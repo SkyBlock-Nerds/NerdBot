@@ -87,7 +87,7 @@ public class NerdBot implements Bot {
 
     @Override
     public void registerListeners() {
-        jda.addEventListener(new ReadyListener(), new ShutdownListener());
+        jda.addEventListener(new ReadyListener(), new ShutdownListener(), new MessageListener());
     }
 
     @Override
