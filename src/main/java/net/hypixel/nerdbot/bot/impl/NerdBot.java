@@ -37,7 +37,6 @@ public class NerdBot implements Bot {
             .build();
 
     private JDA jda;
-    private boolean dead = false;
 
     public NerdBot() {
     }
@@ -73,10 +72,6 @@ public class NerdBot implements Bot {
         return jda;
     }
 
-    public boolean isDead() {
-        return dead;
-    }
-
     @Override
     public void onStart() {
         TextChannel channel = ChannelManager.getChannel(Channel.CURATE);
@@ -96,7 +91,6 @@ public class NerdBot implements Bot {
 
     @Override
     public void onEnd() {
-        dead = true;
         for (BotFeature feature : FEATURES) {
             feature.onEnd();
         }
