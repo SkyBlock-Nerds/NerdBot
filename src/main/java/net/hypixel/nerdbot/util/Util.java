@@ -20,7 +20,7 @@ public class Util {
     }
 
     public static BotConfig loadConfig(File file) throws FileNotFoundException {
-        if(!file.exists()) {
+        if (!file.exists()) {
             throw new FileNotFoundException("Config file not found!");
         }
         BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
