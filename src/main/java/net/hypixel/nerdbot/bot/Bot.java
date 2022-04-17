@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.bot;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.hypixel.nerdbot.config.BotConfig;
 
 import javax.security.auth.login.LoginException;
 
@@ -18,5 +19,7 @@ public interface Bot {
     void registerListeners();
 
     void onEnd();
+
+    BotConfig getConfig();
 
 }
