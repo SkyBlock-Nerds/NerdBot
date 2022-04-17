@@ -1,20 +1,25 @@
 package net.hypixel.nerdbot.bot.impl;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.hooks.EventListener;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.bot.Bot;
+import net.hypixel.nerdbot.channel.Channel;
+import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.BotFeature;
 import net.hypixel.nerdbot.feature.impl.CurateFeature;
 import net.hypixel.nerdbot.listener.ReadyListener;
-import net.hypixel.nerdbot.listener.ShutdownListener;
 
 import javax.security.auth.login.LoginException;
+import java.awt.*;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,19 +28,25 @@ public class NerdBot implements Bot {
     private static final List<BotFeature> FEATURES = Arrays.asList(
             new CurateFeature()
     );
+    public static final MessageEmbed HELLO_THERE = new EmbedBuilder()
+            .setTitle("Hello there!")
+            .setDescription("It would appear as though my core functions are operating at peak efficiency!")
+            .setImage("https://media2.giphy.com/media/xTiIzJSKB4l7xTouE8/giphy.gif")
+            .setColor(Color.GREEN)
+            .setTimestamp(OffsetDateTime.now())
+            .build();
 
     private JDA jda;
+    private boolean dead = false;
 
     public NerdBot() {
     }
 
     @Override
     public void create(String[] args) throws LoginException {
-        JDABuilder builder = JDABuilder.createDefault(args[0]);
-
-        // Disable unneeded parts of the cache
-        builder.disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE);
-        builder.setActivity(Activity.watching("You"));
+        JDABuilder builder = JDABuilder.createDefault(args[0])
+                .disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE)
+                .setActivity(Activity.watching("You"));
 
         configureMemoryUsage(builder);
 
@@ -58,7 +69,21 @@ public class NerdBot implements Bot {
     }
 
     @Override
+    public JDA getJDA() {
+        return jda;
+    }
+
+    public boolean isDead() {
+        return dead;
+    }
+
+    @Override
     public void onStart() {
+        TextChannel channel = ChannelManager.getChannel(Channel.CURATE);
+        if (channel != null) {
+            channel.sendMessageEmbeds(HELLO_THERE).queue();
+        }
+
         for (BotFeature feature : FEATURES) {
             feature.onStart();
         }
@@ -66,11 +91,12 @@ public class NerdBot implements Bot {
 
     @Override
     public void registerListeners() {
-        jda.addEventListener(new ReadyListener(), new ShutdownListener());
+        jda.addEventListener(new ReadyListener());
     }
 
     @Override
     public void onEnd() {
+        dead = true;
         for (BotFeature feature : FEATURES) {
             feature.onEnd();
         }
