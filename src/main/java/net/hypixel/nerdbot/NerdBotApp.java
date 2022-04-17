@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import net.hypixel.nerdbot.bot.Bot;
 import net.hypixel.nerdbot.bot.impl.NerdBot;
 import net.hypixel.nerdbot.util.Logger;
@@ -9,6 +11,8 @@ import javax.security.auth.login.LoginException;
 public class NerdBotApp {
 
     private static Bot bot;
+
+    public static final Gson GSON = new GsonBuilder().create();
 
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();
