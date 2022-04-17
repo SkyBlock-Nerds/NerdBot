@@ -48,10 +48,9 @@ public class NerdBot implements Bot {
         configureMemoryUsage(builder);
 
         jda = builder.build();
-        commands = JDACommands.start(jda, NerdBotApp.class);
 
         try {
-            config = Util.loadConfig(new File(getClass().getClassLoader().getResource("example-config.json").getFile()));
+            config = Util.loadConfig(new File(getClass().getClassLoader().getResource("config.json").getFile()));
         } catch (FileNotFoundException exception) {
             Logger.error("Could not find config file!");
             System.exit(-1);
