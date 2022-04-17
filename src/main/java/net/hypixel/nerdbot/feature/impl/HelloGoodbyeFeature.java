@@ -23,7 +23,7 @@ public class HelloGoodbyeFeature extends BotFeature {
             .setTitle("Goodbye cruel world!")
             .setDescription("It seems as though I'm needed elsewhere!")
             .setImage("https://i.pinimg.com/564x/7c/5a/19/7c5a193b0f832bb13a2b1dd802a023ab.jpg")
-            .setColor(Color.GREEN)
+            .setColor(Color.RED)
             .setTimestamp(OffsetDateTime.now())
             .build();
 
