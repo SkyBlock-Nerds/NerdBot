@@ -1,5 +1,4 @@
 {
-  "prefix": "!",
-  "minimumThreshold": 15,
-  "percentage": 0.75
+  "minimumThreshold": 1,
+  "percentage": 75
 }
