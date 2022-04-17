@@ -1,9 +1,10 @@
-package net.hypixel.nerdbot.util;
+package net.hypixel.nerdbot.curator;
 
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.channel.Reactions;
 import net.hypixel.nerdbot.config.BotConfig;
+import net.hypixel.nerdbot.util.Logger;
 
 import java.util.HashSet;
 import java.util.List;
@@ -25,7 +26,6 @@ public class Curator {
 
     public void curate() {
         MessageHistory history = channel.getHistory();
-        BotConfig config = NerdBotApp.getBot().getConfig();
         List<Message> messages = history.retrievePast(limit).complete();
 
         for (Message message : messages) {
@@ -52,6 +52,8 @@ public class Curator {
                     negative = reaction.getCount();
                 }
             }
+
+            BotConfig config = NerdBotApp.getBot().getConfig();
 
             if (positive == 0 || negative == 0 || positive < config.getMinimumThreshold()) {
                 continue;
