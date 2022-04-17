@@ -43,7 +43,7 @@ public class NerdBot implements Bot {
     public void create(String[] args) throws LoginException {
         JDABuilder builder = JDABuilder.createDefault(args[0])
                 .disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE)
-                .setActivity(Activity.watching("You"));
+                .setActivity(Activity.playing("play.hypixel.net"));
 
         configureMemoryUsage(builder);
 
