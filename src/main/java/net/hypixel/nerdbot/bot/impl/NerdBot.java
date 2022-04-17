@@ -16,6 +16,7 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.BotFeature;
 import net.hypixel.nerdbot.feature.impl.CurateFeature;
 import net.hypixel.nerdbot.listener.ReadyListener;
+import net.hypixel.nerdbot.listener.ShutdownListener;
 
 import javax.security.auth.login.LoginException;
 import java.awt.*;
@@ -86,7 +87,7 @@ public class NerdBot implements Bot {
 
     @Override
     public void registerListeners() {
-        jda.addEventListener(new ReadyListener());
+        jda.addEventListener(new ReadyListener(), new ShutdownListener());
     }
 
     @Override
