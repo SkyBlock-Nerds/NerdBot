@@ -1,17 +1,17 @@
 package net.hypixel.nerdbot.channel;
 
 public enum Reactions {
-    AGREE("yes"),
-    DISAGREE("no"),
-    GREENLIT("greenlit");
+    AGREE("965225847306981417"),
+    DISAGREE("965225847378313256"),
+    GREENLIT("965226114005999626");
 
-    private final String name;
+    private final String id;
 
-    Reactions(String name) {
-        this.name = name;
+    Reactions(String id) {
+        this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getId() {
+        return id;
     }
 }
