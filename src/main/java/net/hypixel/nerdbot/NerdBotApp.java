@@ -8,7 +8,7 @@ import javax.security.auth.login.LoginException;
 
 public class NerdBotApp {
 
-    private static Bot BOT;
+    private static Bot bot;
 
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();
@@ -22,10 +22,10 @@ public class NerdBotApp {
         }
         nerdBot.registerListeners();
 
-        BOT = nerdBot;
+        bot = nerdBot;
     }
 
     public static Bot getBot() {
-        return BOT;
+        return bot;
     }
 }
