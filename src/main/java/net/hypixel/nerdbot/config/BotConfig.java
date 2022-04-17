@@ -2,19 +2,9 @@ package net.hypixel.nerdbot.config;
 
 public class BotConfig {
 
-    private String prefix;
-
     private int minimumThreshold;
 
     private double percentage;
-
-    public String getPrefix() {
-        return prefix;
-    }
-
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
-    }
 
     public int getMinimumThreshold() {
         return minimumThreshold;
@@ -35,7 +25,6 @@ public class BotConfig {
     @Override
     public String toString() {
         return "BotConfig{" +
-                "prefix='" + prefix + '\'' +
                 ", minimumThreshold=" + minimumThreshold +
                 ", percentage=" + percentage +
                 '}';
