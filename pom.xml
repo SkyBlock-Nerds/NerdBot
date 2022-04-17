@@ -14,11 +14,28 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
             <version>5.0.0-alpha.9</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.Kaktushose</groupId>
+            <artifactId>jda-commands</artifactId>
+            <version>v.2.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.9.0</version>
         </dependency>
     </dependencies>
 
