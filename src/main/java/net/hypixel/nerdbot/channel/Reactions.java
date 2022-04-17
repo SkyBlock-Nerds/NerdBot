@@ -5,13 +5,13 @@ public enum Reactions {
     DISAGREE("no"),
     GREENLIT("greenlit");
 
-    private final String reaction;
+    private final String name;
 
-    Reactions(String reaction) {
-        this.reaction = reaction;
+    Reactions(String name) {
+        this.name = name;
     }
 
-    public String getReaction() {
-        return reaction;
+    public String getName() {
+        return name;
     }
 }
