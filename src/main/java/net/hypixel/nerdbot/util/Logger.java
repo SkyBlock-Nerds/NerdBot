@@ -13,7 +13,7 @@ public class Logger {
     public static final String ANSI_WHITE = "\u001B[37m";
 
     public static void print(String msg) {
-        System.out.println(Time.formatNow() + " " + msg + ANSI_RESET);
+        System.out.println(ANSI_RESET + Time.formatNow() + " " + msg);
     }
 
     public static void info(String msg) {
