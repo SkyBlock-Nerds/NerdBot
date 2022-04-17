@@ -12,7 +12,7 @@ public enum Channel {
         this.id = id;
     }
 
-    public String getID() {
+    public String getId() {
         return id;
     }
 

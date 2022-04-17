@@ -9,7 +9,7 @@ public class ChannelManager {
 
     @Nullable
     public static TextChannel getChannel(Channel channel) {
-        String id = channel.getID();
+        String id = channel.getId();
         TextChannel textChannel = NerdBotApp.getBot().getJDA().getTextChannelById(id);
         if (textChannel == null) {
             Logger.error("Failed to find channel: '" + id + "'");
