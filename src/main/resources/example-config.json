@@ -1,3 +1,5 @@
 {
-  "prefix": "!"
+  "prefix": "!",
+  "minimumThreshold": 15,
+  "percentage": 0.75
 }
