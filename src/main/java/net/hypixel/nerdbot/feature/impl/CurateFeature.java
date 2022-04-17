@@ -2,8 +2,8 @@ package net.hypixel.nerdbot.feature.impl;
 
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.channel.Channel;
+import net.hypixel.nerdbot.curator.Curator;
 import net.hypixel.nerdbot.feature.BotFeature;
-import net.hypixel.nerdbot.util.Curator;
 
 import java.util.Timer;
 import java.util.TimerTask;
