@@ -14,12 +14,12 @@ public interface Bot {
 
     JDA getJDA();
 
+    BotConfig getConfig();
+
     void onStart();
 
     void registerListeners();
 
     void onEnd();
-
-    BotConfig getConfig();
 
 }

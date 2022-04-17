@@ -6,6 +6,8 @@ public class BotConfig {
 
     private double percentage;
 
+    private long interval;
+
     public int getMinimumThreshold() {
         return minimumThreshold;
     }
@@ -20,6 +22,14 @@ public class BotConfig {
 
     public void setPercentage(double percentage) {
         this.percentage = percentage;
+    }
+
+    public long getInterval() {
+        return interval;
+    }
+
+    public void setInterval(long interval) {
+        this.interval = interval;
     }
 
     @Override
