@@ -14,6 +14,7 @@ import net.hypixel.nerdbot.config.BotConfig;
 import net.hypixel.nerdbot.feature.BotFeature;
 import net.hypixel.nerdbot.feature.impl.CurateFeature;
 import net.hypixel.nerdbot.feature.impl.HelloGoodbyeFeature;
+import net.hypixel.nerdbot.listener.MessageListener;
 import net.hypixel.nerdbot.listener.ReadyListener;
 import net.hypixel.nerdbot.listener.ShutdownListener;
 import net.hypixel.nerdbot.util.Logger;

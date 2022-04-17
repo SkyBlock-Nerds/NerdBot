@@ -1,4 +1,5 @@
 {
   "minimumThreshold": 1,
-  "percentage": 75
+  "percentage": 75,
+  "interval": 3600000
 }

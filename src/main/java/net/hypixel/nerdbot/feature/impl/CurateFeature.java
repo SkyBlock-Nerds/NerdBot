@@ -1,13 +1,28 @@
 package net.hypixel.nerdbot.feature.impl;
 
+import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.channel.Channel;
 import net.hypixel.nerdbot.feature.BotFeature;
-import net.hypixel.nerdbot.util.Logger;
+import net.hypixel.nerdbot.util.Curator;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class CurateFeature extends BotFeature {
 
     @Override
     public void onStart() {
-        Logger.info("Curation ready!");
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                Curator curator = new Curator(100, NerdBotApp.getBot().getJDA().getTextChannelById(Channel.SUGGESTIONS.getId()));
+                curator.curate();
+                curator.applyEmoji();
+            }
+        };
+
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(timerTask, 0L, NerdBotApp.getBot().getConfig().getInterval());
     }
 
     @Override
