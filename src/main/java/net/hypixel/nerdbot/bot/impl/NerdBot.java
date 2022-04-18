@@ -1,6 +1,5 @@
 package net.hypixel.nerdbot.bot.impl;
 
-import com.github.kaktushose.jda.commands.JDACommands;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -8,7 +7,6 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
-import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.Bot;
 import net.hypixel.nerdbot.config.BotConfig;
 import net.hypixel.nerdbot.feature.BotFeature;
@@ -34,7 +32,7 @@ public class NerdBot implements Bot {
     );
 
     private JDA jda;
-    private JDACommands commands;
+
     private BotConfig config;
 
     public NerdBot() {
@@ -95,7 +93,6 @@ public class NerdBot implements Bot {
         for (BotFeature feature : FEATURES) {
             feature.onEnd();
         }
-        commands.shutdown();
     }
 
     @Override
