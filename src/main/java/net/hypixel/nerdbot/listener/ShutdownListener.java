@@ -14,4 +14,5 @@ public class ShutdownListener implements EventListener {
             NerdBotApp.getBot().onEnd();
         }
     }
+
 }

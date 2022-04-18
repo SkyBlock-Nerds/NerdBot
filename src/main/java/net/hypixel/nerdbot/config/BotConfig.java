@@ -32,11 +32,4 @@ public class BotConfig {
         this.interval = interval;
     }
 
-    @Override
-    public String toString() {
-        return "BotConfig{" +
-                ", minimumThreshold=" + minimumThreshold +
-                ", percentage=" + percentage +
-                '}';
-    }
 }

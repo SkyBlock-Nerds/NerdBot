@@ -14,6 +14,7 @@ public class MessageListener extends ListenerAdapter {
         if (event.getAuthor().isBot() || !event.getChannel().getId().equals(Channel.SUGGESTIONS.getId())) {
             return;
         }
+
         Guild guild = event.getGuild();
         Emote yes = guild.getEmoteById(Reactions.AGREE.getId());
         Emote no = guild.getEmoteById(Reactions.DISAGREE.getId());
@@ -21,4 +22,5 @@ public class MessageListener extends ListenerAdapter {
         event.getMessage().addReaction(yes).queue();
         event.getMessage().addReaction(no).queue();
     }
+
 }

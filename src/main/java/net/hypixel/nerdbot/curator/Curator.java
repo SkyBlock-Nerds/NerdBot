@@ -29,11 +29,7 @@ public class Curator {
         List<Message> messages = history.retrievePast(limit).complete();
 
         for (Message message : messages) {
-            if (message.getAuthor().isBot()) {
-                continue;
-            }
-
-            if (message.getReactionById(Reactions.GREENLIT.getId()) != null) {
+            if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null) {
                 continue;
             }
 
@@ -72,9 +68,11 @@ public class Curator {
     public void applyEmoji() {
         Guild guild = channel.getGuild();
         Emote greenlit = guild.getEmoteById(Reactions.GREENLIT.getId());
+
         for (Message message : greenlitMessages) {
             message.addReaction(greenlit).queue();
         }
+
         Logger.info("Applied greenlit emoji to " + greenlitMessages.size() + " messages");
     }
 
@@ -93,4 +91,5 @@ public class Curator {
     public Set<Message> getGreenlitMessages() {
         return greenlitMessages;
     }
+
 }

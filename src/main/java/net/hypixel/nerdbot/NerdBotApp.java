@@ -10,9 +10,8 @@ import javax.security.auth.login.LoginException;
 
 public class NerdBotApp {
 
-    private static Bot bot;
-
     public static final Gson GSON = new GsonBuilder().create();
+    private static Bot bot;
 
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();
@@ -32,4 +31,5 @@ public class NerdBotApp {
     public static Bot getBot() {
         return bot;
     }
+
 }

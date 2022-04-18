@@ -7,7 +7,7 @@ import net.hypixel.nerdbot.channel.Channel;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.BotFeature;
 
-import java.awt.Color;
+import java.awt.*;
 import java.time.OffsetDateTime;
 
 public class HelloGoodbyeFeature extends BotFeature {
@@ -42,4 +42,5 @@ public class HelloGoodbyeFeature extends BotFeature {
             channel.sendMessageEmbeds(GOODBYE).queue();
         }
     }
+
 }
