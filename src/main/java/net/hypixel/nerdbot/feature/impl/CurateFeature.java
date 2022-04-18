@@ -20,7 +20,6 @@ public class CurateFeature extends BotFeature {
                 curator.applyEmoji();
             }
         };
-
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(timerTask, 0L, NerdBotApp.getBot().getConfig().getInterval());
     }
@@ -29,4 +28,5 @@ public class CurateFeature extends BotFeature {
     public void onEnd() {
 
     }
+
 }

@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.channel;
 
 public enum Reactions {
+
     AGREE("965225847306981417"),
     DISAGREE("965225847378313256"),
     GREENLIT("965226114005999626");
@@ -18,4 +19,5 @@ public enum Reactions {
     public String getId() {
         return id;
     }
+
 }

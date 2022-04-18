@@ -14,4 +14,5 @@ public class ReadyListener implements EventListener {
             NerdBotApp.getBot().onStart();
         }
     }
+
 }

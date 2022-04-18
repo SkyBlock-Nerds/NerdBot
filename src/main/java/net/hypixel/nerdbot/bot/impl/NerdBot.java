@@ -99,4 +99,5 @@ public class NerdBot implements Bot {
     public BotConfig getConfig() {
         return config;
     }
+
 }
