@@ -25,7 +25,7 @@ public class MessageListener extends ListenerAdapter {
         if (channel.getId().equals(Channel.SUGGESTIONS.getId())) {
             String firstLine = message.getContentRaw().split("\n")[0];
 
-            if (firstLine.length() > 100) {
+            if (firstLine.length() > 30) {
                 firstLine = firstLine.substring(0, 30) + "...";
             }
 
