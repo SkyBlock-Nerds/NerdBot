@@ -15,11 +15,17 @@ public class CurateFeature extends BotFeature {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                Curator curator = new Curator(100, NerdBotApp.getBot().getJDA().getTextChannelById(Channel.SUGGESTIONS.getId()));
+                Curator curator = new Curator(100, Channel.SUGGESTIONS);
+
                 curator.curate();
-                curator.applyEmoji();
+
+                if (!curator.getGreenlitMessages().isEmpty()) {
+                    curator.applyEmoji();
+                    curator.insert();
+                }
             }
         };
+
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(timerTask, 0L, NerdBotApp.getBot().getConfig().getInterval());
     }

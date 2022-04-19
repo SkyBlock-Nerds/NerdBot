@@ -2,13 +2,16 @@ package net.hypixel.nerdbot.curator;
 
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.channel.Channel;
 import net.hypixel.nerdbot.channel.Reactions;
 import net.hypixel.nerdbot.config.BotConfig;
+import net.hypixel.nerdbot.database.Database;
+import net.hypixel.nerdbot.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Logger;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 public class Curator {
 
@@ -16,12 +19,16 @@ public class Curator {
 
     private final TextChannel channel;
 
-    private final Set<Message> greenlitMessages;
+    private final List<GreenlitMessage> greenlitMessages;
 
-    public Curator(int limit, TextChannel channel) {
+    public Curator(int limit, Channel channel) {
         this.limit = limit;
-        this.channel = channel;
-        greenlitMessages = new HashSet<>(limit);
+        this.channel = NerdBotApp.getBot().getJDA().getTextChannelById(channel.getId());
+        greenlitMessages = new ArrayList<>(limit);
+    }
+
+    public Curator(Channel channel) {
+        this(100, channel);
     }
 
     public void curate() {
@@ -61,19 +68,31 @@ public class Curator {
                 continue;
             }
 
-            greenlitMessages.add(message);
+            GreenlitMessage msg = new GreenlitMessage(message.getAuthor().getId(), message.getId(), message.getContentRaw(), new Date(message.getTimeCreated().toInstant().toEpochMilli()), message.getJumpUrl());
+            greenlitMessages.add(msg);
         }
     }
 
     public void applyEmoji() {
         Guild guild = channel.getGuild();
-        Emote greenlit = guild.getEmoteById(Reactions.GREENLIT.getId());
+        Emote greenlitEmoji = guild.getEmoteById(Reactions.GREENLIT.getId());
+        List<Message> messages = channel.getHistory().retrievePast(limit).complete();
 
-        for (Message message : greenlitMessages) {
-            message.addReaction(greenlit).queue();
+        for (Message message : messages) {
+            if (Database.getInstance().get("messageId", message.getId()) != null) {
+                message.addReaction(greenlitEmoji).queue();
+            }
         }
 
         Logger.info("Applied greenlit emoji to " + greenlitMessages.size() + " messages");
+    }
+
+    public void insert() {
+        if (!greenlitMessages.isEmpty()) {
+            Database.getInstance().insertGreenlitMessages(greenlitMessages);
+        } else {
+            Logger.info("No greenlit messages to insert!");
+        }
     }
 
     private double getRatio(int positive, int negative) {
@@ -88,7 +107,7 @@ public class Curator {
         return channel;
     }
 
-    public Set<Message> getGreenlitMessages() {
+    public List<GreenlitMessage> getGreenlitMessages() {
         return greenlitMessages;
     }
 

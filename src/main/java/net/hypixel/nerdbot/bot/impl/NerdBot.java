@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.bot.Bot;
 import net.hypixel.nerdbot.config.BotConfig;
+import net.hypixel.nerdbot.database.Database;
 import net.hypixel.nerdbot.feature.BotFeature;
 import net.hypixel.nerdbot.feature.impl.CurateFeature;
 import net.hypixel.nerdbot.feature.impl.HelloGoodbyeFeature;
@@ -40,7 +41,7 @@ public class NerdBot implements Bot {
 
     @Override
     public void create(String[] args) throws LoginException {
-        JDABuilder builder = JDABuilder.createDefault(args[0])
+        JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
                 .disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE)
                 .setActivity(Activity.competing("mc.hypixel.net"));
 
@@ -93,6 +94,7 @@ public class NerdBot implements Bot {
         for (BotFeature feature : FEATURES) {
             feature.onEnd();
         }
+        Database.getInstance().disconnect();
     }
 
     @Override
