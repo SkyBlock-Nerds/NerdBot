@@ -19,6 +19,7 @@ public class HelloGoodbyeFeature extends BotFeature {
             .setColor(Color.GREEN)
             .setTimestamp(OffsetDateTime.now())
             .build();
+
     private static final MessageEmbed GOODBYE = new EmbedBuilder()
             .setTitle("Goodbye cruel world!")
             .setDescription("It seems as though I'm needed elsewhere!")
