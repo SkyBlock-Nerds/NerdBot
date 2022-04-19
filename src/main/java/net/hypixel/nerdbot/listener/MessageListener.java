@@ -25,6 +25,9 @@ public class MessageListener extends ListenerAdapter {
         if (channel.getId().equals(Channel.SUGGESTIONS.getId())) {
             message.addReaction(yes).queue();
             message.addReaction(no).queue();
+            message.createThreadChannel("Suggestion Discussion - " + message.getAuthor().getName()).queue(threadChannel -> {
+                threadChannel.addThreadMember(message.getAuthor()).queue();
+            });
         }
     }
 
