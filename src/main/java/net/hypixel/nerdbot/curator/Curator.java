@@ -68,7 +68,15 @@ public class Curator {
                 continue;
             }
 
-            GreenlitMessage msg = new GreenlitMessage(message.getAuthor().getId(), message.getId(), message.getContentRaw(), new Date(message.getTimeCreated().toInstant().toEpochMilli()), message.getJumpUrl());
+            GreenlitMessage msg = new GreenlitMessage()
+                    .setUserId(message.getAuthor().getId())
+                    .setMessageId(message.getId())
+                    .setSuggestionContent(message.getContentRaw())
+                    .setSuggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli()))
+                    .setSuggestionUrl(message.getJumpUrl())
+                    .setOriginalAgrees(positive)
+                    .setOriginalDisagrees(negative);
+
             greenlitMessages.add(msg);
         }
     }
