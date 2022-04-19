@@ -21,13 +21,14 @@ public class MessageListener extends ListenerAdapter {
         Message message = event.getMessage();
         Emote yes = guild.getEmoteById(Reactions.AGREE.getId());
         Emote no = guild.getEmoteById(Reactions.DISAGREE.getId());
-        String firstLine = message.getContentRaw().split("\n")[0];
-
-        if (firstLine.length() > 100) {
-            firstLine = firstLine.substring(0, 30) + "...";
-        }
 
         if (channel.getId().equals(Channel.SUGGESTIONS.getId())) {
+            String firstLine = message.getContentRaw().split("\n")[0];
+
+            if (firstLine.length() > 100) {
+                firstLine = firstLine.substring(0, 30) + "...";
+            }
+
             message.addReaction(yes).queue();
             message.addReaction(no).queue();
             message.createThreadChannel("Discussion - " + firstLine).queue(threadChannel -> {
