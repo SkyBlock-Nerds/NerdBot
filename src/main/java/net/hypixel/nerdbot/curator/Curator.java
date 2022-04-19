@@ -78,10 +78,13 @@ public class Curator {
         Emote greenlitEmoji = guild.getEmoteById(Reactions.GREENLIT.getId());
         List<Message> messages = channel.getHistory().retrievePast(limit).complete();
 
-        for (Message message : messages) {
-            if (Database.getInstance().get("messageId", message.getId()) != null) {
+        TextChannel logChannel = NerdBotApp.getBot().getJDA().getTextChannelById(Channel.SUGGESTIONS.getId());
+
+
+        for (GreenlitMessage msg : greenlitMessages) {
+            logChannel.retrieveMessageById(msg.getMessageId()).queue(message -> {
                 message.addReaction(greenlitEmoji).queue();
-            }
+            });
         }
 
         Logger.info("Applied greenlit emoji to " + greenlitMessages.size() + " messages");
