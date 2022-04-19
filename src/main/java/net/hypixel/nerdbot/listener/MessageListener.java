@@ -33,7 +33,7 @@ public class MessageListener extends ListenerAdapter {
             message.addReaction(no).queue();
             message.createThreadChannel("Discussion - " + firstLine).queue(threadChannel -> {
                 threadChannel.addThreadMember(message.getAuthor()).queue();
-                threadChannel.sendMessage("Use this thread to discuss the suggestion by " + message.getAuthor().getAsMention()).queue();
+                threadChannel.sendMessage("Use this thread to discuss " + message.getAuthor().getAsMention() + "'s suggestion: " + firstLine).queue();
             });
         }
     }
