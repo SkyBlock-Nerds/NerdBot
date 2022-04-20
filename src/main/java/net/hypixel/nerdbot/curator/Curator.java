@@ -41,18 +41,17 @@ public class Curator {
             }
 
             int positive = 0, negative = 0;
-
             for (MessageReaction reaction : message.getReactions()) {
                 if (reaction.getReactionEmote().isEmoji()) {
                     continue;
                 }
 
                 if (reaction.getReactionEmote().getId().equals(Reactions.AGREE.getId())) {
-                    positive = reaction.getCount();
+                    positive = reaction.getCount() - 1;
                 }
 
                 if (reaction.getReactionEmote().getId().equals(Reactions.DISAGREE.getId())) {
-                    negative = reaction.getCount();
+                    negative = reaction.getCount() - 1;
                 }
             }
 
