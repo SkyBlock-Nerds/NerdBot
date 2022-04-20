@@ -29,11 +29,13 @@ public class MessageListener extends ListenerAdapter {
                 firstLine = firstLine.substring(0, 30) + "...";
             }
 
+            String tmp = firstLine;
+
             message.addReaction(yes).queue();
             message.addReaction(no).queue();
             message.createThreadChannel("Discussion - " + firstLine).queue(threadChannel -> {
                 threadChannel.addThreadMember(message.getAuthor()).queue();
-                threadChannel.sendMessage("Use this thread to discuss " + message.getAuthor().getAsMention() + "'s suggestion: " + firstLine).queue();
+                threadChannel.sendMessage("Use this thread to discuss " + message.getAuthor().getAsMention() + "'s suggestion: " + tmp).queue();
             });
         }
     }
