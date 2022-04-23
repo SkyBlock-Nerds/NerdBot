@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.bot.impl;
 
+import me.neiizun.lightdrop.LightDrop;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -36,6 +37,8 @@ public class NerdBot implements Bot {
 
     private BotConfig config;
 
+    private LightDrop commands;
+
     public NerdBot() {
     }
 
@@ -55,6 +58,9 @@ public class NerdBot implements Bot {
             Logger.error("Could not find config file!");
             System.exit(-1);
         }
+
+        commands = new LightDrop().hook(jda).enableAutoMapping("net.hypixel.nerdbot.command");
+        commands.setPrefix(config.getPrefix());
     }
 
     @Override
