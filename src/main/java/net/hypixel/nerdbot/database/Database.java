@@ -7,6 +7,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import net.hypixel.nerdbot.util.Logger;
+import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
@@ -56,9 +57,10 @@ public class Database {
         return connected;
     }
 
-    public List<GreenlitMessage> get(String field, Object value) {
-        return greenlitCollection.find(Filters.eq(field, value)).into(new ArrayList<>());
+    public List<Document> get(String collection, String field, Object value) {
+        return mongoClient.getDatabase("skyblockNerds").getCollection(collection).find(Filters.eq(field, value)).into(new ArrayList<>());
     }
+
 
     public void insertGreenlitMessage(GreenlitMessage greenlitMessage) {
         greenlitCollection.insertOne(greenlitMessage);
@@ -78,4 +80,5 @@ public class Database {
     public List<GreenlitMessage> getGreenlitCollection() {
         return new ArrayList<>(this.greenlitCollection.find().into(new ArrayList<>()));
     }
+
 }

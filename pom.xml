@@ -37,6 +37,11 @@
             <artifactId>mongodb-driver-sync</artifactId>
             <version>4.5.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.NeiiZun</groupId>
+            <artifactId>LightDrop</artifactId>
+            <version>1.2.1</version>
+        </dependency>
     </dependencies>
 
     <build>
