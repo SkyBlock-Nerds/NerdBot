@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.util;
 
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
@@ -21,6 +22,11 @@ public class Util {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public static boolean isMod(String userId, String guildId) {
+        Member member = NerdBotApp.getBot().getJDA().getGuildById(guildId).getMemberById(userId);
+        return member != null && member.hasPermission(Permission.BAN_MEMBERS);
     }
 
     public static Role findRole(Member member, String id) {

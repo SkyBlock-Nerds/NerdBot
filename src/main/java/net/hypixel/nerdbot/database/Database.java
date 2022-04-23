@@ -6,6 +6,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
+import net.hypixel.nerdbot.channel.ChannelGroup;
 import net.hypixel.nerdbot.util.Logger;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
@@ -20,6 +21,8 @@ public class Database {
     private static Database instance;
 
     private final MongoCollection<GreenlitMessage> greenlitCollection;
+
+    private final MongoCollection<ChannelGroup> channelCollection;
 
     private final MongoClient mongoClient;
 
@@ -37,6 +40,7 @@ public class Database {
         mongoClient = MongoClients.create(clientSettings);
         connected = true;
         greenlitCollection = mongoClient.getDatabase("skyblockNerds").getCollection("greenlitMessages", GreenlitMessage.class);
+        channelCollection = mongoClient.getDatabase("skyblockNerds").getCollection("channelGroups", ChannelGroup.class);
     }
 
     public static Database getInstance() {
@@ -79,6 +83,29 @@ public class Database {
 
     public List<GreenlitMessage> getGreenlitCollection() {
         return new ArrayList<>(this.greenlitCollection.find().into(new ArrayList<>()));
+    }
+
+    public ChannelGroup getChannelGroup(String channel) {
+        return channelCollection.find(Filters.eq("name", channel)).first();
+    }
+
+    public void insertChannelGroup(ChannelGroup channelGroup) {
+        channelCollection.insertOne(channelGroup);
+        Logger.info("Inserted channel group " + channelGroup.getName());
+    }
+
+    public void insertChannelGroups(List<ChannelGroup> channelGroups) {
+        channelCollection.insertMany(channelGroups);
+        Logger.info("Inserted " + channelGroups.size() + " channel groups");
+    }
+
+    public void deleteChannelGroup(String field, Object value) {
+        channelCollection.deleteOne(Filters.eq(field, value));
+        Logger.info("Deleted channel group " + field + ":" + value);
+    }
+
+    public List<ChannelGroup> getChannelGroups() {
+        return this.channelCollection.find().into(new ArrayList<>());
     }
 
 }
