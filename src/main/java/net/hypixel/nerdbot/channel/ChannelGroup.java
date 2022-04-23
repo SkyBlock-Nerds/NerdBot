@@ -1,10 +1,7 @@
 package net.hypixel.nerdbot.channel;
 
-import org.bson.codecs.pojo.annotations.BsonProperty;
-
 public class ChannelGroup {
 
-    @BsonProperty("name")
     private String name;
 
     private String guildId;
