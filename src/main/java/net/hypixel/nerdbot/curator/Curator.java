@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.curator;
 
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.channel.Channel;
+import net.hypixel.nerdbot.channel.ChannelGroup;
 import net.hypixel.nerdbot.channel.Reactions;
 import net.hypixel.nerdbot.config.BotConfig;
 import net.hypixel.nerdbot.database.Database;
@@ -17,23 +17,27 @@ public class Curator {
 
     private final int limit;
 
-    private final TextChannel channel;
+    private final ChannelGroup group;
 
     private final List<GreenlitMessage> greenlitMessages;
 
-    public Curator(int limit, Channel channel) {
+    public Curator(int limit, ChannelGroup group) {
         this.limit = limit;
-        this.channel = NerdBotApp.getBot().getJDA().getTextChannelById(channel.getId());
+        //this.channel = NerdBotApp.getBot().getJDA().getTextChannelById(channel.getId());
+        this.group = group;
         greenlitMessages = new ArrayList<>(limit);
     }
 
-    public Curator(Channel channel) {
-        this(100, channel);
+    public Curator(ChannelGroup group) {
+        this(100, group);
     }
 
     public void curate() {
-        MessageHistory history = channel.getHistory();
+        TextChannel textChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getFrom());
+        MessageHistory history = textChannel.getHistory();
         List<Message> messages = history.retrievePast(limit).complete();
+
+        Logger.info("Starting suggestion curation at " + new Date());
 
         for (Message message : messages) {
             if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null) {
@@ -57,11 +61,14 @@ public class Curator {
 
             BotConfig config = NerdBotApp.getBot().getConfig();
 
-            if (positive == 0 || negative == 0 || positive < config.getMinimumThreshold()) {
+            if (positive == 0 && negative == 0 || positive < config.getMinimumThreshold()) {
+                Logger.info("Message " + message.getId() + " is below the minimum threshold! (" + positive + "/" + negative + ") (min threshold: " + config.getMinimumThreshold() + ")");
                 continue;
             }
 
             double ratio = getRatio(positive, negative);
+
+            Logger.info("Message " + message.getId() + " has a ratio of " + getRatio(positive, negative) + "%");
 
             if (ratio < config.getPercentage()) {
                 continue;
@@ -76,14 +83,23 @@ public class Curator {
                     .setOriginalAgrees(positive)
                     .setOriginalDisagrees(negative);
 
+            String[] lines = message.getContentRaw().split("\n");
+
+            if (lines.length >= 1) {
+                msg.setSuggestionTitle(message.getContentRaw().split("\n")[0]);
+            } else {
+                msg.setSuggestionTitle("No Title");
+            }
+
             greenlitMessages.add(msg);
         }
+        Logger.info("Finished curating messages at " + new Date());
     }
 
     public void applyEmoji() {
-        Guild guild = channel.getGuild();
+        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
         Emote greenlitEmoji = guild.getEmoteById(Reactions.GREENLIT.getId());
-        TextChannel suggestionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(Channel.SUGGESTIONS.getId());
+        TextChannel suggestionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getFrom());
 
         for (GreenlitMessage msg : greenlitMessages) {
             suggestionChannel.retrieveMessageById(msg.getMessageId()).queue(message -> {
@@ -94,9 +110,18 @@ public class Curator {
         Logger.info("Applied greenlit emoji to " + greenlitMessages.size() + " messages");
     }
 
+    public void send() {
+        for (GreenlitMessage message : greenlitMessages) {
+            if (group != null) {
+                NerdBotApp.getBot().getJDA().getTextChannelById(group.getTo()).sendMessageEmbeds(message.getEmbed().build()).queue();
+            }
+        }
+    }
+
     public void insert() {
         if (!greenlitMessages.isEmpty()) {
             Database.getInstance().insertGreenlitMessages(greenlitMessages);
+            Logger.info("Inserted " + greenlitMessages.size() + " greenlit messages");
         } else {
             Logger.info("No greenlit messages to insert!");
         }
@@ -110,8 +135,8 @@ public class Curator {
         return limit;
     }
 
-    public TextChannel getChannel() {
-        return channel;
+    public ChannelGroup getGroup() {
+        return group;
     }
 
     public List<GreenlitMessage> getGreenlitMessages() {

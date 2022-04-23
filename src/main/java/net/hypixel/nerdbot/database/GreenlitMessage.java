@@ -1,7 +1,13 @@
 package net.hypixel.nerdbot.database;
 
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.User;
+import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.channel.Reactions;
+import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.bson.types.ObjectId;
 
+import java.awt.*;
 import java.util.Date;
 
 public class GreenlitMessage {
@@ -11,6 +17,8 @@ public class GreenlitMessage {
     private String userId;
 
     private String messageId;
+
+    private String suggestionTitle;
 
     private String suggestionContent;
 
@@ -25,9 +33,11 @@ public class GreenlitMessage {
     public GreenlitMessage() {
     }
 
-    public GreenlitMessage(String userId, String messageId, String suggestionContent, Date suggestionDate, String suggestionUrl, int originalAgrees, int originalDisagrees) {
+    public GreenlitMessage(ObjectId id, String userId, String messageId, String suggestionTitle, String suggestionContent, Date suggestionDate, String suggestionUrl, int originalAgrees, int originalDisagrees) {
+        this.id = id;
         this.userId = userId;
         this.messageId = messageId;
+        this.suggestionTitle = suggestionTitle;
         this.suggestionContent = suggestionContent;
         this.suggestionDate = suggestionDate;
         this.suggestionUrl = suggestionUrl;
@@ -59,6 +69,15 @@ public class GreenlitMessage {
 
     public GreenlitMessage setMessageId(String messageId) {
         this.messageId = messageId;
+        return this;
+    }
+
+    public String getSuggestionTitle() {
+        return suggestionTitle;
+    }
+
+    public GreenlitMessage setSuggestionTitle(String suggestionTitle) {
+        this.suggestionTitle = suggestionTitle;
         return this;
     }
 
@@ -107,15 +126,16 @@ public class GreenlitMessage {
         return this;
     }
 
-    @Override
-    public String toString() {
-        return "GreenlitMessage{" +
-                "id=" + id +
-                ", userId=" + userId +
-                ", messageId=" + messageId +
-                ", suggestionContent='" + suggestionContent + '\'' +
-                ", suggestionDate='" + suggestionDate + '\'' +
-                ", suggestionUrl='" + suggestionUrl + '\'' +
-                '}';
+    @BsonIgnore
+    public EmbedBuilder getEmbed() {
+        EmbedBuilder builder = new EmbedBuilder();
+        User user = NerdBotApp.getBot().getJDA().getUserById(userId);
+        builder.setAuthor(user.getName(), suggestionUrl, user.getAvatarUrl());
+        builder.setTitle(suggestionTitle, suggestionUrl);
+        builder.setColor(Color.GREEN);
+        builder.setDescription(suggestionContent + "\n\n" + Reactions.THUMBS_UP_EMOJI + " " + originalAgrees + " " + Reactions.THUMBS_DOWN_EMOJI + " " + originalDisagrees);
+        builder.setFooter("Suggested by " + user.getName(), null);
+        builder.setTimestamp(suggestionDate.toInstant());
+        return builder;
     }
 }
