@@ -8,10 +8,12 @@ import net.hypixel.nerdbot.config.BotConfig;
 import net.hypixel.nerdbot.database.Database;
 import net.hypixel.nerdbot.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Logger;
+import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
 
 public class Curator {
 
@@ -44,6 +46,14 @@ public class Curator {
                 continue;
             }
 
+            if (message.getReactionById(Reactions.AGREE.getId()) == null) {
+                message.addReaction(NerdBotApp.getBot().getJDA().getEmoteById(Reactions.AGREE.getId())).queue();
+            }
+
+            if (message.getReactionById(Reactions.DISAGREE.getId()) == null) {
+                message.addReaction(NerdBotApp.getBot().getJDA().getEmoteById(Reactions.DISAGREE.getId())).queue();
+            }
+
             int positive = 0, negative = 0;
             for (MessageReaction reaction : message.getReactions()) {
                 if (reaction.getReactionEmote().isEmoji()) {
@@ -74,9 +84,18 @@ public class Curator {
                 continue;
             }
 
+            String firstLine = message.getContentRaw().split("\n")[0];
+            Matcher matcher = Util.SUGGESTION_TITLE.matcher(firstLine);
+            List<String> tags = new ArrayList<>();
+
+            while (matcher.find()) {
+                tags.add(matcher.group(1));
+            }
+
             GreenlitMessage msg = new GreenlitMessage()
                     .setUserId(message.getAuthor().getId())
                     .setMessageId(message.getId())
+                    .setTags(tags)
                     .setSuggestionContent(message.getContentRaw())
                     .setSuggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli()))
                     .setSuggestionUrl(message.getJumpUrl())
