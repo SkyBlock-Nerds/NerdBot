@@ -13,8 +13,11 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 public class Util {
+
+    public static final Pattern SUGGESTION_TITLE = Pattern.compile("(?i)\\[(.*?)\\]");
 
     public static void sleep(TimeUnit unit, long time) {
         try {
