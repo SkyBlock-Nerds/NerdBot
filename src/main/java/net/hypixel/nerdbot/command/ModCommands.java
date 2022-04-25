@@ -16,10 +16,12 @@ public class ModCommands {
     public void curate(CommandContext context) {
         if (!Util.isMod(context.getAuthor().getId(), context.getMessage().getGuild().getId())) {
             context.getChannel().sendMessage("You do not have permission to use this command.").queue();
+            return;
         }
 
         if (!Database.getInstance().isConnected()) {
             context.getMessage().reply("Cannot connect to the database!").queue();
+            return;
         }
 
         String[] args = context.getArgs();
@@ -57,6 +59,7 @@ public class ModCommands {
 
         if (args.length < 3) {
             context.getMessage().reply("Invalid arguments. Usage: `!addchannel <group name> <from> <to>`").queue();
+            return;
         }
 
         ChannelGroup channelGroup = new ChannelGroup(args[0], context.getMessage().getGuild().getId(), args[1], args[2]);
