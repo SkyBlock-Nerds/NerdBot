@@ -18,4 +18,5 @@ public class PublicCommands {
         int total = Database.getInstance().getGreenlitCollection().size();
         context.getMessage().reply("There are currently " + total + " greenlit suggestions.").queue();
     }
+
 }
