@@ -23,7 +23,6 @@ public class Curator {
 
     public Curator(int limit, ChannelGroup group) {
         this.limit = limit;
-        //this.channel = NerdBotApp.getBot().getJDA().getTextChannelById(channel.getId());
         this.group = group;
         greenlitMessages = new ArrayList<>(limit);
     }
@@ -93,6 +92,7 @@ public class Curator {
 
             greenlitMessages.add(msg);
         }
+
         Logger.info("Finished curating messages at " + new Date());
     }
 
@@ -107,7 +107,7 @@ public class Curator {
             });
         }
 
-        Logger.info("Applied greenlit emoji to " + greenlitMessages.size() + " messages");
+        Logger.info("Applied greenlit emoji to " + greenlitMessages.size() + " message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
     }
 
     public void send() {
@@ -121,7 +121,7 @@ public class Curator {
     public void insert() {
         if (!greenlitMessages.isEmpty()) {
             Database.getInstance().insertGreenlitMessages(greenlitMessages);
-            Logger.info("Inserted " + greenlitMessages.size() + " greenlit messages");
+            Logger.info("Inserted " + greenlitMessages.size() + " greenlit message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
         } else {
             Logger.info("No greenlit messages to insert!");
         }
