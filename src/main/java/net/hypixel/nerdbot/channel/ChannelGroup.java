@@ -52,12 +52,4 @@ public class ChannelGroup {
         this.to = to;
     }
 
-    @Override
-    public String toString() {
-        return "ChannelGroup{" +
-                "name='" + name + '\'' +
-                ", from='" + from + '\'' +
-                ", to='" + to + '\'' +
-                '}';
-    }
 }
