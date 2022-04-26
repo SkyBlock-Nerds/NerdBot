@@ -43,7 +43,7 @@ public class ModCommands {
             curator.applyEmoji();
             curator.insert();
             curator.send();
-            message.reply("Curation complete. " + curator.getGreenlitMessages().size() + " suggestions were greenlit.").queue();
+            message.reply("Curation complete. " + curator.getGreenlitMessages().size() + " suggestion" + (curator.getGreenlitMessages().size() == 1 ? " was" : "s were") + " greenlit.").queue();
         } else {
             message.reply("Curation complete. No suggestions were greenlit.").queue();
         }
@@ -53,6 +53,7 @@ public class ModCommands {
     public void addChannelGroup(CommandContext context) {
         if (!Util.isMod(context.getAuthor().getId(), context.getMessage().getGuild().getId())) {
             context.getChannel().sendMessage("You do not have permission to use this command.").queue();
+            return;
         }
 
         String[] args = context.getArgs();
