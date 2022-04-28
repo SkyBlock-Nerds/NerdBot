@@ -7,18 +7,12 @@ import net.dv8tion.jda.api.entities.Message;
 import net.hypixel.nerdbot.channel.ChannelGroup;
 import net.hypixel.nerdbot.curator.Curator;
 import net.hypixel.nerdbot.database.Database;
-import net.hypixel.nerdbot.util.Util;
 
 @AutoMapping
 public class ModCommands {
 
-    @Command(name = "curate")
+    @Command(name = "curate", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
     public void curate(CommandContext context) {
-        if (!Util.isMod(context.getAuthor().getId(), context.getMessage().getGuild().getId())) {
-            context.getChannel().sendMessage("You do not have permission to use this command.").queue();
-            return;
-        }
-
         if (!Database.getInstance().isConnected()) {
             context.getMessage().reply("Cannot connect to the database!").queue();
             return;
@@ -49,13 +43,8 @@ public class ModCommands {
         }
     }
 
-    @Command(name = "addchannel")
+    @Command(name = "addchannel", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
     public void addChannelGroup(CommandContext context) {
-        if (!Util.isMod(context.getAuthor().getId(), context.getMessage().getGuild().getId())) {
-            context.getChannel().sendMessage("You do not have permission to use this command.").queue();
-            return;
-        }
-
         String[] args = context.getArgs();
 
         if (args.length < 3) {
