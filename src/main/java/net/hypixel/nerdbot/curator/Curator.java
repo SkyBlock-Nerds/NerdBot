@@ -83,7 +83,6 @@ public class Curator {
                     .setSuggestionUrl(message.getJumpUrl())
                     .setOriginalAgrees(positive)
                     .setOriginalDisagrees(negative);
-
             String[] lines = message.getContentRaw().split("\n");
 
             if (lines.length >= 1) {
@@ -94,7 +93,6 @@ public class Curator {
 
             greenlitMessages.add(msg);
         }
-
         Logger.info("Finished curating messages at " + new Date());
     }
 
