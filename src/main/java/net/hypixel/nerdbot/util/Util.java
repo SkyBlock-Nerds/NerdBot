@@ -1,12 +1,14 @@
 package net.hypixel.nerdbot.util;
 
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.config.BotConfig;
 
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,11 +26,22 @@ public class Util {
         }
     }
 
-    public static boolean isMod(String userId, String guildId) {
-        Member member = NerdBotApp.getBot().getJDA().getGuildById(guildId).getMemberById(userId);
-        return member != null && member.hasPermission(Permission.BAN_MEMBERS);
+    @Nullable
+    public static Guild getGuild(String guildId) {
+        return NerdBotApp.getBot().getJDA().getGuildById(guildId);
     }
 
+    public static boolean isMod(String userId, String guildId) {
+        Guild guild = getGuild(guildId);
+        if (guild == null) return false;
+
+        Member member = guild.getMemberById(userId);
+        if (member == null) return false;
+
+        return member.hasPermission(Permission.BAN_MEMBERS);
+    }
+
+    @Nullable
     public static Role findRole(Member member, String id) {
         List<Role> roles = member.getRoles();
         return roles.stream()
@@ -37,8 +50,14 @@ public class Util {
                 .orElse(null);
     }
 
+    @Nullable
     public static Role findRole(User user, String guildId, String roleId) {
-        Member member = user.getJDA().getGuildById(guildId).getMember(user);
+        Guild guild = getGuild(guildId);
+        if (guild == null) return null;
+
+        Member member = guild.getMember(user);
+        if (member == null) return null;
+
         return findRole(member, roleId);
     }
 

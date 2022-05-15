@@ -3,11 +3,13 @@ package net.hypixel.nerdbot.curator;
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.channel.ChannelGroup;
+import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.channel.Reactions;
 import net.hypixel.nerdbot.config.BotConfig;
 import net.hypixel.nerdbot.database.Database;
 import net.hypixel.nerdbot.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Logger;
+import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,9 +18,7 @@ import java.util.List;
 public class Curator {
 
     private final int limit;
-
     private final ChannelGroup group;
-
     private final List<GreenlitMessage> greenlitMessages;
 
     public Curator(int limit, ChannelGroup group) {
@@ -32,7 +32,9 @@ public class Curator {
     }
 
     public void curate() {
-        TextChannel textChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getFrom());
+        TextChannel textChannel = ChannelManager.getChannel(group.getFrom());
+        if (textChannel == null) return;
+
         MessageHistory history = textChannel.getHistory();
         List<Message> messages = history.retrievePast(limit).complete();
 
@@ -97,9 +99,23 @@ public class Curator {
     }
 
     public void applyEmoji() {
-        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
+        Guild guild = Util.getGuild(group.getGuildId());
+        if (guild == null) {
+            Logger.error("Guild was null wtf happened");
+            return;
+        }
+
+        TextChannel suggestionChannel = ChannelManager.getChannel(group.getFrom());
+        if (suggestionChannel == null) {
+            Logger.error("Failed to find suggestion channel!");
+            return;
+        }
+
         Emote greenlitEmoji = guild.getEmoteById(Reactions.GREENLIT.getId());
-        TextChannel suggestionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getFrom());
+        if (greenlitEmoji == null) {
+            Logger.error("Failed to find greenlit emoji!");
+            return;
+        }
 
         for (GreenlitMessage msg : greenlitMessages) {
             suggestionChannel.retrieveMessageById(msg.getMessageId()).queue(message -> {
@@ -111,10 +127,13 @@ public class Curator {
     }
 
     public void send() {
+        if (group == null) return;
+
+        TextChannel channel = ChannelManager.getChannel(group.getTo());
+        if (channel == null) return;
+
         for (GreenlitMessage message : greenlitMessages) {
-            if (group != null) {
-                NerdBotApp.getBot().getJDA().getTextChannelById(group.getTo()).sendMessageEmbeds(message.getEmbed().build()).queue();
-            }
+            channel.sendMessageEmbeds(message.getEmbed().build()).queue();
         }
     }
 
