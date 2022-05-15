@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
+import net.dv8tion.jda.api.entities.Channel;
 import net.dv8tion.jda.api.entities.Emote;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
@@ -21,38 +22,39 @@ public class MessageListener extends ListenerAdapter {
         }
 
         Guild guild = event.getGuild();
-        net.dv8tion.jda.api.entities.Channel channel = event.getChannel();
-        Message message = event.getMessage();
         Emote yes = guild.getEmoteById(Reactions.AGREE.getId());
         Emote no = guild.getEmoteById(Reactions.DISAGREE.getId());
+        if (yes == null || no == null) return;
+
         List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
 
         // TODO make better
+        if (groups == null) return;
+        if (groups.isEmpty()) return;
 
-        if (groups != null && !groups.isEmpty()) {
-            for (ChannelGroup group : groups) {
-                // TODO check if it's a suggestion based channel
-                if (group.getFrom().equals(channel.getId())) {
-                    message.addReaction(yes).queue();
-                    message.addReaction(no).queue();
+        Channel channel = event.getChannel();
+        Message message = event.getMessage();
 
-                    String firstLine = message.getContentRaw().split("\n")[0];
+        for (ChannelGroup group : groups) {
+            // TODO check if it's a suggestion based channel
+            if (!group.getFrom().equals(channel.getId())) continue;
 
-                    if (firstLine.equals("")) {
-                        if (message.getEmbeds().get(0) != null) {
-                            firstLine = message.getEmbeds().get(0).getTitle();
-                        } else {
-                            firstLine = "No Title";
-                        }
-                    }
+            message.addReaction(yes).queue();
+            message.addReaction(no).queue();
 
-                    if (firstLine.length() > 30) {
-                        firstLine = firstLine.substring(0, 30) + "...";
-                    }
+            String firstLine = message.getContentRaw().split("\n")[0];
 
-                    message.createThreadChannel("Discussion - " + firstLine).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
+            if (firstLine == null || firstLine.equals("")) {
+                if (message.getEmbeds().get(0) != null) {
+                    firstLine = message.getEmbeds().get(0).getTitle();
+                } else {
+                    firstLine = "No Title";
                 }
+            } else if (firstLine.length() > 30) {
+                firstLine = firstLine.substring(0, 30) + "...";
             }
+
+            message.createThreadChannel("Discussion - " + firstLine).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
         }
     }
 
