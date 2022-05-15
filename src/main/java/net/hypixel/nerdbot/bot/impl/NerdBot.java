@@ -34,9 +34,7 @@ public class NerdBot implements Bot {
     );
 
     private JDA jda;
-
     private BotConfig config;
-
     private LightDrop commands;
 
     public NerdBot() {

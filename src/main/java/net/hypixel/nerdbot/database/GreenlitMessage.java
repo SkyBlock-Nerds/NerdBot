@@ -13,22 +13,9 @@ import java.util.Date;
 public class GreenlitMessage {
 
     private ObjectId id;
-
-    private String userId;
-
-    private String messageId;
-
-    private String suggestionTitle;
-
-    private String suggestionContent;
-
+    private String userId, messageId, suggestionTitle, suggestionContent, suggestionUrl;
     private Date suggestionDate;
-
-    private String suggestionUrl;
-
-    private int originalAgrees;
-
-    private int originalDisagrees;
+    private int originalAgrees, originalDisagrees;
 
     public GreenlitMessage() {
     }
