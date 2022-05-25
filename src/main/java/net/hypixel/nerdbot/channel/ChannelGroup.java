@@ -2,13 +2,7 @@ package net.hypixel.nerdbot.channel;
 
 public class ChannelGroup {
 
-    private String name;
-
-    private String guildId;
-
-    private String from;
-
-    private String to;
+    private String name, guildId, from, to;
 
     public ChannelGroup() {
     }

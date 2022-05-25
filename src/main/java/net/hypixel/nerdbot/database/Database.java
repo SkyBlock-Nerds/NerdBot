@@ -21,9 +21,7 @@ public class Database {
     private static Database instance;
 
     private final MongoCollection<GreenlitMessage> greenlitCollection;
-
     private final MongoCollection<ChannelGroup> channelCollection;
-
     private final MongoClient mongoClient;
 
     private boolean connected;
