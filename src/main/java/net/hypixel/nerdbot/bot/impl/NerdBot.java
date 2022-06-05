@@ -35,7 +35,6 @@ public class NerdBot implements Bot {
 
     private JDA jda;
     private BotConfig config;
-    private LightDrop commands;
 
     public NerdBot() {
     }
@@ -57,7 +56,7 @@ public class NerdBot implements Bot {
             System.exit(-1);
         }
 
-        commands = new LightDrop().hook(jda).enableAutoMapping("net.hypixel.nerdbot.command");
+        LightDrop commands = new LightDrop().hook(jda).enableAutoMapping("net.hypixel.nerdbot.command");
         commands.setPrefix(config.getPrefix());
     }
 
