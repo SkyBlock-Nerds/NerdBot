@@ -10,9 +10,7 @@ public class ReadyListener implements EventListener {
 
     @Override
     public void onEvent(@NotNull GenericEvent event) {
-        if (event instanceof ReadyEvent) {
-            NerdBotApp.getBot().onStart();
-        }
+        if (event instanceof ReadyEvent) NerdBotApp.getBot().onStart();
     }
 
 }

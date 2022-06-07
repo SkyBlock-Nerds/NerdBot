@@ -22,9 +22,7 @@ public class CurateFeature extends BotFeature {
             @Override
             public void run() {
                 Curator curator = new Curator(100, Database.getInstance().getChannelGroup("DefaultSuggestions"));
-
                 curator.curate();
-
                 if (!curator.getGreenlitMessages().isEmpty()) {
                     curator.applyEmoji();
                     curator.send();

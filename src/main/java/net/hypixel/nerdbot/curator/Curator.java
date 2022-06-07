@@ -39,23 +39,13 @@ public class Curator {
         List<Message> messages = history.retrievePast(limit).complete();
         Logger.info("Starting suggestion curation at " + new Date());
         for (Message message : messages) {
-            if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null) {
-                continue;
-            }
+            if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null) continue;
 
             int positive = 0, negative = 0;
             for (MessageReaction reaction : message.getReactions()) {
-                if (reaction.getReactionEmote().isEmoji()) {
-                    continue;
-                }
-
-                if (reaction.getReactionEmote().getId().equals(Reactions.AGREE.getId())) {
-                    positive = reaction.getCount() - 1;
-                }
-
-                if (reaction.getReactionEmote().getId().equals(Reactions.DISAGREE.getId())) {
-                    negative = reaction.getCount() - 1;
-                }
+                if (reaction.getReactionEmote().isEmoji()) continue;
+                if (reaction.getReactionEmote().getId().equals(Reactions.AGREE.getId())) positive = reaction.getCount() - 1;
+                if (reaction.getReactionEmote().getId().equals(Reactions.DISAGREE.getId())) negative = reaction.getCount() - 1;
             }
 
             BotConfig config = NerdBotApp.getBot().getConfig();
@@ -66,9 +56,7 @@ public class Curator {
 
             double ratio = getRatio(positive, negative);
             Logger.info("Message " + message.getId() + " has a ratio of " + getRatio(positive, negative) + "%");
-            if (ratio < config.getPercentage()) {
-                continue;
-            }
+            if (ratio < config.getPercentage()) continue;
 
             GreenlitMessage msg = new GreenlitMessage()
                     .setUserId(message.getAuthor().getId())
@@ -107,9 +95,7 @@ public class Curator {
             Logger.error("Failed to find greenlit emoji!");
             return;
         }
-        for (GreenlitMessage msg : greenlitMessages) {
-            suggestionChannel.retrieveMessageById(msg.getMessageId()).queue(message -> message.addReaction(greenlitEmoji).queue());
-        }
+        for (GreenlitMessage msg : greenlitMessages) suggestionChannel.retrieveMessageById(msg.getMessageId()).queue(message -> message.addReaction(greenlitEmoji).queue());
         Logger.info("Applied greenlit emoji to " + greenlitMessages.size() + " message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
     }
 
@@ -118,10 +104,7 @@ public class Curator {
 
         TextChannel channel = ChannelManager.getChannel(group.getTo());
         if (channel == null) return;
-
-        for (GreenlitMessage message : greenlitMessages) {
-            channel.sendMessageEmbeds(message.getEmbed().build()).queue();
-        }
+        for (GreenlitMessage message : greenlitMessages) channel.sendMessageEmbeds(message.getEmbed().build()).queue();
     }
 
     public void insert() {
