@@ -24,7 +24,6 @@ public class NerdBotApp {
             return;
         }
         nerdBot.registerListeners();
-
         bot = nerdBot;
     }
 

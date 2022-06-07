@@ -10,9 +10,7 @@ public class ShutdownListener implements EventListener {
 
     @Override
     public void onEvent(@NotNull GenericEvent event) {
-        if (event instanceof ShutdownEvent) {
-            NerdBotApp.getBot().onEnd();
-        }
+        if (event instanceof ShutdownEvent) NerdBotApp.getBot().onEnd();
     }
 
 }

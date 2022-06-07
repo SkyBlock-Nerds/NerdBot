@@ -17,9 +17,8 @@ public class MessageListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (event.getAuthor().isBot() && !event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
+        if (event.getAuthor().isBot() && !event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId()))
             return;
-        }
 
         Guild guild = event.getGuild();
         Emote yes = guild.getEmoteById(Reactions.AGREE.getId());
@@ -27,8 +26,6 @@ public class MessageListener extends ListenerAdapter {
         if (yes == null || no == null) return;
 
         List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
-
-        // TODO make better
         if (groups == null) return;
         if (groups.isEmpty()) return;
 
@@ -43,17 +40,12 @@ public class MessageListener extends ListenerAdapter {
             message.addReaction(no).queue();
 
             String firstLine = message.getContentRaw().split("\n")[0];
-
             if (firstLine == null || firstLine.equals("")) {
-                if (message.getEmbeds().get(0) != null) {
-                    firstLine = message.getEmbeds().get(0).getTitle();
-                } else {
-                    firstLine = "No Title";
-                }
+                if (message.getEmbeds().get(0) != null) firstLine = message.getEmbeds().get(0).getTitle();
+                else firstLine = "No Title";
             } else if (firstLine.length() > 30) {
                 firstLine = firstLine.substring(0, 30) + "...";
             }
-
             message.createThreadChannel("Discussion - " + firstLine).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
         }
     }
