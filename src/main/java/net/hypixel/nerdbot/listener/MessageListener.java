@@ -21,8 +21,7 @@ public class MessageListener extends ListenerAdapter {
             return;
 
         Guild guild = event.getGuild();
-        Emote yes = guild.getEmoteById(Reactions.AGREE.getId());
-        Emote no = guild.getEmoteById(Reactions.DISAGREE.getId());
+        Emote yes = guild.getEmoteById(Reactions.AGREE.getId()), no = guild.getEmoteById(Reactions.DISAGREE.getId());
         if (yes == null || no == null) return;
 
         List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
@@ -33,7 +32,6 @@ public class MessageListener extends ListenerAdapter {
         Message message = event.getMessage();
 
         for (ChannelGroup group : groups) {
-            // TODO check if it's a suggestion based channel
             if (!group.getFrom().equals(channel.getId())) continue;
 
             message.addReaction(yes).queue();
@@ -46,7 +44,7 @@ public class MessageListener extends ListenerAdapter {
             } else if (firstLine.length() > 30) {
                 firstLine = firstLine.substring(0, 30) + "...";
             }
-            message.createThreadChannel("Discussion - " + firstLine).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
+            message.createThreadChannel("[Discussion] " + firstLine).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
         }
     }
 
