@@ -43,7 +43,7 @@ public class ModCommands {
         }
     }
 
-    @Command(name = "addchannel", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
+    @Command(name = "addchannelgroup", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
     public void addChannelGroup(CommandContext context) {
         String[] args = context.getArgs();
 
