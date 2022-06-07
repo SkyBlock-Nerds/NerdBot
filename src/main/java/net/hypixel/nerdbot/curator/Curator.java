@@ -37,9 +37,7 @@ public class Curator {
 
         MessageHistory history = textChannel.getHistory();
         List<Message> messages = history.retrievePast(limit).complete();
-
         Logger.info("Starting suggestion curation at " + new Date());
-
         for (Message message : messages) {
             if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null) {
                 continue;
@@ -61,16 +59,13 @@ public class Curator {
             }
 
             BotConfig config = NerdBotApp.getBot().getConfig();
-
             if (positive == 0 && negative == 0 || positive < config.getMinimumThreshold()) {
                 Logger.info("Message " + message.getId() + " is below the minimum threshold! (" + positive + "/" + negative + ") (min threshold: " + config.getMinimumThreshold() + ")");
                 continue;
             }
 
             double ratio = getRatio(positive, negative);
-
             Logger.info("Message " + message.getId() + " has a ratio of " + getRatio(positive, negative) + "%");
-
             if (ratio < config.getPercentage()) {
                 continue;
             }
@@ -84,13 +79,11 @@ public class Curator {
                     .setOriginalAgrees(positive)
                     .setOriginalDisagrees(negative);
             String[] lines = message.getContentRaw().split("\n");
-
             if (lines.length >= 1) {
                 msg.setSuggestionTitle(message.getContentRaw().split("\n")[0]);
             } else {
                 msg.setSuggestionTitle("No Title");
             }
-
             greenlitMessages.add(msg);
         }
         Logger.info("Finished curating messages at " + new Date());
@@ -114,13 +107,9 @@ public class Curator {
             Logger.error("Failed to find greenlit emoji!");
             return;
         }
-
         for (GreenlitMessage msg : greenlitMessages) {
-            suggestionChannel.retrieveMessageById(msg.getMessageId()).queue(message -> {
-                message.addReaction(greenlitEmoji).queue();
-            });
+            suggestionChannel.retrieveMessageById(msg.getMessageId()).queue(message -> message.addReaction(greenlitEmoji).queue());
         }
-
         Logger.info("Applied greenlit emoji to " + greenlitMessages.size() + " message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
     }
 
