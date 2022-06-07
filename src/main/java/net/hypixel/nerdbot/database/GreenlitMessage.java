@@ -16,24 +16,10 @@ import java.util.List;
 public class GreenlitMessage {
 
     private ObjectId id;
-
-    private String userId;
-
-    private String messageId;
-
-    private String suggestionTitle;
-
-    private String suggestionContent;
-
+    private String userId, messageId, suggestionTitle, suggestionContent, suggestionUrl;
     private List<String> tags;
-
     private Date suggestionDate;
-
-    private String suggestionUrl;
-
-    private int originalAgrees;
-
-    private int originalDisagrees;
+    private int originalAgrees, originalDisagrees;
 
     public GreenlitMessage() {
     }
@@ -93,7 +79,7 @@ public class GreenlitMessage {
 
     public GreenlitMessage setSuggestionContent(String suggestionContent) {
         for (String tag : tags) {
-            suggestionContent = suggestionContent.replaceAll("\\[" + tag + "\\]", "");
+            suggestionContent = suggestionContent.replaceAll("\\[" + tag + "\\\\]", "");
         }
         this.suggestionContent = suggestionContent;
         return this;
@@ -148,7 +134,12 @@ public class GreenlitMessage {
     public EmbedBuilder getEmbed() {
         EmbedBuilder builder = new EmbedBuilder();
         User user = NerdBotApp.getBot().getJDA().getUserById(userId);
-        builder.setAuthor(user.getName(), suggestionUrl, user.getAvatarUrl());
+        if (user != null) {
+            builder.setAuthor(user.getName(), suggestionUrl, user.getAvatarUrl());
+            builder.setFooter("Suggested by " + user.getName(), null);
+        } else {
+            builder.setFooter("Suggested by an unknown user");
+        }
         builder.setTitle(suggestionTitle, suggestionUrl);
         builder.setColor(Color.GREEN);
         builder.setDescription("Tags: `" + StringUtils.join(tags, ", ") + "`"
@@ -156,8 +147,8 @@ public class GreenlitMessage {
                 + suggestionContent
                 + "\n\n"
                 + Reactions.THUMBS_UP_EMOJI + " " + originalAgrees + " " + Reactions.THUMBS_DOWN_EMOJI + " " + originalDisagrees);
-        builder.setFooter("Suggested by " + user.getName(), null);
         builder.setTimestamp(suggestionDate.toInstant());
         return builder;
     }
+
 }
