@@ -68,11 +68,12 @@ public class Curator {
                     .setOriginalDisagrees(negative);
             String[] lines = message.getContentRaw().split("\n");
             if (lines.length >= 1) {
-                msg.setSuggestionTitle(message.getContentRaw().split("\n")[0]);
+                msg.setSuggestionTitle(lines[0]);
             } else {
                 msg.setSuggestionTitle("No Title");
             }
             greenlitMessages.add(msg);
+            Logger.info("Added suggestion " + message.getId() + " created by " + message.getAuthor().getAsTag() + " to the greenlit collection");
         }
         Logger.info("Finished curating messages at " + new Date());
     }
