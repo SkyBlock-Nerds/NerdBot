@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class NerdBot implements Bot {
 
@@ -50,7 +51,8 @@ public class NerdBot implements Bot {
         jda = builder.build();
 
         try {
-            config = Util.loadConfig(new File(getClass().getClassLoader().getResource("config.json").getFile()));
+            File file = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("config.json")).getFile());
+            config = Util.loadConfig(file);
         } catch (FileNotFoundException exception) {
             Logger.error("Could not find config file!");
             System.exit(-1);
@@ -82,9 +84,7 @@ public class NerdBot implements Bot {
 
     @Override
     public void onStart() {
-        for (BotFeature feature : FEATURES) {
-            feature.onStart();
-        }
+        for (BotFeature feature : FEATURES) feature.onStart();
     }
 
     @Override
@@ -94,9 +94,7 @@ public class NerdBot implements Bot {
 
     @Override
     public void onEnd() {
-        for (BotFeature feature : FEATURES) {
-            feature.onEnd();
-        }
+        for (BotFeature feature : FEATURES) feature.onEnd();
         Database.getInstance().disconnect();
     }
 
