@@ -41,6 +41,12 @@
             <groupId>com.github.NeiiZun</groupId>
             <artifactId>LightDrop</artifactId>
             <version>1.2.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.dv8tion</groupId>
+                    <artifactId>JDA</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
