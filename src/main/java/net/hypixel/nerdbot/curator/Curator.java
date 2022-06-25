@@ -42,19 +42,21 @@ public class Curator {
         for (Message message : messages) {
             if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null) continue;
 
-            if (message.getReactionById(Reactions.AGREE.getId()) == null) {
+            if (message.getReactionById(Reactions.AGREE.getId()) == null)
                 message.addReaction(NerdBotApp.getBot().getJDA().getEmoteById(Reactions.AGREE.getId())).queue();
-            }
 
-            if (message.getReactionById(Reactions.DISAGREE.getId()) == null) {
+            if (message.getReactionById(Reactions.DISAGREE.getId()) == null)
                 message.addReaction(NerdBotApp.getBot().getJDA().getEmoteById(Reactions.DISAGREE.getId())).queue();
-            }
+
 
             int positive = 0, negative = 0;
             for (MessageReaction reaction : message.getReactions()) {
-                if (reaction.getReactionEmote().isEmoji()) continue;
-                if (reaction.getReactionEmote().getId().equals(Reactions.AGREE.getId())) positive = reaction.getCount() - 1;
-                if (reaction.getReactionEmote().getId().equals(Reactions.DISAGREE.getId())) negative = reaction.getCount() - 1;
+                if (reaction.getReactionEmote().isEmoji())
+                    continue;
+                if (reaction.getReactionEmote().getId().equals(Reactions.AGREE.getId()))
+                    positive = reaction.getCount() - 1;
+                if (reaction.getReactionEmote().getId().equals(Reactions.DISAGREE.getId()))
+                    negative = reaction.getCount() - 1;
             }
 
             BotConfig config = NerdBotApp.getBot().getConfig();
@@ -70,7 +72,6 @@ public class Curator {
             String firstLine = message.getContentRaw().split("\n")[0];
             Matcher matcher = Util.SUGGESTION_TITLE.matcher(firstLine);
             List<String> tags = new ArrayList<>();
-
             while (matcher.find()) {
                 tags.add(matcher.group(1));
             }
@@ -114,7 +115,8 @@ public class Curator {
             Logger.error("Failed to find greenlit emoji!");
             return;
         }
-        for (GreenlitMessage msg : greenlitMessages) suggestionChannel.retrieveMessageById(msg.getMessageId()).queue(message -> message.addReaction(greenlitEmoji).queue());
+        for (GreenlitMessage msg : greenlitMessages)
+            suggestionChannel.retrieveMessageById(msg.getMessageId()).queue(message -> message.addReaction(greenlitEmoji).queue());
         Logger.info("Applied greenlit emoji to " + greenlitMessages.size() + " message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
     }
 
