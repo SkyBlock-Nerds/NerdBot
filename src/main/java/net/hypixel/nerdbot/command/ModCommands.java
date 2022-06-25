@@ -20,7 +20,6 @@ public class ModCommands {
 
         String[] args = context.getArgs();
         int limit = 100;
-
         if (args.length > 0) {
             try {
                 limit = Integer.parseInt(args[0]);
@@ -46,7 +45,6 @@ public class ModCommands {
     @Command(name = "addchannelgroup", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
     public void addChannelGroup(CommandContext context) {
         String[] args = context.getArgs();
-
         if (args.length < 3) {
             context.getMessage().reply("Invalid arguments. Usage: `!addchannel <group name> <from> <to>`").queue();
             return;
@@ -60,15 +58,12 @@ public class ModCommands {
     @Command(name = "getchannelgroups")
     public void getGroups(CommandContext context) {
         StringBuilder builder = new StringBuilder();
-
         builder.append("**Channel Groups:**").append("\n");
-
         Database.getInstance().getChannelGroups().forEach(group ->
                 builder.append(" - ")
                         .append(group.getName())
                         .append(" (from: ").append(group.getFrom()).append(", to: ").append(group.getTo()).append(")")
                         .append("\n"));
-
         context.getMessage().reply(builder.toString()).queue();
     }
 
