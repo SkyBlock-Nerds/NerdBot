@@ -40,7 +40,8 @@ public class Curator {
         List<Message> messages = history.retrievePast(limit).complete();
         Logger.info("Starting suggestion curation at " + new Date());
         for (Message message : messages) {
-            if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null) continue;
+            if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null)
+                continue;
 
             if (message.getReactionById(Reactions.AGREE.getId()) == null)
                 message.addReaction(NerdBotApp.getBot().getJDA().getEmoteById(Reactions.AGREE.getId())).queue();
@@ -122,7 +123,6 @@ public class Curator {
 
     public void send() {
         if (group == null) return;
-
         TextChannel channel = ChannelManager.getChannel(group.getTo());
         if (channel == null) return;
         for (GreenlitMessage message : greenlitMessages) channel.sendMessageEmbeds(message.getEmbed().build()).queue();

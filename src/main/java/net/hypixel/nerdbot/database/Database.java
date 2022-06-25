@@ -63,7 +63,6 @@ public class Database {
         return mongoClient.getDatabase("skyblockNerds").getCollection(collection).find(Filters.eq(field, value)).into(new ArrayList<>());
     }
 
-
     public void insertGreenlitMessage(GreenlitMessage greenlitMessage) {
         greenlitCollection.insertOne(greenlitMessage);
         Logger.info("Inserted greenlit message " + greenlitMessage.getId());
