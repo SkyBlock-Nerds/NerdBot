@@ -2,5 +2,6 @@
   "defaultPrefix": "!",
   "minimumThreshold": 1,
   "percentage": 75,
-  "interval": 3600000
+  "interval": 3600000,
+  "guildId": 123456789012345678
 }

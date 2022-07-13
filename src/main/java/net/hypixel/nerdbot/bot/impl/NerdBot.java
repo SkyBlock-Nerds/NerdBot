@@ -14,6 +14,7 @@ import net.hypixel.nerdbot.database.Database;
 import net.hypixel.nerdbot.feature.BotFeature;
 import net.hypixel.nerdbot.feature.impl.CurateFeature;
 import net.hypixel.nerdbot.feature.impl.HelloGoodbyeFeature;
+import net.hypixel.nerdbot.feature.impl.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.MessageListener;
 import net.hypixel.nerdbot.listener.ReadyListener;
 import net.hypixel.nerdbot.listener.ShutdownListener;
@@ -31,7 +32,8 @@ public class NerdBot implements Bot {
 
     private static final List<BotFeature> FEATURES = Arrays.asList(
             new HelloGoodbyeFeature(),
-            new CurateFeature()
+            new CurateFeature(),
+            new UserGrabberFeature()
     );
 
     private JDA jda;
@@ -75,6 +77,9 @@ public class NerdBot implements Bot {
 
         // Disable presence updates and typing events
         builder.disableIntents(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_TYPING);
+
+        // Allow the bot to see all guild members
+        builder.enableIntents(GatewayIntent.GUILD_MEMBERS);
     }
 
     @Override

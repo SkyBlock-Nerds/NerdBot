@@ -6,6 +6,7 @@ public class BotConfig {
     private int minimumThreshold;
     private double percentage;
     private long interval;
+    private long guildId;
 
     public String getPrefix() {
         return prefix;
@@ -39,4 +40,11 @@ public class BotConfig {
         this.interval = interval;
     }
 
+    public long getGuildId() {
+        return guildId;
+    }
+
+    public void setGuildId(long guildId) {
+        this.guildId = guildId;
+    }
 }

@@ -22,6 +22,7 @@ public class Database {
 
     private final MongoCollection<GreenlitMessage> greenlitCollection;
     private final MongoCollection<ChannelGroup> channelCollection;
+    private final MongoCollection<DiscordUser> userCollection;
     private final MongoClient mongoClient;
 
     private boolean connected;
@@ -39,6 +40,7 @@ public class Database {
         connected = true;
         greenlitCollection = mongoClient.getDatabase("skyblockNerds").getCollection("greenlitMessages", GreenlitMessage.class);
         channelCollection = mongoClient.getDatabase("skyblockNerds").getCollection("channelGroups", ChannelGroup.class);
+        userCollection = mongoClient.getDatabase("skyblockNerds").getCollection("users", DiscordUser.class);
     }
 
     public static Database getInstance() {
@@ -103,6 +105,33 @@ public class Database {
 
     public List<ChannelGroup> getChannelGroups() {
         return this.channelCollection.find().into(new ArrayList<>());
+    }
+
+    public List<DiscordUser> getUsers() {
+        return this.userCollection.find().into(new ArrayList<>());
+    }
+
+    public DiscordUser getUser(String field, Object value) {
+        return this.userCollection.find(Filters.eq(field, value)).first();
+    }
+
+    public DiscordUser getUser(String id) {
+        return getUser("discordId", id);
+    }
+
+    public void insertUser(DiscordUser user) {
+        userCollection.insertOne(user);
+        Logger.info("Inserted user " + user.getDiscordId());
+    }
+
+    public void updateUser(String field, Object value, DiscordUser user) {
+        userCollection.replaceOne(Filters.eq(field, value), user);
+        Logger.info("Updated user " + field + ":" + value);
+    }
+
+    public void deleteUser(String field, Object value) {
+        userCollection.deleteOne(Filters.eq(field, value));
+        Logger.info("Deleted user " + field + ":" + value);
     }
 
 }
