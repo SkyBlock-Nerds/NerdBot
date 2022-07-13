@@ -4,9 +4,11 @@ import me.neiizun.lightdrop.automapping.AutoMapping;
 import me.neiizun.lightdrop.command.Command;
 import me.neiizun.lightdrop.command.CommandContext;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.channel.ChannelGroup;
 import net.hypixel.nerdbot.curator.Curator;
 import net.hypixel.nerdbot.database.Database;
+import net.hypixel.nerdbot.database.DiscordUser;
 
 @AutoMapping
 public class ModCommands {
@@ -40,6 +42,43 @@ public class ModCommands {
         } else {
             message.reply("Curation complete. No suggestions were greenlit.").queue();
         }
+    }
+
+    @Command(name = "userstats", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
+    public void getUserStats(CommandContext context) {
+        if (!Database.getInstance().isConnected()) {
+            context.getMessage().reply("Cannot connect to the database!").queue();
+            return;
+        }
+
+        String[] args = context.getArgs();
+        if (args.length == 0) {
+            context.getMessage().reply("Please specify a user!").queue();
+            return;
+        }
+
+        User user;
+        if (!context.getMessage().getMentionedUsers().isEmpty())
+            user = context.getMessage().getMentionedUsers().get(0);
+        else
+            user = context.getMessage().getJDA().getUserById(args[0]);
+        if (user == null) {
+            context.getMessage().reply("Cannot find that user!").queue();
+            return;
+        }
+
+        DiscordUser discordUser = Database.getInstance().getUser(user.getId());
+        if (discordUser == null) {
+            context.getMessage().reply("User `" + user.getAsTag() + "` not found in database!").queue();
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder("**User stats for " + user.getAsTag() + ":**");
+        builder.append("\n```");
+        builder.append("Total agrees: ").append(discordUser.getTotalAgrees()).append("\n");
+        builder.append("Total disagrees: ").append(discordUser.getTotalDisagrees()).append("\n");
+        builder.append("Total suggestion reactions: ").append(discordUser.getTotalSuggestionReactions()).append("\n```");
+        context.getMessage().reply(builder.toString()).queue();
     }
 
     @Command(name = "addchannelgroup", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")

@@ -7,6 +7,7 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.channel.Reactions;
 import net.hypixel.nerdbot.config.BotConfig;
 import net.hypixel.nerdbot.database.Database;
+import net.hypixel.nerdbot.database.DiscordUser;
 import net.hypixel.nerdbot.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Util;
@@ -21,11 +22,13 @@ public class Curator {
     private final int limit;
     private final ChannelGroup group;
     private final List<GreenlitMessage> greenlitMessages;
+    private final List<DiscordUser> users;
 
     public Curator(int limit, ChannelGroup group) {
         this.limit = limit;
         this.group = group;
         greenlitMessages = new ArrayList<>(limit);
+        users = new ArrayList<>();
     }
 
     public Curator(ChannelGroup group) {
@@ -54,10 +57,37 @@ public class Curator {
             for (MessageReaction reaction : message.getReactions()) {
                 if (reaction.getReactionEmote().isEmoji())
                     continue;
+
                 if (reaction.getReactionEmote().getId().equals(Reactions.AGREE.getId()))
                     positive = reaction.getCount() - 1;
+
                 if (reaction.getReactionEmote().getId().equals(Reactions.DISAGREE.getId()))
                     negative = reaction.getCount() - 1;
+
+                reaction.retrieveUsers().forEach(user -> {
+                    if (user.isBot()) return;
+
+                    DiscordUser discordUser = findUser(user.getId());
+                    if (discordUser == null)
+                        discordUser = new DiscordUser(user.getId(), 0, 0, 0);
+
+                    if (!users.contains(discordUser))
+                        users.add(discordUser);
+
+                    switch (reaction.getReactionEmote().getName()) {
+                        case "yes" -> {
+                            discordUser.setTotalAgrees(discordUser.getTotalAgrees() + 1);
+                            Logger.info("Total agrees for " + discordUser.getDiscordId() + " is now " + discordUser.getTotalAgrees());
+                        }
+                        case "no" -> {
+                            discordUser.setTotalDisagrees(discordUser.getTotalDisagrees() + 1);
+                            Logger.info("Total disagrees for " + discordUser.getDiscordId() + " is now " + discordUser.getTotalDisagrees());
+                        }
+                    }
+
+                    discordUser.setTotalSuggestionReactions(discordUser.getTotalSuggestionReactions() + 1);
+                    Logger.info("User " + user.getAsTag() + " reacted with " + reaction.getReactionEmote().getName() + " to message " + message.getId());
+                });
             }
 
             BotConfig config = NerdBotApp.getBot().getConfig();
@@ -71,11 +101,9 @@ public class Curator {
             if (ratio < config.getPercentage()) continue;
 
             String firstLine = message.getContentRaw().split("\n")[0];
-            Matcher matcher = Util.SUGGESTION_TITLE.matcher(firstLine);
+            Matcher matcher = Util.SUGGESTION_TITLE_REGEX.matcher(firstLine);
             List<String> tags = new ArrayList<>();
-            while (matcher.find()) {
-                tags.add(matcher.group(1));
-            }
+            while (matcher.find()) tags.add(matcher.group(1));
 
             GreenlitMessage msg = new GreenlitMessage()
                     .setUserId(message.getAuthor().getId())
@@ -87,14 +115,11 @@ public class Curator {
                     .setOriginalAgrees(positive)
                     .setOriginalDisagrees(negative);
             String[] lines = message.getContentRaw().split("\n");
-            if (lines.length >= 1) {
-                msg.setSuggestionTitle(lines[0]);
-            } else {
-                msg.setSuggestionTitle("No Title");
-            }
+            msg.setSuggestionTitle(lines.length >= 1 ? lines[0] : "No Title");
             greenlitMessages.add(msg);
             Logger.info("Added suggestion " + message.getId() + " created by " + message.getAuthor().getAsTag() + " to the greenlit collection");
         }
+        if (!users.isEmpty()) Database.getInstance().updateUsers(users);
         Logger.info("Finished curating messages at " + new Date());
     }
 
@@ -135,6 +160,15 @@ public class Curator {
         } else {
             Logger.info("No greenlit messages to insert!");
         }
+    }
+
+    private DiscordUser findUser(String id) {
+        DiscordUser user = null;
+        for (DiscordUser discordUser : users)
+            if (discordUser.getDiscordId().equals(id)) user = discordUser;
+
+        if (user == null) user = Database.getInstance().getUser(id);
+        return user;
     }
 
     private double getRatio(int positive, int negative) {

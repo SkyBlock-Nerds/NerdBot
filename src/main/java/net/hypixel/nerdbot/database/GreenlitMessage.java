@@ -69,7 +69,7 @@ public class GreenlitMessage {
     }
 
     public GreenlitMessage setSuggestionTitle(String suggestionTitle) {
-        this.suggestionTitle = suggestionTitle.replaceAll(Util.SUGGESTION_TITLE.pattern(), "");
+        this.suggestionTitle = suggestionTitle.replaceAll(Util.SUGGESTION_TITLE_REGEX.pattern(), "");
         return this;
     }
 
