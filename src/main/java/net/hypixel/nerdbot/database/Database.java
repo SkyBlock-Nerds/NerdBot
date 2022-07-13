@@ -130,12 +130,10 @@ public class Database {
     }
 
     public void updateUsers(List<DiscordUser> users) {
-        int amount = 0;
         for (DiscordUser user : users) {
             updateUser("discordId", user.getDiscordId(), user);
-            amount++;
         }
-        Logger.info("Updated " + amount + " users");
+        Logger.info("Updated " + users.size() + " users");
     }
 
     public void deleteUser(String field, Object value) {
