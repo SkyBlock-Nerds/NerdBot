@@ -12,6 +12,7 @@ import net.hypixel.nerdbot.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Util;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -67,9 +68,11 @@ public class Curator {
                 reaction.retrieveUsers().forEach(user -> {
                     if (user.isBot()) return;
 
+                    Logger.info("User " + user.getAsTag() + " reacted with " + reaction.getReactionEmote().getName() + " to message " + message.getId());
+
                     DiscordUser discordUser = findUser(user.getId());
                     if (discordUser == null)
-                        discordUser = new DiscordUser(user.getId(), 0, 0, 0);
+                        discordUser = new DiscordUser(user.getId(), 0, 0, 0, null);
 
                     if (!users.contains(discordUser))
                         users.add(discordUser);
@@ -86,7 +89,12 @@ public class Curator {
                     }
 
                     discordUser.setTotalSuggestionReactions(discordUser.getTotalSuggestionReactions() + 1);
-                    Logger.info("User " + user.getAsTag() + " reacted with " + reaction.getReactionEmote().getName() + " to message " + message.getId());
+
+                    Date lastReactionDate = discordUser.getLastReactionDate();
+                    if (lastReactionDate != null && lastReactionDate.toInstant().isBefore(Instant.now())) {
+                        Logger.info("User " + user.getAsTag() + "'s last reaction was " + lastReactionDate + ". Setting it to " + new Date());
+                        discordUser.setLastReactionDate(new Date());
+                    }
                 });
             }
 
@@ -103,7 +111,10 @@ public class Curator {
             String firstLine = message.getContentRaw().split("\n")[0];
             Matcher matcher = Util.SUGGESTION_TITLE_REGEX.matcher(firstLine);
             List<String> tags = new ArrayList<>();
-            while (matcher.find()) tags.add(matcher.group(1));
+            while (matcher.find()) {
+                tags.add(matcher.group(1));
+                Logger.info("Found tag '" + matcher.group(1) + "' in message " + message.getId());
+            }
 
             GreenlitMessage msg = new GreenlitMessage()
                     .setUserId(message.getAuthor().getId())
