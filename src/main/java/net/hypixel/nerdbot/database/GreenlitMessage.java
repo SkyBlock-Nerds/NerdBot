@@ -3,7 +3,6 @@ package net.hypixel.nerdbot.database;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.channel.Reactions;
 import net.hypixel.nerdbot.util.Util;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
@@ -140,13 +139,12 @@ public class GreenlitMessage {
         } else {
             builder.setFooter("Suggested by an unknown user");
         }
+        
         builder.setTitle(suggestionTitle, suggestionUrl);
         builder.setColor(Color.GREEN);
-        builder.setDescription("Tags: `" + StringUtils.join(tags, ", ") + "`"
-                + "\n"
-                + suggestionContent
+        builder.setDescription("Tags: `" + (tags.isEmpty() ? "N/A" : StringUtils.join(tags, ", ")) + "`"
                 + "\n\n"
-                + Reactions.THUMBS_UP_EMOJI + " " + originalAgrees + " " + Reactions.THUMBS_DOWN_EMOJI + " " + originalDisagrees);
+                + suggestionContent);
         builder.setTimestamp(suggestionDate.toInstant());
         return builder;
     }

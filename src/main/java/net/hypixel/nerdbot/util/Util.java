@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 
 public class Util {
 
-    public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)\\\\]");
+    public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
 
     public static void sleep(TimeUnit unit, long time) {
         try {

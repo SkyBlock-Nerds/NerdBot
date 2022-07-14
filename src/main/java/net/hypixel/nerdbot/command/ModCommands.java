@@ -77,7 +77,8 @@ public class ModCommands {
         builder.append("\n```");
         builder.append("Total agrees: ").append(discordUser.getTotalAgrees()).append("\n");
         builder.append("Total disagrees: ").append(discordUser.getTotalDisagrees()).append("\n");
-        builder.append("Total suggestion reactions: ").append(discordUser.getTotalSuggestionReactions()).append("\n```");
+        builder.append("Total suggestion reactions: ").append(discordUser.getTotalSuggestionReactions()).append("\n");
+        builder.append("Last recorded reaction date: ").append(discordUser.getLastReactionDate()).append("```");
         context.getMessage().reply(builder.toString()).queue();
     }
 

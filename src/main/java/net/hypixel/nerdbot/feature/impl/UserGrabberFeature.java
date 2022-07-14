@@ -22,7 +22,7 @@ public class UserGrabberFeature extends BotFeature {
         guild.loadMembers(member -> {
             if (!member.getUser().isBot() && !containsUser(existingUsers, member.getId())) {
                 Logger.info("Adding DiscordUser " + member.getUser().getAsTag() + " to database");
-                DiscordUser discordUser = new DiscordUser(member.getId(), 0, 0, 0);
+                DiscordUser discordUser = new DiscordUser(member.getId(), 0, 0, 0, null);
                 Database.getInstance().insertUser(discordUser);
             }
         });
