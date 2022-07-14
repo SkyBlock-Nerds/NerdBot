@@ -161,7 +161,14 @@ public class Curator {
         if (group == null) return;
         TextChannel channel = ChannelManager.getChannel(group.getTo());
         if (channel == null) return;
-        for (GreenlitMessage message : greenlitMessages) channel.sendMessageEmbeds(message.getEmbed().build()).queue();
+        Emote agree = NerdBotApp.getBot().getJDA().getEmoteById(Reactions.AGREE.getId());
+        Emote disagree = NerdBotApp.getBot().getJDA().getEmoteById(Reactions.DISAGREE.getId());
+        for (GreenlitMessage message : greenlitMessages) {
+            channel.sendMessageEmbeds(message.getEmbed().build()).queue(msg -> {
+                if (agree != null) msg.addReaction(agree).queue();
+                if (disagree != null) msg.addReaction(disagree).queue();
+            });
+        }
     }
 
     public void insert() {
