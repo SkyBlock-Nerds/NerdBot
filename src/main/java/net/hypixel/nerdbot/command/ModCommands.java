@@ -5,10 +5,10 @@ import me.neiizun.lightdrop.command.Command;
 import me.neiizun.lightdrop.command.CommandContext;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.hypixel.nerdbot.channel.ChannelGroup;
+import net.hypixel.nerdbot.api.channel.ChannelGroup;
+import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.curator.Curator;
-import net.hypixel.nerdbot.database.Database;
-import net.hypixel.nerdbot.database.DiscordUser;
 
 @AutoMapping
 public class ModCommands {

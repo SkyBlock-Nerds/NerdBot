@@ -2,13 +2,13 @@ package net.hypixel.nerdbot.curator;
 
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.channel.ChannelGroup;
-import net.hypixel.nerdbot.channel.ChannelManager;
-import net.hypixel.nerdbot.channel.Reactions;
-import net.hypixel.nerdbot.config.BotConfig;
-import net.hypixel.nerdbot.database.Database;
-import net.hypixel.nerdbot.database.DiscordUser;
-import net.hypixel.nerdbot.database.GreenlitMessage;
+import net.hypixel.nerdbot.api.channel.ChannelGroup;
+import net.hypixel.nerdbot.api.channel.ChannelManager;
+import net.hypixel.nerdbot.api.channel.Reactions;
+import net.hypixel.nerdbot.api.config.BotConfig;
+import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.DiscordUser;
+import net.hypixel.nerdbot.api.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Util;
 

@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.database;
+package net.hypixel.nerdbot.api.database;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -6,7 +6,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
-import net.hypixel.nerdbot.channel.ChannelGroup;
+import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.util.Logger;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
@@ -42,6 +42,7 @@ public class Database {
         channelCollection = mongoClient.getDatabase("skyblockNerds").getCollection("channelGroups", ChannelGroup.class);
         userCollection = mongoClient.getDatabase("skyblockNerds").getCollection("users", DiscordUser.class);
     }
+
 
     public static Database getInstance() {
         if (instance == null) {

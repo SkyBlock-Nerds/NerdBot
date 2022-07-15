@@ -2,8 +2,8 @@ package net.hypixel.nerdbot;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.hypixel.nerdbot.bot.Bot;
-import net.hypixel.nerdbot.bot.impl.NerdBot;
+import net.hypixel.nerdbot.api.bot.Bot;
+import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.Logger;
 
 import javax.security.auth.login.LoginException;

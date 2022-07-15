@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.channel;
+package net.hypixel.nerdbot.api.channel;
 
 public class ChannelGroup {
 

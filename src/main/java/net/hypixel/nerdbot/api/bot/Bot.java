@@ -1,8 +1,8 @@
-package net.hypixel.nerdbot.bot;
+package net.hypixel.nerdbot.api.bot;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.hypixel.nerdbot.config.BotConfig;
+import net.hypixel.nerdbot.api.config.BotConfig;
 
 import javax.security.auth.login.LoginException;
 

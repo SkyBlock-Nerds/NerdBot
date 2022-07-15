@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.database;
+package net.hypixel.nerdbot.api.database;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
@@ -139,7 +139,7 @@ public class GreenlitMessage {
         } else {
             builder.setFooter("Suggested by an unknown user");
         }
-        
+
         builder.setTitle(suggestionTitle, suggestionUrl);
         builder.setColor(Color.GREEN);
         builder.setDescription("Tags: `" + (tags.isEmpty() ? "N/A" : StringUtils.join(tags, ", ")) + "`"
