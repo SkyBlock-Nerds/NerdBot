@@ -25,6 +25,12 @@ public class Curator {
     private final List<GreenlitMessage> greenlitMessages;
     private final List<DiscordUser> users;
 
+    /**
+     * Initialize a new Curator object with a set limit and {@link ChannelGroup}
+     *
+     * @param limit The amount of messages to curate
+     * @param group The {@link ChannelGroup} to search through
+     */
     public Curator(int limit, ChannelGroup group) {
         this.limit = limit;
         this.group = group;
@@ -32,39 +38,51 @@ public class Curator {
         users = new ArrayList<>();
     }
 
+    /**
+     * Initialize a new Curator with a limit of 100 messages in a set {@link ChannelGroup}
+     *
+     * @param group The {@link ChannelGroup} to search through
+     */
     public Curator(ChannelGroup group) {
         this(100, group);
     }
 
+    /**
+     * Start the curation process on the selected {@link ChannelGroup} and message limit
+     */
     public void curate() {
         TextChannel textChannel = ChannelManager.getChannel(group.getFrom());
         if (textChannel == null) return;
 
         MessageHistory history = textChannel.getHistory();
         List<Message> messages = history.retrievePast(limit).complete();
+
         Logger.info("Starting suggestion curation at " + new Date());
         for (Message message : messages) {
             if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null)
                 continue;
 
-            if (message.getReactionById(Reactions.AGREE.getId()) == null)
-                message.addReaction(NerdBotApp.getBot().getJDA().getEmoteById(Reactions.AGREE.getId())).queue();
+            Emote agree = NerdBotApp.getBot().getJDA().getEmoteById(Reactions.AGREE.getId());
+            Emote disagree = NerdBotApp.getBot().getJDA().getEmoteById(Reactions.DISAGREE.getId());
+            if (agree != null && message.getReactionById(Reactions.AGREE.getId()) == null)
+                message.addReaction(agree).queue();
 
-            if (message.getReactionById(Reactions.DISAGREE.getId()) == null)
-                message.addReaction(NerdBotApp.getBot().getJDA().getEmoteById(Reactions.DISAGREE.getId())).queue();
-
+            if (disagree != null && message.getReactionById(Reactions.DISAGREE.getId()) == null)
+                message.addReaction(disagree).queue();
 
             int positive = 0, negative = 0;
             for (MessageReaction reaction : message.getReactions()) {
                 if (reaction.getReactionEmote().isEmoji())
                     continue;
 
+                // We remove 1 from each agree and disagree because of the bots reaction
                 if (reaction.getReactionEmote().getId().equals(Reactions.AGREE.getId()))
                     positive = reaction.getCount() - 1;
 
                 if (reaction.getReactionEmote().getId().equals(Reactions.DISAGREE.getId()))
                     negative = reaction.getCount() - 1;
 
+                // Track reactions for each user and save them into the database
                 reaction.retrieveUsers().forEach(user -> {
                     if (user.isBot()) return;
 
@@ -92,8 +110,9 @@ public class Curator {
 
                     Date lastReactionDate = discordUser.getLastReactionDate();
                     if (lastReactionDate != null && lastReactionDate.toInstant().isBefore(Instant.now())) {
-                        Logger.info("User " + user.getAsTag() + "'s last reaction was " + lastReactionDate + ". Setting it to " + new Date());
-                        discordUser.setLastReactionDate(new Date());
+                        Date date = new Date();
+                        Logger.info("User " + user.getAsTag() + "'s last reaction was " + lastReactionDate + ". Setting it to " + date);
+                        discordUser.setLastReactionDate(date);
                     }
                 });
             }
@@ -105,9 +124,11 @@ public class Curator {
             }
 
             double ratio = getRatio(positive, negative);
-            Logger.info("Message " + message.getId() + " has a ratio of " + getRatio(positive, negative) + "%");
+            Logger.info("Message " + message.getId() + " has a ratio of " + ratio + "%");
             if (ratio < config.getPercentage()) continue;
 
+            // Get the title and tags of the suggestion to save and display
+            // A suggestion can have multiple tags e.g. "[MINING] [SKILL] Suggestion Title"
             String firstLine = message.getContentRaw().split("\n")[0];
             Matcher matcher = Util.SUGGESTION_TITLE_REGEX.matcher(firstLine);
             List<String> tags = new ArrayList<>();
@@ -134,6 +155,9 @@ public class Curator {
         Logger.info("Finished curating messages at " + new Date());
     }
 
+    /**
+     * Apply the greenlit emoji to all saved greenlit messages
+     */
     public void applyEmoji() {
         Guild guild = Util.getGuild(group.getGuildId());
         if (guild == null) {
@@ -157,10 +181,14 @@ public class Curator {
         Logger.info("Applied greenlit emoji to " + greenlitMessages.size() + " message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
     }
 
-    public void send() {
+    /**
+     * Send all saved greenlit messages to the {@link ChannelGroup} 'to' channel
+     */
+    public void sendGreenlitToChannel() {
         if (group == null) return;
         TextChannel channel = ChannelManager.getChannel(group.getTo());
         if (channel == null) return;
+
         Emote agree = NerdBotApp.getBot().getJDA().getEmoteById(Reactions.AGREE.getId());
         Emote disagree = NerdBotApp.getBot().getJDA().getEmoteById(Reactions.DISAGREE.getId());
         for (GreenlitMessage message : greenlitMessages) {
@@ -171,7 +199,10 @@ public class Curator {
         }
     }
 
-    public void insert() {
+    /**
+     * Insert all saved greenlit messages into the database.
+     */
+    public void insertIntoDatabase() {
         if (!greenlitMessages.isEmpty()) {
             Database.getInstance().insertGreenlitMessages(greenlitMessages);
             Logger.info("Inserted " + greenlitMessages.size() + " greenlit message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
