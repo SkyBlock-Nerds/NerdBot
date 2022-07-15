@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.database;
+package net.hypixel.nerdbot.api.database;
 
 import org.jetbrains.annotations.Nullable;
 

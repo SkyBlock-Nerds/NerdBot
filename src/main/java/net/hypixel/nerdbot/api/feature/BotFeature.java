@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.feature;
+package net.hypixel.nerdbot.api.feature;
 
 public abstract class BotFeature {
 

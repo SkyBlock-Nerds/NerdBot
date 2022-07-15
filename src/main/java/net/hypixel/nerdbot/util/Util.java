@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.config.BotConfig;
+import net.hypixel.nerdbot.api.config.BotConfig;
 
 import javax.annotation.Nullable;
 import java.io.BufferedReader;

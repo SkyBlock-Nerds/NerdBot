@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.config;
+package net.hypixel.nerdbot.api.config;
 
 public class BotConfig {
 

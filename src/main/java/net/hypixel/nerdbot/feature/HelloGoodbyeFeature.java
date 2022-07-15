@@ -1,11 +1,11 @@
-package net.hypixel.nerdbot.feature.impl;
+package net.hypixel.nerdbot.feature;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.hypixel.nerdbot.channel.Channel;
-import net.hypixel.nerdbot.channel.ChannelManager;
-import net.hypixel.nerdbot.feature.BotFeature;
+import net.hypixel.nerdbot.api.channel.Channel;
+import net.hypixel.nerdbot.api.channel.ChannelManager;
+import net.hypixel.nerdbot.api.feature.BotFeature;
 
 import java.awt.*;
 import java.time.OffsetDateTime;

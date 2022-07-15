@@ -7,9 +7,9 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.channel.ChannelGroup;
-import net.hypixel.nerdbot.channel.Reactions;
-import net.hypixel.nerdbot.database.Database;
+import net.hypixel.nerdbot.api.channel.ChannelGroup;
+import net.hypixel.nerdbot.api.channel.Reactions;
+import net.hypixel.nerdbot.api.database.Database;
 
 import java.util.List;
 

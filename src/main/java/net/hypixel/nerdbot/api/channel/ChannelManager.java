@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.channel;
+package net.hypixel.nerdbot.api.channel;
 
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
