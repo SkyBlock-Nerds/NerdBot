@@ -25,8 +25,8 @@ public class CurateFeature extends BotFeature {
                 curator.curate();
                 if (!curator.getGreenlitMessages().isEmpty()) {
                     curator.applyEmoji();
-                    curator.send();
-                    curator.insert();
+                    curator.sendGreenlitToChannel();
+                    curator.insertIntoDatabase();
                 }
             }
         };

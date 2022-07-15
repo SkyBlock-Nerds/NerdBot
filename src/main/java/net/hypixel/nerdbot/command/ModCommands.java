@@ -22,22 +22,27 @@ public class ModCommands {
 
         String[] args = context.getArgs();
         int limit = 100;
+        ChannelGroup channelGroup = Database.getInstance().getChannelGroup("DefaultSuggestions");
         if (args.length > 0) {
             try {
                 limit = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
                 context.getMessage().reply("Invalid limit: " + args[0]).queue();
             }
+
+            if (args[1] != null) {
+                channelGroup = Database.getInstance().getChannelGroup(args[1]);
+            }
         }
 
         Message message = context.getMessage();
-        Curator curator = new Curator(limit, Database.getInstance().getChannelGroup("DefaultSuggestions"));
+        Curator curator = new Curator(limit, channelGroup);
         curator.curate();
 
         if (!curator.getGreenlitMessages().isEmpty()) {
             curator.applyEmoji();
-            curator.insert();
-            curator.send();
+            curator.insertIntoDatabase();
+            curator.sendGreenlitToChannel();
             message.reply("Curation complete. " + curator.getGreenlitMessages().size() + " suggestion" + (curator.getGreenlitMessages().size() == 1 ? " was" : "s were") + " greenlit.").queue();
         } else {
             message.reply("Curation complete. No suggestions were greenlit.").queue();
