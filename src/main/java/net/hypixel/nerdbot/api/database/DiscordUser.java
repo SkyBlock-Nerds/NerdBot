@@ -9,17 +9,17 @@ public class DiscordUser {
     private String discordId;
     private int totalSuggestionReactions, totalAgrees, totalDisagrees;
     @Nullable
-    private Date lastReactionDate;
+    private Date lastKnownActivityDate;
 
     public DiscordUser() {
     }
 
-    public DiscordUser(String discordId, int totalSuggestionReactions, int totalAgrees, int totalDisagrees, @Nullable Date lastReactionDate) {
+    public DiscordUser(String discordId, int totalSuggestionReactions, int totalAgrees, int totalDisagrees, @Nullable Date lastKnownActivityDate) {
         this.discordId = discordId;
         this.totalSuggestionReactions = totalSuggestionReactions;
         this.totalAgrees = totalAgrees;
         this.totalDisagrees = totalDisagrees;
-        this.lastReactionDate = lastReactionDate;
+        this.lastKnownActivityDate = lastKnownActivityDate;
     }
 
     public String getDiscordId() {
@@ -55,11 +55,11 @@ public class DiscordUser {
     }
 
     @Nullable
-    public Date getLastReactionDate() {
-        return lastReactionDate;
+    public Date getLastKnownActivityDate() {
+        return lastKnownActivityDate;
     }
 
-    public void setLastReactionDate(@Nullable Date lastReactionDate) {
-        this.lastReactionDate = lastReactionDate;
+    public void setLastKnownActivityDate(@Nullable Date lastKnownActivityDate) {
+        this.lastKnownActivityDate = lastKnownActivityDate;
     }
 }

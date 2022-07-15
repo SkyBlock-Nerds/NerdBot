@@ -108,11 +108,11 @@ public class Curator {
 
                     discordUser.setTotalSuggestionReactions(discordUser.getTotalSuggestionReactions() + 1);
 
-                    Date lastReactionDate = discordUser.getLastReactionDate();
+                    Date lastReactionDate = discordUser.getLastKnownActivityDate();
                     if (lastReactionDate != null && lastReactionDate.toInstant().isBefore(Instant.now())) {
                         Date date = new Date();
                         Logger.info("User " + user.getAsTag() + "'s last reaction was " + lastReactionDate + ". Setting it to " + date);
-                        discordUser.setLastReactionDate(date);
+                        discordUser.setLastKnownActivityDate(date);
                     }
                 });
             }
@@ -182,7 +182,7 @@ public class Curator {
     }
 
     /**
-     * Send all saved greenlit messages to the {@link ChannelGroup} 'to' channel
+     * Send all saved greenlit messages to the {@link ChannelGroup#getTo()}
      */
     public void sendGreenlitToChannel() {
         if (group == null) return;
