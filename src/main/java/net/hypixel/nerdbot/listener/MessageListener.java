@@ -10,6 +10,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.Reactions;
 import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.util.Logger;
 
 import java.util.List;
 
@@ -21,8 +22,6 @@ public class MessageListener extends ListenerAdapter {
             return;
 
         Guild guild = event.getGuild();
-        Emote yes = guild.getEmoteById(Reactions.AGREE.getId()), no = guild.getEmoteById(Reactions.DISAGREE.getId());
-        if (yes == null || no == null) return;
 
         List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
         if (groups == null) return;
@@ -34,9 +33,6 @@ public class MessageListener extends ListenerAdapter {
         for (ChannelGroup group : groups) {
             if (!group.getFrom().equals(channel.getId())) continue;
 
-            message.addReaction(yes).queue();
-            message.addReaction(no).queue();
-
             String firstLine = message.getContentRaw().split("\n")[0];
             if (firstLine == null || firstLine.equals("")) {
                 if (message.getEmbeds().get(0) != null) firstLine = message.getEmbeds().get(0).getTitle();
@@ -45,6 +41,14 @@ public class MessageListener extends ListenerAdapter {
                 firstLine = firstLine.substring(0, 30) + "...";
             }
             message.createThreadChannel("[Discussion] " + firstLine).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
+
+            Emote yes = guild.getEmoteById(Reactions.AGREE.getId()), no = guild.getEmoteById(Reactions.DISAGREE.getId());
+            if (yes == null || no == null) {
+                Logger.error("Couldn't find the emote for yes or no!");
+                return;
+            }
+            message.addReaction(yes).queue();
+            message.addReaction(no).queue();
         }
     }
 
