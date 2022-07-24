@@ -22,4 +22,6 @@ public interface Bot {
 
     void onEnd();
 
+    long getUptime();
+
 }

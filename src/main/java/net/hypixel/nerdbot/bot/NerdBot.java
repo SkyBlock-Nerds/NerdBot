@@ -39,6 +39,8 @@ public class NerdBot implements Bot {
     private JDA jda;
     private BotConfig config;
 
+    private long startTime;
+
     public NerdBot() {
     }
 
@@ -90,6 +92,7 @@ public class NerdBot implements Bot {
     @Override
     public void onStart() {
         for (BotFeature feature : FEATURES) feature.onStart();
+        startTime = System.currentTimeMillis();
     }
 
     @Override
@@ -106,6 +109,11 @@ public class NerdBot implements Bot {
     @Override
     public BotConfig getConfig() {
         return config;
+    }
+
+    @Override
+    public long getUptime() {
+        return System.currentTimeMillis() - startTime;
     }
 
 }
