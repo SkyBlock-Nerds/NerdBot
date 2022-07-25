@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
+import net.hypixel.nerdbot.api.channel.Reactions;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.curator.Curator;
@@ -41,7 +42,11 @@ public class ModCommands {
 
         Message message = context.getMessage();
         Curator curator = new Curator(limit, channelGroup);
-        NerdBotApp.getExecutorService().submit(curator::curate);
+        NerdBotApp.getExecutorService().submit(() -> {
+            curator.curate();
+            message.addReaction(Reactions.THUMBS_UP_EMOJI).queue();
+            message.editMessage("Curation complete!").queue();
+        });
     }
 
     @Command(name = "userstats", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
@@ -122,7 +127,11 @@ public class ModCommands {
         SelfUser bot = NerdBotApp.getBot().getJDA().getSelfUser();
         builder.append(" - Bot name: ").append(bot.getName()).append(" (").append(bot.getId()).append(")").append("\n");
         builder.append(" - Bot region: ").append(Region.getRegion()).append("\n");
-        builder.append(" - Bot uptime: ").append(Util.formatMs(NerdBotApp.getBot().getUptime()));
+        builder.append(" - Bot uptime: ").append(Util.formatMs(NerdBotApp.getBot().getUptime())).append("\n");
+
+        long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        long totalMemory = Runtime.getRuntime().totalMemory();
+        builder.append(" - Used memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
         context.getMessage().reply(builder.toString()).queue();
     }
 
