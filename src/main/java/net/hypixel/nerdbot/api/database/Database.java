@@ -13,6 +13,7 @@ import net.hypixel.nerdbot.api.channel.Channel;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Logger;
+import net.hypixel.nerdbot.util.Users;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -69,7 +70,7 @@ public class Database implements ServerMonitorListener {
     @Override
     public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
         if (connected)
-            ChannelManager.getChannel(Channel.CURATE).sendMessage("@here I lost connection to the database! Pls fix!").queue();
+            ChannelManager.getChannel(Channel.CURATE).sendMessage(Users.getUser(Users.AERH.getUserId()).getAsMention() + " I lost connection to the database! Pls fix!").queue();
         connected = false;
     }
 
