@@ -9,6 +9,9 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.Channel;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
@@ -43,12 +46,10 @@ public class Database implements ServerMonitorListener {
                 .codecRegistry(codecRegistry)
                 .applyToServerSettings(builder -> {
                     builder.addServerMonitorListener(this);
-                    builder.heartbeatFrequency(10, TimeUnit.SECONDS);
                 })
                 .build();
 
         mongoClient = MongoClients.create(clientSettings);
-        connected = true;
         greenlitCollection = mongoClient.getDatabase("skyblockNerds").getCollection("greenlitMessages", GreenlitMessage.class);
         channelCollection = mongoClient.getDatabase("skyblockNerds").getCollection("channelGroups", ChannelGroup.class);
         userCollection = mongoClient.getDatabase("skyblockNerds").getCollection("users", DiscordUser.class);
@@ -65,13 +66,25 @@ public class Database implements ServerMonitorListener {
     @Override
     public void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event) {
         connected = true;
+        log("Heartbeat successful! Elapsed time: " + event.getElapsedTime(TimeUnit.MILLISECONDS) + "ms");
     }
 
     @Override
     public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
-        if (connected)
-            ChannelManager.getChannel(Channel.CURATE).sendMessage(Users.getUser(Users.AERH.getUserId()).getAsMention() + " I lost connection to the database! Pls fix!").queue();
-        connected = false;
+        error("Heartbeat failed! Reason: " + event.getThrowable().getMessage());
+
+        NerdBotApp.getExecutorService().submit(() -> {
+            if (connected) {
+                TextChannel channel = ChannelManager.getChannel(Channel.CURATE);
+                User user = Users.getUser(Users.AERH.getUserId());
+                if (channel == null || user == null) {
+                    error("Couldn't notify of database error on Discord!");
+                    return;
+                }
+                channel.sendMessage(user.getAsMention() + " I lost connection to the database! Pls fix!").queue();
+            }
+            connected = false;
+        });
     }
 
     public void disconnect() {
@@ -79,6 +92,14 @@ public class Database implements ServerMonitorListener {
             mongoClient.close();
             connected = false;
         }
+    }
+
+    private void log(String message) {
+        Logger.info("[Database] " + message);
+    }
+
+    private void error(String message) {
+        Logger.error("[Database] " + message);
     }
 
     public boolean isConnected() {
@@ -91,17 +112,17 @@ public class Database implements ServerMonitorListener {
 
     public void insertGreenlitMessage(GreenlitMessage greenlitMessage) {
         greenlitCollection.insertOne(greenlitMessage);
-        Logger.info("Inserted greenlit message " + greenlitMessage.getId());
+        log("Inserted greenlit message " + greenlitMessage.getId());
     }
 
     public void insertGreenlitMessages(List<GreenlitMessage> greenlitMessages) {
         greenlitCollection.insertMany(greenlitMessages);
-        Logger.info("Inserted " + greenlitMessages.size() + " greenlit messages");
+        log("Inserted " + greenlitMessages.size() + " greenlit messages");
     }
 
     public void deleteGreenlitMessage(String field, Object value) {
         greenlitCollection.deleteOne(Filters.eq(field, value));
-        Logger.info("Deleted greenlit message " + field + ":" + value);
+        log("Deleted greenlit message " + field + ":" + value);
     }
 
     public List<GreenlitMessage> getGreenlitCollection() {
@@ -114,17 +135,17 @@ public class Database implements ServerMonitorListener {
 
     public void insertChannelGroup(ChannelGroup channelGroup) {
         channelCollection.insertOne(channelGroup);
-        Logger.info("Inserted channel group " + channelGroup.getName());
+        log("Inserted channel group " + channelGroup.getName());
     }
 
     public void insertChannelGroups(List<ChannelGroup> channelGroups) {
         channelCollection.insertMany(channelGroups);
-        Logger.info("Inserted " + channelGroups.size() + " channel groups");
+        log("Inserted " + channelGroups.size() + " channel groups");
     }
 
     public void deleteChannelGroup(String field, Object value) {
         channelCollection.deleteOne(Filters.eq(field, value));
-        Logger.info("Deleted channel group " + field + ":" + value);
+        log("Deleted channel group " + field + ":" + value);
     }
 
     public List<ChannelGroup> getChannelGroups() {
@@ -145,24 +166,24 @@ public class Database implements ServerMonitorListener {
 
     public void insertUser(DiscordUser user) {
         userCollection.insertOne(user);
-        Logger.info("Inserted user " + user.getDiscordId());
+        log("Inserted user " + user.getDiscordId());
     }
 
     public void updateUser(String field, Object value, DiscordUser user) {
         userCollection.replaceOne(Filters.eq(field, value), user);
-        Logger.info("Updated user " + field + ":" + value);
+        log("Updated user " + field + ":" + value);
     }
 
     public void updateUsers(List<DiscordUser> users) {
         for (DiscordUser user : users) {
             updateUser("discordId", user.getDiscordId(), user);
         }
-        Logger.info("Updated " + users.size() + " users");
+        log("Updated " + users.size() + " users");
     }
 
     public void deleteUser(String field, Object value) {
         userCollection.deleteOne(Filters.eq(field, value));
-        Logger.info("Deleted user " + field + ":" + value);
+        log("Deleted user " + field + ":" + value);
     }
 
     public void deleteUser(DiscordUser user) {
