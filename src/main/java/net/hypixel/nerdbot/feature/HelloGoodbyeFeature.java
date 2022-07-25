@@ -6,6 +6,8 @@ import net.dv8tion.jda.api.entities.TextChannel;
 import net.hypixel.nerdbot.api.channel.Channel;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.api.feature.BotFeature;
+import net.hypixel.nerdbot.util.Logger;
+import net.hypixel.nerdbot.util.Region;
 
 import java.awt.*;
 import java.time.OffsetDateTime;
@@ -32,6 +34,7 @@ public class HelloGoodbyeFeature extends BotFeature {
     public void onStart() {
         TextChannel channel = ChannelManager.getChannel(Channel.CURATE);
         if (channel != null) channel.sendMessageEmbeds(HELLO_THERE).queue();
+        Logger.info("Bot started on region " + Region.getRegion());
     }
 
     @Override

@@ -4,11 +4,15 @@ import me.neiizun.lightdrop.automapping.AutoMapping;
 import me.neiizun.lightdrop.command.Command;
 import me.neiizun.lightdrop.command.CommandContext;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.entities.User;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.curator.Curator;
+import net.hypixel.nerdbot.util.Region;
+import net.hypixel.nerdbot.util.Util;
 
 @AutoMapping
 public class ModCommands {
@@ -109,6 +113,24 @@ public class ModCommands {
                         .append(group.getName())
                         .append(" (from: ").append(group.getFrom()).append(", to: ").append(group.getTo()).append(")")
                         .append("\n"));
+        context.getMessage().reply(builder.toString()).queue();
+    }
+
+    @Command(name = "uptime")
+    public void uptime(CommandContext context) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("**Uptime:** ").append(Util.formatMs(NerdBotApp.getBot().getUptime()));
+        context.getMessage().reply(builder.toString()).queue();
+    }
+
+    @Command(name = "botinfo")
+    public void botInfo(CommandContext context) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("**Bot info:**").append("\n");
+        SelfUser bot = NerdBotApp.getBot().getJDA().getSelfUser();
+        builder.append(" - Bot name: ").append(bot.getName()).append(" (").append(bot.getId()).append(")").append("\n");
+        builder.append(" - Bot region: ").append(Region.getRegion()).append("\n");
+        builder.append(" - Bot uptime: ").append(Util.formatMs(NerdBotApp.getBot().getUptime()));
         context.getMessage().reply(builder.toString()).queue();
     }
 
