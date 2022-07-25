@@ -13,10 +13,7 @@ import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Region;
 import net.hypixel.nerdbot.util.Util;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 
 public class Curator {
@@ -52,6 +49,10 @@ public class Curator {
      * Start the curation process on the selected {@link ChannelGroup} and message limit
      */
     public void curate() {
+        if (!Database.getInstance().isConnected()) {
+            Logger.error("[Curator] Cannot connect to the database!");
+            return;
+        }
         TextChannel textChannel = ChannelManager.getChannel(group.getFrom());
         if (textChannel == null) return;
 
@@ -60,6 +61,15 @@ public class Curator {
 
         long start = System.currentTimeMillis();
         log("Starting suggestion curation at " + new Date());
+
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                textChannel.sendTyping().queue();
+            }
+        };
+        Timer timer = new Timer();
+        timer.schedule(timerTask, 0, 10_000);
 
         for (Message message : messages) {
             if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null)
@@ -177,6 +187,7 @@ public class Curator {
         }
         long end = System.currentTimeMillis();
         log("Finished curating messages at " + new Date() + ". Took " + (end - start) + "ms");
+        timer.cancel();
     }
 
     /**
