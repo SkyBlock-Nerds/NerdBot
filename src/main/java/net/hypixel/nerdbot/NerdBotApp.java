@@ -7,9 +7,12 @@ import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.Logger;
 
 import javax.security.auth.login.LoginException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class NerdBotApp {
 
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(4);
     public static final Gson GSON = new GsonBuilder().create();
     private static Bot bot;
 
@@ -31,4 +34,7 @@ public class NerdBotApp {
         return bot;
     }
 
+    public static ExecutorService getExecutorService() {
+        return executorService;
+    }
 }

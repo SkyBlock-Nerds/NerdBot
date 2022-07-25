@@ -41,16 +41,7 @@ public class ModCommands {
 
         Message message = context.getMessage();
         Curator curator = new Curator(limit, channelGroup);
-        curator.curate();
-
-        if (!curator.getGreenlitMessages().isEmpty()) {
-            curator.applyEmoji();
-            curator.insertIntoDatabase();
-            curator.sendGreenlitToChannel();
-            message.reply("Curation complete. " + curator.getGreenlitMessages().size() + " suggestion" + (curator.getGreenlitMessages().size() == 1 ? " was" : "s were") + " greenlit.").queue();
-        } else {
-            message.reply("Curation complete. No suggestions were greenlit.").queue();
-        }
+        NerdBotApp.getExecutorService().submit(curator::curate);
     }
 
     @Command(name = "userstats", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
@@ -83,10 +74,11 @@ public class ModCommands {
         }
 
         StringBuilder builder = new StringBuilder("**User stats for " + user.getAsTag() + ":**");
+        int agrees = discordUser.getAgrees().size(), disagrees = discordUser.getDisagrees().size(), total = agrees + disagrees;
         builder.append("\n```");
-        builder.append("Total agrees: ").append(discordUser.getTotalAgrees()).append("\n");
-        builder.append("Total disagrees: ").append(discordUser.getTotalDisagrees()).append("\n");
-        builder.append("Total suggestion reactions: ").append(discordUser.getTotalSuggestionReactions()).append("\n");
+        builder.append("Total agrees: ").append(discordUser.getAgrees().size()).append("\n");
+        builder.append("Total disagrees: ").append(discordUser.getDisagrees().size()).append("\n");
+        builder.append("Total suggestion reactions: ").append(total).append("\n");
         builder.append("Last recorded activity date: ").append(discordUser.getLastKnownActivityDate()).append("```");
         context.getMessage().reply(builder.toString()).queue();
     }
@@ -104,7 +96,7 @@ public class ModCommands {
         context.getMessage().reply("Added channel group: `" + channelGroup.getName() + "`").queue();
     }
 
-    @Command(name = "getchannelgroups")
+    @Command(name = "getchannelgroups", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
     public void getGroups(CommandContext context) {
         StringBuilder builder = new StringBuilder();
         builder.append("**Channel Groups:**").append("\n");
@@ -116,14 +108,14 @@ public class ModCommands {
         context.getMessage().reply(builder.toString()).queue();
     }
 
-    @Command(name = "uptime")
+    @Command(name = "uptime", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
     public void uptime(CommandContext context) {
         StringBuilder builder = new StringBuilder();
         builder.append("**Uptime:** ").append(Util.formatMs(NerdBotApp.getBot().getUptime()));
         context.getMessage().reply(builder.toString()).queue();
     }
 
-    @Command(name = "botinfo")
+    @Command(name = "botinfo", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
     public void botInfo(CommandContext context) {
         StringBuilder builder = new StringBuilder();
         builder.append("**Bot info:**").append("\n");

@@ -3,23 +3,22 @@ package net.hypixel.nerdbot.api.database;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
+import java.util.List;
 
 public class DiscordUser {
 
     private String discordId;
-    private int totalSuggestionReactions, totalAgrees, totalDisagrees;
-    @Nullable
     private Date lastKnownActivityDate;
+    private List<String> agrees, disagrees;
 
     public DiscordUser() {
     }
 
-    public DiscordUser(String discordId, int totalSuggestionReactions, int totalAgrees, int totalDisagrees, @Nullable Date lastKnownActivityDate) {
+    public DiscordUser(String discordId, Date lastKnownActivityDate, List<String> agrees, List<String> disagrees) {
         this.discordId = discordId;
-        this.totalSuggestionReactions = totalSuggestionReactions;
-        this.totalAgrees = totalAgrees;
-        this.totalDisagrees = totalDisagrees;
         this.lastKnownActivityDate = lastKnownActivityDate;
+        this.agrees = agrees;
+        this.disagrees = disagrees;
     }
 
     public String getDiscordId() {
@@ -30,30 +29,6 @@ public class DiscordUser {
         this.discordId = discordId;
     }
 
-    public int getTotalSuggestionReactions() {
-        return totalSuggestionReactions;
-    }
-
-    public void setTotalSuggestionReactions(int totalSuggestionReactions) {
-        this.totalSuggestionReactions = totalSuggestionReactions;
-    }
-
-    public int getTotalAgrees() {
-        return totalAgrees;
-    }
-
-    public void setTotalAgrees(int totalAgrees) {
-        this.totalAgrees = totalAgrees;
-    }
-
-    public int getTotalDisagrees() {
-        return totalDisagrees;
-    }
-
-    public void setTotalDisagrees(int totalDisagrees) {
-        this.totalDisagrees = totalDisagrees;
-    }
-
     @Nullable
     public Date getLastKnownActivityDate() {
         return lastKnownActivityDate;
@@ -61,5 +36,21 @@ public class DiscordUser {
 
     public void setLastKnownActivityDate(@Nullable Date lastKnownActivityDate) {
         this.lastKnownActivityDate = lastKnownActivityDate;
+    }
+
+    public List<String> getAgrees() {
+        return agrees;
+    }
+
+    public void setAgrees(List<String> agrees) {
+        this.agrees = agrees;
+    }
+
+    public List<String> getDisagrees() {
+        return disagrees;
+    }
+
+    public void setDisagrees(List<String> disagrees) {
+        this.disagrees = disagrees;
     }
 }
