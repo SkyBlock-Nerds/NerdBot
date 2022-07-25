@@ -1,10 +1,8 @@
 package net.hypixel.nerdbot.util;
 
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.config.BotConfig;
 
@@ -34,16 +32,6 @@ public class Util {
         return NerdBotApp.getBot().getJDA().getGuildById(guildId);
     }
 
-    public static boolean isMod(String userId, String guildId) {
-        Guild guild = getGuild(guildId);
-        if (guild == null) return false;
-
-        Member member = guild.getMemberById(userId);
-        if (member == null) return false;
-
-        return member.hasPermission(Permission.BAN_MEMBERS);
-    }
-
     @Nullable
     public static Role findRole(Member member, String id) {
         List<Role> roles = member.getRoles();
@@ -53,15 +41,15 @@ public class Util {
                 .orElse(null);
     }
 
-    @Nullable
-    public static Role findRole(User user, String guildId, String roleId) {
-        Guild guild = getGuild(guildId);
-        if (guild == null) return null;
-
-        Member member = guild.getMember(user);
-        if (member == null) return null;
-
-        return findRole(member, roleId);
+    public static String formatMs(long ms) {
+        long days = TimeUnit.MILLISECONDS.toDays(ms);
+        ms -= TimeUnit.DAYS.toMillis(days);
+        long hours = TimeUnit.MILLISECONDS.toHours(ms);
+        ms -= TimeUnit.HOURS.toMillis(hours);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(ms);
+        ms -= TimeUnit.MINUTES.toMillis(minutes);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(ms);
+        return String.format("%dd %dh %dm %ds", days, hours, minutes, seconds);
     }
 
     public static BotConfig loadConfig(File file) throws FileNotFoundException {
