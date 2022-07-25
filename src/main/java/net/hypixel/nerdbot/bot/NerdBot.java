@@ -19,6 +19,7 @@ import net.hypixel.nerdbot.listener.MessageListener;
 import net.hypixel.nerdbot.listener.ReadyListener;
 import net.hypixel.nerdbot.listener.ShutdownListener;
 import net.hypixel.nerdbot.util.Logger;
+import net.hypixel.nerdbot.util.Region;
 import net.hypixel.nerdbot.util.Util;
 
 import javax.security.auth.login.LoginException;
@@ -54,11 +55,12 @@ public class NerdBot implements Bot {
 
         jda = builder.build();
 
+        String fileName = Region.getRegion().name().toLowerCase() + ".config.json";
         try {
-            File file = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("config.json")).getFile());
+            File file = new File(Objects.requireNonNull(getClass().getClassLoader().getResource(fileName)).getFile());
             config = Util.loadConfig(file);
-        } catch (FileNotFoundException exception) {
-            Logger.error("Could not find config file!");
+        } catch (NullPointerException | FileNotFoundException exception) {
+            Logger.error("Could not find config file " + fileName);
             System.exit(-1);
         }
 
