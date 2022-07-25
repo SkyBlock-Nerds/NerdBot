@@ -113,16 +113,12 @@ public class Curator {
                             if (!discordUser.getAgrees().contains(message.getId())) {
                                 discordUser.getAgrees().add(message.getId());
                                 log("Total agrees for " + discordUser.getDiscordId() + " is now " + discordUser.getAgrees().size());
-                            } else {
-                                log("User " + discordUser.getDiscordId() + " already agreed to message " + message.getId());
                             }
                         }
                         case "no" -> {
                             if (!discordUser.getDisagrees().contains(message.getId())) {
                                 discordUser.getDisagrees().add(message.getId());
                                 log("Total disagrees for " + discordUser.getDiscordId() + " is now " + discordUser.getDisagrees().size());
-                            } else {
-                                log("User " + discordUser.getDiscordId() + " already disagreed to message " + message.getId());
                             }
                         }
                     }
