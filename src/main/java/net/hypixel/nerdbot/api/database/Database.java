@@ -6,7 +6,12 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
+import com.mongodb.event.ServerHeartbeatFailedEvent;
+import com.mongodb.event.ServerHeartbeatSucceededEvent;
+import com.mongodb.event.ServerMonitorListener;
+import net.hypixel.nerdbot.api.channel.Channel;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
+import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Logger;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
@@ -15,8 +20,9 @@ import org.bson.codecs.pojo.PojoCodecProvider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-public class Database {
+public class Database implements ServerMonitorListener {
 
     private static Database instance;
 
@@ -34,6 +40,10 @@ public class Database {
         MongoClientSettings clientSettings = MongoClientSettings.builder()
                 .applyConnectionString(connectionString)
                 .codecRegistry(codecRegistry)
+                .applyToServerSettings(builder -> {
+                    builder.addServerMonitorListener(this);
+                    builder.heartbeatFrequency(10, TimeUnit.SECONDS);
+                })
                 .build();
 
         mongoClient = MongoClients.create(clientSettings);
@@ -49,6 +59,18 @@ public class Database {
             instance = new Database();
         }
         return instance;
+    }
+
+    @Override
+    public void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event) {
+        connected = true;
+    }
+
+    @Override
+    public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
+        if (connected)
+            ChannelManager.getChannel(Channel.CURATE).sendMessage("@here I lost connection to the database! Pls fix!").queue();
+        connected = false;
     }
 
     public void disconnect() {
