@@ -10,10 +10,11 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.api.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Logger;
+import net.hypixel.nerdbot.util.Region;
 import net.hypixel.nerdbot.util.Util;
 
-import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -57,7 +58,9 @@ public class Curator {
         MessageHistory history = textChannel.getHistory();
         List<Message> messages = history.retrievePast(limit).complete();
 
-        Logger.info("Starting suggestion curation at " + new Date());
+        long start = System.currentTimeMillis();
+        log("Starting suggestion curation at " + new Date());
+
         for (Message message : messages) {
             if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null)
                 continue;
@@ -80,14 +83,14 @@ public class Curator {
                 // Maybe could even remove the actual reaction from the person as a visual indication
                 if (reaction.getReactionEmote().getId().equals(Reactions.AGREE.getId())) {
                     positive = reaction.getCount() - 1;
-                    if (reaction.retrieveUsers().stream().map(ISnowflake::getId).anyMatch(s -> s.equals(message.getAuthor().getId()))) {
+                    if (Region.isProduction() && reaction.retrieveUsers().stream().map(ISnowflake::getId).anyMatch(s -> s.equals(message.getAuthor().getId()))) {
                         positive--;
                     }
                 }
 
                 if (reaction.getReactionEmote().getId().equals(Reactions.DISAGREE.getId())) {
                     negative = reaction.getCount() - 1;
-                    if (reaction.retrieveUsers().stream().map(ISnowflake::getId).anyMatch(s -> s.equals(message.getAuthor().getId()))) {
+                    if (Region.isProduction() && reaction.retrieveUsers().stream().map(ISnowflake::getId).anyMatch(s -> s.equals(message.getAuthor().getId()))) {
                         negative--;
                     }
                 }
@@ -96,45 +99,53 @@ public class Curator {
                 reaction.retrieveUsers().forEach(user -> {
                     if (user.isBot()) return;
 
-                    Logger.info("User " + user.getAsTag() + " reacted with " + reaction.getReactionEmote().getName() + " to message " + message.getId());
+                    log("User " + user.getAsTag() + " reacted with " + reaction.getReactionEmote().getName() + " to message " + message.getId());
 
                     DiscordUser discordUser = findUser(user.getId());
                     if (discordUser == null)
-                        discordUser = new DiscordUser(user.getId(), 0, 0, 0, null);
+                        discordUser = new DiscordUser(user.getId(), null, Collections.emptyList(), Collections.emptyList());
 
                     if (!users.contains(discordUser))
                         users.add(discordUser);
 
                     switch (reaction.getReactionEmote().getName()) {
                         case "yes" -> {
-                            discordUser.setTotalAgrees(discordUser.getTotalAgrees() + 1);
-                            Logger.info("Total agrees for " + discordUser.getDiscordId() + " is now " + discordUser.getTotalAgrees());
+                            if (!discordUser.getAgrees().contains(message.getId())) {
+                                discordUser.getAgrees().add(message.getId());
+                                log("Total agrees for " + discordUser.getDiscordId() + " is now " + discordUser.getAgrees().size());
+                            } else {
+                                log("User " + discordUser.getDiscordId() + " already agreed to message " + message.getId());
+                            }
                         }
                         case "no" -> {
-                            discordUser.setTotalDisagrees(discordUser.getTotalDisagrees() + 1);
-                            Logger.info("Total disagrees for " + discordUser.getDiscordId() + " is now " + discordUser.getTotalDisagrees());
+                            if (!discordUser.getDisagrees().contains(message.getId())) {
+                                discordUser.getDisagrees().add(message.getId());
+                                log("Total disagrees for " + discordUser.getDiscordId() + " is now " + discordUser.getDisagrees().size());
+                            } else {
+                                log("User " + discordUser.getDiscordId() + " already disagreed to message " + message.getId());
+                            }
                         }
                     }
 
-                    discordUser.setTotalSuggestionReactions(discordUser.getTotalSuggestionReactions() + 1);
+                    // TODO figure out a better way for this
+                    /*Date lastReactionDate = discordUser.getLastKnownActivityDate();
+                    Date date = new Date();
 
-                    Date lastReactionDate = discordUser.getLastKnownActivityDate();
-                    if (lastReactionDate != null && lastReactionDate.toInstant().isBefore(Instant.now())) {
-                        Date date = new Date();
-                        Logger.info("User " + user.getAsTag() + "'s last reaction was " + lastReactionDate + ". Setting it to " + date);
+                    if (lastReactionDate == null || lastReactionDate.before(date)) {
+                        log("User " + user.getAsTag() + "'s last reaction was " + lastReactionDate + ". Setting it to " + date);
                         discordUser.setLastKnownActivityDate(date);
-                    }
+                    }*/
                 });
             }
 
             BotConfig config = NerdBotApp.getBot().getConfig();
             if (positive == 0 && negative == 0 || positive < config.getMinimumThreshold()) {
-                Logger.info("Message " + message.getId() + " is below the minimum threshold! (" + positive + "/" + negative + ") (min threshold: " + config.getMinimumThreshold() + ")");
+                log("Message " + message.getId() + " is below the minimum threshold! (" + positive + "/" + negative + ") (min threshold: " + config.getMinimumThreshold() + ")");
                 continue;
             }
 
             double ratio = getRatio(positive, negative);
-            Logger.info("Message " + message.getId() + " has a ratio of " + ratio + "%");
+            log("Message " + message.getId() + " has a ratio of " + ratio + "%");
             if (ratio < config.getPercentage()) continue;
 
             // Get the title and tags of the suggestion to save and display
@@ -144,7 +155,7 @@ public class Curator {
             List<String> tags = new ArrayList<>();
             while (matcher.find()) {
                 tags.add(matcher.group(1));
-                Logger.info("Found tag '" + matcher.group(1) + "' in message " + message.getId());
+                log("Found tag '" + matcher.group(1) + "' in message " + message.getId());
             }
 
             GreenlitMessage msg = new GreenlitMessage()
@@ -159,10 +170,17 @@ public class Curator {
             String[] lines = message.getContentRaw().split("\n");
             msg.setSuggestionTitle(lines.length >= 1 ? lines[0] : "No Title");
             greenlitMessages.add(msg);
-            Logger.info("Added suggestion " + message.getId() + " created by " + message.getAuthor().getAsTag() + " to the greenlit collection");
+            log("Added suggestion " + message.getId() + " created by " + message.getAuthor().getAsTag() + " to the greenlit collection");
         }
+
         if (!users.isEmpty()) Database.getInstance().updateUsers(users);
-        Logger.info("Finished curating messages at " + new Date());
+        if (!getGreenlitMessages().isEmpty()) {
+            applyEmoji();
+            insertIntoDatabase();
+            sendGreenlitToChannel();
+        }
+        long end = System.currentTimeMillis();
+        log("Finished curating messages at " + new Date() + ". Took " + (end - start) + "ms");
     }
 
     /**
@@ -188,7 +206,7 @@ public class Curator {
         }
         for (GreenlitMessage msg : greenlitMessages)
             suggestionChannel.retrieveMessageById(msg.getMessageId()).queue(message -> message.addReaction(greenlitEmoji).queue());
-        Logger.info("Applied greenlit emoji to " + greenlitMessages.size() + " message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
+        log("Applied greenlit emoji to " + greenlitMessages.size() + " message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
     }
 
     /**
@@ -215,9 +233,9 @@ public class Curator {
     public void insertIntoDatabase() {
         if (!greenlitMessages.isEmpty()) {
             Database.getInstance().insertGreenlitMessages(greenlitMessages);
-            Logger.info("Inserted " + greenlitMessages.size() + " greenlit message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
+            log("Inserted " + greenlitMessages.size() + " greenlit message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
         } else {
-            Logger.info("No greenlit messages to insert!");
+            log("No greenlit messages to insert!");
         }
     }
 
@@ -232,6 +250,10 @@ public class Curator {
 
     private double getRatio(int positive, int negative) {
         return (double) positive / (positive + negative) * 100;
+    }
+
+    private void log(String message) {
+        Logger.info("[Curator] " + message);
     }
 
     public int getLimit() {

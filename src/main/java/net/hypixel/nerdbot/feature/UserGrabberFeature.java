@@ -7,6 +7,7 @@ import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.util.Logger;
 
+import java.util.Collections;
 import java.util.List;
 
 public class UserGrabberFeature extends BotFeature {
@@ -22,7 +23,7 @@ public class UserGrabberFeature extends BotFeature {
         guild.loadMembers(member -> {
             if (!member.getUser().isBot() && !containsUser(existingUsers, member.getId())) {
                 Logger.info("Adding DiscordUser " + member.getUser().getAsTag() + " to database");
-                DiscordUser discordUser = new DiscordUser(member.getId(), 0, 0, 0, null);
+                DiscordUser discordUser = new DiscordUser(member.getId(), null, Collections.emptyList(), Collections.emptyList());
                 Database.getInstance().insertUser(discordUser);
             }
         });
