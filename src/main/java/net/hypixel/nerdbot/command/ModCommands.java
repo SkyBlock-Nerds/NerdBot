@@ -13,6 +13,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.curator.Curator;
 import net.hypixel.nerdbot.util.Region;
+import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.Date;
@@ -45,7 +46,7 @@ public class ModCommands {
         Message message = context.getMessage();
         Curator curator = new Curator(limit, channelGroup);
         message.reply("Curation started at " + new Date()).queue();
-        NerdBotApp.getExecutorService().submit(() -> {
+        NerdBotApp.EXECUTOR_SERVICE.submit(() -> {
             curator.curate();
             message.addReaction(Reactions.THUMBS_UP_EMOJI).queue();
             message.reply("Curation complete at " + new Date() + "! Took " + curator.getElapsedTime() + "ms").queue();
@@ -66,10 +67,9 @@ public class ModCommands {
         }
 
         User user;
-        if (!context.getMessage().getMentionedUsers().isEmpty())
-            user = context.getMessage().getMentionedUsers().get(0);
-        else
-            user = context.getMessage().getJDA().getUserById(args[0]);
+        if (!context.getMessage().getMentionedUsers().isEmpty()) user = context.getMessage().getMentionedUsers().get(0);
+        else user = context.getMessage().getJDA().getUserById(args[0]);
+
         if (user == null) {
             context.getMessage().reply("Cannot find that user!").queue();
             return;
@@ -119,7 +119,7 @@ public class ModCommands {
     @Command(name = "uptime", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
     public void uptime(CommandContext context) {
         StringBuilder builder = new StringBuilder();
-        builder.append("**Uptime:** ").append(Util.formatMs(NerdBotApp.getBot().getUptime()));
+        builder.append("**Uptime:** ").append(Time.formatMs(NerdBotApp.getBot().getUptime()));
         context.getMessage().reply(builder.toString()).queue();
     }
 
@@ -130,11 +130,11 @@ public class ModCommands {
         SelfUser bot = NerdBotApp.getBot().getJDA().getSelfUser();
         builder.append(" - Bot name: ").append(bot.getName()).append(" (").append(bot.getId()).append(")").append("\n");
         builder.append(" - Bot region: ").append(Region.getRegion()).append("\n");
-        builder.append(" - Bot uptime: ").append(Util.formatMs(NerdBotApp.getBot().getUptime())).append("\n");
+        builder.append(" - Bot uptime: ").append(Time.formatMs(NerdBotApp.getBot().getUptime())).append("\n");
 
         long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         long totalMemory = Runtime.getRuntime().totalMemory();
-        builder.append(" - Used memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
+        builder.append(" - Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
         context.getMessage().reply(builder.toString()).queue();
     }
 
