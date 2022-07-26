@@ -23,6 +23,8 @@ public class Curator {
     private final List<GreenlitMessage> greenlitMessages;
     private final List<DiscordUser> users;
 
+    private long elapsed;
+
     /**
      * Initialize a new Curator object with a set limit and {@link ChannelGroup}
      *
@@ -203,7 +205,8 @@ public class Curator {
                 sendGreenlitToChannel();
             }
             long end = System.currentTimeMillis();
-            log("Finished curating messages at " + new Date() + ". Took " + (end - start) + "ms");
+            elapsed = end - start;
+            log("Finished curating messages at " + new Date() + ". Took " + elapsed + "ms");
             timer.cancel();
         }
     }
@@ -288,6 +291,10 @@ public class Curator {
 
     public int getLimit() {
         return limit;
+    }
+
+    public long getElapsedTime() {
+        return elapsed;
     }
 
     public List<ChannelGroup> getGroups() {

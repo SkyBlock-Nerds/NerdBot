@@ -15,6 +15,8 @@ import net.hypixel.nerdbot.curator.Curator;
 import net.hypixel.nerdbot.util.Region;
 import net.hypixel.nerdbot.util.Util;
 
+import java.util.Date;
+
 @AutoMapping
 public class ModCommands {
 
@@ -42,10 +44,11 @@ public class ModCommands {
 
         Message message = context.getMessage();
         Curator curator = new Curator(limit, channelGroup);
+        message.reply("Curation started at " + new Date()).queue();
         NerdBotApp.getExecutorService().submit(() -> {
             curator.curate();
             message.addReaction(Reactions.THUMBS_UP_EMOJI).queue();
-            message.editMessage("Curation complete!").queue();
+            message.reply("Curation complete at " + new Date() + "! Took " + curator.getElapsedTime() + "ms").queue();
         });
     }
 
