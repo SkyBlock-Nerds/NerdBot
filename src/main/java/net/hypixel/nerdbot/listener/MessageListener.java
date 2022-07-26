@@ -22,13 +22,18 @@ public class MessageListener extends ListenerAdapter {
             return;
 
         Guild guild = event.getGuild();
-
         List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
         if (groups == null) return;
         if (groups.isEmpty()) return;
 
         Channel channel = event.getChannel();
         Message message = event.getMessage();
+
+        Emote yes = guild.getEmoteById(Reactions.AGREE.getId()), no = guild.getEmoteById(Reactions.DISAGREE.getId());
+        if (yes == null || no == null) {
+            Logger.error("Couldn't find the emote for yes or no!");
+            return;
+        }
 
         for (ChannelGroup group : groups) {
             if (!group.getFrom().equals(channel.getId())) continue;
@@ -40,13 +45,8 @@ public class MessageListener extends ListenerAdapter {
             } else if (firstLine.length() > 30) {
                 firstLine = firstLine.substring(0, 30) + "...";
             }
-            message.createThreadChannel("[Discussion] " + firstLine).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
 
-            Emote yes = guild.getEmoteById(Reactions.AGREE.getId()), no = guild.getEmoteById(Reactions.DISAGREE.getId());
-            if (yes == null || no == null) {
-                Logger.error("Couldn't find the emote for yes or no!");
-                return;
-            }
+            message.createThreadChannel("[Discussion] " + firstLine).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
             message.addReaction(yes).queue();
             message.addReaction(no).queue();
         }
