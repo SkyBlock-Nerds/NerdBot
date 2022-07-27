@@ -104,6 +104,24 @@ public class ModCommands {
         context.getMessage().reply("Added channel group: `" + channelGroup.getName() + "`").queue();
     }
 
+    @Command(name = "removechannelgroup", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
+    public void removeChannelGroup(CommandContext context) {
+        String[] args = context.getArgs();
+        if (args.length < 1) {
+            context.getMessage().reply("Invalid arguments. Usage: `!removechannel <group name>`").queue();
+            return;
+        }
+
+        ChannelGroup channelGroup = Database.getInstance().getChannelGroup(args[0]);
+        if (channelGroup == null) {
+            context.getMessage().reply("Channel group `" + args[0] + "` not found!").queue();
+            return;
+        }
+
+        Database.getInstance().deleteChannelGroup(channelGroup);
+        context.getMessage().reply("Removed channel group: `" + channelGroup.getName() + "`").queue();
+    }
+
     @Command(name = "getchannelgroups", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
     public void getGroups(CommandContext context) {
         StringBuilder builder = new StringBuilder();
