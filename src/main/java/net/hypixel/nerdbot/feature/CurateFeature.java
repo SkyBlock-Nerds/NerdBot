@@ -27,7 +27,7 @@ public class CurateFeature extends BotFeature {
         };
 
         Timer timer = new Timer();
-        timer.scheduleAtFixedRate(timerTask, 0L, NerdBotApp.getBot().getConfig().getInterval());
+        timer.scheduleAtFixedRate(timerTask, 30_000L, NerdBotApp.getBot().getConfig().getInterval());
     }
 
     @Override
