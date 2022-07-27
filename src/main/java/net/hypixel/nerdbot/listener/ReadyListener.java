@@ -1,16 +1,14 @@
 package net.hypixel.nerdbot.listener;
 
-import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.ReadyEvent;
-import net.dv8tion.jda.api.hooks.EventListener;
+import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import org.jetbrains.annotations.NotNull;
 
-public class ReadyListener implements EventListener {
+public class ReadyListener {
 
-    @Override
-    public void onEvent(@NotNull GenericEvent event) {
-        if (event instanceof ReadyEvent) NerdBotApp.getBot().onStart();
+    @SubscribeEvent
+    public void onEvent(ReadyEvent event) {
+        NerdBotApp.getBot().onStart();
     }
 
 }

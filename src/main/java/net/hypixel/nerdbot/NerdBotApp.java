@@ -12,8 +12,9 @@ import java.util.concurrent.Executors;
 
 public class NerdBotApp {
 
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(4);
-    public static final Gson GSON = new GsonBuilder().create();
+    public static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
+    public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
     private static Bot bot;
 
     public static void main(String[] args) {
@@ -34,7 +35,4 @@ public class NerdBotApp {
         return bot;
     }
 
-    public static ExecutorService getExecutorService() {
-        return executorService;
-    }
 }
