@@ -73,7 +73,7 @@ public class Database implements ServerMonitorListener {
     public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
         error("Heartbeat failed! Reason: " + event.getThrowable().getMessage());
 
-        NerdBotApp.getExecutorService().submit(() -> {
+        NerdBotApp.EXECUTOR_SERVICE.submit(() -> {
             if (connected) {
                 TextChannel channel = ChannelManager.getChannel(Channel.CURATE);
                 User user = Users.getUser(Users.AERH.getUserId());
@@ -118,6 +118,10 @@ public class Database implements ServerMonitorListener {
     public void insertGreenlitMessages(List<GreenlitMessage> greenlitMessages) {
         greenlitCollection.insertMany(greenlitMessages);
         log("Inserted " + greenlitMessages.size() + " greenlit messages");
+    }
+
+    public GreenlitMessage getGreenlitMessage(String id) {
+        return greenlitCollection.find(Filters.eq("messageId", id)).first();
     }
 
     public void deleteGreenlitMessage(String field, Object value) {

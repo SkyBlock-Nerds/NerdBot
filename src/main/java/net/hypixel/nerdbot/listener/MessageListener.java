@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.entities.Emote;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.Reactions;
@@ -14,9 +14,9 @@ import net.hypixel.nerdbot.util.Logger;
 
 import java.util.List;
 
-public class MessageListener extends ListenerAdapter {
+public class MessageListener {
 
-    @Override
+    @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {
         if (event.getAuthor().isBot() && !event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId()))
             return;

@@ -22,7 +22,7 @@ public class CurateFeature extends BotFeature {
             @Override
             public void run() {
                 Curator curator = new Curator(100, Database.getInstance().getChannelGroups());
-                NerdBotApp.getExecutorService().submit(curator::curate);
+                NerdBotApp.EXECUTOR_SERVICE.submit(curator::curate);
             }
         };
 

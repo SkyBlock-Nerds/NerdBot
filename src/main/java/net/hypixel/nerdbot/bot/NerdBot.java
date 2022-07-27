@@ -4,6 +4,7 @@ import me.neiizun.lightdrop.LightDrop;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -48,6 +49,7 @@ public class NerdBot implements Bot {
     @Override
     public void create(String[] args) throws LoginException {
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
+                .setEventManager(new AnnotatedEventManager())
                 .disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE)
                 .setActivity(Activity.competing("mc.hypixel.net"));
 
