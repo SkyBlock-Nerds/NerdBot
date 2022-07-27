@@ -3,8 +3,10 @@ package net.hypixel.nerdbot.api.bot;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.hypixel.nerdbot.api.config.BotConfig;
+import net.hypixel.nerdbot.api.feature.BotFeature;
 
 import javax.security.auth.login.LoginException;
+import java.util.List;
 
 public interface Bot {
 
@@ -18,7 +20,7 @@ public interface Bot {
 
     void onStart();
 
-    void registerListeners();
+    List<BotFeature> getFeatures();
 
     void onEnd();
 

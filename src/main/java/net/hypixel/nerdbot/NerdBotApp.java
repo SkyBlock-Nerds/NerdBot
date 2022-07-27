@@ -19,16 +19,14 @@ public class NerdBotApp {
 
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();
+        bot = nerdBot;
         try {
             nerdBot.create(args);
         } catch (LoginException e) {
             Logger.error("Failed to find login for bot!");
             e.printStackTrace();
             System.exit(0);
-            return;
         }
-        nerdBot.registerListeners();
-        bot = nerdBot;
     }
 
     public static Bot getBot() {
