@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.curator;
 
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
@@ -88,34 +89,38 @@ public class Curator {
             Timer timer = new Timer();
             timer.schedule(timerTask, 0, 10_000);
 
+            Emoji agree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.AGREE.getId());
+            Emoji disagree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.DISAGREE.getId());
+            Emoji greenlit = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.GREENLIT.getId());
+
+            if (agree == null || disagree == null || greenlit == null) {
+                Logger.error("[Curator] Could not find emoji for agree, disagree, or greenlit!");
+                return;
+            }
+
             for (Message message : messages) {
-                if (message.getAuthor().isBot() || message.getReactionById(Reactions.GREENLIT.getId()) != null)
+                if (message.getAuthor().isBot() || message.getReaction(greenlit) != null)
                     continue;
 
-                Emote agree = NerdBotApp.getBot().getJDA().getEmoteById(Reactions.AGREE.getId());
-                Emote disagree = NerdBotApp.getBot().getJDA().getEmoteById(Reactions.DISAGREE.getId());
-                if (agree != null && message.getReactionById(Reactions.AGREE.getId()) == null)
+                if (message.getReaction(agree) == null)
                     message.addReaction(agree).queue();
 
-                if (disagree != null && message.getReactionById(Reactions.DISAGREE.getId()) == null)
+                if (message.getReaction(disagree) == null)
                     message.addReaction(disagree).queue();
 
                 int positive = 0, negative = 0;
                 for (MessageReaction reaction : message.getReactions()) {
-                    if (reaction.getReactionEmote().isEmoji())
-                        continue;
-
                     // We remove 1 from each agree and disagree because of the bots reaction
                     // And also remove one from the person who suggested it
                     // Maybe could even remove the actual reaction from the person as a visual indication
-                    if (reaction.getReactionEmote().getId().equals(Reactions.AGREE.getId())) {
+                    if (reaction.getEmoji().asCustom().getId().equals(Reactions.AGREE.getId())) {
                         positive = reaction.getCount() - 1;
                         if (Region.isProduction() && reaction.retrieveUsers().stream().map(ISnowflake::getId).anyMatch(s -> s.equals(message.getAuthor().getId()))) {
                             positive--;
                         }
                     }
 
-                    if (reaction.getReactionEmote().getId().equals(Reactions.DISAGREE.getId())) {
+                    if (reaction.getEmoji().asCustom().getId().equals(Reactions.DISAGREE.getId())) {
                         negative = reaction.getCount() - 1;
                         if (Region.isProduction() && reaction.retrieveUsers().stream().map(ISnowflake::getId).anyMatch(s -> s.equals(message.getAuthor().getId()))) {
                             negative--;
@@ -126,7 +131,7 @@ public class Curator {
                     reaction.retrieveUsers().forEach(user -> {
                         if (user.isBot()) return;
 
-                        log("User " + user.getAsTag() + " reacted with " + reaction.getReactionEmote().getName() + " to message " + message.getId());
+                        log("User " + user.getAsTag() + " reacted with " + reaction.getEmoji().getName() + " to message " + message.getId());
 
                         DiscordUser discordUser = findUser(user.getId());
                         if (discordUser == null)
@@ -135,7 +140,7 @@ public class Curator {
                         if (!users.contains(discordUser))
                             users.add(discordUser);
 
-                        switch (reaction.getReactionEmote().getName()) {
+                        switch (reaction.getEmoji().getName()) {
                             case "yes" -> {
                                 if (!discordUser.getAgrees().contains(message.getId())) {
                                     discordUser.getAgrees().add(message.getId());
@@ -228,7 +233,7 @@ public class Curator {
                 return;
             }
 
-            Emote greenlitEmoji = guild.getEmoteById(Reactions.GREENLIT.getId());
+            Emoji greenlitEmoji = guild.getEmojiById(Reactions.GREENLIT.getId());
             if (greenlitEmoji == null) {
                 Logger.error("Failed to find greenlit emoji!");
                 return;
@@ -249,8 +254,9 @@ public class Curator {
             TextChannel channel = ChannelManager.getChannel(group.getTo());
             if (channel == null) return;
 
-            Emote agree = NerdBotApp.getBot().getJDA().getEmoteById(Reactions.AGREE.getId());
-            Emote disagree = NerdBotApp.getBot().getJDA().getEmoteById(Reactions.DISAGREE.getId());
+            Emoji agree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.AGREE.getId());
+            Emoji disagree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.DISAGREE.getId());
+
             for (GreenlitMessage message : greenlitMessages) {
                 channel.sendMessageEmbeds(message.getEmbed().build()).queue(msg -> {
                     if (agree != null) msg.addReaction(agree).queue();

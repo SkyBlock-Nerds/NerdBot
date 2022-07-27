@@ -4,7 +4,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.util.Util;
-import org.apache.commons.lang3.StringUtils;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.bson.types.ObjectId;
 
@@ -142,7 +141,7 @@ public class GreenlitMessage {
 
         builder.setTitle(suggestionTitle, suggestionUrl);
         builder.setColor(Color.GREEN);
-        builder.setDescription("Tags: `" + (tags.isEmpty() ? "N/A" : StringUtils.join(tags, ", ")) + "`"
+        builder.setDescription("Tags: `" + (tags.isEmpty() ? "N/A" : String.join(", ", tags)) + "`"
                 + "\n\n"
                 + suggestionContent);
         builder.setTimestamp(suggestionDate.toInstant());
