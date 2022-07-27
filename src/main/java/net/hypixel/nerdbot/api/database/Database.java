@@ -44,9 +44,7 @@ public class Database implements ServerMonitorListener {
         MongoClientSettings clientSettings = MongoClientSettings.builder()
                 .applyConnectionString(connectionString)
                 .codecRegistry(codecRegistry)
-                .applyToServerSettings(builder -> {
-                    builder.addServerMonitorListener(this);
-                })
+                .applyToServerSettings(builder -> builder.addServerMonitorListener(this))
                 .build();
 
         mongoClient = MongoClients.create(clientSettings);
