@@ -49,25 +49,31 @@ public class NerdBot implements Bot {
     @Override
     public void create(String[] args) throws LoginException {
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
-                .setEventManager(new AnnotatedEventManager())
-                .disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE)
+                .addEventListeners(new MessageListener(), new FeatureEventListener())
                 .setActivity(Activity.competing("mc.hypixel.net"));
 
         configureMemoryUsage(builder);
 
         jda = builder.build();
+        try {
+            jda.awaitReady();
+        } catch (InterruptedException exception) {
+            Logger.error("Failed to create JDA instance!");
+            exception.printStackTrace();
+            System.exit(0);
+        }
 
         String fileName = Region.getRegion().name().toLowerCase() + ".config.json";
         try {
             File file = new File(Objects.requireNonNull(getClass().getClassLoader().getResource(fileName)).getFile());
             config = Util.loadConfig(file);
+            Logger.info("Loaded config from " + file.getAbsolutePath());
         } catch (NullPointerException | FileNotFoundException exception) {
             Logger.error("Could not find config file " + fileName);
             System.exit(-1);
         }
 
-        LightDrop commands = new LightDrop().hook(jda).enableAutoMapping("net.hypixel.nerdbot.command");
-        commands.setPrefix(config.getPrefix());
+        NerdBotApp.getBot().onStart();
     }
 
     @Override
@@ -86,6 +92,9 @@ public class NerdBot implements Bot {
 
         // Allow the bot to see all guild members
         builder.enableIntents(GatewayIntent.GUILD_MEMBERS);
+
+        // Enable the bot to see message content
+        builder.enableIntents(GatewayIntent.MESSAGE_CONTENT);
     }
 
     @Override
@@ -95,13 +104,17 @@ public class NerdBot implements Bot {
 
     @Override
     public void onStart() {
-        for (BotFeature feature : FEATURES) feature.onStart();
+        for (BotFeature feature : FEATURES) {
+            feature.onStart();
+            Logger.info("Started feature " + feature.getClass().getSimpleName());
+        }
         startTime = System.currentTimeMillis();
+        Logger.info("Bot started on region " + Region.getRegion());
     }
 
     @Override
-    public void registerListeners() {
-        jda.addEventListener(new ReadyListener(), new ShutdownListener(), new MessageListener());
+    public List<BotFeature> getFeatures() {
+        return FEATURES;
     }
 
     @Override
