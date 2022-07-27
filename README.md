@@ -34,7 +34,8 @@ The default bot prefix is `!` and can be changed in the config file.
 |---------------------------------------|-------------------------------------------------------------------------|---------------------|
 | `!curate`                             | Make the bot start a manual curation process on suggestions             | BAN_MEMBERS         |
 | `!userstats <user>`                   | Display some stats about a user such as their agree and disagree amount | BAN_MEMBERS         |
-| `!addchannelgroup <name> <from> <to>` | Suggest a feature for the bot                                           | BAN_MEMBERS         |
+| `!addchannelgroup <name> <from> <to>` | Add a channel group to collect and send suggestions                     | BAN_MEMBERS         |
+| `!removechannelgroup <name>`          | Remove a channel group                                                  | BAN_MEMBERS         |
 | `!getchannelgroups`                   | Display all channel groups                                              | BAN_MEMBERS         |
 | `!uptime`                             | Display the current bot uptime                                          | BAN_MEMBERS         |
 | `!botinfo`                            | Show more detailed information on the bot status                        | BAN_MEMBERS         |
