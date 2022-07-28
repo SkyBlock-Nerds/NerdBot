@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.command.slash.CommandArgument;
+import net.hypixel.nerdbot.api.command.slash.RestrictedSlashCommand;
 import net.hypixel.nerdbot.api.command.slash.SlashCommand;
 import net.hypixel.nerdbot.util.Logger;
 
@@ -38,6 +39,10 @@ public class CommandManager {
         }
 
         SlashCommandData data = Commands.slash(command.getCommandName(), command.getDescription());
+        if (command instanceof RestrictedSlashCommand) {
+            data.setDefaultPermissions(((RestrictedSlashCommand) command).getPermission());
+        }
+
         if (!command.getArgs().isEmpty()) {
             for (CommandArgument arg : command.getArgs()) {
                 data.addOption(arg.optionType(), arg.argument(), arg.description(), arg.required());
@@ -46,6 +51,7 @@ public class CommandManager {
 
         guild.upsertCommand(data).queue();
         guild.updateCommands().complete();
+        Logger.info("Registered command " + command.getCommandName() + " (" + command.getClass().getSimpleName() + ")");
     }
 
     public void registerCommands(SlashCommand... commands) {
@@ -80,5 +86,5 @@ public class CommandManager {
     public void setPrefix(String prefix) {
         this.prefix = prefix;
     }
-    
+
 }
