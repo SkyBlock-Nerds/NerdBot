@@ -1,9 +1,8 @@
-package net.hypixel.nerdbot.listener;
+package net.hypixel.nerdbot.api.feature;
 
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.feature.FeatureListener;
 import org.jetbrains.annotations.NotNull;
 
 public class FeatureEventListener implements EventListener {
