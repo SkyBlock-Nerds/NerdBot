@@ -1,27 +1,8 @@
 package net.hypixel.nerdbot.command;
 
-import me.neiizun.lightdrop.automapping.AutoMapping;
-import me.neiizun.lightdrop.command.Command;
-import me.neiizun.lightdrop.command.CommandContext;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.api.entities.User;
-import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.channel.ChannelGroup;
-import net.hypixel.nerdbot.api.channel.Reactions;
-import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.DiscordUser;
-import net.hypixel.nerdbot.curator.Curator;
-import net.hypixel.nerdbot.util.Region;
-import net.hypixel.nerdbot.util.Time;
-import net.hypixel.nerdbot.util.Util;
-
-import java.util.Date;
-
-@AutoMapping
 public class ModCommands {
 
-    @Command(name = "curate", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
+    /*@Command(name = "curate", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
     public void curate(CommandContext context) {
         if (!Database.getInstance().isConnected()) {
             context.getMessage().reply("Cannot connect to the database!").queue();
@@ -48,7 +29,7 @@ public class ModCommands {
         message.reply("Curation started at " + new Date()).queue();
         NerdBotApp.EXECUTOR_SERVICE.submit(() -> {
             curator.curate();
-            message.addReaction(Reactions.THUMBS_UP_EMOJI).queue();
+            message.addReaction(Emoji.fromUnicode(Reactions.THUMBS_UP_EMOJI)).queue();
             message.reply("Curation complete at " + new Date() + "! Took " + curator.getElapsedTime() + "ms").queue();
         });
     }
@@ -67,8 +48,12 @@ public class ModCommands {
         }
 
         User user;
-        if (!context.getMessage().getMentionedUsers().isEmpty()) user = context.getMessage().getMentionedUsers().get(0);
-        else user = context.getMessage().getJDA().getUserById(args[0]);
+
+        if (!context.getMessage().getMentions().getMentions(Message.MentionType.USER).isEmpty()) {
+            user = NerdBotApp.getBot().getJDA().getUserById(context.getMessage().getMentions().getMentions(Message.MentionType.USER).get(0).getId());
+        } else {
+            user = context.getMessage().getJDA().getUserById(args[0]);
+        }
 
         if (user == null) {
             context.getMessage().reply("Cannot find that user!").queue();
@@ -126,11 +111,7 @@ public class ModCommands {
     public void getGroups(CommandContext context) {
         StringBuilder builder = new StringBuilder();
         builder.append("**Channel Groups:**").append("\n");
-        Database.getInstance().getChannelGroups().forEach(group ->
-                builder.append(" - ")
-                        .append(group.getName())
-                        .append(" (from: ").append(group.getFrom()).append(", to: ").append(group.getTo()).append(")")
-                        .append("\n"));
+        Database.getInstance().getChannelGroups().forEach(group -> builder.append(" - ").append(group.getName()).append(" (from: ").append(group.getFrom()).append(", to: ").append(group.getTo()).append(")").append("\n"));
         context.getMessage().reply(builder.toString()).queue();
     }
 
@@ -154,6 +135,6 @@ public class ModCommands {
         long totalMemory = Runtime.getRuntime().totalMemory();
         builder.append(" - Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
         context.getMessage().reply(builder.toString()).queue();
-    }
+    }*/
 
 }
