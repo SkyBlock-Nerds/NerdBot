@@ -50,8 +50,7 @@ public class CommandManager {
         }
 
         guild.upsertCommand(data).queue();
-        guild.updateCommands().complete();
-        Logger.info("Registered command " + command.getCommandName() + " (" + command.getClass().getSimpleName() + ")");
+        Logger.info("Registered command: " + command.getCommandName() + " (" + command.getClass().getSimpleName() + ")");
     }
 
     public void registerCommands(SlashCommand... commands) {
