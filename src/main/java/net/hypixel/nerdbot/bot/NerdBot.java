@@ -51,7 +51,7 @@ public class NerdBot implements Bot {
     @Override
     public void create(String[] args) throws LoginException {
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
-                .addEventListeners(new MessageListener(), new FeatureEventListener())
+                .addEventListeners(new MessageListener(), new FeatureEventListener(), new CommandListener(), new ShutdownListener())
                 .setActivity(Activity.competing("mc.hypixel.net"));
 
         configureMemoryUsage(builder);
