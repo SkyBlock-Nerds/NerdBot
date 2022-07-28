@@ -17,6 +17,9 @@ import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.command.CurateSlashCommand;
 import net.hypixel.nerdbot.command.UserStatsCommand;
+import net.hypixel.nerdbot.command.channelgroup.AddChannelGroupCommand;
+import net.hypixel.nerdbot.command.channelgroup.GetChannelGroupCommand;
+import net.hypixel.nerdbot.command.channelgroup.ListChannelGroupsCommand;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
@@ -78,7 +81,13 @@ public class NerdBot implements Bot {
         }
 
         commands = new CommandManager();
-        commands.registerCommands(new CurateSlashCommand(), new UserStatsCommand());
+        commands.registerCommands(
+                new CurateSlashCommand(),
+                new UserStatsCommand(),
+                new AddChannelGroupCommand(),
+                new GetChannelGroupCommand(),
+                new ListChannelGroupsCommand()
+        );
 
         NerdBotApp.getBot().onStart();
     }
