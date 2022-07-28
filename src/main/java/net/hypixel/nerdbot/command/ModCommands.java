@@ -1,27 +1,8 @@
 package net.hypixel.nerdbot.command;
 
-import me.neiizun.lightdrop.automapping.AutoMapping;
-import me.neiizun.lightdrop.command.Command;
-import me.neiizun.lightdrop.command.CommandContext;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.api.entities.User;
-import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.channel.ChannelGroup;
-import net.hypixel.nerdbot.api.channel.Reactions;
-import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.DiscordUser;
-import net.hypixel.nerdbot.curator.Curator;
-import net.hypixel.nerdbot.util.Region;
-import net.hypixel.nerdbot.util.Time;
-import net.hypixel.nerdbot.util.Util;
-
-import java.util.Date;
-
-@AutoMapping
 public class ModCommands {
 
-    @Command(name = "curate", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
+    /*@Command(name = "curate", permission = "BAN_MEMBERS", permissionMessage = "You do not have permission to use this command.")
     public void curate(CommandContext context) {
         if (!Database.getInstance().isConnected()) {
             context.getMessage().reply("Cannot connect to the database!").queue();
@@ -154,6 +135,6 @@ public class ModCommands {
         long totalMemory = Runtime.getRuntime().totalMemory();
         builder.append(" - Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
         context.getMessage().reply(builder.toString()).queue();
-    }
+    }*/
 
 }
