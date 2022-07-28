@@ -15,11 +15,11 @@ import net.hypixel.nerdbot.api.config.BotConfig;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
-import net.hypixel.nerdbot.feature.BugReportingFeature;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.MessageListener;
+import net.hypixel.nerdbot.listener.ShutdownListener;
 import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Region;
 import net.hypixel.nerdbot.util.Util;
@@ -51,7 +51,7 @@ public class NerdBot implements Bot {
     @Override
     public void create(String[] args) throws LoginException {
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
-                .addEventListeners(new MessageListener(), new FeatureEventListener(), new CommandListener())
+                .addEventListeners(new MessageListener(), new FeatureEventListener())
                 .setActivity(Activity.competing("mc.hypixel.net"));
 
         configureMemoryUsage(builder);
