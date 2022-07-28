@@ -131,7 +131,7 @@ public class Curator {
                     reaction.retrieveUsers().forEach(user -> {
                         if (user.isBot()) return;
 
-                        log("[ " + group.getName() + "] User " + user.getAsTag() + " reacted with " + reaction.getEmoji().getName() + " to message " + message.getId());
+                        log("[" + group.getName() + "] User " + user.getAsTag() + " reacted with " + reaction.getEmoji().getName() + " to message " + message.getId());
 
                         DiscordUser discordUser = findUser(user.getId());
                         if (discordUser == null)
@@ -168,12 +168,12 @@ public class Curator {
 
                 BotConfig config = NerdBotApp.getBot().getConfig();
                 if (positive == 0 && negative == 0 || positive < config.getMinimumThreshold()) {
-                    log("[ " + group.getName() + "] Message " + message.getId() + " is below the minimum threshold! (" + positive + "/" + negative + ") (min threshold: " + config.getMinimumThreshold() + ")");
+                    log("[" + group.getName() + "] Message " + message.getId() + " is below the minimum threshold! (" + positive + "/" + negative + ") (min threshold: " + config.getMinimumThreshold() + ")");
                     continue;
                 }
 
                 double ratio = getRatio(positive, negative);
-                log("[ " + group.getName() + "] Message " + message.getId() + " has a ratio of " + ratio + "%");
+                log("[" + group.getName() + "] Message " + message.getId() + " has a ratio of " + ratio + "%");
                 if (ratio < config.getPercentage()) continue;
 
                 // Get the title and tags of the suggestion to save and display
@@ -183,7 +183,7 @@ public class Curator {
                 List<String> tags = new ArrayList<>();
                 while (matcher.find()) {
                     tags.add(matcher.group(1));
-                    log("[ " + group.getName() + "] Found tag '" + matcher.group(1) + "' in message " + message.getId());
+                    log("[" + group.getName() + "] Found tag '" + matcher.group(1) + "' in message " + message.getId());
                 }
 
                 GreenlitMessage msg = new GreenlitMessage()
@@ -198,7 +198,7 @@ public class Curator {
                 String[] lines = message.getContentRaw().split("\n");
                 msg.setSuggestionTitle(lines.length >= 1 ? lines[0] : "No Title");
                 greenlitMessages.add(msg);
-                log("[ " + group.getName() + "] Added suggestion " + message.getId() + " created by " + message.getAuthor().getAsTag() + " to the greenlit collection");
+                log("[" + group.getName() + "] Added suggestion " + message.getId() + " created by " + message.getAuthor().getAsTag() + " to the greenlit collection");
             }
 
             if (!users.isEmpty())
