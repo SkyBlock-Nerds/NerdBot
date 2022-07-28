@@ -43,6 +43,7 @@ public class CurateSlashCommand implements SlashCommand, RestrictedSlashCommand 
     public void execute(SlashCommandInteractionEvent event) {
         if (!Database.getInstance().isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
+            return;
         }
 
         int amount = 50;
