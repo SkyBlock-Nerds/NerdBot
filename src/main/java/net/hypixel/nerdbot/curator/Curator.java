@@ -219,7 +219,7 @@ public class Curator {
     /**
      * Apply the greenlit emoji to all saved greenlit messages
      */
-    public void applyEmoji() {
+    private void applyEmoji() {
         for (ChannelGroup group : groups) {
             Guild guild = Util.getGuild(group.getGuildId());
             if (guild == null) {
@@ -247,8 +247,7 @@ public class Curator {
     /**
      * Send all saved greenlit messages to the {@link ChannelGroup#getTo()}
      */
-    public void sendGreenlitToChannel() {
-
+    private void sendGreenlitToChannel() {
         for (ChannelGroup group : groups) {
             if (group == null) return;
             TextChannel channel = ChannelManager.getChannel(group.getTo());
@@ -269,7 +268,7 @@ public class Curator {
     /**
      * Insert all saved greenlit messages into the database.
      */
-    public void insertIntoDatabase() {
+    private void insertIntoDatabase() {
         if (!greenlitMessages.isEmpty()) {
             Database.getInstance().insertGreenlitMessages(greenlitMessages);
             log("Inserted " + greenlitMessages.size() + " greenlit message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
