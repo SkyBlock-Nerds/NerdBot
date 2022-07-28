@@ -10,6 +10,7 @@ import net.hypixel.nerdbot.api.command.slash.RestrictedSlashCommand;
 import net.hypixel.nerdbot.api.command.slash.SlashCommand;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.curator.Curator;
+import net.hypixel.nerdbot.util.Logger;
 
 import java.util.List;
 
@@ -43,6 +44,7 @@ public class CurateSlashCommand implements SlashCommand, RestrictedSlashCommand 
     public void execute(SlashCommandInteractionEvent event) {
         if (!Database.getInstance().isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
+            Logger.error("Couldn't connect to the database!");
             return;
         }
 
