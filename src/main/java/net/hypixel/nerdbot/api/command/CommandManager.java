@@ -7,6 +7,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.command.slash.CommandArgument;
 import net.hypixel.nerdbot.api.command.slash.RestrictedSlashCommand;
 import net.hypixel.nerdbot.api.command.slash.SlashCommand;
+import net.hypixel.nerdbot.api.command.slash.SlashCommandArguments;
 import net.hypixel.nerdbot.util.Logger;
 
 import java.util.ArrayList;
@@ -43,9 +44,11 @@ public class CommandManager {
             data.setDefaultPermissions(((RestrictedSlashCommand) command).getPermission());
         }
 
-        if (!command.getArgs().isEmpty()) {
-            for (CommandArgument arg : command.getArgs()) {
-                data.addOption(arg.optionType(), arg.argument(), arg.description(), arg.required());
+        if (command instanceof SlashCommandArguments) {
+            if (!((SlashCommandArguments) command).getArgs().isEmpty()) {
+                for (CommandArgument arg : ((SlashCommandArguments) command).getArgs()) {
+                    data.addOption(arg.optionType(), arg.argument(), arg.description(), arg.required());
+                }
             }
         }
 
