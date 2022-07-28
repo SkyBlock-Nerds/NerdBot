@@ -15,6 +15,7 @@ import net.hypixel.nerdbot.api.config.BotConfig;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
+import net.hypixel.nerdbot.command.CurateSlashCommand;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
@@ -76,7 +77,7 @@ public class NerdBot implements Bot {
         }
 
         commands = new CommandManager();
-        // TODO register commands here
+        commands.registerCommand(new CurateSlashCommand());
 
         NerdBotApp.getBot().onStart();
     }
