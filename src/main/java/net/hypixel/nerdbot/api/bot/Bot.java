@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.api.bot;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.hypixel.nerdbot.api.command.CommandManager;
 import net.hypixel.nerdbot.api.config.BotConfig;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 
@@ -21,6 +22,8 @@ public interface Bot {
     void onStart();
 
     List<BotFeature> getFeatures();
+
+    CommandManager getCommands();
 
     void onEnd();
 

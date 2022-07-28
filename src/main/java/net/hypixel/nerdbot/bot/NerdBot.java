@@ -1,24 +1,25 @@
 package net.hypixel.nerdbot.bot;
 
-import me.neiizun.lightdrop.LightDrop;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
+import net.hypixel.nerdbot.api.command.CommandListener;
+import net.hypixel.nerdbot.api.command.CommandManager;
 import net.hypixel.nerdbot.api.config.BotConfig;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.feature.BotFeature;
+import net.hypixel.nerdbot.api.feature.FeatureEventListener;
+import net.hypixel.nerdbot.feature.BugReportingFeature;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.MessageListener;
-import net.hypixel.nerdbot.listener.ReadyListener;
-import net.hypixel.nerdbot.listener.ShutdownListener;
 import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Region;
 import net.hypixel.nerdbot.util.Util;
@@ -40,6 +41,7 @@ public class NerdBot implements Bot {
 
     private JDA jda;
     private BotConfig config;
+    private CommandManager commands;
 
     private long startTime;
 
@@ -49,7 +51,7 @@ public class NerdBot implements Bot {
     @Override
     public void create(String[] args) throws LoginException {
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
-                .addEventListeners(new MessageListener(), new FeatureEventListener())
+                .addEventListeners(new MessageListener(), new FeatureEventListener(), new CommandListener())
                 .setActivity(Activity.competing("mc.hypixel.net"));
 
         configureMemoryUsage(builder);
@@ -72,6 +74,9 @@ public class NerdBot implements Bot {
             Logger.error("Could not find config file " + fileName);
             System.exit(-1);
         }
+
+        commands = new CommandManager();
+        // TODO register commands here
 
         NerdBotApp.getBot().onStart();
     }
@@ -126,6 +131,11 @@ public class NerdBot implements Bot {
     @Override
     public BotConfig getConfig() {
         return config;
+    }
+
+    @Override
+    public CommandManager getCommands() {
+        return commands;
     }
 
     @Override
