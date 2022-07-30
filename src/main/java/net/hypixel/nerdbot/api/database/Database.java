@@ -146,8 +146,12 @@ public class Database implements ServerMonitorListener {
     }
 
     public void deleteChannelGroup(ChannelGroup channelGroup) {
-        channelCollection.deleteOne(Filters.eq("name", channelGroup.getName()));
-        log("Deleted channel group " + channelGroup.getName());
+        deleteChannelGroup(channelGroup.getName());
+    }
+
+    public void deleteChannelGroup(String name) {
+        channelCollection.deleteOne(Filters.eq("name", name));
+        log("Deleted channel group " + name);
     }
 
     public List<ChannelGroup> getChannelGroups() {
