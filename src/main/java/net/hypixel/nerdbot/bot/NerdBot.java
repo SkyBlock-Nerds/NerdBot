@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.bot;
 
+import net.aerh.jdacommands.CommandManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -9,8 +10,6 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
-import net.hypixel.nerdbot.api.command.CommandListener;
-import net.hypixel.nerdbot.api.command.CommandManager;
 import net.hypixel.nerdbot.api.config.BotConfig;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.feature.BotFeature;
@@ -51,7 +50,7 @@ public class NerdBot implements Bot {
     @Override
     public void create(String[] args) throws LoginException {
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
-                .addEventListeners(new MessageListener(), new FeatureEventListener(), new CommandListener(), new ShutdownListener())
+                .addEventListeners(new MessageListener(), new FeatureEventListener(), new ShutdownListener())
                 .setActivity(Activity.competing("mc.hypixel.net"));
 
         configureMemoryUsage(builder);
@@ -75,7 +74,7 @@ public class NerdBot implements Bot {
             System.exit(-1);
         }
 
-        commands = new CommandManager();
+        commands = new CommandManager(jda);
         commands.registerCommandsInPackage("net.hypixel.nerdbot.command");
 
         NerdBotApp.getBot().onStart();
