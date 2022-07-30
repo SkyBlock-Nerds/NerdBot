@@ -1,21 +1,21 @@
 package net.hypixel.nerdbot.command;
 
+import net.aerh.jdacommands.command.CommandArgument;
+import net.aerh.jdacommands.command.HasArguments;
+import net.aerh.jdacommands.command.RequiresPermission;
+import net.aerh.jdacommands.command.SlashCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.command.slash.CommandArgument;
-import net.hypixel.nerdbot.api.command.slash.RestrictedSlashCommand;
-import net.hypixel.nerdbot.api.command.slash.SlashCommand;
-import net.hypixel.nerdbot.api.command.slash.SlashCommandArguments;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.curator.Curator;
 import net.hypixel.nerdbot.util.Logger;
 
 import java.util.List;
 
-public class CurateSlashCommand implements SlashCommand, RestrictedSlashCommand, SlashCommandArguments {
+public class CurateSlashCommand implements SlashCommand, RequiresPermission, HasArguments {
 
     @Override
     public String getCommandName() {
@@ -28,7 +28,7 @@ public class CurateSlashCommand implements SlashCommand, RestrictedSlashCommand,
     }
 
     @Override
-    public List<CommandArgument> getArgs() {
+    public List<CommandArgument> getArguments() {
         return List.of(
                 CommandArgument.of(OptionType.STRING, "group", "The ChannelGroup to curate", false),
                 CommandArgument.of(OptionType.INTEGER, "amount", "The amount of suggestions to curate", false)
@@ -36,7 +36,7 @@ public class CurateSlashCommand implements SlashCommand, RestrictedSlashCommand,
     }
 
     @Override
-    public DefaultMemberPermissions getPermission() {
+    public DefaultMemberPermissions permissionRequired() {
         return DefaultMemberPermissions.enabledFor(Permission.BAN_MEMBERS);
     }
 

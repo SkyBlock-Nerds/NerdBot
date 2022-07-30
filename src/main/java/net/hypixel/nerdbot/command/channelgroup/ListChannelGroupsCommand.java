@@ -1,20 +1,20 @@
 package net.hypixel.nerdbot.command.channelgroup;
 
+import net.aerh.jdacommands.command.RequiresPermission;
+import net.aerh.jdacommands.command.SlashCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
-import net.hypixel.nerdbot.api.command.slash.RestrictedSlashCommand;
-import net.hypixel.nerdbot.api.command.slash.SlashCommand;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.util.Logger;
 
 import java.util.List;
 
-public class ListChannelGroupsCommand implements SlashCommand, RestrictedSlashCommand {
+public class ListChannelGroupsCommand implements SlashCommand, RequiresPermission {
 
     @Override
-    public DefaultMemberPermissions getPermission() {
+    public DefaultMemberPermissions permissionRequired() {
         return DefaultMemberPermissions.enabledFor(Permission.BAN_MEMBERS);
     }
 

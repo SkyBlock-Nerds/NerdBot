@@ -19,6 +19,10 @@
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
+        <repository>
+            <id>repo.aerh.net</id>
+            <url>https://repo.aerh.net</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -41,6 +45,11 @@
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
             <version>0.10.2</version>
+        </dependency>
+        <dependency>
+            <groupId>net.aerh</groupId>
+            <artifactId>JDASlashCommands</artifactId>
+            <version>1.0.0</version>
         </dependency>
     </dependencies>
 
