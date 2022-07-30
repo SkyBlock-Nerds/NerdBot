@@ -20,13 +20,7 @@ public class CommandManager {
 
     private final List<SlashCommand> commands = new ArrayList<>();
 
-    private String prefix = "!";
-
     public CommandManager() {
-    }
-
-    public CommandManager(String prefix) {
-        this.prefix = prefix;
     }
 
     public List<SlashCommand> getCommands() {
@@ -97,14 +91,6 @@ public class CommandManager {
                 return command;
         }
         return null;
-    }
-
-    public String getPrefix() {
-        return prefix;
-    }
-
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
     }
 
 }
