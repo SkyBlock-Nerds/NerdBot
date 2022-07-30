@@ -24,6 +24,10 @@ public class Curator {
     private final List<GreenlitMessage> greenlitMessages;
     private final List<DiscordUser> users;
 
+    private final Emoji agree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.AGREE.getId());
+    private final Emoji disagree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.DISAGREE.getId());
+    private final Emoji greenlit = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.GREENLIT.getId());
+
     private long elapsed;
 
     /**
@@ -67,6 +71,10 @@ public class Curator {
             return;
         }
 
+        if (agree == null || disagree == null || greenlit == null) {
+            Logger.error("[Curator] Could not find emoji for agree, disagree, or greenlit!");
+            return;
+        }
 
         for (ChannelGroup group : groups) {
             log("Curation started for group " + group.getName());
@@ -88,15 +96,6 @@ public class Curator {
             };
             Timer timer = new Timer();
             timer.schedule(timerTask, 0, 10_000);
-
-            Emoji agree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.AGREE.getId());
-            Emoji disagree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.DISAGREE.getId());
-            Emoji greenlit = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.GREENLIT.getId());
-
-            if (agree == null || disagree == null || greenlit == null) {
-                Logger.error("[Curator] Could not find emoji for agree, disagree, or greenlit!");
-                return;
-            }
 
             for (Message message : messages) {
                 if (message.getAuthor().isBot() || message.getReaction(greenlit) != null)
@@ -220,26 +219,28 @@ public class Curator {
      * Apply the greenlit emoji to all saved greenlit messages
      */
     private void applyEmoji() {
-        for (ChannelGroup group : groups) {
-            Guild guild = Util.getGuild(group.getGuildId());
-            if (guild == null) {
-                Logger.error("Guild was null wtf happened");
-                return;
-            }
+        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        if (guild == null) {
+            error("Couldn't find the guild");
+            return;
+        }
 
+        Emoji greenlitEmoji = guild.getEmojiById(Reactions.GREENLIT.getId());
+        if (greenlitEmoji == null) {
+            error("Failed to find greenlit emoji!");
+            return;
+        }
+
+        for (ChannelGroup group : groups) {
             TextChannel suggestionChannel = ChannelManager.getChannel(group.getFrom());
             if (suggestionChannel == null) {
-                Logger.error("Failed to find suggestion channel in group " + group.getName() + "!");
+                error("Failed to find 'from' channel in group " + group.getName() + "!");
                 return;
             }
 
-            Emoji greenlitEmoji = guild.getEmojiById(Reactions.GREENLIT.getId());
-            if (greenlitEmoji == null) {
-                Logger.error("Failed to find greenlit emoji!");
-                return;
-            }
             for (GreenlitMessage msg : greenlitMessages)
                 suggestionChannel.retrieveMessageById(msg.getMessageId()).queue(message -> message.addReaction(greenlitEmoji).queue());
+
             log("Applied greenlit emoji to " + greenlitMessages.size() + " message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date() + " in group " + group.getName());
         }
     }
@@ -248,18 +249,22 @@ public class Curator {
      * Send all saved greenlit messages to the {@link ChannelGroup#getTo()}
      */
     private void sendGreenlitToChannel() {
-        for (ChannelGroup group : groups) {
-            if (group == null) return;
-            TextChannel channel = ChannelManager.getChannel(group.getTo());
-            if (channel == null) return;
+        if (agree == null || disagree == null) {
+            error("Couldn't find the agree or disagree emojis when sending greenlit messages to a channel!");
+            return;
+        }
 
-            Emoji agree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.AGREE.getId());
-            Emoji disagree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.DISAGREE.getId());
+        for (ChannelGroup group : groups) {
+            TextChannel channel = ChannelManager.getChannel(group.getTo());
+            if (channel == null) {
+                error("Couldn't find where to send greenlit suggestions to!");
+                return;
+            }
 
             for (GreenlitMessage message : greenlitMessages) {
                 channel.sendMessageEmbeds(message.getEmbed().build()).queue(msg -> {
-                    if (agree != null) msg.addReaction(agree).queue();
-                    if (disagree != null) msg.addReaction(disagree).queue();
+                    msg.addReaction(agree).queue();
+                    msg.addReaction(disagree).queue();
                 });
             }
         }
@@ -280,7 +285,8 @@ public class Curator {
     private DiscordUser findUser(String id) {
         DiscordUser user = null;
         for (DiscordUser discordUser : users)
-            if (discordUser.getDiscordId().equals(id)) user = discordUser;
+            if (discordUser.getDiscordId().equals(id))
+                user = discordUser;
 
         if (user == null) user = Database.getInstance().getUser(id);
         return user;
@@ -292,6 +298,10 @@ public class Curator {
 
     private void log(String message) {
         Logger.info("[Curator] " + message);
+    }
+
+    private void error(String message) {
+        Logger.error("[Curator] " + message);
     }
 
     public int getLimit() {

@@ -26,17 +26,16 @@ public class MessageListener implements EventListener {
 
             Guild guild = messageEvent.getGuild();
             List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
-            if (groups == null) return;
-            if (groups.isEmpty()) return;
-
-            Channel channel = messageEvent.getChannel();
-            Message message = messageEvent.getMessage();
+            if (groups == null || groups.isEmpty()) return;
 
             Emoji yes = guild.getEmojiById(Reactions.AGREE.getId()), no = guild.getEmojiById(Reactions.DISAGREE.getId());
             if (yes == null || no == null) {
                 Logger.error("Couldn't find the emote for yes or no!");
                 return;
             }
+
+            Channel channel = messageEvent.getChannel();
+            Message message = messageEvent.getMessage();
 
             for (ChannelGroup group : groups) {
                 if (!group.getFrom().equals(channel.getId())) continue;
@@ -54,6 +53,19 @@ public class MessageListener implements EventListener {
                 message.addReaction(no).queue();
             }
         }
+    }
+
+    private String getFirstLine(Message message) {
+        String firstLine = message.getContentRaw().split("\n")[0];
+
+        if (firstLine == null || firstLine.equals("")) {
+            firstLine = "No Title";
+
+            if (message.getEmbeds().get(0) != null)
+                firstLine = message.getEmbeds().get(0).getTitle();
+        }
+
+        return firstLine.substring(0, Math.min(30, firstLine.length()));
     }
 
 }
