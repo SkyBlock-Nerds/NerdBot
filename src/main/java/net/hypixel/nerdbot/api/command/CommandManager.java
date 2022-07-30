@@ -9,9 +9,12 @@ import net.hypixel.nerdbot.api.command.slash.RestrictedSlashCommand;
 import net.hypixel.nerdbot.api.command.slash.SlashCommand;
 import net.hypixel.nerdbot.api.command.slash.SlashCommandArguments;
 import net.hypixel.nerdbot.util.Logger;
+import org.reflections.Reflections;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class CommandManager {
 
@@ -60,6 +63,20 @@ public class CommandManager {
         for (SlashCommand command : commands) {
             registerCommand(command);
         }
+    }
+
+    public void registerCommandsInPackage(String pkg) {
+        Reflections reflections = new Reflections(pkg);
+        Set<Class<? extends SlashCommand>> classes = reflections.getSubTypesOf(SlashCommand.class);
+
+        classes.forEach(aClass -> {
+            try {
+                registerCommand(aClass.getConstructor().newInstance());
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public void unregisterCommand(SlashCommand command) {
