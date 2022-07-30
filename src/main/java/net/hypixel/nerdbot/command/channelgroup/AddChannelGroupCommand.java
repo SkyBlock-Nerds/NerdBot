@@ -1,24 +1,24 @@
 package net.hypixel.nerdbot.command.channelgroup;
 
+import net.aerh.jdacommands.command.CommandArgument;
+import net.aerh.jdacommands.command.HasArguments;
+import net.aerh.jdacommands.command.RequiresPermission;
+import net.aerh.jdacommands.command.SlashCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Channel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
-import net.hypixel.nerdbot.api.command.slash.CommandArgument;
-import net.hypixel.nerdbot.api.command.slash.RestrictedSlashCommand;
-import net.hypixel.nerdbot.api.command.slash.SlashCommand;
-import net.hypixel.nerdbot.api.command.slash.SlashCommandArguments;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.util.Logger;
 
 import java.util.List;
 
-public class AddChannelGroupCommand implements SlashCommand, RestrictedSlashCommand, SlashCommandArguments {
+public class AddChannelGroupCommand implements SlashCommand, RequiresPermission, HasArguments {
 
     @Override
-    public DefaultMemberPermissions getPermission() {
+    public DefaultMemberPermissions permissionRequired() {
         return DefaultMemberPermissions.enabledFor(Permission.BAN_MEMBERS);
     }
 
@@ -33,7 +33,7 @@ public class AddChannelGroupCommand implements SlashCommand, RestrictedSlashComm
     }
 
     @Override
-    public List<CommandArgument> getArgs() {
+    public List<CommandArgument> getArguments() {
         return List.of(
                 CommandArgument.of(OptionType.STRING, "name", "The name of the ChannelGroup", true),
                 CommandArgument.of(OptionType.CHANNEL, "from", "The channel to take submissions from", true),

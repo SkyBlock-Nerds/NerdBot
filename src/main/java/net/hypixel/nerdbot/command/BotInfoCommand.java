@@ -1,20 +1,20 @@
 package net.hypixel.nerdbot.command;
 
+import net.aerh.jdacommands.command.RequiresPermission;
+import net.aerh.jdacommands.command.SlashCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.command.slash.RestrictedSlashCommand;
-import net.hypixel.nerdbot.api.command.slash.SlashCommand;
 import net.hypixel.nerdbot.util.Region;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
 
-public class BotInfoCommand implements SlashCommand, RestrictedSlashCommand {
+public class BotInfoCommand implements SlashCommand, RequiresPermission {
 
     @Override
-    public DefaultMemberPermissions getPermission() {
+    public DefaultMemberPermissions permissionRequired() {
         return DefaultMemberPermissions.enabledFor(Permission.BAN_MEMBERS);
     }
 
