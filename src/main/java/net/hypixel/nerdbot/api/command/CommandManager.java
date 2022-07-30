@@ -43,6 +43,7 @@ public class CommandManager {
         }
 
         SlashCommandData data = Commands.slash(command.getCommandName(), command.getDescription());
+
         if (command instanceof RestrictedSlashCommand) {
             data.setDefaultPermissions(((RestrictedSlashCommand) command).getPermission());
         }

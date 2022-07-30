@@ -15,13 +15,16 @@ public class UserGrabberFeature extends BotFeature {
     @Override
     public void onStart() {
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
-        if (guild == null)
-            throw new RuntimeException("Couldn't find the guild specified in the bot config!");
+        if (guild == null) {
+            Logger.error("Couldn't find the guild specified in the bot config!");
+            return;
+        }
 
         Logger.info("Grabbing users from guild " + guild.getName());
-        List<DiscordUser> existingUsers = Database.getInstance().getUsers();
+        List<DiscordUser> users = Database.getInstance().getUsers();
+
         guild.loadMembers(member -> {
-            if (!member.getUser().isBot() && !containsUser(existingUsers, member.getId())) {
+            if (!member.getUser().isBot() && !containsUser(users, member.getId())) {
                 Logger.info("Adding DiscordUser " + member.getUser().getAsTag() + " to database");
                 DiscordUser discordUser = new DiscordUser(member.getId(), null, Collections.emptyList(), Collections.emptyList());
                 Database.getInstance().insertUser(discordUser);
