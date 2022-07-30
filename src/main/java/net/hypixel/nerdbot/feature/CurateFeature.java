@@ -21,7 +21,7 @@ public class CurateFeature extends BotFeature {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                Curator curator = new Curator(100, Database.getInstance().getChannelGroups());
+                Curator curator = new Curator(25, Database.getInstance().getChannelGroups());
                 NerdBotApp.EXECUTOR_SERVICE.submit(curator::curate);
             }
         };
