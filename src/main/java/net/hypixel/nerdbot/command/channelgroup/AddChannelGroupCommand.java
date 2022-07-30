@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.command.channelgroup;
 
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Channel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -35,8 +36,8 @@ public class AddChannelGroupCommand implements SlashCommand, RestrictedSlashComm
     public List<CommandArgument> getArgs() {
         return List.of(
                 CommandArgument.of(OptionType.STRING, "name", "The name of the ChannelGroup", true),
-                CommandArgument.of(OptionType.STRING, "from", "The channel to take submissions from", true),
-                CommandArgument.of(OptionType.STRING, "to", "The channel to send approved submissions", true)
+                CommandArgument.of(OptionType.CHANNEL, "from", "The channel to take submissions from", true),
+                CommandArgument.of(OptionType.CHANNEL, "to", "The channel to send approved submissions", true)
         );
     }
 
@@ -49,10 +50,10 @@ public class AddChannelGroupCommand implements SlashCommand, RestrictedSlashComm
         }
 
         String name = event.getOption("name").getAsString();
-        String from = event.getOption("from").getAsString();
-        String to = event.getOption("to").getAsString();
+        Channel from = event.getOption("from").getAsChannel();
+        Channel to = event.getOption("to").getAsChannel();
 
-        ChannelGroup channelGroup = new ChannelGroup(name, event.getGuild().getId(), from, to);
+        ChannelGroup channelGroup = new ChannelGroup(name, event.getGuild().getId(), from.getId(), to.getId());
         Database.getInstance().insertChannelGroup(channelGroup);
         event.reply("Added channel group " + name + " to the database!").setEphemeral(true).queue();
     }
