@@ -40,15 +40,7 @@ public class MessageListener implements EventListener {
             for (ChannelGroup group : groups) {
                 if (!group.getFrom().equals(channel.getId())) continue;
 
-                String firstLine = message.getContentRaw().split("\n")[0];
-                if (firstLine == null || firstLine.equals("")) {
-                    if (message.getEmbeds().get(0) != null) firstLine = message.getEmbeds().get(0).getTitle();
-                    else firstLine = "No Title";
-                } else if (firstLine.length() > 30) {
-                    firstLine = firstLine.substring(0, 30) + "...";
-                }
-
-                message.createThreadChannel("[Discussion] " + firstLine).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
+                message.createThreadChannel("[Discussion] " + getFirstLine(message)).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
                 message.addReaction(yes).queue();
                 message.addReaction(no).queue();
             }
