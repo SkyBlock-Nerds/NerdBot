@@ -5,6 +5,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.curator.Curator;
 import net.hypixel.nerdbot.util.Logger;
+import net.hypixel.nerdbot.util.Region;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -22,12 +23,12 @@ public class CurateFeature extends BotFeature {
             @Override
             public void run() {
                 Curator curator = new Curator(25, Database.getInstance().getChannelGroups());
-                NerdBotApp.EXECUTOR_SERVICE.submit(curator::curate);
+                curator.curate();
             }
         };
 
         Timer timer = new Timer();
-        timer.scheduleAtFixedRate(timerTask, 30_000L, NerdBotApp.getBot().getConfig().getInterval());
+        timer.scheduleAtFixedRate(timerTask, Region.isDev() ? 5_000L : 30_000L, NerdBotApp.getBot().getConfig().getInterval());
     }
 
     @Override

@@ -16,6 +16,7 @@ import net.hypixel.nerdbot.api.channel.Channel;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Logger;
+import net.hypixel.nerdbot.util.Region;
 import net.hypixel.nerdbot.util.Users;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
@@ -44,7 +45,10 @@ public class Database implements ServerMonitorListener {
         MongoClientSettings clientSettings = MongoClientSettings.builder()
                 .applyConnectionString(connectionString)
                 .codecRegistry(codecRegistry)
-                .applyToServerSettings(builder -> builder.addServerMonitorListener(this))
+                .applyToServerSettings(builder -> {
+                    builder.heartbeatFrequency(Region.isDev() ? 1 : 10, TimeUnit.SECONDS);
+                    builder.addServerMonitorListener(this);
+                })
                 .build();
 
         mongoClient = MongoClients.create(clientSettings);
@@ -63,7 +67,7 @@ public class Database implements ServerMonitorListener {
 
     @Override
     public void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event) {
-        connected = true;
+        if (!connected) connected = true;
         log("Heartbeat successful! Elapsed time: " + event.getElapsedTime(TimeUnit.MILLISECONDS) + "ms");
     }
 
