@@ -48,9 +48,9 @@ public class CurateSlashCommand implements SlashCommand, RequiresPermission, Has
             return;
         }
 
-        int amount = 50;
+        int amount = 25;
         if (event.getOption("amount") != null) {
-            amount = Math.min(event.getOption("amount").getAsInt(), 250);
+            amount = Math.min(event.getOption("amount").getAsInt(), 200);
         }
 
         String group = "DefaultSuggestions";
