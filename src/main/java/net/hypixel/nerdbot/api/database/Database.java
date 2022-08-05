@@ -68,7 +68,10 @@ public class Database implements ServerMonitorListener {
     @Override
     public void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event) {
         if (!connected) connected = true;
-        log("Heartbeat successful! Elapsed time: " + event.getElapsedTime(TimeUnit.MILLISECONDS) + "ms");
+
+        if (System.getProperty("show-heartbeats") != null && System.getProperty("show-heartbeats").equals("true")) {
+            log("Heartbeat successful! Elapsed time: " + event.getElapsedTime(TimeUnit.MILLISECONDS) + "ms");
+        }
     }
 
     @Override
