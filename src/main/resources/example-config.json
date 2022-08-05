@@ -1,7 +1,12 @@
 {
-  "defaultPrefix": "!",
-  "minimumThreshold": 1,
+  "prefix": "!",
+  "minimumThreshold": 10,
   "percentage": 75,
-  "interval": 3600000,
-  "guildId": 123456789012345678
+  "interval": 120000,
+  "guildId": 123456789012345678,
+  "emojis": {
+    "agree": "123456789012345678",
+    "disagree": "123456789012345678",
+    "greenlit": "123456789012345678"
+  }
 }
