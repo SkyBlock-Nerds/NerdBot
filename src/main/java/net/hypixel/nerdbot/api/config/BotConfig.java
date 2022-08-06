@@ -8,6 +8,8 @@ public class BotConfig {
     private long interval;
     private long guildId;
 
+    private Emojis emojis;
+
     public String getPrefix() {
         return prefix;
     }
@@ -46,5 +48,13 @@ public class BotConfig {
 
     public void setGuildId(long guildId) {
         this.guildId = guildId;
+    }
+
+    public Emojis getEmojis() {
+        return emojis;
+    }
+
+    public void setEmojis(Emojis emojis) {
+        this.emojis = emojis;
     }
 }
