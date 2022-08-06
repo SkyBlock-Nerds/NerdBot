@@ -171,14 +171,14 @@ public class Curator {
             }
         }
 
+        if (!users.isEmpty()) Database.getInstance().updateUsers(users);
+
         long end = System.currentTimeMillis();
         elapsed = end - start;
 
         log(Util.DASHED_LINE);
         log("Curating process finished at " + new Date(end) + ". Elapsed time: " + elapsed + "ms");
         log(Util.DASHED_LINE);
-
-        if (!users.isEmpty()) Database.getInstance().updateUsers(users);
     }
 
     /**
