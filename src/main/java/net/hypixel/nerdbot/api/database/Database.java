@@ -5,7 +5,12 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.InsertManyResult;
+import com.mongodb.client.result.InsertOneResult;
+import com.mongodb.client.result.UpdateResult;
 import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
@@ -52,9 +57,10 @@ public class Database implements ServerMonitorListener {
                 .build();
 
         mongoClient = MongoClients.create(clientSettings);
-        greenlitCollection = mongoClient.getDatabase("skyblockNerds").getCollection("greenlitMessages", GreenlitMessage.class);
-        channelCollection = mongoClient.getDatabase("skyblockNerds").getCollection("channelGroups", ChannelGroup.class);
-        userCollection = mongoClient.getDatabase("skyblockNerds").getCollection("users", DiscordUser.class);
+        MongoDatabase database = mongoClient.getDatabase("skyblockNerds");
+        greenlitCollection = database.getCollection("greenlitMessages", GreenlitMessage.class);
+        channelCollection = database.getCollection("channelGroups", ChannelGroup.class);
+        userCollection = database.getCollection("users", DiscordUser.class);
     }
 
 
@@ -116,22 +122,31 @@ public class Database implements ServerMonitorListener {
     }
 
     public void insertGreenlitMessage(GreenlitMessage greenlitMessage) {
-        greenlitCollection.insertOne(greenlitMessage);
-        log("Inserted greenlit message " + greenlitMessage.getId());
+        InsertOneResult result = greenlitCollection.insertOne(greenlitMessage);
+        log("Inserted greenlit message " + result.getInsertedId());
     }
 
     public void insertGreenlitMessages(List<GreenlitMessage> greenlitMessages) {
-        greenlitCollection.insertMany(greenlitMessages);
-        log("Inserted " + greenlitMessages.size() + " greenlit messages");
+        InsertManyResult result = greenlitCollection.insertMany(greenlitMessages);
+        log("Inserted " + result.getInsertedIds().size() + " greenlit messages");
     }
 
     public GreenlitMessage getGreenlitMessage(String id) {
         return greenlitCollection.find(Filters.eq("messageId", id)).first();
     }
 
+    public void updateGreenlitMessage(GreenlitMessage greenlitMessage) {
+        UpdateResult result = greenlitCollection.updateOne(Filters.eq("messageId", greenlitMessage.getMessageId()), new Document("$set", greenlitMessage));
+        if (result.getMatchedCount() == 0) {
+            log("Couldn't find greenlit message " + greenlitMessage.getId() + " to update");
+        } else {
+            log(result.getModifiedCount() + " greenlit message(s) updated");
+        }
+    }
+
     public void deleteGreenlitMessage(String field, Object value) {
-        greenlitCollection.deleteOne(Filters.eq(field, value));
-        log("Deleted greenlit message " + field + ":" + value);
+        DeleteResult result = greenlitCollection.deleteOne(Filters.eq(field, value));
+        log(result.getDeletedCount() + " greenlit message(s) deleted");
     }
 
     public List<GreenlitMessage> getGreenlitCollection() {
@@ -183,15 +198,20 @@ public class Database implements ServerMonitorListener {
     }
 
     public void updateUser(String field, Object value, DiscordUser user) {
-        userCollection.replaceOne(Filters.eq(field, value), user);
-        log("Updated user " + field + ":" + value);
+        UpdateResult result = userCollection.replaceOne(Filters.eq(field, value), user);
+        if (result.getMatchedCount() == 0) {
+            log("Couldn't find user " + user.getDiscordId() + " to update");
+        } else {
+            log(result.getModifiedCount() + " user(s) updated");
+        }
     }
 
     public void updateUsers(List<DiscordUser> users) {
+        if (users.isEmpty()) return;
+
         for (DiscordUser user : users) {
             updateUser("discordId", user.getDiscordId(), user);
         }
-        log("Updated " + users.size() + " users");
     }
 
     public void deleteUser(String field, Object value) {
