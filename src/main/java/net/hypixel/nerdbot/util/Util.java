@@ -19,6 +19,8 @@ import java.util.regex.Pattern;
 public class Util {
 
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
+    public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
+    public static final String DASHED_LINE = "----------------------------------------------------------------";
 
     public static void sleep(TimeUnit unit, long time) {
         try {
