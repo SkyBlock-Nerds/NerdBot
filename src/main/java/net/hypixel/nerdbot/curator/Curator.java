@@ -117,7 +117,7 @@ public class Curator {
             int count = 0;
 
             for (Message message : messages) {
-                log("[" + group.getName() + "] Curating message " + (++count) + "/" + messages.size() + "!");
+                log("[" + group.getName() + "] Curating message " + (++count) + "/" + messages.size() + " by " + message.getAuthor().getAsTag() + "!");
 
                 addEmojiIfMissing(group, message, agree);
                 addEmojiIfMissing(group, message, disagree);
@@ -159,14 +159,8 @@ public class Curator {
 
                 message.addReaction(greenlit).queue();
 
-                GreenlitMessage msg = createGreenlitMessage(message, realPositive, realNegative);
-
-                submissionChannel.sendMessageEmbeds(msg.getEmbed().build()).queue(message1 -> {
-                    msg.setGreenlitMessageId(message1.getId());
-                    Database.getInstance().insertGreenlitMessage(msg);
-                    log("[" + group.getName() + "] [" + message.getId() + "] Greenlit message sent to " + submissionChannel.getName() + " and inserted into database");
-                    greenlitMessages.add(msg);
-                });
+                GreenlitMessage msg = createGreenlitMessage(group, message, realPositive, realNegative);
+                sendGreenlitToChannel(submissionChannel, group, msg);
             }
         }
 
@@ -178,6 +172,22 @@ public class Curator {
         log(Util.DASHED_LINE);
         log("Curating process finished at " + new Date(end) + ". Elapsed time: " + elapsed + "ms");
         log(Util.DASHED_LINE);
+    }
+
+    /**
+     * Send the greenlit message to the submission channel
+     *
+     * @param channel      The {@link TextChannel} to send the message to
+     * @param channelGroup The {@link ChannelGroup} being curated
+     * @param message      The {@link GreenlitMessage} to send
+     */
+    private void sendGreenlitToChannel(TextChannel channel, ChannelGroup channelGroup, GreenlitMessage message) {
+        channel.sendMessageEmbeds(message.getEmbed().build()).queue(message1 -> {
+            message.setGreenlitMessageId(message1.getId());
+            Database.getInstance().insertGreenlitMessage(message);
+            log("[" + channelGroup.getName() + "] [" + message.getId() + "] Greenlit message sent to " + channel.getName() + " and inserted into database");
+            greenlitMessages.add(message);
+        });
     }
 
     /**
@@ -202,16 +212,18 @@ public class Curator {
      * @param negative The negative amount of {@link MessageReaction}
      * @return The new {@link GreenlitMessage}
      */
-    private GreenlitMessage createGreenlitMessage(Message message, int positive, int negative) {
+    private GreenlitMessage createGreenlitMessage(ChannelGroup group, Message message, int positive, int negative) {
         return new GreenlitMessage()
                 .setUserId(message.getAuthor().getId())
                 .setMessageId(message.getId())
                 .setTags(getTags(message.getContentRaw()))
+                .setSuggestionTitle(Util.getFirstLine(message))
                 .setSuggestionContent(message.getContentRaw())
                 .setSuggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli()))
                 .setSuggestionUrl(message.getJumpUrl())
                 .setAgrees(positive)
-                .setDisagrees(negative);
+                .setDisagrees(negative)
+                .setChannelGroupName(group.getName());
     }
 
     /**
@@ -293,11 +305,38 @@ public class Curator {
     private void checkGreenlit(ChannelGroup group, Message message, int agrees, int disagrees) {
         log("[" + group.getName() + "] [" + message.getId() + "] This message is already greenlit! Checking to see if the reaction count has changed");
 
+        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
+        if (guild == null) {
+            log("[" + group.getName() + "] [" + message.getId() + "] Could not find guild " + group.getGuildId());
+            return;
+        }
+
+        TextChannel channel = guild.getTextChannelById(group.getTo());
+        if (channel == null) {
+            log("[" + group.getName() + "] [" + message.getId() + "] Could not find channel " + group.getTo());
+            return;
+        }
+
         GreenlitMessage greenlitMessage = Database.getInstance().getGreenlitMessage(message.getId());
+
         if (greenlitMessage == null) {
-            greenlitMessage = createGreenlitMessage(message, agrees, disagrees);
+            greenlitMessage = createGreenlitMessage(group, message, agrees, disagrees);
+
             Database.getInstance().insertGreenlitMessage(greenlitMessage);
             log("[" + group.getName() + "] [" + message.getId() + "] Created new greenlit message because it wasn't found in the database");
+
+            if (greenlitMessage.getGreenlitMessageId() != null) {
+                if (channel.retrieveMessageById(greenlitMessage.getGreenlitMessageId()).complete() != null) {
+                    sendGreenlitToChannel(channel, group, greenlitMessage);
+                }
+            } else {
+                GreenlitMessage finalGreenlitMessage = greenlitMessage;
+                channel.sendMessageEmbeds(greenlitMessage.getEmbed().build()).queue(msg -> {
+                    finalGreenlitMessage.setGreenlitMessageId(msg.getId());
+                    Database.getInstance().updateGreenlitMessage(finalGreenlitMessage);
+                    log("[" + group.getName() + "] [" + message.getId() + "] Updated greenlit message ID to " + msg.getId());
+                });
+            }
         }
 
         if (greenlitMessage.getAgrees() == agrees && greenlitMessage.getDisagrees() == disagrees) {
@@ -312,18 +351,7 @@ public class Curator {
         greenlitMessage.setDisagrees(disagrees);
 
         if (greenlitMessage.getGreenlitMessageId() != null) {
-            Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
-            if (guild == null) {
-                log("[" + group.getName() + "] [" + message.getId() + "] Could not find guild " + group.getGuildId());
-                return;
-            }
-
-            TextChannel channel = guild.getTextChannelById(group.getTo());
-            if (channel == null) {
-                log("[" + group.getName() + "] [" + message.getId() + "] Could not find channel " + group.getTo());
-                return;
-            }
-
+            greenlitMessage.setSuggestionContent(message.getContentRaw());
             channel.retrieveMessageById(greenlitMessage.getGreenlitMessageId()).complete().editMessageEmbeds(greenlitMessage.getEmbed().build()).queue();
         }
 
