@@ -14,26 +14,28 @@ import java.util.List;
 public class GreenlitMessage {
 
     private ObjectId id;
-    private String userId, messageId, suggestionTitle, suggestionContent, suggestionUrl;
+    private String userId, messageId, greenlitMessageId, suggestionTitle, suggestionContent, suggestionUrl;
     private List<String> tags;
     private Date suggestionDate;
-    private int originalAgrees, originalDisagrees;
+    private int agrees, disagrees;
 
     public GreenlitMessage() {
     }
 
-    public GreenlitMessage(ObjectId id, String userId, String messageId, String suggestionTitle, String suggestionContent, List<String> tags, Date suggestionDate, String suggestionUrl, int originalAgrees, int originalDisagrees) {
+    public GreenlitMessage(ObjectId id, String userId, String messageId, String greenlitMessageId, String suggestionTitle, String suggestionContent, String suggestionUrl, List<String> tags, Date suggestionDate, int agrees, int disagrees) {
         this.id = id;
         this.userId = userId;
         this.messageId = messageId;
+        this.greenlitMessageId = greenlitMessageId;
         this.suggestionTitle = suggestionTitle;
         this.suggestionContent = suggestionContent;
+        this.suggestionUrl = suggestionUrl;
         this.tags = tags;
         this.suggestionDate = suggestionDate;
-        this.suggestionUrl = suggestionUrl;
-        this.originalAgrees = originalAgrees;
-        this.originalDisagrees = originalDisagrees;
+        this.agrees = agrees;
+        this.disagrees = disagrees;
     }
+
 
     public ObjectId getId() {
         return id;
@@ -62,6 +64,15 @@ public class GreenlitMessage {
         return this;
     }
 
+    public String getGreenlitMessageId() {
+        return greenlitMessageId;
+    }
+
+    public GreenlitMessage setGreenlitMessageId(String greenlitMessageId) {
+        this.greenlitMessageId = greenlitMessageId;
+        return this;
+    }
+
     public String getSuggestionTitle() {
         return suggestionTitle;
     }
@@ -76,8 +87,10 @@ public class GreenlitMessage {
     }
 
     public GreenlitMessage setSuggestionContent(String suggestionContent) {
-        for (String tag : tags) {
-            suggestionContent = suggestionContent.replaceAll("\\[" + tag + "\\\\]", "");
+        if (tags != null) {
+            for (String tag : tags) {
+                suggestionContent = suggestionContent.replaceAll("\\[" + tag + "\\\\]", "");
+            }
         }
         this.suggestionContent = suggestionContent;
         return this;
@@ -110,21 +123,21 @@ public class GreenlitMessage {
         return this;
     }
 
-    public int getOriginalAgrees() {
-        return originalAgrees;
+    public int getAgrees() {
+        return agrees;
     }
 
-    public GreenlitMessage setOriginalAgrees(int originalAgrees) {
-        this.originalAgrees = originalAgrees;
+    public GreenlitMessage setAgrees(int agrees) {
+        this.agrees = agrees;
         return this;
     }
 
-    public int getOriginalDisagrees() {
-        return originalDisagrees;
+    public int getDisagrees() {
+        return disagrees;
     }
 
-    public GreenlitMessage setOriginalDisagrees(int originalDisagrees) {
-        this.originalDisagrees = originalDisagrees;
+    public GreenlitMessage setDisagrees(int disagrees) {
+        this.disagrees = disagrees;
         return this;
     }
 
