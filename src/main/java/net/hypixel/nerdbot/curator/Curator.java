@@ -119,14 +119,13 @@ public class Curator {
             for (Message message : messages) {
                 log("[" + group.getName() + "] Curating message " + (++count) + "/" + messages.size() + "!");
 
+                addEmojiIfMissing(group, message, agree);
+                addEmojiIfMissing(group, message, disagree);
+
                 MessageReaction positive = message.getReaction(agree);
                 MessageReaction negative = message.getReaction(disagree);
-                addEmojiIfMissing(group, message, positive);
-                addEmojiIfMissing(group, message, negative);
-
                 int realPositive = positive.getCount();
                 int realNegative = negative.getCount();
-
 
                 if (!dev) {
                     realPositive = discountBotAndUserReactions(group, message, positive);
@@ -184,14 +183,14 @@ public class Curator {
     /**
      * Add an emoji to a message if it doesn't already exist
      *
-     * @param group    The {@link ChannelGroup} to search through
-     * @param message  The {@link Message} to add the emoji to
-     * @param reaction The {@link MessageReaction} to add to the message
+     * @param group   The {@link ChannelGroup} to search through
+     * @param message The {@link Message} to add the emoji to
+     * @param emoji   The {@link Emoji} to add to the message
      */
-    private void addEmojiIfMissing(ChannelGroup group, Message message, @NotNull MessageReaction reaction) {
-        if (message.getReaction(reaction.getEmoji()) == null) {
+    private void addEmojiIfMissing(ChannelGroup group, Message message, @NotNull Emoji emoji) {
+        if (message.getReaction(emoji) == null) {
             log("[" + group.getName() + "] [" + message.getId() + "] No reaction found, adding one!");
-            message.addReaction(reaction.getEmoji()).queue();
+            message.addReaction(emoji).queue();
         }
     }
 
