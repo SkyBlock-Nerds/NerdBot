@@ -13,6 +13,7 @@ import net.hypixel.nerdbot.api.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Region;
 import net.hypixel.nerdbot.util.Util;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -187,10 +188,10 @@ public class Curator {
      * @param message  The {@link Message} to add the emoji to
      * @param reaction The {@link MessageReaction} to add to the message
      */
-    private void addEmojiIfMissing(ChannelGroup group, Message message, MessageReaction reaction) {
-        if (reaction == null) {
+    private void addEmojiIfMissing(ChannelGroup group, Message message, @NotNull MessageReaction reaction) {
+        if (message.getReaction(reaction.getEmoji()) == null) {
             log("[" + group.getName() + "] [" + message.getId() + "] No reaction found, adding one!");
-            message.addReaction(agree).queue();
+            message.addReaction(reaction.getEmoji()).queue();
         }
     }
 
