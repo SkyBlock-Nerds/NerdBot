@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.util;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.config.BotConfig;
@@ -57,6 +58,19 @@ public class Util {
         final String[] units = new String[]{"B", "kB", "MB", "GB", "TB"};
         int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
         return new DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
+    }
+
+    public static String getFirstLine(Message message) {
+        String firstLine = message.getContentRaw().split("\n")[0];
+
+        if (firstLine == null || firstLine.equals("")) {
+            firstLine = "No Title";
+
+            if (message.getEmbeds().get(0) != null)
+                firstLine = message.getEmbeds().get(0).getTitle();
+        }
+
+        return firstLine.substring(0, Math.min(30, firstLine.length()));
     }
 
 }

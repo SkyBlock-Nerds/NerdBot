@@ -12,6 +12,7 @@ import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.Reactions;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.util.Logger;
+import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -40,24 +41,11 @@ public class MessageListener implements EventListener {
             for (ChannelGroup group : groups) {
                 if (!group.getFrom().equals(channel.getId())) continue;
 
-                message.createThreadChannel("[Discussion] " + getFirstLine(message)).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
+                message.createThreadChannel("[Discussion] " + Util.getFirstLine(message)).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
                 message.addReaction(yes).queue();
                 message.addReaction(no).queue();
             }
         }
-    }
-
-    private String getFirstLine(Message message) {
-        String firstLine = message.getContentRaw().split("\n")[0];
-
-        if (firstLine == null || firstLine.equals("")) {
-            firstLine = "No Title";
-
-            if (message.getEmbeds().get(0) != null)
-                firstLine = message.getEmbeds().get(0).getTitle();
-        }
-
-        return firstLine.substring(0, Math.min(30, firstLine.length()));
     }
 
 }
