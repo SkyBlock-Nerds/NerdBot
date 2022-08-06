@@ -1,20 +1,24 @@
 package net.hypixel.nerdbot.curator;
 
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
-import net.hypixel.nerdbot.api.channel.ChannelManager;
-import net.hypixel.nerdbot.api.channel.Reactions;
-import net.hypixel.nerdbot.api.config.BotConfig;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.api.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Region;
 import net.hypixel.nerdbot.util.Util;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 
 public class Curator {
@@ -24,9 +28,7 @@ public class Curator {
     private final List<GreenlitMessage> greenlitMessages;
     private final List<DiscordUser> users;
 
-    private final Emoji agree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.AGREE.getId());
-    private final Emoji disagree = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.DISAGREE.getId());
-    private final Emoji greenlit = NerdBotApp.getBot().getJDA().getEmojiById(Reactions.GREENLIT.getId());
+    private final Emoji agree, disagree, greenlit;
 
     private long elapsed;
 
@@ -39,8 +41,13 @@ public class Curator {
     public Curator(int limit, List<ChannelGroup> groups) {
         this.limit = limit;
         this.groups = groups;
+
         greenlitMessages = new ArrayList<>(limit);
         users = new ArrayList<>();
+
+        agree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getAgree());
+        disagree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getDisagree());
+        greenlit = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getGreenlit());
     }
 
     /**
@@ -67,232 +74,318 @@ public class Curator {
      */
     public void curate() {
         if (!Database.getInstance().isConnected()) {
-            Logger.error("[Curator] Cannot connect to the database!");
+            error("Cannot connect to the database!");
             return;
         }
 
-        if (agree == null || disagree == null || greenlit == null) {
-            Logger.error("[Curator] Could not find emoji for agree, disagree, or greenlit!");
+        if (groups.isEmpty()) {
+            error("No groups to curate!");
             return;
         }
+
+        if (limit <= 0) {
+            error("Invalid message limit specified! (" + limit + ")");
+            return;
+        }
+
+        long start = System.currentTimeMillis();
+        log(Util.DASHED_LINE);
+        log("Curating process started at " + new Date(start));
+        log(Util.DASHED_LINE);
+
+        boolean dev = Region.isDev();
+        if (dev) log("Since this is a DEV environment we will include all reactions!");
 
         for (ChannelGroup group : groups) {
-            log("Curation started for group " + group.getName());
+            log("[" + group.getName() + "] Starting to curate the suggestions for this group at " + new Date(start) + "!");
 
-            TextChannel textChannel = ChannelManager.getChannel(group.getFrom());
-            if (textChannel == null) return;
+            Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
+            TextChannel suggestionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getFrom());
+            TextChannel submissionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getTo());
+            if (guild == null || suggestionChannel == null || submissionChannel == null) {
+                error("[" + group.getName() + "] Either the guild, suggestion channel, or submission channel is null so I can't continue with this group!");
+                continue;
+            }
 
-            MessageHistory history = textChannel.getHistory();
-            List<Message> messages = history.retrievePast(limit).complete();
+            List<Message> messages = suggestionChannel.getHistory().retrievePast(limit).complete();
+            if (messages.isEmpty()) {
+                log("[" + group.getName() + "] No messages to curate in this group!");
+                continue;
+            }
 
-            long start = System.currentTimeMillis();
-            log("Starting suggestion curation at " + new Date());
-
-            TimerTask timerTask = new TimerTask() {
-                @Override
-                public void run() {
-                    textChannel.sendTyping().queue();
-                }
-            };
-            Timer timer = new Timer();
-            timer.schedule(timerTask, 0, 10_000);
+            log("[" + group.getName() + "] Found " + messages.size() + " messages to curate!");
+            int count = 0;
 
             for (Message message : messages) {
-                if (message.getAuthor().isBot() || message.getReaction(greenlit) != null)
-                    continue;
+                log("[" + group.getName() + "] Curating message " + (++count) + "/" + messages.size() + " by " + message.getAuthor().getAsTag() + "!");
 
-                if (message.getReaction(agree) == null)
-                    message.addReaction(agree).queue();
+                addEmojiIfMissing(group, message, agree);
+                addEmojiIfMissing(group, message, disagree);
 
-                if (message.getReaction(disagree) == null)
-                    message.addReaction(disagree).queue();
+                MessageReaction positive = message.getReaction(agree);
+                MessageReaction negative = message.getReaction(disagree);
+                int realPositive = positive.getCount();
+                int realNegative = negative.getCount();
 
-                int positive = 0, negative = 0;
-                for (MessageReaction reaction : message.getReactions()) {
-                    // We remove 1 from each agree and disagree because of the bots reaction
-                    // And also remove one from the person who suggested it
-                    // Maybe could even remove the actual reaction from the person as a visual indication
-                    if (reaction.getEmoji().asCustom().getId().equals(Reactions.AGREE.getId())) {
-                        positive = reaction.getCount() - 1;
-                        if (Region.isProduction() && reaction.retrieveUsers().stream().map(ISnowflake::getId).anyMatch(s -> s.equals(message.getAuthor().getId()))) {
-                            positive--;
-                        }
-                    }
-
-                    if (reaction.getEmoji().asCustom().getId().equals(Reactions.DISAGREE.getId())) {
-                        negative = reaction.getCount() - 1;
-                        if (Region.isProduction() && reaction.retrieveUsers().stream().map(ISnowflake::getId).anyMatch(s -> s.equals(message.getAuthor().getId()))) {
-                            negative--;
-                        }
-                    }
-
-                    // Track reactions for each user and save them into the database
-                    reaction.retrieveUsers().forEach(user -> {
-                        if (user.isBot()) return;
-
-                        log("[" + group.getName() + "] User " + user.getAsTag() + " reacted with " + reaction.getEmoji().getName() + " to message " + message.getId());
-
-                        DiscordUser discordUser = findUser(user.getId());
-                        if (discordUser == null)
-                            discordUser = new DiscordUser(user.getId(), null, Collections.emptyList(), Collections.emptyList());
-
-                        if (!users.contains(discordUser))
-                            users.add(discordUser);
-
-                        switch (reaction.getEmoji().getName()) {
-                            case "yes" -> {
-                                if (!discordUser.getAgrees().contains(message.getId())) {
-                                    discordUser.getAgrees().add(message.getId());
-                                    log("Total agrees for " + discordUser.getDiscordId() + " is now " + discordUser.getAgrees().size());
-                                }
-                            }
-                            case "no" -> {
-                                if (!discordUser.getDisagrees().contains(message.getId())) {
-                                    discordUser.getDisagrees().add(message.getId());
-                                    log("Total disagrees for " + discordUser.getDiscordId() + " is now " + discordUser.getDisagrees().size());
-                                }
-                            }
-                        }
-
-                        // TODO figure out a better way for this
-                        /*Date lastReactionDate = discordUser.getLastKnownActivityDate();
-                        Date date = new Date();
-
-                        if (lastReactionDate == null || lastReactionDate.before(date)) {
-                            log("User " + user.getAsTag() + "'s last reaction was " + lastReactionDate + ". Setting it to " + date);
-                            discordUser.setLastKnownActivityDate(date);
-                        }*/
-                    });
+                if (!dev) {
+                    realPositive = discountBotAndUserReactions(group, message, positive);
+                    realNegative = discountBotAndUserReactions(group, message, negative);
                 }
 
-                BotConfig config = NerdBotApp.getBot().getConfig();
-                if (positive == 0 && negative == 0 || positive < config.getMinimumThreshold()) {
-                    log("[" + group.getName() + "] Message " + message.getId() + " is below the minimum threshold! (" + positive + "/" + negative + ") (min threshold: " + config.getMinimumThreshold() + ")");
+                if (realPositive == 0 && realNegative == 0) {
+                    log("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has no positive and negative reactions!");
                     continue;
                 }
 
-                double ratio = getRatio(positive, negative);
-                log("[" + group.getName() + "] Message " + message.getId() + " has a ratio of " + ratio + "%");
-                if (ratio < config.getPercentage()) continue;
+                getAndUpdateUserReactions(group, message, positive, negative);
 
-                // Get the title and tags of the suggestion to save and display
-                // A suggestion can have multiple tags e.g. "[MINING] [SKILL] Suggestion Title"
-                String firstLine = message.getContentRaw().split("\n")[0];
-                Matcher matcher = Util.SUGGESTION_TITLE_REGEX.matcher(firstLine);
-                List<String> tags = new ArrayList<>();
-                while (matcher.find()) {
-                    tags.add(matcher.group(1));
-                    log("[" + group.getName() + "] Found tag '" + matcher.group(1) + "' in message " + message.getId());
+                if (message.getReaction(greenlit) != null) {
+                    checkGreenlit(group, message, realPositive, realNegative);
+                    continue;
                 }
 
-                GreenlitMessage msg = new GreenlitMessage()
-                        .setUserId(message.getAuthor().getId())
-                        .setMessageId(message.getId())
-                        .setTags(tags)
-                        .setSuggestionContent(message.getContentRaw())
-                        .setSuggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli()))
-                        .setSuggestionUrl(message.getJumpUrl())
-                        .setOriginalAgrees(positive)
-                        .setOriginalDisagrees(negative);
-                String[] lines = message.getContentRaw().split("\n");
-                msg.setSuggestionTitle(lines.length >= 1 ? lines[0] : "No Title");
-                greenlitMessages.add(msg);
-                log("[" + group.getName() + "] Added suggestion " + message.getId() + " created by " + message.getAuthor().getAsTag() + " to the greenlit collection");
-            }
+                double ratio = getRatio(realPositive, realNegative);
+                double requiredRatio = NerdBotApp.getBot().getConfig().getPercentage();
+                String ratioMessage = "[" + group.getName() + "] [" + message.getId() + "] Reaction ratio is "
+                        + Util.DECIMAL_FORMAT.format(ratio) + "% (" + realPositive + " positive / " + realNegative + " negative)";
+                if (ratio < requiredRatio) {
+                    ratioMessage += ". This is below the minimum threshold of " + Util.DECIMAL_FORMAT.format(requiredRatio) + "%!";
+                    log(ratioMessage);
+                    continue;
+                }
 
-            if (!users.isEmpty())
-                Database.getInstance().updateUsers(users);
+                ratioMessage += ". Greenlighting this message!";
+                log(ratioMessage);
 
-            if (!getGreenlitMessages().isEmpty()) {
-                applyEmoji();
-                insertIntoDatabase();
-                sendGreenlitToChannel();
+                message.addReaction(greenlit).queue();
+
+                GreenlitMessage msg = createGreenlitMessage(group, message, realPositive, realNegative);
+                sendGreenlitToChannel(submissionChannel, group, msg);
             }
-            long end = System.currentTimeMillis();
-            elapsed = end - start;
-            log("Finished curating messages at " + new Date() + ". Took " + elapsed + "ms");
-            timer.cancel();
+        }
+
+        if (!users.isEmpty()) Database.getInstance().updateUsers(users);
+
+        long end = System.currentTimeMillis();
+        elapsed = end - start;
+
+        log(Util.DASHED_LINE);
+        log("Curating process finished at " + new Date(end) + ". Elapsed time: " + elapsed + "ms");
+        log(Util.DASHED_LINE);
+    }
+
+    /**
+     * Send the greenlit message to the submission channel
+     *
+     * @param channel      The {@link TextChannel} to send the message to
+     * @param channelGroup The {@link ChannelGroup} being curated
+     * @param message      The {@link GreenlitMessage} to send
+     */
+    private void sendGreenlitToChannel(TextChannel channel, ChannelGroup channelGroup, GreenlitMessage message) {
+        channel.sendMessageEmbeds(message.getEmbed().build()).queue(message1 -> {
+            message.setGreenlitMessageId(message1.getId());
+            Database.getInstance().insertGreenlitMessage(message);
+            log("[" + channelGroup.getName() + "] [" + message.getId() + "] Greenlit message sent to " + channel.getName() + " and inserted into database");
+            greenlitMessages.add(message);
+        });
+    }
+
+    /**
+     * Add an emoji to a message if it doesn't already exist
+     *
+     * @param group   The {@link ChannelGroup} to search through
+     * @param message The {@link Message} to add the emoji to
+     * @param emoji   The {@link Emoji} to add to the message
+     */
+    private void addEmojiIfMissing(ChannelGroup group, Message message, @NotNull Emoji emoji) {
+        if (message.getReaction(emoji) == null) {
+            log("[" + group.getName() + "] [" + message.getId() + "] No reaction found, adding one!");
+            message.addReaction(emoji).queue();
         }
     }
 
     /**
-     * Apply the greenlit emoji to all saved greenlit messages
+     * Create a new {@link GreenlitMessage} from a {@link Message}
+     *
+     * @param message  The {@link Message} to create the {@link GreenlitMessage} from
+     * @param positive The positive amount of {@link MessageReaction}
+     * @param negative The negative amount of {@link MessageReaction}
+     * @return The new {@link GreenlitMessage}
      */
-    private void applyEmoji() {
-        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+    private GreenlitMessage createGreenlitMessage(ChannelGroup group, Message message, int positive, int negative) {
+        return new GreenlitMessage()
+                .setUserId(message.getAuthor().getId())
+                .setMessageId(message.getId())
+                .setTags(getTags(message.getContentRaw()))
+                .setSuggestionTitle(Util.getFirstLine(message))
+                .setSuggestionContent(message.getContentRaw())
+                .setSuggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli()))
+                .setSuggestionUrl(message.getJumpUrl())
+                .setAgrees(positive)
+                .setDisagrees(negative)
+                .setChannelGroupName(group.getName());
+    }
+
+    /**
+     * Get all tags that a message contains in the first line
+     *
+     * @param message The {@link Message} to get the tags from
+     * @return A list of tags
+     */
+    private List<String> getTags(String message) {
+        String firstLine = message.split("\n")[0];
+        Matcher matcher = Util.SUGGESTION_TITLE_REGEX.matcher(firstLine);
+        List<String> tags = new ArrayList<>();
+
+        while (matcher.find())
+            tags.add(matcher.group(1));
+
+        return tags;
+    }
+
+    /**
+     * Remove all reactions from a message by a user or bot
+     *
+     * @param message  The {@link Message} to remove the reactions from
+     * @param reaction The {@link MessageReaction} to check and remove from
+     */
+    private int discountBotAndUserReactions(ChannelGroup group, Message message, MessageReaction reaction) {
+        AtomicInteger total = new AtomicInteger(reaction.getCount());
+
+        reaction.retrieveUsers().stream().filter(user -> user.getId().equals(message.getAuthor().getId()) || user.getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())).forEach(user -> {
+            log("[" + group.getName() + "] [" + message.getId() + "] Discounting " + user.getAsTag() + " from the " + reaction.getEmoji().getName() + " reaction!");
+            total.getAndDecrement();
+        });
+
+        return total.get();
+    }
+
+    /**
+     * Grab and update a {@link DiscordUser}'s positive and negative reaction count
+     *
+     * @param group    The {@link ChannelGroup} to search through
+     * @param message  The {@link Message} to get the reactions from
+     * @param positive The {@link MessageReaction} to check and update the positive count
+     * @param negative The {@link MessageReaction} to check and update the negative count
+     */
+    private void getAndUpdateUserReactions(ChannelGroup group, Message message, MessageReaction positive, MessageReaction negative) {
+        positive.retrieveUsers().complete().forEach(user -> {
+            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId()))) return;
+
+            DiscordUser discordUser = findUser(user.getId());
+
+            if (!discordUser.getAgrees().contains(message.getId())) {
+                discordUser.getAgrees().add(message.getId());
+                log("[" + group.getName() + "] [" + message.getId() + "] Added message to " + discordUser.getDiscordId() + "'s agrees!");
+            }
+        });
+
+        negative.retrieveUsers().complete().forEach(user -> {
+            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId()))) return;
+
+            DiscordUser discordUser = findUser(user.getId());
+
+            if (!discordUser.getDisagrees().contains(message.getId())) {
+                discordUser.getDisagrees().add(message.getId());
+                log("[" + group.getName() + "] [" + message.getId() + "] Added message to " + discordUser.getDiscordId() + "'s disagrees!");
+            } else {
+                log("[" + group.getName() + "] [" + message.getId() + "] Message already added to " + discordUser.getDiscordId() + "'s disagrees!");
+            }
+        });
+    }
+
+    /**
+     * Check an existing {@link GreenlitMessage} for different reaction values and update it if it exists
+     *
+     * @param group     The {@link ChannelGroup} to search through
+     * @param message   The {@link Message} to check for
+     * @param agrees    The new number of agrees the message has
+     * @param disagrees The new number of disagrees the message has
+     */
+    private void checkGreenlit(ChannelGroup group, Message message, int agrees, int disagrees) {
+        log("[" + group.getName() + "] [" + message.getId() + "] This message is already greenlit! Checking to see if the reaction count has changed");
+
+        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
         if (guild == null) {
-            error("Couldn't find the guild");
+            log("[" + group.getName() + "] [" + message.getId() + "] Could not find guild " + group.getGuildId());
             return;
         }
 
-        Emoji greenlitEmoji = guild.getEmojiById(Reactions.GREENLIT.getId());
-        if (greenlitEmoji == null) {
-            error("Failed to find greenlit emoji!");
+        TextChannel channel = guild.getTextChannelById(group.getTo());
+        if (channel == null) {
+            log("[" + group.getName() + "] [" + message.getId() + "] Could not find channel " + group.getTo());
             return;
         }
 
-        for (ChannelGroup group : groups) {
-            TextChannel suggestionChannel = ChannelManager.getChannel(group.getFrom());
-            if (suggestionChannel == null) {
-                error("Failed to find 'from' channel in group " + group.getName() + "!");
-                return;
-            }
+        GreenlitMessage greenlitMessage = Database.getInstance().getGreenlitMessage(message.getId());
 
-            for (GreenlitMessage msg : greenlitMessages)
-                suggestionChannel.retrieveMessageById(msg.getMessageId()).queue(message -> message.addReaction(greenlitEmoji).queue());
+        if (greenlitMessage == null) {
+            greenlitMessage = createGreenlitMessage(group, message, agrees, disagrees);
 
-            log("Applied greenlit emoji to " + greenlitMessages.size() + " message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date() + " in group " + group.getName());
-        }
-    }
+            Database.getInstance().insertGreenlitMessage(greenlitMessage);
+            log("[" + group.getName() + "] [" + message.getId() + "] Created new greenlit message because it wasn't found in the database");
 
-    /**
-     * Send all saved greenlit messages to the {@link ChannelGroup#getTo()}
-     */
-    private void sendGreenlitToChannel() {
-        if (agree == null || disagree == null) {
-            error("Couldn't find the agree or disagree emojis when sending greenlit messages to a channel!");
-            return;
-        }
-
-        for (ChannelGroup group : groups) {
-            TextChannel channel = ChannelManager.getChannel(group.getTo());
-            if (channel == null) {
-                error("Couldn't find where to send greenlit suggestions to!");
-                return;
-            }
-
-            for (GreenlitMessage message : greenlitMessages) {
-                channel.sendMessageEmbeds(message.getEmbed().build()).queue(msg -> {
-                    msg.addReaction(agree).queue();
-                    msg.addReaction(disagree).queue();
+            if (greenlitMessage.getGreenlitMessageId() != null) {
+                if (channel.retrieveMessageById(greenlitMessage.getGreenlitMessageId()).complete() != null) {
+                    sendGreenlitToChannel(channel, group, greenlitMessage);
+                }
+            } else {
+                GreenlitMessage finalGreenlitMessage = greenlitMessage;
+                channel.sendMessageEmbeds(greenlitMessage.getEmbed().build()).queue(msg -> {
+                    finalGreenlitMessage.setGreenlitMessageId(msg.getId());
+                    Database.getInstance().updateGreenlitMessage(finalGreenlitMessage);
+                    log("[" + group.getName() + "] [" + message.getId() + "] Updated greenlit message ID to " + msg.getId());
                 });
             }
         }
+
+        if (greenlitMessage.getAgrees() == agrees && greenlitMessage.getDisagrees() == disagrees) {
+            log("[" + group.getName() + "] [" + message.getId() + "] Reaction count has not changed");
+            return;
+        }
+
+        log("[" + group.getName() + "] [" + message.getId() + "] Updating record in the database with the new reaction count! "
+                + "(" + greenlitMessage.getAgrees() + "->" + agrees + " positive, "
+                + greenlitMessage.getDisagrees() + "->" + disagrees + " negative)");
+        greenlitMessage.setAgrees(agrees);
+        greenlitMessage.setDisagrees(disagrees);
+
+        if (greenlitMessage.getGreenlitMessageId() != null) {
+            greenlitMessage.setSuggestionContent(message.getContentRaw());
+            channel.retrieveMessageById(greenlitMessage.getGreenlitMessageId()).complete().editMessageEmbeds(greenlitMessage.getEmbed().build()).queue();
+        }
+
+        Database.getInstance().updateGreenlitMessage(greenlitMessage);
     }
 
     /**
-     * Insert all saved greenlit messages into the database.
+     * Find a {@link DiscordUser} in the database by their Discord ID
+     *
+     * @param id The Discord ID to search for
+     * @return The {@link DiscordUser} if found, null otherwise
      */
-    private void insertIntoDatabase() {
-        if (!greenlitMessages.isEmpty()) {
-            Database.getInstance().insertGreenlitMessages(greenlitMessages);
-            log("Inserted " + greenlitMessages.size() + " greenlit message" + (greenlitMessages.size() == 1 ? "" : "s") + " at " + new Date());
-        } else {
-            log("No greenlit messages to insert!");
-        }
-    }
-
     private DiscordUser findUser(String id) {
-        DiscordUser user = null;
-        for (DiscordUser discordUser : users)
-            if (discordUser.getDiscordId().equals(id))
-                user = discordUser;
+        DiscordUser discordUser;
 
-        if (user == null) user = Database.getInstance().getUser(id);
-        return user;
+        if (users.stream().anyMatch(u -> u.getDiscordId().equals(id))) {
+            discordUser = users.stream().filter(u -> u.getDiscordId().equals(id)).findFirst().get();
+        } else {
+            discordUser = new DiscordUser(id, null, new ArrayList<>(), new ArrayList<>());
+            users.add(discordUser);
+        }
+
+        return discordUser;
     }
 
+    /**
+     * Get the ratio of positive to negative reactions for a {@link Message}
+     *
+     * @param positive The number of positive reactions
+     * @param negative The number of negative reactions
+     * @return The ratio of positive to negative reactions
+     */
     private double getRatio(int positive, int negative) {
+        if (positive == 0 && negative == 0) return 0;
         return (double) positive / (positive + negative) * 100;
     }
 
