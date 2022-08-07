@@ -14,7 +14,7 @@ import java.util.List;
 public class GreenlitMessage {
 
     private ObjectId id;
-    private String userId, messageId, greenlitMessageId, suggestionTitle, suggestionContent, suggestionUrl;
+    private String userId, messageId, greenlitMessageId, suggestionTitle, suggestionContent, suggestionUrl, channelGroupName;
     private List<String> tags;
     private Date suggestionDate;
     private int agrees, disagrees;
@@ -22,7 +22,7 @@ public class GreenlitMessage {
     public GreenlitMessage() {
     }
 
-    public GreenlitMessage(ObjectId id, String userId, String messageId, String greenlitMessageId, String suggestionTitle, String suggestionContent, String suggestionUrl, List<String> tags, Date suggestionDate, int agrees, int disagrees) {
+    public GreenlitMessage(ObjectId id, String userId, String messageId, String greenlitMessageId, String suggestionTitle, String suggestionContent, String suggestionUrl, String channelGroupName, List<String> tags, Date suggestionDate, int agrees, int disagrees) {
         this.id = id;
         this.userId = userId;
         this.messageId = messageId;
@@ -30,12 +30,12 @@ public class GreenlitMessage {
         this.suggestionTitle = suggestionTitle;
         this.suggestionContent = suggestionContent;
         this.suggestionUrl = suggestionUrl;
+        this.channelGroupName = channelGroupName;
         this.tags = tags;
         this.suggestionDate = suggestionDate;
         this.agrees = agrees;
         this.disagrees = disagrees;
     }
-
 
     public ObjectId getId() {
         return id;
@@ -138,6 +138,15 @@ public class GreenlitMessage {
 
     public GreenlitMessage setDisagrees(int disagrees) {
         this.disagrees = disagrees;
+        return this;
+    }
+
+    public String getChannelGroupName() {
+        return channelGroupName;
+    }
+
+    public GreenlitMessage setChannelGroupName(String channelGroupName) {
+        this.channelGroupName = channelGroupName;
         return this;
     }
 
