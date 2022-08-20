@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.api.config;
 public class BotConfig {
 
     private String prefix;
-    private int minimumThreshold;
+    private int minimumThreshold, messageLimit;
     private double percentage;
     private long interval;
     private long guildId;
@@ -24,6 +24,14 @@ public class BotConfig {
 
     public void setMinimumThreshold(int minimumThreshold) {
         this.minimumThreshold = minimumThreshold;
+    }
+
+    public int getMessageLimit() {
+        return messageLimit;
+    }
+
+    public void setMessageLimit(int messageLimit) {
+        this.messageLimit = messageLimit;
     }
 
     public double getPercentage() {
