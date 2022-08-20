@@ -1,6 +1,7 @@
 {
   "prefix": "!",
   "minimumThreshold": 10,
+  "messageLimit": 100,
   "percentage": 75,
   "interval": 120000,
   "guildId": 123456789012345678,

@@ -56,7 +56,7 @@ public class Curator {
      * @param group The {@link ChannelGroup} to search through
      */
     public Curator(ChannelGroup group) {
-        this(100, List.of(group));
+        this(NerdBotApp.getBot().getConfig().getMessageLimit(), List.of(group));
     }
 
     /**
@@ -164,7 +164,8 @@ public class Curator {
             }
         }
 
-        if (!users.isEmpty()) Database.getInstance().updateUsers(users);
+        if (!users.isEmpty())
+            Database.getInstance().updateUsers(users);
 
         long end = System.currentTimeMillis();
         elapsed = end - start;
@@ -270,7 +271,8 @@ public class Curator {
      */
     private void getAndUpdateUserReactions(ChannelGroup group, Message message, MessageReaction positive, MessageReaction negative) {
         positive.retrieveUsers().complete().forEach(user -> {
-            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId()))) return;
+            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId())))
+                return;
 
             DiscordUser discordUser = findUser(user.getId());
 
@@ -281,7 +283,8 @@ public class Curator {
         });
 
         negative.retrieveUsers().complete().forEach(user -> {
-            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId()))) return;
+            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId())))
+                return;
 
             DiscordUser discordUser = findUser(user.getId());
 
@@ -318,7 +321,6 @@ public class Curator {
         }
 
         GreenlitMessage greenlitMessage = Database.getInstance().getGreenlitMessage(message.getId());
-
         if (greenlitMessage == null) {
             greenlitMessage = createGreenlitMessage(group, message, agrees, disagrees);
 
@@ -385,7 +387,9 @@ public class Curator {
      * @return The ratio of positive to negative reactions
      */
     private double getRatio(int positive, int negative) {
-        if (positive == 0 && negative == 0) return 0;
+        if (positive == 0 && negative == 0)
+            return 0;
+
         return (double) positive / (positive + negative) * 100;
     }
 
