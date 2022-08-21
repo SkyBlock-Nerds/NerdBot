@@ -17,7 +17,6 @@ import com.mongodb.event.ServerMonitorListener;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.channel.Channel;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Logger;
@@ -86,7 +85,7 @@ public class Database implements ServerMonitorListener {
 
         NerdBotApp.EXECUTOR_SERVICE.submit(() -> {
             if (connected) {
-                TextChannel channel = ChannelManager.getChannel(Channel.CURATE);
+                TextChannel channel = ChannelManager.getChannel(NerdBotApp.getBot().getConfig().getLogChannel());
                 User user = Users.getUser(Users.AERH.getUserId());
                 if (channel == null || user == null) {
                     error("Couldn't notify of database error on Discord!");
