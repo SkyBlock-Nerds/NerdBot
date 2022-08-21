@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.curator;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
@@ -21,6 +23,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 
+@Getter
+@Setter
 public class Curator {
 
     private final int limit;
@@ -28,7 +32,7 @@ public class Curator {
     private final List<GreenlitMessage> greenlitMessages;
     private final List<DiscordUser> users;
 
-    private final Emoji agree, disagree, greenlit;
+    private Emoji agree, disagree, greenlit;
 
     private long elapsed;
 
@@ -184,7 +188,7 @@ public class Curator {
      */
     private void sendGreenlitToChannel(TextChannel channel, ChannelGroup channelGroup, GreenlitMessage message) {
         channel.sendMessageEmbeds(message.getEmbed().build()).queue(message1 -> {
-            message.setGreenlitMessageId(message1.getId());
+            message.setSuggestionTitle(message1.getId());
             Database.getInstance().insertGreenlitMessage(message);
             log("[" + channelGroup.getName() + "] [" + message.getId() + "] Greenlit message sent to " + channel.getName() + " and inserted into database");
             greenlitMessages.add(message);
@@ -214,17 +218,18 @@ public class Curator {
      * @return The new {@link GreenlitMessage}
      */
     private GreenlitMessage createGreenlitMessage(ChannelGroup group, Message message, int positive, int negative) {
-        return new GreenlitMessage()
-                .setUserId(message.getAuthor().getId())
-                .setMessageId(message.getId())
-                .setTags(getTags(message.getContentRaw()))
-                .setSuggestionTitle(Util.getFirstLine(message))
-                .setSuggestionContent(message.getContentRaw())
-                .setSuggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli()))
-                .setSuggestionUrl(message.getJumpUrl())
-                .setAgrees(positive)
-                .setDisagrees(negative)
-                .setChannelGroupName(group.getName());
+        return GreenlitMessage.builder()
+                .userId(message.getAuthor().getId())
+                .messageId(message.getId())
+                .tags(getTags(message.getContentRaw()))
+                .suggestionTitle(Util.getFirstLine(message))
+                .suggestionContent(message.getContentRaw())
+                .suggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli()))
+                .suggestionUrl(message.getJumpUrl())
+                .agrees(positive)
+                .disagrees(negative)
+                .channelGroupName(group.getName())
+                .build();
     }
 
     /**
@@ -400,25 +405,4 @@ public class Curator {
     private void error(String message) {
         Logger.error("[Curator] " + message);
     }
-
-    public int getLimit() {
-        return limit;
-    }
-
-    public long getElapsedTime() {
-        return elapsed;
-    }
-
-    public List<ChannelGroup> getGroups() {
-        return groups;
-    }
-
-    public List<DiscordUser> getUsers() {
-        return users;
-    }
-
-    public List<GreenlitMessage> getGreenlitMessages() {
-        return greenlitMessages;
-    }
-
 }

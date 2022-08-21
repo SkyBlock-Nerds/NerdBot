@@ -1,24 +1,15 @@
 package net.hypixel.nerdbot.api.config;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+@AllArgsConstructor
+@Getter
+@Setter
 public class Emojis {
 
+    public static final Emojis DEFAULT = new Emojis("\uD83D\uDC4D", "\uD83D\uDC4E", "\u2705");
+
     private final String agree, disagree, greenlit;
-
-    public Emojis(String agree, String disagree, String greenlit) {
-        this.agree = agree;
-        this.disagree = disagree;
-        this.greenlit = greenlit;
-    }
-
-    public String getAgree() {
-        return agree;
-    }
-
-    public String getDisagree() {
-        return disagree;
-    }
-
-    public String getGreenlit() {
-        return greenlit;
-    }
 }
