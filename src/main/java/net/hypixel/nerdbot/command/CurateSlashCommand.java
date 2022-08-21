@@ -9,11 +9,13 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.curator.Curator;
 import net.hypixel.nerdbot.util.Logger;
 
 import java.util.List;
+import java.util.Objects;
 
 public class CurateSlashCommand implements SlashCommand, RequiresPermission, HasArguments {
 
@@ -50,15 +52,22 @@ public class CurateSlashCommand implements SlashCommand, RequiresPermission, Has
 
         int amount = 25;
         if (event.getOption("amount") != null) {
-            amount = Math.min(event.getOption("amount").getAsInt(), 200);
+            amount = Math.min(Objects.requireNonNull(event.getOption("amount")).getAsInt(), 200);
         }
 
         String group = "DefaultSuggestions";
         if (event.getOption("group") != null) {
-            group = event.getOption("group").getAsString();
+            group = Objects.requireNonNull(event.getOption("group")).getAsString();
         }
 
-        Curator curator = new Curator(amount, Database.getInstance().getChannelGroup(group));
+        ChannelGroup channelGroup = Database.getInstance().getChannelGroup(group);
+        if (channelGroup == null) {
+            event.reply("Couldn't find channel group: **" + group + "**").setEphemeral(true).queue();
+            Logger.error("Couldn't find channel group: " + group);
+            return;
+        }
+
+        Curator curator = new Curator(amount, channelGroup);
         NerdBotApp.EXECUTOR_SERVICE.submit(curator::curate);
 
         if (!group.equals("DefaultSuggestions")) {
