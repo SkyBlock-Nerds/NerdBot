@@ -8,11 +8,6 @@ import org.jetbrains.annotations.Nullable;
 public class ChannelManager {
 
     @Nullable
-    public static TextChannel getChannel(Channel channel) {
-        return getChannel(channel.getId());
-    }
-
-    @Nullable
     public static TextChannel getChannel(String channel) {
         TextChannel textChannel = NerdBotApp.getBot().getJDA().getTextChannelById(channel);
         if (textChannel == null) {

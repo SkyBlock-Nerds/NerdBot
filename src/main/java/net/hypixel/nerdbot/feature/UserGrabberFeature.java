@@ -6,6 +6,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.util.Logger;
+import net.hypixel.nerdbot.util.Util;
 
 import java.util.Collections;
 import java.util.List;
@@ -14,7 +15,7 @@ public class UserGrabberFeature extends BotFeature {
 
     @Override
     public void onStart() {
-        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        Guild guild = Util.getGuild(NerdBotApp.getBot().getConfig().getGuildId());
         if (guild == null) {
             Logger.error("Couldn't find the guild specified in the bot config!");
             return;
