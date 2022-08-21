@@ -1,21 +1,13 @@
 package net.hypixel.nerdbot.api.channel;
 
-public enum Channel {
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
+@AllArgsConstructor
+@Getter
+public enum Channel {
     CURATE("965243148597088367");
 
-    private String id;
-
-    Channel(String id) {
-        this.id = id;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
+    private final String id;
 }
