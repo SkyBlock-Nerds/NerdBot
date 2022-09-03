@@ -9,7 +9,6 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
-import net.hypixel.nerdbot.api.channel.Reactions;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Util;
@@ -29,7 +28,7 @@ public class MessageListener implements EventListener {
             List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
             if (groups == null || groups.isEmpty()) return;
 
-            Emoji yes = guild.getEmojiById(Reactions.AGREE.getId()), no = guild.getEmojiById(Reactions.DISAGREE.getId());
+            Emoji yes = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getAgree()), no = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getDisagree());
             if (yes == null || no == null) {
                 Logger.error("Couldn't find the emote for yes or no!");
                 return;
