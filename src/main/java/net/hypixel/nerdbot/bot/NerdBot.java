@@ -67,12 +67,7 @@ public class NerdBot implements Bot {
         String fileName = Region.getRegion().name().toLowerCase() + ".config.json";
         try {
             File file;
-
-            if (Region.isDev()) {
-                file = new File(Objects.requireNonNull(getClass().getClassLoader().getResource(fileName)).getFile());
-            } else {
-                file = new File(fileName);
-            }
+            file = new File(Objects.requireNonNull(getClass().getClassLoader().getResource(fileName)).getFile());
 
             config = Util.loadConfig(file);
             Logger.info("Loaded config from " + file.getAbsolutePath());

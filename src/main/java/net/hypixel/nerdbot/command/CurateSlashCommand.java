@@ -70,7 +70,7 @@ public class CurateSlashCommand implements SlashCommand, RequiresPermission, Has
 
         boolean readOnly = false;
         if (event.getOption("readonly") != null) {
-            readOnly = Objects.requireNonNull(event.getOption("readOnly")).getAsBoolean();
+            readOnly = Objects.requireNonNull(event.getOption("readonly")).getAsBoolean();
         }
 
         Curator curator = new Curator(amount, channelGroup, readOnly);

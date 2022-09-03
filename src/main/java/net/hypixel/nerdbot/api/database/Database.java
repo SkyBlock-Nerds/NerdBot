@@ -56,7 +56,7 @@ public class Database implements ServerMonitorListener {
                 .build();
 
         mongoClient = MongoClients.create(clientSettings);
-        MongoDatabase database = mongoClient.getDatabase("skyblockNerds");
+        MongoDatabase database = mongoClient.getDatabase("skyblockNerds_" + NerdBotApp.getBot().getConfig().getGuildId());
         greenlitCollection = database.getCollection("greenlitMessages", GreenlitMessage.class);
         channelCollection = database.getCollection("channelGroups", ChannelGroup.class);
         userCollection = database.getCollection("users", DiscordUser.class);
