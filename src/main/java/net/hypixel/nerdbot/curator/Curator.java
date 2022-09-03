@@ -14,6 +14,7 @@ import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.api.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Region;
+import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
@@ -188,7 +189,7 @@ public class Curator {
         elapsed = end - start;
 
         log(Util.DASHED_LINE);
-        log("Curating process finished at " + new Date(end) + ". Elapsed time: " + elapsed + "ms");
+        log("Curating process finished at " + new Date(end) + ". Elapsed time: " + elapsed + "ms (" + Time.formatMs(elapsed) + ")");
         log(Util.DASHED_LINE);
     }
 
