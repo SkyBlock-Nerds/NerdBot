@@ -5,10 +5,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.util.Util;
-import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.bson.types.ObjectId;
 
 import java.awt.*;
@@ -45,17 +45,8 @@ public class GreenlitMessage {
         return this;
     }
 
-    @BsonIgnore
     public EmbedBuilder getEmbed() {
         EmbedBuilder builder = new EmbedBuilder();
-
-        User user = NerdBotApp.getBot().getJDA().getUserById(userId);
-        if (user != null) {
-            builder.setAuthor(user.getName(), suggestionUrl, user.getAvatarUrl());
-            builder.setFooter("Suggested by " + user.getName(), null);
-        } else {
-            builder.setFooter("Suggested by an unknown user");
-        }
 
         builder.setTitle(suggestionTitle, suggestionUrl);
         builder.setColor(Color.GREEN);
@@ -68,6 +59,19 @@ public class GreenlitMessage {
         builder.addField("Agrees", String.valueOf(agrees), true);
         builder.addField("Disagrees", String.valueOf(disagrees), true);
         builder.setTimestamp(suggestionDate.toInstant());
+
+        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        if (guild == null) {
+            return builder;
+        }
+
+        Member member = guild.getMemberById(userId);
+        if (member == null) {
+            builder.setFooter("Suggested by an unknown user");
+        } else {
+            builder.setAuthor(member.getEffectiveName(), suggestionUrl, member.getAvatarUrl());
+            builder.setFooter("Suggested by " + member.getEffectiveName(), member.getAvatarUrl());
+        }
 
         return builder;
     }
