@@ -26,12 +26,10 @@ public class UserGrabberFeature extends BotFeature {
 
         guild.loadMembers(member -> {
             if (!member.getUser().isBot() && !containsUser(users, member.getId())) {
-                Logger.info("Adding DiscordUser " + member.getUser().getAsTag() + " to database");
                 DiscordUser discordUser = new DiscordUser(member.getId(), null, Collections.emptyList(), Collections.emptyList());
                 Database.getInstance().insertUser(discordUser);
             }
-        });
-        Logger.info("Finished grabbing users from guild " + guild.getName());
+        }).onSuccess(aVoid -> Logger.info("Finished grabbing users from guild " + guild.getName())).onError(Throwable::printStackTrace);
     }
 
     @Override
