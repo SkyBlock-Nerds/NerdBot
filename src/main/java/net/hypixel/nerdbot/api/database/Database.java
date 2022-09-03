@@ -50,7 +50,7 @@ public class Database implements ServerMonitorListener {
                 .applyConnectionString(connectionString)
                 .codecRegistry(codecRegistry)
                 .applyToServerSettings(builder -> {
-                    builder.heartbeatFrequency(Region.isDev() ? 1:10, TimeUnit.SECONDS);
+                    builder.heartbeatFrequency(Region.isDev() ? 1 : 10, TimeUnit.SECONDS);
                     builder.addServerMonitorListener(this);
                 })
                 .build();
@@ -64,7 +64,7 @@ public class Database implements ServerMonitorListener {
 
 
     public static Database getInstance() {
-        if (instance==null) {
+        if (instance == null) {
             instance = new Database();
         }
         return instance;
@@ -74,7 +74,7 @@ public class Database implements ServerMonitorListener {
     public void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event) {
         if (!connected) connected = true;
 
-        if (System.getProperty("show-heartbeats")!=null && System.getProperty("show-heartbeats").equals("true")) {
+        if (System.getProperty("show-heartbeats") != null && System.getProperty("show-heartbeats").equals("true")) {
             log("Heartbeat successful! Elapsed time: " + event.getElapsedTime(TimeUnit.MILLISECONDS) + "ms");
         }
     }
@@ -86,7 +86,7 @@ public class Database implements ServerMonitorListener {
         if (connected) {
             TextChannel channel = ChannelManager.getChannel(NerdBotApp.getBot().getConfig().getLogChannel());
             User user = Users.getUser(Users.AERH.getUserId());
-            if (channel==null || user==null) {
+            if (channel == null || user == null) {
                 error("Couldn't notify of database error on Discord!");
                 return;
             }
@@ -134,7 +134,7 @@ public class Database implements ServerMonitorListener {
 
     public void updateGreenlitMessage(GreenlitMessage greenlitMessage) {
         UpdateResult result = greenlitCollection.updateOne(Filters.eq("messageId", greenlitMessage.getMessageId()), new Document("$set", greenlitMessage));
-        if (result.getMatchedCount()==0) {
+        if (result.getMatchedCount() == 0) {
             log("Couldn't find greenlit message " + greenlitMessage.getId() + " to update");
         } else {
             log(result.getModifiedCount() + " greenlit message(s) updated");
@@ -196,7 +196,7 @@ public class Database implements ServerMonitorListener {
 
     public void updateUser(String field, Object value, DiscordUser user) {
         UpdateResult result = userCollection.replaceOne(Filters.eq(field, value), user);
-        if (result.getMatchedCount()==0) {
+        if (result.getMatchedCount() == 0) {
             log("Couldn't find user " + user.getDiscordId() + " to update");
         } else {
             log(result.getModifiedCount() + " user(s) updated");

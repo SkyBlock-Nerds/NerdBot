@@ -84,6 +84,10 @@ public class NerdBot implements Bot {
         commands = new CommandManager(jda);
         commands.registerCommandsInPackage("net.hypixel.nerdbot.command");
 
+        if (Boolean.parseBoolean(System.getProperty("bot.readOnly"))) {
+            Logger.info("Bot is loaded in read-only mode!");
+        }
+
         NerdBotApp.getBot().onStart();
     }
 

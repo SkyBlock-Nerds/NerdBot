@@ -33,7 +33,8 @@ public class CurateSlashCommand implements SlashCommand, RequiresPermission, Has
     public List<CommandArgument> getArguments() {
         return List.of(
                 CommandArgument.of(OptionType.STRING, "group", "The ChannelGroup to curate", false),
-                CommandArgument.of(OptionType.INTEGER, "amount", "The amount of suggestions to curate", false)
+                CommandArgument.of(OptionType.INTEGER, "amount", "The amount of suggestions to curate", false),
+                CommandArgument.of(OptionType.BOOLEAN, "readonly", "Whether this run should be done in read-only mode", false)
         );
     }
 
@@ -67,7 +68,12 @@ public class CurateSlashCommand implements SlashCommand, RequiresPermission, Has
             return;
         }
 
-        Curator curator = new Curator(amount, channelGroup);
+        boolean readOnly = false;
+        if (event.getOption("readonly") != null) {
+            readOnly = Objects.requireNonNull(event.getOption("readOnly")).getAsBoolean();
+        }
+
+        Curator curator = new Curator(amount, channelGroup, readOnly);
         NerdBotApp.EXECUTOR_SERVICE.submit(curator::curate);
 
         if (!group.equals("DefaultSuggestions")) {

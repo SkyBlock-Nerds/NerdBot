@@ -12,11 +12,11 @@ public enum Users {
         this.userId = userId;
     }
 
-    public String getUserId() {
-        return userId;
-    }
-
     public static User getUser(String userId) {
         return NerdBotApp.getBot().getJDA().retrieveUserById(userId).complete();
+    }
+
+    public String getUserId() {
+        return userId;
     }
 }

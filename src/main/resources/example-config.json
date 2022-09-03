@@ -1,13 +1,13 @@
 {
-    "minimumThreshold": 10,
-    "messageLimit": 100,
-    "percentage": 75,
-    "interval": 120000,
-    "guildId": "123456789012345678",
-    "logChannel": "123456789012345678",
-    "emojis": {
-        "agree": "123456789012345678",
-        "disagree": "123456789012345678",
-        "greenlit": "123456789012345678"
-    }
+  "minimumThreshold": 10,
+  "messageLimit": 100,
+  "percentage": 75,
+  "interval": 120000,
+  "guildId": "123456789012345678",
+  "logChannel": "123456789012345678",
+  "emojis": {
+    "agree": "123456789012345678",
+    "disagree": "123456789012345678",
+    "greenlit": "123456789012345678"
+  }
 }

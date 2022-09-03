@@ -22,7 +22,7 @@ public class CurateFeature extends BotFeature {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                Curator curator = new Curator(NerdBotApp.getBot().getConfig().getMessageLimit(), Database.getInstance().getChannelGroups());
+                Curator curator = new Curator(NerdBotApp.getBot().getConfig().getMessageLimit(), Database.getInstance().getChannelGroups(), Boolean.parseBoolean(System.getProperty("bot.readOnly", "false")));
                 curator.curate();
             }
         };

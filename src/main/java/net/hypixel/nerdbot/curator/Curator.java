@@ -31,9 +31,8 @@ public class Curator {
     private final List<ChannelGroup> groups;
     private final List<GreenlitMessage> greenlitMessages;
     private final List<DiscordUser> users;
-
+    private final boolean readOnly;
     private Emoji agree, disagree, greenlit;
-
     private long elapsed;
 
     /**
@@ -42,9 +41,10 @@ public class Curator {
      * @param limit  The amount of messages to curate
      * @param groups The list of {@link ChannelGroup} to search through
      */
-    public Curator(int limit, List<ChannelGroup> groups) {
+    public Curator(int limit, List<ChannelGroup> groups, boolean readOnly) {
         this.limit = limit;
         this.groups = groups;
+        this.readOnly = readOnly;
 
         greenlitMessages = new ArrayList<>(limit);
         users = new ArrayList<>();
@@ -60,7 +60,7 @@ public class Curator {
      * @param group The {@link ChannelGroup} to search through
      */
     public Curator(ChannelGroup group) {
-        this(NerdBotApp.getBot().getConfig().getMessageLimit(), List.of(group));
+        this(NerdBotApp.getBot().getConfig().getMessageLimit(), List.of(group), false);
     }
 
     /**
@@ -70,7 +70,18 @@ public class Curator {
      * @param group The {@link ChannelGroup} to search through
      */
     public Curator(int limit, ChannelGroup group) {
-        this(limit, List.of(group));
+        this(limit, List.of(group), false);
+    }
+
+    /**
+     * Initialize a new Curator with a limit of 100 messages in a set {@link ChannelGroup}
+     *
+     * @param limit    The amount of messages to curate
+     * @param group    The {@link ChannelGroup} to search through
+     * @param readOnly Whether to execute the Curator in read-only mode
+     */
+    public Curator(int limit, ChannelGroup group, boolean readOnly) {
+        this(limit, List.of(group), readOnly);
     }
 
     /**
@@ -150,8 +161,7 @@ public class Curator {
 
                 double ratio = getRatio(realPositive, realNegative);
                 double requiredRatio = NerdBotApp.getBot().getConfig().getPercentage();
-                String ratioMessage = "[" + group.getName() + "] [" + message.getId() + "] Reaction ratio is "
-                        + Util.DECIMAL_FORMAT.format(ratio) + "% (" + realPositive + " positive / " + realNegative + " negative)";
+                String ratioMessage = "[" + group.getName() + "] [" + message.getId() + "] Reaction ratio is " + Util.DECIMAL_FORMAT.format(ratio) + "% (" + realPositive + " positive / " + realNegative + " negative)";
                 if (ratio < requiredRatio) {
                     ratioMessage += ". This is below the minimum threshold of " + Util.DECIMAL_FORMAT.format(requiredRatio) + "%!";
                     log(ratioMessage);
@@ -161,15 +171,18 @@ public class Curator {
                 ratioMessage += ". Greenlighting this message!";
                 log(ratioMessage);
 
-                message.addReaction(greenlit).queue();
+                if (readOnly) {
+                    log("[" + group.getName() + "] [" + message.getId() + "] Skipping logging the message because this is a read-only run!");
+                    continue;
+                }
 
+                message.addReaction(greenlit).queue();
                 GreenlitMessage msg = createGreenlitMessage(group, message, realPositive, realNegative);
                 sendGreenlitToChannel(submissionChannel, group, msg);
             }
         }
 
-        if (!users.isEmpty())
-            Database.getInstance().updateUsers(users);
+        if (!users.isEmpty()) Database.getInstance().updateUsers(users);
 
         long end = System.currentTimeMillis();
         elapsed = end - start;
@@ -215,27 +228,18 @@ public class Curator {
      * @param message  The {@link Message} to create the {@link GreenlitMessage} from
      * @param positive The positive amount of {@link MessageReaction}
      * @param negative The negative amount of {@link MessageReaction}
+     *
      * @return The new {@link GreenlitMessage}
      */
     private GreenlitMessage createGreenlitMessage(ChannelGroup group, Message message, int positive, int negative) {
-        return GreenlitMessage.builder()
-                .userId(message.getAuthor().getId())
-                .messageId(message.getId())
-                .tags(getTags(message.getContentRaw()))
-                .suggestionTitle(Util.getFirstLine(message))
-                .suggestionContent(message.getContentRaw())
-                .suggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli()))
-                .suggestionUrl(message.getJumpUrl())
-                .agrees(positive)
-                .disagrees(negative)
-                .channelGroupName(group.getName())
-                .build();
+        return GreenlitMessage.builder().userId(message.getAuthor().getId()).messageId(message.getId()).tags(getTags(message.getContentRaw())).suggestionTitle(Util.getFirstLine(message)).suggestionContent(message.getContentRaw()).suggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli())).suggestionUrl(message.getJumpUrl()).agrees(positive).disagrees(negative).channelGroupName(group.getName()).build();
     }
 
     /**
      * Get all tags that a message contains in the first line
      *
      * @param message The {@link Message} to get the tags from
+     *
      * @return A list of tags
      */
     private List<String> getTags(String message) {
@@ -243,8 +247,7 @@ public class Curator {
         Matcher matcher = Util.SUGGESTION_TITLE_REGEX.matcher(firstLine);
         List<String> tags = new ArrayList<>();
 
-        while (matcher.find())
-            tags.add(matcher.group(1));
+        while (matcher.find()) tags.add(matcher.group(1));
 
         return tags;
     }
@@ -275,9 +278,13 @@ public class Curator {
      * @param negative The {@link MessageReaction} to check and update the negative count
      */
     private void getAndUpdateUserReactions(ChannelGroup group, Message message, MessageReaction positive, MessageReaction negative) {
+        if (readOnly) {
+            log("[" + group.getName() + "] [" + message.getId() + "] Skipping updating user reactions because this is a read-only run!");
+            return;
+        }
+
         positive.retrieveUsers().complete().forEach(user -> {
-            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId())))
-                return;
+            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId()))) return;
 
             DiscordUser discordUser = findUser(user.getId());
 
@@ -288,8 +295,7 @@ public class Curator {
         });
 
         negative.retrieveUsers().complete().forEach(user -> {
-            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId())))
-                return;
+            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId()))) return;
 
             DiscordUser discordUser = findUser(user.getId());
 
@@ -311,6 +317,11 @@ public class Curator {
      * @param disagrees The new number of disagrees the message has
      */
     private void checkGreenlit(ChannelGroup group, Message message, int agrees, int disagrees) {
+        if (readOnly) {
+            log("[" + group.getName() + "] [" + message.getId() + "] Skipping greenlit check because we're in read-only mode!");
+            return;
+        }
+
         log("[" + group.getName() + "] [" + message.getId() + "] This message is already greenlit! Checking to see if the reaction count has changed");
 
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
@@ -351,9 +362,7 @@ public class Curator {
             return;
         }
 
-        log("[" + group.getName() + "] [" + message.getId() + "] Updating record in the database with the new reaction count! "
-                + "(" + greenlitMessage.getAgrees() + "->" + agrees + " positive, "
-                + greenlitMessage.getDisagrees() + "->" + disagrees + " negative)");
+        log("[" + group.getName() + "] [" + message.getId() + "] Updating record in the database with the new reaction count! " + "(" + greenlitMessage.getAgrees() + "->" + agrees + " positive, " + greenlitMessage.getDisagrees() + "->" + disagrees + " negative)");
         greenlitMessage.setAgrees(agrees);
         greenlitMessage.setDisagrees(disagrees);
 
@@ -369,6 +378,7 @@ public class Curator {
      * Find a {@link DiscordUser} in the database by their Discord ID
      *
      * @param id The Discord ID to search for
+     *
      * @return The {@link DiscordUser} if found, null otherwise
      */
     private DiscordUser findUser(String id) {
@@ -389,11 +399,11 @@ public class Curator {
      *
      * @param positive The number of positive reactions
      * @param negative The number of negative reactions
+     *
      * @return The ratio of positive to negative reactions
      */
     private double getRatio(int positive, int negative) {
-        if (positive == 0 && negative == 0)
-            return 0;
+        if (positive == 0 && negative == 0) return 0;
 
         return (double) positive / (positive + negative) * 100;
     }
