@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
+import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.api.database.GreenlitMessage;
@@ -23,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -89,12 +91,21 @@ public class Curator {
      * Start the curation process on the selected {@link ChannelGroup} and message limit
      */
     public void curate() {
+        TextChannel logChannel = ChannelManager.getChannel(NerdBotApp.getBot().getConfig().getLogChannel());
+
+        if (logChannel == null) {
+            Logger.error("Couldn't find the log channel!");
+            return;
+        }
+
         if (!Database.getInstance().isConnected()) {
+            logChannel.sendMessage("The database is not connected!").queue();
             error("Cannot connect to the database!");
             return;
         }
 
         if (groups.isEmpty()) {
+            logChannel.sendMessage("No channel groups were found!").queue();
             error("No groups to curate!");
             return;
         }
@@ -108,6 +119,7 @@ public class Curator {
         log(Util.DASHED_LINE);
         log("Curating process started at " + new Date(start));
         log(Util.DASHED_LINE);
+        logChannel.sendMessage("Curating process started at " + new Date(start) + " for groups: " + groups.stream().map(ChannelGroup::getName).collect(Collectors.joining(", "))).queue();
 
         boolean dev = Region.isDev();
         if (dev) log("Since this is a DEV environment we will include all reactions!");
@@ -191,6 +203,8 @@ public class Curator {
         log(Util.DASHED_LINE);
         log("Curating process finished at " + new Date(end) + ". Elapsed time: " + elapsed + "ms (" + Time.formatMs(elapsed) + ")");
         log(Util.DASHED_LINE);
+
+        logChannel.sendMessage("Curating process finished at " + new Date(end) + ". Elapsed time: " + elapsed + "ms (" + Time.formatMs(elapsed) + ")").queue();
     }
 
     /**
