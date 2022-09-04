@@ -165,6 +165,11 @@ public class Curator {
                     continue;
                 }
 
+                if (realPositive < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
+                    log("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has less than the minimum threshold of " + NerdBotApp.getBot().getConfig().getMinimumThreshold() + " positive reactions!");
+                    continue;
+                }
+
                 getAndUpdateUserReactions(group, message, positive, negative);
 
                 if (message.getReaction(greenlit) != null) {
