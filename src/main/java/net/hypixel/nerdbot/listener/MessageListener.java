@@ -24,11 +24,6 @@ public class MessageListener implements EventListener {
             if (messageEvent.getAuthor().isBot() && !messageEvent.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId()))
                 return;
 
-            if (System.getProperty("bot.readOnly") != null && Boolean.parseBoolean(System.getProperty("bot.readOnly"))) {
-                Logger.info("Read only mode is enabled, ignoring new message");
-                return;
-            }
-
             Guild guild = messageEvent.getGuild();
             List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
             if (groups == null || groups.isEmpty()) return;
@@ -46,6 +41,12 @@ public class MessageListener implements EventListener {
                 if (!group.getFrom().equals(channel.getId())) continue;
 
                 message.createThreadChannel("[Discussion] " + Util.getFirstLine(message)).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
+
+                if (System.getProperty("bot.readOnly") != null && Boolean.parseBoolean(System.getProperty("bot.readOnly"))) {
+                    Logger.info("Read-only mode is enabled, not adding reactions to new message " + message.getId());
+                    return;
+                }
+
                 message.addReaction(yes).queue();
                 message.addReaction(no).queue();
             }
