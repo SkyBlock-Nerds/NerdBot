@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class NerdBot implements Bot {
 
@@ -67,9 +66,9 @@ public class NerdBot implements Bot {
         String fileName = Region.getRegion().name().toLowerCase() + ".config.json";
         try {
             File file;
-            file = new File(Objects.requireNonNull(getClass().getClassLoader().getResource(fileName)).getFile());
-
+            file = new File(fileName);
             config = Util.loadConfig(file);
+
             Logger.info("Loaded config from " + file.getAbsolutePath());
         } catch (FileNotFoundException exception) {
             Logger.error("Could not find config file " + fileName);

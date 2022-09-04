@@ -24,6 +24,11 @@ public class MessageListener implements EventListener {
             if (messageEvent.getAuthor().isBot() && !messageEvent.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId()))
                 return;
 
+            if (System.getProperty("bot.readOnly") != null && Boolean.parseBoolean(System.getProperty("bot.readOnly"))) {
+                Logger.info("Read only mode is enabled, ignoring new message");
+                return;
+            }
+
             Guild guild = messageEvent.getGuild();
             List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
             if (groups == null || groups.isEmpty()) return;
