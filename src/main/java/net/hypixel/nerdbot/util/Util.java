@@ -64,13 +64,13 @@ public class Util {
         String firstLine = message.getContentRaw().split("\n")[0];
 
         if (firstLine == null || firstLine.equals("")) {
-            firstLine = "No Title";
+            firstLine = "No Title Found";
 
-            if (message.getEmbeds().get(0) != null)
+            if (message.getEmbeds().get(0) != null) {
                 firstLine = message.getEmbeds().get(0).getTitle();
+            }
         }
 
-        return firstLine.substring(0, Math.min(30, firstLine.length()));
+        return (firstLine.length() > 3) ? firstLine.substring(0, 30 - 3) + "..." : firstLine;
     }
-
 }
