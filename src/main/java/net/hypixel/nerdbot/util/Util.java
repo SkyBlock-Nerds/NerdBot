@@ -71,6 +71,6 @@ public class Util {
             }
         }
 
-        return (firstLine.length() > 3) ? firstLine.substring(0, 30 - 3) + "..." : firstLine;
+        return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
     }
 }

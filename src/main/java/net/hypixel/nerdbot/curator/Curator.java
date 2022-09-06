@@ -186,13 +186,13 @@ public class Curator {
                     continue;
                 }
 
-                ratioMessage += ". Greenlighting this message!";
-                log(ratioMessage);
-
                 if (readOnly) {
                     log("[" + group.getName() + "] [" + message.getId() + "] Skipping logging the message because this is a read-only run!");
                     continue;
                 }
+
+                ratioMessage += ". Greenlighting this message!";
+                log(ratioMessage);
 
                 message.addReaction(greenlit).queue();
                 GreenlitMessage msg = createGreenlitMessage(group, message, realPositive, realNegative);
