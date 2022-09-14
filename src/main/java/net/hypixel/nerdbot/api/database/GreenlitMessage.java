@@ -14,6 +14,7 @@ import org.bson.types.ObjectId;
 import java.awt.*;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @AllArgsConstructor
 @Builder
@@ -50,12 +51,18 @@ public class GreenlitMessage {
 
         builder.setTitle(suggestionTitle, suggestionUrl);
         builder.setColor(Color.GREEN);
-        builder.setDescription("Tags: `" + (tags.isEmpty() ? "N/A" : String.join(", ", tags)) + "`"
-                + "\n\n"
-                + suggestionContent
-                + "\n\n"
-        );
 
+        StringBuilder description = new StringBuilder();
+
+        if (tags != null && !tags.isEmpty()) {
+            description.append("**Tags:** `");
+            String tagString = String.join("`, `", tags);
+            description.append(tagString).append("`\n\n");
+        }
+
+        description.append(suggestionContent);
+
+        builder.setDescription(description.toString());
         builder.addField("Agrees", String.valueOf(agrees), true);
         builder.addField("Disagrees", String.valueOf(disagrees), true);
         builder.setTimestamp(suggestionDate.toInstant());
@@ -65,12 +72,13 @@ public class GreenlitMessage {
             return builder;
         }
 
-        Member member = guild.getMemberById(userId);
-        if (member == null) {
-            builder.setFooter("Suggested by an unknown user");
+        CompletableFuture<Member> memberFuture = CompletableFuture.supplyAsync(() -> guild.retrieveMemberById(userId).complete());
+        Member member = memberFuture.join();
+
+        if (member != null) {
+            builder.setFooter("Suggested by " + member.getUser().getName(), member.getUser().getEffectiveAvatarUrl());
         } else {
-            builder.setAuthor(member.getEffectiveName(), suggestionUrl, member.getAvatarUrl());
-            builder.setFooter("Suggested by " + member.getEffectiveName(), member.getAvatarUrl());
+            builder.setFooter("Suggested by an unknown user");
         }
 
         return builder;
