@@ -71,10 +71,8 @@ public class NerdBot implements Bot {
         }
 
         try {
-            File file;
-            file = new File(fileName);
+            File file = new File(fileName);
             config = Util.loadConfig(file);
-
             Logger.info("Loaded config from " + file.getAbsolutePath());
         } catch (FileNotFoundException exception) {
             Logger.error("Could not find config file " + fileName);
