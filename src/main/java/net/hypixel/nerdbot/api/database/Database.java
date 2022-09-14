@@ -116,10 +116,6 @@ public class Database implements ServerMonitorListener {
         return connected;
     }
 
-    public List<Document> get(String collection, String field, Object value) {
-        return mongoClient.getDatabase("skyblockNerds").getCollection(collection).find(Filters.eq(field, value)).into(new ArrayList<>());
-    }
-
     public void insertGreenlitMessage(GreenlitMessage greenlitMessage) {
         InsertOneResult result = greenlitCollection.insertOne(greenlitMessage);
         log("Inserted greenlit message " + result.getInsertedId());
