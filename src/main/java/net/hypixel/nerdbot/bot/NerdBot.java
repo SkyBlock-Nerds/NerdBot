@@ -63,7 +63,13 @@ public class NerdBot implements Bot {
             System.exit(0);
         }
 
-        String fileName = Region.getRegion().name().toLowerCase() + ".config.json";
+        String fileName;
+        if (System.getProperty("bot.config") != null) {
+            fileName = System.getProperty("bot.config");
+        } else {
+            fileName = Region.getRegion().name().toLowerCase() + ".config.json";
+        }
+
         try {
             File file;
             file = new File(fileName);
