@@ -60,25 +60,6 @@ public class Curator {
     /**
      * Initialize a new Curator with a limit of 100 messages in a set {@link ChannelGroup}
      *
-     * @param group The {@link ChannelGroup} to search through
-     */
-    public Curator(ChannelGroup group) {
-        this(NerdBotApp.getBot().getConfig().getMessageLimit(), List.of(group), false);
-    }
-
-    /**
-     * Initialize a new Curator with a limit of 100 messages in a set {@link ChannelGroup}
-     *
-     * @param limit The amount of messages to curate
-     * @param group The {@link ChannelGroup} to search through
-     */
-    public Curator(int limit, ChannelGroup group) {
-        this(limit, List.of(group), false);
-    }
-
-    /**
-     * Initialize a new Curator with a limit of 100 messages in a set {@link ChannelGroup}
-     *
      * @param limit    The amount of messages to curate
      * @param group    The {@link ChannelGroup} to search through
      * @param readOnly Whether to execute the Curator in read-only mode
