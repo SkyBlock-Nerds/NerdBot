@@ -14,8 +14,8 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
-import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
@@ -34,13 +34,12 @@ import java.util.concurrent.TimeUnit;
 public class Database implements ServerMonitorListener {
 
     private static Database instance;
+    private boolean connected;
 
+    private final MongoClient mongoClient;
     private final MongoCollection<GreenlitMessage> greenlitCollection;
     private final MongoCollection<ChannelGroup> channelCollection;
     private final MongoCollection<DiscordUser> userCollection;
-    private final MongoClient mongoClient;
-
-    private boolean connected;
 
     private Database() {
         ConnectionString connectionString = new ConnectionString(System.getProperty("mongodb.uri"));
@@ -92,6 +91,7 @@ public class Database implements ServerMonitorListener {
                 error("Couldn't notify of database error on Discord!");
                 return;
             }
+
             channel.sendMessage(user.getAsMention() + " I lost connection to the database! Pls fix!").queue();
         }
         connected = false;
