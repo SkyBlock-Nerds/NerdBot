@@ -14,9 +14,6 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
-import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Logger;
@@ -83,16 +80,8 @@ public class Database implements ServerMonitorListener {
     @Override
     public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
         error("Heartbeat failed! Reason: " + event.getThrowable().getMessage());
-
         if (connected) {
-            TextChannel channel = ChannelManager.getChannel(NerdBotApp.getBot().getConfig().getLogChannel());
-            User user = Users.getUser(Users.AERH.getUserId());
-            if (channel == null || user == null) {
-                error("Couldn't notify of database error on Discord!");
-                return;
-            }
-
-            channel.sendMessage(user.getAsMention() + " I lost connection to the database! Pls fix!").queue();
+            ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH.getUserId()).getAsMention() + " The database has disconnected!").queue();
         }
         connected = false;
     }
