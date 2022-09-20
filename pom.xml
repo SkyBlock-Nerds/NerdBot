@@ -21,17 +21,13 @@
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
-        <repository>
-            <id>repo.aerh.net</id>
-            <url>https://repo.aerh.net/repository/maven-public/</url>
-        </repository>
     </repositories>
 
     <dependencies>
         <dependency>
-            <groupId>net.dv8tion</groupId>
+            <groupId>com.github.DV8FromtheWorld</groupId>
             <artifactId>JDA</artifactId>
-            <version>5.0.0-alpha.17</version>
+            <version>feature~forums-v3.7.1-g051ee54-1054</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -53,6 +49,11 @@
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.1.1</version>
         </dependency>
     </dependencies>
 
