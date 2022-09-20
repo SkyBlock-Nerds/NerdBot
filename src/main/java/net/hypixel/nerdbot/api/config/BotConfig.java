@@ -12,5 +12,6 @@ public class BotConfig {
     private double percentage;
     private long interval;
     private Emojis emojis;
+    private Tags tags;
 
 }
