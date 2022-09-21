@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.curator;
+package net.hypixel.nerdbot.api.curator;
 
 import net.dv8tion.jda.api.JDA;
 import net.hypixel.nerdbot.NerdBotApp;
