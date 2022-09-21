@@ -29,4 +29,5 @@ public interface Bot {
 
     long getUptime();
 
+    boolean isReadOnly();
 }
