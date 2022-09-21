@@ -16,6 +16,10 @@ public enum Users {
         return NerdBotApp.getBot().getJDA().retrieveUserById(userId).complete();
     }
 
+    public static User getUser(Users user) {
+        return getUser(user.getUserId());
+    }
+
     public String getUserId() {
         return userId;
     }

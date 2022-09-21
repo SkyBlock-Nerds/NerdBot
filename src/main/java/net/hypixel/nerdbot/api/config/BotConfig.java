@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class BotConfig {
 
-    private String prefix, guildId, logChannel;
+    private String prefix, guildId, logChannel, suggestionForumId;
     private int minimumThreshold, messageLimit;
     private double percentage;
     private long interval;

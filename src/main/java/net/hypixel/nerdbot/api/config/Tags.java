@@ -9,6 +9,6 @@ import lombok.Setter;
 @Setter
 public class Tags {
 
-    private final String greenlit;
+    private final long greenlit;
 
 }
