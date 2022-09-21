@@ -145,8 +145,8 @@ public class Database implements ServerMonitorListener {
         return new ArrayList<>(this.greenlitCollection.find().into(new ArrayList<>()));
     }
 
-    public ChannelGroup getChannelGroup(String channel) {
-        return channelCollection.find(Filters.eq("name", channel)).first();
+    public ChannelGroup getChannelGroup(String name) {
+        return channelCollection.find(Filters.eq("name", name)).first();
     }
 
     public void insertChannelGroup(ChannelGroup channelGroup) {

@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 
 public class ChannelGroupCurator extends Curator<ChannelGroup> {
@@ -81,8 +80,8 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
                 int realNegative = negative.getCount();
 
                 if (!Region.isDev()) {
-                    realPositive = discountBotAndUserReactions(group, message, positive);
-                    realNegative = discountBotAndUserReactions(group, message, negative);
+                    realPositive = discountBotAndUserReactions(message, positive);
+                    realNegative = discountBotAndUserReactions(message, negative);
                 }
 
                 if (realPositive == 0 && realNegative == 0) {
@@ -153,7 +152,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
      */
     private void addEmojiIfMissing(ChannelGroup group, Message message, @NotNull Emoji emoji) {
         if (message.getReaction(emoji) == null) {
-            log("[" + group.getName() + "] [" + message.getId() + "] No reaction found, adding one!");
+            log("[" + group.getName() + "] [" + message.getId() + "] No " + emoji.getName() + " reaction found, adding one!");
             message.addReaction(emoji).queue();
         }
     }
@@ -183,7 +182,9 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
         Matcher matcher = Util.SUGGESTION_TITLE_REGEX.matcher(firstLine);
         List<String> tags = new ArrayList<>();
 
-        while (matcher.find()) tags.add(matcher.group(1));
+        while (matcher.find()) {
+            tags.add(matcher.group(1));
+        }
 
         return tags;
     }
@@ -194,15 +195,11 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
      * @param message  The {@link Message} to remove the reactions from
      * @param reaction The {@link MessageReaction} to check and remove from
      */
-    private int discountBotAndUserReactions(ChannelGroup group, Message message, MessageReaction reaction) {
-        AtomicInteger total = new AtomicInteger(reaction.getCount());
-
-        reaction.retrieveUsers().stream().filter(user -> user.getId().equals(message.getAuthor().getId()) || user.getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())).forEach(user -> {
-            log("[" + group.getName() + "] [" + message.getId() + "] Discounting " + user.getAsTag() + " from the " + reaction.getEmoji().getName() + " reaction!");
-            total.getAndDecrement();
-        });
-
-        return total.get();
+    private int discountBotAndUserReactions(Message message, MessageReaction reaction) {
+        return (int) reaction.retrieveUsers()
+                .stream()
+                .filter(user -> !user.getId().equals(message.getAuthor().getId()) || !user.getId().equals(getJDA().getSelfUser().getId()))
+                .count();
     }
 
     /**
@@ -274,9 +271,11 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
 
         GreenlitMessage greenlitMessage = Database.getInstance().getGreenlitMessage(message.getId());
         if (greenlitMessage == null) {
-            greenlitMessage = createGreenlitMessage(group, message, agrees, disagrees);
+            log("[" + group.getName() + "] [" + message.getId() + "] Could not find greenlit message! Creating one...");
 
+            greenlitMessage = createGreenlitMessage(group, message, agrees, disagrees);
             Database.getInstance().insertGreenlitMessage(greenlitMessage);
+
             log("[" + group.getName() + "] [" + message.getId() + "] Created new greenlit message because it wasn't found in the database");
 
             if (greenlitMessage.getGreenlitMessageId() != null) {
