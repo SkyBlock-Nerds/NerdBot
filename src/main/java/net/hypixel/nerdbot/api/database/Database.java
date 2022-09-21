@@ -128,6 +128,12 @@ public class Database implements ServerMonitorListener {
         }
     }
 
+    public void updateGreenlitMessages(List<GreenlitMessage> messages) {
+        for (GreenlitMessage message : messages) {
+            updateGreenlitMessage(message);
+        }
+    }
+
     public void deleteGreenlitMessage(String field, Object value) {
         DeleteResult result = greenlitCollection.deleteOne(Filters.eq(field, value));
         log(result.getDeletedCount() + " greenlit message(s) deleted");

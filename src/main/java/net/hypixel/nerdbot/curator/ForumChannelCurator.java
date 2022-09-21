@@ -16,6 +16,10 @@ import java.util.List;
 
 public class ForumChannelCurator extends Curator<ForumChannel> {
 
+    public ForumChannelCurator(boolean readOnly) {
+        super(readOnly);
+    }
+
     @Override
     public List<GreenlitMessage> curate(List<ForumChannel> list) {
         List<GreenlitMessage> output = new ArrayList<>();
