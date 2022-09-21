@@ -117,6 +117,16 @@ public class Database implements ServerMonitorListener {
         log("Inserted " + result.getInsertedIds().size() + " greenlit messages");
     }
 
+    public void createOrUpdateGreenlitMessages(List<GreenlitMessage> messages) {
+        for (GreenlitMessage message : messages) {
+            if (greenlitCollection.find(Filters.eq("messageId", message.getMessageId())).first() == null) {
+                insertGreenlitMessage(message);
+            } else {
+                updateGreenlitMessage(message);
+            }
+        }
+    }
+
     public GreenlitMessage getGreenlitMessage(String id) {
         return greenlitCollection.find(Filters.eq("messageId", id)).first();
     }

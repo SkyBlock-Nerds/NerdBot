@@ -26,11 +26,11 @@ public abstract class Curator<T> {
         Logger.error("[" + getClass().getSimpleName() + "] " + message);
     }
 
-    public double getRatio(int positiveReactions, int negativeReactions) {
+    public double getRatio(double positiveReactions, double negativeReactions) {
         if (positiveReactions == 0 && negativeReactions == 0) {
             return 0;
         }
-        return (double) positiveReactions / (positiveReactions + negativeReactions) * 100;
+        return positiveReactions / (positiveReactions + negativeReactions) * 100;
     }
 
     public long getStartTime() {

@@ -41,7 +41,7 @@ public class CurateFeature extends BotFeature {
                         Logger.info("Greenlit " + result.size() + " new suggestions in " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!");
                     }
 
-                    Database.getInstance().updateGreenlitMessages(result);
+                    Database.getInstance().createOrUpdateGreenlitMessages(result);
                 });
             }
         };
