@@ -29,14 +29,12 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         log("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
-        for (ThreadChannel thread : forumChannel.getThreadChannels()) {
+        List<ThreadChannel> threads = forumChannel.getThreadChannels()
+                .stream()
+                .filter(threadChannel -> threadChannel.getAppliedTags().stream().anyMatch(tag -> !tag.getName().equalsIgnoreCase("greenlit")))
+                .toList();
+        for (ThreadChannel thread : threads) {
             log("Curating thread: " + thread.getName() + " (Thread ID: " + thread.getId() + ")");
-
-            // Check if the post is already greenlit then skip it
-            if (thread.getAppliedTags().stream().anyMatch(tag -> tag.getName().equalsIgnoreCase("greenlit"))) {
-                log("Thread '" + thread.getName() + "' is already greenlit, skipping...");
-                continue;
-            }
 
             try {
                 // This is a stupid way to do it but it's the only way that works right now
@@ -57,16 +55,6 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 // Theoretically the agree reaction should be there by default but lets check anyway just in case
                 int agreeReaction = firstPost.getReaction(agreeEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(agreeEmoji)).getCount();
                 int disagreeReaction = firstPost.getReaction(disagreeEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(disagreeEmoji)).getCount();
-
-                    /*if (agreeReaction == null) {
-                        log("Adding a missing agree reaction to post " + firstPost.getJumpUrl());
-                        firstPost.addReaction(agreeEmoji).complete(true);
-                    }
-
-                    if (disagreeReaction == null) {
-                        log("Adding a missing disagree reaction to post " + firstPost.getJumpUrl());
-                        firstPost.addReaction(disagreeEmoji).complete(true);
-                    }*/
 
                 if (agreeReaction < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
                     log("Post " + firstPost.getId() + " doesn't have enough agree reactions, skipping...");
