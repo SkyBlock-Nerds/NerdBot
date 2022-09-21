@@ -28,11 +28,15 @@ public class HelloGoodbyeFeature extends BotFeature {
 
     @Override
     public void onStart() {
-        ChannelManager.getLogChannel().sendMessageEmbeds(HELLO_THERE).queue();
+        if (ChannelManager.getLogChannel() != null) {
+            ChannelManager.getLogChannel().sendMessageEmbeds(HELLO_THERE).queue();
+        }
     }
 
     @Override
     public void onEnd() {
-        ChannelManager.getLogChannel().sendMessageEmbeds(GOODBYE).queue();
+        if (ChannelManager.getLogChannel() != null) {
+            ChannelManager.getLogChannel().sendMessageEmbeds(GOODBYE).queue();
+        }
     }
 }

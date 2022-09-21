@@ -48,7 +48,9 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
                     if (agreeEmoji == null || disagreeEmoji == null) {
                         log("Couldn't find the agree or disagree emoji, time to yell!");
-                        ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH).getAsMention() + " I couldn't find the agree or disagree emoji for some reason, check logs!").queue();
+                        if (ChannelManager.getLogChannel() != null) {
+                            ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH).getAsMention() + " I couldn't find the agree or disagree emoji for some reason, check logs!").queue();
+                        }
                         break;
                     }
 
