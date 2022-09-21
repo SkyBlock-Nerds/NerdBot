@@ -7,11 +7,13 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
+import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.api.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Region;
+import net.hypixel.nerdbot.util.Users;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,6 +40,14 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
         List<GreenlitMessage> output = new ArrayList<>();
 
         setStartTime(System.currentTimeMillis());
+
+        if (agree == null || disagree == null || greenlit == null) {
+            error("Failed to find an emoji! Either agree, disagree or greenlit is null! Check to see if the ID's are correct!");
+            if (ChannelManager.getLogChannel() != null) {
+                ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH).getAsMention() + " Couldn't find one or more of the emojis required, check logs!").queue();
+            }
+            return output;
+        }
 
         for (ChannelGroup group : list) {
             log("Starting to curate channel group " + group.getName() + " for guild " + group.getGuildId() + " (Source: " + group.getFrom() + ", Destination: " + group.getTo() + ")");
