@@ -40,9 +40,9 @@
             <version>4.7.1</version>
         </dependency>
         <dependency>
-            <groupId>net.aerh</groupId>
+            <groupId>com.github.Aerhhh</groupId>
             <artifactId>JDASlashCommands</artifactId>
-            <version>1.0.4</version>
+            <version>1b75df9a41</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
