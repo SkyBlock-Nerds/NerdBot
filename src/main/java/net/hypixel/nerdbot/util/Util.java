@@ -1,9 +1,6 @@
 package net.hypixel.nerdbot.util;
 
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 
@@ -43,6 +40,19 @@ public class Util {
                 .filter(role -> role.getId().equals(id))
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Remove all reactions from a message by a user or bot
+     *
+     * @param reaction The {@link MessageReaction} to search for the list of users to remove
+     * @param users    The {@link List list} of {@link User users} to remove the reaction from
+     */
+    public static int getReactionCountExcludingList(MessageReaction reaction, List<User> users) {
+        return (int) reaction.retrieveUsers()
+                .stream()
+                .filter(user -> !users.contains(user))
+                .count();
     }
 
     public static BotConfig loadConfig(File file) throws FileNotFoundException {

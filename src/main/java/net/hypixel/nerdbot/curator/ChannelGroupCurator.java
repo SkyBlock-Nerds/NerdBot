@@ -86,8 +86,8 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
             int realNegative = negative.getCount();
 
             if (!Region.isDev()) {
-                realPositive = discountBotAndUserReactions(message, positive);
-                realNegative = discountBotAndUserReactions(message, negative);
+                realPositive = Util.getReactionCountExcludingList(positive, List.of(NerdBotApp.getBot().getJDA().getSelfUser(), message.getAuthor()));
+                realNegative = Util.getReactionCountExcludingList(negative, List.of(NerdBotApp.getBot().getJDA().getSelfUser(), message.getAuthor()));
             }
 
             if (realPositive == 0 && realNegative == 0) {
@@ -193,19 +193,6 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
         }
 
         return tags;
-    }
-
-    /**
-     * Remove all reactions from a message by a user or bot
-     *
-     * @param message  The {@link Message} to remove the reactions from
-     * @param reaction The {@link MessageReaction} to check and remove from
-     */
-    private int discountBotAndUserReactions(Message message, MessageReaction reaction) {
-        return (int) reaction.retrieveUsers()
-                .stream()
-                .filter(user -> !user.getId().equals(message.getAuthor().getId()) || !user.getId().equals(getJDA().getSelfUser().getId()))
-                .count();
     }
 
     /**
