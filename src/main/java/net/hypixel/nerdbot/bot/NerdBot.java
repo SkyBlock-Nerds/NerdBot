@@ -82,7 +82,7 @@ public class NerdBot implements Bot {
         commands = new CommandManager(jda);
         commands.registerCommandsInPackage("net.hypixel.nerdbot.command");
 
-        if (Boolean.parseBoolean(System.getProperty("bot.readOnly"))) {
+        if (NerdBotApp.getBot().isReadOnly()) {
             Logger.info("Bot is loaded in read-only mode!");
         }
 
@@ -149,6 +149,11 @@ public class NerdBot implements Bot {
     @Override
     public long getUptime() {
         return System.currentTimeMillis() - startTime;
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return System.getProperty("bot.readOnly") != null && Boolean.parseBoolean(System.getProperty("bot.readOnly"));
     }
 
 }

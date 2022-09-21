@@ -43,7 +43,7 @@ public class MessageListener implements EventListener {
 
                 message.createThreadChannel("[Discussion] " + Util.getFirstLine(message)).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
 
-                if (System.getProperty("bot.readOnly") != null && Boolean.parseBoolean(System.getProperty("bot.readOnly"))) {
+                if (NerdBotApp.getBot().isReadOnly()) {
                     Logger.info("Read-only mode is enabled, not adding reactions to new message " + message.getId());
                     return;
                 }
