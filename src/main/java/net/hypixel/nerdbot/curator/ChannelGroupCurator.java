@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.exceptions.RateLimitedException;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
@@ -35,7 +36,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
     }
 
     @Override
-    public List<GreenlitMessage> curate(List<ChannelGroup> list) {
+    public List<GreenlitMessage> curate(ChannelGroup group) {
         List<GreenlitMessage> output = new ArrayList<>();
 
         setStartTime(System.currentTimeMillis());
@@ -48,82 +49,87 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
             return output;
         }
 
-        for (ChannelGroup group : list) {
-            log("Starting to curate channel group " + group.getName() + " for guild " + group.getGuildId() + " (Source: " + group.getFrom() + ", Destination: " + group.getTo() + ")");
+        log("Starting to curate channel group " + group.getName() + " for guild " + group.getGuildId() + " (Source: " + group.getFrom() + ", Destination: " + group.getTo() + ")");
 
-            Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
-            TextChannel suggestionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getFrom());
-            TextChannel submissionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getTo());
-            if (guild == null || suggestionChannel == null || submissionChannel == null) {
-                error("[" + group.getName() + "] Either the guild, suggestion channel, or submission channel is null so I can't continue with this group!");
-                continue;
-            }
+        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
+        TextChannel suggestionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getFrom());
+        TextChannel submissionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getTo());
+        if (guild == null || suggestionChannel == null || submissionChannel == null) {
+            error("[" + group.getName() + "] Either the guild, suggestion channel, or submission channel is null so I can't continue with this group!");
+            return output;
+        }
 
-            List<Message> messages = suggestionChannel.getHistory().retrievePast(100).complete();
+        List<Message> messages;
+        try {
+            messages = suggestionChannel.getHistory().retrievePast(100).complete(true);
             if (messages.isEmpty()) {
                 log("[" + group.getName() + "] No messages to curate in this group!");
+                return output;
+            }
+        } catch (RateLimitedException exception) {
+            error("[" + group.getName() + "] Rate limited while trying to get the history of the suggestion channel! Skipping this group!");
+            return output;
+        }
+
+        log("[" + group.getName() + "] Found " + messages.size() + " messages to curate!");
+        int count = 0;
+
+        for (Message message : messages) {
+            log("[" + group.getName() + "] Curating message " + (++count) + "/" + messages.size() + " by " + message.getAuthor().getAsTag() + "!");
+
+            addEmojiIfMissing(group, message, agree);
+            addEmojiIfMissing(group, message, disagree);
+
+            MessageReaction positive = message.getReaction(agree);
+            MessageReaction negative = message.getReaction(disagree);
+            int realPositive = positive.getCount();
+            int realNegative = negative.getCount();
+
+            if (!Region.isDev()) {
+                realPositive = discountBotAndUserReactions(message, positive);
+                realNegative = discountBotAndUserReactions(message, negative);
+            }
+
+            if (realPositive == 0 && realNegative == 0) {
+                log("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has no positive and negative reactions!");
                 continue;
             }
 
-            log("[" + group.getName() + "] Found " + messages.size() + " messages to curate!");
-            int count = 0;
-
-            for (Message message : messages) {
-                log("[" + group.getName() + "] Curating message " + (++count) + "/" + messages.size() + " by " + message.getAuthor().getAsTag() + "!");
-
-                addEmojiIfMissing(group, message, agree);
-                addEmojiIfMissing(group, message, disagree);
-
-                MessageReaction positive = message.getReaction(agree);
-                MessageReaction negative = message.getReaction(disagree);
-                int realPositive = positive.getCount();
-                int realNegative = negative.getCount();
-
-                if (!Region.isDev()) {
-                    realPositive = discountBotAndUserReactions(message, positive);
-                    realNegative = discountBotAndUserReactions(message, negative);
-                }
-
-                if (realPositive == 0 && realNegative == 0) {
-                    log("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has no positive and negative reactions!");
-                    continue;
-                }
-
-                if (realPositive < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
-                    log("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has less than the minimum threshold of " + NerdBotApp.getBot().getConfig().getMinimumThreshold() + " positive reactions!");
-                    continue;
-                }
-
-                getAndUpdateUserReactions(group, message, positive, negative);
-
-                if (message.getReaction(greenlit) != null) {
-                    checkGreenlit(group, message, realPositive, realNegative);
-                    continue;
-                }
-
-                double ratio = getRatio(realPositive, realNegative);
-                double requiredRatio = NerdBotApp.getBot().getConfig().getPercentage();
-                String ratioMessage = "[" + group.getName() + "] [" + message.getId() + "] Reaction ratio is " + Util.DECIMAL_FORMAT.format(ratio) + "% (" + realPositive + " positive / " + realNegative + " negative)";
-                if (ratio < requiredRatio) {
-                    ratioMessage += ". This is below the minimum threshold of " + Util.DECIMAL_FORMAT.format(requiredRatio) + "%!";
-                    log(ratioMessage);
-                    continue;
-                }
-
-                if (isReadOnly()) {
-                    log("[" + group.getName() + "] [" + message.getId() + "] Skipping logging the message because this is a read-only run!");
-                    continue;
-                }
-
-                ratioMessage += ". Greenlighting this message!";
-                log(ratioMessage);
-
-                message.addReaction(greenlit).queue();
-                GreenlitMessage msg = createGreenlitMessage(group, message, realPositive, realNegative);
-                sendGreenlitToChannel(submissionChannel, group, msg);
-                output.add(msg);
+            if (realPositive < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
+                log("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has less than the minimum threshold of " + NerdBotApp.getBot().getConfig().getMinimumThreshold() + " positive reactions!");
+                continue;
             }
+
+            getAndUpdateUserReactions(group, message, positive, negative);
+
+            if (message.getReaction(greenlit) != null) {
+                checkGreenlit(group, message, realPositive, realNegative);
+                continue;
+            }
+
+            double ratio = getRatio(realPositive, realNegative);
+            double requiredRatio = NerdBotApp.getBot().getConfig().getPercentage();
+            String ratioMessage = "[" + group.getName() + "] [" + message.getId() + "] Reaction ratio is " + Util.DECIMAL_FORMAT.format(ratio) + "% (" + realPositive + " positive / " + realNegative + " negative)";
+            if (ratio < requiredRatio) {
+                ratioMessage += ". This is below the minimum threshold of " + Util.DECIMAL_FORMAT.format(requiredRatio) + "%!";
+                log(ratioMessage);
+                continue;
+            }
+
+            if (isReadOnly()) {
+                log("[" + group.getName() + "] [" + message.getId() + "] Skipping logging the message because this is a read-only run!");
+                continue;
+            }
+
+            ratioMessage += ". Greenlighting this message!";
+            log(ratioMessage);
+
+            message.addReaction(greenlit).queue();
+            GreenlitMessage msg = createGreenlitMessage(group, message, realPositive, realNegative);
+            sendGreenlitToChannel(submissionChannel, group, msg);
+            output.add(msg);
         }
+
         setEndTime(System.currentTimeMillis());
         return output;
     }

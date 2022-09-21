@@ -63,7 +63,7 @@ public class CurateSlashCommand implements SlashCommand, RequiresPermission, Has
         NerdBotApp.EXECUTOR_SERVICE.submit(() -> {
             event.deferReply(true).queue();
 
-            List<GreenlitMessage> output = forumChannelCurator.curate(List.of(forumChannel));
+            List<GreenlitMessage> output = forumChannelCurator.curate(forumChannel);
             if (output.isEmpty()) {
                 event.getHook().editOriginal("No suggestions were greenlit!").queue();
             } else {

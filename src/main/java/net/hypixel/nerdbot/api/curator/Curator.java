@@ -16,7 +16,7 @@ public abstract class Curator<T> {
         this.readOnly = readOnly;
     }
 
-    public abstract List<GreenlitMessage> curate(List<T> list);
+    public abstract List<GreenlitMessage> curate(T t);
 
     public void log(String message) {
         Logger.info("[" + getClass().getSimpleName() + "] " + message);
