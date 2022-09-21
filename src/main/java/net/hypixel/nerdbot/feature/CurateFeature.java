@@ -25,7 +25,7 @@ public class CurateFeature extends BotFeature {
                     return;
                 }
 
-                Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(true);
+                Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(false);
                 ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(NerdBotApp.getBot().getConfig().getSuggestionForumId());
                 if (forumChannel == null) {
                     Logger.error("Couldn't find the suggestion forum channel from the bot config!");
@@ -54,5 +54,4 @@ public class CurateFeature extends BotFeature {
     public void onEnd() {
 
     }
-
 }
