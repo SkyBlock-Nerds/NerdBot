@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.exceptions.RateLimitedException;
 import net.dv8tion.jda.internal.entities.ForumTagImpl;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.api.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Users;
@@ -41,8 +42,8 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     // This is a stupid way to do it but it's the only way that works right now
                     List<Message> allMessages = thread.getIterableHistory().complete(true);
                     Message firstPost = allMessages.get(allMessages.size() - 1);
-                    Emoji agreeEmoji = getBot().getJDA().getEmojiById(getBot().getConfig().getEmojis().getAgree());
-                    Emoji disagreeEmoji = getBot().getJDA().getEmojiById(getBot().getConfig().getEmojis().getDisagree());
+                    Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getAgree());
+                    Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getDisagree());
 
                     if (agreeEmoji == null || disagreeEmoji == null) {
                         log("Couldn't find the agree or disagree emoji, time to yell!");
@@ -65,14 +66,14 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         firstPost.addReaction(disagreeEmoji).complete();
                     }
 
-                    if (agreeReaction.getCount() < getBot().getConfig().getMinimumThreshold()) {
+                    if (agreeReaction.getCount() < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
                         log("Post " + firstPost.getId() + " doesn't have enough agree reactions, skipping...");
                         continue;
                     }
 
                     // Get the ratio of reactions and greenlight it if it's over the threshold
                     double ratio = getRatio(agreeReaction.getCount(), disagreeReaction.getCount());
-                    if (ratio >= getBot().getConfig().getPercentage()) {
+                    if (ratio >= NerdBotApp.getBot().getConfig().getPercentage()) {
                         GreenlitMessage greenlitMessage = GreenlitMessage.builder()
                                 .agrees(agreeReaction.getCount())
                                 .disagrees(disagreeReaction.getCount())
@@ -80,7 +81,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                                 .build();
 
                         log("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
-                        thread.getManager().setAppliedTags(new ForumTagImpl(getBot().getConfig().getTags().getGreenlit())).complete();
+                        thread.getManager().setAppliedTags(new ForumTagImpl(NerdBotApp.getBot().getConfig().getTags().getGreenlit())).complete();
                         output.add(greenlitMessage);
                     }
                 } catch (RateLimitedException exception) {

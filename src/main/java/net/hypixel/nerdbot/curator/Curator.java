@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.curator;
 
+import net.dv8tion.jda.api.JDA;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.database.GreenlitMessage;
 import net.hypixel.nerdbot.util.Logger;
 
@@ -53,7 +53,7 @@ public abstract class Curator<T> {
         return readOnly;
     }
 
-    public Bot getBot() {
-        return NerdBotApp.getBot();
+    public JDA getJDA() {
+        return NerdBotApp.getBot().getJDA();
     }
 }
