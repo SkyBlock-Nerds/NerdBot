@@ -20,11 +20,6 @@ public class CurateFeature extends BotFeature {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                if (Database.getInstance().getChannelGroup("DefaultSuggestions") == null) {
-                    Logger.error("Couldn't find a default suggestions channel group!");
-                    return;
-                }
-
                 Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(NerdBotApp.getBot().isReadOnly());
                 ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(NerdBotApp.getBot().getConfig().getSuggestionForumId());
                 if (forumChannel == null) {
