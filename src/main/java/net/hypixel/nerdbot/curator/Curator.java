@@ -19,11 +19,11 @@ public abstract class Curator<T> {
     public abstract List<GreenlitMessage> curate(List<T> list);
 
     public void log(String message) {
-        Logger.info("[" + super.getClass().getSimpleName() + "] " + message);
+        Logger.info("[" + getClass().getSimpleName() + "] " + message);
     }
 
     public void error(String message) {
-        Logger.error("[" + super.getClass().getSimpleName() + "] " + message);
+        Logger.error("[" + getClass().getSimpleName() + "] " + message);
     }
 
     public double getRatio(int positiveReactions, int negativeReactions) {
