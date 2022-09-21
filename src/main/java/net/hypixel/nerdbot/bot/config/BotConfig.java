@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.api.config;
+package net.hypixel.nerdbot.bot.config;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -56,5 +56,5 @@ public class BotConfig {
      * Forum tags for the bot to use, such as the greenlit tag to set suggestions as greenlit
      */
     private Tags tags;
-    
+
 }
