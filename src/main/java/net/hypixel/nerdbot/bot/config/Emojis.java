@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.api.config;
+package net.hypixel.nerdbot.bot.config;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

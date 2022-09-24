@@ -1,8 +1,8 @@
 package net.hypixel.nerdbot.listener;
 
-import net.dv8tion.jda.api.entities.Channel;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -21,8 +21,9 @@ public class MessageListener implements EventListener {
     @Override
     public void onEvent(@NotNull GenericEvent event) {
         if (event instanceof MessageReceivedEvent messageEvent) {
-            if (messageEvent.getAuthor().isBot() && !messageEvent.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId()))
+            if (messageEvent.getAuthor().isBot() && !messageEvent.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
                 return;
+            }
 
             Guild guild = messageEvent.getGuild();
             List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
@@ -34,7 +35,7 @@ public class MessageListener implements EventListener {
                 return;
             }
 
-            Channel channel = messageEvent.getChannel();
+            MessageChannelUnion channel = messageEvent.getChannel();
             Message message = messageEvent.getMessage();
 
             for (ChannelGroup group : groups) {
@@ -52,5 +53,4 @@ public class MessageListener implements EventListener {
             }
         }
     }
-
 }

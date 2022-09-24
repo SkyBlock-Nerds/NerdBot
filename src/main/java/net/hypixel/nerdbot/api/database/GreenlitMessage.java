@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.util.Util;
+import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.bson.types.ObjectId;
 
 import java.awt.*;
@@ -46,6 +47,7 @@ public class GreenlitMessage {
         return this;
     }
 
+    @BsonIgnore
     public EmbedBuilder getEmbed() {
         EmbedBuilder builder = new EmbedBuilder();
 
@@ -72,10 +74,9 @@ public class GreenlitMessage {
             return builder;
         }
 
-        CompletableFuture<Member> memberFuture = CompletableFuture.supplyAsync(() -> guild.retrieveMemberById(userId).complete());
-        Member member = memberFuture.join();
-
-        if (member != null) {
+        if (userId != null) {
+            CompletableFuture<Member> memberFuture = CompletableFuture.supplyAsync(() -> guild.retrieveMemberById(userId).complete());
+            Member member = memberFuture.join();
             builder.setFooter("Suggested by " + member.getUser().getName(), member.getUser().getEffectiveAvatarUrl());
         } else {
             builder.setFooter("Suggested by an unknown user");

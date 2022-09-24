@@ -1,196 +1,137 @@
 package net.hypixel.nerdbot.curator;
 
-import lombok.Getter;
-import lombok.Setter;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.exceptions.RateLimitedException;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
+import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.api.database.GreenlitMessage;
-import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Region;
-import net.hypixel.nerdbot.util.Time;
+import net.hypixel.nerdbot.util.Users;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 
-@Getter
-@Setter
-public class Curator {
+public class ChannelGroupCurator extends Curator<ChannelGroup> {
 
-    private final int limit;
-    private final List<ChannelGroup> groups;
-    private final List<GreenlitMessage> greenlitMessages;
-    private final List<DiscordUser> users;
-    private final boolean readOnly;
-    private Emoji agree, disagree, greenlit;
-    private long elapsed;
+    private final Emoji agree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getAgree());
+    private final Emoji disagree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getDisagree());
+    private final Emoji greenlit = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getGreenlit());
 
-    /**
-     * Initialize a new Curator object with a set limit and {@link ChannelGroup}
-     *
-     * @param limit  The amount of messages to curate
-     * @param groups The list of {@link ChannelGroup} to search through
-     */
-    public Curator(int limit, List<ChannelGroup> groups, boolean readOnly) {
-        this.limit = limit;
-        this.groups = groups;
-        this.readOnly = readOnly;
+    private final List<DiscordUser> users = new ArrayList<>();
 
-        greenlitMessages = new ArrayList<>(limit);
-        users = new ArrayList<>();
-
-        agree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getAgree());
-        disagree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getDisagree());
-        greenlit = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getGreenlit());
+    public ChannelGroupCurator(boolean readOnly) {
+        super(readOnly);
     }
 
-    /**
-     * Initialize a new Curator with a limit of 100 messages in a set {@link ChannelGroup}
-     *
-     * @param limit    The amount of messages to curate
-     * @param group    The {@link ChannelGroup} to search through
-     * @param readOnly Whether to execute the Curator in read-only mode
-     */
-    public Curator(int limit, ChannelGroup group, boolean readOnly) {
-        this(limit, List.of(group), readOnly);
-    }
+    @Override
+    public List<GreenlitMessage> curate(ChannelGroup group) {
+        List<GreenlitMessage> output = new ArrayList<>();
 
-    /**
-     * Start the curation process on the selected {@link ChannelGroup} and message limit
-     */
-    public void curate() {
-        TextChannel logChannel = ChannelManager.getChannel(NerdBotApp.getBot().getConfig().getLogChannel());
+        setStartTime(System.currentTimeMillis());
 
-        if (logChannel == null) {
-            Logger.error("Couldn't find the log channel!");
-            return;
-        }
-
-        if (!Database.getInstance().isConnected()) {
-            logChannel.sendMessage("The database is not connected!").queue();
-            error("Cannot connect to the database!");
-            return;
-        }
-
-        if (groups.isEmpty()) {
-            logChannel.sendMessage("No channel groups were found!").queue();
-            error("No groups to curate!");
-            return;
-        }
-
-        if (limit <= 0) {
-            error("Invalid message limit specified! (" + limit + ")");
-            return;
-        }
-
-        long start = System.currentTimeMillis();
-        log(Util.DASHED_LINE);
-        log("Curating process started at " + new Date(start));
-        log(Util.DASHED_LINE);
-        logChannel.sendMessage("Curating process started at " + new Date(start) + " for groups: " + groups.stream().map(ChannelGroup::getName).collect(Collectors.joining(", "))).queue();
-
-        boolean dev = Region.isDev();
-        if (dev) log("Since this is a DEV environment we will include all reactions!");
-
-        for (ChannelGroup group : groups) {
-            log("[" + group.getName() + "] Starting to curate the suggestions for this group at " + new Date(start) + "!");
-
-            Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
-            TextChannel suggestionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getFrom());
-            TextChannel submissionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getTo());
-            if (guild == null || suggestionChannel == null || submissionChannel == null) {
-                error("[" + group.getName() + "] Either the guild, suggestion channel, or submission channel is null so I can't continue with this group!");
-                continue;
+        if (agree == null || disagree == null || greenlit == null) {
+            error("Failed to find an emoji! Either agree, disagree or greenlit is null! Check to see if the ID's are correct!");
+            if (ChannelManager.getLogChannel() != null) {
+                ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH).getAsMention() + " Couldn't find one or more of the emojis required, check logs!").queue();
             }
+            return output;
+        }
 
-            List<Message> messages = suggestionChannel.getHistory().retrievePast(limit).complete();
+        log("Starting to curate channel group " + group.getName() + " for guild " + group.getGuildId() + " (Source: " + group.getFrom() + ", Destination: " + group.getTo() + ")");
+
+        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
+        TextChannel suggestionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getFrom());
+        TextChannel submissionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getTo());
+        if (guild == null || suggestionChannel == null || submissionChannel == null) {
+            error("[" + group.getName() + "] Either the guild, suggestion channel, or submission channel is null so I can't continue with this group!");
+            return output;
+        }
+
+        List<Message> messages;
+        try {
+            messages = suggestionChannel.getHistory().retrievePast(100).complete(true);
             if (messages.isEmpty()) {
                 log("[" + group.getName() + "] No messages to curate in this group!");
+                return output;
+            }
+        } catch (RateLimitedException exception) {
+            error("[" + group.getName() + "] Rate limited while trying to get the history of the suggestion channel! Skipping this group!");
+            return output;
+        }
+
+        log("[" + group.getName() + "] Found " + messages.size() + " messages to curate!");
+        int count = 0;
+
+        for (Message message : messages) {
+            log("[" + group.getName() + "] Curating message " + (++count) + "/" + messages.size() + " by " + message.getAuthor().getAsTag() + "!");
+
+            addEmojiIfMissing(group, message, agree);
+            addEmojiIfMissing(group, message, disagree);
+
+            MessageReaction positive = message.getReaction(agree);
+            MessageReaction negative = message.getReaction(disagree);
+            int realPositive = positive.getCount();
+            int realNegative = negative.getCount();
+
+            if (!Region.isDev()) {
+                realPositive = Util.getReactionCountExcludingList(positive, List.of(NerdBotApp.getBot().getJDA().getSelfUser(), message.getAuthor()));
+                realNegative = Util.getReactionCountExcludingList(negative, List.of(NerdBotApp.getBot().getJDA().getSelfUser(), message.getAuthor()));
+            }
+
+            if (realPositive == 0 && realNegative == 0) {
+                log("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has no positive and negative reactions!");
                 continue;
             }
 
-            log("[" + group.getName() + "] Found " + messages.size() + " messages to curate!");
-            int count = 0;
-
-            for (Message message : messages) {
-                log("[" + group.getName() + "] Curating message " + (++count) + "/" + messages.size() + " by " + message.getAuthor().getAsTag() + "!");
-
-                addEmojiIfMissing(group, message, agree);
-                addEmojiIfMissing(group, message, disagree);
-
-                MessageReaction positive = message.getReaction(agree);
-                MessageReaction negative = message.getReaction(disagree);
-                int realPositive = positive.getCount();
-                int realNegative = negative.getCount();
-
-                if (!dev) {
-                    realPositive = discountBotAndUserReactions(group, message, positive);
-                    realNegative = discountBotAndUserReactions(group, message, negative);
-                }
-
-                if (realPositive == 0 && realNegative == 0) {
-                    log("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has no positive and negative reactions!");
-                    continue;
-                }
-
-                if (realPositive < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
-                    log("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has less than the minimum threshold of " + NerdBotApp.getBot().getConfig().getMinimumThreshold() + " positive reactions!");
-                    continue;
-                }
-
-                getAndUpdateUserReactions(group, message, positive, negative);
-
-                if (message.getReaction(greenlit) != null) {
-                    checkGreenlit(group, message, realPositive, realNegative);
-                    continue;
-                }
-
-                double ratio = getRatio(realPositive, realNegative);
-                double requiredRatio = NerdBotApp.getBot().getConfig().getPercentage();
-                String ratioMessage = "[" + group.getName() + "] [" + message.getId() + "] Reaction ratio is " + Util.DECIMAL_FORMAT.format(ratio) + "% (" + realPositive + " positive / " + realNegative + " negative)";
-                if (ratio < requiredRatio) {
-                    ratioMessage += ". This is below the minimum threshold of " + Util.DECIMAL_FORMAT.format(requiredRatio) + "%!";
-                    log(ratioMessage);
-                    continue;
-                }
-
-                if (readOnly) {
-                    log("[" + group.getName() + "] [" + message.getId() + "] Skipping logging the message because this is a read-only run!");
-                    continue;
-                }
-
-                ratioMessage += ". Greenlighting this message!";
-                log(ratioMessage);
-
-                message.addReaction(greenlit).queue();
-                GreenlitMessage msg = createGreenlitMessage(group, message, realPositive, realNegative);
-                sendGreenlitToChannel(submissionChannel, group, msg);
+            if (realPositive < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
+                log("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has less than the minimum threshold of " + NerdBotApp.getBot().getConfig().getMinimumThreshold() + " positive reactions!");
+                continue;
             }
+
+            getAndUpdateUserReactions(group, message, positive, negative);
+
+            if (message.getReaction(greenlit) != null) {
+                checkGreenlit(group, message, realPositive, realNegative);
+                continue;
+            }
+
+            double ratio = getRatio(realPositive, realNegative);
+            double requiredRatio = NerdBotApp.getBot().getConfig().getPercentage();
+            String ratioMessage = "[" + group.getName() + "] [" + message.getId() + "] Reaction ratio is " + Util.DECIMAL_FORMAT.format(ratio) + "% (" + realPositive + " positive / " + realNegative + " negative)";
+            if (ratio < requiredRatio) {
+                ratioMessage += ". This is below the minimum threshold of " + Util.DECIMAL_FORMAT.format(requiredRatio) + "%!";
+                log(ratioMessage);
+                continue;
+            }
+
+            if (isReadOnly()) {
+                log("[" + group.getName() + "] [" + message.getId() + "] Skipping logging the message because this is a read-only run!");
+                continue;
+            }
+
+            ratioMessage += ". Greenlighting this message!";
+            log(ratioMessage);
+
+            message.addReaction(greenlit).queue();
+            GreenlitMessage msg = createGreenlitMessage(group, message, realPositive, realNegative);
+            sendGreenlitToChannel(submissionChannel, group, msg);
+            output.add(msg);
         }
 
-        if (!users.isEmpty()) Database.getInstance().updateUsers(users);
-
-        long end = System.currentTimeMillis();
-        elapsed = end - start;
-
-        log(Util.DASHED_LINE);
-        log("Curating process finished at " + new Date(end) + ". Elapsed time: " + elapsed + "ms (" + Time.formatMs(elapsed) + ")");
-        log(Util.DASHED_LINE);
-
-        logChannel.sendMessage("Curating process finished at " + new Date(end) + ". Elapsed time: " + elapsed + "ms (" + Time.formatMs(elapsed) + ")").queue();
+        setEndTime(System.currentTimeMillis());
+        return output;
     }
 
     /**
@@ -200,12 +141,11 @@ public class Curator {
      * @param channelGroup The {@link ChannelGroup} being curated
      * @param message      The {@link GreenlitMessage} to send
      */
-    private void sendGreenlitToChannel(TextChannel channel, ChannelGroup channelGroup, GreenlitMessage message) {
+    public void sendGreenlitToChannel(TextChannel channel, ChannelGroup channelGroup, GreenlitMessage message) {
         channel.sendMessageEmbeds(message.getEmbed().build()).queue(message1 -> {
             message.setSuggestionTitle(message1.getId());
             Database.getInstance().insertGreenlitMessage(message);
             log("[" + channelGroup.getName() + "] [" + message.getId() + "] Greenlit message sent to " + channel.getName() + " and inserted into database");
-            greenlitMessages.add(message);
         });
     }
 
@@ -218,7 +158,7 @@ public class Curator {
      */
     private void addEmojiIfMissing(ChannelGroup group, Message message, @NotNull Emoji emoji) {
         if (message.getReaction(emoji) == null) {
-            log("[" + group.getName() + "] [" + message.getId() + "] No reaction found, adding one!");
+            log("[" + group.getName() + "] [" + message.getId() + "] No " + emoji.getName() + " reaction found, adding one!");
             message.addReaction(emoji).queue();
         }
     }
@@ -248,26 +188,11 @@ public class Curator {
         Matcher matcher = Util.SUGGESTION_TITLE_REGEX.matcher(firstLine);
         List<String> tags = new ArrayList<>();
 
-        while (matcher.find()) tags.add(matcher.group(1));
+        while (matcher.find()) {
+            tags.add(matcher.group(1));
+        }
 
         return tags;
-    }
-
-    /**
-     * Remove all reactions from a message by a user or bot
-     *
-     * @param message  The {@link Message} to remove the reactions from
-     * @param reaction The {@link MessageReaction} to check and remove from
-     */
-    private int discountBotAndUserReactions(ChannelGroup group, Message message, MessageReaction reaction) {
-        AtomicInteger total = new AtomicInteger(reaction.getCount());
-
-        reaction.retrieveUsers().stream().filter(user -> user.getId().equals(message.getAuthor().getId()) || user.getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())).forEach(user -> {
-            log("[" + group.getName() + "] [" + message.getId() + "] Discounting " + user.getAsTag() + " from the " + reaction.getEmoji().getName() + " reaction!");
-            total.getAndDecrement();
-        });
-
-        return total.get();
     }
 
     /**
@@ -279,7 +204,7 @@ public class Curator {
      * @param negative The {@link MessageReaction} to check and update the negative count
      */
     private void getAndUpdateUserReactions(ChannelGroup group, Message message, MessageReaction positive, MessageReaction negative) {
-        if (readOnly) {
+        if (isReadOnly()) {
             log("[" + group.getName() + "] [" + message.getId() + "] Skipping updating user reactions because this is a read-only run!");
             return;
         }
@@ -318,7 +243,7 @@ public class Curator {
      * @param disagrees The new number of disagrees the message has
      */
     private void checkGreenlit(ChannelGroup group, Message message, int agrees, int disagrees) {
-        if (readOnly) {
+        if (isReadOnly()) {
             log("[" + group.getName() + "] [" + message.getId() + "] Skipping greenlit check because we're in read-only mode!");
             return;
         }
@@ -339,9 +264,11 @@ public class Curator {
 
         GreenlitMessage greenlitMessage = Database.getInstance().getGreenlitMessage(message.getId());
         if (greenlitMessage == null) {
-            greenlitMessage = createGreenlitMessage(group, message, agrees, disagrees);
+            log("[" + group.getName() + "] [" + message.getId() + "] Could not find greenlit message! Creating one...");
 
+            greenlitMessage = createGreenlitMessage(group, message, agrees, disagrees);
             Database.getInstance().insertGreenlitMessage(greenlitMessage);
+
             log("[" + group.getName() + "] [" + message.getId() + "] Created new greenlit message because it wasn't found in the database");
 
             if (greenlitMessage.getGreenlitMessageId() != null) {
@@ -393,27 +320,5 @@ public class Curator {
         }
 
         return discordUser;
-    }
-
-    /**
-     * Get the ratio of positive to negative reactions for a {@link Message}
-     *
-     * @param positive The number of positive reactions
-     * @param negative The number of negative reactions
-     *
-     * @return The ratio of positive to negative reactions
-     */
-    private double getRatio(int positive, int negative) {
-        if (positive == 0 && negative == 0) return 0;
-
-        return (double) positive / (positive + negative) * 100;
-    }
-
-    private void log(String message) {
-        Logger.info("[Curator] " + message);
-    }
-
-    private void error(String message) {
-        Logger.error("[Curator] " + message);
     }
 }
