@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.api.channel;
 
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.util.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -15,5 +15,10 @@ public class ChannelManager {
             return null;
         }
         return textChannel;
+    }
+
+    @Nullable
+    public static TextChannel getLogChannel() {
+        return getChannel(NerdBotApp.getBot().getConfig().getLogChannel());
     }
 }

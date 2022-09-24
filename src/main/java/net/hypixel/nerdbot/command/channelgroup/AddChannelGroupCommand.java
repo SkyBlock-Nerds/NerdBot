@@ -5,7 +5,7 @@ import net.aerh.jdacommands.command.HasArguments;
 import net.aerh.jdacommands.command.RequiresPermission;
 import net.aerh.jdacommands.command.SlashCommand;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Channel;
+import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -50,8 +50,8 @@ public class AddChannelGroupCommand implements SlashCommand, RequiresPermission,
         }
 
         String name = event.getOption("name").getAsString();
-        Channel from = event.getOption("from").getAsChannel();
-        Channel to = event.getOption("to").getAsChannel();
+        GuildChannelUnion from = event.getOption("from").getAsChannel();
+        GuildChannelUnion to = event.getOption("to").getAsChannel();
 
         ChannelGroup channelGroup = new ChannelGroup(name, event.getGuild().getId(), from.getId(), to.getId());
         Database.getInstance().insertChannelGroup(channelGroup);

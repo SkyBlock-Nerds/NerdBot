@@ -14,9 +14,6 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
-import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Logger;
@@ -34,13 +31,12 @@ import java.util.concurrent.TimeUnit;
 public class Database implements ServerMonitorListener {
 
     private static Database instance;
+    private boolean connected;
 
+    private final MongoClient mongoClient;
     private final MongoCollection<GreenlitMessage> greenlitCollection;
     private final MongoCollection<ChannelGroup> channelCollection;
     private final MongoCollection<DiscordUser> userCollection;
-    private final MongoClient mongoClient;
-
-    private boolean connected;
 
     private Database() {
         ConnectionString connectionString = new ConnectionString(System.getProperty("mongodb.uri"));
@@ -84,15 +80,10 @@ public class Database implements ServerMonitorListener {
     @Override
     public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
         error("Heartbeat failed! Reason: " + event.getThrowable().getMessage());
-
         if (connected) {
-            TextChannel channel = ChannelManager.getChannel(NerdBotApp.getBot().getConfig().getLogChannel());
-            User user = Users.getUser(Users.AERH.getUserId());
-            if (channel == null || user == null) {
-                error("Couldn't notify of database error on Discord!");
-                return;
+            if (ChannelManager.getLogChannel() != null) {
+                ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH.getUserId()).getAsMention() + " The database has disconnected!").queue();
             }
-            channel.sendMessage(user.getAsMention() + " I lost connection to the database! Pls fix!").queue();
         }
         connected = false;
     }
@@ -126,6 +117,16 @@ public class Database implements ServerMonitorListener {
         log("Inserted " + result.getInsertedIds().size() + " greenlit messages");
     }
 
+    public void createOrUpdateGreenlitMessages(List<GreenlitMessage> messages) {
+        for (GreenlitMessage message : messages) {
+            if (greenlitCollection.find(Filters.eq("messageId", message.getMessageId())).first() == null) {
+                insertGreenlitMessage(message);
+            } else {
+                updateGreenlitMessage(message);
+            }
+        }
+    }
+
     public GreenlitMessage getGreenlitMessage(String id) {
         return greenlitCollection.find(Filters.eq("messageId", id)).first();
     }
@@ -139,6 +140,12 @@ public class Database implements ServerMonitorListener {
         }
     }
 
+    public void updateGreenlitMessages(List<GreenlitMessage> messages) {
+        for (GreenlitMessage message : messages) {
+            updateGreenlitMessage(message);
+        }
+    }
+
     public void deleteGreenlitMessage(String field, Object value) {
         DeleteResult result = greenlitCollection.deleteOne(Filters.eq(field, value));
         log(result.getDeletedCount() + " greenlit message(s) deleted");
@@ -148,8 +155,8 @@ public class Database implements ServerMonitorListener {
         return new ArrayList<>(this.greenlitCollection.find().into(new ArrayList<>()));
     }
 
-    public ChannelGroup getChannelGroup(String channel) {
-        return channelCollection.find(Filters.eq("name", channel)).first();
+    public ChannelGroup getChannelGroup(String name) {
+        return channelCollection.find(Filters.eq("name", name)).first();
     }
 
     public void insertChannelGroup(ChannelGroup channelGroup) {
