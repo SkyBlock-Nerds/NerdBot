@@ -173,7 +173,18 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
      * @return The new {@link GreenlitMessage}
      */
     private GreenlitMessage createGreenlitMessage(ChannelGroup group, Message message, int positive, int negative) {
-        return GreenlitMessage.builder().userId(message.getAuthor().getId()).messageId(message.getId()).tags(getTags(message.getContentRaw())).suggestionTitle(Util.getFirstLine(message)).suggestionContent(message.getContentRaw()).suggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli())).suggestionUrl(message.getJumpUrl()).agrees(positive).disagrees(negative).channelGroupName(group.getName()).build();
+        return GreenlitMessage.builder()
+                .userId(message.getAuthor().getId())
+                .messageId(message.getId())
+                .tags(getTags(message.getContentRaw()))
+                .suggestionTitle(Util.getFirstLine(message))
+                .suggestionContent(message.getContentRaw())
+                .suggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli()))
+                .suggestionUrl(message.getJumpUrl())
+                .agrees(positive)
+                .disagrees(negative)
+                .channelGroupName(group.getName())
+                .build();
     }
 
     /**
