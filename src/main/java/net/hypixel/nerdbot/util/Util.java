@@ -73,11 +73,11 @@ public class Util {
     public static String getFirstLine(Message message) {
         String firstLine = message.getContentRaw().split("\n")[0];
 
-        if (firstLine == null || firstLine.equals("")) {
-            firstLine = "No Title Found";
-
-            if (message.getEmbeds().get(0) != null) {
+        if (firstLine.equals("")) {
+            if (message.getEmbeds().get(0).getTitle() != null) {
                 firstLine = message.getEmbeds().get(0).getTitle();
+            } else {
+                firstLine = "No Title Found";
             }
         }
 
