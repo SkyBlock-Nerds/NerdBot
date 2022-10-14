@@ -66,7 +66,7 @@ public class NerdBot implements Bot {
         if (System.getProperty("bot.config") != null) {
             fileName = System.getProperty("bot.config");
         } else {
-            fileName = Environment.getRegion().name().toLowerCase() + ".config.json";
+            fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
         }
 
         try {
@@ -121,7 +121,7 @@ public class NerdBot implements Bot {
             NerdBotApp.LOGGER.info("Started feature " + feature.getClass().getSimpleName());
         }
         startTime = System.currentTimeMillis();
-        NerdBotApp.LOGGER.info("Bot started on region " + Environment.getRegion());
+        NerdBotApp.LOGGER.info("Bot started on region " + Environment.getEnvironment());
     }
 
     @Override

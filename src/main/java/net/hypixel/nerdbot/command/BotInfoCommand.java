@@ -37,7 +37,7 @@ public class BotInfoCommand implements SlashCommand, RequiresPermission {
 
         builder.append("**Bot info:**").append("\n");
         builder.append(" - Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n");
-        builder.append(" - Bot region: ").append(Environment.getRegion()).append("\n");
+        builder.append(" - Bot region: ").append(Environment.getEnvironment()).append("\n");
         builder.append(" - Bot uptime: ").append(Time.formatMs(NerdBotApp.getBot().getUptime())).append("\n");
         builder.append(" - Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
 
