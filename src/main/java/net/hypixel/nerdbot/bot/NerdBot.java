@@ -20,7 +20,7 @@ import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.MessageListener;
 import net.hypixel.nerdbot.listener.ShutdownListener;
 import net.hypixel.nerdbot.util.Logger;
-import net.hypixel.nerdbot.util.Region;
+import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Util;
 
 import javax.security.auth.login.LoginException;
@@ -67,7 +67,7 @@ public class NerdBot implements Bot {
         if (System.getProperty("bot.config") != null) {
             fileName = System.getProperty("bot.config");
         } else {
-            fileName = Region.getRegion().name().toLowerCase() + ".config.json";
+            fileName = Environment.getRegion().name().toLowerCase() + ".config.json";
         }
 
         try {
@@ -122,7 +122,7 @@ public class NerdBot implements Bot {
             Logger.info("Started feature " + feature.getClass().getSimpleName());
         }
         startTime = System.currentTimeMillis();
-        Logger.info("Bot started on region " + Region.getRegion());
+        Logger.info("Bot started on region " + Environment.getRegion());
     }
 
     @Override

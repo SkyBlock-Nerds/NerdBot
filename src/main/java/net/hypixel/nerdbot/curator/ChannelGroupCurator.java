@@ -13,7 +13,7 @@ import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.api.database.GreenlitMessage;
-import net.hypixel.nerdbot.util.Region;
+import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Users;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
@@ -85,7 +85,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
             int realPositive = positive.getCount();
             int realNegative = negative.getCount();
 
-            if (!Region.isDev()) {
+            if (!Environment.isDev()) {
                 realPositive = Util.getReactionCountExcludingList(positive, List.of(NerdBotApp.getBot().getJDA().getSelfUser(), message.getAuthor()));
                 realNegative = Util.getReactionCountExcludingList(negative, List.of(NerdBotApp.getBot().getJDA().getSelfUser(), message.getAuthor()));
             }
@@ -210,7 +210,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
         }
 
         positive.retrieveUsers().complete().forEach(user -> {
-            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId()))) return;
+            if (user.isBot() || (!Environment.isDev() && user.getId().equals(message.getAuthor().getId()))) return;
 
             DiscordUser discordUser = findUser(user.getId());
 
@@ -221,7 +221,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
         });
 
         negative.retrieveUsers().complete().forEach(user -> {
-            if (user.isBot() || (!Region.isDev() && user.getId().equals(message.getAuthor().getId()))) return;
+            if (user.isBot() || (!Environment.isDev() && user.getId().equals(message.getAuthor().getId()))) return;
 
             DiscordUser discordUser = findUser(user.getId());
 
