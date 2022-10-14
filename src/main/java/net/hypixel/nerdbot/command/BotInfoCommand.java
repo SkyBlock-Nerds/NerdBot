@@ -7,7 +7,7 @@ import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.util.Region;
+import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
 
@@ -37,7 +37,7 @@ public class BotInfoCommand implements SlashCommand, RequiresPermission {
 
         builder.append("**Bot info:**").append("\n");
         builder.append(" - Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n");
-        builder.append(" - Bot region: ").append(Region.getRegion()).append("\n");
+        builder.append(" - Bot region: ").append(Environment.getRegion()).append("\n");
         builder.append(" - Bot uptime: ").append(Time.formatMs(NerdBotApp.getBot().getUptime())).append("\n");
         builder.append(" - Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
 
