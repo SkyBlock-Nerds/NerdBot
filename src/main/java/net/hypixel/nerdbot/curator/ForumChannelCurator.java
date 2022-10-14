@@ -27,14 +27,14 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         List<GreenlitMessage> output = new ArrayList<>();
         setStartTime(System.currentTimeMillis());
 
-        log("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
+        getLogger().info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
         List<ThreadChannel> threads = forumChannel.getThreadChannels()
                 .stream()
                 .filter(threadChannel -> threadChannel.getAppliedTags().stream().anyMatch(tag -> !tag.getName().equalsIgnoreCase("greenlit")))
                 .toList();
         for (ThreadChannel thread : threads) {
-            log("Curating thread: " + thread.getName() + " (Thread ID: " + thread.getId() + ")");
+            getLogger().info("Curating thread: " + thread.getName() + " (Thread ID: " + thread.getId() + ")");
 
             try {
                 // This is a stupid way to do it but it's the only way that works right now
@@ -44,7 +44,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getDisagree());
 
                 if (agreeEmoji == null || disagreeEmoji == null) {
-                    log("Couldn't find the agree or disagree emoji, time to yell!");
+                    getLogger().error("Couldn't find the agree or disagree emoji, time to yell!");
                     if (ChannelManager.getLogChannel() != null) {
                         ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH).getAsMention() + " I couldn't find the agree or disagree emoji for some reason, check logs!").queue();
                     }
@@ -57,7 +57,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 int disagreeReaction = firstPost.getReaction(disagreeEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(disagreeEmoji)).getCount();
 
                 if (agreeReaction < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
-                    log("Post " + firstPost.getId() + " doesn't have enough agree reactions, skipping...");
+                    getLogger().info("Post " + firstPost.getId() + " doesn't have enough agree reactions, skipping...");
                     continue;
                 }
 
@@ -70,18 +70,18 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                             .messageId(firstPost.getId())
                             .build();
 
-                    log("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
+                    getLogger().info("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
                     thread.getManager().setAppliedTags(new ForumTagImpl(NerdBotApp.getBot().getConfig().getTags().getGreenlit())).complete(true);
                     output.add(greenlitMessage);
                 }
             } catch (RateLimitedException exception) {
-                log("Currently being rate limited so the curation process has to stop!");
+                getLogger().info("Currently being rate limited so the curation process has to stop!");
                 break;
             }
         }
 
         setEndTime(System.currentTimeMillis());
-        log("Curated forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ") in " + (getEndTime() - getStartTime()) + "ms");
+        getLogger().info("Curated forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ") in " + (getEndTime() - getStartTime()) + "ms");
 
         return output;
     }

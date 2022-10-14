@@ -5,7 +5,6 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.api.feature.BotFeature;
-import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.Collections;
@@ -17,11 +16,11 @@ public class UserGrabberFeature extends BotFeature {
     public void onStart() {
         Guild guild = Util.getGuild(NerdBotApp.getBot().getConfig().getGuildId());
         if (guild == null) {
-            Logger.error("Couldn't find the guild specified in the bot config!");
+            NerdBotApp.LOGGER.error("Couldn't find the guild specified in the bot config!");
             return;
         }
 
-        Logger.info("Grabbing users from guild " + guild.getName());
+        NerdBotApp.LOGGER.info("Grabbing users from guild " + guild.getName());
         List<DiscordUser> users = Database.getInstance().getUsers();
 
         guild.loadMembers(member -> {
@@ -29,7 +28,7 @@ public class UserGrabberFeature extends BotFeature {
                 DiscordUser discordUser = new DiscordUser(member.getId(), null, Collections.emptyList(), Collections.emptyList());
                 Database.getInstance().insertUser(discordUser);
             }
-        }).onSuccess(aVoid -> Logger.info("Finished grabbing users from guild " + guild.getName())).onError(Throwable::printStackTrace);
+        }).onSuccess(aVoid -> NerdBotApp.LOGGER.info("Finished grabbing users from guild " + guild.getName())).onError(Throwable::printStackTrace);
     }
 
     @Override

@@ -14,7 +14,6 @@ import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.GreenlitMessage;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
-import net.hypixel.nerdbot.util.Logger;
 
 import java.util.List;
 import java.util.Objects;
@@ -48,7 +47,7 @@ public class CurateSlashCommand implements SlashCommand, RequiresPermission, Has
     public void execute(SlashCommandInteractionEvent event) {
         if (!Database.getInstance().isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
-            Logger.error("Couldn't connect to the database!");
+            NerdBotApp.LOGGER.error("Couldn't connect to the database!");
             return;
         }
 

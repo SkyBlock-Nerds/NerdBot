@@ -14,9 +14,9 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
-import net.hypixel.nerdbot.util.Logger;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Users;
 import org.bson.Document;
@@ -96,11 +96,11 @@ public class Database implements ServerMonitorListener {
     }
 
     private void log(String message) {
-        Logger.info("[Database] " + message);
+        NerdBotApp.LOGGER.info("[Database] " + message);
     }
 
     private void error(String message) {
-        Logger.error("[Database] " + message);
+        NerdBotApp.LOGGER.error("[Database] " + message);
     }
 
     public boolean isConnected() {
