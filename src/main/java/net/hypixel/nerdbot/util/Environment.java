@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.util;
 
-public enum Region {
+public enum Environment {
     PRODUCTION,
     DEV;
 
@@ -12,7 +12,7 @@ public enum Region {
         return getRegion().equals(DEV);
     }
 
-    public static Region getRegion() {
-        return Region.valueOf(System.getProperty("bot.region"));
+    public static Environment getRegion() {
+        return Environment.valueOf(System.getProperty("bot.region"));
     }
 }

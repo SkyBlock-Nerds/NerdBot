@@ -5,9 +5,9 @@ import net.aerh.jdacommands.command.SlashCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.util.Logger;
 
 import java.util.List;
 
@@ -32,7 +32,7 @@ public class ListChannelGroupsCommand implements SlashCommand, RequiresPermissio
     public void execute(SlashCommandInteractionEvent event) {
         if (!Database.getInstance().isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
-            Logger.error("Couldn't connect to the database!");
+            NerdBotApp.LOGGER.error("Couldn't connect to the database!");
             return;
         }
 

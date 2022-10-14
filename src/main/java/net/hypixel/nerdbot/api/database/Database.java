@@ -14,10 +14,10 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
-import net.hypixel.nerdbot.util.Logger;
-import net.hypixel.nerdbot.util.Region;
+import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Users;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
@@ -46,13 +46,13 @@ public class Database implements ServerMonitorListener {
                 .applyConnectionString(connectionString)
                 .codecRegistry(codecRegistry)
                 .applyToServerSettings(builder -> {
-                    builder.heartbeatFrequency(Region.isDev() ? 1 : 10, TimeUnit.SECONDS);
+                    builder.heartbeatFrequency(Environment.isDev() ? 1 : 10, TimeUnit.SECONDS);
                     builder.addServerMonitorListener(this);
                 })
                 .build();
 
         mongoClient = MongoClients.create(clientSettings);
-        MongoDatabase database = mongoClient.getDatabase("skyblockNerds_" + Region.getRegion().name().toLowerCase());
+        MongoDatabase database = mongoClient.getDatabase("skyblockNerds_" + Environment.getRegion().name().toLowerCase());
         greenlitCollection = database.getCollection("greenlitMessages", GreenlitMessage.class);
         channelCollection = database.getCollection("channelGroups", ChannelGroup.class);
         userCollection = database.getCollection("users", DiscordUser.class);
@@ -96,11 +96,11 @@ public class Database implements ServerMonitorListener {
     }
 
     private void log(String message) {
-        Logger.info("[Database] " + message);
+        NerdBotApp.LOGGER.info("[Database] " + message);
     }
 
     private void error(String message) {
-        Logger.error("[Database] " + message);
+        NerdBotApp.LOGGER.error("[Database] " + message);
     }
 
     public boolean isConnected() {

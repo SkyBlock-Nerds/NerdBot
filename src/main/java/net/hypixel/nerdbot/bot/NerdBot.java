@@ -19,8 +19,7 @@ import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.MessageListener;
 import net.hypixel.nerdbot.listener.ShutdownListener;
-import net.hypixel.nerdbot.util.Logger;
-import net.hypixel.nerdbot.util.Region;
+import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Util;
 
 import javax.security.auth.login.LoginException;
@@ -58,7 +57,7 @@ public class NerdBot implements Bot {
         try {
             jda.awaitReady();
         } catch (InterruptedException exception) {
-            Logger.error("Failed to create JDA instance!");
+            NerdBotApp.LOGGER.error("Failed to create JDA instance!");
             exception.printStackTrace();
             System.exit(0);
         }
@@ -67,15 +66,15 @@ public class NerdBot implements Bot {
         if (System.getProperty("bot.config") != null) {
             fileName = System.getProperty("bot.config");
         } else {
-            fileName = Region.getRegion().name().toLowerCase() + ".config.json";
+            fileName = Environment.getRegion().name().toLowerCase() + ".config.json";
         }
 
         try {
             File file = new File(fileName);
             config = Util.loadConfig(file);
-            Logger.info("Loaded config from " + file.getAbsolutePath());
+            NerdBotApp.LOGGER.info("Loaded config from " + file.getAbsolutePath());
         } catch (FileNotFoundException exception) {
-            Logger.error("Could not find config file " + fileName);
+            NerdBotApp.LOGGER.error("Could not find config file " + fileName);
             System.exit(-1);
         }
 
@@ -83,7 +82,7 @@ public class NerdBot implements Bot {
         commands.registerCommandsInPackage("net.hypixel.nerdbot.command");
 
         if (NerdBotApp.getBot().isReadOnly()) {
-            Logger.info("Bot is loaded in read-only mode!");
+            NerdBotApp.LOGGER.info("Bot is loaded in read-only mode!");
         }
 
         NerdBotApp.getBot().onStart();
@@ -119,10 +118,10 @@ public class NerdBot implements Bot {
     public void onStart() {
         for (BotFeature feature : FEATURES) {
             feature.onStart();
-            Logger.info("Started feature " + feature.getClass().getSimpleName());
+            NerdBotApp.LOGGER.info("Started feature " + feature.getClass().getSimpleName());
         }
         startTime = System.currentTimeMillis();
-        Logger.info("Bot started on region " + Region.getRegion());
+        NerdBotApp.LOGGER.info("Bot started on region " + Environment.getRegion());
     }
 
     @Override
