@@ -5,14 +5,14 @@ public enum Environment {
     DEV;
 
     public static boolean isProduction() {
-        return getRegion().equals(PRODUCTION);
+        return getEnvironment().equals(PRODUCTION);
     }
 
     public static boolean isDev() {
-        return getRegion().equals(DEV);
+        return getEnvironment().equals(DEV);
     }
 
-    public static Environment getRegion() {
+    public static Environment getEnvironment() {
         return Environment.valueOf(System.getProperty("bot.region"));
     }
 }
