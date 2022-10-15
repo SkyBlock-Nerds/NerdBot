@@ -47,9 +47,11 @@ public class NerdBot implements Bot {
 
     @Override
     public void create(String[] args) throws LoginException {
+        loadConfig();
+
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
                 .addEventListeners(new MessageListener(), new FeatureEventListener(), new ShutdownListener())
-                .setActivity(Activity.competing("mc.hypixel.net"));
+                .setActivity(Activity.of(config.getActivityType(), config.getActivity()));
 
         configureMemoryUsage(builder);
 
@@ -60,22 +62,6 @@ public class NerdBot implements Bot {
             NerdBotApp.LOGGER.error("Failed to create JDA instance!");
             exception.printStackTrace();
             System.exit(0);
-        }
-
-        String fileName;
-        if (System.getProperty("bot.config") != null) {
-            fileName = System.getProperty("bot.config");
-        } else {
-            fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
-        }
-
-        try {
-            File file = new File(fileName);
-            config = Util.loadConfig(file);
-            NerdBotApp.LOGGER.info("Loaded config from " + file.getAbsolutePath());
-        } catch (FileNotFoundException exception) {
-            NerdBotApp.LOGGER.error("Could not find config file " + fileName);
-            System.exit(-1);
         }
 
         commands = new CommandManager(jda);
@@ -155,4 +141,22 @@ public class NerdBot implements Bot {
         return System.getProperty("bot.readOnly") != null && Boolean.parseBoolean(System.getProperty("bot.readOnly"));
     }
 
+    private void loadConfig() {
+        String fileName;
+        if (System.getProperty("bot.config") != null) {
+            fileName = System.getProperty("bot.config");
+        } else {
+            fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
+        }
+
+        try {
+            File file = new File(fileName);
+            config = Util.loadConfig(file);
+            NerdBotApp.LOGGER.info("Loaded config from " + file.getAbsolutePath());
+            NerdBotApp.LOGGER.debug(config.toString());
+        } catch (FileNotFoundException exception) {
+            NerdBotApp.LOGGER.error("Could not find config file " + fileName);
+            System.exit(-1);
+        }
+    }
 }
