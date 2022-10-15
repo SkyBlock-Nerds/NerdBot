@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.bot.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import net.dv8tion.jda.api.entities.Activity;
 
 @Getter
 @Setter
@@ -32,8 +33,9 @@ public class BotConfig {
 
     /**
      * The limit of messages that the bot will curate in one go
+     * Default value is 100 messages
      */
-    private int messageLimit;
+    private int messageLimit = 100;
 
     /**
      * The percentage of positive reactions needed for a suggestion to be considered greenlit
@@ -45,7 +47,7 @@ public class BotConfig {
      * The interval between each curate cycle in milliseconds
      * Default value is 43200000 (12 hours)
      */
-    private long interval;
+    private long interval = 43_200_000;
 
     /**
      * Emotes that the bot will use to react to suggestions
@@ -57,4 +59,14 @@ public class BotConfig {
      */
     private Tags tags;
 
+    /**
+     * The activity that the bot will display on its profile
+     * Default is PLAYING
+     */
+    private Activity.ActivityType activityType = Activity.ActivityType.PLAYING;
+
+    /**
+     * The string being displayed as the bot's activity on its profile
+     */
+    private String activity;
 }
