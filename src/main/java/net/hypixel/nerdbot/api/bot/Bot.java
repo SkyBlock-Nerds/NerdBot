@@ -17,6 +17,8 @@ public interface Bot {
 
     JDA getJDA();
 
+    void loadConfig();
+
     BotConfig getConfig();
 
     void onStart();

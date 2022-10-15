@@ -141,7 +141,8 @@ public class NerdBot implements Bot {
         return System.getProperty("bot.readOnly") != null && Boolean.parseBoolean(System.getProperty("bot.readOnly"));
     }
 
-    private void loadConfig() {
+    @Override
+    public void loadConfig() {
         String fileName;
         if (System.getProperty("bot.config") != null) {
             fileName = System.getProperty("bot.config");
@@ -152,6 +153,7 @@ public class NerdBot implements Bot {
         try {
             File file = new File(fileName);
             config = Util.loadConfig(file);
+
             NerdBotApp.LOGGER.info("Loaded config from " + file.getAbsolutePath());
             NerdBotApp.LOGGER.debug(config.toString());
         } catch (FileNotFoundException exception) {
