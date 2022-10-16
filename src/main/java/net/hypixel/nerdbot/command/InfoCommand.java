@@ -1,11 +1,13 @@
 package net.hypixel.nerdbot.command;
 
 import com.freya02.botcommands.api.application.ApplicationCommand;
+import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.DiscordUser;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
@@ -49,6 +51,28 @@ public class InfoCommand extends ApplicationCommand {
                 .append("  • HPC: ").append(guild.getMembersWithRoles(Util.getRole("HPC")).size()).append("\n")
                 .append("  • Grapes: ").append(guild.getMembersWithRoles(Util.getRole("Grape")).size()).append("\n")
                 .append("  • Nerds: ").append(guild.getMembersWithRoles(Util.getRole("Nerd")).size());
+
+        event.reply(builder.toString()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "info", subcommand = "user", description = "View some information about a user", defaultLocked = true)
+    public void userInfo(GuildSlashEvent event, @AppOption(description = "The user to search") Member member) {
+        if (!Database.getInstance().isConnected()) {
+            event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
+            return;
+        }
+
+        DiscordUser discordUser = Database.getInstance().getUser(member.getId());
+        if (discordUser == null) {
+            event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("User stats for ").append(member.getAsMention()).append("\n");
+        builder.append(" • Total known agree reactions: ").append(discordUser.getAgrees().size()).append("\n");
+        builder.append(" • Total known disagree reactions: ").append(discordUser.getAgrees().size()).append("\n");
+        builder.append(" • Last known activity date: ").append(discordUser.getLastKnownActivityDate() == null ? "N/A" : discordUser.getLastKnownActivityDate());
 
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
