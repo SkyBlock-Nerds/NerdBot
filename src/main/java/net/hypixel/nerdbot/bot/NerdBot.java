@@ -20,6 +20,8 @@ import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.MessageListener;
 import net.hypixel.nerdbot.listener.ShutdownListener;
 import net.hypixel.nerdbot.util.Environment;
+import net.hypixel.nerdbot.util.ForumChannelResolver;
+import net.hypixel.nerdbot.util.Users;
 import net.hypixel.nerdbot.util.Util;
 
 import javax.security.auth.login.LoginException;
@@ -63,7 +65,11 @@ public class NerdBot implements Bot {
         }
 
         try {
-            CommandsBuilder commandsBuilder = CommandsBuilder.newBuilder(165438405155487744L);
+            CommandsBuilder commandsBuilder = CommandsBuilder
+                    .newBuilder(Long.parseLong(Users.AERH.getUserId()))
+                    .extensionsBuilder(extensionsBuilder ->
+                            extensionsBuilder.registerParameterResolver(new ForumChannelResolver())
+                    );
             commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
         } catch (IOException exception) {
             NerdBotApp.LOGGER.error("Couldn't create the command builder! Reason: " + exception.getMessage());
