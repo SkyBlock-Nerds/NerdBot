@@ -27,7 +27,7 @@
         <dependency>
             <groupId>com.github.DV8FromtheWorld</groupId>
             <artifactId>JDA</artifactId>
-            <version>5.0.0-alpha.20</version>
+            <version>5.0.0-alpha.21</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
