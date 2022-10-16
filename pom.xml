@@ -40,9 +40,9 @@
             <version>4.7.1</version>
         </dependency>
         <dependency>
-            <groupId>com.github.Aerhhh</groupId>
-            <artifactId>JDASlashCommands</artifactId>
-            <version>1b75df9a41</version>
+            <groupId>io.github.freya022</groupId>
+            <artifactId>BotCommands</artifactId>
+            <version>2.6.2</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -75,6 +75,9 @@
                             <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
+                    <compilerArgs>
+                        <compilerArg>-parameters</compilerArg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
 
