@@ -14,7 +14,7 @@ import net.hypixel.nerdbot.curator.ForumChannelCurator;
 
 import java.util.List;
 
-public class CurateSlashCommand extends ApplicationCommand {
+public class CurateCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "curate", description = "Manually run the curation process", defaultLocked = true)
     public void curate(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Run the curator without greenlighting suggestions") boolean readOnly) {

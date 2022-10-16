@@ -85,14 +85,11 @@ public class NerdBot implements Bot {
 
     @Override
     public void configureMemoryUsage(JDABuilder builder) {
+        builder.setMemberCachePolicy(MemberCachePolicy.ALL);
+        builder.setChunkingFilter(ChunkingFilter.ALL);
+
         // Disable cache for member activities (streaming/games/spotify)
         builder.disableCache(CacheFlag.ACTIVITY);
-
-        // Only cache members who are either in a voice channel or owner of the guild
-        builder.setMemberCachePolicy(MemberCachePolicy.VOICE.or(MemberCachePolicy.OWNER));
-
-        // Disable member chunking on startup
-        builder.setChunkingFilter(ChunkingFilter.NONE);
 
         // Disable presence updates and typing events
         builder.disableIntents(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_TYPING);

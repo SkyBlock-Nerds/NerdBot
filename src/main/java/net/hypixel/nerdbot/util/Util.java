@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.util;
 
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 
 import javax.annotation.Nullable;
@@ -34,12 +35,21 @@ public class Util {
     }
 
     @Nullable
-    public static Role findRole(Member member, String id) {
+    public static Role hasRole(Member member, String id) {
         List<Role> roles = member.getRoles();
         return roles.stream()
                 .filter(role -> role.getId().equals(id))
                 .findFirst()
                 .orElse(null);
+    }
+
+    @Nullable
+    public static Role getRole(String name) {
+        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        if (guild == null) {
+            return null;
+        }
+        return guild.getRoles().stream().filter(role -> role.getName().equals(name)).findFirst().orElse(null);
     }
 
     /**
