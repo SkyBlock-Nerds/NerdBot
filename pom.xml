@@ -27,7 +27,7 @@
         <dependency>
             <groupId>com.github.DV8FromtheWorld</groupId>
             <artifactId>JDA</artifactId>
-            <version>5.0.0-alpha.20</version>
+            <version>5.0.0-alpha.21</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -40,9 +40,9 @@
             <version>4.7.1</version>
         </dependency>
         <dependency>
-            <groupId>com.github.Aerhhh</groupId>
-            <artifactId>JDASlashCommands</artifactId>
-            <version>1b75df9a41</version>
+            <groupId>io.github.freya022</groupId>
+            <artifactId>BotCommands</artifactId>
+            <version>2.6.2</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -75,6 +75,9 @@
                             <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
+                    <compilerArgs>
+                        <compilerArg>-parameters</compilerArg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
 
