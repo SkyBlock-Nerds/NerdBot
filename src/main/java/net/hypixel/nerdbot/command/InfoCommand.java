@@ -71,7 +71,7 @@ public class InfoCommand extends ApplicationCommand {
         StringBuilder builder = new StringBuilder();
         builder.append("User stats for ").append(member.getAsMention()).append("\n");
         builder.append(" • Total known agree reactions: ").append(discordUser.getAgrees().size()).append("\n");
-        builder.append(" • Total known disagree reactions: ").append(discordUser.getAgrees().size()).append("\n");
+        builder.append(" • Total known disagree reactions: ").append(discordUser.getDisagrees().size()).append("\n");
         builder.append(" • Last known activity date: ").append(discordUser.getLastKnownActivityDate() == null ? "N/A" : discordUser.getLastKnownActivityDate());
 
         event.reply(builder.toString()).setEphemeral(true).queue();
