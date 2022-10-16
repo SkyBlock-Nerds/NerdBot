@@ -28,7 +28,7 @@ public class NerdBotApp {
         } catch (LoginException e) {
             LOGGER.error("Failed to find login for bot!");
             e.printStackTrace();
-            System.exit(0);
+            System.exit(-1);
         }
     }
 

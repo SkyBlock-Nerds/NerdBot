@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.bot;
 
-import net.aerh.jdacommands.CommandManager;
+import com.freya02.botcommands.api.CommandsBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -25,6 +25,7 @@ import net.hypixel.nerdbot.util.Util;
 import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -38,8 +39,6 @@ public class NerdBot implements Bot {
 
     private JDA jda;
     private BotConfig config;
-    private CommandManager commands;
-
     private long startTime;
 
     public NerdBot() {
@@ -52,7 +51,6 @@ public class NerdBot implements Bot {
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
                 .addEventListeners(new MessageListener(), new FeatureEventListener(), new ShutdownListener())
                 .setActivity(Activity.of(config.getActivityType(), config.getActivity()));
-
         configureMemoryUsage(builder);
 
         jda = builder.build();
@@ -61,11 +59,16 @@ public class NerdBot implements Bot {
         } catch (InterruptedException exception) {
             NerdBotApp.LOGGER.error("Failed to create JDA instance!");
             exception.printStackTrace();
-            System.exit(0);
+            System.exit(-1);
         }
 
-        commands = new CommandManager(jda);
-        commands.registerCommandsInPackage("net.hypixel.nerdbot.command");
+        try {
+            CommandsBuilder commandsBuilder = CommandsBuilder.newBuilder(165438405155487744L);
+            commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
+        } catch (IOException exception) {
+            NerdBotApp.LOGGER.error("Couldn't create the command builder! Reason: " + exception.getMessage());
+            System.exit(-1);
+        }
 
         if (NerdBotApp.getBot().isReadOnly()) {
             NerdBotApp.LOGGER.info("Bot is loaded in read-only mode!");
@@ -124,11 +127,6 @@ public class NerdBot implements Bot {
     @Override
     public BotConfig getConfig() {
         return config;
-    }
-
-    @Override
-    public CommandManager getCommands() {
-        return commands;
     }
 
     @Override
