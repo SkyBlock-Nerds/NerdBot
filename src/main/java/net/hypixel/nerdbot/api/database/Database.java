@@ -1,5 +1,8 @@
 package net.hypixel.nerdbot.api.database;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -17,18 +20,36 @@ import com.mongodb.event.ServerMonitorListener;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
+import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.api.database.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.user.LastActivity;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Users;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class Database implements ServerMonitorListener {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(Database.class);
+    public static final Cache<String, DiscordUser> USER_CACHE = Caffeine.newBuilder()
+            .expireAfterAccess(Duration.ofMinutes(1))
+            .scheduler(Scheduler.systemScheduler())
+            .removalListener((key, value, cause) -> {
+                DiscordUser discordUser = (DiscordUser) value;
+                Database.getInstance().updateUsers(List.of(discordUser));
+            })
+            .build();
 
     private static Database instance;
     private boolean connected;
@@ -96,11 +117,11 @@ public class Database implements ServerMonitorListener {
     }
 
     private void log(String message) {
-        NerdBotApp.LOGGER.info("[Database] " + message);
+        LOGGER.info(message);
     }
 
     private void error(String message) {
-        NerdBotApp.LOGGER.error("[Database] " + message);
+        LOGGER.error(message);
     }
 
     public boolean isConnected() {
@@ -186,12 +207,29 @@ public class Database implements ServerMonitorListener {
         return this.userCollection.find().into(new ArrayList<>());
     }
 
-    public DiscordUser getUser(String field, Object value) {
+    public DiscordUser getUserFromDatabase(String field, Object value) {
         return this.userCollection.find(Filters.eq(field, value)).first();
     }
 
     public DiscordUser getUser(String id) {
-        return getUser("discordId", id);
+        if (USER_CACHE.getIfPresent(id) != null) {
+            return USER_CACHE.getIfPresent(id);
+        }
+
+        return getUserFromDatabase("discordId", id);
+    }
+
+    public DiscordUser getOrAddUserToCache(String id) {
+        DiscordUser discordUser = Database.getInstance().getUser(id);
+        if (discordUser == null) {
+            discordUser = new DiscordUser(id, new ArrayList<>(), new ArrayList<>(), new LastActivity());
+        }
+
+        if (Database.USER_CACHE.getIfPresent(id) == null) {
+            Database.USER_CACHE.put(id, discordUser);
+        }
+
+        return Database.USER_CACHE.getIfPresent(id);
     }
 
     public void insertUser(DiscordUser user) {
@@ -204,8 +242,13 @@ public class Database implements ServerMonitorListener {
         if (result.getMatchedCount() == 0) {
             log("Couldn't find user " + user.getDiscordId() + " to update");
         } else {
-            log(result.getModifiedCount() + " user(s) updated");
+            log("Updated user " + user.getDiscordId());
+
         }
+    }
+
+    public void updateUser(DiscordUser user) {
+        updateUser("discordId", user.getDiscordId(), user);
     }
 
     public void updateUsers(List<DiscordUser> users) {

@@ -4,6 +4,7 @@ import com.freya02.botcommands.api.CommandsBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -17,6 +18,7 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
+import net.hypixel.nerdbot.listener.ActivityListener;
 import net.hypixel.nerdbot.listener.MessageListener;
 import net.hypixel.nerdbot.listener.ShutdownListener;
 import net.hypixel.nerdbot.util.Environment;
@@ -51,7 +53,8 @@ public class NerdBot implements Bot {
         loadConfig();
 
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
-                .addEventListeners(new MessageListener(), new FeatureEventListener(), new ShutdownListener())
+                .setEventManager(new AnnotatedEventManager())
+                .addEventListeners(new MessageListener(), new FeatureEventListener(), new ShutdownListener(), new ActivityListener())
                 .setActivity(Activity.of(config.getActivityType(), config.getActivity()));
         configureMemoryUsage(builder);
 

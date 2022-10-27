@@ -9,9 +9,12 @@ import net.dv8tion.jda.internal.entities.ForumTagImpl;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.api.curator.Curator;
-import net.hypixel.nerdbot.api.database.GreenlitMessage;
+import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.util.Users;
 
+import java.time.temporal.TemporalField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -42,6 +45,10 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 Message firstPost = allMessages.get(allMessages.size() - 1);
                 Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getAgree());
                 Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getDisagree());
+
+                DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(firstPost.getAuthor().getId());
+                discordUser.getLastActivity().setLastSuggestionDate(firstPost.getTimeCreated().toInstant().toEpochMilli());
+                getLogger().info("Updating last suggestion time for " + firstPost.getAuthor().getName() + " to " + firstPost.getTimeCreated().toEpochSecond());
 
                 if (agreeEmoji == null || disagreeEmoji == null) {
                     getLogger().error("Couldn't find the agree or disagree emoji, time to yell!");
