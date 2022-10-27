@@ -14,7 +14,6 @@ import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.util.Users;
 
-import java.time.temporal.TemporalField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -47,8 +46,11 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getDisagree());
 
                 DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(firstPost.getAuthor().getId());
-                discordUser.getLastActivity().setLastSuggestionDate(firstPost.getTimeCreated().toInstant().toEpochMilli());
-                getLogger().info("Updating last suggestion time for " + firstPost.getAuthor().getName() + " to " + firstPost.getTimeCreated().toEpochSecond());
+
+                if (discordUser.getLastActivity().getLastSuggestionDate() < firstPost.getTimeCreated().toInstant().toEpochMilli()) {
+                    discordUser.getLastActivity().setLastSuggestionDate(firstPost.getTimeCreated().toInstant().toEpochMilli());
+                    getLogger().info("Updating last suggestion time for " + firstPost.getAuthor().getName() + " to " + firstPost.getTimeCreated().toEpochSecond());
+                }
 
                 if (agreeEmoji == null || disagreeEmoji == null) {
                     getLogger().error("Couldn't find the agree or disagree emoji, time to yell!");
@@ -75,6 +77,10 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                             .agrees(agreeReaction)
                             .disagrees(disagreeReaction)
                             .messageId(firstPost.getId())
+                            .suggestionUrl(firstPost.getJumpUrl())
+                            .suggestionTitle(thread.getName())
+                            .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
+                            .suggestionContent(firstPost.getContentRaw())
                             .build();
 
                     getLogger().info("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");

@@ -17,7 +17,6 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
-import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
@@ -29,11 +28,9 @@ import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +40,7 @@ public class Database implements ServerMonitorListener {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(Database.class);
     public static final Cache<String, DiscordUser> USER_CACHE = Caffeine.newBuilder()
-            .expireAfterAccess(Duration.ofMinutes(1))
+            .expireAfterAccess(Duration.ofMinutes(10))
             .scheduler(Scheduler.systemScheduler())
             .removalListener((key, value, cause) -> {
                 DiscordUser discordUser = (DiscordUser) value;

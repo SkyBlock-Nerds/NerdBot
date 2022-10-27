@@ -9,7 +9,6 @@ import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class UserGrabberFeature extends BotFeature {

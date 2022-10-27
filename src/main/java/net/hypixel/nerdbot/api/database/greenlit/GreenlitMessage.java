@@ -13,7 +13,7 @@ import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.bson.types.ObjectId;
 
 import java.awt.*;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -26,7 +26,7 @@ public class GreenlitMessage {
     private ObjectId id;
     private String userId, messageId, greenlitMessageId, suggestionTitle, suggestionContent, suggestionUrl, channelGroupName;
     private List<String> tags;
-    private Date suggestionDate;
+    private long suggestionTimestamp;
     private int agrees, disagrees;
 
     public GreenlitMessage() {
@@ -67,7 +67,7 @@ public class GreenlitMessage {
         builder.setDescription(description.toString());
         builder.addField("Agrees", String.valueOf(agrees), true);
         builder.addField("Disagrees", String.valueOf(disagrees), true);
-        builder.setTimestamp(suggestionDate.toInstant());
+        builder.setTimestamp(Instant.ofEpochMilli(suggestionTimestamp));
 
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
         if (guild == null) {

@@ -70,9 +70,7 @@ public class NerdBot implements Bot {
         try {
             CommandsBuilder commandsBuilder = CommandsBuilder
                     .newBuilder(Long.parseLong(Users.AERH.getUserId()))
-                    .extensionsBuilder(extensionsBuilder ->
-                            extensionsBuilder.registerParameterResolver(new ForumChannelResolver())
-                    );
+                    .extensionsBuilder(extensionsBuilder -> extensionsBuilder.registerParameterResolver(new ForumChannelResolver()));
             commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
         } catch (IOException exception) {
             NerdBotApp.LOGGER.error("Couldn't create the command builder! Reason: " + exception.getMessage());
