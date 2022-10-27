@@ -17,7 +17,6 @@ public class NerdBotApp {
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static final Logger LOGGER = LoggerFactory.getLogger(NerdBotApp.class);
 
-
     private static Bot bot;
 
     public static void main(String[] args) {
@@ -35,5 +34,4 @@ public class NerdBotApp {
     public static Bot getBot() {
         return bot;
     }
-
 }

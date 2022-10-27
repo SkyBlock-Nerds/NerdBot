@@ -7,10 +7,12 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.DiscordUser;
+import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
+
+import java.util.Date;
 
 public class InfoCommand extends ApplicationCommand {
 
@@ -72,8 +74,19 @@ public class InfoCommand extends ApplicationCommand {
         builder.append("User stats for ").append(member.getAsMention()).append("\n");
         builder.append(" • Total known agree reactions: ").append(discordUser.getAgrees().size()).append("\n");
         builder.append(" • Total known disagree reactions: ").append(discordUser.getDisagrees().size()).append("\n");
-        builder.append(" • Last known activity date: ").append(discordUser.getLastKnownActivityDate() == null ? "N/A" : discordUser.getLastKnownActivityDate());
+        builder.append(" • Last known activity date: ").append(getDateString(discordUser.getLastActivity().getLastGlobalActivity())).append("\n");
+        builder.append(" • Last known activity date (alpha): ").append(getDateString(discordUser.getLastActivity().getLastAlphaActivity())).append("\n");
+        builder.append(" • Last known voice channel activity date: ").append(getDateString(discordUser.getLastActivity().getLastVoiceChannelJoinDate())).append("\n");
+        builder.append(" • Last known suggestion date: ").append(getDateString(discordUser.getLastActivity().getLastSuggestionDate())).append("\n");
 
         event.reply(builder.toString()).setEphemeral(true).queue();
+    }
+
+    private String getDateString(long timestamp) {
+        if (timestamp == -1) {
+            return "N/A";
+        }
+
+        return Time.DATE_FORMAT.format(new Date(timestamp));
     }
 }

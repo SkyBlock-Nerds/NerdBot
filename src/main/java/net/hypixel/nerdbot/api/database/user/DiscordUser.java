@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.api.database;
+package net.hypixel.nerdbot.api.database.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,8 +13,8 @@ import java.util.List;
 public class DiscordUser {
 
     private String discordId;
-    private Date lastKnownActivityDate;
     private List<String> agrees, disagrees;
+    private LastActivity lastActivity;
 
     public DiscordUser() {
     }
