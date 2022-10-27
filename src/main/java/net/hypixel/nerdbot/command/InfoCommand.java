@@ -4,15 +4,21 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.SelfUser;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
 public class InfoCommand extends ApplicationCommand {
 
@@ -31,10 +37,23 @@ public class InfoCommand extends ApplicationCommand {
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "info", subcommand = "greenlit", description = "View the amount of greenlit messages", defaultLocked = true)
-    public void greenlitInfo(GuildSlashEvent event) {
-        int amount = Database.getInstance().getGreenlitCollection().size();
-        event.reply("There are currently " + amount + " greenlit message" + (amount == 1 ? "" : "s")).setEphemeral(true).queue();
+    @JDASlashCommand(name = "info", subcommand = "greenlit", description = "View some information on greenlit messages", defaultLocked = true)
+    public void greenlitInfo(GuildSlashEvent event, @AppOption int page) {
+        List<GreenlitMessage> greenlits = getPage(Database.getInstance().getGreenlitCollection(), page, 10);
+        greenlits.sort(Comparator.comparingLong(GreenlitMessage::getSuggestionTimestamp));
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Page ").append(page).append("\n");
+
+        if (greenlits.isEmpty()) {
+            stringBuilder.append("No results found");
+        } else {
+            for (GreenlitMessage greenlitMessage : greenlits) {
+                stringBuilder.append(" • [").append(greenlitMessage.getSuggestionTitle()).append("](").append(greenlitMessage.getSuggestionUrl()).append(")\n");
+            }
+        }
+
+        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "server", description = "View some information about the server", defaultLocked = true)
@@ -88,5 +107,28 @@ public class InfoCommand extends ApplicationCommand {
         }
 
         return Time.DATE_FORMAT.format(new Date(timestamp));
+    }
+
+    /**
+     * returns a view (not a new list) of the sourceList for the
+     * range based on page and pageSize
+     *
+     * @param sourceList
+     * @param page       page number should start from 1
+     * @param pageSize
+     *
+     * @return custom error can be given instead of returning emptyList
+     */
+    public static <T> List<T> getPage(List<T> sourceList, int page, int pageSize) {
+        if (pageSize <= 0 || page <= 0) {
+            throw new IllegalArgumentException("Invalid page: " + pageSize);
+        }
+
+        int fromIndex = (page - 1) * pageSize;
+        if (sourceList == null || sourceList.size() <= fromIndex) {
+            return new ArrayList<>();
+        }
+
+        return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
     }
 }

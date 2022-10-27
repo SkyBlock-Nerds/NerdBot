@@ -11,8 +11,8 @@ import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.user.LastActivity;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Users;
@@ -20,7 +20,6 @@ import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 
@@ -180,7 +179,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
                 .tags(getTags(message.getContentRaw()))
                 .suggestionTitle(Util.getFirstLine(message))
                 .suggestionContent(message.getContentRaw())
-                .suggestionDate(new Date(message.getTimeCreated().toInstant().toEpochMilli()))
+                .suggestionTimestamp(message.getTimeCreated().toInstant().toEpochMilli())
                 .suggestionUrl(message.getJumpUrl())
                 .agrees(positive)
                 .disagrees(negative)

@@ -16,7 +16,7 @@ public class ActivityListener {
         Member member = event.getMember();
         GuildChannel channel = event.getGuildChannel();
 
-        if (member == null || member.getUser().isBot()) {
+        if (!event.isFromGuild() || member == null || member.getUser().isBot()) {
             return;
         }
 
