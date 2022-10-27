@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.api.curator;
 
 import net.dv8tion.jda.api.JDA;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.GreenlitMessage;
+import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
