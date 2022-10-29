@@ -42,9 +42,7 @@ public class InfoCommand extends ApplicationCommand {
         List<GreenlitMessage> greenlits = getPage(Database.getInstance().getGreenlitCollection(), page, 10);
         greenlits.sort(Comparator.comparingLong(GreenlitMessage::getSuggestionTimestamp));
 
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Page ").append(page).append("\n");
-
+        StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
         if (greenlits.isEmpty()) {
             stringBuilder.append("No results found");
         } else {
@@ -99,6 +97,34 @@ public class InfoCommand extends ApplicationCommand {
         builder.append(" • Last known suggestion date: ").append(getDateString(discordUser.getLastActivity().getLastSuggestionDate())).append("\n");
 
         event.reply(builder.toString()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "info", subcommand = "activity", description = "View information regarding user activity", defaultLocked = true)
+    public void userActivityInfo(GuildSlashEvent event, @AppOption int page) {
+        if (!Database.getInstance().isConnected()) {
+            event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
+            return;
+        }
+
+        List<DiscordUser> users = getPage(Database.getInstance().getUsers().stream().filter(discordUser -> discordUser.getLastActivity().getLastGlobalActivity() == -1L).toList(), page, 15);
+        StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
+        for (DiscordUser user : users) {
+            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(user.getDiscordId());
+            if (member == null) {
+                NerdBotApp.LOGGER.error("Couldn't find member " + user.getDiscordId());
+                continue;
+            }
+
+            if (member.getRoles().contains(Util.getRole("Ultimate Nerd")) || member.getRoles().contains(Util.getRole("Ultimate Nerd But Red")) ||
+                    member.getRoles().contains(Util.getRole("Game Master"))) {
+                NerdBotApp.LOGGER.info("Would have added " + member.getEffectiveName() + " as an inactive user but they have a special role!");
+                continue;
+            }
+
+            stringBuilder.append(" • ").append(member.getUser().getAsMention()).append("\n");
+        }
+
+        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
     }
 
     private String getDateString(long timestamp) {

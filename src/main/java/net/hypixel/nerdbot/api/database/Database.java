@@ -70,6 +70,7 @@ public class Database implements ServerMonitorListener {
                 .build();
 
         mongoClient = MongoClients.create(clientSettings);
+        connected = true;
         MongoDatabase database = mongoClient.getDatabase("skyblockNerds_" + Environment.getEnvironment().name().toLowerCase());
         greenlitCollection = database.getCollection("greenlitMessages", GreenlitMessage.class);
         channelCollection = database.getCollection("channelGroups", ChannelGroup.class);

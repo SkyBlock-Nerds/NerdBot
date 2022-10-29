@@ -35,6 +35,7 @@ public class UserGrabberFeature extends BotFeature {
             }
 
             if (discordUser.getLastActivity() == null) {
+                NerdBotApp.LOGGER.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
                 discordUser.setLastActivity(new LastActivity());
             }
 
