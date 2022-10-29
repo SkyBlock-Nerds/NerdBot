@@ -2,6 +2,8 @@ package net.hypixel.nerdbot.listener;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
@@ -10,6 +12,18 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 
 public class ActivityListener {
+
+    @SubscribeEvent
+    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
+        Database.getInstance().getOrAddUserToCache(event.getUser().getId());
+        NerdBotApp.LOGGER.info("User " + event.getUser().getAsTag() + " joined guild " + event.getGuild().getName());
+    }
+
+    @SubscribeEvent
+    public void onGuildMemberLeave(GuildMemberRemoveEvent event) {
+        Database.getInstance().deleteUser("discordId", event.getUser().getId());
+        NerdBotApp.LOGGER.info("User " + event.getUser().getAsTag() + " left guild " + event.getGuild().getName());
+    }
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {

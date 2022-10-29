@@ -3,6 +3,7 @@ package net.hypixel.nerdbot;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.hypixel.nerdbot.api.bot.Bot;
+import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.bot.NerdBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,14 @@ public class NerdBotApp {
             e.printStackTrace();
             System.exit(-1);
         }
+
+        Thread userSavingTask = new Thread(() -> {
+            LOGGER.info("Attempting to save " + Database.USER_CACHE.estimatedSize() + " cached users");
+            Database.USER_CACHE.asMap().forEach((s, discordUser) -> {
+                Database.getInstance().updateUser(discordUser);
+            });
+        });
+        Runtime.getRuntime().addShutdownHook(userSavingTask);
     }
 
     public static Bot getBot() {
