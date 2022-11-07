@@ -13,6 +13,6 @@ public enum Environment {
     }
 
     public static Environment getEnvironment() {
-        return Environment.valueOf(System.getProperty("bot.region"));
+        return Environment.valueOf(System.getProperty("bot.environment"));
     }
 }
