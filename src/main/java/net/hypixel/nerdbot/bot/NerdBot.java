@@ -20,6 +20,7 @@ import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.ActivityListener;
 import net.hypixel.nerdbot.listener.MessageListener;
+import net.hypixel.nerdbot.listener.ModLogListener;
 import net.hypixel.nerdbot.listener.ShutdownListener;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.ForumChannelResolver;
@@ -54,7 +55,7 @@ public class NerdBot implements Bot {
 
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
                 .setEventManager(new AnnotatedEventManager())
-                .addEventListeners(new MessageListener(), new FeatureEventListener(), new ShutdownListener(), new ActivityListener())
+                .addEventListeners(new ModLogListener(), new MessageListener(), new FeatureEventListener(), new ShutdownListener(), new ActivityListener())
                 .setActivity(Activity.of(config.getActivityType(), config.getActivity()));
         configureMemoryUsage(builder);
 
