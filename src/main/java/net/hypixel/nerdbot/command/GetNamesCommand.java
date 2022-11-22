@@ -53,8 +53,15 @@ public class GetNamesCommand extends ApplicationCommand {
                 }
             }
 
+            if (Util.hasRole(member, "Ultimate Nerd") || Util.hasRole(member, "Ultimate Nerd but Red") || Util.hasRole(member, "Game Master")) {
+                NerdBotApp.LOGGER.info("Skipping " + member.getEffectiveName() + " because they have a special role!");
+                return;
+            }
+
             Matcher matcher = pattern.matcher(member.getEffectiveName());
             while (matcher.find()) {
+                NerdBotApp.LOGGER.info("Found match: " + matcher.group(0));
+
                 try {
                     String response = sendRequest(member.getEffectiveName());
                     JsonObject obj = NerdBotApp.GSON.fromJson(response, JsonObject.class);
