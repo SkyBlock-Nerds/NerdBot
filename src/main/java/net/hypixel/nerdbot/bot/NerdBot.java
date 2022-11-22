@@ -18,10 +18,7 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
-import net.hypixel.nerdbot.listener.ActivityListener;
-import net.hypixel.nerdbot.listener.MessageListener;
-import net.hypixel.nerdbot.listener.ModLogListener;
-import net.hypixel.nerdbot.listener.ShutdownListener;
+import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.ForumChannelResolver;
 import net.hypixel.nerdbot.util.Users;
@@ -101,6 +98,9 @@ public class NerdBot implements Bot {
 
         // Enable the bot to see message content
         builder.enableIntents(GatewayIntent.MESSAGE_CONTENT);
+
+        // Allow the bot to see guild message reactions
+        builder.enableIntents(GatewayIntent.GUILD_MESSAGE_REACTIONS);
     }
 
     @Override
