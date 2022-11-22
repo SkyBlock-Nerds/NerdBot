@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 public class GetNamesCommand extends ApplicationCommand {
 
     private final String regex = "^[a-zA-Z0-9_]{2,16}$";
-    private final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+    private final Pattern pattern = Pattern.compile(regex);
 
     @JDASlashCommand(name = "getnames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)
     public void getNerdNames(GuildSlashEvent event) throws IOException {
