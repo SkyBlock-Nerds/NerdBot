@@ -13,6 +13,10 @@ public enum Environment {
     }
 
     public static Environment getEnvironment() {
+        if (System.getProperty("bot.environment") == null) {
+            return DEV;
+        }
+
         return Environment.valueOf(System.getProperty("bot.environment"));
     }
 }

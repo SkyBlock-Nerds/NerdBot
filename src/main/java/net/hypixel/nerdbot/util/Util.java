@@ -2,14 +2,11 @@ package net.hypixel.nerdbot.util;
 
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 
 import javax.annotation.Nullable;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -19,7 +16,6 @@ public class Util {
 
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
-    public static final String DASHED_LINE = "----------------------------------------------------------------";
 
     public static void sleep(TimeUnit unit, long time) {
         try {
@@ -34,13 +30,9 @@ public class Util {
         return NerdBotApp.getBot().getJDA().getGuildById(guildId);
     }
 
-    @Nullable
-    public static Role hasRole(Member member, String id) {
+    public static boolean hasRole(Member member, String name) {
         List<Role> roles = member.getRoles();
-        return roles.stream()
-                .filter(role -> role.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+        return roles.stream().anyMatch(role -> role.getName().equalsIgnoreCase(name));
     }
 
     @Nullable
@@ -50,6 +42,16 @@ public class Util {
             return null;
         }
         return guild.getRoles().stream().filter(role -> role.getName().equals(name)).findFirst().orElse(null);
+    }
+
+    public static File createTempFile(String fileName, String content) throws IOException {
+        String dir = System.getProperty("java.io.tmpdir");
+        File file = new File(dir + File.separator + fileName);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(content.getBytes(StandardCharsets.UTF_8));
+        }
+        NerdBotApp.LOGGER.info("Created temporary file " + file.getAbsolutePath());
+        return file;
     }
 
     /**
