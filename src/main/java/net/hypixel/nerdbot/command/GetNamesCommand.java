@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.util.DelayedObject;
 import net.hypixel.nerdbot.util.Util;
 
 import java.io.File;
@@ -17,6 +18,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.concurrent.DelayQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,6 +26,7 @@ public class GetNamesCommand extends ApplicationCommand {
 
     private final String regex = "^[a-zA-Z0-9_]{2,16}$";
     private final Pattern pattern = Pattern.compile(regex);
+    private final DelayQueue<DelayedObject> usernameQueue = new DelayQueue<>();
 
     @JDASlashCommand(name = "getnames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)
     public void getNerdNames(GuildSlashEvent event) throws IOException {
@@ -61,9 +64,13 @@ public class GetNamesCommand extends ApplicationCommand {
             Matcher matcher = pattern.matcher(member.getEffectiveName());
             while (matcher.find()) {
                 NerdBotApp.LOGGER.info("Found match: " + matcher.group(0));
+                usernameQueue.put(new DelayedObject(member.getEffectiveName(), 1_000L));
+            }
 
+            while (!usernameQueue.isEmpty()) {
                 try {
-                    String response = sendRequest(member.getEffectiveName());
+                    DelayedObject object = usernameQueue.take();
+                    String response = sendRequest((String) object.getObject());
                     JsonObject obj = NerdBotApp.GSON.fromJson(response, JsonObject.class);
                     jsonArray.add(obj.get("uuid").getAsString());
                 } catch (IOException | URISyntaxException | InterruptedException e) {
@@ -83,6 +90,7 @@ public class GetNamesCommand extends ApplicationCommand {
             HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             return response.body();
         } catch (Exception e) {
+            NerdBotApp.LOGGER.error(String.format("Encountered error while looking up Minecraft account of %s!", name));
             e.printStackTrace();
         }
 
