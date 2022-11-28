@@ -72,7 +72,8 @@ public class GetNamesCommand extends ApplicationCommand {
                     DelayedObject object = usernameQueue.take();
                     String response = sendRequest((String) object.getObject());
                     JsonObject obj = NerdBotApp.GSON.fromJson(response, JsonObject.class);
-                    jsonArray.add(obj.get("uuid").getAsString());
+                    NerdBotApp.LOGGER.info("Response: " + obj.toString());
+                    jsonArray.add(obj.get("id").getAsString());
                 } catch (IOException | URISyntaxException | InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -84,7 +85,7 @@ public class GetNamesCommand extends ApplicationCommand {
 
     private String sendRequest(String name) throws IOException, URISyntaxException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
-        HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format("https://api.ashcon.app/mojang/v2/user/%s", name))).GET().build();
+        HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format("https://api.mojang.com/users/profiles/minecraft/%s", name))).GET().build();
 
         try {
             HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
