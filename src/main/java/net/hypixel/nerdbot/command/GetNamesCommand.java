@@ -6,9 +6,9 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.util.DelayedObject;
 import net.hypixel.nerdbot.util.Util;
 
 import java.io.File;
@@ -18,7 +18,9 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.DelayQueue;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,7 +28,7 @@ public class GetNamesCommand extends ApplicationCommand {
 
     private final String regex = "^[a-zA-Z0-9_]{2,16}$";
     private final Pattern pattern = Pattern.compile(regex);
-    private final DelayQueue<DelayedObject> usernameQueue = new DelayQueue<>();
+    private final Queue<String> usernameQueue = new LinkedList<>();
 
     @JDASlashCommand(name = "getnames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)
     public void getNerdNames(GuildSlashEvent event) throws IOException {
@@ -49,36 +51,38 @@ public class GetNamesCommand extends ApplicationCommand {
     private JsonArray getNames(Guild guild, boolean nerdsOnly) {
         JsonArray jsonArray = new JsonArray();
 
-        guild.loadMembers(member -> {
-            if (nerdsOnly) {
-                if (!Util.hasRole(member, "Nerd") || Util.hasRole(member, "HPC") || Util.hasRole(member, "Grape")) {
-                    return;
-                }
-            }
+        List<Member> members = guild.loadMembers().get()
+                .stream()
+                .filter(member -> Util.hasRole(member, "Member"))
+                .toList();
 
-            if (Util.hasRole(member, "Ultimate Nerd") || Util.hasRole(member, "Ultimate Nerd but Red") || Util.hasRole(member, "Game Master")) {
-                NerdBotApp.LOGGER.info("Skipping " + member.getEffectiveName() + " because they have a special role!");
-                return;
-            }
+        if (nerdsOnly) {
+            members = members.stream().filter(member -> Util.hasRole(member, "Nerd") || Util.hasRole(member, "HPC") || Util.hasRole(member, "Grape")).toList();
+        }
 
+        NerdBotApp.LOGGER.info("Found " + members.size() + " members meeting requirements");
+        members.forEach(member -> {
             Matcher matcher = pattern.matcher(member.getEffectiveName());
-            while (matcher.find()) {
+            if (matcher.matches()) {
                 NerdBotApp.LOGGER.info("Found match: " + matcher.group(0));
-                usernameQueue.put(new DelayedObject(member.getEffectiveName(), 1_000L));
-            }
-
-            while (!usernameQueue.isEmpty()) {
-                try {
-                    DelayedObject object = usernameQueue.take();
-                    String response = sendRequest((String) object.getObject());
-                    JsonObject obj = NerdBotApp.GSON.fromJson(response, JsonObject.class);
-                    NerdBotApp.LOGGER.info("Response: " + obj.toString());
-                    jsonArray.add(obj.get("id").getAsString());
-                } catch (IOException | URISyntaxException | InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                usernameQueue.add(member.getEffectiveName());
+                NerdBotApp.LOGGER.info("Added " + member.getEffectiveName() + " to the username lookup queue!");
             }
         });
+
+        while (!usernameQueue.isEmpty()) {
+            try {
+                String response = sendRequest(usernameQueue.poll());
+                JsonObject obj = NerdBotApp.GSON.fromJson(response, JsonObject.class);
+                if (obj.get("id") == null) {
+                    continue;
+                }
+                jsonArray.add(obj.get("id").getAsString());
+            } catch (IOException | URISyntaxException | InterruptedException e) {
+                NerdBotApp.LOGGER.error("Encountered an error while looking up UUID: " + e.getMessage());
+                throw new RuntimeException(e);
+            }
+        }
 
         return jsonArray;
     }
@@ -88,6 +92,7 @@ public class GetNamesCommand extends ApplicationCommand {
         HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format("https://api.mojang.com/users/profiles/minecraft/%s", name))).GET().build();
 
         try {
+            NerdBotApp.LOGGER.info("Sending request to " + httpRequest.uri());
             HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             return response.body();
         } catch (Exception e) {
