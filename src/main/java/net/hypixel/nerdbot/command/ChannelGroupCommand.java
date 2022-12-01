@@ -4,20 +4,21 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.database.Database;
 
 import java.util.List;
 
+@Log4j2
 public class ChannelGroupCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "channelgroup", subcommand = "show", description = "View all channel groups", defaultLocked = true)
     public void showChannelGroups(GuildSlashEvent event) {
         if (!Database.getInstance().isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
-            NerdBotApp.LOGGER.error("Couldn't connect to the database!");
+            log.error("Couldn't connect to the database!");
             return;
         }
 
@@ -44,7 +45,7 @@ public class ChannelGroupCommand extends ApplicationCommand {
     ) {
         if (!Database.getInstance().isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
-            NerdBotApp.LOGGER.error("Couldn't connect to the database!");
+            log.error("Couldn't connect to the database!");
             return;
         }
 
@@ -57,7 +58,7 @@ public class ChannelGroupCommand extends ApplicationCommand {
     public void getChannelGroup(GuildSlashEvent event, @AppOption(description = "The name of the channel group") String name) {
         if (!Database.getInstance().isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
-            NerdBotApp.LOGGER.error("Couldn't connect to the database!");
+            log.error("Couldn't connect to the database!");
             return;
         }
 
@@ -74,7 +75,7 @@ public class ChannelGroupCommand extends ApplicationCommand {
     public void removeChannelGroup(GuildSlashEvent event, @AppOption(description = "The name of the channel group") String name) {
         if (!Database.getInstance().isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
-            NerdBotApp.LOGGER.error("Couldn't connect to the database!");
+            log.error("Couldn't connect to the database!");
             return;
         }
 

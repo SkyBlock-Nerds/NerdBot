@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.bot;
 
 import com.freya02.botcommands.api.CommandsBuilder;
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -18,7 +19,10 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
-import net.hypixel.nerdbot.listener.*;
+import net.hypixel.nerdbot.listener.ActivityListener;
+import net.hypixel.nerdbot.listener.MessageListener;
+import net.hypixel.nerdbot.listener.ModLogListener;
+import net.hypixel.nerdbot.listener.ShutdownListener;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.ForumChannelResolver;
 import net.hypixel.nerdbot.util.Users;
@@ -31,6 +35,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+@Log4j2
 public class NerdBot implements Bot {
 
     private static final List<BotFeature> FEATURES = Arrays.asList(
@@ -60,7 +65,7 @@ public class NerdBot implements Bot {
         try {
             jda.awaitReady();
         } catch (InterruptedException exception) {
-            NerdBotApp.LOGGER.error("Failed to create JDA instance!");
+            log.error("Failed to create JDA instance!");
             exception.printStackTrace();
             System.exit(-1);
         }
@@ -71,12 +76,12 @@ public class NerdBot implements Bot {
                     .extensionsBuilder(extensionsBuilder -> extensionsBuilder.registerParameterResolver(new ForumChannelResolver()));
             commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
         } catch (IOException exception) {
-            NerdBotApp.LOGGER.error("Couldn't create the command builder! Reason: " + exception.getMessage());
+            log.error("Couldn't create the command builder! Reason: " + exception.getMessage());
             System.exit(-1);
         }
 
         if (NerdBotApp.getBot().isReadOnly()) {
-            NerdBotApp.LOGGER.info("Bot is loaded in read-only mode!");
+            log.info("Bot is loaded in read-only mode!");
         }
 
         NerdBotApp.getBot().onStart();
@@ -112,10 +117,10 @@ public class NerdBot implements Bot {
     public void onStart() {
         for (BotFeature feature : FEATURES) {
             feature.onStart();
-            NerdBotApp.LOGGER.info("Started feature " + feature.getClass().getSimpleName());
+            log.info("Started feature " + feature.getClass().getSimpleName());
         }
         startTime = System.currentTimeMillis();
-        NerdBotApp.LOGGER.info("Bot started on region " + Environment.getEnvironment());
+        log.info("Bot started in environment " + Environment.getEnvironment());
     }
 
     @Override
@@ -155,12 +160,12 @@ public class NerdBot implements Bot {
 
         try {
             File file = new File(fileName);
-            config = Util.loadConfig(file);
+            config = (BotConfig) Util.jsonToObject(file, BotConfig.class);
 
-            NerdBotApp.LOGGER.info("Loaded config from " + file.getAbsolutePath());
-            NerdBotApp.LOGGER.debug(config.toString());
+            log.info("Loaded config from " + file.getAbsolutePath());
+            log.info(config.toString());
         } catch (FileNotFoundException exception) {
-            NerdBotApp.LOGGER.error("Could not find config file " + fileName);
+            log.error("Could not find config file " + fileName);
             System.exit(-1);
         }
     }

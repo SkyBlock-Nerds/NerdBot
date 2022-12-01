@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
@@ -13,6 +14,7 @@ import net.hypixel.nerdbot.util.Util;
 
 import java.util.List;
 
+@Log4j2
 public class MessageListener {
 
     @SubscribeEvent
@@ -27,7 +29,7 @@ public class MessageListener {
 
         Emoji yes = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getAgree()), no = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getDisagree());
         if (yes == null || no == null) {
-            NerdBotApp.LOGGER.error("Couldn't find the emote for yes or no!");
+            log.error("Couldn't find the emote for yes or no!");
             return;
         }
 
@@ -40,7 +42,7 @@ public class MessageListener {
             message.createThreadChannel("[Discussion] " + Util.getFirstLine(message)).queue(threadChannel -> threadChannel.addThreadMember(message.getAuthor()).queue());
 
             if (NerdBotApp.getBot().isReadOnly()) {
-                NerdBotApp.LOGGER.info("Read-only mode is enabled, not adding reactions to new message " + message.getId());
+                log.info("Read-only mode is enabled, not adding reactions to new message " + message.getId());
                 return;
             }
 

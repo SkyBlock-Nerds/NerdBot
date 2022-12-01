@@ -5,6 +5,7 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -24,6 +25,7 @@ import java.util.Queue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Log4j2
 public class GetNamesCommand extends ApplicationCommand {
 
     private final String regex = "^[a-zA-Z0-9_]{2,16}$";
@@ -60,13 +62,13 @@ public class GetNamesCommand extends ApplicationCommand {
             members = members.stream().filter(member -> Util.hasRole(member, "Nerd") || Util.hasRole(member, "HPC") || Util.hasRole(member, "Grape")).toList();
         }
 
-        NerdBotApp.LOGGER.info("Found " + members.size() + " members meeting requirements");
+        log.info("Found " + members.size() + " members meeting requirements");
         members.forEach(member -> {
             Matcher matcher = pattern.matcher(member.getEffectiveName());
             if (matcher.matches()) {
-                NerdBotApp.LOGGER.info("Found match: " + matcher.group(0));
+                log.info("Found match: " + matcher.group(0));
                 usernameQueue.add(member.getEffectiveName());
-                NerdBotApp.LOGGER.info("Added " + member.getEffectiveName() + " to the username lookup queue!");
+                log.info("Added " + member.getEffectiveName() + " to the username lookup queue!");
             }
         });
 
@@ -79,7 +81,7 @@ public class GetNamesCommand extends ApplicationCommand {
                 }
                 jsonArray.add(obj.get("id").getAsString());
             } catch (IOException | URISyntaxException | InterruptedException e) {
-                NerdBotApp.LOGGER.error("Encountered an error while looking up UUID: " + e.getMessage());
+                log.error("Encountered an error while looking up UUID: " + e.getMessage());
                 throw new RuntimeException(e);
             }
         }
@@ -92,11 +94,11 @@ public class GetNamesCommand extends ApplicationCommand {
         HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format("https://api.mojang.com/users/profiles/minecraft/%s", name))).GET().build();
 
         try {
-            NerdBotApp.LOGGER.info("Sending request to " + httpRequest.uri());
+            log.info("Sending request to " + httpRequest.uri());
             HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             return response.body();
         } catch (Exception e) {
-            NerdBotApp.LOGGER.error(String.format("Encountered error while looking up Minecraft account of %s!", name));
+            log.error(String.format("Encountered error while looking up Minecraft account of %s!", name));
             e.printStackTrace();
         }
 
