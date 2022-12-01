@@ -32,9 +32,9 @@ public class CurateFeature extends BotFeature {
                     List<GreenlitMessage> result = forumChannelCurator.curate(forumChannel);
 
                     if (result.isEmpty()) {
-                        forumChannelCurator.getLogger().info("No new suggestions were greenlit this time!");
+                        log.info("No new suggestions were greenlit this time!");
                     } else {
-                        forumChannelCurator.getLogger().info("Greenlit " + result.size() + " new suggestions in " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!");
+                        log.info("Greenlit " + result.size() + " new suggestions in " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!");
                     }
 
                     Database.getInstance().createOrUpdateGreenlitMessages(result);

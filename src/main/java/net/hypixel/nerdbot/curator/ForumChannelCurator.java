@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.curator;
 
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 public class ForumChannelCurator extends Curator<ForumChannel> {
 
     public ForumChannelCurator(boolean readOnly) {
@@ -29,14 +31,14 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         List<GreenlitMessage> output = new ArrayList<>();
         setStartTime(System.currentTimeMillis());
 
-        getLogger().info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
+        log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
         List<ThreadChannel> threads = forumChannel.getThreadChannels()
                 .stream()
                 .filter(threadChannel -> threadChannel.getAppliedTags().stream().anyMatch(tag -> !tag.getName().equalsIgnoreCase("greenlit")))
                 .toList();
         for (ThreadChannel thread : threads) {
-            getLogger().info("Curating thread: " + thread.getName() + " (Thread ID: " + thread.getId() + ")");
+            log.info("Curating thread: " + thread.getName() + " (Thread ID: " + thread.getId() + ")");
 
             try {
                 // This is a stupid way to do it but it's the only way that works right now
@@ -49,11 +51,11 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
                 if (discordUser.getLastActivity().getLastSuggestionDate() < firstPost.getTimeCreated().toInstant().toEpochMilli()) {
                     discordUser.getLastActivity().setLastSuggestionDate(firstPost.getTimeCreated().toInstant().toEpochMilli());
-                    getLogger().info("Updating last suggestion time for " + firstPost.getAuthor().getName() + " to " + firstPost.getTimeCreated().toEpochSecond());
+                    log.info("Updating last suggestion time for " + firstPost.getAuthor().getName() + " to " + firstPost.getTimeCreated().toEpochSecond());
                 }
 
                 if (agreeEmoji == null || disagreeEmoji == null) {
-                    getLogger().error("Couldn't find the agree or disagree emoji, time to yell!");
+                    log.error("Couldn't find the agree or disagree emoji, time to yell!");
                     if (ChannelManager.getLogChannel() != null) {
                         ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH).getAsMention() + " I couldn't find the agree or disagree emoji for some reason, check logs!").queue();
                     }
@@ -66,7 +68,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 int disagreeReaction = firstPost.getReaction(disagreeEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(disagreeEmoji)).getCount();
 
                 if (agreeReaction < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
-                    getLogger().info("Post " + firstPost.getId() + " doesn't have enough agree reactions, skipping...");
+                    log.info("Post " + firstPost.getId() + " doesn't have enough agree reactions, skipping...");
                     continue;
                 }
 
@@ -83,18 +85,18 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                             .suggestionContent(firstPost.getContentRaw())
                             .build();
 
-                    getLogger().info("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
+                    log.info("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
                     thread.getManager().setAppliedTags(new ForumTagImpl(NerdBotApp.getBot().getConfig().getTags().getGreenlit())).complete(true);
                     output.add(greenlitMessage);
                 }
             } catch (RateLimitedException exception) {
-                getLogger().info("Currently being rate limited so the curation process has to stop!");
+                log.info("Currently being rate limited so the curation process has to stop!");
                 break;
             }
         }
 
         setEndTime(System.currentTimeMillis());
-        getLogger().info("Curated forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ") in " + (getEndTime() - getStartTime()) + "ms");
+        log.info("Curated forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ") in " + (getEndTime() - getStartTime()) + "ms");
 
         return output;
     }
