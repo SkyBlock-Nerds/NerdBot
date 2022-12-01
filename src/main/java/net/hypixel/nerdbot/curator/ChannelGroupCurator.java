@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.curator;
 
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 
+@Slf4j
 public class ChannelGroupCurator extends Curator<ChannelGroup> {
 
     private final Emoji agree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getAgree());
@@ -42,20 +44,20 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
         setStartTime(System.currentTimeMillis());
 
         if (agree == null || disagree == null || greenlit == null) {
-            getLogger().error("Failed to find an emoji! Either agree, disagree or greenlit is null! Check to see if the ID's are correct!");
+            log.error("Failed to find an emoji! Either agree, disagree or greenlit is null! Check to see if the ID's are correct!");
             if (ChannelManager.getLogChannel() != null) {
                 ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH).getAsMention() + " Couldn't find one or more of the emojis required, check logs!").queue();
             }
             return output;
         }
 
-        getLogger().info("Starting to curate channel group " + group.getName() + " for guild " + group.getGuildId() + " (Source: " + group.getFrom() + ", Destination: " + group.getTo() + ")");
+        log.info("Starting to curate channel group " + group.getName() + " for guild " + group.getGuildId() + " (Source: " + group.getFrom() + ", Destination: " + group.getTo() + ")");
 
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
         TextChannel suggestionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getFrom());
         TextChannel submissionChannel = NerdBotApp.getBot().getJDA().getTextChannelById(group.getTo());
         if (guild == null || suggestionChannel == null || submissionChannel == null) {
-            getLogger().error("[" + group.getName() + "] Either the guild, suggestion channel, or submission channel is null so I can't continue with this group!");
+            log.error("[" + group.getName() + "] Either the guild, suggestion channel, or submission channel is null so I can't continue with this group!");
             return output;
         }
 
@@ -63,19 +65,19 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
         try {
             messages = suggestionChannel.getHistory().retrievePast(100).complete(true);
             if (messages.isEmpty()) {
-                getLogger().info("[" + group.getName() + "] No messages to curate in this group!");
+                log.info("[" + group.getName() + "] No messages to curate in this group!");
                 return output;
             }
         } catch (RateLimitedException exception) {
-            getLogger().error("[" + group.getName() + "] Rate limited while trying to get the history of the suggestion channel! Skipping this group!");
+            log.error("[" + group.getName() + "] Rate limited while trying to get the history of the suggestion channel! Skipping this group!");
             return output;
         }
 
-        getLogger().info("[" + group.getName() + "] Found " + messages.size() + " messages to curate!");
+        log.info("[" + group.getName() + "] Found " + messages.size() + " messages to curate!");
         int count = 0;
 
         for (Message message : messages) {
-            getLogger().info("[" + group.getName() + "] Curating message " + (++count) + "/" + messages.size() + " by " + message.getAuthor().getAsTag() + "!");
+            log.info("[" + group.getName() + "] Curating message " + (++count) + "/" + messages.size() + " by " + message.getAuthor().getAsTag() + "!");
 
             addEmojiIfMissing(group, message, agree);
             addEmojiIfMissing(group, message, disagree);
@@ -91,12 +93,12 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
             }
 
             if (realPositive == 0 && realNegative == 0) {
-                getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has no positive and negative reactions!");
+                log.info("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has no positive and negative reactions!");
                 continue;
             }
 
             if (realPositive < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
-                getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has less than the minimum threshold of " + NerdBotApp.getBot().getConfig().getMinimumThreshold() + " positive reactions!");
+                log.info("[" + group.getName() + "] [" + message.getId() + "] Skipping because it has less than the minimum threshold of " + NerdBotApp.getBot().getConfig().getMinimumThreshold() + " positive reactions!");
                 continue;
             }
 
@@ -112,17 +114,17 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
             String ratioMessage = "[" + group.getName() + "] [" + message.getId() + "] Reaction ratio is " + Util.DECIMAL_FORMAT.format(ratio) + "% (" + realPositive + " positive / " + realNegative + " negative)";
             if (ratio < requiredRatio) {
                 ratioMessage += ". This is below the minimum threshold of " + Util.DECIMAL_FORMAT.format(requiredRatio) + "%!";
-                getLogger().info(ratioMessage);
+                log.info(ratioMessage);
                 continue;
             }
 
             if (isReadOnly()) {
-                getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Skipping logging the message because this is a read-only run!");
+                log.info("[" + group.getName() + "] [" + message.getId() + "] Skipping logging the message because this is a read-only run!");
                 continue;
             }
 
             ratioMessage += ". Greenlighting this message!";
-            getLogger().info(ratioMessage);
+            log.info(ratioMessage);
 
             message.addReaction(greenlit).queue();
             GreenlitMessage msg = createGreenlitMessage(group, message, realPositive, realNegative);
@@ -145,7 +147,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
         channel.sendMessageEmbeds(message.getEmbed().build()).queue(message1 -> {
             message.setSuggestionTitle(message1.getId());
             Database.getInstance().insertGreenlitMessage(message);
-            getLogger().info("[" + channelGroup.getName() + "] [" + message.getId() + "] Greenlit message sent to " + channel.getName() + " and inserted into database");
+            log.info("[" + channelGroup.getName() + "] [" + message.getId() + "] Greenlit message sent to " + channel.getName() + " and inserted into database");
         });
     }
 
@@ -158,7 +160,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
      */
     private void addEmojiIfMissing(ChannelGroup group, Message message, @NotNull Emoji emoji) {
         if (message.getReaction(emoji) == null) {
-            getLogger().info("[" + group.getName() + "] [" + message.getId() + "] No " + emoji.getName() + " reaction found, adding one!");
+            log.info("[" + group.getName() + "] [" + message.getId() + "] No " + emoji.getName() + " reaction found, adding one!");
             message.addReaction(emoji).queue();
         }
     }
@@ -216,7 +218,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
      */
     private void getAndUpdateUserReactions(ChannelGroup group, Message message, MessageReaction positive, MessageReaction negative) {
         if (isReadOnly()) {
-            getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Skipping updating user reactions because this is a read-only run!");
+            log.info("[" + group.getName() + "] [" + message.getId() + "] Skipping updating user reactions because this is a read-only run!");
             return;
         }
 
@@ -227,7 +229,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
 
             if (!discordUser.getAgrees().contains(message.getId())) {
                 discordUser.getAgrees().add(message.getId());
-                getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Added message to " + discordUser.getDiscordId() + "'s agrees!");
+                log.info("[" + group.getName() + "] [" + message.getId() + "] Added message to " + discordUser.getDiscordId() + "'s agrees!");
             }
         });
 
@@ -238,9 +240,9 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
 
             if (!discordUser.getDisagrees().contains(message.getId())) {
                 discordUser.getDisagrees().add(message.getId());
-                getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Added message to " + discordUser.getDiscordId() + "'s disagrees!");
+                log.info("[" + group.getName() + "] [" + message.getId() + "] Added message to " + discordUser.getDiscordId() + "'s disagrees!");
             } else {
-                getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Message already added to " + discordUser.getDiscordId() + "'s disagrees!");
+                log.info("[" + group.getName() + "] [" + message.getId() + "] Message already added to " + discordUser.getDiscordId() + "'s disagrees!");
             }
         });
     }
@@ -255,32 +257,32 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
      */
     private void checkGreenlit(ChannelGroup group, Message message, int agrees, int disagrees) {
         if (isReadOnly()) {
-            getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Skipping greenlit check because we're in read-only mode!");
+            log.info("[" + group.getName() + "] [" + message.getId() + "] Skipping greenlit check because we're in read-only mode!");
             return;
         }
 
-        getLogger().info("[" + group.getName() + "] [" + message.getId() + "] This message is already greenlit! Checking to see if the reaction count has changed");
+        log.info("[" + group.getName() + "] [" + message.getId() + "] This message is already greenlit! Checking to see if the reaction count has changed");
 
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(group.getGuildId());
         if (guild == null) {
-            getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Could not find guild " + group.getGuildId());
+            log.info("[" + group.getName() + "] [" + message.getId() + "] Could not find guild " + group.getGuildId());
             return;
         }
 
         TextChannel channel = guild.getTextChannelById(group.getTo());
         if (channel == null) {
-            getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Could not find channel " + group.getTo());
+            log.info("[" + group.getName() + "] [" + message.getId() + "] Could not find channel " + group.getTo());
             return;
         }
 
         GreenlitMessage greenlitMessage = Database.getInstance().getGreenlitMessage(message.getId());
         if (greenlitMessage == null) {
-            getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Could not find greenlit message! Creating one...");
+            log.info("[" + group.getName() + "] [" + message.getId() + "] Could not find greenlit message! Creating one...");
 
             greenlitMessage = createGreenlitMessage(group, message, agrees, disagrees);
             Database.getInstance().insertGreenlitMessage(greenlitMessage);
 
-            getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Created new greenlit message because it wasn't found in the database");
+            log.info("[" + group.getName() + "] [" + message.getId() + "] Created new greenlit message because it wasn't found in the database");
 
             if (greenlitMessage.getGreenlitMessageId() != null) {
                 if (channel.retrieveMessageById(greenlitMessage.getGreenlitMessageId()).complete() != null) {
@@ -291,17 +293,17 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
                 channel.sendMessageEmbeds(greenlitMessage.getEmbed().build()).queue(msg -> {
                     finalGreenlitMessage.setGreenlitMessageId(msg.getId());
                     Database.getInstance().updateGreenlitMessage(finalGreenlitMessage);
-                    getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Updated greenlit message ID to " + msg.getId());
+                    log.info("[" + group.getName() + "] [" + message.getId() + "] Updated greenlit message ID to " + msg.getId());
                 });
             }
         }
 
         if (greenlitMessage.getAgrees() == agrees && greenlitMessage.getDisagrees() == disagrees) {
-            getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Reaction count has not changed");
+            log.info("[" + group.getName() + "] [" + message.getId() + "] Reaction count has not changed");
             return;
         }
 
-        getLogger().info("[" + group.getName() + "] [" + message.getId() + "] Updating record in the database with the new reaction count! " + "(" + greenlitMessage.getAgrees() + "->" + agrees + " positive, " + greenlitMessage.getDisagrees() + "->" + disagrees + " negative)");
+        log.info("[" + group.getName() + "] [" + message.getId() + "] Updating record in the database with the new reaction count! " + "(" + greenlitMessage.getAgrees() + "->" + agrees + " positive, " + greenlitMessage.getDisagrees() + "->" + disagrees + " negative)");
         greenlitMessage.setAgrees(agrees);
         greenlitMessage.setDisagrees(disagrees);
 
