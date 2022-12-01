@@ -28,6 +28,10 @@ public class ActivityListener {
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {
+        if (!event.isFromGuild()) {
+            return;
+        }
+
         Member member = event.getMember();
         GuildChannel channel = event.getGuildChannel();
 

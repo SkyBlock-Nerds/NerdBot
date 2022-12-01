@@ -69,4 +69,6 @@ public class BotConfig {
      * The string being displayed as the bot's activity on its profile
      */
     private String activity;
+
+    private ModMailConfig modMailConfig;
 }
