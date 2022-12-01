@@ -4,6 +4,7 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.SelfUser;
@@ -20,6 +21,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
+@Log4j2
 public class InfoCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "info", subcommand = "bot", description = "View information about the bot", defaultLocked = true)
@@ -111,13 +113,13 @@ public class InfoCommand extends ApplicationCommand {
         for (DiscordUser user : users) {
             Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(user.getDiscordId());
             if (member == null) {
-                NerdBotApp.LOGGER.error("Couldn't find member " + user.getDiscordId());
+                log.error("Couldn't find member " + user.getDiscordId());
                 continue;
             }
 
             if (member.getRoles().contains(Util.getRole("Ultimate Nerd")) || member.getRoles().contains(Util.getRole("Ultimate Nerd But Red")) ||
                     member.getRoles().contains(Util.getRole("Game Master"))) {
-                NerdBotApp.LOGGER.info("Would have added " + member.getEffectiveName() + " as an inactive user but they have a special role!");
+                log.info("Would have added " + member.getEffectiveName() + " as an inactive user but they have a special role!");
                 continue;
             }
 

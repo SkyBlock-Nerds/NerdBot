@@ -1,8 +1,8 @@
 package net.hypixel.nerdbot.util;
 
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.bot.config.BotConfig;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+@Log4j2
 public class Util {
 
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
@@ -50,7 +51,7 @@ public class Util {
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(content.getBytes(StandardCharsets.UTF_8));
         }
-        NerdBotApp.LOGGER.info("Created temporary file " + file.getAbsolutePath());
+        log.info("Created temporary file " + file.getAbsolutePath());
         return file;
     }
 
@@ -67,12 +68,9 @@ public class Util {
                 .count();
     }
 
-    public static BotConfig loadConfig(File file) throws FileNotFoundException {
-        if (!file.exists()) {
-            throw new FileNotFoundException("Config file not found!");
-        }
+    public static Object jsonToObject(File file, Class<?> clazz) throws FileNotFoundException {
         BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
-        return NerdBotApp.GSON.fromJson(br, BotConfig.class);
+        return NerdBotApp.GSON.fromJson(br, clazz);
     }
 
     public static String formatSize(long size) {

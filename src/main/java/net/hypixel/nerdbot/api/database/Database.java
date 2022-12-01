@@ -17,6 +17,7 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
+import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
@@ -28,17 +29,15 @@ import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+@Log4j2
 public class Database implements ServerMonitorListener {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(Database.class);
     public static final Cache<String, DiscordUser> USER_CACHE = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(10))
             .scheduler(Scheduler.systemScheduler())
@@ -92,13 +91,13 @@ public class Database implements ServerMonitorListener {
         }
 
         if (System.getProperty("mongodb.showHeartbeats") != null && Boolean.parseBoolean(System.getProperty("mongodb.showHeartbeats", "true"))) {
-            log("Heartbeat successful! Elapsed time: " + event.getElapsedTime(TimeUnit.MILLISECONDS) + "ms");
+            log.info("Heartbeat successful! Elapsed time: " + event.getElapsedTime(TimeUnit.MILLISECONDS) + "ms");
         }
     }
 
     @Override
     public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
-        error("Heartbeat failed! Reason: " + event.getThrowable().getMessage());
+        log.error("Heartbeat failed! Reason: " + event.getThrowable().getMessage());
         if (connected) {
             if (ChannelManager.getLogChannel() != null) {
                 ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH.getUserId()).getAsMention() + " The database has disconnected!").queue();
@@ -114,26 +113,18 @@ public class Database implements ServerMonitorListener {
         }
     }
 
-    private void log(String message) {
-        LOGGER.info(message);
-    }
-
-    private void error(String message) {
-        LOGGER.error(message);
-    }
-
     public boolean isConnected() {
         return connected;
     }
 
     public void insertGreenlitMessage(GreenlitMessage greenlitMessage) {
         InsertOneResult result = greenlitCollection.insertOne(greenlitMessage);
-        log("Inserted greenlit message " + result.getInsertedId());
+        log.info("Inserted greenlit message " + result.getInsertedId());
     }
 
     public void insertGreenlitMessages(List<GreenlitMessage> greenlitMessages) {
         InsertManyResult result = greenlitCollection.insertMany(greenlitMessages);
-        log("Inserted " + result.getInsertedIds().size() + " greenlit messages");
+        log.info("Inserted " + result.getInsertedIds().size() + " greenlit messages");
     }
 
     public void createOrUpdateGreenlitMessages(List<GreenlitMessage> messages) {
@@ -153,9 +144,9 @@ public class Database implements ServerMonitorListener {
     public void updateGreenlitMessage(GreenlitMessage greenlitMessage) {
         UpdateResult result = greenlitCollection.updateOne(Filters.eq("messageId", greenlitMessage.getMessageId()), new Document("$set", greenlitMessage));
         if (result.getMatchedCount() == 0) {
-            log("Couldn't find greenlit message " + greenlitMessage.getId() + " to update");
+            log.info("Couldn't find greenlit message " + greenlitMessage.getId() + " to update");
         } else {
-            log(result.getModifiedCount() + " greenlit message(s) updated");
+            log.info(result.getModifiedCount() + " greenlit message(s) updated");
         }
     }
 
@@ -167,7 +158,7 @@ public class Database implements ServerMonitorListener {
 
     public void deleteGreenlitMessage(String field, Object value) {
         DeleteResult result = greenlitCollection.deleteOne(Filters.eq(field, value));
-        log(result.getDeletedCount() + " greenlit message(s) deleted");
+        log.info(result.getDeletedCount() + " greenlit message(s) deleted");
     }
 
     public List<GreenlitMessage> getGreenlitCollection() {
@@ -180,12 +171,12 @@ public class Database implements ServerMonitorListener {
 
     public void insertChannelGroup(ChannelGroup channelGroup) {
         channelCollection.insertOne(channelGroup);
-        log("Inserted channel group " + channelGroup.getName());
+        log.info("Inserted channel group " + channelGroup.getName());
     }
 
     public void insertChannelGroups(List<ChannelGroup> channelGroups) {
         channelCollection.insertMany(channelGroups);
-        log("Inserted " + channelGroups.size() + " channel groups");
+        log.info("Inserted " + channelGroups.size() + " channel groups");
     }
 
     public void deleteChannelGroup(ChannelGroup channelGroup) {
@@ -194,7 +185,7 @@ public class Database implements ServerMonitorListener {
 
     public void deleteChannelGroup(String name) {
         channelCollection.deleteOne(Filters.eq("name", name));
-        log("Deleted channel group " + name);
+        log.info("Deleted channel group " + name);
     }
 
     public List<ChannelGroup> getChannelGroups() {
@@ -232,15 +223,15 @@ public class Database implements ServerMonitorListener {
 
     public void insertUser(DiscordUser user) {
         userCollection.insertOne(user);
-        log("Inserted user " + user.getDiscordId());
+        log.info("Inserted user " + user.getDiscordId());
     }
 
     public void updateUser(String field, Object value, DiscordUser user) {
         UpdateResult result = userCollection.replaceOne(Filters.eq(field, value), user);
         if (result.getMatchedCount() == 0) {
-            log("Couldn't find user " + user.getDiscordId() + " to update");
+            log.info("Couldn't find user " + user.getDiscordId() + " to update");
         } else {
-            log("Updated user " + user.getDiscordId());
+            log.info("Updated user " + user.getDiscordId());
 
         }
     }
@@ -259,7 +250,7 @@ public class Database implements ServerMonitorListener {
 
     public void deleteUser(String field, Object value) {
         userCollection.deleteOne(Filters.eq(field, value));
-        log("Deleted user " + field + ":" + value);
+        log.info("Deleted user " + field + ":" + value);
     }
 
     public void deleteUser(DiscordUser user) {

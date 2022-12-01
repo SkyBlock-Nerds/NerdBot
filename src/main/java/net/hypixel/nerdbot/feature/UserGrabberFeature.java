@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.feature;
 
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
@@ -11,17 +12,18 @@ import net.hypixel.nerdbot.util.Util;
 import java.util.ArrayList;
 import java.util.List;
 
+@Log4j2
 public class UserGrabberFeature extends BotFeature {
 
     @Override
     public void onStart() {
         Guild guild = Util.getGuild(NerdBotApp.getBot().getConfig().getGuildId());
         if (guild == null) {
-            NerdBotApp.LOGGER.error("Couldn't find the guild specified in the bot config!");
+            log.error("Couldn't find the guild specified in the bot config!");
             return;
         }
 
-        NerdBotApp.LOGGER.info("Grabbing users from guild " + guild.getName());
+        log.info("Grabbing users from guild " + guild.getName());
         List<DiscordUser> users = Database.getInstance().getUsers();
 
         guild.loadMembers(member -> {
@@ -35,7 +37,7 @@ public class UserGrabberFeature extends BotFeature {
             }
 
             if (discordUser.getLastActivity() == null) {
-                NerdBotApp.LOGGER.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
+                log.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
                 discordUser.setLastActivity(new LastActivity());
             }
 
@@ -44,7 +46,7 @@ public class UserGrabberFeature extends BotFeature {
             } else {
                 Database.getInstance().insertUser(discordUser);
             }
-        }).onSuccess(aVoid -> NerdBotApp.LOGGER.info("Finished grabbing users from guild " + guild.getName())).onError(Throwable::printStackTrace);
+        }).onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName())).onError(Throwable::printStackTrace);
     }
 
     @Override

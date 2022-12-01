@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.feature;
 
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+@Log4j2
 public class CurateFeature extends BotFeature {
 
     @Override
@@ -22,7 +24,7 @@ public class CurateFeature extends BotFeature {
                 Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(NerdBotApp.getBot().isReadOnly());
                 ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(NerdBotApp.getBot().getConfig().getSuggestionForumId());
                 if (forumChannel == null) {
-                    NerdBotApp.LOGGER.error("Couldn't find the suggestion forum channel from the bot config!");
+                    log.error("Couldn't find the suggestion forum channel from the bot config!");
                     return;
                 }
 

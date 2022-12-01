@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
@@ -7,22 +8,22 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 
+@Log4j2
 public class ActivityListener {
 
     @SubscribeEvent
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
         Database.getInstance().getOrAddUserToCache(event.getUser().getId());
-        NerdBotApp.LOGGER.info("User " + event.getUser().getAsTag() + " joined guild " + event.getGuild().getName());
+        log.info("User " + event.getUser().getAsTag() + " joined guild " + event.getGuild().getName());
     }
 
     @SubscribeEvent
     public void onGuildMemberLeave(GuildMemberRemoveEvent event) {
         Database.getInstance().deleteUser("discordId", event.getUser().getId());
-        NerdBotApp.LOGGER.info("User " + event.getUser().getAsTag() + " left guild " + event.getGuild().getName());
+        log.info("User " + event.getUser().getAsTag() + " left guild " + event.getGuild().getName());
     }
 
     @SubscribeEvent
@@ -39,11 +40,11 @@ public class ActivityListener {
 
         if (channel.getName().contains("alpha")) {
             discordUser.getLastActivity().setLastAlphaActivity(time);
-            NerdBotApp.LOGGER.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
+            log.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
         }
 
         discordUser.getLastActivity().setLastGlobalActivity(time);
-        NerdBotApp.LOGGER.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
+        log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
     }
 
     @SubscribeEvent
@@ -56,6 +57,6 @@ public class ActivityListener {
 
         DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(member.getId());
         discordUser.getLastActivity().setLastVoiceChannelJoinDate(System.currentTimeMillis());
-        NerdBotApp.LOGGER.info("Updating last voice channel activity date for " + member.getEffectiveName() + " to " + System.currentTimeMillis());
+        log.info("Updating last voice channel activity date for " + member.getEffectiveName() + " to " + System.currentTimeMillis());
     }
 }

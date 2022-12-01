@@ -2,22 +2,21 @@ package net.hypixel.nerdbot;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.MessageCache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+@Log4j2
 public class NerdBotApp {
 
     public static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
-    public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    public static final Logger LOGGER = LoggerFactory.getLogger(NerdBotApp.class);
+    public static final Gson GSON = new GsonBuilder().create();
 
     private static MessageCache messageCache;
     private static Bot bot;
@@ -29,13 +28,13 @@ public class NerdBotApp {
             nerdBot.create(args);
             messageCache = new MessageCache();
         } catch (LoginException e) {
-            LOGGER.error("Failed to find login for bot!");
+            log.error("Failed to find login for bot!");
             e.printStackTrace();
             System.exit(-1);
         }
 
         Thread userSavingTask = new Thread(() -> {
-            LOGGER.info("Attempting to save " + Database.USER_CACHE.estimatedSize() + " cached users");
+            log.info("Attempting to save " + Database.USER_CACHE.estimatedSize() + " cached users");
             Database.USER_CACHE.asMap().forEach((s, discordUser) -> {
                 Database.getInstance().updateUser(discordUser);
             });
