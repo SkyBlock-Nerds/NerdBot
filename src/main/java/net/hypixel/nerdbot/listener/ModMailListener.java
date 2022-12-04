@@ -24,8 +24,7 @@ import java.util.concurrent.ExecutionException;
 public class ModMailListener {
 
     private final String modMailChannelId = NerdBotApp.getBot().getConfig().getModMailConfig().getReceivingChannelId();
-    private final String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
-    private final String modMailRoleMention = "<@&%s>".formatted(modMailRoleId);
+    private final String modMailRoleMention = "<@&%s>".formatted(NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId());
 
     @SubscribeEvent
     public void onModMailReceived(MessageReceivedEvent event) throws ExecutionException, InterruptedException {
@@ -33,7 +32,6 @@ public class ModMailListener {
             return;
         }
 
-        Message message = event.getMessage();
         User author = event.getAuthor();
         if (author.isBot() || author.isSystem()) {
             return;
@@ -44,25 +42,27 @@ public class ModMailListener {
             return;
         }
 
+        Message message = event.getMessage();
         Optional<ThreadChannel> optional = forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getName().contains(author.getName())).findFirst();
         if (optional.isPresent()) {
             ThreadChannel threadChannel = optional.get();
             if (threadChannel.isArchived()) {
                 threadChannel.getManager().setArchived(false).queue();
             }
-            MessageCreateBuilder data = createMessage(message);
             threadChannel.sendMessage(modMailRoleMention).queue();
-            threadChannel.sendMessage(data.build()).queue();
+            threadChannel.sendMessage(createMessage(message).build()).queue();
             log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
         } else {
-            forumChannel.createForumPost("[Mod Mail] " + author.getName(), MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())).queue(forumPost -> {
+            forumChannel.createForumPost(
+                    "[Mod Mail] " + author.getName(),
+                    MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
+            ).queue(forumPost -> {
                 try {
-                    log.info(author.getName() + " submitted a new mod mail request! (ID: " + forumPost.getThreadChannel().getId() + ")");
                     ThreadChannel threadChannel = forumPost.getThreadChannel();
                     threadChannel.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
-                    MessageCreateBuilder builder = createMessage(message);
                     threadChannel.sendMessage(modMailRoleMention).queue();
-                    threadChannel.sendMessage(builder.build()).queue();
+                    threadChannel.sendMessage(createMessage(message).build()).queue();
+                    log.info(author.getName() + " submitted a new Mod Mail request! (Thread ID: " + forumPost.getThreadChannel().getId() + ")");
                 } catch (ExecutionException | InterruptedException e) {
                     author.openPrivateChannel().flatMap(channel -> channel.sendMessage("I wasn't able to send your request! Please try again later.")).queue();
                     throw new RuntimeException(e);
@@ -77,7 +77,6 @@ public class ModMailListener {
             return;
         }
 
-        Message message = event.getMessage();
         ThreadChannel threadChannel = event.getChannel().asThreadChannel();
         ForumChannel parent = threadChannel.getParentChannel().asForumChannel();
         if (!parent.getId().equals(modMailChannelId)) {
@@ -97,8 +96,9 @@ public class ModMailListener {
         List<Message> allMessages = threadChannel.getIterableHistory().complete(true);
         Message firstPost = allMessages.get(allMessages.size() - 1);
         User requester = firstPost.getMentions().getUsers().get(0);
-        MessageCreateBuilder builder = createMessage(message);
-        builder.setContent("**Response from " + author.getName() + " in SkyBlock Nerds:**\n" + message.getContentDisplay());
+        Message message = event.getMessage();
+
+        MessageCreateBuilder builder = createMessage(message).setContent("**Response from " + author.getName() + " in SkyBlock Nerds:**\n" + message.getContentDisplay());
         requester.openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
     }
 
@@ -106,6 +106,7 @@ public class ModMailListener {
         MessageCreateBuilder data = new MessageCreateBuilder();
         data.setContent(String.format("**%s:**\n%s", message.getAuthor().getName(), message.getContentDisplay()));
 
+        // TODO split into another message, but I don't anticipate someone sending a giant essay yet
         if (data.getContent().length() > 2000) {
             data.setContent(data.getContent().substring(0, 1997) + "...");
         }
