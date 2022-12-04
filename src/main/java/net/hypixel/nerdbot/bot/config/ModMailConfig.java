@@ -6,4 +6,6 @@ import lombok.Getter;
 public class ModMailConfig {
 
     private String receivingChannelId;
+
+    private String roleId;
 }

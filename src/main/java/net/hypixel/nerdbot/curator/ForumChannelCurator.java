@@ -44,8 +44,8 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 // This is a stupid way to do it but it's the only way that works right now
                 List<Message> allMessages = thread.getIterableHistory().complete(true);
                 Message firstPost = allMessages.get(allMessages.size() - 1);
-                Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getAgree());
-                Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojis().getDisagree());
+                Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgree());
+                Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagree());
 
                 DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(firstPost.getAuthor().getId());
 
@@ -86,7 +86,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                             .build();
 
                     log.info("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
-                    thread.getManager().setAppliedTags(new ForumTagImpl(NerdBotApp.getBot().getConfig().getTags().getGreenlit())).complete(true);
+                    thread.getManager().setAppliedTags(new ForumTagImpl(NerdBotApp.getBot().getConfig().getTagConfig().getGreenlit())).complete(true);
                     output.add(greenlitMessage);
                 }
             } catch (RateLimitedException exception) {

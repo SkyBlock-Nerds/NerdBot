@@ -23,7 +23,9 @@ import java.util.concurrent.ExecutionException;
 @Log4j2
 public class ModMailListener {
 
-    public static final String MOD_MAIL_CHANNEL_ID = NerdBotApp.getBot().getConfig().getModMailConfig().getReceivingChannelId();
+    private final String modMailChannelId = NerdBotApp.getBot().getConfig().getModMailConfig().getReceivingChannelId();
+    private final String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
+    private final String modMailRoleMention = "<@&%s>".formatted(modMailRoleId);
 
     @SubscribeEvent
     public void onModMailReceived(MessageReceivedEvent event) throws ExecutionException, InterruptedException {
@@ -37,39 +39,30 @@ public class ModMailListener {
             return;
         }
 
-        ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(MOD_MAIL_CHANNEL_ID);
+        ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(modMailChannelId);
         if (forumChannel == null) {
             return;
         }
 
-        String msg = String.format("**%s:**\n%s", author.getName(), message.getContentDisplay());
-        // TODO send another message with the remaining contents, or send a file with the text maybe?
-        if (msg.length() > 2000) {
-            msg = msg.substring(0, 2000);
-        }
-
         Optional<ThreadChannel> optional = forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getName().contains(author.getName())).findFirst();
         if (optional.isPresent()) {
-            log.info(author.getName() + " replied to their Mod Mail request");
             ThreadChannel threadChannel = optional.get();
             if (threadChannel.isArchived()) {
                 threadChannel.getManager().setArchived(false).queue();
-                log.info("Received new request from old thread " + threadChannel.getName());
-                threadChannel.sendMessage("Received new request from old thread").queue();
-                // TODO send message of new request from old thread
             }
-
-            MessageCreateBuilder data = createMessage(message).setContent(msg);
+            MessageCreateBuilder data = createMessage(message);
+            threadChannel.sendMessage(modMailRoleMention).queue();
             threadChannel.sendMessage(data.build()).queue();
+            log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
         } else {
-            String initial = "Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId() + "\nThread ID: ";
-            forumChannel.createForumPost("[Mod Mail] " + author.getName(), MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!")).queue(forumPost -> {
+            forumChannel.createForumPost("[Mod Mail] " + author.getName(), MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())).queue(forumPost -> {
                 try {
-                    forumPost.getMessage().editMessage(initial + forumPost.getMessage().getId()).queue();
                     log.info(author.getName() + " submitted a new mod mail request! (ID: " + forumPost.getThreadChannel().getId() + ")");
-                    forumPost.getThreadChannel().getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
+                    ThreadChannel threadChannel = forumPost.getThreadChannel();
+                    threadChannel.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
                     MessageCreateBuilder builder = createMessage(message);
-                    forumPost.getThreadChannel().sendMessage(builder.build()).queue();
+                    threadChannel.sendMessage(modMailRoleMention).queue();
+                    threadChannel.sendMessage(builder.build()).queue();
                 } catch (ExecutionException | InterruptedException e) {
                     author.openPrivateChannel().flatMap(channel -> channel.sendMessage("I wasn't able to send your request! Please try again later.")).queue();
                     throw new RuntimeException(e);
@@ -87,11 +80,11 @@ public class ModMailListener {
         Message message = event.getMessage();
         ThreadChannel threadChannel = event.getChannel().asThreadChannel();
         ForumChannel parent = threadChannel.getParentChannel().asForumChannel();
-        if (!parent.getId().equals(MOD_MAIL_CHANNEL_ID)) {
+        if (!parent.getId().equals(modMailChannelId)) {
             return;
         }
 
-        ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(MOD_MAIL_CHANNEL_ID);
+        ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(modMailChannelId);
         if (forumChannel == null) {
             return;
         }
@@ -111,14 +104,18 @@ public class ModMailListener {
 
     private MessageCreateBuilder createMessage(Message message) throws ExecutionException, InterruptedException {
         MessageCreateBuilder data = new MessageCreateBuilder();
-        data.setContent(message.getContentDisplay());
+        data.setContent(String.format("**%s:**\n%s", message.getAuthor().getName(), message.getContentDisplay()));
+
+        if (data.getContent().length() > 2000) {
+            data.setContent(data.getContent().substring(0, 1997) + "...");
+        }
+
         if (!message.getAttachments().isEmpty()) {
             List<FileUpload> files = new ArrayList<>();
             for (Message.Attachment attachment : message.getAttachments()) {
                 InputStream stream = attachment.getProxy().download().get();
                 files.add(FileUpload.fromData(stream, attachment.getFileName()));
             }
-            log.info("files: " + files.size());
             data.setFiles(files);
         }
         return data;

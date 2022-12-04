@@ -52,12 +52,12 @@ public class BotConfig {
     /**
      * Emotes that the bot will use to react to suggestions
      */
-    private Emojis emojis;
+    private EmojiConfig emojiConfig;
 
     /**
      * Forum tags for the bot to use, such as the greenlit tag to set suggestions as greenlit
      */
-    private Tags tags;
+    private TagConfig tagConfig;
 
     /**
      * The activity that the bot will display on its profile
@@ -70,5 +70,8 @@ public class BotConfig {
      */
     private String activity;
 
+    /**
+     * Configuration for anything related to the Mod Mail feature
+     */
     private ModMailConfig modMailConfig;
 }

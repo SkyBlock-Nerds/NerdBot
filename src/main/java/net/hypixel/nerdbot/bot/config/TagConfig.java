@@ -9,7 +9,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class Tags {
+public class TagConfig {
 
     private final long greenlit;
 
