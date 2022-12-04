@@ -167,6 +167,10 @@ public class ModLogListener {
 
     @SubscribeEvent
     public void onMessageEdit(MessageUpdateEvent event) {
+        if (event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
+            return;
+        }
+
         Message before = NerdBotApp.getMessageCache().getMessage(event.getMessageId());
         Message after = event.getMessage();
         User user = before.getAuthor();
@@ -176,7 +180,7 @@ public class ModLogListener {
                 .setTitle("Message edited")
                 .setThumbnail(user.getAvatarUrl())
                 .setColor(Color.YELLOW)
-                .addField("User", user.getAsMention(), false)
+                .addField("User", before == null ? "N/A" : user.getAsMention(), false)
                 .addField("Channel", channel.getAsMention(), false)
                 .addField("User ID", user.getId(), false)
                 .addField("Before", before.getContentDisplay(), true)
