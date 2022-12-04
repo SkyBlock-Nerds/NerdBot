@@ -11,6 +11,6 @@ import lombok.ToString;
 @ToString
 public class TagConfig {
 
-    private final long greenlit;
+    private final String greenlit;
 
 }
