@@ -11,7 +11,5 @@ import lombok.ToString;
 @ToString
 public class EmojiConfig {
 
-    public static final EmojiConfig DEFAULT = new EmojiConfig("\uD83D\uDC4D", "\uD83D\uDC4E", "\u2705");
-
     private final String agree, disagree, greenlit;
 }
