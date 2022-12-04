@@ -29,6 +29,11 @@ public class BotConfig {
 
     private String itemGenChannel;
     /**
+     * The channel ID that the bot will be generating items in
+     */
+
+    private String itemGenChannel;
+    /**
      * The {@link Role} ID of the Bot Manager role
      */
     private String botManagerRoleId;
