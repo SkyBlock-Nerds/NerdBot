@@ -21,6 +21,11 @@ public class BotConfig {
     private String logChannel;
 
     /**
+     * The channel ID that the bot will be generating items in
+     */
+
+    private String itemGenChannel;
+    /**
      * The channel ID for the suggestion forum
      */
     private String suggestionForumId;
