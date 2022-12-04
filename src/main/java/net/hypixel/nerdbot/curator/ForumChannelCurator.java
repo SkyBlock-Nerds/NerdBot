@@ -86,7 +86,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                             .build();
 
                     log.info("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
-                    thread.getManager().setAppliedTags(new ForumTagImpl(NerdBotApp.getBot().getConfig().getTagConfig().getGreenlit())).complete(true);
+                    thread.getManager().setAppliedTags(new ForumTagImpl(Long.parseLong(NerdBotApp.getBot().getConfig().getTagConfig().getGreenlit()))).complete(true);
                     output.add(greenlitMessage);
                 }
             } catch (RateLimitedException exception) {
