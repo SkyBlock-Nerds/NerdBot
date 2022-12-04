@@ -6,12 +6,18 @@
   "guildId": "123456789012345678",
   "logChannel": "123456789012345678",
   "suggestionForumId": "123456789012345678",
-  "emojis": {
+  "emojiConfig": {
     "agree": "123456789012345678",
     "disagree": "123456789012345678",
     "greenlit": "123456789012345678"
   },
-  "tags": {
-    "greenlit": 1234567890123456789
+  "tagConfig": {
+    "greenlit": "1234567890123456789"
+  },
+  "activityType": "WATCHING",
+  "activity": "for suggestions",
+  "modMailConfig": {
+    "receivingChannelId": "123456789012345678",
+    "roleId": "123456789012345678"
   }
 }
