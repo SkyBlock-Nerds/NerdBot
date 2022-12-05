@@ -11,6 +11,7 @@ import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Rarity;
 
 import java.io.IOException;
+import java.util.EnumSet;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
@@ -34,6 +35,24 @@ public class ItemGenCommand extends ApplicationCommand {
             }
             builder.append("Please use this in the ").append(channel.getAsMention()).append(" channel!");
             event.reply(builder.toString()).setEphemeral(true).queue();
+        }
+
+        boolean flagRarityFound = false;
+        Rarity[] rarities = Rarity.values();
+        for (Rarity rarity1 : rarities) {
+            if (rarity1.toString().equalsIgnoreCase(rarity)) {
+                flagRarityFound = true;
+                break;
+            }
+        }
+
+        if (!flagRarityFound) {
+            builder.append("Please return a valid rarity:");
+            for (Rarity rarity1 : rarities) {
+                builder.append("\n").append(rarity1.toString());
+            }
+            event.reply(builder.toString()).setEphemeral(true).queue();
+            return;
         }
 
         builder.append(name).append("\n----------\n").append(description).append("\n----------\n").append(rarity);

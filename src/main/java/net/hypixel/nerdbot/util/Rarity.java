@@ -1,15 +1,15 @@
 package net.hypixel.nerdbot.util;
 
 public enum Rarity {
-    COMMON("ONE"),
-    UNCOMMON("TWO"),
-    RARE("THREE"),
-    EPIC("FOUR"),
-    LEGENDARY("FIVE"),
-    MYTHIC("SIX"),
-    DIVINE("SEVEN"),
-    SPECIAL("EIGHT"),
-    VERY_SPECIAL("NINE");
+    COMMON("COMMON"),
+    UNCOMMON("UNCOMMON"),
+    RARE("RARE"),
+    EPIC("EPIC"),
+    LEGENDARY("LEGENDARY"),
+    MYTHIC("MYTHIC"),
+    DIVINE("DIVINE"),
+    SPECIAL("SPECIAL"),
+    VERY_SPECIAL("VERY_SPECIAL");
 
     private final String rarity;
 
