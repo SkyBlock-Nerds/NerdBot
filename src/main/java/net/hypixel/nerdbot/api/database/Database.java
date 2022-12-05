@@ -56,6 +56,15 @@ public class Database implements ServerMonitorListener {
     private final MongoCollection<DiscordUser> userCollection;
 
     private Database() {
+        if (System.getProperty("mongodb.uri") == null) {
+            connected = false;
+            mongoClient = null;
+            greenlitCollection = null;
+            channelCollection = null;
+            userCollection = null;
+            return;
+        }
+
         ConnectionString connectionString = new ConnectionString(System.getProperty("mongodb.uri"));
         CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build());
         CodecRegistry codecRegistry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
@@ -189,15 +198,24 @@ public class Database implements ServerMonitorListener {
     }
 
     public List<ChannelGroup> getChannelGroups() {
-        return this.channelCollection.find().into(new ArrayList<>());
+        if (this.channelCollection != null) {
+            return this.channelCollection.find().into(new ArrayList<>());
+        }
+        return null;
     }
 
     public List<DiscordUser> getUsers() {
-        return this.userCollection.find().into(new ArrayList<>());
+        if (this.userCollection != null) {
+            return this.userCollection.find().into(new ArrayList<>());
+        }
+        return null;
     }
 
     public DiscordUser getUserFromDatabase(String field, Object value) {
-        return this.userCollection.find(Filters.eq(field, value)).first();
+        if (this.userCollection != null) {
+            return this.userCollection.find(Filters.eq(field, value)).first();
+        }
+        return null;
     }
 
     public DiscordUser getUser(String id) {
@@ -227,6 +245,11 @@ public class Database implements ServerMonitorListener {
     }
 
     public void updateUser(String field, Object value, DiscordUser user) {
+        if (this.userCollection == null) {
+            log.info("Couldn't talk to the database!");
+            return;
+        }
+
         UpdateResult result = userCollection.replaceOne(Filters.eq(field, value), user);
         if (result.getMatchedCount() == 0) {
             log.info("Couldn't find user " + user.getDiscordId() + " to update");
