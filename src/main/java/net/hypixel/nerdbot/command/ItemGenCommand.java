@@ -16,7 +16,10 @@ import java.io.IOException;
 public class ItemGenCommand extends ApplicationCommand {
     @JDASlashCommand(name = "itemgen", description = "Creates a Skyblock item")
 
-    public void askForInfo(GuildSlashEvent event, @AppOption(description = "The description of the item") String description) throws IOException {
+    public void askForInfo(GuildSlashEvent event,
+                           @AppOption(description = "The name of the item") String name,
+                           @AppOption(description = "The description of the item") String description,
+                           @AppOption(description = "The rarity of the item") String rarity) throws IOException {
         StringBuilder builder = new StringBuilder();
 
         String senderChannel = event.getChannel().getId();
@@ -33,10 +36,7 @@ public class ItemGenCommand extends ApplicationCommand {
             event.reply(builder.toString()).setEphemeral(true).queue();
         }
 
-        builder.append("Correct channel! ");
-        if (description != null) {
-            builder.append(description);
-        }
+        builder.append(name).append("\n----------\n").append(description).append("\n----------\n").append(rarity);
 
         //Sends the message built in builder to the channel
         event.reply(builder.toString()).setEphemeral(false).queue();
