@@ -9,16 +9,16 @@ public enum Rarity {
     MYTHIC("MYTHIC"),
     DIVINE("DIVINE"),
     SPECIAL("SPECIAL"),
-    VERY_SPECIAL("VERY_SPECIAL");
+    VERY_SPECIAL("VERY SPECIAL");
 
-    private final String rarity;
+    private String rarity;
 
-    Rarity(final String rarity) {
+    Rarity(String rarity) {
         this.rarity = rarity;
     }
 
-    @Override
-    public String toString() {
+
+    public String getID() {
         return rarity;
     }
 }

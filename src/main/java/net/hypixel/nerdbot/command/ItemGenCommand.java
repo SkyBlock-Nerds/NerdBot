@@ -39,9 +39,12 @@ public class ItemGenCommand extends ApplicationCommand {
 
         boolean flagRarityFound = false;
         Rarity[] rarities = Rarity.values();
+        Rarity foundRarity = null; //Used later to print out the rarity in a readable format
+
         for (Rarity rarity1 : rarities) {
             if (rarity1.toString().equalsIgnoreCase(rarity)) {
                 flagRarityFound = true;
+                foundRarity = rarity1;
                 break;
             }
         }
@@ -49,13 +52,17 @@ public class ItemGenCommand extends ApplicationCommand {
         if (!flagRarityFound) {
             builder.append("Please return a valid rarity:");
             for (Rarity rarity1 : rarities) {
-                builder.append("\n").append(rarity1.toString());
+                builder.append("\n").append(rarity1);
             }
             event.reply(builder.toString()).setEphemeral(true).queue();
             return;
         }
 
-        builder.append(name).append("\n----------\n").append(description).append("\n----------\n").append(rarity);
+        builder.append(name)
+                .append("\n----------\n")
+                .append(description)
+                .append("\n----------\n")
+                .append(foundRarity.getID());
 
         //Sends the message built in builder to the channel
         event.reply(builder.toString()).setEphemeral(false).queue();
