@@ -74,9 +74,11 @@ public class GetNamesCommand extends ApplicationCommand {
 
         while (!usernameQueue.isEmpty()) {
             try {
-                String response = sendRequest(usernameQueue.poll());
+                String username = usernameQueue.poll();
+                String response = sendRequest(username);
                 JsonObject obj = NerdBotApp.GSON.fromJson(response, JsonObject.class);
-                if (obj.get("id") == null) {
+                if (obj == null || obj.get("id") == null) {
+                    log.info("Skipping over " + username + "!");
                     continue;
                 }
                 jsonArray.add(obj.get("id").getAsString());
