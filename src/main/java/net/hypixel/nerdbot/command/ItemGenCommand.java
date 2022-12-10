@@ -6,14 +6,21 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Rarity;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
@@ -61,14 +68,25 @@ public class ItemGenCommand extends ApplicationCommand {
             return;
         }
 
-//        BufferedImage image = new BufferedImage(120, 120, BufferedImage.TYPE_INT_RGB);
-//        Graphics2D g2d = image.createGraphics();
-//        g2d.setColor(Color.BLACK);
-//
-//        g2d.setFont(new Font("Arial", Font.PLAIN, 14));
-//        g2d.drawString(foundRarity.getID(), 10, 20);
-//
-//        g2d.dispose();
+        BufferedImage image = new BufferedImage(500, 120, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = image.createGraphics();
+
+        g2d.setColor(Color.WHITE);
+        g2d.drawString("COMMON", 10, 20);
+
+        g2d.setColor(Color.RED);
+        g2d.drawString("UNCOMMON", 10, 40);
+
+        g2d.dispose();
+
+
+        File imageFile = File.createTempFile("image", ".png");
+        ImageIO.write(image, "png", imageFile);
+
+        List<FileUpload> files = new ArrayList<>();
+        files.add(FileUpload.fromData(imageFile));
+
+        builder.addFiles(files);
 
         builder.addContent(name)
                 .addContent("\n----------\n")
