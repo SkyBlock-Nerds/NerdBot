@@ -11,11 +11,10 @@ import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Rarity;
 
 import java.io.IOException;
-import java.util.EnumSet;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
-    @JDASlashCommand(name = "itemgen", description = "Creates a Skyblock item")
+    @JDASlashCommand(name = "itemgen", description = "Creates a Skyblock item, visible to everyone in Skyblock Nerds.")
 
     public void askForInfo(GuildSlashEvent event,
                            @AppOption(description = "The name of the item") String name,
@@ -30,7 +29,7 @@ public class ItemGenCommand extends ApplicationCommand {
         if (!senderChannel.equals(itemGenChannel)) {
             TextChannel channel = ChannelManager.getChannel(itemGenChannel);
             if (channel == null) {
-                builder.append("Please use this in the #item-gen channel!");
+                builder.append("Please use this in the correct channel!");
                 return;
             }
             builder.append("Please use this in the ").append(channel.getAsMention()).append(" channel!");
@@ -64,7 +63,6 @@ public class ItemGenCommand extends ApplicationCommand {
                 .append("\n----------\n")
                 .append(foundRarity.getID());
 
-        //Sends the message built in builder to the channel
         event.reply(builder.toString()).setEphemeral(false).queue();
     }
 }
