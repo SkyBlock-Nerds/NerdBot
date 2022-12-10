@@ -71,11 +71,15 @@ public class ItemGenCommand extends ApplicationCommand {
         BufferedImage image = new BufferedImage(500, 120, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
 
-        g2d.setColor(Color.WHITE);
-        g2d.drawString("COMMON", 10, 20);
+        //this looks and feels horrible
+        g2d.setColor(foundRarity.getColor(foundRarity));
+        g2d.drawString(name, 10, 20);
 
-        g2d.setColor(Color.RED);
-        g2d.drawString("UNCOMMON", 10, 40);
+        g2d.setColor(Color.GRAY);
+        g2d.drawString(description, 10, 40);
+
+        g2d.setColor(foundRarity.getColor(foundRarity));
+        g2d.drawString(foundRarity.getID(), 10, 60);
 
         g2d.dispose();
 

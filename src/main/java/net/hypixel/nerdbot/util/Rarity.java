@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.util;
 
+import java.awt.*;
+
 public enum Rarity {
     COMMON("COMMON"),
     UNCOMMON("UNCOMMON"),
@@ -20,5 +22,17 @@ public enum Rarity {
 
     public String getID() {
         return rarity;
+    }
+    public Color getColor(Rarity rarity) {
+        return switch (rarity) {
+            case COMMON -> Color.WHITE;
+            case UNCOMMON -> Color.GREEN;
+            case RARE -> Color.BLUE;
+            case EPIC -> Color.MAGENTA;
+            case LEGENDARY -> Color.YELLOW;
+            case MYTHIC -> Color.MAGENTA;
+            case DIVINE -> Color.CYAN;
+            case SPECIAL, VERY_SPECIAL -> Color.RED;
+        };
     }
 }
