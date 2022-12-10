@@ -36,7 +36,8 @@ public class ItemGenCommand extends ApplicationCommand {
                 return;
             }
             builder.addContent("Please use this in the ").addContent(channel.getAsMention()).addContent(" channel!");
-            event.reply(builder.toString()).setEphemeral(true).queue();
+            event.reply(builder.build()).setEphemeral(true).queue();
+            event.reply(builder.build()).setEphemeral(true).queue();
         }
 
         boolean flagRarityFound = false;
@@ -56,7 +57,7 @@ public class ItemGenCommand extends ApplicationCommand {
             for (Rarity rarity1 : rarities) {
                 builder.addContent("\n").addContent(rarity1.toString());
             }
-            event.reply(builder.toString()).setEphemeral(true).queue();
+            event.reply(builder.build()).setEphemeral(true).queue();
             return;
         }
 
@@ -75,6 +76,6 @@ public class ItemGenCommand extends ApplicationCommand {
                 .addContent("\n----------\n")
                 .addContent(foundRarity.getID());
 
-        event.reply(builder.toString()).setEphemeral(false).queue();
+        event.reply(builder.build()).setEphemeral(false).queue();
     }
 }
