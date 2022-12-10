@@ -6,11 +6,14 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Rarity;
 
+import java.awt.*;
 import java.io.IOException;
+import java.awt.image.BufferedImage;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
@@ -20,7 +23,7 @@ public class ItemGenCommand extends ApplicationCommand {
                            @AppOption(description = "The name of the item") String name,
                            @AppOption(description = "The description of the item") String description,
                            @AppOption(description = "The rarity of the item") String rarity) throws IOException {
-        StringBuilder builder = new StringBuilder();
+        MessageCreateBuilder builder = new MessageCreateBuilder();
 
         String senderChannel = event.getChannel().getId();
         String itemGenChannel = NerdBotApp.getBot().getConfig().getItemGenChannel();
@@ -29,10 +32,10 @@ public class ItemGenCommand extends ApplicationCommand {
         if (!senderChannel.equals(itemGenChannel)) {
             TextChannel channel = ChannelManager.getChannel(itemGenChannel);
             if (channel == null) {
-                builder.append("Please use this in the correct channel!");
+                builder.addContent("Please use this in the correct channel!");
                 return;
             }
-            builder.append("Please use this in the ").append(channel.getAsMention()).append(" channel!");
+            builder.addContent("Please use this in the ").addContent(channel.getAsMention()).addContent(" channel!");
             event.reply(builder.toString()).setEphemeral(true).queue();
         }
 
@@ -49,19 +52,28 @@ public class ItemGenCommand extends ApplicationCommand {
         }
 
         if (!flagRarityFound) {
-            builder.append("Please return a valid rarity:");
+            builder.addContent("Please return a valid rarity:");
             for (Rarity rarity1 : rarities) {
-                builder.append("\n").append(rarity1);
+                builder.addContent("\n").addContent(rarity1.toString());
             }
             event.reply(builder.toString()).setEphemeral(true).queue();
             return;
         }
 
-        builder.append(name)
-                .append("\n----------\n")
-                .append(description)
-                .append("\n----------\n")
-                .append(foundRarity.getID());
+//        BufferedImage image = new BufferedImage(120, 120, BufferedImage.TYPE_INT_RGB);
+//        Graphics2D g2d = image.createGraphics();
+//        g2d.setColor(Color.BLACK);
+//
+//        g2d.setFont(new Font("Arial", Font.PLAIN, 14));
+//        g2d.drawString(foundRarity.getID(), 10, 20);
+//
+//        g2d.dispose();
+
+        builder.addContent(name)
+                .addContent("\n----------\n")
+                .addContent(description)
+                .addContent("\n----------\n")
+                .addContent(foundRarity.getID());
 
         event.reply(builder.toString()).setEphemeral(false).queue();
     }
