@@ -12,9 +12,13 @@ The bot will automatically track and greenlight suggestions that reach a specifi
 
 A ChannelGroup is two channels that are linked together to submit and collect approved suggestions.
 
-### Reaction Tracking
+### Mod Mail
 
-The bot will automatically track reactions from users on suggestions and store them for later use.
+A Mod Mail system where users can DM the bot user, have the requests sent into a Forum Channel, and responses received in the same DM.
+
+### Mod Logs
+
+The bot listens to a number of events and logs them in a channel.
 
 ## Config
 
@@ -27,15 +31,7 @@ or `dev.config.json`
 Changes to the configuration file require the bot to be restarted.
 
 ## Commands
-
-| Command                               | Description                                                             | Permission Required |
-|---------------------------------------|-------------------------------------------------------------------------|---------------------|
-| `/curate`                             | Make the bot start a manual curation process on suggestions             | BAN_MEMBERS         |
-| `/userstats <user>`                   | Display some stats about a user such as their agree and disagree amount | BAN_MEMBERS         |
-| `/addchannelgroup <name> <from> <to>` | Add a channel group to collect and send suggestions                     | BAN_MEMBERS         |
-| `/removechannelgroup <name>`          | Remove a channel group                                                  | BAN_MEMBERS         |
-| `/getchannelgroups`                   | Display all channel groups                                              | BAN_MEMBERS         |
-| `/botinfo`                            | Show more detailed information on the bot status                        | BAN_MEMBERS         |
+See the [commands](https://github.com/TheMGRF/NerdBot/tree/master/src/main/java/net/hypixel/nerdbot/command) package.
 
 ## Running the Bot
 
