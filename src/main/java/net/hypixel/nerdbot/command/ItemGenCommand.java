@@ -61,40 +61,54 @@ public class ItemGenCommand extends ApplicationCommand {
             return;
         }
 
-        BufferedImage image = new BufferedImage(500, 120, BufferedImage.TYPE_INT_RGB);
+        // Create an image, import fonts
+        BufferedImage image = new BufferedImage(500, 500, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
 
         Font minecraftFont = null;
+        Font minecraftBold = null;
         try {
-            minecraftFont = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/minecraft.ttf")).deriveFont(14f);
+            minecraftFont = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/minecraft.ttf")).deriveFont(16f);
+            minecraftBold = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/3_Minecraft-Bold.otf")).deriveFont(16f); //todo mess with font size
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             ge.registerFont(minecraftFont);
+            ge.registerFont(minecraftBold);
         } catch (IOException | FontFormatException e) {
             e.printStackTrace();
         }
 
         g2d.setFont(minecraftFont);
 
-        //this looks and feels horrible
+        //Let's generate and place our text
         g2d.setColor(foundRarity.getColor());
         g2d.drawString(name, 10, 20);
 
-        g2d.setColor(Color.GRAY);
-        g2d.drawString(description, 10, 40);
 
+        g2d.setColor(Color.GRAY);
+
+        int locationY = 60;
+        while(description.length() > 35) {
+            g2d.drawString(description.substring(0, 35), 10, locationY);
+            description = description.substring(35);
+            locationY += 20;
+        }
+        g2d.drawString(description, 10, locationY);
+
+        locationY += 40;
+        g2d.setFont(minecraftBold);
         g2d.setColor(foundRarity.getColor());
-        g2d.drawString(foundRarity.getId(), 10, 60);
+        g2d.drawString(foundRarity.getId(), 10, locationY);
 
         g2d.dispose();
 
         File imageFile = File.createTempFile("image", ".png");
         ImageIO.write(image, "png", imageFile);
         builder.addFiles(FileUpload.fromData(imageFile));
-        builder.addContent(name)
-                .addContent("\n----------\n")
-                .addContent(description)
-                .addContent("\n----------\n")
-                .addContent(foundRarity.getId());
+//        builder.addContent(name)
+//                .addContent("\n----------\n")
+//                .addContent(description)
+//                .addContent("\n----------\n")
+//                .addContent(foundRarity.getId());
         event.reply(builder.build()).setEphemeral(false).queue();
     }
 }
