@@ -19,20 +19,22 @@ public enum Rarity {
         this.rarity = rarity;
     }
 
-
     public String getID() {
         return rarity;
     }
-    public Color getColor(Rarity rarity) {
+    public Color getColor() {
+        String rarity = this.rarity;
         return switch (rarity) {
-            case COMMON -> Color.WHITE;
-            case UNCOMMON -> Color.GREEN;
-            case RARE -> Color.BLUE;
-            case EPIC -> Color.MAGENTA;
-            case LEGENDARY -> Color.YELLOW;
-            case MYTHIC -> Color.MAGENTA;
-            case DIVINE -> Color.CYAN;
-            case SPECIAL, VERY_SPECIAL -> Color.RED;
+            case "COMMON"           -> new Color(255, 255, 255);
+            case "UNCOMMON"         -> new Color(85, 255, 85);
+            case "RARE"             -> new Color(85, 85, 255);
+            case "EPIC"             -> new Color(170, 0, 170);
+            case "LEGENDARY"        -> new Color(255, 170, 0);
+            case "MYTHIC"           -> new Color(255, 85, 255);
+            case "DIVINE"           -> new Color(85, 255, 255);
+            case "SPECIAL",
+                    "VERY SPECIAL"  -> new Color(170, 0, 0);
+            default -> null;
         };
     }
 }
