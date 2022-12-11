@@ -13,13 +13,11 @@ import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Rarity;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 @Log4j2
@@ -79,7 +77,7 @@ public class ItemGenCommand extends ApplicationCommand {
         g2d.drawString(description, 10, 40);
 
         g2d.setColor(foundRarity.getColor());
-        g2d.drawString(foundRarity.getID(), 10, 60);
+        g2d.drawString(foundRarity.getId(), 10, 60);
 
         g2d.dispose();
 
@@ -95,7 +93,7 @@ public class ItemGenCommand extends ApplicationCommand {
                 .addContent("\n----------\n")
                 .addContent(description)
                 .addContent("\n----------\n")
-                .addContent(foundRarity.getID());
+                .addContent(foundRarity.getId());
 
         event.reply(builder.build()).setEphemeral(false).queue();
     }
