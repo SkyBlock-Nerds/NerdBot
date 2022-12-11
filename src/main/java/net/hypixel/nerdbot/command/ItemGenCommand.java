@@ -72,17 +72,16 @@ public class ItemGenCommand extends ApplicationCommand {
         Graphics2D g2d = image.createGraphics();
 
         //this looks and feels horrible
-        g2d.setColor(foundRarity.getColor(foundRarity));
+        g2d.setColor(foundRarity.getColor());
         g2d.drawString(name, 10, 20);
 
         g2d.setColor(Color.GRAY);
         g2d.drawString(description, 10, 40);
 
-        g2d.setColor(foundRarity.getColor(foundRarity));
+        g2d.setColor(foundRarity.getColor());
         g2d.drawString(foundRarity.getID(), 10, 60);
 
         g2d.dispose();
-
 
         File imageFile = File.createTempFile("image", ".png");
         ImageIO.write(image, "png", imageFile);
