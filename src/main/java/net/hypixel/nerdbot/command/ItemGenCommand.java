@@ -69,6 +69,17 @@ public class ItemGenCommand extends ApplicationCommand {
         BufferedImage image = new BufferedImage(500, 120, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
 
+        Font minecraftFont = null;
+        try {
+            minecraftFont = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/minecraft.ttf")).deriveFont(14f);
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            ge.registerFont(minecraftFont);
+        } catch (IOException | FontFormatException e) {
+            e.printStackTrace();
+        }
+
+        g2d.setFont(minecraftFont);
+
         //this looks and feels horrible
         g2d.setColor(foundRarity.getColor());
         g2d.drawString(name, 10, 20);
