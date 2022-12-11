@@ -22,14 +22,15 @@ import java.util.List;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
+
     @JDASlashCommand(name = "itemgen", description = "Creates a Skyblock item, visible to everyone in Skyblock Nerds.")
-
-    public void askForInfo(GuildSlashEvent event,
-                           @AppOption(description = "The name of the item") String name,
-                           @AppOption(description = "The description of the item") String description,
-                           @AppOption(description = "The rarity of the item") String rarity) throws IOException {
+    public void askForInfo(
+            GuildSlashEvent event,
+            @AppOption(description = "The name of the item") String name,
+            @AppOption(description = "The description of the item") String description,
+            @AppOption(description = "The rarity of the item") String rarity
+    ) throws IOException {
         MessageCreateBuilder builder = new MessageCreateBuilder();
-
         String senderChannel = event.getChannel().getId();
         String itemGenChannel = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
