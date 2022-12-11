@@ -62,7 +62,7 @@ public class ItemGenCommand extends ApplicationCommand {
         }
 
         // Create an image, import fonts
-        BufferedImage image = new BufferedImage(500, 500, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(500, (6 + (description.length() / 35)) * 20, BufferedImage.TYPE_INT_RGB); //attempt to guess how long the image should be
         Graphics2D g2d = image.createGraphics();
 
         Font minecraftFont = null;
@@ -92,6 +92,7 @@ public class ItemGenCommand extends ApplicationCommand {
             description = description.substring(35);
             locationY += 20;
         }
+
         g2d.drawString(description, 10, locationY);
 
         locationY += 40;
