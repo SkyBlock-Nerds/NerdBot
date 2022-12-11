@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Log4j2
@@ -31,38 +32,31 @@ public class ItemGenCommand extends ApplicationCommand {
             @AppOption(description = "The rarity of the item") String rarity
     ) throws IOException {
         MessageCreateBuilder builder = new MessageCreateBuilder();
-        String senderChannel = event.getChannel().getId();
-        String itemGenChannel = NerdBotApp.getBot().getConfig().getItemGenChannel();
+        String senderChannelId = event.getChannel().getId();
+        String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
         //make sure user is in correct channel
-        if (!senderChannel.equals(itemGenChannel)) {
-            TextChannel channel = ChannelManager.getChannel(itemGenChannel);
+        if (!senderChannelId.equals(itemGenChannelId)) {
+            TextChannel channel = ChannelManager.getChannel(itemGenChannelId);
             if (channel == null) {
                 builder.addContent("Please use this in the correct channel!");
                 return;
             }
             builder.addContent("Please use this in the ").addContent(channel.getAsMention()).addContent(" channel!");
             event.reply(builder.build()).setEphemeral(true).queue();
-            event.reply(builder.build()).setEphemeral(true).queue();
         }
 
-        boolean flagRarityFound = false;
         Rarity[] rarities = Rarity.values();
         Rarity foundRarity = null; //Used later to print out the rarity in a readable format
-
         for (Rarity rarity1 : rarities) {
             if (rarity1.toString().equalsIgnoreCase(rarity)) {
-                flagRarityFound = true;
                 foundRarity = rarity1;
                 break;
             }
         }
 
-        if (!flagRarityFound) {
-            builder.addContent("Please return a valid rarity:");
-            for (Rarity rarity1 : rarities) {
-                builder.addContent("\n").addContent(rarity1.toString());
-            }
+        if (foundRarity == null) {
+            builder.addContent("Please return a valid rarity: " + Arrays.toString(rarities));
             event.reply(builder.build()).setEphemeral(true).queue();
             return;
         }
@@ -95,18 +89,12 @@ public class ItemGenCommand extends ApplicationCommand {
 
         File imageFile = File.createTempFile("image", ".png");
         ImageIO.write(image, "png", imageFile);
-
-        List<FileUpload> files = new ArrayList<>();
-        files.add(FileUpload.fromData(imageFile));
-
-        builder.addFiles(files);
-
+        builder.addFiles(FileUpload.fromData(imageFile));
         builder.addContent(name)
                 .addContent("\n----------\n")
                 .addContent(description)
                 .addContent("\n----------\n")
                 .addContent(foundRarity.getId());
-
         event.reply(builder.build()).setEphemeral(false).queue();
     }
 }
