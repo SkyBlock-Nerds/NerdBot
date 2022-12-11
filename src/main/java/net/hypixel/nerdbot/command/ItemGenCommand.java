@@ -44,12 +44,16 @@ public class ItemGenCommand extends ApplicationCommand {
             }
             builder.addContent("Please use this in the ").addContent(channel.getAsMention()).addContent(" channel!");
             event.reply(builder.build()).setEphemeral(true).queue();
+            event.reply(builder.build()).setEphemeral(true).queue();
         }
 
+        boolean flagRarityFound = false;
         Rarity[] rarities = Rarity.values();
         Rarity foundRarity = null; //Used later to print out the rarity in a readable format
+
         for (Rarity rarity1 : rarities) {
             if (rarity1.toString().equalsIgnoreCase(rarity)) {
+                flagRarityFound = true;
                 foundRarity = rarity1;
                 break;
             }
