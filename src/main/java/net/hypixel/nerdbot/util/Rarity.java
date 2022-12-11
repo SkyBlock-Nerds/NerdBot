@@ -19,12 +19,14 @@ public enum Rarity {
         this.rarity = rarity;
     }
 
+    // Get the display name of the enum
     public String getID() {
         return rarity;
     }
+
+    // Get the associated Minecraft color for the rarity enum
     public Color getColor() {
-        String rarity = this.rarity;
-        return switch (rarity) {
+        return switch (this.rarity) {
             case "COMMON"           -> new Color(255, 255, 255);
             case "UNCOMMON"         -> new Color(85, 255, 85);
             case "RARE"             -> new Color(85, 85, 255);
