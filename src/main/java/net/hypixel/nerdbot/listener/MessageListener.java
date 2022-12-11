@@ -27,7 +27,7 @@ public class MessageListener {
         List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
         if (groups == null || groups.isEmpty()) return;
 
-        Emoji yes = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgree()), no = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagree());
+        Emoji yes = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId()), no = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
         if (yes == null || no == null) {
             log.error("Couldn't find the emote for yes or no!");
             return;

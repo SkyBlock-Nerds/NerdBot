@@ -44,8 +44,8 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 // This is a stupid way to do it but it's the only way that works right now
                 List<Message> allMessages = thread.getIterableHistory().complete(true);
                 Message firstPost = allMessages.get(allMessages.size() - 1);
-                Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgree());
-                Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagree());
+                Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
+                Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
 
                 DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(firstPost.getAuthor().getId());
 
