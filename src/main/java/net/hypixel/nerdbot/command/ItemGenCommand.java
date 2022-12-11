@@ -69,7 +69,7 @@ public class ItemGenCommand extends ApplicationCommand {
         Font minecraftBold = null;
         try {
             minecraftFont = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/minecraft.ttf")).deriveFont(16f);
-            minecraftBold = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/3_Minecraft-Bold.otf")).deriveFont(16f); //todo mess with font size
+            minecraftBold = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/3_Minecraft-Bold.otf")).deriveFont(22f);
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             ge.registerFont(minecraftFont);
             ge.registerFont(minecraftBold);
@@ -79,14 +79,14 @@ public class ItemGenCommand extends ApplicationCommand {
 
         g2d.setFont(minecraftFont);
 
+        int locationY = 22;
         //Let's generate and place our text
         g2d.setColor(foundRarity.getColor());
-        g2d.drawString(name, 10, 20);
+        g2d.drawString(name, 10, locationY);
 
-
+        locationY += 40;
         g2d.setColor(Color.GRAY);
 
-        int locationY = 60;
         while(description.length() > 35) {
             g2d.drawString(description.substring(0, 35), 10, locationY);
             description = description.substring(35);
@@ -95,7 +95,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
         g2d.drawString(description, 10, locationY);
 
-        locationY += 40;
+        locationY += 45;
         g2d.setFont(minecraftBold);
         g2d.setColor(foundRarity.getColor());
         g2d.drawString(foundRarity.getId(), 10, locationY);
