@@ -22,14 +22,12 @@ import java.net.http.HttpResponse;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Log4j2
 public class GetNamesCommand extends ApplicationCommand {
-
-    private final String regex = "^[a-zA-Z0-9_]{2,16}$";
-    private final Pattern pattern = Pattern.compile(regex);
+    private final int minNameLength = 3;
+    private final int maxNameLength = 16;
+    private final String namePattern = "[^A-z0-9_](.*?)";
     private final Queue<String> usernameQueue = new LinkedList<>();
 
     @JDASlashCommand(name = "getnames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)
@@ -64,11 +62,20 @@ public class GetNamesCommand extends ApplicationCommand {
 
         log.info("Found " + members.size() + " members meeting requirements");
         members.forEach(member -> {
-            Matcher matcher = pattern.matcher(member.getEffectiveName());
-            if (matcher.matches()) {
-                log.info("Found match: " + matcher.group(0));
-                usernameQueue.add(member.getEffectiveName());
-                log.info("Added " + member.getEffectiveName() + " to the username lookup queue!");
+            String[] formattedMemberName = member.getEffectiveName().trim().split(namePattern);
+
+            String playerName = "";
+            if (formattedMemberName.length > 0) {
+                playerName = formattedMemberName[0];
+            }
+
+            if (playerName.length() >= minNameLength && playerName.length() <= maxNameLength) {
+                log.info("Found match: " + playerName);
+                usernameQueue.add(playerName);
+                log.info(String.format("Added %s (%s) to the username lookup queue!", member.getEffectiveName(), playerName));
+            }
+            else {
+                log.info(String.format("Didn't add %s (%s) to the username lookup queue...", member.getEffectiveName(), playerName));
             }
         });
 
