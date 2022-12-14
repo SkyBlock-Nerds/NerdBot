@@ -68,8 +68,9 @@ public class GetNamesCommand extends ApplicationCommand {
 
             // checks if the member's username has flair
             if (!Pattern.matches(regex, plainUsername)) {
-                // removes start and end characters ([example], {example}, |example| or (example))
-                plainUsername = plainUsername.replaceAll(surroundRegex, "");
+                // removes start and end characters ([example], {example}, |example| or (example)).
+                // also strips spaces from the username
+                plainUsername = plainUsername.replaceAll(surroundRegex, "").replace(" ", "");
                 String[] splitUsername = plainUsername.split("[^a-zA-Z0-9_]");
 
                 // gets the first item that matches the name constraints
@@ -81,7 +82,7 @@ public class GetNamesCommand extends ApplicationCommand {
                 }
             }
             else {
-                memberMCUsername = plainUsername;
+                memberMCUsername = plainUsername.replace(" ", "");
             }
 
             // checks if there was a valid match found
