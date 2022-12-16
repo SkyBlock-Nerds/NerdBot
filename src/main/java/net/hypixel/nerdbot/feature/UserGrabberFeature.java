@@ -23,6 +23,11 @@ public class UserGrabberFeature extends BotFeature {
             return;
         }
 
+        if (!Database.getInstance().isConnected()) {
+            log.error("Can't initiate feature as the database is not connected!");
+            return;
+        }
+
         log.info("Grabbing users from guild " + guild.getName());
         List<DiscordUser> users = Database.getInstance().getUsers();
 
