@@ -46,7 +46,7 @@ public class UserGrabberFeature extends BotFeature {
             } else {
                 Database.getInstance().insertUser(discordUser);
             }
-        }).onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName())).onError(Throwable::printStackTrace);
+        }).onSuccess(v -> log.info("Finished grabbing users from guild " + guild.getName()));
     }
 
     @Override

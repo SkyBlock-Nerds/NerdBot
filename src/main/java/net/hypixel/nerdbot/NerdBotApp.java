@@ -29,7 +29,6 @@ public class NerdBotApp {
             messageCache = new MessageCache();
         } catch (LoginException e) {
             log.error("Failed to find login for bot!");
-            e.printStackTrace();
             System.exit(-1);
         }
 
