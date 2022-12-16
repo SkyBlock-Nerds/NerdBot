@@ -63,7 +63,7 @@ public class NerdBot implements Bot {
                 .setEventManager(new AnnotatedEventManager())
                 .addEventListeners(
                         new ModLogListener(),
-                        new MessageListener(),
+                        new ChannelGroupMessageListener(),
                         new FeatureEventListener(),
                         new ShutdownListener(),
                         new ActivityListener(),
