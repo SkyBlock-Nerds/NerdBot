@@ -15,7 +15,7 @@ import net.hypixel.nerdbot.util.Util;
 import java.util.List;
 
 @Log4j2
-public class MessageListener {
+public class ChannelGroupMessageListener {
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {
