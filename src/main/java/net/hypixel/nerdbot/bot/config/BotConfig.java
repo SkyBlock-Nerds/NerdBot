@@ -29,12 +29,6 @@ public class BotConfig {
     private String botManagerRoleId;
 
     /**
-     * The {@link TextChannel} that the bot will be generating items in
-     */
-
-    private String itemGenChannel;
-
-    /**
      * The {@link TextChannel} ID for the suggestion forum
      */
     private String suggestionForumId;
