@@ -34,6 +34,12 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         List<GreenlitMessage> output = new ArrayList<>();
         setStartTime(System.currentTimeMillis());
 
+        if (!Database.getInstance().isConnected()) {
+            setEndTime(System.currentTimeMillis());
+            log.error("Couldn't curate messages as the database is not connected!");
+            return output;
+        }
+
         log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
         List<ThreadChannel> threads = forumChannel.getThreadChannels()
