@@ -58,7 +58,7 @@ public class InfoCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "info", subcommand = "test", defaultLocked = true)
     public void test(GuildSlashEvent event) {
-        event.reply("Hello world").setEphemeral(true).queue();
+        event.reply("Lets try this again").setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "server", description = "View some information about the server", defaultLocked = true)
