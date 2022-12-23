@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Time {
 
-    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("E, dd MMMM yyyy HH:mm:ss a z");
+    public static final SimpleDateFormat GLOBAL_DATE_TIME_FORMAT = new SimpleDateFormat("d M yyyy HH:mm a");
 
     public static String formatNow() {
         long millis = System.currentTimeMillis();

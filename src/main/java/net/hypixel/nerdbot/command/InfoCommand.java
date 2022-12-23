@@ -134,7 +134,7 @@ public class InfoCommand extends ApplicationCommand {
             return "N/A";
         }
 
-        return Time.DATE_FORMAT.format(new Date(timestamp));
+        return Time.GLOBAL_DATE_TIME_FORMAT.format(new Date(timestamp));
     }
 
     /**
