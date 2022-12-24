@@ -61,15 +61,16 @@ public class ItemGenCommand extends ApplicationCommand {
         }
 
         // Create an image, import fonts
-        String estimateString = description;
+        String estimateString = description.toLowerCase();
         MCColor[] colors = MCColor.values();
         for (MCColor color : colors) {
             String temp = "%%";
-            temp += color;
+            temp += color.name().toLowerCase();
             temp += "%%";
-            estimateString = estimateString.replace(temp, " ");
+            estimateString = estimateString.replace(temp, "");
         }
 
+        //Try to estimate the image length
         int newlineInstances = 0;
         for(int i = 0; i < estimateString.length(); i++) {
             if (estimateString.charAt(i) == '\\' && estimateString.charAt(i + 1) == 'n') {
@@ -77,7 +78,7 @@ public class ItemGenCommand extends ApplicationCommand {
             }
         }
 
-        estimateString = description.replace("\\n", " ");
+        estimateString = estimateString.replace("\\n", "");
 
         int heightEstimate = ((6 + newlineInstances + (estimateString.length() / 35)) * 20);
 
@@ -155,24 +156,38 @@ public class ItemGenCommand extends ApplicationCommand {
                 continue;
             }
 
-            //TODO: Softwrap
+            //TODO: Softwrap parsing
 //            if (description.charAt(charIndex) == ' ') {
 //                for(int i = charIndex; i % 35 == 0; i++) {
 //
 //                }
 //            }
 
-            //if we're at EOL move to next
+            //EOL Parsing
             if (lineLength > 35) {
                 locationX = 10;
                 locationY += 20;
                 lineLength = 0;
             }
 
-            g2d.drawString(description.substring(charIndex, charIndex + 1), locationX, locationY);
-            lineLength++;
-            charIndex++;
-            locationX += 13;
+            //Find next break
+            int findNextIndex = 0;
+            for (int i = charIndex; i < charIndex + (35 - lineLength); i++) {
+                if (i + 1 > description.length()) {
+                    break;
+                }
+
+                if ((description.charAt(i) == '%' && description.charAt(i + 1) == '%') || (description.charAt(i) == '\\' && description.charAt(i + 1) == 'n')) {
+                    break;
+                }
+
+                findNextIndex++;
+            }
+
+            g2d.drawString(description.substring(charIndex, charIndex + findNextIndex), locationX, locationY);
+            lineLength += findNextIndex;
+            charIndex += findNextIndex;
+            locationX += 13 * findNextIndex;
         }
 
         locationY += 45;
