@@ -14,12 +14,10 @@ import net.hypixel.nerdbot.util.Rarity;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
@@ -44,16 +42,12 @@ public class ItemGenCommand extends ApplicationCommand {
             }
             builder.addContent("Please use this in the ").addContent(channel.getAsMention()).addContent(" channel!");
             event.reply(builder.build()).setEphemeral(true).queue();
-            event.reply(builder.build()).setEphemeral(true).queue();
         }
 
-        boolean flagRarityFound = false;
         Rarity[] rarities = Rarity.values();
         Rarity foundRarity = null; //Used later to print out the rarity in a readable format
-
         for (Rarity rarity1 : rarities) {
             if (rarity1.toString().equalsIgnoreCase(rarity)) {
-                flagRarityFound = true;
                 foundRarity = rarity1;
                 break;
             }
