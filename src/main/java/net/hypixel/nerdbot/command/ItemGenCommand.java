@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
+import net.hypixel.nerdbot.util.MCColor;
 import net.hypixel.nerdbot.util.Rarity;
 
 import javax.imageio.ImageIO;
@@ -60,7 +61,27 @@ public class ItemGenCommand extends ApplicationCommand {
         }
 
         // Create an image, import fonts
-        BufferedImage image = new BufferedImage(500, (6 + (description.length() / 35)) * 20, BufferedImage.TYPE_INT_RGB); //attempt to guess how long the image should be
+        String estimateString = description;
+        MCColor[] colors = MCColor.values();
+        for (MCColor color : colors) {
+            String temp = "%%";
+            temp += color;
+            temp += "%%";
+            estimateString = estimateString.replace(temp, " ");
+        }
+
+        int newlineInstances = 0;
+        for(int i = 0; i < estimateString.length(); i++) {
+            if (estimateString.charAt(i) == '\\' && estimateString.charAt(i + 1) == 'n') {
+                newlineInstances++;
+            }
+        }
+
+        estimateString = description.replace("\\n", " ");
+
+        int heightEstimate = ((6 + newlineInstances + (estimateString.length() / 35)) * 20);
+
+        BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB); //attempt to guess how long the image should be
         Graphics2D g2d = image.createGraphics();
 
         Font minecraftFont = null;
@@ -78,25 +99,87 @@ public class ItemGenCommand extends ApplicationCommand {
         g2d.setFont(minecraftFont);
 
         int locationY = 22;
+        int locationX = 10;
         //Let's generate and place our text
         g2d.setColor(foundRarity.getRarityColor());
-        g2d.drawString(name, 10, locationY);
+        g2d.drawString(name, locationX, locationY);
 
         locationY += 40;
-        g2d.setColor(Color.GRAY);
+        g2d.setColor(MCColor.GRAY.getColor());
 
-        while(description.length() > 35) {
-            g2d.drawString(description.substring(0, 35), 10, locationY);
-            description = description.substring(35);
-            locationY += 20;
+        int lineLength = 0;
+        int charIndex = 0;
+        while(description.length() > charIndex) {
+            //Color parsing
+            if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
+                int endCharIndex = 0;
+
+                for(int i = charIndex + 1; i < charIndex + 100; i++) { //get char
+                    if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
+                        endCharIndex = i;
+                        break;
+                    }
+
+                    if (i == 99) {
+                        endCharIndex = -1;
+                        break;
+                    }
+
+                    if (i + 2 > description.length()) {
+                        endCharIndex = -1;
+                        break;
+                    }
+                }
+
+                if (endCharIndex != -1) { //If we can't find the end parenthesis, just continue
+                    charIndex += 2; //move away from color code
+                    String getColor = description.substring(charIndex, endCharIndex);
+
+                    for (MCColor color : colors) {
+                        if (getColor.equals(color.name().toLowerCase())) {
+                            g2d.setColor(color.getColor());
+                            break;
+                        }
+                    }
+
+                    charIndex = endCharIndex + 2; //move away from color code
+                }
+            }
+
+            //Newline parsing
+            if (description.charAt(charIndex) == '\\' && description.charAt(charIndex + 1) == 'n') {
+                locationX = 10;
+                locationY += 20;
+                lineLength = 0;
+                charIndex += 2;
+                continue;
+            }
+
+            //TODO: Softwrap
+//            if (description.charAt(charIndex) == ' ') {
+//                for(int i = charIndex; i % 35 == 0; i++) {
+//
+//                }
+//            }
+
+            //if we're at EOL move to next
+            if (lineLength > 35) {
+                locationX = 10;
+                locationY += 20;
+                lineLength = 0;
+            }
+
+            g2d.drawString(description.substring(charIndex, charIndex + 1), locationX, locationY);
+            lineLength++;
+            charIndex++;
+            locationX += 13;
         }
 
-        g2d.drawString(description, 10, locationY);
-
         locationY += 45;
+        locationX = 10;
         g2d.setFont(minecraftBold);
         g2d.setColor(foundRarity.getRarityColor());
-        g2d.drawString(foundRarity.getId(), 10, locationY);
+        g2d.drawString(foundRarity.getId(), locationX, locationY);
 
         g2d.dispose();
 
