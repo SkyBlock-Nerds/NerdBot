@@ -16,6 +16,8 @@ import java.util.TimerTask;
 @Log4j2
 public class CurateFeature extends BotFeature {
 
+    private final Database database = NerdBotApp.getBot().getDatabase();
+
     @Override
     public void onStart() {
         TimerTask timerTask = new TimerTask() {
@@ -30,14 +32,12 @@ public class CurateFeature extends BotFeature {
 
                 NerdBotApp.EXECUTOR_SERVICE.submit(() -> {
                     List<GreenlitMessage> result = forumChannelCurator.curate(forumChannel);
-
                     if (result.isEmpty()) {
                         log.info("No new suggestions were greenlit this time!");
                     } else {
                         log.info("Greenlit " + result.size() + " new suggestions in " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!");
                     }
-
-                    Database.getInstance().createOrUpdateGreenlitMessages(result);
+                    result.forEach(greenlitMessage -> database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage));
                 });
             }
         };
