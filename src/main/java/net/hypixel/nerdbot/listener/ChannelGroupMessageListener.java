@@ -25,7 +25,7 @@ public class ChannelGroupMessageListener {
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (!Database.getInstance().isConnected()
+        if (!database.isConnected()
                 || !event.isFromGuild()
                 || event.getAuthor().isBot() && !event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
             return;

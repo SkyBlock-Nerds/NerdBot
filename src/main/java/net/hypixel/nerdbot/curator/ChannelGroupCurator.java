@@ -28,9 +28,9 @@ import java.util.regex.Matcher;
 @Log4j2
 public class ChannelGroupCurator extends Curator<ChannelGroup> {
 
-    private final Emoji agree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgree());
-    private final Emoji disagree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagree());
-    private final Emoji greenlit = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getGreenlit());
+    private final Emoji agree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
+    private final Emoji disagree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
+    private final Emoji greenlit = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getGreenlitEmojiId());
     private final Database database = NerdBotApp.getBot().getDatabase();
     private final MongoCollection<GreenlitMessage> greenlitMessageCollection = database.getCollection("greenlit_messages", GreenlitMessage.class);
     private final List<DiscordUser> users = new ArrayList<>();
