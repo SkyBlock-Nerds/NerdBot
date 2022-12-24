@@ -16,10 +16,9 @@ import java.util.TimerTask;
 @Log4j2
 public class CurateFeature extends BotFeature {
 
-    private final Database database = NerdBotApp.getBot().getDatabase();
-
     @Override
     public void onStart() {
+        Database database = NerdBotApp.getBot().getDatabase();
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
