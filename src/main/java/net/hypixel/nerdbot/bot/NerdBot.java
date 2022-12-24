@@ -39,6 +39,7 @@ public class NerdBot implements Bot {
             new CurateFeature(),
             new UserGrabberFeature()
     );
+
     private final Database database = new Database(System.getProperty("mongodb.uri"), "skyblock_nerds");
     private JDA jda;
     private BotConfig config;
