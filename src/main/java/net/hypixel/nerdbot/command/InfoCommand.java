@@ -12,6 +12,8 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.user.LastActivity;
+import net.hypixel.nerdbot.util.DiscordTimestamp;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
@@ -90,13 +92,14 @@ public class InfoCommand extends ApplicationCommand {
         }
 
         StringBuilder builder = new StringBuilder();
+        LastActivity lastActivity = discordUser.getLastActivity();
         builder.append("User stats for ").append(member.getAsMention()).append("\n");
         builder.append(" • Total known agree reactions: ").append(discordUser.getAgrees().size()).append("\n");
         builder.append(" • Total known disagree reactions: ").append(discordUser.getDisagrees().size()).append("\n");
-        builder.append(" • Last known activity date: ").append(getDateString(discordUser.getLastActivity().getLastGlobalActivity())).append("\n");
-        builder.append(" • Last known activity date (alpha): ").append(getDateString(discordUser.getLastActivity().getLastAlphaActivity())).append("\n");
-        builder.append(" • Last known voice channel activity date: ").append(getDateString(discordUser.getLastActivity().getLastVoiceChannelJoinDate())).append("\n");
-        builder.append(" • Last known suggestion date: ").append(getDateString(discordUser.getLastActivity().getLastSuggestionDate())).append("\n");
+        builder.append(" • Last known activity date: ").append(new DiscordTimestamp(lastActivity.getLastGlobalActivity()).toRelativeTimestamp()).append("\n");
+        builder.append(" • Last known activity date (alpha): ").append(new DiscordTimestamp(lastActivity.getLastAlphaActivity()).toRelativeTimestamp()).append("\n");
+        builder.append(" • Last known voice channel activity date: ").append(new DiscordTimestamp(lastActivity.getLastVoiceChannelJoinDate()).toRelativeTimestamp()).append("\n");
+        builder.append(" • Last known suggestion date: ").append(new DiscordTimestamp(lastActivity.getLastSuggestionDate()).toRelativeTimestamp()).append("\n");
 
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
@@ -134,7 +137,7 @@ public class InfoCommand extends ApplicationCommand {
             return "N/A";
         }
 
-        return Time.DATE_FORMAT.format(new Date(timestamp));
+        return Time.GLOBAL_DATE_TIME_FORMAT.format(new Date(timestamp));
     }
 
     /**

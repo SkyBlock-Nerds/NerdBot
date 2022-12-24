@@ -106,7 +106,6 @@ public class Database implements ServerMonitorListener {
 
     @Override
     public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
-        log.error("Heartbeat failed! Reason: " + event.getThrowable().getMessage());
         if (connected) {
             if (ChannelManager.getLogChannel() != null) {
                 ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH.getUserId()).getAsMention() + " The database has disconnected!").queue();

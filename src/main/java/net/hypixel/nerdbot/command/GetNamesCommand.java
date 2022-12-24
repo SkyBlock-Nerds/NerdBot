@@ -22,14 +22,12 @@ import java.net.http.HttpResponse;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Log4j2
 public class GetNamesCommand extends ApplicationCommand {
-
-    private final String regex = "^[a-zA-Z0-9_]{2,16}$";
-    private final Pattern pattern = Pattern.compile(regex);
+    private final String regex = "^[a-zA-Z0-9_]{2,16}";
+    private final String surroundRegex = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
     private final Queue<String> usernameQueue = new LinkedList<>();
 
     @JDASlashCommand(name = "getnames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)
@@ -64,19 +62,47 @@ public class GetNamesCommand extends ApplicationCommand {
 
         log.info("Found " + members.size() + " members meeting requirements");
         members.forEach(member -> {
-            Matcher matcher = pattern.matcher(member.getEffectiveName());
-            if (matcher.matches()) {
-                log.info("Found match: " + matcher.group(0));
-                usernameQueue.add(member.getEffectiveName());
-                log.info("Added " + member.getEffectiveName() + " to the username lookup queue!");
+            // removes non-standard ascii characters from the discord nickname
+            String plainUsername = member.getEffectiveName().trim().replaceAll("[^\u0000-\u007F]", "");
+            String memberMCUsername = null;
+
+            // checks if the member's username has flair
+            if (!Pattern.matches(regex, plainUsername)) {
+                // removes start and end characters ([example], {example}, |example| or (example)).
+                // also strips spaces from the username
+                plainUsername = plainUsername.replaceAll(surroundRegex, "").replace(" ", "");
+                String[] splitUsername = plainUsername.split("[^a-zA-Z0-9_]");
+
+                // gets the first item that matches the name constraints
+                for (String item : splitUsername) {
+                    if (Pattern.matches(regex, item)) {
+                        memberMCUsername = item;
+                        break;
+                    }
+                }
+            }
+            else {
+                memberMCUsername = plainUsername.replace(" ", "");
+            }
+
+            // checks if there was a valid match found
+            if (memberMCUsername != null) {
+                log.info("Found match: " + memberMCUsername);
+                usernameQueue.add(memberMCUsername);
+                log.info(String.format("Added %s (%s) to the username lookup queue!", member.getEffectiveName(), memberMCUsername));
+            }
+            else {
+                log.info(String.format("Didn't add %s to the username lookup queue", member.getEffectiveName()));
             }
         });
 
         while (!usernameQueue.isEmpty()) {
             try {
-                String response = sendRequest(usernameQueue.poll());
+                String username = usernameQueue.poll();
+                String response = sendRequest(username);
                 JsonObject obj = NerdBotApp.GSON.fromJson(response, JsonObject.class);
-                if (obj.get("id") == null) {
+                if (obj == null || obj.get("id") == null) {
+                    log.info("Skipping over " + username + "!");
                     continue;
                 }
                 jsonArray.add(obj.get("id").getAsString());

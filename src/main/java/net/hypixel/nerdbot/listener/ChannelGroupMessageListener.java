@@ -15,11 +15,13 @@ import net.hypixel.nerdbot.util.Util;
 import java.util.List;
 
 @Log4j2
-public class MessageListener {
+public class ChannelGroupMessageListener {
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (!event.isFromGuild() || event.getAuthor().isBot() && !event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
+        if (!Database.getInstance().isConnected()
+                || !event.isFromGuild()
+                || event.getAuthor().isBot() && !event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
             return;
         }
 
@@ -27,7 +29,7 @@ public class MessageListener {
         List<ChannelGroup> groups = Database.getInstance().getChannelGroups();
         if (groups == null || groups.isEmpty()) return;
 
-        Emoji yes = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgree()), no = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagree());
+        Emoji yes = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId()), no = guild.getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
         if (yes == null || no == null) {
             log.error("Couldn't find the emote for yes or no!");
             return;
