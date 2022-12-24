@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.curator;
 
+import com.mongodb.client.MongoCollection;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
@@ -30,7 +31,8 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
     private final Emoji agree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgree());
     private final Emoji disagree = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagree());
     private final Emoji greenlit = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getGreenlit());
-
+    private final Database database = NerdBotApp.getBot().getDatabase();
+    private final MongoCollection<GreenlitMessage> greenlitMessageCollection = database.getCollection("greenlit_messages", GreenlitMessage.class);
     private final List<DiscordUser> users = new ArrayList<>();
 
     public ChannelGroupCurator(boolean readOnly) {
@@ -146,7 +148,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
     public void sendGreenlitToChannel(TextChannel channel, ChannelGroup channelGroup, GreenlitMessage message) {
         channel.sendMessageEmbeds(message.getEmbed().build()).queue(message1 -> {
             message.setSuggestionTitle(message1.getId());
-            Database.getInstance().insertGreenlitMessage(message);
+            database.insertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), message);
             log.info("[" + channelGroup.getName() + "] [" + message.getId() + "] Greenlit message sent to " + channel.getName() + " and inserted into database");
         });
     }
@@ -275,13 +277,12 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
             return;
         }
 
-        GreenlitMessage greenlitMessage = Database.getInstance().getGreenlitMessage(message.getId());
+        GreenlitMessage greenlitMessage = database.findDocument(greenlitMessageCollection, "messageId", message.getId()).first();
         if (greenlitMessage == null) {
             log.info("[" + group.getName() + "] [" + message.getId() + "] Could not find greenlit message! Creating one...");
 
             greenlitMessage = createGreenlitMessage(group, message, agrees, disagrees);
-            Database.getInstance().insertGreenlitMessage(greenlitMessage);
-
+            database.insertDocument(greenlitMessageCollection, greenlitMessage);
             log.info("[" + group.getName() + "] [" + message.getId() + "] Created new greenlit message because it wasn't found in the database");
 
             if (greenlitMessage.getGreenlitMessageId() != null) {
@@ -292,7 +293,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
                 GreenlitMessage finalGreenlitMessage = greenlitMessage;
                 channel.sendMessageEmbeds(greenlitMessage.getEmbed().build()).queue(msg -> {
                     finalGreenlitMessage.setGreenlitMessageId(msg.getId());
-                    Database.getInstance().updateGreenlitMessage(finalGreenlitMessage);
+                    database.updateDocument(greenlitMessageCollection, "messageId", msg.getId(), GreenlitMessage.class);
                     log.info("[" + group.getName() + "] [" + message.getId() + "] Updated greenlit message ID to " + msg.getId());
                 });
             }
@@ -312,7 +313,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
             channel.retrieveMessageById(greenlitMessage.getGreenlitMessageId()).complete().editMessageEmbeds(greenlitMessage.getEmbed().build()).queue();
         }
 
-        Database.getInstance().updateGreenlitMessage(greenlitMessage);
+        database.updateDocument(greenlitMessageCollection, "messageId", message.getId(), GreenlitMessage.class);
     }
 
     /**
