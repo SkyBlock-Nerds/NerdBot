@@ -133,13 +133,20 @@ public class NerdBot implements Bot {
 
     @Override
     public void onEnd() {
-        for (BotFeature feature : FEATURES) feature.onEnd();
-        Database.getInstance().disconnect();
+        for (BotFeature feature : FEATURES) {
+            feature.onEnd();
+        }
+        database.disconnect();
     }
 
     @Override
     public BotConfig getConfig() {
         return config;
+    }
+
+    @Override
+    public Database getDatabase() {
+        return database;
     }
 
     @Override
