@@ -29,55 +29,56 @@ public class Database implements ServerMonitorListener {
     private boolean connected;
 
     public Database(String uri, String databaseName) {
-        this.connectionString = new ConnectionString(uri);
+        connectionString = new ConnectionString(uri);
         CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build());
         CodecRegistry codecRegistry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
-        MongoClientSettings clientSettings = MongoClientSettings.builder().applyConnectionString(this.connectionString).codecRegistry(codecRegistry).applyToServerSettings(builder -> builder.addServerMonitorListener(this)).build();
-        this.mongoClient = MongoClients.create(clientSettings);
-        this.database = this.mongoClient.getDatabase(databaseName);
+        MongoClientSettings clientSettings = MongoClientSettings.builder().applyConnectionString(connectionString).codecRegistry(codecRegistry).applyToServerSettings(builder -> builder.addServerMonitorListener(this)).build();
+        mongoClient = MongoClients.create(clientSettings);
+        database = mongoClient.getDatabase(databaseName);
+        connected = true;
     }
 
     @Override
     public void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event) {
-        this.connected = true;
+        connected = true;
     }
 
     @Override
     public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
-        this.connected = false;
+        connected = false;
     }
 
     public MongoClient getMongoClient() {
-        return this.mongoClient;
+        return mongoClient;
     }
 
     public ConnectionString getConnectionString() {
-        return this.connectionString;
+        return connectionString;
     }
 
     public MongoDatabase getDatabase() {
-        return this.database;
+        return database;
     }
 
     public boolean isConnected() {
-        return this.connected;
+        return connected;
     }
 
     public void disconnect() {
-        this.mongoClient.close();
-        this.connected = false;
+        mongoClient.close();
+        connected = false;
     }
 
     public <T> MongoCollection<T> getCollection(String collectionName, Class<T> clazz) {
-        return this.database.getCollection(collectionName, clazz);
+        return database.getCollection(collectionName, clazz);
     }
 
     public MongoCollection<Document> getCollection(String collectionName) {
-        return this.database.getCollection(collectionName);
+        return database.getCollection(collectionName);
     }
 
     public void createCollection(String collectionName) {
-        this.database.createCollection(collectionName);
+        database.createCollection(collectionName);
     }
 
     public <T> InsertOneResult insertDocument(MongoCollection<T> collection, T object) {
