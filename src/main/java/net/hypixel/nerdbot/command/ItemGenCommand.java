@@ -108,6 +108,7 @@ public class ItemGenCommand extends ApplicationCommand {
         locationY += 40;
         g2d.setColor(MCColor.GRAY.getColor());
 
+        //This goes through and parses colors, newlines, and soft-wraps the text.
         int lineLength = 0;
         int charIndex = 0;
         while(description.length() > charIndex) {
@@ -192,6 +193,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
             //Find next break
             int findNextIndex = 0;
+            boolean spaceBreak = false;
             for (int i = charIndex; i < charIndex + (37 - lineLength); i++) {
                 if (i + 1 > description.length()) {
                     break;
@@ -206,13 +208,15 @@ public class ItemGenCommand extends ApplicationCommand {
                 }
 
                 if (description.charAt(i) == ' ') {
+                    spaceBreak = true;
                     break;
                 }
 
                 findNextIndex++;
             }
 
-            String writeString = description.substring(charIndex, charIndex + findNextIndex) + " ";
+            String subWriteString = description.substring(charIndex, charIndex + findNextIndex);
+            String writeString = spaceBreak ? subWriteString + " " : subWriteString;
             g2d.drawString(writeString, locationX, locationY);
             lineLength += findNextIndex;
             charIndex += findNextIndex;
