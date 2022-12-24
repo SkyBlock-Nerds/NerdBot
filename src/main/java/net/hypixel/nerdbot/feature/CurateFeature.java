@@ -18,6 +18,7 @@ public class CurateFeature extends BotFeature {
 
     @Override
     public void onStart() {
+        Database database = NerdBotApp.getBot().getDatabase();
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
