@@ -23,11 +23,6 @@ public class UserGrabberFeature extends BotFeature {
             return;
         }
 
-        if (!Database.getInstance().isConnected()) {
-            log.error("Can't initiate feature as the database is not connected!");
-            return;
-        }
-
         log.info("Grabbing users from guild " + guild.getName());
         List<DiscordUser> users = Database.getInstance().getUsers();
 
@@ -56,7 +51,7 @@ public class UserGrabberFeature extends BotFeature {
             } else {
                 Database.getInstance().insertUser(discordUser);
             }
-        }).onSuccess(v -> log.info("Finished grabbing users from guild " + guild.getName()));
+        }).onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName())).onError(Throwable::printStackTrace);
     }
 
     @Override
