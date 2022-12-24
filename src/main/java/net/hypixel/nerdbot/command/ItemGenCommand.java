@@ -145,6 +145,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
                     charIndex = endCharIndex + 2; //move away from color code
                 }
+                continue;
             }
 
             //Newline parsing
@@ -156,11 +157,29 @@ public class ItemGenCommand extends ApplicationCommand {
                 continue;
             }
 
-            //TODO: Softwrap parsing
+            //Softwrap parsing
 //            if (description.charAt(charIndex) == ' ') {
-//                for(int i = charIndex; i % 35 == 0; i++) {
+//                boolean newLine = true;
+//                charIndex++;
 //
+//                for(int i = charIndex; i < charIndex + (35 - lineLength); i++) {
+//                    if (i + 1 > description.length()) {
+//                        newLine = false;
+//                        break;
+//                    }
+//                    if (description.charAt(i) == ' ') {
+//                        newLine = false;
+//                        break;
+//                    }
 //                }
+//
+//                if (newLine) {
+//                    //If we get here, we need to be at a new line for the current word to be pasted
+//                    locationX = 10;
+//                    locationY += 20;
+//                    lineLength = 0;
+//                }
+//                continue;
 //            }
 
             //EOL Parsing
@@ -168,26 +187,36 @@ public class ItemGenCommand extends ApplicationCommand {
                 locationX = 10;
                 locationY += 20;
                 lineLength = 0;
+                continue;
             }
 
             //Find next break
             int findNextIndex = 0;
-            for (int i = charIndex; i < charIndex + (35 - lineLength); i++) {
+            for (int i = charIndex; i < charIndex + (37 - lineLength); i++) {
                 if (i + 1 > description.length()) {
                     break;
                 }
 
-                if ((description.charAt(i) == '%' && description.charAt(i + 1) == '%') || (description.charAt(i) == '\\' && description.charAt(i + 1) == 'n')) {
+                if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
+                    break;
+                }
+
+                if (description.charAt(i) == '\\' && description.charAt(i + 1) == 'n') {
+                    break;
+                }
+
+                if (description.charAt(i) == ' ') {
                     break;
                 }
 
                 findNextIndex++;
             }
 
-            g2d.drawString(description.substring(charIndex, charIndex + findNextIndex), locationX, locationY);
+            String writeString = description.substring(charIndex, charIndex + findNextIndex) + " ";
+            g2d.drawString(writeString, locationX, locationY);
             lineLength += findNextIndex;
-            charIndex += findNextIndex;
-            locationX += 13 * findNextIndex;
+            charIndex += findNextIndex + 1;
+            locationX += minecraftFont.getStringBounds(writeString, g2d.getFontRenderContext()).getWidth();
         }
 
         locationY += 45;
