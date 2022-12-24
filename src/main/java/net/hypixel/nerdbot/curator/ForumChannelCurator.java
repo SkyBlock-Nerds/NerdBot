@@ -10,10 +10,11 @@ import net.dv8tion.jda.internal.entities.ForumTagImpl;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.api.curator.Curator;
-import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.MongoDatabase;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.util.Users;
+import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,8 @@ import java.util.Objects;
 
 @Log4j2
 public class ForumChannelCurator extends Curator<ForumChannel> {
+    
+    private final MongoDatabase mongoDatabase = NerdBotApp.getBot().getDatabase();
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
@@ -31,7 +34,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         List<GreenlitMessage> output = new ArrayList<>();
         setStartTime(System.currentTimeMillis());
 
-        if (!Database.getInstance().isConnected()) {
+        if (!mongoDatabase.isConnected()) {
             setEndTime(System.currentTimeMillis());
             log.error("Couldn't curate messages as the database is not connected!");
             return output;
@@ -53,7 +56,9 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
                 Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
 
-                DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(firstPost.getAuthor().getId());
+
+
+                DiscordUser discordUser = Util.getOrAddUserToCache(mongoDatabase, firstPost.getAuthor().getId());
 
                 if (discordUser.getLastActivity().getLastSuggestionDate() < firstPost.getTimeCreated().toInstant().toEpochMilli()) {
                     discordUser.getLastActivity().setLastSuggestionDate(firstPost.getTimeCreated().toInstant().toEpochMilli());

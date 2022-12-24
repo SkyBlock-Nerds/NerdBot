@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
-import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.MongoDatabase;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.bot.config.BotConfig;
@@ -42,6 +42,7 @@ public class NerdBot implements Bot {
 
     private JDA jda;
     private BotConfig config;
+    private MongoDatabase mongoDatabase = new MongoDatabase(System.getProperty("mongodb.uri"), "skyblock_nerds");
     private long startTime;
 
     public NerdBot() {
@@ -140,8 +141,10 @@ public class NerdBot implements Bot {
 
     @Override
     public void onEnd() {
-        for (BotFeature feature : FEATURES) feature.onEnd();
-        Database.getInstance().disconnect();
+        for (BotFeature feature : FEATURES) {
+            feature.onEnd();
+        }
+        NerdBotApp.getBot().getDatabase().disconnect();
     }
 
     @Override
@@ -181,5 +184,10 @@ public class NerdBot implements Bot {
             log.error("Could not find config file " + fileName);
             System.exit(-1);
         }
+    }
+
+    @Override
+    public MongoDatabase getDatabase() {
+        return mongoDatabase;
     }
 }

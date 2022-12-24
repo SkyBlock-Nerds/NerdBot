@@ -8,21 +8,25 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.MongoDatabase;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
+import net.hypixel.nerdbot.util.Util;
 
 @Log4j2
 public class ActivityListener {
 
+    private final MongoDatabase mongoDatabase = NerdBotApp.getBot().getDatabase();
+
     @SubscribeEvent
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-        Database.getInstance().getOrAddUserToCache(event.getUser().getId());
+        Util.getOrAddUserToCache(mongoDatabase, event.getUser().getId());
         log.info("User " + event.getUser().getAsTag() + " joined guild " + event.getGuild().getName());
     }
 
     @SubscribeEvent
     public void onGuildMemberLeave(GuildMemberRemoveEvent event) {
-        Database.getInstance().deleteUser("discordId", event.getUser().getId());
+        mongoDatabase.deleteDocument(mongoDatabase.getCollection("users"), "discordId", event.getUser().getId());
         log.info("User " + event.getUser().getAsTag() + " left guild " + event.getGuild().getName());
     }
 
@@ -39,7 +43,7 @@ public class ActivityListener {
             return;
         }
 
-        DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(member.getId());
+        DiscordUser discordUser = Util.getOrAddUserToCache(mongoDatabase, member.getId());
         long time = System.currentTimeMillis();
 
         if (channel.getName().contains("alpha")) {
@@ -59,7 +63,7 @@ public class ActivityListener {
             return;
         }
 
-        DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(member.getId());
+        DiscordUser discordUser = Util.getOrAddUserToCache(mongoDatabase, member.getId());
         discordUser.getLastActivity().setLastVoiceChannelJoinDate(System.currentTimeMillis());
         log.info("Updating last voice channel activity date for " + member.getEffectiveName() + " to " + System.currentTimeMillis());
     }

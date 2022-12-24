@@ -4,7 +4,6 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
-import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
@@ -37,7 +36,9 @@ public class CurateFeature extends BotFeature {
                         log.info("Greenlit " + result.size() + " new suggestions in " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!");
                     }
 
-                    Database.getInstance().createOrUpdateGreenlitMessages(result);
+                    result.forEach(greenlitMessage -> {
+                        NerdBotApp.getBot().getDatabase().upsertDocument(NerdBotApp.getBot().getDatabase().getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage);
+                    });
                 });
             }
         };

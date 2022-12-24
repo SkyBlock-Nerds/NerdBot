@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.feature;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.MongoDatabase;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.user.LastActivity;
 import net.hypixel.nerdbot.api.feature.BotFeature;
@@ -23,13 +23,14 @@ public class UserGrabberFeature extends BotFeature {
             return;
         }
 
-        if (!Database.getInstance().isConnected()) {
+        MongoDatabase mongoDatabase = NerdBotApp.getBot().getDatabase();
+        if (!mongoDatabase.isConnected()) {
             log.error("Can't initiate feature as the database is not connected!");
             return;
         }
 
         log.info("Grabbing users from guild " + guild.getName());
-        List<DiscordUser> users = Database.getInstance().getUsers();
+        List<DiscordUser> users = mongoDatabase.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
 
         guild.loadMembers(member -> {
             if (member.getUser().isBot()) {
@@ -42,15 +43,10 @@ public class UserGrabberFeature extends BotFeature {
             }
 
             if (discordUser.getLastActivity() == null) {
-                log.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
                 discordUser.setLastActivity(new LastActivity());
             }
 
-            if (users.contains(discordUser)) {
-                Database.getInstance().updateUser(discordUser);
-            } else {
-                Database.getInstance().insertUser(discordUser);
-            }
+            mongoDatabase.upsertDocument(mongoDatabase.getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
         }).onSuccess(v -> log.info("Finished grabbing users from guild " + guild.getName()));
     }
 
