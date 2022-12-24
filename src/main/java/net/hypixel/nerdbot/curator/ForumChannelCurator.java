@@ -31,12 +31,6 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         List<GreenlitMessage> output = new ArrayList<>();
         setStartTime(System.currentTimeMillis());
 
-        if (!Database.getInstance().isConnected()) {
-            setEndTime(System.currentTimeMillis());
-            log.error("Couldn't curate messages as the database is not connected!");
-            return output;
-        }
-
         log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
         List<ThreadChannel> threads = forumChannel.getThreadChannels()
@@ -50,8 +44,8 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 // This is a stupid way to do it but it's the only way that works right now
                 List<Message> allMessages = thread.getIterableHistory().complete(true);
                 Message firstPost = allMessages.get(allMessages.size() - 1);
-                Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
-                Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
+                Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgree());
+                Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagree());
 
                 DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(firstPost.getAuthor().getId());
 
