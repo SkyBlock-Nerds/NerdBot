@@ -158,29 +158,29 @@ public class ItemGenCommand extends ApplicationCommand {
             }
 
             //Softwrap parsing
-//            if (description.charAt(charIndex) == ' ') {
-//                boolean newLine = true;
-//                charIndex++;
-//
-//                for(int i = charIndex; i < charIndex + (35 - lineLength); i++) {
-//                    if (i + 1 > description.length()) {
-//                        newLine = false;
-//                        break;
-//                    }
-//                    if (description.charAt(i) == ' ') {
-//                        newLine = false;
-//                        break;
-//                    }
-//                }
-//
-//                if (newLine) {
-//                    //If we get here, we need to be at a new line for the current word to be pasted
-//                    locationX = 10;
-//                    locationY += 20;
-//                    lineLength = 0;
-//                }
-//                continue;
-//            }
+            if (description.charAt(charIndex) == ' ') {
+                boolean newLine = true;
+                charIndex++;
+
+                for(int i = charIndex; i < charIndex + (34 - lineLength); i++) {
+                    if (i + 1 > description.length()) {
+                        newLine = false;
+                        break;
+                    }
+                    if (description.charAt(i) == ' ') {
+                        newLine = false;
+                        break;
+                    }
+                }
+
+                if (newLine) {
+                    //If we get here, we need to be at a new line for the current word to be pasted
+                    locationX = 10;
+                    locationY += 20;
+                    lineLength = 0;
+                }
+                continue;
+            }
 
             //EOL Parsing
             if (lineLength > 35) {
@@ -215,7 +215,7 @@ public class ItemGenCommand extends ApplicationCommand {
             String writeString = description.substring(charIndex, charIndex + findNextIndex) + " ";
             g2d.drawString(writeString, locationX, locationY);
             lineLength += findNextIndex;
-            charIndex += findNextIndex + 1;
+            charIndex += findNextIndex;
             locationX += minecraftFont.getStringBounds(writeString, g2d.getFontRenderContext()).getWidth();
         }
 
