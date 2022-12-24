@@ -17,9 +17,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
@@ -81,7 +79,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
         int locationY = 22;
         //Let's generate and place our text
-        g2d.setColor(foundRarity.getColor());
+        g2d.setColor(foundRarity.getRarityColor());
         g2d.drawString(name, 10, locationY);
 
         locationY += 40;
@@ -97,7 +95,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
         locationY += 45;
         g2d.setFont(minecraftBold);
-        g2d.setColor(foundRarity.getColor());
+        g2d.setColor(foundRarity.getRarityColor());
         g2d.drawString(foundRarity.getId(), 10, locationY);
 
         g2d.dispose();
