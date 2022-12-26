@@ -17,6 +17,7 @@ public enum MCColor {
     DARK_PURPLE(new Color(170, 0, 170)),
     WHITE(new Color(255, 255, 255)),
     GRAY(new Color(170, 170, 170)),
+    DARK_GRAY(new Color(85, 85, 85)),
     BLACK(new Color(0, 0, 0));
 
 
