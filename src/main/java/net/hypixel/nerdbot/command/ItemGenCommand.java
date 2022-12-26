@@ -37,13 +37,15 @@ public class ItemGenCommand extends ApplicationCommand {
 
         //make sure user is in correct channel
         if (!senderChannelId.equals(itemGenChannelId)) {
+            //todo fix builder
             TextChannel channel = ChannelManager.getChannel(itemGenChannelId);
             if (channel == null) {
-                builder.addContent("Please use this in the correct channel!");
+                event.getHook().sendMessage("Hi! This can only be used in the #item-gen channel.").queue();
                 return;
             }
-            builder.addContent("Please use this in the ").addContent(channel.getAsMention()).addContent(" channel!");
-            event.reply(builder.build()).setEphemeral(true).queue();
+            event.getHook().sendMessage("Hi! This can only be used in the" + channel.getAsMention() + "channel.").queue();
+
+            return;
         }
 
         //verify rarity argument
@@ -57,8 +59,9 @@ public class ItemGenCommand extends ApplicationCommand {
         }
 
         if (foundRarity == null) {
-            builder.addContent("Please return a valid rarity: " + Arrays.toString(rarities));
-            event.reply(builder.build()).setEphemeral(true).queue();
+            //todo format nicer
+            event.getHook().sendMessage("Hi! We found an invalid rarity"
+                    + rarity + "which cannot be used here. Valid rarities:" + Arrays.toString(rarities)).queue();
             return;
         }
 
@@ -150,16 +153,25 @@ public class ItemGenCommand extends ApplicationCommand {
                         charIndex += 2; //move away from color code
                         String getColor = description.substring(charIndex, endCharIndex);
 
+                        boolean foundColor = false;
                         for (MCColor color : colors) {
                             if (getColor.equals(color.name().toLowerCase())) {
+                                foundColor = true;
                                 g2d.setColor(color.getColor());
                                 break;
                             }
                         }
 
+                        if (!foundColor) {
+                            event.getHook().sendMessage("Hi! We found an invalid color or stat, "
+                                                 + getColor + "which cannot be used here. Valid colors:" + Arrays.toString(colors)
+                                                 + "\n Valid stats: <TODO>").queue();
+                            return;
+                        }
+
                         charIndex = endCharIndex + 2; //move away from color code
+                        continue;
                     }
-                    continue;
                 }
 
                 //Newline parsing
