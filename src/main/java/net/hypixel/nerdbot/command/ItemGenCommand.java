@@ -132,13 +132,19 @@ public class ItemGenCommand extends ApplicationCommand {
                 return;
             }
 
+            boolean noColorFlag = false;
             //make sure we are not at EOS
             if (description.length() != charIndex + 1) {
                 //Color parsing
                 if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
                     int endCharIndex = 0;
 
-                    for (int i = charIndex + 1; i < charIndex + 100; i++) { //get char
+                    for (int i = charIndex + 2; i < charIndex + 100; i++) { //get char
+                        if (i + 1 >= description.length()) {
+                            endCharIndex = -1;
+                            break;
+                        }
+
                         if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
                             endCharIndex = i;
                             break;
@@ -169,7 +175,7 @@ public class ItemGenCommand extends ApplicationCommand {
                         }
 
                         if (!foundColor) {
-                            StringBuilder failed = new StringBuilder("Hi! We found an invalid color or stat " + getColor + " which cannot be used here. " +
+                            StringBuilder failed = new StringBuilder("Hi! We found an invalid color or stat `" + getColor + "` which cannot be used here. " +
                                     "Valid colors:\n");
                             for (MCColor color : colors) {
                                 failed.append(color).append(" ");
@@ -181,8 +187,10 @@ public class ItemGenCommand extends ApplicationCommand {
                         }
 
                         charIndex = endCharIndex + 2; //move away from color code
+                        continue;
                     }
-                    continue;
+                    noColorFlag = true;
+                    //if we can't find the endCharIndex, we just move on here and set a flag
                 }
 
                 //Newline parsing
@@ -239,6 +247,11 @@ public class ItemGenCommand extends ApplicationCommand {
                 }
 
                 if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
+                    if (i + 2 >= description.length() || noColorFlag) {
+                        //Edge case for EOS or if color has already been determined to not be present
+                        findNextIndex++;
+                        break;
+                    }
                     break;
                 }
 
