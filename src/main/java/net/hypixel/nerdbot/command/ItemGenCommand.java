@@ -33,7 +33,7 @@ public class ItemGenCommand extends ApplicationCommand {
         MessageCreateBuilder builder = new MessageCreateBuilder();
         String senderChannelId = event.getChannel().getId();
         String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
-        event.deferReply(true).queue();
+        event.deferReply(false).queue();
 
         //make sure user is in correct channel
         if (!senderChannelId.equals(itemGenChannelId)) {
@@ -114,91 +114,102 @@ public class ItemGenCommand extends ApplicationCommand {
         //This goes through and parses colors, newlines, and soft-wraps the text.
         int lineLength = 0;
         int charIndex = 0;
+        int breakLoopCount = 0;
         while(description.length() > charIndex) {
-            //Color parsing
-            if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
-                int endCharIndex = 0;
+            //Make sure we're not looping infinitely and just hanging the thread
+            breakLoopCount++;
+            if (breakLoopCount > description.length() * 10) {
+                event.getHook().sendMessage("Hi! An issue occurred and we could not produce the image. ):").queue();
+                return;
+            }
 
-                for(int i = charIndex + 1; i < charIndex + 100; i++) { //get char
-                    if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
-                        endCharIndex = i;
-                        break;
-                    }
+            //make sure we are not at EOS
+            if (description.length() != charIndex + 1) {
+                //Color parsing
+                if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
+                    int endCharIndex = 0;
 
-                    if (i == 99) {
-                        endCharIndex = -1;
-                        break;
-                    }
+                    for (int i = charIndex + 1; i < charIndex + 100; i++) { //get char
+                        if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
+                            endCharIndex = i;
+                            break;
+                        }
 
-                    if (i + 2 > description.length()) {
-                        endCharIndex = -1;
-                        break;
-                    }
-                }
+                        if (i == 99) {
+                            endCharIndex = -1;
+                            break;
+                        }
 
-                if (endCharIndex != -1) { //If we can't find the end percents, just continue
-                    charIndex += 2; //move away from color code
-                    String getColor = description.substring(charIndex, endCharIndex);
-
-                    for (MCColor color : colors) {
-                        if (getColor.equals(color.name().toLowerCase())) {
-                            g2d.setColor(color.getColor());
+                        if (i + 2 > description.length()) {
+                            endCharIndex = -1;
                             break;
                         }
                     }
 
-                    charIndex = endCharIndex + 2; //move away from color code
-                }
-                continue;
-            }
+                    if (endCharIndex != -1) { //If we can't find the end percents, just continue
+                        charIndex += 2; //move away from color code
+                        String getColor = description.substring(charIndex, endCharIndex);
 
-            //Newline parsing
-            if (description.charAt(charIndex) == '\\' && description.charAt(charIndex + 1) == 'n') {
-                locationX = 10;
-                locationY += 20;
-                lineLength = 0;
-                charIndex += 2;
-                continue;
-            }
+                        for (MCColor color : colors) {
+                            if (getColor.equals(color.name().toLowerCase())) {
+                                g2d.setColor(color.getColor());
+                                break;
+                            }
+                        }
 
-            //Softwrap parsing
-            if (description.charAt(charIndex) == ' ') {
-                boolean newLine = true;
-                charIndex++;
-
-                for(int i = charIndex; i < charIndex + (34 - lineLength); i++) {
-                    if (i + 1 > description.length()) {
-                        newLine = false;
-                        break;
+                        charIndex = endCharIndex + 2; //move away from color code
                     }
-                    if (description.charAt(i) == ' ') {
-                        newLine = false;
-                        break;
-                    }
+                    continue;
                 }
 
-                if (newLine) {
-                    //If we get here, we need to be at a new line for the current word to be pasted
+                //Newline parsing
+                if (description.charAt(charIndex) == '\\' && description.charAt(charIndex + 1) == 'n') {
                     locationX = 10;
                     locationY += 20;
                     lineLength = 0;
+                    charIndex += 2;
+                    continue;
                 }
-                continue;
-            }
 
-            //EOL Parsing
-            if (lineLength > 35) {
-                locationX = 10;
-                locationY += 20;
-                lineLength = 0;
-                continue;
+                //Softwrap parsing
+                if (description.charAt(charIndex) == ' ') {
+                    boolean newLine = true;
+                    charIndex++;
+
+                    for (int i = charIndex; i < charIndex + (34 - lineLength); i++) {
+                        if (i + 1 > description.length()) {
+                            newLine = false;
+                            break;
+                        }
+                        if (description.charAt(i) == ' ') {
+                            newLine = false;
+                            break;
+                        }
+                    }
+
+                    if (newLine) {
+                        //If we get here, we need to be at a new line for the current word to be pasted
+                        locationX = 10;
+                        locationY += 20;
+                        lineLength = 0;
+                    }
+                    continue;
+                }
+
+                //EOL Parsing
+                if (lineLength > 35) {
+                    locationX = 10;
+                    locationY += 20;
+                    lineLength = 0;
+                    continue;
+                }
             }
 
             //Find next break
             int findNextIndex = 0;
             boolean spaceBreak = false;
             for (int i = charIndex; i < charIndex + (37 - lineLength); i++) {
-                if (i + 1 > description.length()) {
+                if (i + 1 >= description.length()) {
                     break;
                 }
 
@@ -235,6 +246,7 @@ public class ItemGenCommand extends ApplicationCommand {
         g2d.dispose();
 
         File imageFile = File.createTempFile("image", ".png");
+        ImageIO.write(image, "png", imageFile);
         event.getHook().sendFiles(FileUpload.fromData(imageFile)).queue();
     }
 }
