@@ -271,7 +271,9 @@ public class ItemGenCommand extends ApplicationCommand {
             lineLength += findNextIndex;
             charIndex += findNextIndex;
             assert minecraftFont != null; //placate the linter
-            locationX += minecraftFont.getStringBounds(writeString, g2d.getFontRenderContext()).getWidth();
+
+            //The bonus spaceBreak in here is just to make spaces look a bit better
+            locationX += minecraftFont.getStringBounds(writeString, g2d.getFontRenderContext()).getWidth() + (spaceBreak ? 2 : 0);
         }
 
         locationY += 45;
