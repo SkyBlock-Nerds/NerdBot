@@ -210,6 +210,10 @@ public class ItemGenCommand extends ApplicationCommand {
             boolean spaceBreak = false;
             for (int i = charIndex; i < charIndex + (37 - lineLength); i++) {
                 if (i + 1 >= description.length()) {
+                    //Edge case for when a percentage is at the end of the string and we infinitely hang
+                    if (description.charAt(i) == '%') {
+                        findNextIndex++;
+                    }
                     break;
                 }
 
