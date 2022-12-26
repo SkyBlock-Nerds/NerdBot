@@ -33,6 +33,7 @@ public class ItemGenCommand extends ApplicationCommand {
         MessageCreateBuilder builder = new MessageCreateBuilder();
         String senderChannelId = event.getChannel().getId();
         String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
+        event.deferReply(true).queue();
 
         //make sure user is in correct channel
         if (!senderChannelId.equals(itemGenChannelId)) {
@@ -45,6 +46,7 @@ public class ItemGenCommand extends ApplicationCommand {
             event.reply(builder.build()).setEphemeral(true).queue();
         }
 
+        //verify rarity argument
         Rarity[] rarities = Rarity.values();
         Rarity foundRarity = null; //Used later to print out the rarity in a readable format
         for (Rarity rarity1 : rarities) {
@@ -77,14 +79,14 @@ public class ItemGenCommand extends ApplicationCommand {
                 newlineInstances++;
             }
         }
-
         estimateString = estimateString.replace("\\n", "");
-
         int heightEstimate = ((6 + newlineInstances + (estimateString.length() / 35)) * 20);
 
-        BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB); //attempt to guess how long the image should be
+        //Let's draw our image
+        BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
 
+        //Let's init our fonts
         Font minecraftFont = null;
         Font minecraftBold = null;
         try {
@@ -99,9 +101,10 @@ public class ItemGenCommand extends ApplicationCommand {
 
         g2d.setFont(minecraftFont);
 
+        //Let's generate and place our text
         int locationY = 22;
         int locationX = 10;
-        //Let's generate and place our text
+
         g2d.setColor(foundRarity.getRarityColor());
         g2d.drawString(name, locationX, locationY);
 
@@ -133,7 +136,7 @@ public class ItemGenCommand extends ApplicationCommand {
                     }
                 }
 
-                if (endCharIndex != -1) { //If we can't find the end parenthesis, just continue
+                if (endCharIndex != -1) { //If we can't find the end percents, just continue
                     charIndex += 2; //move away from color code
                     String getColor = description.substring(charIndex, endCharIndex);
 
@@ -232,13 +235,6 @@ public class ItemGenCommand extends ApplicationCommand {
         g2d.dispose();
 
         File imageFile = File.createTempFile("image", ".png");
-        ImageIO.write(image, "png", imageFile);
-        builder.addFiles(FileUpload.fromData(imageFile));
-//        builder.addContent(name)
-//                .addContent("\n----------\n")
-//                .addContent(description)
-//                .addContent("\n----------\n")
-//                .addContent(foundRarity.getId());
-        event.reply(builder.build()).setEphemeral(false).queue();
+        event.getHook().sendFiles(FileUpload.fromData(imageFile)).queue();
     }
 }
