@@ -18,19 +18,17 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
 
-    @JDASlashCommand(name = "itemgen", description = "Creates a Skyblock item, visible to everyone in Skyblock Nerds.")
+    @JDASlashCommand(name = "itemgen", description = "Creates a SkyBlock item, visible to everyone in SkyBlock Nerds.")
     public void askForInfo(
             GuildSlashEvent event,
             @AppOption(description = "The name of the item") String name,
             @AppOption(description = "The description of the item") String description,
             @AppOption(description = "The rarity of the item") String rarity
     ) throws IOException {
-        MessageCreateBuilder builder = new MessageCreateBuilder();
         String senderChannelId = event.getChannel().getId();
         String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
         event.deferReply(false).queue();
@@ -272,6 +270,7 @@ public class ItemGenCommand extends ApplicationCommand {
             g2d.drawString(writeString, locationX, locationY);
             lineLength += findNextIndex;
             charIndex += findNextIndex;
+            assert minecraftFont != null; //placate the linter
             locationX += minecraftFont.getStringBounds(writeString, g2d.getFontRenderContext()).getWidth();
         }
 
