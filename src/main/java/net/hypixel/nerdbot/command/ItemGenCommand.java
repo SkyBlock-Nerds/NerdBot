@@ -37,13 +37,12 @@ public class ItemGenCommand extends ApplicationCommand {
 
         //make sure user is in correct channel
         if (!senderChannelId.equals(itemGenChannelId)) {
-            //todo fix builder
             TextChannel channel = ChannelManager.getChannel(itemGenChannelId);
             if (channel == null) {
                 event.getHook().sendMessage("Hi! This can only be used in the #item-gen channel.").queue();
                 return;
             }
-            event.getHook().sendMessage("Hi! This can only be used in the" + channel.getAsMention() + "channel.").queue();
+            event.getHook().sendMessage("Hi! This can only be used in the " + channel.getAsMention() + " channel.").queue();
 
             return;
         }
@@ -59,9 +58,11 @@ public class ItemGenCommand extends ApplicationCommand {
         }
 
         if (foundRarity == null) {
-            //todo format nicer
-            event.getHook().sendMessage("Hi! We found an invalid rarity"
-                    + rarity + "which cannot be used here. Valid rarities:" + Arrays.toString(rarities)).queue();
+            StringBuilder failedRarity = new StringBuilder("Hi! We found an invalid rarity, " + rarity + ", which cannot be used here. Valid rarities:\n");
+            for (Rarity rarity1 : rarities) {
+                failedRarity.append(rarity1).append("\n");
+            }
+            event.getHook().sendMessage(failedRarity.toString()).queue();
             return;
         }
 
@@ -122,7 +123,12 @@ public class ItemGenCommand extends ApplicationCommand {
             //Make sure we're not looping infinitely and just hanging the thread
             breakLoopCount++;
             if (breakLoopCount > description.length() * 10) {
-                event.getHook().sendMessage("Hi! An issue occurred and we could not produce the image. ):").queue();
+                String debug = "length: " + description.length() + "\n" +
+                               "charIndex: " + charIndex + "\n" +
+                               "character failed on: " + description.charAt(charIndex) + "\n" +
+                               "string: " + description + "\n" +
+                               "If you see this debug, please go ahead and ping Keith. Thanks!\n";
+                event.getHook().sendMessage(debug).queue();
                 return;
             }
 
@@ -163,15 +169,20 @@ public class ItemGenCommand extends ApplicationCommand {
                         }
 
                         if (!foundColor) {
-                            event.getHook().sendMessage("Hi! We found an invalid color or stat, "
-                                                 + getColor + "which cannot be used here. Valid colors:" + Arrays.toString(colors)
-                                                 + "\n Valid stats: <TODO>").queue();
+                            StringBuilder failed = new StringBuilder("Hi! We found an invalid color or stat " + getColor + " which cannot be used here. " +
+                                    "Valid colors:\n");
+                            for (MCColor color : colors) {
+                                failed.append(color).append(" ");
+                            }
+                            failed.append("\nValid rarities:\nTODO");
+
+                            event.getHook().sendMessage(failed.toString()).queue();
                             return;
                         }
 
                         charIndex = endCharIndex + 2; //move away from color code
-                        continue;
                     }
+                    continue;
                 }
 
                 //Newline parsing
@@ -222,10 +233,8 @@ public class ItemGenCommand extends ApplicationCommand {
             boolean spaceBreak = false;
             for (int i = charIndex; i < charIndex + (37 - lineLength); i++) {
                 if (i + 1 >= description.length()) {
-                    //Edge case for when a percentage is at the end of the string and we infinitely hang
-                    if (description.charAt(i) == '%') {
-                        findNextIndex++;
-                    }
+                    //Edge case for EOS
+                    findNextIndex++;
                     break;
                 }
 
