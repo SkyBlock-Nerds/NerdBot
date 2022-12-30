@@ -65,10 +65,17 @@ public class ItemGenCommand extends ApplicationCommand {
             return;
         }
 
-        //Let's draw our image
+        //Let's draw our image, parse our description
         int heightEstimate = ((4 + parsedDescription.size()) * 20);
         BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
+
+          //Debug for printing out exactly what comes from the parser
+//        StringBuilder temp = new StringBuilder();
+//        for(String string : parsedDescription) {
+//            temp.append(string).append("\n");
+//        }
+//        event.getHook().sendMessage(temp.toString()).queue();
 
         //Let's init our fonts
         Font minecraftFont;
@@ -192,16 +199,44 @@ public class ItemGenCommand extends ApplicationCommand {
                 if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
                     int endCharIndex = 0;
 
+                    StringBuilder specialSubString = new StringBuilder(); //If a parameter can be passed, put that here.
+                    boolean specialSubStringFlag = false;
+                    int specialSubStringIndex = -1;
                     for (int i = charIndex + 2; i < charIndex + 100; i++) { //get char
                         if (i + 1 >= description.length()) {
                             endCharIndex = -1;
                             break;
                         }
 
-                        if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
-                            endCharIndex = i;
+                        //Very annoying corner case for when you want to have a percent as a stat
+                        if (specialSubStringFlag && description.substring(i, i+3).equalsIgnoreCase("%%%")
+                                && !description.substring(i, i+4).equalsIgnoreCase("%%%%")) {
+                            endCharIndex = specialSubStringIndex;
+                            specialSubString.append("%");
                             break;
                         }
+
+                        if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
+                            if (specialSubStringFlag) {
+                                endCharIndex = specialSubStringIndex;
+                            }
+                            else {
+                                endCharIndex = i;
+                            }
+                            break;
+                        }
+
+                        if (specialSubStringFlag && description.charAt(i) != '%') {
+                            specialSubString.append(description.charAt(i));
+                        }
+
+                        //Special case for a specialSubString
+                        if (description.charAt(i) == ':') {
+                            specialSubStringFlag = true;
+                            specialSubStringIndex = i;
+                            continue;
+                        }
+
 
                         if (i == 99) {
                             endCharIndex = -1;
@@ -231,8 +266,12 @@ public class ItemGenCommand extends ApplicationCommand {
                         for (Stats stat : Stats.values()) {
                             if (getSpecialString.equalsIgnoreCase(stat.name())) {
                                 foundColor = true;
+                                currString.append("%%").append(stat.getSecondaryColor()).append("%%");
+                                currString.append(specialSubString).append(" ");
                                 currString.append("%%").append(stat.getColor()).append("%%");
                                 currString.append(stat.getId());
+                                currString.append("%%GRAY%% ");
+                                lineLength += stat.getId().length();
                                 break;
                             }
                         }
@@ -243,13 +282,19 @@ public class ItemGenCommand extends ApplicationCommand {
                             for (MCColor color : colors) {
                                 failed.append(color).append(" ");
                             }
-                            failed.append("\nValid rarities:\nTODO");
-
+                            failed.append("\nValid stats:\n");
+                            for (Stats stat : Stats.values()) {
+                                failed.append(stat).append(" ");
+                            }
                             event.getHook().sendMessage(failed.toString()).queue();
                             return null;
                         }
 
                         charIndex = endCharIndex + 2; //move away from color code
+                        if (specialSubStringFlag) {
+                            charIndex += specialSubString.length() + 1;
+                            lineLength += specialSubString.length();
+                        }
                         continue;
                     }
                     noColorFlag = true;
