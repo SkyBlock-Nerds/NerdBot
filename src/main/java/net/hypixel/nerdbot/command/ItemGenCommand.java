@@ -66,6 +66,12 @@ public class ItemGenCommand extends ApplicationCommand {
         assert parsedDescription != null;
         int heightEstimate = ((4 + parsedDescription.size()) * 20);
 
+        StringBuilder temp = new StringBuilder();
+        for(String string : parsedDescription) {
+            temp.append(string).append("\n");
+        }
+        event.getHook().sendMessage(temp.toString()).queue();
+
         //Let's draw our image
         BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
@@ -164,7 +170,7 @@ public class ItemGenCommand extends ApplicationCommand {
         int charIndex = 0;  //where we are in description
         int breakLoopCount = 0; //break if we are hanging due to a runtime error
 
-        //Go through the entire description, break it apart to find into an arraylist for rendering
+        //Go through the entire description, break it apart to put into an arraylist for rendering
         while(description.length() > charIndex) {
             //Make sure we're not looping infinitely and just hanging the thread
             breakLoopCount++;
@@ -257,7 +263,8 @@ public class ItemGenCommand extends ApplicationCommand {
                     boolean newLine = true;
                     charIndex++;
 
-                    for (int i = charIndex; i < charIndex + (38 - lineLength); i++) {
+                    int colorCheck = 36;
+                    for (int i = charIndex; i < charIndex + (colorCheck - lineLength); i++) {
                         if (i + 1 > description.length()) {
                             newLine = false;
                             break;
@@ -265,6 +272,17 @@ public class ItemGenCommand extends ApplicationCommand {
                         if (description.charAt(i) == ' ') {
                             newLine = false;
                             break;
+                        }
+                        if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
+                            colorCheck += 2;
+
+                            //Let's see if there's a color here. We'll check if it's valid later.
+                            for (int j = i + 2; j < description.length(); j++) {
+                                if (j + 2 <= description.length() && description.charAt(j) == '%' && description.charAt(j + 1) == '%') {
+                                    break;
+                                }
+                                colorCheck++;
+                            }
                         }
                     }
 
