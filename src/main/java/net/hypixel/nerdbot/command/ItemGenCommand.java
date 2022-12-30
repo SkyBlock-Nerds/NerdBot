@@ -11,13 +11,19 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.MCColor;
 import net.hypixel.nerdbot.util.Rarity;
+import org.checkerframework.checker.units.qual.A;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
@@ -54,27 +60,11 @@ public class ItemGenCommand extends ApplicationCommand {
             return;
         }
 
-        Rarity itemRarity = Rarity.valueOf(rarity);
+        Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
 
-        // Create an image, import fonts
-        String estimateString = description.toLowerCase();
-        MCColor[] colors = MCColor.values();
-        for (MCColor color : colors) {
-            String temp = "%%";
-            temp += color.name().toLowerCase();
-            temp += "%%";
-            estimateString = estimateString.replace(temp, "");
-        }
-
-        //Try to estimate the image length
-        int newlineInstances = 0;
-        for(int i = 0; i < estimateString.length(); i++) {
-            if (estimateString.charAt(i) == '\\' && estimateString.charAt(i + 1) == 'n') {
-                newlineInstances++;
-            }
-        }
-        estimateString = estimateString.replace("\\n", "");
-        int heightEstimate = ((6 + newlineInstances + (estimateString.length() / 35)) * 20);
+        ArrayList<String> parsedDescription = parseDescription(description, event);
+        assert parsedDescription != null;
+        int heightEstimate = ((4 + parsedDescription.size()) * 20);
 
         //Let's draw our image
         BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
@@ -91,39 +81,75 @@ public class ItemGenCommand extends ApplicationCommand {
             ge.registerFont(minecraftBold);
         } catch (IOException | FontFormatException e) {
             e.printStackTrace();
+            event.getHook().sendMessage("Hi! Something went wrong with creating the font. Try again later!").queue();
+            return;
         }
 
         g2d.setFont(minecraftFont);
 
         //Let's generate and place our text
-        int locationY = 22;
+        int locationY = 25;
         int locationX = 10;
 
         g2d.setColor(itemRarity.getRarityColor());
         g2d.drawString(name, locationX, locationY);
 
-        locationY += 40;
+        locationY += 20;
         g2d.setColor(MCColor.GRAY.getColor());
 
-        //This goes through and parses colors, newlines, and soft-wraps the text.
-        int lineLength = 0;
-        int charIndex = 0;
+        for(String string : parsedDescription) {
+            locationX = 10;
+            g2d.drawString(string, locationX, locationY); //draw the last word
+            locationY += 20;
+        }
+
+        locationY += 25;
+        locationX = 10;
+        g2d.setFont(minecraftBold);
+        g2d.setColor(itemRarity.getRarityColor());
+        g2d.drawString(itemRarity.getId(), locationX, locationY);
+
+        g2d.dispose();
+
+        File imageFile = File.createTempFile("image", ".png");
+        ImageIO.write(image, "png", imageFile);
+        event.getHook().sendFiles(FileUpload.fromData(imageFile)).queue();
+
+        //todo: remove
+        StringBuilder tempsend = new StringBuilder("");
+        for (String string : Objects.requireNonNull(parseDescription(description, event))) {
+            tempsend.append(string).append("\n");
+        }
+        event.getHook().sendMessage(tempsend.toString()).queue();
+    }
+
+    @Nullable
+    private ArrayList<String> parseDescription(String description, GuildSlashEvent event) {
+        ArrayList<String> parsed = new ArrayList<String>(); //let's just say there's a hypothetical 30 line cap on strings
+        MCColor[] colors = MCColor.values();
+
+        StringBuilder currString = new StringBuilder("");
+        int lineLength = 0; //where we are in curr string
+        int charIndex = 0;  //where we are in description
         int breakLoopCount = 0;
         while(description.length() > charIndex) {
             //Make sure we're not looping infinitely and just hanging the thread
             breakLoopCount++;
-            if (breakLoopCount > description.length() * 10) {
+            if (breakLoopCount > description.length() * 2) {
                 String debug = "length: " + description.length() + "\n" +
-                               "charIndex: " + charIndex + "\n" +
-                               "character failed on: " + description.charAt(charIndex) + "\n" +
-                               "string: " + description + "\n" +
-                               "If you see this debug, please go ahead and ping Keith. Thanks!\n";
+                        "charIndex: " + charIndex + "\n" +
+                        "character failed on: " + description.charAt(charIndex) + "\n" +
+                        "string: " + description + "\n" +
+                        "If you see this debug, please go ahead and ping Keith. Thanks!\n";
                 event.getHook().sendMessage(debug).queue();
-                return;
+                return null;
             }
 
             boolean noColorFlag = false;
-            //make sure we are not at EOS
+
+            /* This block checks colors, newline characters, soft-wrapping,
+             * and changes the text depending on those checks.
+             */
             if (description.length() != charIndex + 1) {
                 //Color parsing
                 if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
@@ -157,10 +183,12 @@ public class ItemGenCommand extends ApplicationCommand {
 
                         boolean foundColor = false;
                         for (MCColor color : colors) {
-                            if (getColor.equals(color.name().toLowerCase())) {
+                            if (getColor.equalsIgnoreCase(color.name())) {
+                                //We've found a valid color but we're not going to action it here- we do that later
                                 foundColor = true;
-                                g2d.setColor(color.getColor());
-                                break;
+                                charIndex -= 4 + getColor.length();
+                                lineLength -= 4 + getColor.length();
+                                currString.append("%%").append(color).append("%%");
                             }
                         }
 
@@ -173,7 +201,7 @@ public class ItemGenCommand extends ApplicationCommand {
                             failed.append("\nValid rarities:\nTODO");
 
                             event.getHook().sendMessage(failed.toString()).queue();
-                            return;
+                            return null;
                         }
 
                         charIndex = endCharIndex + 2; //move away from color code
@@ -185,8 +213,8 @@ public class ItemGenCommand extends ApplicationCommand {
 
                 //Newline parsing
                 if (description.charAt(charIndex) == '\\' && description.charAt(charIndex + 1) == 'n') {
-                    locationX = 10;
-                    locationY += 20;
+                    parsed.add(currString.toString());
+                    currString.setLength(0);
                     lineLength = 0;
                     charIndex += 2;
                     continue;
@@ -210,8 +238,8 @@ public class ItemGenCommand extends ApplicationCommand {
 
                     if (newLine) {
                         //If we get here, we need to be at a new line for the current word to be pasted
-                        locationX = 10;
-                        locationY += 20;
+                        parsed.add(currString.toString());
+                        currString.setLength(0);
                         lineLength = 0;
                     }
                     continue;
@@ -219,8 +247,8 @@ public class ItemGenCommand extends ApplicationCommand {
 
                 //EOL Parsing
                 if (lineLength > 35) {
-                    locationX = 10;
-                    locationY += 20;
+                    parsed.add(currString.toString());
+                    currString.setLength(0);
                     lineLength = 0;
                     continue;
                 }
@@ -240,7 +268,6 @@ public class ItemGenCommand extends ApplicationCommand {
                     if (i + 2 >= description.length() || noColorFlag) {
                         //Edge case for EOS or if color has already been determined to not be present
                         findNextIndex++;
-                        break;
                     }
                     break;
                 }
@@ -258,26 +285,14 @@ public class ItemGenCommand extends ApplicationCommand {
             }
 
             String subWriteString = description.substring(charIndex, charIndex + findNextIndex);
-            String writeString = spaceBreak ? subWriteString + " " : subWriteString;
-            g2d.drawString(writeString, locationX, locationY);
+
+            currString.append(subWriteString).append(spaceBreak ? " " : "");
+
             lineLength += findNextIndex;
             charIndex += findNextIndex;
-            assert minecraftFont != null; //placate the linter
-
-            //The bonus spaceBreak in here is just to make spaces look a bit better
-            locationX += minecraftFont.getStringBounds(writeString, g2d.getFontRenderContext()).getWidth() + (spaceBreak ? 2 : 0);
         }
+        parsed.add(currString.toString());
 
-        locationY += 45;
-        locationX = 10;
-        g2d.setFont(minecraftBold);
-        g2d.setColor(itemRarity.getRarityColor());
-        g2d.drawString(itemRarity.getId(), locationX, locationY);
-
-        g2d.dispose();
-
-        File imageFile = File.createTempFile("image", ".png");
-        ImageIO.write(image, "png", imageFile);
-        event.getHook().sendFiles(FileUpload.fromData(imageFile)).queue();
+        return parsed;
     }
 }
