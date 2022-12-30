@@ -121,7 +121,6 @@ public class ItemGenCommand extends ApplicationCommand {
                         subword.setLength(0);
 
                         String foundColor = line.substring(colorStartIndex + 2, colorEndIndex + 1);
-                        System.out.println(foundColor);
                         for (MCColor color : MCColor.values()) {
                             if (foundColor.equalsIgnoreCase(color.name())) {
                                 g2d.setColor(color.getColor());
