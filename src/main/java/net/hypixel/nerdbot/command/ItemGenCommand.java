@@ -11,8 +11,6 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.MCColor;
 import net.hypixel.nerdbot.util.Rarity;
-import org.checkerframework.checker.units.qual.A;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
@@ -20,10 +18,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Objects;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
@@ -37,6 +33,7 @@ public class ItemGenCommand extends ApplicationCommand {
     ) throws IOException {
         String senderChannelId = event.getChannel().getId();
         String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
+
         event.deferReply(false).queue();
 
         //make sure user is in correct channel
@@ -61,31 +58,32 @@ public class ItemGenCommand extends ApplicationCommand {
         }
 
         Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
-
         ArrayList<String> parsedDescription = parseDescription(description, event);
-        assert parsedDescription != null;
-        int heightEstimate = ((4 + parsedDescription.size()) * 20);
+        if (parsedDescription == null || parsedDescription.isEmpty()) {
+            event.getHook().sendMessage("Please enter a valid description for the item!").queue();
+            return;
+        }
 
         //Let's draw our image
+        int heightEstimate = ((4 + parsedDescription.size()) * 20);
         BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
 
         //Let's init our fonts
-        Font minecraftFont = null;
-        Font minecraftBold = null;
+        Font minecraftFont;
+        Font minecraftBold;
         try {
             minecraftFont = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/minecraft.ttf")).deriveFont(16f);
             minecraftBold = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/3_Minecraft-Bold.otf")).deriveFont(22f);
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             ge.registerFont(minecraftFont);
             ge.registerFont(minecraftBold);
+            g2d.setFont(minecraftFont);
         } catch (IOException | FontFormatException e) {
             e.printStackTrace();
             event.getHook().sendMessage("Hi! Something went wrong with creating the font. Try again later!").queue();
             return;
         }
-
-        g2d.setFont(minecraftFont);
 
         //Let's generate and place our text
         int locationY = 25;
@@ -93,7 +91,6 @@ public class ItemGenCommand extends ApplicationCommand {
 
         g2d.setColor(itemRarity.getRarityColor());
         g2d.drawString(name, locationX, locationY);
-
         locationY += 20;
         g2d.setColor(MCColor.GRAY.getColor());
 
@@ -122,17 +119,11 @@ public class ItemGenCommand extends ApplicationCommand {
                         subword.setLength(0);
 
                         String foundColor = line.substring(colorStartIndex + 2, colorEndIndex + 1);
-                        for (MCColor color : MCColor.values()) {
-                            if (foundColor.equalsIgnoreCase(color.name())) {
-                                g2d.setColor(color.getColor());
-                                break;
-                            }
-                        }
-
+                        Arrays.stream(MCColor.values()).filter(color -> foundColor.equalsIgnoreCase(color.name())).findFirst().ifPresent(color -> g2d.setColor(color.getColor()));
                         colorStartIndex += 3 + foundColor.length(); //remove the color code
                     }
-                }
-                else { //We do this to prevent monospace bullshit
+                } else {
+                    //We do this to prevent monospace bullshit
                     subword.append(line.charAt(colorStartIndex));
                 }
             }
@@ -146,7 +137,6 @@ public class ItemGenCommand extends ApplicationCommand {
         g2d.setFont(minecraftBold);
         g2d.setColor(itemRarity.getRarityColor());
         g2d.drawString(itemRarity.getId(), locationX, locationY);
-
         g2d.dispose();
 
         File imageFile = File.createTempFile("image", ".png");
