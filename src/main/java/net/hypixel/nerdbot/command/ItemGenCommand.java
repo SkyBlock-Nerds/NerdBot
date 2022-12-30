@@ -223,8 +223,7 @@ public class ItemGenCommand extends ApplicationCommand {
                             if (getColor.equalsIgnoreCase(color.name())) {
                                 //We've found a valid color but we're not going to action it here- we do that later
                                 foundColor = true;
-                                charIndex -= 4 + getColor.length();
-                                lineLength -= 4 + getColor.length();
+                                //lineLength -= 4 + getColor.length();
                                 currString.append("%%").append(color).append("%%");
                                 break;
                             }
@@ -251,6 +250,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
                 //Newline parsing
                 if (description.charAt(charIndex) == '\\' && description.charAt(charIndex + 1) == 'n') {
+                    System.out.println("Made a new line due to a newline character!");
                     parsed.add(currString.toString());
                     currString.setLength(0);
                     lineLength = 0;
@@ -263,7 +263,7 @@ public class ItemGenCommand extends ApplicationCommand {
                     boolean newLine = true;
                     charIndex++;
 
-                    for (int i = charIndex; i < charIndex + (34 - lineLength); i++) {
+                    for (int i = charIndex; i < charIndex + (38 - lineLength); i++) {
                         if (i + 1 > description.length()) {
                             newLine = false;
                             break;
@@ -276,6 +276,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
                     if (newLine) {
                         //If we get here, we need to be at a new line for the current word to be pasted
+                        System.out.println("Made a new line due to softwrapping!");
                         parsed.add(currString.toString());
                         currString.setLength(0);
                         lineLength = 0;
@@ -285,6 +286,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
                 //EOL Parsing
                 if (lineLength > 35) {
+                    System.out.println("Made a new line due to the EOL check!");
                     parsed.add(currString.toString());
                     currString.setLength(0);
                     lineLength = 0;
@@ -295,7 +297,7 @@ public class ItemGenCommand extends ApplicationCommand {
             //Find next break
             int findNextIndex = 0;
             boolean spaceBreak = false;
-            for (int i = charIndex; i < charIndex + (37 - lineLength); i++) {
+            for (int i = charIndex; i < description.length(); i++) {
                 if (i + 1 >= description.length()) {
                     //Edge case for EOS
                     findNextIndex++;
