@@ -20,8 +20,8 @@ public enum MCColor {
     DARK_GRAY(new Color(85, 85, 85)),
     BLACK(new Color(0, 0, 0));
 
-
     private final Color color;
+
     MCColor(Color color) {
         this.color = color;
     }
