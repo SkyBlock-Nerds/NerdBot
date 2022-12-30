@@ -11,6 +11,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.MCColor;
 import net.hypixel.nerdbot.util.Rarity;
+import net.hypixel.nerdbot.util.Stats;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
@@ -215,11 +216,11 @@ public class ItemGenCommand extends ApplicationCommand {
 
                     if (endCharIndex != -1) { //If we can't find the end percents, just continue
                         charIndex += 2; //move away from color code
-                        String getColor = description.substring(charIndex, endCharIndex);
+                        String getSpecialString = description.substring(charIndex, endCharIndex);
 
                         boolean foundColor = false;
                         for (MCColor color : colors) {
-                            if (getColor.equalsIgnoreCase(color.name())) {
+                            if (getSpecialString.equalsIgnoreCase(color.name())) {
                                 //We've found a valid color but we're not going to action it here- we do that later
                                 foundColor = true;
                                 currString.append("%%").append(color).append("%%");
@@ -227,8 +228,17 @@ public class ItemGenCommand extends ApplicationCommand {
                             }
                         }
 
+                        for (Stats stat : Stats.values()) {
+                            if (getSpecialString.equalsIgnoreCase(stat.name())) {
+                                foundColor = true;
+                                currString.append("%%").append(stat.getColor()).append("%%");
+                                currString.append(stat.getId());
+                                break;
+                            }
+                        }
+
                         if (!foundColor) {
-                            StringBuilder failed = new StringBuilder("Hi! We found an invalid color or stat `" + getColor + "` which cannot be used here. " +
+                            StringBuilder failed = new StringBuilder("Hi! We found an invalid color or stat `" + getSpecialString + "` which cannot be used here. " +
                                     "Valid colors:\n");
                             for (MCColor color : colors) {
                                 failed.append(color).append(" ");
