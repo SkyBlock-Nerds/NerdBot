@@ -7,7 +7,6 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.MCColor;
@@ -15,9 +14,10 @@ import net.hypixel.nerdbot.util.Rarity;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.awt.image.BufferedImage;
+import java.util.Arrays;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
@@ -40,29 +40,21 @@ public class ItemGenCommand extends ApplicationCommand {
                 event.getHook().sendMessage("Hi! This can only be used in the #item-gen channel.").queue();
                 return;
             }
-            event.getHook().sendMessage("Hi! This can only be used in the " + channel.getAsMention() + " channel.").queue();
 
+            event.getHook().sendMessage("Hi! This can only be used in the " + channel.getAsMention() + " channel.").queue();
             return;
         }
 
         //verify rarity argument
-        Rarity[] rarities = Rarity.values();
-        Rarity foundRarity = null; //Used later to print out the rarity in a readable format
-        for (Rarity rarity1 : rarities) {
-            if (rarity1.toString().equalsIgnoreCase(rarity)) {
-                foundRarity = rarity1;
-                break;
-            }
-        }
-
-        if (foundRarity == null) {
+        if (Arrays.stream(Rarity.values()).noneMatch(rarity1 -> rarity.equalsIgnoreCase(rarity1.name()))) {
             StringBuilder failedRarity = new StringBuilder("Hi! We found an invalid rarity, " + rarity + ", which cannot be used here. Valid rarities:\n");
-            for (Rarity rarity1 : rarities) {
-                failedRarity.append(rarity1).append("\n");
-            }
+            Arrays.stream(Rarity.values()).forEachOrdered(rarity1 -> failedRarity.append(rarity1.name()).append("\n"));
+            failedRarity.append(Arrays.toString(Rarity.values()));
             event.getHook().sendMessage(failedRarity.toString()).queue();
             return;
         }
+
+        Rarity itemRarity = Rarity.valueOf(rarity);
 
         // Create an image, import fonts
         String estimateString = description.toLowerCase();
@@ -107,7 +99,7 @@ public class ItemGenCommand extends ApplicationCommand {
         int locationY = 22;
         int locationX = 10;
 
-        g2d.setColor(foundRarity.getRarityColor());
+        g2d.setColor(itemRarity.getRarityColor());
         g2d.drawString(name, locationX, locationY);
 
         locationY += 40;
@@ -279,8 +271,8 @@ public class ItemGenCommand extends ApplicationCommand {
         locationY += 45;
         locationX = 10;
         g2d.setFont(minecraftBold);
-        g2d.setColor(foundRarity.getRarityColor());
-        g2d.drawString(foundRarity.getId(), locationX, locationY);
+        g2d.setColor(itemRarity.getRarityColor());
+        g2d.drawString(itemRarity.getId(), locationX, locationY);
 
         g2d.dispose();
 
