@@ -97,9 +97,47 @@ public class ItemGenCommand extends ApplicationCommand {
         locationY += 20;
         g2d.setColor(MCColor.GRAY.getColor());
 
-        for(String string : parsedDescription) {
+        for(String line : parsedDescription) {
             locationX = 10;
-            g2d.drawString(string, locationX, locationY); //draw the last word
+
+            //Let's iterate through each character in our line, looking for colors
+            StringBuilder subword = new StringBuilder();
+            for(int colorStartIndex = 0; colorStartIndex < line.length(); colorStartIndex++) {
+                //Check for colors
+                if (colorStartIndex + 2 < line.length() && line.charAt(colorStartIndex) == '%' && line.charAt(colorStartIndex + 1) == '%') {
+                    int colorEndIndex = -1;
+
+                    for(int j = colorStartIndex; j < line.length() - 2; j++) {
+                        if (line.charAt(j + 1) == '%' && line.charAt(j + 2) == '%') {
+                            colorEndIndex = j;
+                            break;
+                        }
+                    }
+
+                    if (colorEndIndex != -1) {
+                        //We've previously verified that this is a good color, so let's trust it
+                        g2d.drawString(subword.toString(), locationX, locationY);
+                        locationX += minecraftFont.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
+                        subword.setLength(0);
+
+                        String foundColor = line.substring(colorStartIndex + 2, colorEndIndex + 1);
+                        System.out.println(foundColor);
+                        for (MCColor color : MCColor.values()) {
+                            if (foundColor.equalsIgnoreCase(color.name())) {
+                                g2d.setColor(color.getColor());
+                                break;
+                            }
+                        }
+
+                        colorStartIndex += 3 + foundColor.length(); //remove the color code
+                    }
+                }
+                else { //We do this to prevent monospace bullshit
+                    subword.append(line.charAt(colorStartIndex));
+                }
+            }
+
+            g2d.drawString(subword.toString(), locationX, locationY); //draw the last word, even if it's empty
             locationY += 20;
         }
 
@@ -189,6 +227,7 @@ public class ItemGenCommand extends ApplicationCommand {
                                 charIndex -= 4 + getColor.length();
                                 lineLength -= 4 + getColor.length();
                                 currString.append("%%").append(color).append("%%");
+                                break;
                             }
                         }
 
