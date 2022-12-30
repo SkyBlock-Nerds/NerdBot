@@ -66,12 +66,6 @@ public class ItemGenCommand extends ApplicationCommand {
         assert parsedDescription != null;
         int heightEstimate = ((4 + parsedDescription.size()) * 20);
 
-        StringBuilder temp = new StringBuilder();
-        for(String string : parsedDescription) {
-            temp.append(string).append("\n");
-        }
-        event.getHook().sendMessage(temp.toString()).queue();
-
         //Let's draw our image
         BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
