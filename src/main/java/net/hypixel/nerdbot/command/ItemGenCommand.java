@@ -132,6 +132,21 @@ public class ItemGenCommand extends ApplicationCommand {
                         colorStartIndex += 3 + foundColor.length(); //remove the color code
                     }
                 }
+                else if (!minecraftFont.canDisplay(line.charAt(colorStartIndex))) {
+                    //We need to draw this character special, so let's get rid of our old word.
+                    g2d.drawString(subword.toString(), locationX, locationY);
+                    locationX += minecraftFont.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
+                    subword.setLength(0);
+
+                    //Let's try to render the character in a normal font, and then return to the minecraft font.
+                    Font tnr = new Font("SansSerif", Font.PLAIN, 20);
+                    g2d.setFont(tnr);
+                    subword.append(line.charAt(colorStartIndex));
+                    g2d.drawString(subword.toString(), locationX, locationY);
+                    locationX += tnr.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
+                    subword.setLength(0);
+                    g2d.setFont(minecraftFont);
+                }
                 else { //We do this to prevent monospace bullshit
                     subword.append(line.charAt(colorStartIndex));
                 }
