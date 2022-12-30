@@ -97,7 +97,8 @@ public class ItemGenCommand extends ApplicationCommand {
         locationY += 20;
         g2d.setColor(MCColor.GRAY.getColor());
 
-        for(String line : parsedDescription) {
+        //Go through our ArrayList, print each string on a new line
+        for (String line : parsedDescription) {
             locationX = 10;
 
             //Let's iterate through each character in our line, looking for colors
@@ -151,24 +152,19 @@ public class ItemGenCommand extends ApplicationCommand {
         File imageFile = File.createTempFile("image", ".png");
         ImageIO.write(image, "png", imageFile);
         event.getHook().sendFiles(FileUpload.fromData(imageFile)).queue();
-
-        //todo: remove
-        StringBuilder tempsend = new StringBuilder("");
-        for (String string : Objects.requireNonNull(parseDescription(description, event))) {
-            tempsend.append(string).append("\n");
-        }
-        event.getHook().sendMessage(tempsend.toString()).queue();
     }
 
     @Nullable
     private ArrayList<String> parseDescription(String description, GuildSlashEvent event) {
-        ArrayList<String> parsed = new ArrayList<String>(); //let's just say there's a hypothetical 30 line cap on strings
+        ArrayList<String> parsed = new ArrayList<>();
         MCColor[] colors = MCColor.values();
 
         StringBuilder currString = new StringBuilder("");
         int lineLength = 0; //where we are in curr string
         int charIndex = 0;  //where we are in description
-        int breakLoopCount = 0;
+        int breakLoopCount = 0; //break if we are hanging due to a runtime error
+
+        //Go through the entire description, break it apart to find into an arraylist for rendering
         while(description.length() > charIndex) {
             //Make sure we're not looping infinitely and just hanging the thread
             breakLoopCount++;
@@ -223,7 +219,6 @@ public class ItemGenCommand extends ApplicationCommand {
                             if (getColor.equalsIgnoreCase(color.name())) {
                                 //We've found a valid color but we're not going to action it here- we do that later
                                 foundColor = true;
-                                //lineLength -= 4 + getColor.length();
                                 currString.append("%%").append(color).append("%%");
                                 break;
                             }
@@ -250,7 +245,6 @@ public class ItemGenCommand extends ApplicationCommand {
 
                 //Newline parsing
                 if (description.charAt(charIndex) == '\\' && description.charAt(charIndex + 1) == 'n') {
-                    System.out.println("Made a new line due to a newline character!");
                     parsed.add(currString.toString());
                     currString.setLength(0);
                     lineLength = 0;
@@ -276,7 +270,6 @@ public class ItemGenCommand extends ApplicationCommand {
 
                     if (newLine) {
                         //If we get here, we need to be at a new line for the current word to be pasted
-                        System.out.println("Made a new line due to softwrapping!");
                         parsed.add(currString.toString());
                         currString.setLength(0);
                         lineLength = 0;
@@ -286,7 +279,6 @@ public class ItemGenCommand extends ApplicationCommand {
 
                 //EOL Parsing
                 if (lineLength > 35) {
-                    System.out.println("Made a new line due to the EOL check!");
                     parsed.add(currString.toString());
                     currString.setLength(0);
                     lineLength = 0;
@@ -324,13 +316,15 @@ public class ItemGenCommand extends ApplicationCommand {
                 findNextIndex++;
             }
 
+            //We're not at EOL yet, so let's write what we've got so far
             String subWriteString = description.substring(charIndex, charIndex + findNextIndex);
-
-            currString.append(subWriteString).append(spaceBreak ? " " : "");
+            currString.append(subWriteString).append(spaceBreak ? " " : ""); //if we need a space, put it in
 
             lineLength += findNextIndex;
             charIndex += findNextIndex;
         }
+
+        //Make sure to save the last word written
         parsed.add(currString.toString());
 
         return parsed;
