@@ -66,7 +66,7 @@ public class ItemGenCommand extends ApplicationCommand {
         }
 
         //Let's draw our image, parse our description
-        int heightEstimate = ((4 + parsedDescription.size()) * 20);
+        int heightEstimate = ((4 + parsedDescription.size()) * 23);
         BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
 
@@ -99,7 +99,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
         g2d.setColor(itemRarity.getRarityColor());
         g2d.drawString(name, locationX, locationY);
-        locationY += 20;
+        locationY += 23;
         g2d.setColor(MCColor.GRAY.getColor());
 
         //Go through our ArrayList, print each string on a new line
@@ -169,7 +169,7 @@ public class ItemGenCommand extends ApplicationCommand {
             }
 
             g2d.drawString(subword.toString(), locationX, locationY); //draw the last word, even if it's empty
-            locationY += 20;
+            locationY += 23;
         }
 
         locationY += 25;
@@ -285,8 +285,10 @@ public class ItemGenCommand extends ApplicationCommand {
                         for (Stats stat : Stats.values()) {
                             if (getSpecialString.equalsIgnoreCase(stat.name())) {
                                 foundColor = true;
-                                currString.append("%%").append(stat.getSecondaryColor()).append("%%");
-                                currString.append(specialSubString).append(" ");
+                                if (specialSubStringFlag) {
+                                    currString.append("%%").append(stat.getSecondaryColor()).append("%%");
+                                    currString.append(specialSubString).append(" ");
+                                }
                                 currString.append("%%").append(stat.getColor()).append("%%");
                                 currString.append(stat.getId());
                                 currString.append("%%GRAY%% ");
@@ -324,6 +326,20 @@ public class ItemGenCommand extends ApplicationCommand {
                     }
                     noColorFlag = true;
                     //if we can't find the endCharIndex, we just move on here and set a flag
+                }
+
+                //Shorthand Color Parsing
+                if (description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
+                    for(MCColor color : colors) {
+                        if (color.getColorCode() == description.charAt(charIndex + 1)) {
+                            currString.append("%%").append(color).append("%%");
+                            break;
+                        }
+                    }
+                    if ('l' == description.charAt(charIndex + 1)) {
+                        currString.append("%%BOLD%%");
+                    }
+                    charIndex += 2;
                 }
 
                 //Newline parsing
@@ -400,6 +416,10 @@ public class ItemGenCommand extends ApplicationCommand {
                 }
 
                 if (description.charAt(i) == '\\' && description.charAt(i + 1) == 'n') {
+                    break;
+                }
+
+                if (description.charAt(i) == '&' && description.charAt(i + 1) != ' ') {
                     break;
                 }
 

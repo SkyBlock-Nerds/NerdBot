@@ -21,7 +21,14 @@ public enum Stats {
     MINING_FORTUNE("☘ Mining Fortune", MCColor.GOLD, null),
     FARMING_FORTUNE("☘ Farming Fortune", MCColor.GOLD, null),
     FORAGING_FORTUNE("☘ Foraging Fortune", MCColor.GOLD, null),
-    SOULFLOW("⸎ Soulflow", MCColor.DARK_AQUA, null);
+    SOULFLOW("⸎ Soulflow", MCColor.DARK_AQUA, null),
+    GEM_RUBY("%%DARK_GRAY%%[%%red%%❤%%DARK_GRAY%%]", MCColor.DARK_GRAY, null),
+    GEM_AMETHYST("%%DARK_GRAY%%[%%dark_purple%%❈%%DARK_GRAY%%]", MCColor.DARK_GRAY, null),
+    GEM_SAPPHIRE("%%DARK_GRAY%%[%%aqua%%✎%%DARK_GRAY%%]", MCColor.DARK_GRAY, null),
+    GEM_JASPER("%%DARK_GRAY%%[%%light_purple%%❁%%DARK_GRAY%%]", MCColor.DARK_GRAY, null),
+    GEM_JADE("%%DARK_GRAY%%[%%green%%☘%%DARK_GRAY%%]", MCColor.DARK_GRAY, null),
+    GEM_AMBER("%%DARK_GRAY%%[%%gold%%⸕%%DARK_GRAY%%]", MCColor.DARK_GRAY, null),
+    GEM_TOPAZ("%%DARK_GRAY%%[%%yellow%%✧%%DARK_GRAY%%]", MCColor.DARK_GRAY, null);
 
     private final String stat;
     private final MCColor color;
