@@ -66,7 +66,7 @@ public class ItemGenCommand extends ApplicationCommand {
         }
 
         //Let's draw our image, parse our description
-        int heightEstimate = ((4 + parsedDescription.size()) * 23);
+        int heightEstimate = ((4 + parsedDescription.size()) * 23) - 5;
         BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
 
