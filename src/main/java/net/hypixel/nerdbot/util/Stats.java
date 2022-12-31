@@ -28,7 +28,8 @@ public enum Stats {
     GEM_JASPER("%%DARK_GRAY%%[%%light_purple%%❁%%DARK_GRAY%%]", MCColor.DARK_GRAY, null),
     GEM_JADE("%%DARK_GRAY%%[%%green%%☘%%DARK_GRAY%%]", MCColor.DARK_GRAY, null),
     GEM_AMBER("%%DARK_GRAY%%[%%gold%%⸕%%DARK_GRAY%%]", MCColor.DARK_GRAY, null),
-    GEM_TOPAZ("%%DARK_GRAY%%[%%yellow%%✧%%DARK_GRAY%%]", MCColor.DARK_GRAY, null);
+    GEM_TOPAZ("%%DARK_GRAY%%[%%yellow%%✧%%DARK_GRAY%%]", MCColor.DARK_GRAY, null),
+    REQUIRE("❣ Requires", MCColor.RED, null);
 
     private final String stat;
     private final MCColor color;

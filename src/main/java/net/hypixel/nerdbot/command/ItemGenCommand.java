@@ -227,14 +227,6 @@ public class ItemGenCommand extends ApplicationCommand {
                             break;
                         }
 
-                        //Very annoying corner case for when you want to have a percent as a stat
-                        if (specialSubStringFlag && description.substring(i, i+3).equalsIgnoreCase("%%%")
-                                && !description.substring(i, i+4).equalsIgnoreCase("%%%%")) {
-                            endCharIndex = specialSubStringIndex;
-                            specialSubString.append("%");
-                            break;
-                        }
-
                         if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
                             if (specialSubStringFlag) {
                                 endCharIndex = specialSubStringIndex;
