@@ -71,11 +71,11 @@ public class ItemGenCommand extends ApplicationCommand {
         Graphics2D g2d = image.createGraphics();
 
           //Debug for printing out exactly what comes from the parser
-        StringBuilder temp = new StringBuilder();
-        for(String string : parsedDescription) {
-            temp.append(string).append("\n");
-        }
-        event.getHook().sendMessage(temp.toString()).queue();
+//        StringBuilder temp = new StringBuilder();
+//        for(String string : parsedDescription) {
+//            temp.append(string).append("\n");
+//        }
+//        event.getHook().sendMessage(temp.toString()).queue();
 
         //Let's init our fonts
         Font minecraftFont;
@@ -129,7 +129,6 @@ public class ItemGenCommand extends ApplicationCommand {
 
                         String foundColor = line.substring(colorStartIndex + 2, colorEndIndex + 1);
 
-                        System.out.println(foundColor);
                         if (foundColor.equalsIgnoreCase("bold")) {
                             g2d.drawString(subword.toString(), locationX, locationY);
                             locationX += minecraftFont.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
