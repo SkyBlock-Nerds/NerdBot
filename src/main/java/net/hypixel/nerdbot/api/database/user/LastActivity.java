@@ -12,6 +12,7 @@ public class LastActivity {
     private long lastSuggestionDate = -1L;
     private long lastAlphaSuggestionDate = -1L;
     private long lastAlphaActivity = -1L;
+    private long lastItemGenUsage = -1L;
 
     public LastActivity() {
     }
