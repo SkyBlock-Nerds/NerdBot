@@ -69,6 +69,8 @@ public class ItemGenCommand extends ApplicationCommand {
         int heightEstimate = ((4 + parsedDescription.size()) * 23) - 5;
         BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
+        g2d.setColor(new Color(41, 5, 96));
+        g2d.drawRect(1, 1, 498, heightEstimate - 2);
 
           //Debug for printing out exactly what comes from the parser
 //        StringBuilder temp = new StringBuilder();
@@ -97,8 +99,12 @@ public class ItemGenCommand extends ApplicationCommand {
         int locationY = 25;
         int locationX = 10;
 
+        g2d.setColor(new Color(42, 42, 0));
+        g2d.drawString(name, locationX + 2, locationY + 2);
+
         g2d.setColor(itemRarity.getRarityColor());
         g2d.drawString(name, locationX, locationY);
+
         locationY += 23;
         g2d.setColor(MCColor.GRAY.getColor());
 
@@ -436,4 +442,5 @@ public class ItemGenCommand extends ApplicationCommand {
 
         return parsed;
     }
+
 }
