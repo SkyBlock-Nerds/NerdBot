@@ -71,11 +71,11 @@ public class ItemGenCommand extends ApplicationCommand {
         Graphics2D g2d = image.createGraphics();
 
           //Debug for printing out exactly what comes from the parser
-//        StringBuilder temp = new StringBuilder();
-//        for(String string : parsedDescription) {
-//            temp.append(string).append("\n");
-//        }
-//        event.getHook().sendMessage(temp.toString()).queue();
+        StringBuilder temp = new StringBuilder();
+        for(String string : parsedDescription) {
+            temp.append(string).append("\n");
+        }
+        event.getHook().sendMessage(temp.toString()).queue();
 
         //Let's init our fonts
         Font minecraftFont;
@@ -103,6 +103,7 @@ public class ItemGenCommand extends ApplicationCommand {
         g2d.setColor(MCColor.GRAY.getColor());
 
         //Go through our ArrayList, print each string on a new line
+        boolean boldFlag = false;
         for (String line : parsedDescription) {
             locationX = 10;
 
@@ -127,13 +128,32 @@ public class ItemGenCommand extends ApplicationCommand {
                         subword.setLength(0);
 
                         String foundColor = line.substring(colorStartIndex + 2, colorEndIndex + 1);
-                        Arrays.stream(MCColor.values()).filter(color -> foundColor.equalsIgnoreCase(color.name())).findFirst().ifPresent(color -> g2d.setColor(color.getColor()));
-                        colorStartIndex += 3 + foundColor.length(); //remove the color code
+
+                        System.out.println(foundColor);
+                        if (foundColor.equalsIgnoreCase("bold")) {
+                            g2d.drawString(subword.toString(), locationX, locationY);
+                            locationX += minecraftFont.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
+                            subword.setLength(0);
+                            colorStartIndex += 3 + foundColor.length(); //remove the color code
+                            g2d.setFont(minecraftBold);
+                            boldFlag = true;
+                        }
+                        else {
+                            Arrays.stream(MCColor.values()).filter(color -> foundColor.equalsIgnoreCase(color.name())).findFirst().ifPresent(color -> g2d.setColor(color.getColor()));
+                            colorStartIndex += 3 + foundColor.length(); //remove the color code
+                            g2d.setFont(minecraftFont);
+                            boldFlag = false;
+                        }
                     }
                 } else if (!minecraftFont.canDisplay(line.charAt(colorStartIndex))) {
                     //We need to draw this character special, so let's get rid of our old word.
                     g2d.drawString(subword.toString(), locationX, locationY);
-                    locationX += minecraftFont.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
+                    if (boldFlag) {
+                        locationX += minecraftBold.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
+                    }
+                    else {
+                        locationX += minecraftFont.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
+                    }
                     subword.setLength(0);
 
                     //Let's try to render the character in a normal font, and then return to the minecraft font.
@@ -143,7 +163,7 @@ public class ItemGenCommand extends ApplicationCommand {
                     g2d.drawString(subword.toString(), locationX, locationY);
                     locationX += tnr.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
                     subword.setLength(0);
-                    g2d.setFont(minecraftFont);
+                    g2d.setFont(boldFlag ? minecraftBold : minecraftFont);
                 } else { //We do this to prevent monospace bullshit
                     subword.append(line.charAt(colorStartIndex));
                 }
@@ -276,12 +296,18 @@ public class ItemGenCommand extends ApplicationCommand {
                             }
                         }
 
+                        if (getSpecialString.equalsIgnoreCase("bold")) {
+                            currString.append("%%BOLD%%");
+                            foundColor = true;
+                        }
+
                         if (!foundColor) {
                             StringBuilder failed = new StringBuilder("Hi! We found an invalid color or stat `" + getSpecialString + "` which cannot be used here. " +
                                     "Valid colors:\n");
                             for (MCColor color : colors) {
                                 failed.append(color).append(" ");
                             }
+                            failed.append("BOLD");
                             failed.append("\nValid stats:\n");
                             for (Stats stat : Stats.values()) {
                                 failed.append(stat).append(" ");
