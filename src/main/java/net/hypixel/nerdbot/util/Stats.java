@@ -41,16 +41,24 @@ public enum Stats {
         this.subColor = subColor;
     }
 
-    public String getId() {return stat;}
-    public MCColor getColor() {return color;}
+    public String getId() {
+        return stat;
+    }
 
-    //In some rare cases, stats can have two colors, one for the number and one for the stat. This solves that
-    //problem.
+    public MCColor getColor() {
+        return color;
+    }
+
+    /**
+     * In some cases, stats can have multiple colors.
+     * One for the number and another for the stat
+     *
+     * @return Secondary {@link MCColor} of the stat
+     */
     public MCColor getSecondaryColor() {
         if (subColor != null) {
             return subColor;
-        }
-        else {
+        } else {
             return color;
         }
     }
