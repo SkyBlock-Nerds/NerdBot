@@ -70,7 +70,8 @@ public class ItemGenCommand extends ApplicationCommand {
         BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
         g2d.setColor(new Color(41, 5, 96));
-        g2d.drawRect(1, 1, 498, heightEstimate - 2);
+        g2d.drawRect(1, 1, 497, heightEstimate - 3);
+        g2d.drawRect(2, 2, 497, heightEstimate - 3);
 
           //Debug for printing out exactly what comes from the parser
 //        StringBuilder temp = new StringBuilder();
