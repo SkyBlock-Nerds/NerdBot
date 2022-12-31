@@ -25,7 +25,7 @@ public enum Rarity {
         return rarity;
     }
 
-    public Color getRarityColor() {
-        return color.getColor();
+    public MCColor getRarityColor() {
+        return color;
     }
 }

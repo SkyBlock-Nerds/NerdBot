@@ -99,10 +99,10 @@ public class ItemGenCommand extends ApplicationCommand {
         int locationY = 25;
         int locationX = 10;
 
-        g2d.setColor(new Color(42, 42, 0));
+        g2d.setColor(itemRarity.getRarityColor().getBackgroundColor());
         g2d.drawString(name, locationX + 2, locationY + 2);
 
-        g2d.setColor(itemRarity.getRarityColor());
+        g2d.setColor(itemRarity.getRarityColor().getColor());
         g2d.drawString(name, locationX, locationY);
 
         locationY += 23;
@@ -110,6 +110,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
         //Go through our ArrayList, print each string on a new line
         boolean boldFlag = false;
+        MCColor currentColor = MCColor.GRAY;
         for (String line : parsedDescription) {
             locationX = 10;
 
@@ -129,14 +130,23 @@ public class ItemGenCommand extends ApplicationCommand {
 
                     if (colorEndIndex != -1) {
                         //We've previously verified that this is a good color, so let's trust it
+                        g2d.setColor(currentColor.getBackgroundColor());
+                        g2d.drawString(subword.toString(), locationX + 2, locationY + 2);
+                        g2d.setColor(currentColor.getColor());
                         g2d.drawString(subword.toString(), locationX, locationY);
+
                         locationX += minecraftFont.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
                         subword.setLength(0);
 
                         String foundColor = line.substring(colorStartIndex + 2, colorEndIndex + 1);
 
                         if (foundColor.equalsIgnoreCase("bold")) {
+                            g2d.setColor(currentColor.getBackgroundColor());
+                            g2d.drawString(subword.toString(), locationX + 2, locationY + 2);
+
+                            g2d.setColor(currentColor.getColor());
                             g2d.drawString(subword.toString(), locationX, locationY);
+
                             locationX += minecraftFont.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
                             subword.setLength(0);
                             colorStartIndex += 3 + foundColor.length(); //remove the color code
@@ -144,7 +154,13 @@ public class ItemGenCommand extends ApplicationCommand {
                             boldFlag = true;
                         }
                         else {
-                            Arrays.stream(MCColor.values()).filter(color -> foundColor.equalsIgnoreCase(color.name())).findFirst().ifPresent(color -> g2d.setColor(color.getColor()));
+                            //Arrays.stream(MCColor.values()).filter(color -> foundColor.equalsIgnoreCase(color.name())).findFirst().ifPresent(color -> g2d.setColor(color.getColor()));
+                            for (MCColor color : MCColor.values()) {
+                                if (foundColor.equalsIgnoreCase(color.toString())) {
+                                    currentColor = color;
+                                }
+                            }
+                            g2d.setColor(currentColor.getColor());
                             colorStartIndex += 3 + foundColor.length(); //remove the color code
                             g2d.setFont(minecraftFont);
                             boldFlag = false;
@@ -152,7 +168,11 @@ public class ItemGenCommand extends ApplicationCommand {
                     }
                 } else if (!minecraftFont.canDisplay(line.charAt(colorStartIndex))) {
                     //We need to draw this character special, so let's get rid of our old word.
+                    g2d.setColor(currentColor.getBackgroundColor());
+                    g2d.drawString(subword.toString(), locationX + 2, locationY + 2);
+                    g2d.setColor(currentColor.getColor());
                     g2d.drawString(subword.toString(), locationX, locationY);
+
                     if (boldFlag) {
                         locationX += minecraftBold.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
                     }
@@ -165,7 +185,13 @@ public class ItemGenCommand extends ApplicationCommand {
                     Font tnr = new Font("SansSerif", Font.PLAIN, 20);
                     g2d.setFont(tnr);
                     subword.append(line.charAt(colorStartIndex));
+
+                    g2d.setColor(currentColor.getBackgroundColor());
+                    g2d.drawString(subword.toString(), locationX + 2, locationY + 2);
+
+                    g2d.setColor(currentColor.getColor());
                     g2d.drawString(subword.toString(), locationX, locationY);
+
                     locationX += tnr.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
                     subword.setLength(0);
                     g2d.setFont(boldFlag ? minecraftBold : minecraftFont);
@@ -174,6 +200,9 @@ public class ItemGenCommand extends ApplicationCommand {
                 }
             }
 
+            g2d.setColor(currentColor.getBackgroundColor());
+            g2d.drawString(subword.toString(), locationX + 2, locationY + 2);
+            g2d.setColor(currentColor.getColor());
             g2d.drawString(subword.toString(), locationX, locationY); //draw the last word, even if it's empty
             locationY += 23;
         }
@@ -181,8 +210,13 @@ public class ItemGenCommand extends ApplicationCommand {
         locationY += 25;
         locationX = 10;
         g2d.setFont(minecraftBold);
-        g2d.setColor(itemRarity.getRarityColor());
+
+        g2d.setColor(itemRarity.getRarityColor().getBackgroundColor());
+        g2d.drawString(itemRarity.getId(), locationX + 2, locationY + 2);
+
+        g2d.setColor(itemRarity.getRarityColor().getColor());
         g2d.drawString(itemRarity.getId(), locationX, locationY);
+
         g2d.dispose();
 
         File imageFile = File.createTempFile("image", ".png");
@@ -442,5 +476,4 @@ public class ItemGenCommand extends ApplicationCommand {
 
         return parsed;
     }
-
 }
