@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
+import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
@@ -23,9 +24,7 @@ import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.util.*;
 
 import javax.security.auth.login.LoginException;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
@@ -38,6 +37,7 @@ public class NerdBot implements Bot {
             new UserGrabberFeature()
     );
 
+    private final Database database = new Database(System.getProperty("mongodb.uri"), "skyblock_nerds");
     private JDA jda;
     private BotConfig config;
     private long startTime;
@@ -47,13 +47,21 @@ public class NerdBot implements Bot {
 
     @Override
     public void create(String[] args) throws LoginException {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            e.printStackTrace();
+            e.printStackTrace(pw);
+            ChannelManager.getLogChannel().sendMessage(jda.getRoleById(config.getBotManagerRoleId()).getAsMention() + "\n\n" + sw).queue();
+        });
+
         loadConfig();
 
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
                 .setEventManager(new AnnotatedEventManager())
                 .addEventListeners(
                         new ModLogListener(),
-                        new MessageListener(),
+                        new ChannelGroupMessageListener(),
                         new FeatureEventListener(),
                         new ShutdownListener(),
                         new ActivityListener(),
@@ -130,13 +138,20 @@ public class NerdBot implements Bot {
 
     @Override
     public void onEnd() {
-        for (BotFeature feature : FEATURES) feature.onEnd();
-        Database.getInstance().disconnect();
+        for (BotFeature feature : FEATURES) {
+            feature.onEnd();
+        }
+        database.disconnect();
     }
 
     @Override
     public BotConfig getConfig() {
         return config;
+    }
+
+    @Override
+    public Database getDatabase() {
+        return database;
     }
 
     @Override
@@ -154,11 +169,14 @@ public class NerdBot implements Bot {
         String fileName;
         if (System.getProperty("bot.config") != null) {
             fileName = System.getProperty("bot.config");
+            log.info("Found config property: " + fileName);
         } else {
+            log.info("Config property not defined, going to default path!");
             fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
         }
 
         try {
+            log.info("Loading config file from '" + fileName + "'");
             File file = new File(fileName);
             config = (BotConfig) Util.jsonToObject(file, BotConfig.class);
 

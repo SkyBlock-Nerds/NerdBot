@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.api.bot;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 
@@ -19,6 +20,8 @@ public interface Bot {
     void loadConfig();
 
     BotConfig getConfig();
+
+    Database getDatabase();
 
     void onStart();
 
