@@ -1,6 +1,4 @@
-package net.hypixel.nerdbot.util;
-
-import java.awt.*;
+package net.hypixel.nerdbot.util.skyblock;
 
 public enum Rarity {
     COMMON("COMMON", MCColor.WHITE),

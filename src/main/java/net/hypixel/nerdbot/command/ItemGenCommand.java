@@ -9,9 +9,10 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
-import net.hypixel.nerdbot.util.MCColor;
-import net.hypixel.nerdbot.util.Rarity;
-import net.hypixel.nerdbot.util.Stat;
+import net.hypixel.nerdbot.util.skyblock.Gemstone;
+import net.hypixel.nerdbot.util.skyblock.MCColor;
+import net.hypixel.nerdbot.util.skyblock.Rarity;
+import net.hypixel.nerdbot.util.skyblock.Stat;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
@@ -306,10 +307,9 @@ public class ItemGenCommand extends ApplicationCommand {
                         charIndex += 2; //move away from color code
                         String getSpecialString = description.substring(charIndex, endCharIndex);
 
-                        boolean foundColor = false;
+                        boolean foundColor = false; //True if we find a valid color, stat, or gemstone.
                         for (MCColor color : colors) {
                             if (getSpecialString.equalsIgnoreCase(color.name())) {
-                                //We've found a valid color but we're not going to action it here- we do that later
                                 foundColor = true;
                                 currString.append("%%").append(color).append("%%");
                                 break;
@@ -317,6 +317,7 @@ public class ItemGenCommand extends ApplicationCommand {
                         }
 
                         for (Stat stat : Stat.values()) {
+                            if (foundColor) { break; } //Early break if we found a color earlier
                             if (getSpecialString.equalsIgnoreCase(stat.name())) {
                                 foundColor = true;
                                 if (specialSubStringFlag) {
@@ -331,13 +332,22 @@ public class ItemGenCommand extends ApplicationCommand {
                             }
                         }
 
+                        for (Gemstone gemstone : Gemstone.values()) {
+                            if (foundColor) { break; } //Early break if we found a color or stat earlier
+                            if (getSpecialString.equalsIgnoreCase(gemstone.name())) {
+                                foundColor = true;
+                                currString.append("%%DARK_GRAY%%").append(gemstone.getId()).append("%%GRAY%% ");
+                                lineLength += 4;
+                            }
+                        }
+
                         if (getSpecialString.equalsIgnoreCase("bold")) {
                             currString.append("%%BOLD%%");
                             foundColor = true;
                         }
 
                         if (!foundColor) {
-                            StringBuilder failed = new StringBuilder("Hi! We found an invalid color or stat `" + getSpecialString + "` which cannot be used here. " +
+                            StringBuilder failed = new StringBuilder("Hi! We found an invalid code `" + getSpecialString + "` which cannot be used here. " +
                                     "Valid colors:\n");
                             for (MCColor color : colors) {
                                 failed.append(color).append(" ");
@@ -346,6 +356,10 @@ public class ItemGenCommand extends ApplicationCommand {
                             failed.append("\nValid Stats:\n");
                             for (Stat stat : Stat.values()) {
                                 failed.append(stat).append(" ");
+                            }
+                            failed.append("\nValid Gems:\n");
+                            for (Gemstone gemstone : Gemstone.values()) {
+                                failed.append(gemstone).append(" ");
                             }
                             event.getHook().sendMessage(failed.toString()).queue();
                             return null;

@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util;
+package net.hypixel.nerdbot.util.skyblock;
 
 import org.checkerframework.checker.units.qual.C;
 
