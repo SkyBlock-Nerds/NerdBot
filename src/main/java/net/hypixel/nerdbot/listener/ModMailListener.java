@@ -118,6 +118,9 @@ public class ModMailListener {
             data.setContent(data.getContent().substring(0, 1997) + "...");
         }
 
+        // Stuffy: Remove any mentions of users, roles, or @everyone/@here
+        data.setContent(data.getContent().replaceAll("@(everyone|here|&\\d+)", "@\u200b$1"));
+
         if (!message.getAttachments().isEmpty()) {
             List<FileUpload> files = new ArrayList<>();
             for (Message.Attachment attachment : message.getAttachments()) {
