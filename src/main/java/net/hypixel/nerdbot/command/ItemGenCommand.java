@@ -11,7 +11,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.util.MCColor;
 import net.hypixel.nerdbot.util.Rarity;
-import net.hypixel.nerdbot.util.Stats;
+import net.hypixel.nerdbot.util.Stat;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
@@ -60,13 +60,15 @@ public class ItemGenCommand extends ApplicationCommand {
 
         Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
         ArrayList<String> parsedDescription = parseDescription(description, event);
+
         if (parsedDescription == null || parsedDescription.isEmpty()) {
             event.getHook().sendMessage("Please enter a valid description for the item!").queue();
             return;
         }
 
+        parsedDescription.add(0, name);
         //Let's draw our image, parse our description
-        int heightEstimate = ((4 + parsedDescription.size()) * 23) - 5;
+        int heightEstimate = ((3 + parsedDescription.size()) * 23) - 5;
         BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
         g2d.setColor(new Color(41, 5, 96));
@@ -100,18 +102,11 @@ public class ItemGenCommand extends ApplicationCommand {
         int locationY = 25;
         int locationX = 10;
 
-        g2d.setColor(itemRarity.getRarityColor().getBackgroundColor());
-        g2d.drawString(name, locationX + 2, locationY + 2);
-
-        g2d.setColor(itemRarity.getRarityColor().getColor());
-        g2d.drawString(name, locationX, locationY);
-
-        locationY += 23;
-        g2d.setColor(MCColor.GRAY.getColor());
-
         //Go through our ArrayList, print each string on a new line
-        boolean boldFlag = false;
-        MCColor currentColor = MCColor.GRAY;
+        boolean boldFlag = false; //True if the text is bold
+        boolean titleFlag = true; //True if we're printing the title
+        MCColor currentColor = itemRarity.getRarityColor(); //Start by printing the title in its color
+
         for (String line : parsedDescription) {
             locationX = 10;
 
@@ -206,6 +201,12 @@ public class ItemGenCommand extends ApplicationCommand {
             g2d.setColor(currentColor.getColor());
             g2d.drawString(subword.toString(), locationX, locationY); //draw the last word, even if it's empty
             locationY += 23;
+
+            //Reset to normal text color when we're done printing the title
+            if (titleFlag) {
+                titleFlag = false;
+                currentColor = MCColor.GRAY;
+            }
         }
 
         locationY += 25;
@@ -315,7 +316,7 @@ public class ItemGenCommand extends ApplicationCommand {
                             }
                         }
 
-                        for (Stats stat : Stats.values()) {
+                        for (Stat stat : Stat.values()) {
                             if (getSpecialString.equalsIgnoreCase(stat.name())) {
                                 foundColor = true;
                                 if (specialSubStringFlag) {
@@ -342,8 +343,8 @@ public class ItemGenCommand extends ApplicationCommand {
                                 failed.append(color).append(" ");
                             }
                             failed.append("BOLD");
-                            failed.append("\nValid stats:\n");
-                            for (Stats stat : Stats.values()) {
+                            failed.append("\nValid Stats:\n");
+                            for (Stat stat : Stat.values()) {
                                 failed.append(stat).append(" ");
                             }
                             event.getHook().sendMessage(failed.toString()).queue();

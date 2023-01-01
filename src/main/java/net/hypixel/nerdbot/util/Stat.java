@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.util;
 
-public enum Stats {
+public enum Stat {
     STRENGTH("❁ Strength", MCColor.RED, null),
     DAMAGE("❁ Damage", MCColor.RED, null),
     HEALTH("❤ Health", MCColor.RED, MCColor.GREEN),
@@ -36,7 +36,7 @@ public enum Stats {
     //Some stats have special colors which are used in conjunction to the normal color.
     private final MCColor subColor;
 
-    Stats(String stat, MCColor color, MCColor subColor) {
+    Stat(String stat, MCColor color, MCColor subColor) {
         this.stat = stat;
         this.color = color;
         this.subColor = subColor;
