@@ -316,28 +316,32 @@ public class ItemGenCommand extends ApplicationCommand {
                             }
                         }
 
-                        for (Stat stat : Stat.values()) {
-                            if (foundColor) { break; } //Early break if we found a color earlier
-                            if (getSpecialString.equalsIgnoreCase(stat.name())) {
-                                foundColor = true;
-                                if (specialSubStringFlag) {
-                                    currString.append("%%").append(stat.getSecondaryColor()).append("%%");
-                                    currString.append(specialSubString).append(" ");
+                        //redundant check so we don't call for stats without needing them
+                        if (!foundColor) {
+                            for (Stat stat : Stat.values()) {
+                                if (getSpecialString.equalsIgnoreCase(stat.name())) {
+                                    foundColor = true;
+                                    if (specialSubStringFlag) {
+                                        currString.append("%%").append(stat.getSecondaryColor()).append("%%");
+                                        currString.append(specialSubString).append(" ");
+                                    }
+                                    currString.append("%%").append(stat.getColor()).append("%%");
+                                    currString.append(stat.getId());
+                                    currString.append("%%GRAY%% ");
+                                    lineLength += stat.getId().length();
+                                    break;
                                 }
-                                currString.append("%%").append(stat.getColor()).append("%%");
-                                currString.append(stat.getId());
-                                currString.append("%%GRAY%% ");
-                                lineLength += stat.getId().length();
-                                break;
                             }
                         }
 
-                        for (Gemstone gemstone : Gemstone.values()) {
-                            if (foundColor) { break; } //Early break if we found a color or stat earlier
-                            if (getSpecialString.equalsIgnoreCase(gemstone.name())) {
-                                foundColor = true;
-                                currString.append("%%DARK_GRAY%%").append(gemstone.getId()).append("%%GRAY%% ");
-                                lineLength += 4;
+                        //redundant check so we don't call for gems without needing them
+                        if (!foundColor) {
+                            for (Gemstone gemstone : Gemstone.values()) {
+                                if (getSpecialString.equalsIgnoreCase(gemstone.name())) {
+                                    foundColor = true;
+                                    currString.append("%%DARK_GRAY%%").append(gemstone.getId()).append("%%GRAY%% ");
+                                    lineLength += 4;
+                                }
                             }
                         }
 
@@ -401,17 +405,17 @@ public class ItemGenCommand extends ApplicationCommand {
 
                 //Softwrap parsing
                 if (description.charAt(charIndex) == ' ') {
-                    boolean newLine = true;
                     charIndex++;
 
-                    int colorCheck = 36;
+                    int colorCheck = 36; //An extra buffer so we don't wrap colors
+                    boolean newLineFlag = true; //True if we need to make a newline to paste the next word
                     for (int i = charIndex; i < charIndex + (colorCheck - lineLength); i++) {
                         if (i + 1 > description.length()) {
-                            newLine = false;
+                            newLineFlag = false;
                             break;
                         }
                         if (description.charAt(i) == ' ') {
-                            newLine = false;
+                            newLineFlag = false;
                             break;
                         }
                         if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
@@ -427,8 +431,7 @@ public class ItemGenCommand extends ApplicationCommand {
                         }
                     }
 
-                    if (newLine) {
-                        //If we get here, we need to be at a new line for the current word to be pasted
+                    if (newLineFlag) {
                         parsed.add(currString.toString());
                         currString.setLength(0);
                         lineLength = 0;
