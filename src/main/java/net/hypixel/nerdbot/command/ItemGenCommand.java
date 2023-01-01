@@ -36,6 +36,12 @@ public class ItemGenCommand extends ApplicationCommand {
         String senderChannelId = event.getChannel().getId();
         String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
+        if (itemGenChannelId == null) {
+            log.error("The item gen channel is not properly set up in the config, and cannot create items.");
+            event.getHook().sendMessage("Hi! The config for the #item-gen channel is not ready yet. Try again later!").queue();
+            return;
+        }
+
         event.deferReply(false).queue();
 
         //make sure user is in correct channel

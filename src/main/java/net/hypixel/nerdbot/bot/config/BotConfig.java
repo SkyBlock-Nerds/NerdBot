@@ -34,6 +34,11 @@ public class BotConfig {
     private String suggestionForumId;
 
     /**
+     * The {@link TextChannel} ID for the itemgen channel
+     */
+    private String itemGenChannel;
+
+    /**
      * The minimum threshold of {@link MessageReaction reactions} needed for a suggestion to be considered greenlit
      * Default value is 15 {@link MessageReaction reactions}
      */

@@ -57,6 +57,10 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
                 Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
                 DiscordUser discordUser = Util.getOrAddUserToCache(database, firstPost.getAuthor().getId());
+                if (discordUser == null) {
+                    continue;
+                }
+
                 if (discordUser.getLastActivity().getLastSuggestionDate() < firstPost.getTimeCreated().toInstant().toEpochMilli()) {
                     discordUser.getLastActivity().setLastSuggestionDate(firstPost.getTimeCreated().toInstant().toEpochMilli());
                     log.info("Updating last suggestion time for " + firstPost.getAuthor().getName() + " to " + firstPost.getTimeCreated().toEpochSecond());

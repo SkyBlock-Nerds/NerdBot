@@ -46,6 +46,10 @@ public class ActivityListener {
         DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
         long time = System.currentTimeMillis();
 
+        if (discordUser == null) {
+            return;
+        }
+
         if (channel.getName().contains("alpha")) {
             discordUser.getLastActivity().setLastAlphaActivity(time);
             log.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
@@ -64,6 +68,9 @@ public class ActivityListener {
         }
 
         DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+        if (discordUser == null) {
+            return;
+        }
         discordUser.getLastActivity().setLastVoiceChannelJoinDate(System.currentTimeMillis());
         log.info("Updating last voice channel activity date for " + member.getEffectiveName() + " to " + System.currentTimeMillis());
     }

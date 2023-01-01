@@ -99,6 +99,10 @@ public class Util {
     }
 
     public static DiscordUser getOrAddUserToCache(Database database, String userId) {
+        if (!database.isConnected()) {
+            log.warn("Could not cache user because there is not a database connected!");
+            return null;
+        }
         DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", userId).first();
         if (discordUser == null) {
             discordUser = new DiscordUser(userId, new ArrayList<>(), new ArrayList<>(), new LastActivity());
