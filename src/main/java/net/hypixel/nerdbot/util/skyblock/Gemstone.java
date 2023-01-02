@@ -16,9 +16,8 @@ public enum Gemstone {
     GEM_UNIVERSAL("[❂]");
 
     private final String gemstone;
-    Gemstone(String gemstone) {
-        this.gemstone = gemstone;
-    }
+
+    Gemstone(String gemstone) { this.gemstone = gemstone; }
 
     public String getId() { return gemstone; }
 }
