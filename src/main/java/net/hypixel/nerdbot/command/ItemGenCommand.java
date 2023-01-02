@@ -19,7 +19,9 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -81,13 +83,18 @@ public class ItemGenCommand extends ApplicationCommand {
         Font minecraftFont;
         Font minecraftBold;
         try {
-            minecraftFont = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/minecraft.ttf")).deriveFont(16f);
-            minecraftBold = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/3_Minecraft-Bold.otf")).deriveFont(22f);
+            InputStream minecraftFontStream = ItemGenCommand.class.getResourceAsStream("/Minecraft/minecraft.ttf");
+            InputStream boldFontStream = ItemGenCommand.class.getResourceAsStream("/Minecraft/3_Minecraft-Bold.otf");
+            if (minecraftFontStream == null || boldFontStream == null) {
+                throw new NullPointerException();
+            }
+            minecraftFont = Font.createFont(Font.TRUETYPE_FONT, minecraftFontStream).deriveFont(16f);
+            minecraftBold = Font.createFont(Font.TRUETYPE_FONT, boldFontStream).deriveFont(22f);
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             ge.registerFont(minecraftFont);
             ge.registerFont(minecraftBold);
             g2d.setFont(minecraftFont);
-        } catch (IOException | FontFormatException e) {
+        } catch (IOException | FontFormatException | NullPointerException e) {
             e.printStackTrace();
             event.getHook().sendMessage("Something went wrong with creating the font. Try again later!").setEphemeral(true).queue();
             return;
