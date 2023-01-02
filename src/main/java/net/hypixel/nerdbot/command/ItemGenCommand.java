@@ -20,6 +20,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -82,8 +83,13 @@ public class ItemGenCommand extends ApplicationCommand {
         Font minecraftFont;
         Font minecraftBold;
         try {
-            minecraftFont = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/minecraft.ttf")).deriveFont(16f);
-            minecraftBold = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/3_Minecraft-Bold.otf")).deriveFont(22f);
+            InputStream normalFontStream = ItemGenCommand.class.getResourceAsStream("/Minecraft/minecraft.ttf");
+            InputStream boldFontStream = ItemGenCommand.class.getResourceAsStream("/Minecraft/3_Minecraft-Bold.otf");
+            if (normalFontStream == null || boldFontStream == null) {
+                throw new NullPointerException();
+            }
+            minecraftFont = Font.createFont(Font.TRUETYPE_FONT, normalFontStream).deriveFont(16f);
+            minecraftBold = Font.createFont(Font.TRUETYPE_FONT, boldFontStream).deriveFont(22f);
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             ge.registerFont(minecraftFont);
             ge.registerFont(minecraftBold);
