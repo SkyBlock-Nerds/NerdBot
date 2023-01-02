@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util;
+package net.hypixel.nerdbot.util.resolver;
 
 import com.freya02.botcommands.api.BContext;
 import com.freya02.botcommands.api.parameters.ParameterResolver;

@@ -22,6 +22,7 @@ import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.util.*;
+import net.hypixel.nerdbot.util.resolver.ForumChannelResolver;
 
 import javax.security.auth.login.LoginException;
 import java.io.*;

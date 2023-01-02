@@ -4,8 +4,11 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
+import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
@@ -19,11 +22,14 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Queue;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
@@ -32,13 +38,13 @@ public class ItemGenCommand extends ApplicationCommand {
     public void askForInfo(
             GuildSlashEvent event,
             @AppOption(description = "The name of the item") String name,
-            @AppOption(description = "The description of the item") String description,
-            @AppOption(description = "The rarity of the item") String rarity
+            @AppOption(description = "The rarity of the item", autocomplete = "rarities") String rarity,
+            @AppOption(description = "The description of the item") String description
     ) throws IOException {
         String senderChannelId = event.getChannel().getId();
         String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
-        event.deferReply().queue();
+        event.deferReply(true).queue();
 
         if (itemGenChannelId == null) {
             event.getHook().sendMessage("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
@@ -490,5 +496,12 @@ public class ItemGenCommand extends ApplicationCommand {
         parsed.add(currString.toString());
 
         return parsed;
+    }
+
+
+
+    @AutocompletionHandler(name = "rarities", mode = AutocompletionMode.CONTINUITY, showUserInput = false)
+    public Queue<String> listRarities(CommandAutoCompleteInteractionEvent event) {
+        return Stream.of(Rarity.values()).map(Enum::name).collect(Collectors.toCollection(ArrayDeque::new));
     }
 }
