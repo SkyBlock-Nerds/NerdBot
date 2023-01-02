@@ -88,7 +88,9 @@ public class Database implements ServerMonitorListener {
     }
 
     public void createCollection(String collectionName) {
-        if (database == null) { return; }
+        if (database == null) { 
+            return;
+        }
         database.createCollection(collectionName);
     }
 
