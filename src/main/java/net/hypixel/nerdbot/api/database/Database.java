@@ -1,15 +1,10 @@
 package net.hypixel.nerdbot.api.database;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.Scheduler;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.*;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.InsertOneResult;
@@ -18,243 +13,138 @@ import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
 import lombok.extern.log4j.Log4j2;
-import net.hypixel.nerdbot.api.channel.ChannelGroup;
-import net.hypixel.nerdbot.api.channel.ChannelManager;
-import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
-import net.hypixel.nerdbot.api.database.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.user.LastActivity;
-import net.hypixel.nerdbot.util.Environment;
-import net.hypixel.nerdbot.util.Users;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
+import org.bson.conversions.Bson;
 
-import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Log4j2
 public class Database implements ServerMonitorListener {
-
-    public static final Cache<String, DiscordUser> USER_CACHE = Caffeine.newBuilder()
-            .expireAfterAccess(Duration.ofMinutes(10))
-            .scheduler(Scheduler.systemScheduler())
-            .removalListener((key, value, cause) -> {
-                DiscordUser discordUser = (DiscordUser) value;
-                Database.getInstance().updateUsers(List.of(discordUser));
-            })
-            .build();
-
-    private static Database instance;
+    private final MongoClient mongoClient;
+    private final MongoDatabase database;
+    private final ConnectionString connectionString;
     private boolean connected;
 
-    private final MongoClient mongoClient;
-    private final MongoCollection<GreenlitMessage> greenlitCollection;
-    private final MongoCollection<ChannelGroup> channelCollection;
-    private final MongoCollection<DiscordUser> userCollection;
-
-    private Database() {
-        ConnectionString connectionString = new ConnectionString(System.getProperty("mongodb.uri"));
+    public Database(String uri, String databaseName) {
+        if (uri == null || uri.isBlank() || databaseName == null || databaseName.isBlank()) {
+            log.warn("Couldn't connect to the Database due to an invalid URI or Database Name!");
+            mongoClient = null;
+            database = null;
+            connectionString = null;
+            connected = false;
+            return;
+        }
+        connectionString = new ConnectionString(uri);
         CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build());
         CodecRegistry codecRegistry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
-        MongoClientSettings clientSettings = MongoClientSettings.builder()
-                .applyConnectionString(connectionString)
-                .codecRegistry(codecRegistry)
-                .applyToServerSettings(builder -> {
-                    builder.heartbeatFrequency(Environment.isDev() ? 1 : 10, TimeUnit.SECONDS);
-                    builder.addServerMonitorListener(this);
-                })
-                .build();
-
+        MongoClientSettings clientSettings = MongoClientSettings.builder().applyConnectionString(connectionString).codecRegistry(codecRegistry).applyToServerSettings(builder -> builder.addServerMonitorListener(this)).build();
         mongoClient = MongoClients.create(clientSettings);
+        database = mongoClient.getDatabase(databaseName);
         connected = true;
-        MongoDatabase database = mongoClient.getDatabase("skyblockNerds_" + Environment.getEnvironment().name().toLowerCase());
-        greenlitCollection = database.getCollection("greenlitMessages", GreenlitMessage.class);
-        channelCollection = database.getCollection("channelGroups", ChannelGroup.class);
-        userCollection = database.getCollection("users", DiscordUser.class);
-    }
-
-
-    public static Database getInstance() {
-        if (instance == null) {
-            instance = new Database();
-        }
-        return instance;
     }
 
     @Override
     public void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event) {
-        if (!connected) {
-            connected = true;
-        }
-
-        if (System.getProperty("mongodb.showHeartbeats") != null && Boolean.parseBoolean(System.getProperty("mongodb.showHeartbeats", "true"))) {
-            log.info("Heartbeat successful! Elapsed time: " + event.getElapsedTime(TimeUnit.MILLISECONDS) + "ms");
-        }
+        connected = true;
     }
 
     @Override
     public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
-        log.error("Heartbeat failed! Reason: " + event.getThrowable().getMessage());
-        if (connected) {
-            if (ChannelManager.getLogChannel() != null) {
-                ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH.getUserId()).getAsMention() + " The database has disconnected!").queue();
-            }
-        }
         connected = false;
     }
 
-    public void disconnect() {
-        if (connected) {
-            mongoClient.close();
-            connected = false;
-        }
+    public MongoClient getMongoClient() {
+        return mongoClient;
+    }
+
+    public ConnectionString getConnectionString() {
+        return connectionString;
+    }
+
+    public MongoDatabase getDatabase() {
+        return database;
     }
 
     public boolean isConnected() {
         return connected;
     }
 
-    public void insertGreenlitMessage(GreenlitMessage greenlitMessage) {
-        InsertOneResult result = greenlitCollection.insertOne(greenlitMessage);
-        log.info("Inserted greenlit message " + result.getInsertedId());
+    public void disconnect() {
+        mongoClient.close();
+        connected = false;
     }
 
-    public void insertGreenlitMessages(List<GreenlitMessage> greenlitMessages) {
-        InsertManyResult result = greenlitCollection.insertMany(greenlitMessages);
-        log.info("Inserted " + result.getInsertedIds().size() + " greenlit messages");
+    public <T> MongoCollection<T> getCollection(String collectionName, Class<T> clazz) {
+        if (database == null) { return null; }
+        return database.getCollection(collectionName, clazz);
     }
 
-    public void createOrUpdateGreenlitMessages(List<GreenlitMessage> messages) {
-        for (GreenlitMessage message : messages) {
-            if (greenlitCollection.find(Filters.eq("messageId", message.getMessageId())).first() == null) {
-                insertGreenlitMessage(message);
-            } else {
-                updateGreenlitMessage(message);
-            }
-        }
+    public MongoCollection<Document> getCollection(String collectionName) {
+        if (database == null) { return null; }
+        return database.getCollection(collectionName);
     }
 
-    public GreenlitMessage getGreenlitMessage(String id) {
-        return greenlitCollection.find(Filters.eq("messageId", id)).first();
+    public void createCollection(String collectionName) {
+        if (database == null) { return; }
+        database.createCollection(collectionName);
     }
 
-    public void updateGreenlitMessage(GreenlitMessage greenlitMessage) {
-        UpdateResult result = greenlitCollection.updateOne(Filters.eq("messageId", greenlitMessage.getMessageId()), new Document("$set", greenlitMessage));
-        if (result.getMatchedCount() == 0) {
-            log.info("Couldn't find greenlit message " + greenlitMessage.getId() + " to update");
-        } else {
-            log.info(result.getModifiedCount() + " greenlit message(s) updated");
-        }
+    public <T> InsertOneResult insertDocument(MongoCollection<T> collection, T object) {
+        if (collection == null) { return null; }
+        return collection.insertOne(object);
     }
 
-    public void updateGreenlitMessages(List<GreenlitMessage> messages) {
-        for (GreenlitMessage message : messages) {
-            updateGreenlitMessage(message);
-        }
+    public <T> InsertManyResult insertDocuments(MongoCollection<T> collection, List<T> objects) {
+        if (collection == null) { return null; }
+        return collection.insertMany(objects);
     }
 
-    public void deleteGreenlitMessage(String field, Object value) {
-        DeleteResult result = greenlitCollection.deleteOne(Filters.eq(field, value));
-        log.info(result.getDeletedCount() + " greenlit message(s) deleted");
+    public <T> T upsertDocument(MongoCollection<T> collection, String key, Object value, T object) {
+        if (collection == null) { return null; }
+        FindOneAndReplaceOptions replaceOptions = new FindOneAndReplaceOptions().upsert(true);
+        return collection.findOneAndReplace(Filters.eq(key, value), object, replaceOptions);
     }
 
-    public List<GreenlitMessage> getGreenlitCollection() {
-        return new ArrayList<>(this.greenlitCollection.find().into(new ArrayList<>()));
+    public <T> UpdateResult updateDocument(MongoCollection<T> collection, String key, Object value, Object clazz) {
+        if (collection == null) { return null; }
+        return collection.updateOne(Filters.eq(key, value), new Document("$set", clazz));
     }
 
-    public ChannelGroup getChannelGroup(String name) {
-        return channelCollection.find(Filters.eq("name", name)).first();
+    public UpdateResult updateDocuments(MongoCollection<Document> collection, String key, Object value, List<Document> documents) {
+        if (collection == null) { return null; }
+        return collection.updateMany(Filters.eq(key, value), documents);
     }
 
-    public void insertChannelGroup(ChannelGroup channelGroup) {
-        channelCollection.insertOne(channelGroup);
-        log.info("Inserted channel group " + channelGroup.getName());
+    public <T> FindIterable<T> findDocument(MongoCollection<T> collection, String key, Object value) {
+        if (collection == null) { return null; }
+        return collection.find(Filters.eq(key, value));
     }
 
-    public void insertChannelGroups(List<ChannelGroup> channelGroups) {
-        channelCollection.insertMany(channelGroups);
-        log.info("Inserted " + channelGroups.size() + " channel groups");
+    public <T> FindIterable<T> findAllDocuments(MongoCollection<T> collection) {
+        if (collection == null) { return null; }
+        return collection.find();
     }
 
-    public void deleteChannelGroup(ChannelGroup channelGroup) {
-        deleteChannelGroup(channelGroup.getName());
+    public <T> long countDocuments(MongoCollection<T> collection) {
+        if (collection == null) { return -1; }
+        return collection.countDocuments();
     }
 
-    public void deleteChannelGroup(String name) {
-        channelCollection.deleteOne(Filters.eq("name", name));
-        log.info("Deleted channel group " + name);
+    public <T> long countDocuments(MongoCollection<T> collection, Bson filter) {
+        if (collection == null) { return -1; }
+        return collection.countDocuments(filter);
     }
 
-    public List<ChannelGroup> getChannelGroups() {
-        return this.channelCollection.find().into(new ArrayList<>());
+    public <T> DeleteResult deleteDocument(MongoCollection<T> collection, String key, Object value) {
+        if (collection == null) { return null; }
+        return collection.deleteOne(Filters.eq(key, value));
     }
 
-    public List<DiscordUser> getUsers() {
-        return this.userCollection.find().into(new ArrayList<>());
+    public <T> DeleteResult deleteDocuments(MongoCollection<T> collection, String key, Object value) {
+        if (collection == null) { return null; }
+        return collection.deleteMany(Filters.eq(key, value));
     }
-
-    public DiscordUser getUserFromDatabase(String field, Object value) {
-        return this.userCollection.find(Filters.eq(field, value)).first();
-    }
-
-    public DiscordUser getUser(String id) {
-        if (USER_CACHE.getIfPresent(id) != null) {
-            return USER_CACHE.getIfPresent(id);
-        }
-
-        return getUserFromDatabase("discordId", id);
-    }
-
-    public DiscordUser getOrAddUserToCache(String id) {
-        DiscordUser discordUser = Database.getInstance().getUser(id);
-        if (discordUser == null) {
-            discordUser = new DiscordUser(id, new ArrayList<>(), new ArrayList<>(), new LastActivity());
-        }
-
-        if (Database.USER_CACHE.getIfPresent(id) == null) {
-            Database.USER_CACHE.put(id, discordUser);
-        }
-
-        return Database.USER_CACHE.getIfPresent(id);
-    }
-
-    public void insertUser(DiscordUser user) {
-        userCollection.insertOne(user);
-        log.info("Inserted user " + user.getDiscordId());
-    }
-
-    public void updateUser(String field, Object value, DiscordUser user) {
-        UpdateResult result = userCollection.replaceOne(Filters.eq(field, value), user);
-        if (result.getMatchedCount() == 0) {
-            log.info("Couldn't find user " + user.getDiscordId() + " to update");
-        } else {
-            log.info("Updated user " + user.getDiscordId());
-
-        }
-    }
-
-    public void updateUser(DiscordUser user) {
-        updateUser("discordId", user.getDiscordId(), user);
-    }
-
-    public void updateUsers(List<DiscordUser> users) {
-        if (users.isEmpty()) return;
-
-        for (DiscordUser user : users) {
-            updateUser("discordId", user.getDiscordId(), user);
-        }
-    }
-
-    public void deleteUser(String field, Object value) {
-        userCollection.deleteOne(Filters.eq(field, value));
-        log.info("Deleted user " + field + ":" + value);
-    }
-
-    public void deleteUser(DiscordUser user) {
-        deleteUser("discordId", user.getDiscordId());
-    }
-
 }

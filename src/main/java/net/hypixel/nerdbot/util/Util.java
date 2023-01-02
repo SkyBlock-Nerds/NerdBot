@@ -3,11 +3,15 @@ package net.hypixel.nerdbot.util;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.user.LastActivity;
 
 import javax.annotation.Nullable;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -92,5 +96,20 @@ public class Util {
         }
 
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
+    }
+
+    public static DiscordUser getOrAddUserToCache(Database database, String userId) {
+        if (!database.isConnected()) {
+            log.warn("Could not cache user because there is not a database connected!");
+            return null;
+        }
+        DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", userId).first();
+        if (discordUser == null) {
+            discordUser = new DiscordUser(userId, new ArrayList<>(), new ArrayList<>(), new LastActivity());
+        }
+        if (NerdBotApp.USER_CACHE.getIfPresent(userId) == null) {
+            NerdBotApp.USER_CACHE.put(userId, discordUser);
+        }
+        return NerdBotApp.USER_CACHE.getIfPresent(userId);
     }
 }

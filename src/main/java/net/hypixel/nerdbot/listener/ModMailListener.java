@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.listener;
 
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -13,12 +14,14 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.util.Util;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Log4j2
 public class ModMailListener {
@@ -57,16 +60,20 @@ public class ModMailListener {
                     "[Mod Mail] " + author.getName(),
                     MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
             ).queue(forumPost -> {
-                try {
-                    ThreadChannel threadChannel = forumPost.getThreadChannel();
-                    threadChannel.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
-                    threadChannel.sendMessage(modMailRoleMention).queue();
-                    threadChannel.sendMessage(createMessage(message).build()).queue();
-                    log.info(author.getName() + " submitted a new Mod Mail request! (Thread ID: " + forumPost.getThreadChannel().getId() + ")");
-                } catch (ExecutionException | InterruptedException e) {
-                    author.openPrivateChannel().flatMap(channel -> channel.sendMessage("I wasn't able to send your request! Please try again later.")).queue();
-                    throw new RuntimeException(e);
-                }
+                ThreadChannel threadChannel = forumPost.getThreadChannel();
+                List<Member> roleMembers = threadChannel.getGuild().getMembersWithRoles(Util.getRole("Mod Mail"));
+                AtomicInteger count = new AtomicInteger();
+                threadChannel.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
+                threadChannel.getGuild().getMembersWithRoles(Util.getRole("Mod Mail")).forEach(member -> threadChannel.addThreadMember(member).queue(unused -> {
+                    if (count.incrementAndGet() == roleMembers.size()) {
+                        try {
+                            threadChannel.sendMessage(modMailRoleMention).queue();
+                            threadChannel.sendMessage(createMessage(message).build()).queue();
+                        } catch (ExecutionException | InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }));
             });
         }
     }
@@ -110,6 +117,9 @@ public class ModMailListener {
         if (data.getContent().length() > 2000) {
             data.setContent(data.getContent().substring(0, 1997) + "...");
         }
+
+        // Stuffy: Remove any mentions of users, roles, or @everyone/@here
+        data.setContent(data.getContent().replaceAll("@(everyone|here|&\\d+)", "@\u200b$1"));
 
         if (!message.getAttachments().isEmpty()) {
             List<FileUpload> files = new ArrayList<>();
