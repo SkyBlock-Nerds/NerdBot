@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 @Log4j2
 public class ItemGenCommand extends ApplicationCommand {
 
-    @JDASlashCommand(name = "itemgen", description = "Creates a SkyBlock item, visible to everyone in SkyBlock Nerds.")
+    @JDASlashCommand(name = "itemgen", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock")
     public void askForInfo(
             GuildSlashEvent event,
             @AppOption(description = "The name of the item") String name,
@@ -44,7 +44,7 @@ public class ItemGenCommand extends ApplicationCommand {
         String senderChannelId = event.getChannel().getId();
         String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
-        event.deferReply(true).queue();
+        event.deferReply(false).queue();
 
         if (itemGenChannelId == null) {
             event.getHook().sendMessage("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
