@@ -15,6 +15,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.util.Users;
+import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,8 @@ import java.util.Objects;
 
 @Log4j2
 public class ForumChannelCurator extends Curator<ForumChannel> {
+
+    private final Database database = NerdBotApp.getBot().getDatabase();
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
@@ -32,7 +35,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         List<GreenlitMessage> output = new ArrayList<>();
         setStartTime(System.currentTimeMillis());
 
-        if (!Database.getInstance().isConnected()) {
+        if (!database.isConnected()) {
             setEndTime(System.currentTimeMillis());
             log.error("Couldn't curate messages as the database is not connected!");
             return output;
@@ -53,8 +56,10 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 Message firstPost = allMessages.get(allMessages.size() - 1);
                 Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
                 Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
-
-                DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(firstPost.getAuthor().getId());
+                DiscordUser discordUser = Util.getOrAddUserToCache(database, firstPost.getAuthor().getId());
+                if (discordUser == null) {
+                    continue;
+                }
 
                 if (discordUser.getLastActivity().getLastSuggestionDate() < firstPost.getTimeCreated().toInstant().toEpochMilli()) {
                     discordUser.getLastActivity().setLastSuggestionDate(firstPost.getTimeCreated().toInstant().toEpochMilli());

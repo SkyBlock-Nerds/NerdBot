@@ -23,13 +23,14 @@ public class UserGrabberFeature extends BotFeature {
             return;
         }
 
-        if (!Database.getInstance().isConnected()) {
+        Database database = NerdBotApp.getBot().getDatabase();
+        if (!database.isConnected()) {
             log.error("Can't initiate feature as the database is not connected!");
             return;
         }
 
         log.info("Grabbing users from guild " + guild.getName());
-        List<DiscordUser> users = Database.getInstance().getUsers();
+        List<DiscordUser> users = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
 
         guild.loadMembers(member -> {
             if (member.getUser().isBot()) {
@@ -50,13 +51,8 @@ public class UserGrabberFeature extends BotFeature {
                 discordUser.setLastActivity(new LastActivity());
             }
 
-
-            if (users.contains(discordUser)) {
-                Database.getInstance().updateUser(discordUser);
-            } else {
-                Database.getInstance().insertUser(discordUser);
-            }
-        }).onSuccess(v -> log.info("Finished grabbing users from guild " + guild.getName()));
+            database.upsertDocument(database.getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
+        }).onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName())).onError(Throwable::printStackTrace);
     }
 
     @Override

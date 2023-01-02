@@ -21,10 +21,7 @@ import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
-import net.hypixel.nerdbot.util.Environment;
-import net.hypixel.nerdbot.util.ForumChannelResolver;
-import net.hypixel.nerdbot.util.Users;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.*;
 
 import javax.security.auth.login.LoginException;
 import java.io.*;
@@ -40,6 +37,7 @@ public class NerdBot implements Bot {
             new UserGrabberFeature()
     );
 
+    private final Database database = new Database(System.getProperty("mongodb.uri"), "skyblock_nerds");
     private JDA jda;
     private BotConfig config;
     private long startTime;
@@ -140,13 +138,20 @@ public class NerdBot implements Bot {
 
     @Override
     public void onEnd() {
-        for (BotFeature feature : FEATURES) feature.onEnd();
-        Database.getInstance().disconnect();
+        for (BotFeature feature : FEATURES) {
+            feature.onEnd();
+        }
+        database.disconnect();
     }
 
     @Override
     public BotConfig getConfig() {
         return config;
+    }
+
+    @Override
+    public Database getDatabase() {
+        return database;
     }
 
     @Override

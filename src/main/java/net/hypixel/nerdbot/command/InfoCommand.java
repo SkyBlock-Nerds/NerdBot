@@ -4,6 +4,7 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import com.mongodb.client.MongoCollection;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -12,6 +13,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
+import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.api.database.user.LastActivity;
 import net.hypixel.nerdbot.util.DiscordTimestamp;
 import net.hypixel.nerdbot.util.Environment;
@@ -25,6 +27,8 @@ import java.util.List;
 
 @Log4j2
 public class InfoCommand extends ApplicationCommand {
+
+    private final Database database = NerdBotApp.getBot().getDatabase();
 
     @JDASlashCommand(name = "info", subcommand = "bot", description = "View information about the bot", defaultLocked = true)
     public void botInfo(GuildSlashEvent event) {
@@ -43,7 +47,7 @@ public class InfoCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "info", subcommand = "greenlit", description = "View some information on greenlit messages", defaultLocked = true)
     public void greenlitInfo(GuildSlashEvent event, @AppOption int page) {
-        List<GreenlitMessage> greenlits = getPage(Database.getInstance().getGreenlitCollection(), page, 10);
+        List<GreenlitMessage> greenlits = getPage(database.getCollection("greenlit_messages", GreenlitMessage.class).find().into(new ArrayList<>()), page, 10);
         greenlits.sort(Comparator.comparingLong(GreenlitMessage::getSuggestionTimestamp));
 
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
@@ -80,12 +84,12 @@ public class InfoCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "info", subcommand = "user", description = "View some information about a user", defaultLocked = true)
     public void userInfo(GuildSlashEvent event, @AppOption(description = "The user to search") Member member) {
-        if (!Database.getInstance().isConnected()) {
+        if (!database.isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
             return;
         }
 
-        DiscordUser discordUser = Database.getInstance().getUser(member.getId());
+        DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", member.getId()).first();
         if (discordUser == null) {
             event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
             return;
@@ -106,12 +110,13 @@ public class InfoCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "info", subcommand = "activity", description = "View information regarding user activity", defaultLocked = true)
     public void userActivityInfo(GuildSlashEvent event, @AppOption int page) {
-        if (!Database.getInstance().isConnected()) {
+        if (!database.isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
             return;
         }
 
-        List<DiscordUser> users = getPage(Database.getInstance().getUsers().stream().filter(discordUser -> discordUser.getLastActivity().getLastGlobalActivity() == -1L).toList(), page, 15);
+        MongoCollection<DiscordUser> userCollection = database.getCollection("users", DiscordUser.class);
+        List<DiscordUser> users = getPage(userCollection.find().into(new ArrayList<>()).stream().filter(discordUser -> discordUser.getLastActivity().getLastGlobalActivity() == -1L).toList(), page, 15);
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
         for (DiscordUser user : users) {
             Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(user.getDiscordId());
