@@ -38,12 +38,12 @@ public class ItemGenCommand extends ApplicationCommand {
         String senderChannelId = event.getChannel().getId();
         String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
+        event.deferReply().queue();
+
         if (itemGenChannelId == null) {
             event.getHook().sendMessage("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
             return;
         }
-
-        event.deferReply(false).queue();
 
         if (!senderChannelId.equals(itemGenChannelId)) {
             TextChannel channel = ChannelManager.getChannel(itemGenChannelId);
@@ -224,7 +224,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
         File imageFile = File.createTempFile("image", ".png");
         ImageIO.write(image, "png", imageFile);
-        event.getHook().sendFiles(FileUpload.fromData(imageFile)).queue();
+        event.getHook().sendFiles(FileUpload.fromData(imageFile)).setEphemeral(false).queue();
     }
 
     @Nullable
@@ -349,7 +349,7 @@ public class ItemGenCommand extends ApplicationCommand {
                         }
 
                         if (!foundColor) {
-                            StringBuilder failed = new StringBuilder("You used an invalid code `" + getSpecialString + "Valid colors:\n");
+                            StringBuilder failed = new StringBuilder("You used an invalid code `" + getSpecialString + "`. Valid colors:\n");
                             for (MCColor color : colors) {
                                 failed.append(color).append(" ");
                             }
