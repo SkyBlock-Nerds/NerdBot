@@ -20,7 +20,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -38,36 +37,39 @@ public class ItemGenCommand extends ApplicationCommand {
         String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
         if (itemGenChannelId == null) {
-            event.getHook().sendMessage("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
+            log.error("The item gen channel is not properly set up in the config, and cannot create items.");
+            event.getHook().sendMessage("Hi! The config for the #item-gen channel is not ready yet. Try again later!").queue();
             return;
         }
 
         event.deferReply(false).queue();
 
+        //make sure user is in correct channel
         if (!senderChannelId.equals(itemGenChannelId)) {
             TextChannel channel = ChannelManager.getChannel(itemGenChannelId);
             if (channel == null) {
-                event.getHook().sendMessage("This can only be used in the item generating channel.").setEphemeral(true).queue();
+                event.getHook().sendMessage("Hi! This can only be used in the #item-gen channel.").queue();
                 return;
             }
 
-            event.getHook().sendMessage("Hi! This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue();
+            event.getHook().sendMessage("Hi! This can only be used in the " + channel.getAsMention() + " channel.").queue();
             return;
         }
 
         //verify rarity argument
         if (Arrays.stream(Rarity.values()).noneMatch(rarity1 -> rarity.equalsIgnoreCase(rarity1.name()))) {
-            StringBuilder failedRarity = new StringBuilder("You specified an invalid rarity, `" + rarity + "`. Valid rarities:\n");
+            StringBuilder failedRarity = new StringBuilder("Hi! We found an invalid rarity, " + rarity + ", which cannot be used here. Valid rarities:\n");
             Arrays.stream(Rarity.values()).forEachOrdered(rarity1 -> failedRarity.append(rarity1.name()).append("\n"));
             failedRarity.append(Arrays.toString(Rarity.values()));
-            event.getHook().sendMessage(failedRarity.toString()).setEphemeral(true).queue();
+            event.getHook().sendMessage(failedRarity.toString()).queue();
             return;
         }
+
         Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
         ArrayList<String> parsedDescription = parseDescription(description, event);
 
         if (parsedDescription == null || parsedDescription.isEmpty()) {
-            event.getHook().sendMessage("Please enter a valid description for the item!").setEphemeral(true).queue();
+            event.getHook().sendMessage("Please enter a valid description for the item!").queue();
             return;
         }
 
@@ -80,23 +82,26 @@ public class ItemGenCommand extends ApplicationCommand {
         g2d.drawRect(1, 1, 497, heightEstimate - 3);
         g2d.drawRect(2, 2, 497, heightEstimate - 3);
 
+          //Debug for printing out exactly what comes from the parser
+//        StringBuilder temp = new StringBuilder();
+//        for(String string : parsedDescription) {
+//            temp.append(string).append("\n");
+//        }
+//        event.getHook().sendMessage(temp.toString()).queue();
+
+        //Let's init our fonts
         Font minecraftFont;
         Font minecraftBold;
         try {
-            InputStream normalFontStream = ItemGenCommand.class.getResourceAsStream("/Minecraft/minecraft.ttf");
-            InputStream boldFontStream = ItemGenCommand.class.getResourceAsStream("/Minecraft/3_Minecraft-Bold.otf");
-            if (normalFontStream == null || boldFontStream == null) {
-                throw new NullPointerException();
-            }
-            minecraftFont = Font.createFont(Font.TRUETYPE_FONT, normalFontStream).deriveFont(16f);
-            minecraftBold = Font.createFont(Font.TRUETYPE_FONT, boldFontStream).deriveFont(22f);
+            minecraftFont = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/minecraft.ttf")).deriveFont(16f);
+            minecraftBold = Font.createFont(Font.TRUETYPE_FONT, new File("./resources/Minecraft/3_Minecraft-Bold.otf")).deriveFont(22f);
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             ge.registerFont(minecraftFont);
             ge.registerFont(minecraftBold);
             g2d.setFont(minecraftFont);
         } catch (IOException | FontFormatException e) {
             e.printStackTrace();
-            event.getHook().sendMessage("Something went wrong with creating the font. Try again later!").setEphemeral(true).queue();
+            event.getHook().sendMessage("Hi! Something went wrong with creating the font. Try again later!").queue();
             return;
         }
 
@@ -113,10 +118,10 @@ public class ItemGenCommand extends ApplicationCommand {
             locationX = 10;
 
             //Let's iterate through each character in our line, looking for colors
-            StringBuilder subWord = new StringBuilder();
+            StringBuilder subword = new StringBuilder();
             for(int colorStartIndex = 0; colorStartIndex < line.length(); colorStartIndex++) {
                 //Check for colors
-                if ((colorStartIndex + 2 < line.length()) && (line.charAt(colorStartIndex) == '%') && (line.charAt(colorStartIndex + 1) == '%')) {
+                if (colorStartIndex + 2 < line.length() && line.charAt(colorStartIndex) == '%' && line.charAt(colorStartIndex + 1) == '%') {
                     int colorEndIndex = -1;
 
                     for(int j = colorStartIndex; j < line.length() - 2; j++) {
@@ -129,27 +134,30 @@ public class ItemGenCommand extends ApplicationCommand {
                     if (colorEndIndex != -1) {
                         //We've previously verified that this is a good color, so let's trust it
                         g2d.setColor(currentColor.getBackgroundColor());
-                        g2d.drawString(subWord.toString(), locationX + 2, locationY + 2);
+                        g2d.drawString(subword.toString(), locationX + 2, locationY + 2);
                         g2d.setColor(currentColor.getColor());
-                        g2d.drawString(subWord.toString(), locationX, locationY);
+                        g2d.drawString(subword.toString(), locationX, locationY);
 
-                        locationX += minecraftFont.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
-                        subWord.setLength(0);
+                        locationX += minecraftFont.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
+                        subword.setLength(0);
+
                         String foundColor = line.substring(colorStartIndex + 2, colorEndIndex + 1);
 
                         if (foundColor.equalsIgnoreCase("bold")) {
                             g2d.setColor(currentColor.getBackgroundColor());
-                            g2d.drawString(subWord.toString(), locationX + 2, locationY + 2);
+                            g2d.drawString(subword.toString(), locationX + 2, locationY + 2);
 
                             g2d.setColor(currentColor.getColor());
-                            g2d.drawString(subWord.toString(), locationX, locationY);
+                            g2d.drawString(subword.toString(), locationX, locationY);
 
-                            locationX += minecraftFont.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
-                            subWord.setLength(0);
+                            locationX += minecraftFont.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
+                            subword.setLength(0);
                             colorStartIndex += 3 + foundColor.length(); //remove the color code
                             g2d.setFont(minecraftBold);
                             boldFlag = true;
-                        } else {
+                        }
+                        else {
+                            //Arrays.stream(MCColor.values()).filter(color -> foundColor.equalsIgnoreCase(color.name())).findFirst().ifPresent(color -> g2d.setColor(color.getColor()));
                             for (MCColor color : MCColor.values()) {
                                 if (foundColor.equalsIgnoreCase(color.toString())) {
                                     currentColor = color;
@@ -164,41 +172,41 @@ public class ItemGenCommand extends ApplicationCommand {
                 } else if (!minecraftFont.canDisplay(line.charAt(colorStartIndex))) {
                     //We need to draw this character special, so let's get rid of our old word.
                     g2d.setColor(currentColor.getBackgroundColor());
-                    g2d.drawString(subWord.toString(), locationX + 2, locationY + 2);
+                    g2d.drawString(subword.toString(), locationX + 2, locationY + 2);
                     g2d.setColor(currentColor.getColor());
-                    g2d.drawString(subWord.toString(), locationX, locationY);
+                    g2d.drawString(subword.toString(), locationX, locationY);
 
                     if (boldFlag) {
-                        locationX += minecraftBold.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
-                    } else {
-                        locationX += minecraftFont.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
+                        locationX += minecraftBold.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
                     }
-                    subWord.setLength(0);
+                    else {
+                        locationX += minecraftFont.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
+                    }
+                    subword.setLength(0);
 
                     //Let's try to render the character in a normal font, and then return to the minecraft font.
-                    Font sansSerif = new Font("SansSerif", Font.PLAIN, 20);
-                    g2d.setFont(sansSerif);
-                    subWord.append(line.charAt(colorStartIndex));
+                    Font tnr = new Font("SansSerif", Font.PLAIN, 20);
+                    g2d.setFont(tnr);
+                    subword.append(line.charAt(colorStartIndex));
 
                     g2d.setColor(currentColor.getBackgroundColor());
-                    g2d.drawString(subWord.toString(), locationX + 2, locationY + 2);
+                    g2d.drawString(subword.toString(), locationX + 2, locationY + 2);
 
                     g2d.setColor(currentColor.getColor());
-                    g2d.drawString(subWord.toString(), locationX, locationY);
+                    g2d.drawString(subword.toString(), locationX, locationY);
 
-                    locationX += sansSerif.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
-                    subWord.setLength(0);
+                    locationX += tnr.getStringBounds(subword.toString(), g2d.getFontRenderContext()).getWidth();
+                    subword.setLength(0);
                     g2d.setFont(boldFlag ? minecraftBold : minecraftFont);
-                } else {
-                    //We do this to prevent monospace bullshit
-                    subWord.append(line.charAt(colorStartIndex));
+                } else { //We do this to prevent monospace bullshit
+                    subword.append(line.charAt(colorStartIndex));
                 }
             }
 
             g2d.setColor(currentColor.getBackgroundColor());
-            g2d.drawString(subWord.toString(), locationX + 2, locationY + 2);
+            g2d.drawString(subword.toString(), locationX + 2, locationY + 2);
             g2d.setColor(currentColor.getColor());
-            g2d.drawString(subWord.toString(), locationX, locationY); //draw the last word, even if it's empty
+            g2d.drawString(subword.toString(), locationX, locationY); //draw the last word, even if it's empty
             locationY += 23;
 
             //Reset to normal text color when we're done printing the title
@@ -230,7 +238,7 @@ public class ItemGenCommand extends ApplicationCommand {
         ArrayList<String> parsed = new ArrayList<>();
         MCColor[] colors = MCColor.values();
 
-        StringBuilder currString = new StringBuilder();
+        StringBuilder currString = new StringBuilder("");
         int lineLength = 0; //where we are in curr string
         int charIndex = 0;  //where we are in description
         int breakLoopCount = 0; //break if we are hanging due to a runtime error
@@ -244,12 +252,13 @@ public class ItemGenCommand extends ApplicationCommand {
                         "charIndex: " + charIndex + "\n" +
                         "character failed on: " + description.charAt(charIndex) + "\n" +
                         "string: " + description + "\n" +
-                        "If you see this debug, please report this to a developer. Thanks!\n";
-                event.getHook().sendMessage(debug).setEphemeral(true).queue();
+                        "If you see this debug, please go ahead and ping Keith. Thanks!\n";
+                event.getHook().sendMessage(debug).queue();
                 return null;
             }
 
             boolean noColorFlag = false;
+
             /* This block checks colors, newline characters, soft-wrapping,
              * and changes the text depending on those checks.
              */
@@ -258,10 +267,10 @@ public class ItemGenCommand extends ApplicationCommand {
                 if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
                     int endCharIndex = 0;
 
-                    StringBuilder specialSubString = new StringBuilder(); //If a color code has a special argument that can be used, we will store that in here
+                    StringBuilder specialSubString = new StringBuilder(); //If a parameter can be passed, put that here.
                     boolean specialSubStringFlag = false;
                     int specialSubStringIndex = -1;
-                    for (int i = charIndex + 2; i < charIndex + 100; i++) {
+                    for (int i = charIndex + 2; i < charIndex + 100; i++) { //get char
                         if (i + 1 >= description.length()) {
                             endCharIndex = -1;
                             break;
@@ -270,7 +279,8 @@ public class ItemGenCommand extends ApplicationCommand {
                         if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
                             if (specialSubStringFlag) {
                                 endCharIndex = specialSubStringIndex;
-                            } else {
+                            }
+                            else {
                                 endCharIndex = i;
                             }
                             break;
@@ -287,6 +297,7 @@ public class ItemGenCommand extends ApplicationCommand {
                             continue;
                         }
 
+
                         if (i == 99) {
                             endCharIndex = -1;
                             break;
@@ -298,10 +309,10 @@ public class ItemGenCommand extends ApplicationCommand {
                         }
                     }
 
-                    //If we can't find the end percents, just continue
-                    if (endCharIndex != -1) {
+                    if (endCharIndex != -1) { //If we can't find the end percents, just continue
                         charIndex += 2; //move away from color code
                         String getSpecialString = description.substring(charIndex, endCharIndex);
+
                         boolean foundColor = false; //True if we find a valid color, stat, or gemstone.
                         for (MCColor color : colors) {
                             if (getSpecialString.equalsIgnoreCase(color.name())) {
@@ -346,7 +357,8 @@ public class ItemGenCommand extends ApplicationCommand {
                         }
 
                         if (!foundColor) {
-                            StringBuilder failed = new StringBuilder("You specified an invalid code `" + getSpecialString + "`. Valid colors:\n");
+                            StringBuilder failed = new StringBuilder("Hi! We found an invalid code `" + getSpecialString + "` which cannot be used here. " +
+                                    "Valid colors:\n");
                             for (MCColor color : colors) {
                                 failed.append(color).append(" ");
                             }
@@ -359,7 +371,7 @@ public class ItemGenCommand extends ApplicationCommand {
                             for (Gemstone gemstone : Gemstone.values()) {
                                 failed.append(gemstone).append(" ");
                             }
-                            event.getHook().sendMessage(failed.toString()).setEphemeral(true).queue();
+                            event.getHook().sendMessage(failed.toString()).queue();
                             return null;
                         }
 
@@ -370,8 +382,8 @@ public class ItemGenCommand extends ApplicationCommand {
                         }
                         continue;
                     }
-                    //if we can't find the endCharIndex, we just move on here and set a flag
                     noColorFlag = true;
+                    //if we can't find the endCharIndex, we just move on here and set a flag
                 }
 
                 //Shorthand Color Parsing
@@ -382,11 +394,9 @@ public class ItemGenCommand extends ApplicationCommand {
                             break;
                         }
                     }
-
                     if ('l' == description.charAt(charIndex + 1)) {
                         currString.append("%%BOLD%%");
                     }
-
                     charIndex += 2;
                 }
 
@@ -404,18 +414,16 @@ public class ItemGenCommand extends ApplicationCommand {
                     charIndex++;
 
                     int colorCheck = 36; //An extra buffer so we don't wrap colors
-                    boolean newLineFlag = true;
+                    boolean newLineFlag = true; //True if we need to make a newline to paste the next word
                     for (int i = charIndex; i < charIndex + (colorCheck - lineLength); i++) {
                         if (i + 1 > description.length()) {
                             newLineFlag = false;
                             break;
                         }
-
                         if (description.charAt(i) == ' ') {
                             newLineFlag = false;
                             break;
                         }
-
                         if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
                             colorCheck += 2;
 
@@ -476,6 +484,7 @@ public class ItemGenCommand extends ApplicationCommand {
                     spaceBreak = true;
                     break;
                 }
+
                 findNextIndex++;
             }
 

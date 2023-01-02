@@ -33,6 +33,7 @@ public class ChannelGroupCurator extends Curator<ChannelGroup> {
     private final Emoji greenlit = NerdBotApp.getBot().getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getGreenlitEmojiId());
     private final Database database = NerdBotApp.getBot().getDatabase();
     private final MongoCollection<GreenlitMessage> greenlitMessageCollection = database.getCollection("greenlit_messages", GreenlitMessage.class);
+
     private final List<DiscordUser> users = new ArrayList<>();
 
     public ChannelGroupCurator(boolean readOnly) {

@@ -37,6 +37,10 @@ public class UserGrabberFeature extends BotFeature {
                 return;
             }
 
+            if (users == null) {
+                return;
+            }
+
             DiscordUser discordUser = getUser(users, member.getId());
             if (discordUser == null) {
                 discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new ArrayList<>(), new LastActivity());
@@ -56,10 +60,16 @@ public class UserGrabberFeature extends BotFeature {
     }
 
     private boolean containsUser(List<DiscordUser> users, String id) {
-        return users.stream().anyMatch(user -> user.getDiscordId().equals(id));
+        if (users != null) {
+            return users.stream().anyMatch(user -> user.getDiscordId().equals(id));
+        }
+        return false;
     }
 
     private DiscordUser getUser(List<DiscordUser> users, String id) {
-        return users.stream().filter(user -> user.getDiscordId().equalsIgnoreCase(id)).findFirst().orElse(null);
+        if (users != null) {
+            return users.stream().filter(user -> user.getDiscordId().equalsIgnoreCase(id)).findFirst().orElse(null);
+        }
+        return null;
     }
 }

@@ -26,6 +26,7 @@ public enum MCColor {
     private final Color color;
     private final Color backgroundColor;
 
+
     MCColor(char colorCode, Color color, Color backgroundColor) {
         this.colorCode = colorCode;
         this.color = color;
@@ -33,8 +34,9 @@ public enum MCColor {
     }
 
     public char getColorCode() { return colorCode; }
-
-    public Color getColor() { return color; }
-
+    public Color getColor() {
+        return color;
+    }
     public Color getBackgroundColor() {return backgroundColor;}
+
 }
