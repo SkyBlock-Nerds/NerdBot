@@ -63,7 +63,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
         //verify rarity argument
         if (Arrays.stream(Rarity.values()).noneMatch(rarity1 -> rarity.equalsIgnoreCase(rarity1.name()))) {
-            StringBuilder failedRarity = new StringBuilder("You used an invalid rarity, `" + rarity + "`. Valid rarities:\n");
+            StringBuilder failedRarity = new StringBuilder("You used an invalid rarity. Valid rarities:\n");
             Arrays.stream(Rarity.values()).forEachOrdered(rarity1 -> failedRarity.append(rarity1.name()).append(" "));
             event.getHook().sendMessage(failedRarity.toString()).setEphemeral(true).queue();
             return;
@@ -354,7 +354,7 @@ public class ItemGenCommand extends ApplicationCommand {
                         }
 
                         if (!foundColor) {
-                            StringBuilder failed = new StringBuilder("You used an invalid code `" + getSpecialString + "`. Valid colors:\n");
+                            StringBuilder failed = new StringBuilder("You used an invalid code. Valid colors:\n");
                             for (MCColor color : colors) {
                                 failed.append(color).append(" ");
                             }
