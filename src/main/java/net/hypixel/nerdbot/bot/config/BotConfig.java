@@ -3,7 +3,10 @@ package net.hypixel.nerdbot.bot.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 
 @Getter
 @Setter
@@ -11,39 +14,44 @@ import net.dv8tion.jda.api.entities.Activity;
 public class BotConfig {
 
     /**
-     * The guild ID that the bot will be running in
+     * The {@link Guild} ID that the bot will be running in
      */
     private String guildId;
 
     /**
-     * The channel ID that the bot will be logging to
+     * The {@link TextChannel} ID that the bot will be logging to
      */
     private String logChannel;
 
     /**
-     * The channel ID that the bot will be generating items in
+     * The {@link Role} ID of the Bot Manager role
      */
+    private String botManagerRoleId;
 
-    private String itemGenChannel;
     /**
-     * The channel ID for the suggestion forum
+     * The {@link TextChannel} ID for the suggestion forum
      */
     private String suggestionForumId;
 
     /**
-     * The minimum threshold of reactions needed for a suggestion to be considered greenlit
-     * Default value is 15 reactions
+     * The {@link TextChannel} ID for the itemgen channel
+     */
+    private String itemGenChannel;
+
+    /**
+     * The minimum threshold of {@link MessageReaction reactions} needed for a suggestion to be considered greenlit
+     * Default value is 15 {@link MessageReaction reactions}
      */
     private int minimumThreshold = 15;
 
     /**
-     * The limit of messages that the bot will curate in one go
-     * Default value is 100 messages
+     * The limit of {@link Message messages} that the bot will curate in one go
+     * Default value is 100 {@link Message messages}
      */
     private int messageLimit = 100;
 
     /**
-     * The percentage of positive reactions needed for a suggestion to be considered greenlit
+     * The percentage of positive {@link MessageReaction reactions} needed for a suggestion to be considered greenlit
      * Default value is 75%
      */
     private double percentage = 75;
@@ -55,23 +63,23 @@ public class BotConfig {
     private long interval = 43_200_000;
 
     /**
-     * Emotes that the bot will use to react to suggestions
+     * {@link Emoji Emojis} that the bot will use to react to suggestions
      */
     private EmojiConfig emojiConfig;
 
     /**
-     * Forum tags for the bot to use, such as the greenlit tag to set suggestions as greenlit
+     * {@link ForumTag Forum tags} for the bot to use, such as the greenlit tag to set suggestions as greenlit
      */
     private TagConfig tagConfig;
 
     /**
-     * The activity that the bot will display on its profile
+     * The {@link Activity.ActivityType} that the bot will display on its profile
      * Default is PLAYING
      */
     private Activity.ActivityType activityType = Activity.ActivityType.PLAYING;
 
     /**
-     * The string being displayed as the bot's activity on its profile
+     * The message being displayed as the bots {@link Activity} on its profile
      */
     private String activity;
 

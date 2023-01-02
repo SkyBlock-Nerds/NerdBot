@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
+import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
@@ -8,21 +9,25 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
+import net.hypixel.nerdbot.util.Util;
 
 @Log4j2
 public class ActivityListener {
 
+    private final Database database = NerdBotApp.getBot().getDatabase();
+
     @SubscribeEvent
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-        Database.getInstance().getOrAddUserToCache(event.getUser().getId());
+        Util.getOrAddUserToCache(database, event.getUser().getId());
         log.info("User " + event.getUser().getAsTag() + " joined guild " + event.getGuild().getName());
     }
 
     @SubscribeEvent
     public void onGuildMemberLeave(GuildMemberRemoveEvent event) {
-        Database.getInstance().deleteUser("discordId", event.getUser().getId());
+        database.deleteDocument(database.getCollection("users"), "discordId", event.getUser().getId());
         log.info("User " + event.getUser().getAsTag() + " left guild " + event.getGuild().getName());
     }
 
@@ -39,8 +44,12 @@ public class ActivityListener {
             return;
         }
 
-        DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(member.getId());
+        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
         long time = System.currentTimeMillis();
+
+        if (discordUser == null) {
+            return;
+        }
 
         if (channel.getName().contains("alpha")) {
             discordUser.getLastActivity().setLastAlphaActivity(time);
@@ -59,8 +68,28 @@ public class ActivityListener {
             return;
         }
 
-        DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(member.getId());
+        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+        if (discordUser == null) {
+            return;
+        }
         discordUser.getLastActivity().setLastVoiceChannelJoinDate(System.currentTimeMillis());
         log.info("Updating last voice channel activity date for " + member.getEffectiveName() + " to " + System.currentTimeMillis());
+    }
+
+    @SubscribeEvent
+    public void onSlashCommand(GuildSlashEvent event) {
+        Member member = event.getMember();
+
+        if (member.getUser().isBot()) {
+            return;
+        }
+
+        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+        if (discordUser == null) {
+            return;
+        }
+
+        discordUser.getLastActivity().setLastItemGenUsage(System.currentTimeMillis());
+        log.info("Updating last item-gen usage date for " + member.getEffectiveName() + " to " + System.currentTimeMillis());
     }
 }
