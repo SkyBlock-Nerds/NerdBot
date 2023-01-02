@@ -371,15 +371,16 @@ public class ItemGenCommand extends ApplicationCommand {
                             return null;
                         }
 
-                        charIndex = endCharIndex + 2; //move away from color code
+                        // Move away from the color code
+                        charIndex = endCharIndex + 2;
                         if (specialSubStringFlag) {
                             charIndex += specialSubString.length() + 1;
                             lineLength += specialSubString.length();
                         }
                         continue;
                     }
-                    noColorFlag = true;
                     //if we can't find the endCharIndex, we just move on here and set a flag
+                    noColorFlag = true;
                 }
 
                 //Shorthand Color Parsing
