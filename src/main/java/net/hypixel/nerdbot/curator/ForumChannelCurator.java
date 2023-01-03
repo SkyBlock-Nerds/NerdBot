@@ -43,12 +43,13 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
+        int index = 0;
         List<ThreadChannel> threads = forumChannel.getThreadChannels()
                 .stream()
                 .filter(threadChannel -> threadChannel.getAppliedTags().stream().anyMatch(tag -> !tag.getName().equalsIgnoreCase("greenlit")))
                 .toList();
         for (ThreadChannel thread : threads) {
-            log.info("Curating thread: " + thread.getName() + " (Thread ID: " + thread.getId() + ")");
+            log.info("[" + (index++) + "/" + threads.size() + "] Curating thread: " + thread.getName() + " (Thread ID: " + thread.getId() + ")");
 
             try {
                 // This is a stupid way to do it but it's the only way that works right now
@@ -100,8 +101,9 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     log.info("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
                     List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
                     tags.add(new ForumTagImpl(Long.parseLong(NerdBotApp.getBot().getConfig().getTagConfig().getGreenlit())));
-                    thread.getManager().setAppliedTags(tags).complete(true);
+                    thread.getManager().setAppliedTags(tags).queue();
                     output.add(greenlitMessage);
+                    log.debug("Added " + greenlitMessage + " to curator output");
                 }
             } catch (RateLimitedException exception) {
                 log.info("Currently being rate limited so the curation process has to stop!");
