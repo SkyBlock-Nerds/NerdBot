@@ -9,7 +9,8 @@ public enum Rarity {
     MYTHIC("MYTHIC", MCColor.LIGHT_PURPLE),
     DIVINE("DIVINE", MCColor.AQUA),
     SPECIAL("SPECIAL", MCColor.RED),
-    VERY_SPECIAL("VERY SPECIAL", MCColor.RED);
+    VERY_SPECIAL("VERY SPECIAL", MCColor.RED),
+    NONE("", MCColor.GRAY);
 
     private final String rarity;
     private final MCColor color;

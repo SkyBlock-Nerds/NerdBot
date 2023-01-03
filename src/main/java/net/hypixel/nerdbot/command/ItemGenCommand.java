@@ -217,21 +217,25 @@ public class ItemGenCommand extends ApplicationCommand {
             }
         }
 
-        locationY += 25;
-        locationX = 10;
-        g2d.setFont(minecraftBold);
+        //If the user doesn't want a rarity, we don't print the extra lines at the end.
+        if (itemRarity != Rarity.NONE) {
+            locationY += 25;
+            locationX = 10;
+            g2d.setFont(minecraftBold);
 
-        g2d.setColor(itemRarity.getRarityColor().getBackgroundColor());
-        g2d.drawString(itemRarity.getId(), locationX + 2, locationY + 2);
+            g2d.setColor(itemRarity.getRarityColor().getBackgroundColor());
+            g2d.drawString(itemRarity.getId(), locationX + 2, locationY + 2);
 
-        g2d.setColor(itemRarity.getRarityColor().getColor());
-        g2d.drawString(itemRarity.getId(), locationX, locationY);
+            g2d.setColor(itemRarity.getRarityColor().getColor());
+            g2d.drawString(itemRarity.getId(), locationX, locationY);
+        }
 
         g2d.dispose();
 
         File imageFile = File.createTempFile("image", ".png");
         ImageIO.write(image, "png", imageFile);
         event.getHook().sendFiles(FileUpload.fromData(imageFile)).setEphemeral(false).queue();
+
     }
 
     @Nullable
@@ -501,8 +505,6 @@ public class ItemGenCommand extends ApplicationCommand {
 
         return parsed;
     }
-
-
 
     @AutocompletionHandler(name = "rarities", mode = AutocompletionMode.CONTINUITY, showUserInput = false)
     public Queue<String> listRarities(CommandAutoCompleteInteractionEvent event) {
