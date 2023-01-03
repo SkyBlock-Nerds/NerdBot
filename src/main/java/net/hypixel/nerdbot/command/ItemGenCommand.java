@@ -154,7 +154,12 @@ public class ItemGenCommand extends ApplicationCommand {
                             g2d.setColor(currentColor.getColor());
                             g2d.drawString(subWord.toString(), locationX, locationY);
 
-                            locationX += minecraftFont.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
+                            if (boldFlag) {
+                                locationX += minecraftBold.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
+                            } else {
+                                locationX += minecraftFont.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
+                            }
+
                             subWord.setLength(0);
                             colorStartIndex += 3 + foundColor.length(); //remove the color code
                             g2d.setFont(minecraftBold);
