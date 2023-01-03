@@ -79,8 +79,8 @@ public class ItemGenCommand extends ApplicationCommand {
         }
 
         parsedDescription.add(0, name);
-        //Let's draw our image, parse our description
-        int heightEstimate = ((3 + parsedDescription.size()) * 23) - 5;
+        //Guess the height for our image. If there is no rarity, strip 2 lines of space from it.
+        int heightEstimate = (((itemRarity == Rarity.NONE ? 1 : 3) + parsedDescription.size()) * 23) - 5;
         BufferedImage image = new BufferedImage(500, heightEstimate, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
         g2d.setColor(new Color(41, 5, 96));
