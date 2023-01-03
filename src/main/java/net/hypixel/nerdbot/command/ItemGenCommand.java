@@ -491,6 +491,11 @@ public class ItemGenCommand extends ApplicationCommand {
                     break;
                 }
 
+                //If we've reached the EOL
+                if (findNextIndex > (36 - lineLength)) {
+                    break;
+                }
+
                 findNextIndex++;
             }
 
