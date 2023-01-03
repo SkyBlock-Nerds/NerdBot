@@ -22,6 +22,7 @@ public enum Stat {
     FARMING_FORTUNE("☘ Farming Fortune", MCColor.GOLD),
     FORAGING_FORTUNE("☘ Foraging Fortune", MCColor.GOLD),
     SOULFLOW("⸎ Soulflow", MCColor.DARK_AQUA),
+    RECIPE("Right-click to view recipes!", MCColor.YELLOW),
     REQUIRE("❣ Requires", MCColor.RED);
 
     private final String stat;
