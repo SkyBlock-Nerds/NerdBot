@@ -159,7 +159,6 @@ public class ItemGenCommand extends ApplicationCommand {
                             g2d.setFont(minecraftBold);
                             boldFlag = true;
                         } else {
-                            //Arrays.stream(MCColor.values()).filter(color -> foundColor.equalsIgnoreCase(color.name())).findFirst().ifPresent(color -> g2d.setColor(color.getColor()));
                             for (MCColor color : MCColor.values()) {
                                 if (foundColor.equalsIgnoreCase(color.toString())) {
                                     currentColor = color;
@@ -223,6 +222,7 @@ public class ItemGenCommand extends ApplicationCommand {
             locationY += 25;
             locationX = 10;
             g2d.setFont(minecraftBold);
+            if (type.equalsIgnoreCase("NONE")) { type = " "; }
 
             g2d.setColor(itemRarity.getRarityColor().getBackgroundColor());
             g2d.drawString(itemRarity.getId() + " " + type.toUpperCase(), locationX + 2, locationY + 2);
