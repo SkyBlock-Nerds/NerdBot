@@ -39,7 +39,8 @@ public class ItemGenCommand extends ApplicationCommand {
             GuildSlashEvent event,
             @AppOption(description = "The name of the item") String name,
             @AppOption(description = "The rarity of the item", autocomplete = "rarities") String rarity,
-            @AppOption(description = "The description of the item") String description
+            @AppOption(description = "The description of the item") String description,
+            @AppOption(description = "The type of the item") String type
     ) throws IOException {
         String senderChannelId = event.getChannel().getId();
         String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
@@ -224,10 +225,10 @@ public class ItemGenCommand extends ApplicationCommand {
             g2d.setFont(minecraftBold);
 
             g2d.setColor(itemRarity.getRarityColor().getBackgroundColor());
-            g2d.drawString(itemRarity.getId(), locationX + 2, locationY + 2);
+            g2d.drawString(itemRarity.getId() + " " + type.toUpperCase(), locationX + 2, locationY + 2);
 
             g2d.setColor(itemRarity.getRarityColor().getColor());
-            g2d.drawString(itemRarity.getId(), locationX, locationY);
+            g2d.drawString(itemRarity.getId() + " " + type.toUpperCase(), locationX, locationY);
         }
 
         g2d.dispose();
