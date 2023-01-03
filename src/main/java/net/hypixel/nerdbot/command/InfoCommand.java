@@ -13,7 +13,6 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
-import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.api.database.user.LastActivity;
 import net.hypixel.nerdbot.util.DiscordTimestamp;
 import net.hypixel.nerdbot.util.Environment;
@@ -71,6 +70,7 @@ public class InfoCommand extends ApplicationCommand {
                 + guild.getMembersWithRoles(Util.getRole("Game Master")).size();
 
         builder.append("Server name: ").append(guild.getName()).append(" (Server ID: ").append(guild.getId()).append(")\n")
+                .append("Created on: ").append(new DiscordTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()).toRelativeTimestamp()).append("\n")
                 .append("Boosters: ").append(guild.getBoostCount()).append(" (").append(guild.getBoostTier().name()).append(")\n")
                 .append("Channels: ").append(guild.getChannels().size()).append("\n")
                 .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
