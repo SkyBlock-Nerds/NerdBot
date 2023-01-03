@@ -64,7 +64,7 @@ public class ItemGenCommand extends ApplicationCommand {
         //verify rarity argument
         String finalRarity = rarity;
         if (Arrays.stream(Rarity.values()).noneMatch(rarity1 -> finalRarity.equalsIgnoreCase(rarity1.name()))) {
-            rarity = rarity.replaceAll("[^a-zA-Z0-9]", "");
+            rarity = rarity.replaceAll("[^a-zA-Z0-9 ]", "");
             StringBuilder failedRarity = new StringBuilder("You used an invalid rarity, `" + rarity + "`. Valid rarities:\n");
             Arrays.stream(Rarity.values()).forEachOrdered(rarity1 -> failedRarity.append(rarity1.name()).append(" "));
             event.getHook().sendMessage(failedRarity.toString()).setEphemeral(true).queue();
@@ -339,7 +339,7 @@ public class ItemGenCommand extends ApplicationCommand {
                             }
                         }
 
-                        getSpecialString = getSpecialString.replaceAll("[^a-zA-Z0-9]", "");
+                        getSpecialString = getSpecialString.replaceAll("[^a-zA-Z0-9 ]", "");
 
                         //redundant check so we don't call for gems without needing them
                         if (!foundColor) {
