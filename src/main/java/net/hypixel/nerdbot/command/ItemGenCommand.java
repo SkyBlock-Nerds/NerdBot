@@ -127,7 +127,8 @@ public class ItemGenCommand extends ApplicationCommand {
                 if ((colorStartIndex + 2 < line.length()) && (line.charAt(colorStartIndex) == '%') && (line.charAt(colorStartIndex + 1) == '%')) {
                     int colorEndIndex = -1;
 
-                    for(int j = colorStartIndex; j < line.length() - 2; j++) {
+                    //Get index of where color code ends.
+                    for(int j = colorStartIndex + 1; j < line.length() - 2; j++) {
                         if (line.charAt(j + 1) == '%' && line.charAt(j + 2) == '%') {
                             colorEndIndex = j;
                             break;
