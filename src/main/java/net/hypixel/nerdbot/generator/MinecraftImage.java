@@ -22,6 +22,7 @@ public class MinecraftImage {
     final Font minecraftFont;
     final Font minecraftBold;
     MCColor currentColor;
+    boolean boldFlag = false; //True if we're currently printing with bold, false if not.
     private BufferedImage image;
 
     public MinecraftImage(int imageWidth, int linesToPrint, MCColor defaultColor) {
@@ -49,7 +50,6 @@ public class MinecraftImage {
      * @param parsedString A string with valid color codes, such as through #parseDescription().
      */
     public void printStrings(ArrayList<String> parsedString) {
-        boolean boldFlag = false; //True if we're currently printing with bold, false if not.
         for (String line : parsedString) {
             locationX = 10;
 
@@ -70,28 +70,13 @@ public class MinecraftImage {
 
                     if (colorEndIndex != -1) {
                         //We've previously verified that this is a good color, so let's trust it
-                        g2d.setColor(currentColor.getBackgroundColor());
-                        g2d.drawString(subWord.toString(), locationX + 2, locationY + 2);
-                        g2d.setColor(currentColor.getColor());
-                        g2d.drawString(subWord.toString(), locationX, locationY);
-
-                        locationX += minecraftFont.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
+                        drawStringWithBackground(subWord.toString());
                         subWord.setLength(0);
 
                         String foundColor = line.substring(colorStartIndex + 2, colorEndIndex + 1);
 
                         if (foundColor.equalsIgnoreCase("bold")) {
-                            g2d.setColor(currentColor.getBackgroundColor());
-                            g2d.drawString(subWord.toString(), locationX + 2, locationY + 2);
-
-                            g2d.setColor(currentColor.getColor());
-                            g2d.drawString(subWord.toString(), locationX, locationY);
-
-                            if (boldFlag) {
-                                locationX += minecraftBold.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
-                            } else {
-                                locationX += minecraftFont.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
-                            }
+                            drawStringWithBackground(subWord.toString());
 
                             subWord.setLength(0);
                             colorStartIndex += 3 + foundColor.length(); //remove the color code
@@ -111,45 +96,62 @@ public class MinecraftImage {
                     }
                 } else if (!minecraftFont.canDisplay(line.charAt(colorStartIndex))) {
                     //We need to draw this character special, so let's get rid of our old word.
-                    g2d.setColor(currentColor.getBackgroundColor());
-                    g2d.drawString(subWord.toString(), locationX + 2, locationY + 2);
-                    g2d.setColor(currentColor.getColor());
-                    g2d.drawString(subWord.toString(), locationX, locationY);
-
-                    if (boldFlag) {
-                        locationX += minecraftBold.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
-                    } else {
-                        locationX += minecraftFont.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
-                    }
+                    drawStringWithBackground(subWord.toString());
                     subWord.setLength(0);
-
-                    //Let's try to render the character in a normal font, and then return to the minecraft font.
-                    Font sansSerif = new Font("SansSerif", Font.PLAIN, 20);
-                    g2d.setFont(sansSerif);
-                    subWord.append(line.charAt(colorStartIndex));
-
-                    g2d.setColor(currentColor.getBackgroundColor());
-                    g2d.drawString(subWord.toString(), locationX + 2, locationY + 2);
-
-                    g2d.setColor(currentColor.getColor());
-                    g2d.drawString(subWord.toString(), locationX, locationY);
-
-                    locationX += sansSerif.getStringBounds(subWord.toString(), g2d.getFontRenderContext()).getWidth();
-                    subWord.setLength(0);
-                    g2d.setFont(boldFlag ? minecraftBold : minecraftFont);
+                    drawSymbol(line.charAt(colorStartIndex));
                 } else {
                     //We do this to prevent monospace bullshit
                     subWord.append(line.charAt(colorStartIndex));
                 }
             }
 
-            g2d.setColor(currentColor.getBackgroundColor());
-            g2d.drawString(subWord.toString(), locationX + 2, locationY + 2);
-            g2d.setColor(currentColor.getColor());
-            g2d.drawString(subWord.toString(), locationX, locationY); //draw the last word, even if it's empty
-            locationY += 23;
+            drawStringWithBackground(subWord.toString());
+            newLine();
         }
 
+    }
+
+    /**
+     * Draws a symbol on the image, and moves the locationX to where needed.
+     * @param symbol Symbol to be drawn.
+     */
+    private void drawSymbol(char symbol) {
+        Font sansSerif = new Font("SansSerif", Font.PLAIN, 20);
+        g2d.setFont(sansSerif);
+
+        g2d.setColor(currentColor.getBackgroundColor());
+        g2d.drawString(Character.toString(symbol), locationX + 2, locationY + 2);
+
+        g2d.setColor(currentColor.getColor());
+        g2d.drawString(Character.toString(symbol), locationX, locationY);
+
+        locationX += sansSerif.getStringBounds(Character.toString(symbol), g2d.getFontRenderContext()).getWidth();
+        g2d.setFont(boldFlag ? minecraftBold : minecraftFont);
+    }
+
+    /**
+     * Draws a string at the current location, and moves the locationX to where needed.
+     * @param string String to print.
+     */
+    private void drawStringWithBackground(String string) {
+        g2d.setColor(currentColor.getBackgroundColor());
+        g2d.drawString(string, locationX + 2, locationY + 2);
+        g2d.setColor(currentColor.getColor());
+        g2d.drawString(string, locationX, locationY);
+
+        //Move the printing location depending on the size of the printed string
+        if (boldFlag) {
+            locationX += minecraftBold.getStringBounds(string, g2d.getFontRenderContext()).getWidth();
+        } else {
+            locationX += minecraftFont.getStringBounds(string, g2d.getFontRenderContext()).getWidth();
+        }
+    }
+
+    /**
+     * Moves the string to print to the next line.
+     */
+    private void newLine() {
+        locationY += 23;
     }
 
     /**
