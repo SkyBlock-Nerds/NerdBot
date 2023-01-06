@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 
 public class StringColorParser {
+
     /**
      * Returns an array list that parses Minecraft Color Codes, newlines, and wrapping.
      * @param description String to be parsed

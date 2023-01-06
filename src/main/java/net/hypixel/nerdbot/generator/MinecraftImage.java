@@ -14,12 +14,12 @@ public class MinecraftImage {
     int locationX = 10;
     int locationY = 25;
 
-    GraphicsEnvironment ge;
-    Graphics2D g2d;
-    final Font minecraftFont;
-    final Font minecraftBold;
-    MCColor currentColor = MCColor.GRAY;
-    boolean boldFlag = false; //True if we're currently printing with bold, false if not.
+    private GraphicsEnvironment ge;
+    private Graphics2D g2d;
+    private final Font minecraftFont;
+    private final Font minecraftBold;
+    private MCColor currentColor;
+    private boolean boldFlag = false; //True if we're currently printing with bold, false if not.
     private BufferedImage image;
 
     public MinecraftImage(int imageWidth, int linesToPrint, MCColor defaultColor) {
@@ -97,7 +97,6 @@ public class MinecraftImage {
             drawStringWithBackground(subWord.toString());
             newLine();
         }
-
     }
 
     /**
