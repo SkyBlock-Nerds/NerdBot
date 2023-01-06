@@ -14,6 +14,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.generator.MinecraftImage;
 import net.hypixel.nerdbot.generator.MinecraftImage.*;
+import net.hypixel.nerdbot.generator.StringColorParser;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 
@@ -72,7 +73,7 @@ public class ItemGenCommand extends ApplicationCommand {
         }
 
         Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
-        ArrayList<String> parsedDescription = MinecraftImage.parseDescription(description, event);
+        ArrayList<String> parsedDescription = StringColorParser.parseDescription(description, event);
         if (parsedDescription == null || parsedDescription.isEmpty()) {
             event.getHook().sendMessage("Please enter a valid description for the item!").setEphemeral(true).queue();
             return;
