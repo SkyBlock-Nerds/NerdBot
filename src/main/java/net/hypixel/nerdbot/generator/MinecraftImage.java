@@ -1,10 +1,7 @@
 package net.hypixel.nerdbot.generator;
 
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import net.hypixel.nerdbot.command.ItemGenCommand;
-import net.hypixel.nerdbot.util.skyblock.Gemstone;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
-import net.hypixel.nerdbot.util.skyblock.Stat;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
