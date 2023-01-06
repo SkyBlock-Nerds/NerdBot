@@ -105,7 +105,6 @@ public class MinecraftImage {
             drawStringWithBackground(subWord.toString());
             newLine();
         }
-
     }
 
     /**
