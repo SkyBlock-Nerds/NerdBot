@@ -21,7 +21,6 @@ public class MinecraftImage {
     Graphics2D g2d;
     final Font minecraftFont;
     final Font minecraftBold;
-    boolean boldFlag; //True if we're currently printing with bold, false if not.
     MCColor currentColor;
     private BufferedImage image;
 
@@ -29,7 +28,6 @@ public class MinecraftImage {
         this.ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         this.minecraftFont = initFont("/Minecraft/minecraft.ttf", 16f);
         this.minecraftBold = initFont("/Minecraft/3_Minecraft-Bold.otf", 22f);
-        this.boldFlag = false;
         this.g2d = initG2D(imageWidth, linesToPrint * 23);
         this.currentColor = defaultColor;
     }
@@ -38,7 +36,6 @@ public class MinecraftImage {
         this.ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         this.minecraftFont = initFont("/Minecraft/minecraft.ttf", 16f);
         this.minecraftBold = initFont("/Minecraft/3_Minecraft-Bold.otf", 22f);
-        this.boldFlag = false;
         this.g2d = initG2D(imageWidth, linesToPrint * 23);
         this.currentColor = MCColor.GRAY;
     }
@@ -52,6 +49,7 @@ public class MinecraftImage {
      * @param parsedString A string with valid color codes, such as through #parseDescription().
      */
     public void printStrings(ArrayList<String> parsedString) {
+        boolean boldFlag = false; //True if we're currently printing with bold, false if not.
         for (String line : parsedString) {
             locationX = 10;
 
