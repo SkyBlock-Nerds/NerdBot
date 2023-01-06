@@ -69,7 +69,7 @@ public class StringColorParser {
                     StringBuilder specialSubString = new StringBuilder();
                     boolean specialSubStringFlag = false;
                     int specialSubStringIndex = -1;
-                    for (int i = charIndex + 2; i < charIndex + 100; i++) { //get char
+                    for (int i = charIndex + 2; i < charIndex + 100; i++) {
                         if (i + 1 >= description.length()) {
                             endCharIndex = -1;
                             break;
@@ -106,11 +106,14 @@ public class StringColorParser {
                         }
                     }
 
-                    if (endCharIndex != -1) { //If we can't find the end percents, just continue
-                        charIndex += 2; //move away from color code
+                    //If we can't find the end percents, just continue
+                    if (endCharIndex != -1) {
+                        //Move away from color code
+                        charIndex += 2;
                         String getSpecialString = description.substring(charIndex, endCharIndex);
 
-                        boolean foundColor = false; //True if we find a valid color, stat, or gemstone.
+                        //True if we find a valid color, stat, or gemstone.
+                        boolean foundColor = false;
                         for (MCColor color : colors) {
                             if (getSpecialString.equalsIgnoreCase(color.name())) {
                                 foundColor = true;
@@ -214,7 +217,7 @@ public class StringColorParser {
                     charIndex++;
 
                     int colorCheck = 36; //An extra buffer so we don't wrap colors
-                    boolean newLineFlag = true; //True if we need to make a newline to paste the next word
+                    boolean newLineFlag = true;
                     for (int i = charIndex; i < charIndex + (colorCheck - lineLength); i++) {
                         if (i + 1 > description.length()) {
                             newLineFlag = false;
