@@ -14,6 +14,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.channel.ChannelManager;
 import net.hypixel.nerdbot.generator.MinecraftImage;
 import net.hypixel.nerdbot.generator.StringColorParser;
+import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 
 import javax.imageio.ImageIO;
@@ -81,7 +82,7 @@ public class ItemGenCommand extends ApplicationCommand {
         String createRarity = "%%" + itemRarity.getRarityColor().getColor() + "%%" + itemRarity.getId() + " " + type;
         parsedDescription.add(parsedDescription.size(), createRarity);
 
-        MinecraftImage minecraftImage = new MinecraftImage(500, parsedDescription.size());
+        MinecraftImage minecraftImage = new MinecraftImage(500, parsedDescription.size(), MCColor.GRAY);
         minecraftImage.printStrings(parsedDescription);
 
         File imageFile = File.createTempFile("image", ".png");

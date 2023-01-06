@@ -18,7 +18,7 @@ public class MinecraftImage {
     Graphics2D g2d;
     final Font minecraftFont;
     final Font minecraftBold;
-    MCColor currentColor;
+    MCColor currentColor = MCColor.GRAY;
     boolean boldFlag = false; //True if we're currently printing with bold, false if not.
     private BufferedImage image;
 
@@ -28,14 +28,6 @@ public class MinecraftImage {
         this.minecraftBold = initFont("/Minecraft/3_Minecraft-Bold.otf", 22f);
         this.g2d = initG2D(imageWidth, linesToPrint * 23);
         this.currentColor = defaultColor;
-    }
-
-    public MinecraftImage(int imageWidth, int linesToPrint) {
-        this.ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        this.minecraftFont = initFont("/Minecraft/minecraft.ttf", 16f);
-        this.minecraftBold = initFont("/Minecraft/3_Minecraft-Bold.otf", 22f);
-        this.g2d = initG2D(imageWidth, linesToPrint * 23);
-        this.currentColor = MCColor.GRAY;
     }
 
     public BufferedImage getImage() {
