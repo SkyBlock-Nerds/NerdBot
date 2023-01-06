@@ -193,6 +193,7 @@ public class StringColorParser {
                             break;
                         }
                     }
+
                     if ('l' == description.charAt(charIndex + 1)) {
                         currString.append("%%BOLD%%");
                     }
