@@ -162,11 +162,11 @@ public class MinecraftImage {
         try {
             InputStream fontStream = ItemGenCommand.class.getResourceAsStream(path);
             if (fontStream == null) {
-                throw new NullPointerException();
+                return null;
             }
             font = Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(size);
             ge.registerFont(font);
-        } catch (IOException | FontFormatException | NullPointerException e) {
+        } catch (IOException | FontFormatException e) {
             e.printStackTrace();
             return null;
         }
