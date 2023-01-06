@@ -220,6 +220,7 @@ public class StringColorParser {
                             newLineFlag = false;
                             break;
                         }
+
                         if (description.charAt(i) == ' ') {
                             newLineFlag = false;
                             break;
