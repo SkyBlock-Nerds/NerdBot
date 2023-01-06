@@ -83,7 +83,7 @@ public class ItemGenCommand extends ApplicationCommand {
         parsedDescription.add(parsedDescription.size(), createRarity);
 
         MinecraftImage minecraftImage = new MinecraftImage(500, parsedDescription.size(), MCColor.GRAY);
-        minecraftImage.printStrings(parsedDescription);
+        minecraftImage.drawStrings(parsedDescription);
 
         File imageFile = File.createTempFile("image", ".png");
         ImageIO.write(minecraftImage.getImage(), "png", imageFile);

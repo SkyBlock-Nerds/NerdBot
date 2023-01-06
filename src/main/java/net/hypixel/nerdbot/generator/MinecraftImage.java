@@ -35,10 +35,10 @@ public class MinecraftImage {
     }
 
     /**
-     * Prints the strings to the generated image.
+     * Draws the strings to the generated image.
      * @param parsedString A string with valid color codes, such as through #parseDescription().
      */
-    public void printStrings(ArrayList<String> parsedString) {
+    public void drawStrings(ArrayList<String> parsedString) {
         for (String line : parsedString) {
             locationX = 10;
 
