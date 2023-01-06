@@ -64,7 +64,6 @@ public class StringColorParser {
                 //Color parsing
                 if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
                     int endCharIndex = 0;
-
                     //If a parameter can be passed, put that here.
                     StringBuilder specialSubString = new StringBuilder();
                     boolean specialSubStringFlag = false;
@@ -197,6 +196,7 @@ public class StringColorParser {
                             break;
                         }
                     }
+
                     if ('l' == description.charAt(charIndex + 1)) {
                         currString.append("%%BOLD%%");
                     }
@@ -223,6 +223,7 @@ public class StringColorParser {
                             newLineFlag = false;
                             break;
                         }
+
                         if (description.charAt(i) == ' ') {
                             newLineFlag = false;
                             break;
