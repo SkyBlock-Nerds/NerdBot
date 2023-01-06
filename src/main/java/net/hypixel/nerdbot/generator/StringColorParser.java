@@ -64,7 +64,6 @@ public class StringColorParser {
                 //Color parsing
                 if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
                     int endCharIndex = 0;
-
                     //If a parameter can be passed, put that here.
                     StringBuilder specialSubString = new StringBuilder();
                     boolean specialSubStringFlag = false;
