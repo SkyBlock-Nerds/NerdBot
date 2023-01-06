@@ -40,9 +40,8 @@ public class StringColorParser {
             }
 
             boolean noColorFlag = false;
-            /* This block checks colors, newline characters, soft-wrapping,
-             * and changes the text depending on those checks.
-             */
+            //This block checks colors, newline characters, soft-wrapping,
+            //and changes the text depending on those checks.
             if (description.length() != charIndex + 1) {
                 //Color parsing
                 if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
