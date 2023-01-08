@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.channel.ChannelGroup;
+import net.hypixel.nerdbot.api.database.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.util.Util;
 

@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util;
+package net.hypixel.nerdbot.util.discord;
 
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;

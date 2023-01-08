@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.api.channel;
+package net.hypixel.nerdbot.api.database.channel;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

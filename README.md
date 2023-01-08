@@ -14,7 +14,8 @@ A ChannelGroup is two channels that are linked together to submit and collect ap
 
 ### Mod Mail
 
-A Mod Mail system where users can DM the bot user, have the requests sent into a Forum Channel, and responses received in the same DM.
+A Mod Mail system where users can DM the bot user, have the requests sent into a Forum Channel, and responses received
+in the same DM.
 
 ### Mod Logs
 
@@ -31,6 +32,7 @@ or `dev.config.json`
 Changes to the configuration file require the bot to be restarted.
 
 ## Commands
+
 See the [commands](https://github.com/TheMGRF/NerdBot/tree/master/src/main/java/net/hypixel/nerdbot/command) package.
 
 ## Running the Bot

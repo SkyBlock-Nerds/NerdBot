@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util.resolver;
+package net.hypixel.nerdbot.util.discord;
 
 import com.freya02.botcommands.api.BContext;
 import com.freya02.botcommands.api.parameters.ParameterResolver;
@@ -11,8 +11,8 @@ import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.util.EnumSet;
 
 public class ForumChannelResolver extends ParameterResolver implements SlashParameterResolver, ChannelResolver {

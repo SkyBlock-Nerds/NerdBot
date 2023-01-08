@@ -8,7 +8,7 @@ import com.mongodb.client.MongoCollection;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.channel.ChannelGroup;
+import net.hypixel.nerdbot.api.database.channel.ChannelGroup;
 import net.hypixel.nerdbot.api.database.Database;
 
 import java.util.ArrayList;
