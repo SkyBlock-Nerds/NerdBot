@@ -11,7 +11,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.channel.ChannelManager;
+import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.generator.MinecraftImage;
 import net.hypixel.nerdbot.generator.StringColorParser;
 import net.hypixel.nerdbot.util.skyblock.MCColor;

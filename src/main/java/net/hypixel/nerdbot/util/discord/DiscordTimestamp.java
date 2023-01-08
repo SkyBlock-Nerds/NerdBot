@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util;
+package net.hypixel.nerdbot.util.discord;
 
 public class DiscordTimestamp {
 

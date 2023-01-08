@@ -15,7 +15,7 @@ import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.channel.ChannelManager;
+import net.hypixel.nerdbot.channel.ChannelManager;
 
 import java.awt.*;
 import java.time.Instant;

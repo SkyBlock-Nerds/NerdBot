@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util;
+package net.hypixel.nerdbot.util.discord;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;

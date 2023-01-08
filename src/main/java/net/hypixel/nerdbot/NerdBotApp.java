@@ -9,7 +9,7 @@ import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.bot.NerdBot;
-import net.hypixel.nerdbot.util.MessageCache;
+import net.hypixel.nerdbot.util.discord.MessageCache;
 
 import javax.security.auth.login.LoginException;
 import java.time.Duration;

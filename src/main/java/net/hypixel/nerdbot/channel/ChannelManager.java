@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.api.channel;
+package net.hypixel.nerdbot.channel;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
