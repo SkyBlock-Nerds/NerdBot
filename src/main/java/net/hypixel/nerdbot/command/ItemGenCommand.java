@@ -58,12 +58,12 @@ public class ItemGenCommand extends ApplicationCommand {
             return;
         }
 
-        //verify rarity argument
+        // verify rarity argument
         String finalRarity = rarity;
-        if (Arrays.stream(Rarity.values()).noneMatch(rarity1 -> finalRarity.equalsIgnoreCase(rarity1.name()))) {
+        if (Arrays.stream(Rarity.VALUES).noneMatch(rarity1 -> finalRarity.equalsIgnoreCase(rarity1.name()))) {
             rarity = rarity.replaceAll("[^a-zA-Z0-9_ ]", "");
             StringBuilder failedRarity = new StringBuilder("You used an invalid rarity, `" + rarity + "`. Valid rarities:\n");
-            Arrays.stream(Rarity.values()).forEachOrdered(rarity1 -> failedRarity.append(rarity1.name()).append(" "));
+            Arrays.stream(Rarity.VALUES).forEachOrdered(rarity1 -> failedRarity.append(rarity1.name()).append(" "));
             event.getHook().sendMessage(failedRarity.toString()).setEphemeral(true).queue();
             return;
         }
@@ -92,6 +92,6 @@ public class ItemGenCommand extends ApplicationCommand {
 
     @AutocompletionHandler(name = "rarities", mode = AutocompletionMode.CONTINUITY, showUserInput = false)
     public Queue<String> listRarities(CommandAutoCompleteInteractionEvent event) {
-        return Stream.of(Rarity.values()).map(Enum::name).collect(Collectors.toCollection(ArrayDeque::new));
+        return Stream.of(Rarity.VALUES).map(Enum::name).collect(Collectors.toCollection(ArrayDeque::new));
     }
 }

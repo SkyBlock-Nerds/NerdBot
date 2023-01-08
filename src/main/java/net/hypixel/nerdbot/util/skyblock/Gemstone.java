@@ -15,11 +15,15 @@ public enum Gemstone {
     GEM_MINING("[✦]"),
     GEM_UNIVERSAL("[❂]");
 
+    public static final Gemstone[] VALUES = values();
+
     private final String gemstone;
 
     Gemstone(String gemstone) {
         this.gemstone = gemstone;
     }
 
-    public String getId() { return gemstone; }
+    public String getId() {
+        return gemstone;
+    }
 }

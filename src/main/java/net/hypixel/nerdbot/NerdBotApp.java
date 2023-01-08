@@ -7,7 +7,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.bot.Bot;
-import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.MessageCache;

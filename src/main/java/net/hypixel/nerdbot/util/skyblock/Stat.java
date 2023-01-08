@@ -25,9 +25,11 @@ public enum Stat {
     RECIPE("Right-click to view recipes!", MCColor.YELLOW),
     REQUIRE("❣ Requires", MCColor.RED);
 
+    public static final Stat[] VALUES = values();
+
     private final String stat;
     private final MCColor color;
-    //Some stats have special colors which are used in conjunction to the normal color.
+    // Some stats have special colors which are used in conjunction to the normal color.
     private final MCColor subColor;
 
     Stat(String stat, MCColor color) {
@@ -35,6 +37,7 @@ public enum Stat {
         this.color = color;
         this.subColor = null;
     }
+
     Stat(String stat, MCColor color, MCColor subColor) {
         this.stat = stat;
         this.color = color;

@@ -2,8 +2,8 @@ package net.hypixel.nerdbot.generator;
 
 import net.hypixel.nerdbot.command.ItemGenCommand;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -11,16 +11,17 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 public class MinecraftImage {
-    int locationX = 10;
-    int locationY = 25;
 
-    private GraphicsEnvironment ge;
-    private Graphics2D g2d;
+    private final GraphicsEnvironment ge;
+    private final Graphics2D g2d;
     private final Font minecraftFont;
     private final Font minecraftBold;
+
     private MCColor currentColor;
-    private boolean boldFlag = false; //True if we're currently printing with bold, false if not.
+    private boolean boldFlag = false; // True if we're currently printing with bold, false if not.
     private BufferedImage image;
+    private int locationX = 10;
+    private int locationY = 25;
 
     public MinecraftImage(int imageWidth, int linesToPrint, MCColor defaultColor) {
         this.ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -36,21 +37,22 @@ public class MinecraftImage {
 
     /**
      * Draws the strings to the generated image.
+     *
      * @param parsedString A string with valid color codes, such as through #parseDescription().
      */
     public void drawStrings(ArrayList<String> parsedString) {
         for (String line : parsedString) {
             locationX = 10;
 
-            //Let's iterate through each character in our line, looking for colors
+            // Let's iterate through each character in our line, looking for colors
             StringBuilder subWord = new StringBuilder();
-            for(int colorStartIndex = 0; colorStartIndex < line.length(); colorStartIndex++) {
-                //Check for colors
+            for (int colorStartIndex = 0; colorStartIndex < line.length(); colorStartIndex++) {
+                // Check for colors
                 if ((colorStartIndex + 2 < line.length()) && (line.charAt(colorStartIndex) == '%') && (line.charAt(colorStartIndex + 1) == '%')) {
                     int colorEndIndex = -1;
 
-                    //Get index of where color code ends.
-                    for(int j = colorStartIndex + 1; j < line.length() - 2; j++) {
+                    // Get index of where color code ends.
+                    for (int j = colorStartIndex + 1; j < line.length() - 2; j++) {
                         if (line.charAt(j + 1) == '%' && line.charAt(j + 2) == '%') {
                             colorEndIndex = j;
                             break;
@@ -58,7 +60,7 @@ public class MinecraftImage {
                     }
 
                     if (colorEndIndex != -1) {
-                        //We've previously verified that this is a good color, so let's trust it
+                        // We've previously verified that this is a good color, so let's trust it
                         drawStringWithBackground(subWord.toString());
                         subWord.setLength(0);
 
@@ -68,28 +70,28 @@ public class MinecraftImage {
                             drawStringWithBackground(subWord.toString());
 
                             subWord.setLength(0);
-                            colorStartIndex += 3 + foundColor.length(); //remove the color code
+                            colorStartIndex += 3 + foundColor.length(); // remove the color code
                             g2d.setFont(minecraftBold);
                             boldFlag = true;
                         } else {
-                            for (MCColor color : MCColor.values()) {
+                            for (MCColor color : MCColor.VALUES) {
                                 if (foundColor.equalsIgnoreCase(color.toString())) {
                                     currentColor = color;
                                 }
                             }
                             g2d.setColor(currentColor.getColor());
-                            colorStartIndex += 3 + foundColor.length(); //remove the color code
+                            colorStartIndex += 3 + foundColor.length(); // remove the color code
                             g2d.setFont(minecraftFont);
                             boldFlag = false;
                         }
                     }
                 } else if (!minecraftFont.canDisplay(line.charAt(colorStartIndex))) {
-                    //We need to draw this character special, so let's get rid of our old word.
+                    // We need to draw this character special, so let's get rid of our old word.
                     drawStringWithBackground(subWord.toString());
                     subWord.setLength(0);
                     drawSymbol(line.charAt(colorStartIndex));
                 } else {
-                    //We do this to prevent monospace bullshit
+                    // We do this to prevent monospace bullshit
                     subWord.append(line.charAt(colorStartIndex));
                 }
             }
@@ -101,6 +103,7 @@ public class MinecraftImage {
 
     /**
      * Draws a symbol on the image, and moves the locationX to where needed.
+     *
      * @param symbol Symbol to be drawn.
      */
     private void drawSymbol(char symbol) {
@@ -119,6 +122,7 @@ public class MinecraftImage {
 
     /**
      * Draws a string at the current location, and moves the locationX to where needed.
+     *
      * @param string String to print.
      */
     private void drawStringWithBackground(String string) {
@@ -127,7 +131,7 @@ public class MinecraftImage {
         g2d.setColor(currentColor.getColor());
         g2d.drawString(string, locationX, locationY);
 
-        //Move the printing location depending on the size of the printed string
+        // Move the printing location depending on the size of the printed string
         if (boldFlag) {
             locationX += minecraftBold.getStringBounds(string, g2d.getFontRenderContext()).getWidth();
         } else {
@@ -144,6 +148,7 @@ public class MinecraftImage {
 
     /**
      * Creates an image, then initialized a Graphics2D object from that image.
+     *
      * @return G2D object
      */
     private Graphics2D initG2D(int width, int height) {
@@ -153,7 +158,9 @@ public class MinecraftImage {
 
     /**
      * Initializes a font.
+     *
      * @param path The path to the font in the resources folder.
+     *
      * @return The initialized font.
      */
     @Nullable
