@@ -75,12 +75,21 @@ public class ItemGenCommand extends ApplicationCommand {
             return;
         }
 
-        String createTitle = "%%" + itemRarity.getRarityColor().getColor() + "%%" + name;
+        // adds the items name to the array list
+        String createTitle = "%%" + itemRarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%";
         parsedDescription.add(0, createTitle);
-        parsedDescription.add(parsedDescription.size(), "");
 
-        String createRarity = "%%" + itemRarity.getRarityColor().getColor() + "%%" + itemRarity.getId() + " " + type;
-        parsedDescription.add(parsedDescription.size(), createRarity);
+        // writing the rarity if the rarity is not none
+        if (itemRarity != Rarity.NONE) {
+            if (type.equalsIgnoreCase("none")) {
+                type = "";
+            }
+            // adds the items type in the description
+            parsedDescription.add(parsedDescription.size(), "");
+            String createRarity = "%%" + itemRarity.getRarityColor() + "%%%%BOLD%%" + itemRarity.getId().toUpperCase() + " " + type;
+            
+            parsedDescription.add(parsedDescription.size(), createRarity);
+        }
 
         MinecraftImage minecraftImage = new MinecraftImage(500, parsedDescription.size(), MCColor.GRAY);
         minecraftImage.drawStrings(parsedDescription);
