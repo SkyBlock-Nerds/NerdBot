@@ -19,10 +19,14 @@ import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 @Log4j2
 public class Database implements ServerMonitorListener {
+
+    private static final FindOneAndReplaceOptions REPLACE_OPTIONS = new FindOneAndReplaceOptions().upsert(true);
+
     private final MongoClient mongoClient;
     private final MongoDatabase database;
     private final ConnectionString connectionString;
@@ -77,74 +81,112 @@ public class Database implements ServerMonitorListener {
         connected = false;
     }
 
+    @Nullable
     public <T> MongoCollection<T> getCollection(String collectionName, Class<T> clazz) {
-        if (database == null) { return null; }
+        if (database == null) {
+            return null;
+        }
         return database.getCollection(collectionName, clazz);
     }
 
+    @Nullable
     public MongoCollection<Document> getCollection(String collectionName) {
-        if (database == null) { return null; }
+        if (database == null) {
+            return null;
+        }
         return database.getCollection(collectionName);
     }
 
     public void createCollection(String collectionName) {
-        if (database == null) { return; }
+        if (database == null) {
+            return;
+        }
         database.createCollection(collectionName);
     }
 
+    @Nullable
     public <T> InsertOneResult insertDocument(MongoCollection<T> collection, T object) {
-        if (collection == null) { return null; }
+        if (collection == null) {
+            return null;
+        }
         return collection.insertOne(object);
     }
 
+    @Nullable
     public <T> InsertManyResult insertDocuments(MongoCollection<T> collection, List<T> objects) {
-        if (collection == null) { return null; }
+        if (collection == null) {
+            return null;
+        }
         return collection.insertMany(objects);
     }
 
+    @Nullable
     public <T> T upsertDocument(MongoCollection<T> collection, String key, Object value, T object) {
-        if (collection == null) { return null; }
-        FindOneAndReplaceOptions replaceOptions = new FindOneAndReplaceOptions().upsert(true);
-        return collection.findOneAndReplace(Filters.eq(key, value), object, replaceOptions);
+        if (collection == null) {
+            return null;
+        }
+        return collection.findOneAndReplace(Filters.eq(key, value), object, REPLACE_OPTIONS);
     }
 
+    @Nullable
     public <T> UpdateResult updateDocument(MongoCollection<T> collection, String key, Object value, Object clazz) {
-        if (collection == null) { return null; }
+        if (collection == null) {
+            return null;
+        }
         return collection.updateOne(Filters.eq(key, value), new Document("$set", clazz));
     }
 
+    @Nullable
     public UpdateResult updateDocuments(MongoCollection<Document> collection, String key, Object value, List<Document> documents) {
-        if (collection == null) { return null; }
+        if (collection == null) {
+            return null;
+        }
         return collection.updateMany(Filters.eq(key, value), documents);
     }
 
+    @Nullable
     public <T> FindIterable<T> findDocument(MongoCollection<T> collection, String key, Object value) {
-        if (collection == null) { return null; }
+        if (collection == null) {
+            return null;
+        }
         return collection.find(Filters.eq(key, value));
     }
 
+    @Nullable
     public <T> FindIterable<T> findAllDocuments(MongoCollection<T> collection) {
-        if (collection == null) { return null; }
+        if (collection == null) {
+            return null;
+        }
         return collection.find();
     }
 
     public <T> long countDocuments(MongoCollection<T> collection) {
-        if (collection == null) { return -1; }
+        if (collection == null) {
+            return -1;
+        }
         return collection.countDocuments();
     }
 
     public <T> long countDocuments(MongoCollection<T> collection, Bson filter) {
-        if (collection == null) { return -1; }
+        if (collection == null) {
+            return -1;
+        }
         return collection.countDocuments(filter);
     }
 
+    @Nullable
     public <T> DeleteResult deleteDocument(MongoCollection<T> collection, String key, Object value) {
-        if (collection == null) { return null; }
+        if (collection == null) {
+            return null;
+        }
         return collection.deleteOne(Filters.eq(key, value));
     }
 
+    @Nullable
     public <T> DeleteResult deleteDocuments(MongoCollection<T> collection, String key, Object value) {
-        if (collection == null) { return null; }
+        if (collection == null) {
+            return null;
+        }
         return collection.deleteMany(Filters.eq(key, value));
     }
 }

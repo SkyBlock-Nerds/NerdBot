@@ -4,16 +4,18 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Stat;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 public class StringColorParser {
 
     /**
      * Returns an array list that parses Minecraft Color Codes, newlines, and wrapping.
+     *
      * @param description String to be parsed
-     * @param event GuildSlashEvent to return errors to.
+     * @param event       GuildSlashEvent to return errors to.
+     *
      * @return Parsed description with a max of 35 characters, excluding special codes.
      */
     @Nullable
@@ -23,7 +25,9 @@ public class StringColorParser {
 
     /**
      * Returns an array list that parses Minecraft Color Codes, newlines, and wrapping.
+     *
      * @param description String to be parsed
+     *
      * @return Parsed description with a max of 35 characters, excluding special codes. null if it cannot be parsed.
      */
     @Nullable
@@ -34,16 +38,16 @@ public class StringColorParser {
     @Nullable
     private static ArrayList<String> parseDescriptionHelper(String description, GuildSlashEvent event) {
         ArrayList<String> parsed = new ArrayList<>();
-        MCColor[] colors = MCColor.values();
+        MCColor[] colors = MCColor.VALUES;
 
         StringBuilder currString = new StringBuilder();
-        int lineLength = 0; //where we are in curr string
-        int charIndex = 0;  //where we are in description
-        int breakLoopCount = 0; //break if we are hanging due to a runtime error
+        int lineLength = 0; // where we are in curr string
+        int charIndex = 0;  // where we are in description
+        int breakLoopCount = 0; // break if we are hanging due to a runtime error
 
-        //Go through the entire description, break it apart to put into an arraylist for rendering
-        while(description.length() > charIndex) {
-            //Make sure we're not looping infinitely and just hanging the thread
+        // Go through the entire description, break it apart to put into an arraylist for rendering
+        while (description.length() > charIndex) {
+            // Make sure we're not looping infinitely and just hanging the thread
             breakLoopCount++;
             if (breakLoopCount > description.length() * 2) {
                 if (event != null) {
@@ -61,10 +65,10 @@ public class StringColorParser {
             // This block checks colors, newline characters, soft-wrapping,
             // and changes the text depending on those checks.
             if (description.length() != charIndex + 1) {
-                //Color parsing
+                // Color parsing
                 if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
                     int endCharIndex = 0;
-                    //If a parameter can be passed, put that here.
+                    // If a parameter can be passed, put that here.
                     StringBuilder specialSubString = new StringBuilder();
                     boolean specialSubStringFlag = false;
                     int specialSubStringIndex = -1;
@@ -87,7 +91,7 @@ public class StringColorParser {
                             specialSubString.append(description.charAt(i));
                         }
 
-                        //Special case for a specialSubString
+                        // Special case for a specialSubString
                         if (description.charAt(i) == ':') {
                             specialSubStringFlag = true;
                             specialSubStringIndex = i;
@@ -105,13 +109,13 @@ public class StringColorParser {
                         }
                     }
 
-                    //If we can't find the end percents, just continue
+                    // If we can't find the end percents, just continue
                     if (endCharIndex != -1) {
-                        //Move away from color code
+                        // Move away from color code
                         charIndex += 2;
                         String getSpecialString = description.substring(charIndex, endCharIndex);
 
-                        //True if we find a valid color, stat, or gemstone.
+                        // True if we find a valid color, stat, or gemstone.
                         boolean foundColor = false;
                         for (MCColor color : colors) {
                             if (getSpecialString.equalsIgnoreCase(color.name())) {
@@ -121,9 +125,9 @@ public class StringColorParser {
                             }
                         }
 
-                        //redundant check so we don't call for stats without needing them
+                        // redundant check so we don't call for stats without needing them
                         if (!foundColor) {
-                            for (Stat stat : Stat.values()) {
+                            for (Stat stat : Stat.VALUES) {
                                 if (getSpecialString.equalsIgnoreCase(stat.name())) {
                                     foundColor = true;
                                     if (specialSubStringFlag) {
@@ -139,9 +143,9 @@ public class StringColorParser {
                             }
                         }
 
-                        //redundant check so we don't call for gems without needing them
+                        // redundant check so we don't call for gems without needing them
                         if (!foundColor) {
-                            for (Gemstone gemstone : Gemstone.values()) {
+                            for (Gemstone gemstone : Gemstone.VALUES) {
                                 if (getSpecialString.equalsIgnoreCase(gemstone.name())) {
                                     foundColor = true;
                                     currString.append("%%DARK_GRAY%%").append(gemstone.getId()).append("%%GRAY%% ");
@@ -164,11 +168,11 @@ public class StringColorParser {
                                 }
                                 failed.append("BOLD");
                                 failed.append("\nValid Stats:\n");
-                                for (Stat stat : Stat.values()) {
+                                for (Stat stat : Stat.VALUES) {
                                     failed.append(stat).append(" ");
                                 }
                                 failed.append("\nValid Gems:\n");
-                                for (Gemstone gemstone : Gemstone.values()) {
+                                for (Gemstone gemstone : Gemstone.VALUES) {
                                     failed.append(gemstone).append(" ");
                                 }
                                 event.getHook().sendMessage(failed.toString()).setEphemeral(true).queue();
@@ -184,13 +188,13 @@ public class StringColorParser {
                         }
                         continue;
                     }
-                    //if we can't find the endCharIndex, we just move on here and set a flag
+                    // if we can't find the endCharIndex, we just move on here and set a flag
                     noColorFlag = true;
                 }
 
-                //Shorthand Color Parsing
+                // Shorthand Color Parsing
                 if (description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
-                    for(MCColor color : colors) {
+                    for (MCColor color : colors) {
                         if (color.getColorCode() == description.charAt(charIndex + 1)) {
                             currString.append("%%").append(color).append("%%");
                             break;
@@ -203,7 +207,7 @@ public class StringColorParser {
                     charIndex += 2;
                 }
 
-                //Newline parsing
+                // Newline parsing
                 if (description.charAt(charIndex) == '\\' && description.charAt(charIndex + 1) == 'n') {
                     parsed.add(currString.toString());
                     currString.setLength(0);
@@ -212,11 +216,11 @@ public class StringColorParser {
                     continue;
                 }
 
-                //Softwrap parsing
+                // Softwrap parsing
                 if (description.charAt(charIndex) == ' ') {
                     charIndex++;
 
-                    int colorCheck = 36; //An extra buffer so we don't wrap colors
+                    int colorCheck = 36; // An extra buffer so we don't wrap colors
                     boolean newLineFlag = true;
                     for (int i = charIndex; i < charIndex + (colorCheck - lineLength); i++) {
                         if (i + 1 > description.length()) {
@@ -231,7 +235,7 @@ public class StringColorParser {
                         if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
                             colorCheck += 2;
 
-                            //Let's see if there's a color here. We'll check if it's valid later.
+                            // Let's see if there's a color here. We'll check if it's valid later.
                             for (int j = i + 2; j < description.length(); j++) {
                                 if (j + 2 <= description.length() && description.charAt(j) == '%' && description.charAt(j + 1) == '%') {
                                     break;
@@ -249,7 +253,7 @@ public class StringColorParser {
                     continue;
                 }
 
-                //EOL Parsing
+                // EOL Parsing
                 if (lineLength > 35) {
                     parsed.add(currString.toString());
                     currString.setLength(0);
@@ -258,19 +262,19 @@ public class StringColorParser {
                 }
             }
 
-            //Find next break
+            // Find next break
             int findNextIndex = 0;
             boolean spaceBreak = false;
             for (int i = charIndex; i < description.length(); i++) {
                 if (i + 1 >= description.length()) {
-                    //Edge case for EOS
+                    // Edge case for EOS
                     findNextIndex++;
                     break;
                 }
 
                 if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
                     if (i + 2 >= description.length() || noColorFlag) {
-                        //Edge case for EOS or if color has already been determined to not be present
+                        // Edge case for EOS or if color has already been determined to not be present
                         findNextIndex++;
                     }
                     break;
@@ -289,7 +293,7 @@ public class StringColorParser {
                     break;
                 }
 
-                //If we've reached the EOL
+                // If we've reached the EOL
                 if (findNextIndex > (36 - lineLength)) {
                     break;
                 }
@@ -297,15 +301,15 @@ public class StringColorParser {
                 findNextIndex++;
             }
 
-            //We're not at EOL yet, so let's write what we've got so far
+            // We're not at EOL yet, so let's write what we've got so far
             String subWriteString = description.substring(charIndex, charIndex + findNextIndex);
-            currString.append(subWriteString).append(spaceBreak ? " " : ""); //if we need a space, put it in
+            currString.append(subWriteString).append(spaceBreak ? " " : ""); // if we need a space, put it in
 
             lineLength += findNextIndex;
             charIndex += findNextIndex;
         }
 
-        //Make sure to save the last word written
+        // Make sure to save the last word written
         parsed.add(currString.toString());
 
         return parsed;

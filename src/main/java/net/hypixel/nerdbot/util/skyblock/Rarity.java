@@ -12,6 +12,8 @@ public enum Rarity {
     VERY_SPECIAL("VERY SPECIAL", MCColor.RED),
     NONE("", MCColor.GRAY);
 
+    public static final Rarity[] VALUES = values();
+
     private final String rarity;
     private final MCColor color;
 
