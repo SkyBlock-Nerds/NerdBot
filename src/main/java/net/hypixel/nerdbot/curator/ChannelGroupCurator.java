@@ -9,15 +9,15 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.exceptions.RateLimitedException;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.channel.ChannelGroup;
-import net.hypixel.nerdbot.api.channel.ChannelManager;
+import net.hypixel.nerdbot.api.database.channel.ChannelGroup;
+import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.user.LastActivity;
 import net.hypixel.nerdbot.util.Environment;
-import net.hypixel.nerdbot.util.Users;
+import net.hypixel.nerdbot.util.discord.Users;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
