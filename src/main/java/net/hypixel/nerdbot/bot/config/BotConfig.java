@@ -3,10 +3,7 @@ package net.hypixel.nerdbot.bot.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -27,9 +24,19 @@ public class BotConfig {
     private String logChannel;
 
     /**
+     * The {@link Role} ID of the Bot Manager role
+     */
+    private String botManagerRoleId;
+
+    /**
      * The {@link TextChannel} ID for the suggestion forum
      */
     private String suggestionForumId;
+
+    /**
+     * The {@link TextChannel} ID for the itemgen channel
+     */
+    private String itemGenChannel;
 
     /**
      * The minimum threshold of {@link MessageReaction reactions} needed for a suggestion to be considered greenlit

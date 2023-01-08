@@ -4,6 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.exceptions.RateLimitedException;
 import net.dv8tion.jda.internal.entities.ForumTagImpl;
@@ -14,6 +15,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.util.Users;
+import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +23,8 @@ import java.util.Objects;
 
 @Log4j2
 public class ForumChannelCurator extends Curator<ForumChannel> {
+
+    private final Database database = NerdBotApp.getBot().getDatabase();
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
@@ -31,14 +35,21 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         List<GreenlitMessage> output = new ArrayList<>();
         setStartTime(System.currentTimeMillis());
 
+        if (!database.isConnected()) {
+            setEndTime(System.currentTimeMillis());
+            log.error("Couldn't curate messages as the database is not connected!");
+            return output;
+        }
+
         log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
+        int index = 0;
         List<ThreadChannel> threads = forumChannel.getThreadChannels()
                 .stream()
                 .filter(threadChannel -> threadChannel.getAppliedTags().stream().anyMatch(tag -> !tag.getName().equalsIgnoreCase("greenlit")))
                 .toList();
         for (ThreadChannel thread : threads) {
-            log.info("Curating thread: " + thread.getName() + " (Thread ID: " + thread.getId() + ")");
+            log.info("[" + (index++) + "/" + threads.size() + "] Curating thread: " + thread.getName() + " (Thread ID: " + thread.getId() + ")");
 
             try {
                 // This is a stupid way to do it but it's the only way that works right now
@@ -46,8 +57,10 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 Message firstPost = allMessages.get(allMessages.size() - 1);
                 Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
                 Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
-
-                DiscordUser discordUser = Database.getInstance().getOrAddUserToCache(firstPost.getAuthor().getId());
+                DiscordUser discordUser = Util.getOrAddUserToCache(database, firstPost.getAuthor().getId());
+                if (discordUser == null) {
+                    continue;
+                }
 
                 if (discordUser.getLastActivity().getLastSuggestionDate() < firstPost.getTimeCreated().toInstant().toEpochMilli()) {
                     discordUser.getLastActivity().setLastSuggestionDate(firstPost.getTimeCreated().toInstant().toEpochMilli());
@@ -86,8 +99,11 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                             .build();
 
                     log.info("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
-                    thread.getManager().setAppliedTags(new ForumTagImpl(Long.parseLong(NerdBotApp.getBot().getConfig().getTagConfig().getGreenlit()))).complete(true);
+                    List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+                    tags.add(new ForumTagImpl(Long.parseLong(NerdBotApp.getBot().getConfig().getTagConfig().getGreenlit())));
+                    thread.getManager().setAppliedTags(tags).queue();
                     output.add(greenlitMessage);
+                    log.debug("Added " + greenlitMessage + " to curator output");
                 }
             } catch (RateLimitedException exception) {
                 log.info("Currently being rate limited so the curation process has to stop!");

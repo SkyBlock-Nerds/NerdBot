@@ -9,7 +9,6 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
-import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 
@@ -20,7 +19,7 @@ public class CurateCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "curate", description = "Manually run the curation process", defaultLocked = true)
     public void curate(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Run the curator without greenlighting suggestions") boolean readOnly) {
-        if (!Database.getInstance().isConnected()) {
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
             log.error("Couldn't connect to the database!");
             return;
