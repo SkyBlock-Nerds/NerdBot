@@ -193,7 +193,7 @@ public class StringColorParser {
                 }
 
                 // Shorthand Color Parsing
-                if (description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
+                if (charIndex != description.length() - 1 && description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
                     for (MCColor color : colors) {
                         if (color.getColorCode() == description.charAt(charIndex + 1)) {
                             currString.append("%%").append(color).append("%%");
