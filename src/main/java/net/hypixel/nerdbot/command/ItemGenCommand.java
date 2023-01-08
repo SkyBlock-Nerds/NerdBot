@@ -75,10 +75,16 @@ public class ItemGenCommand extends ApplicationCommand {
             return;
         }
 
-        String createTitle = "%%" + itemRarity.getRarityColor().toString() + "%%" + name;
+        // adds the items name to the array list
+        String createTitle = "%%" + itemRarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%";
         parsedDescription.add(0, createTitle);
 
-        if (type != null && !type.equalsIgnoreCase("none")) {
+        // writing the rarity if the rarity is not none
+        if (itemRarity != Rarity.NONE) {
+            if (type.equalsIgnoreCase("none")) {
+                type = "";
+            }
+            // adds the items type in the description
             parsedDescription.add(parsedDescription.size(), "");
             String createRarity = "%%" + itemRarity.getRarityColor() + "%%%%BOLD%%" + itemRarity.getId() + " " + type;
             parsedDescription.add(parsedDescription.size(), createRarity);
