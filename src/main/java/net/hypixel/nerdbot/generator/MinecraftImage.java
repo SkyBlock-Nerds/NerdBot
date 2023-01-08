@@ -27,7 +27,7 @@ public class MinecraftImage {
         this.ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         this.minecraftFont = initFont("/Minecraft/minecraft.ttf", 16f);
         this.minecraftBold = initFont("/Minecraft/3_Minecraft-Bold.otf", 22f);
-        this.g2d = initG2D(imageWidth, linesToPrint * 23);
+        this.g2d = initG2D(imageWidth, linesToPrint * 23 + 13);
         this.currentColor = defaultColor;
     }
 
@@ -153,7 +153,14 @@ public class MinecraftImage {
      */
     private Graphics2D initG2D(int width, int height) {
         this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        return image.createGraphics();
+
+        Graphics2D graphics = image.createGraphics();
+        // drawing the purple rectangle around the edge
+        graphics.setColor(new Color(41, 5, 96));
+        graphics.drawRect(1, 1, width - 3, height - 3);
+        graphics.drawRect(2, 2, width - 3, height - 3);
+
+        return graphics;
     }
 
     /**
