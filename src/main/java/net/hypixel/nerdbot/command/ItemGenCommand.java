@@ -86,7 +86,8 @@ public class ItemGenCommand extends ApplicationCommand {
             }
             // adds the items type in the description
             parsedDescription.add(parsedDescription.size(), "");
-            String createRarity = "%%" + itemRarity.getRarityColor() + "%%%%BOLD%%" + itemRarity.getId() + " " + type;
+            String createRarity = "%%" + itemRarity.getRarityColor() + "%%%%BOLD%%" + itemRarity.getId().toUpperCase() + " " + type;
+            
             parsedDescription.add(parsedDescription.size(), createRarity);
         }
 
