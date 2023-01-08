@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.command;
 
+import com.freya02.botcommands.api.annotations.Optional;
 import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
@@ -36,7 +37,7 @@ public class ItemGenCommand extends ApplicationCommand {
             @AppOption(description = "The name of the item") String name,
             @AppOption(description = "The rarity of the item", autocomplete = "rarities") String rarity,
             @AppOption(description = "The description of the item") String description,
-            @AppOption(description = "The type of the item") String type
+            @Optional @AppOption(description = "The type of the item") String type
     ) throws IOException {
         String senderChannelId = event.getChannel().getId();
         String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
@@ -81,7 +82,7 @@ public class ItemGenCommand extends ApplicationCommand {
 
         // writing the rarity if the rarity is not none
         if (itemRarity != Rarity.NONE) {
-            if (type.equalsIgnoreCase("none")) {
+            if (type == null || type.equalsIgnoreCase("none")) {
                 type = "";
             }
             // adds the items type in the description
