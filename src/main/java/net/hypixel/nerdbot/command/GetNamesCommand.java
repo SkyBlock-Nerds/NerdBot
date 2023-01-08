@@ -26,8 +26,10 @@ import java.util.regex.Pattern;
 
 @Log4j2
 public class GetNamesCommand extends ApplicationCommand {
-    private final String regex = "^[a-zA-Z0-9_]{2,16}";
-    private final String surroundRegex = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
+
+    private static final String REGEX = "^[a-zA-Z0-9_]{2,16}";
+    private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
+
     private final Queue<String> usernameQueue = new LinkedList<>();
 
     @JDASlashCommand(name = "getnames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)
@@ -67,21 +69,20 @@ public class GetNamesCommand extends ApplicationCommand {
             String memberMCUsername = null;
 
             // checks if the member's username has flair
-            if (!Pattern.matches(regex, plainUsername)) {
+            if (!Pattern.matches(REGEX, plainUsername)) {
                 // removes start and end characters ([example], {example}, |example| or (example)).
                 // also strips spaces from the username
-                plainUsername = plainUsername.replaceAll(surroundRegex, "").replace(" ", "");
+                plainUsername = plainUsername.replaceAll(SURROUND_REGEX, "").replace(" ", "");
                 String[] splitUsername = plainUsername.split("[^a-zA-Z0-9_]");
 
                 // gets the first item that matches the name constraints
                 for (String item : splitUsername) {
-                    if (Pattern.matches(regex, item)) {
+                    if (Pattern.matches(REGEX, item)) {
                         memberMCUsername = item;
                         break;
                     }
                 }
-            }
-            else {
+            } else {
                 memberMCUsername = plainUsername.replace(" ", "");
             }
 
@@ -90,8 +91,7 @@ public class GetNamesCommand extends ApplicationCommand {
                 log.info("Found match: " + memberMCUsername);
                 usernameQueue.add(memberMCUsername);
                 log.info(String.format("Added %s (%s) to the username lookup queue!", member.getEffectiveName(), memberMCUsername));
-            }
-            else {
+            } else {
                 log.info(String.format("Didn't add %s to the username lookup queue", member.getEffectiveName()));
             }
         });
