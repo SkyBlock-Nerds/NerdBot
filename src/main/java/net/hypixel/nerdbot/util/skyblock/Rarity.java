@@ -10,7 +10,7 @@ public enum Rarity {
     DIVINE("DIVINE", MCColor.AQUA),
     SPECIAL("SPECIAL", MCColor.RED),
     VERY_SPECIAL("VERY SPECIAL", MCColor.RED),
-    UNOBTAINABLE("UNOBTAINABLE", MCColor.DARK_GRAY),
+    UNOBTAINABLE("ADMIN", MCColor.DARK_RED),
     NONE("", MCColor.GRAY);
 
     public static final Rarity[] VALUES = values();
