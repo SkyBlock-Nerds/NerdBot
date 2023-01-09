@@ -64,7 +64,7 @@ public class StringColorParser {
             boolean noColorFlag = false;
             // This block checks colors, newline characters, soft-wrapping,
             // and changes the text depending on those checks.
-            if (description.length() != charIndex + 1) {
+            if (charIndex + 1 <= description.length()) {
                 // Color parsing
                 if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
                     int endCharIndex = 0;
@@ -193,7 +193,7 @@ public class StringColorParser {
                 }
 
                 // Shorthand Color Parsing
-                if (charIndex != description.length() - 1 && description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
+                if (description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
                     for (MCColor color : colors) {
                         if (color.getColorCode() == description.charAt(charIndex + 1)) {
                             currString.append("%%").append(color).append("%%");
@@ -205,6 +205,7 @@ public class StringColorParser {
                         currString.append("%%BOLD%%");
                     }
                     charIndex += 2;
+                    continue;
                 }
 
                 // Newline parsing
