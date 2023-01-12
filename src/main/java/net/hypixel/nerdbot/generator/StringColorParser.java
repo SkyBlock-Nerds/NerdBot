@@ -42,7 +42,7 @@ public class StringColorParser {
         return parsedDescription.size();
     }
 
-    public boolean didSuccessfullyParsed() {
+    public boolean isSuccessfullyParsed() {
         return successfullyParsed;
     }
 

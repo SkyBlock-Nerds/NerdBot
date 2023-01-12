@@ -90,7 +90,7 @@ public class ItemGenCommand extends ApplicationCommand {
         colorParser.parseString(itemLore);
 
         // checking that there were no errors while parsing the string
-        if (!colorParser.didSuccessfullyParsed()) {
+        if (!colorParser.isSuccessfullyParsed()) {
             event.getHook().sendMessage(colorParser.getErrorString()).setEphemeral(true).queue();
             return;
         }
