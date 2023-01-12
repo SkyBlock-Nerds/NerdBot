@@ -130,11 +130,11 @@ public class StringColorParser {
                     }
 
                     // creating an error message showing the available stats, gemstones and color codes available
-                    StringBuilder failedString = new StringBuilder("You used an invalid code `" + selectedCommand + "`. Valid colors:\n");
+                    StringBuilder failedString = new StringBuilder("You used an invalid code `" + stripString(selectedCommand) + "`. Valid colors:\n");
                     for (MCColor availableColors : colors) {
                         failedString.append(availableColors).append(" ");
                     }
-                    failedString.append("BOLD");
+                    failedString.append("\nValid Codes: \nBOLD ITALIC");
                     failedString.append("\nValid Stats:\n");
                     for (Stat availableStats : Stat.VALUES) {
                         failedString.append(availableStats).append(" ");
