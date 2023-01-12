@@ -302,7 +302,8 @@ public class StringColorParser {
     }
 
     /**
-     * finds a matching value within a given set based on it's name
+     * Finds a matching value within a given set based on its name
+     *
      * @param enumSet an array to search for the enum in
      * @param match the value to find in the array
      * @return returns the enum item or null if not found
