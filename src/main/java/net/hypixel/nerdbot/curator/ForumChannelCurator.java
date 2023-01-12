@@ -92,6 +92,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                             .agrees(agreeReaction)
                             .disagrees(disagreeReaction)
                             .messageId(firstPost.getId())
+                            .userId(firstPost.getAuthor().getId())
                             .suggestionUrl(firstPost.getJumpUrl())
                             .suggestionTitle(thread.getName())
                             .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
