@@ -82,24 +82,15 @@ public class StringColorParser {
                     }
 
                     String selectedCommand = description.substring(charIndex + 2, closingIndex);
-                    // checking if the command is a bold code
-                    if (selectedCommand.equalsIgnoreCase("bold")) {
-                        this.setBold(true);
-                        charIndex = closingIndex + 2;
-                        continue;
-                    }
-
-                    // checking if the command is an italic code
-                    if (selectedCommand.equalsIgnoreCase("italic")) {
-                        this.setItalic(true);
-                        charIndex = closingIndex + 2;
-                        continue;
-                    }
-
                     // checking if the command is a color code
-                    MCColor color = (MCColor) findValue(colors, selectedCommand);
-                    if (color != null) {
-                        this.setColor(color);
+                    MCColor mcColor = (MCColor) findValue(colors, selectedCommand);
+                    if (mcColor != null) {
+                        // setting the correct option for the segment
+                        switch (mcColor) {
+                            case BOLD -> this.setBold(true);
+                            case ITALIC -> this.setItalic(true);
+                            default -> this.setColor(mcColor);
+                        }
                         charIndex = closingIndex + 2;
                         continue;
                     }
@@ -130,11 +121,10 @@ public class StringColorParser {
                     }
 
                     // creating an error message showing the available stats, gemstones and color codes available
-                    StringBuilder failedString = new StringBuilder("You used an invalid code `" + stripString(selectedCommand) + "`. Valid colors:\n");
+                    StringBuilder failedString = new StringBuilder("You used an invalid code `" + stripString(selectedCommand) + "`. Valid codes:\n");
                     for (MCColor availableColors : colors) {
                         failedString.append(availableColors).append(" ");
                     }
-                    failedString.append("\nValid Codes: \nBOLD ITALIC");
                     failedString.append("\nValid Stats:\n");
                     for (Stat availableStats : Stat.VALUES) {
                         failedString.append(availableStats).append(" ");
@@ -148,26 +138,18 @@ public class StringColorParser {
                 }
                 // checking if the user is using normal mc character codes
                 else if (description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
-                    // checking if the next character is for bolding
-                    if (description.charAt(charIndex + 1) == 'l') {
-                        this.setBold(true);
-                        charIndex += 2;
-                        continue;
-                    }
-                    // checking if the next character is for italics
-                    if (description.charAt(charIndex + 1) == 'o') {
-                        this.setItalic(true);
-                        charIndex += 2;
-                        continue;
-                    }
-
                     char selectedCode = description.charAt(charIndex + 1);
                     // checking that the colour code is real color
                     boolean foundMatchingColor = false;
-                    for (MCColor color : colors) {
-                        if (color.getColorCode() == selectedCode) {
+                    for (MCColor mcColor : colors) {
+                        if (mcColor.getColorCode() == selectedCode) {
                             foundMatchingColor = true;
-                            this.setColor(color);
+                            // setting the correct option for the segment
+                            switch (mcColor) {
+                                case BOLD -> this.setBold(true);
+                                case ITALIC -> this.setItalic(true);
+                                default -> this.setColor(mcColor);
+                            }
                             charIndex += 2;
                             break;
                         }
@@ -184,13 +166,12 @@ public class StringColorParser {
                     for (MCColor color : colors) {
                         failedString.append(color).append(": ").append(color.getColorCode()).append(" ");
                     }
-                    failedString.append("BOLD: l ITALIC: o");
                     this.errorString = failedString.toString();
                     return;
                 }
                 // checking if the current character is a new line
                 else if ((description.charAt(charIndex) == '\\' && description.charAt(charIndex + 1) == 'n')) {
-                    this.createNewLine();
+                    createNewLine();
                     charIndex += 2;
 
                     if (description.charAt(charIndex) == ' ') {

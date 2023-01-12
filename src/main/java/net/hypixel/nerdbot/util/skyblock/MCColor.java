@@ -18,7 +18,9 @@ public enum MCColor {
     RED('c', new Color(255, 85, 85), new Color(63, 21, 21)),
     LIGHT_PURPLE('d', new Color(255, 85, 255), new Color(63, 21, 63)),
     YELLOW('e', new Color(255, 255, 85), new Color(63, 63, 21)),
-    WHITE('f', new Color(255, 255, 255), new Color(63, 63, 63));
+    WHITE('f', new Color(255, 255, 255), new Color(63, 63, 63)),
+    BOLD('l', new Color(255, 255, 255), new Color(255, 255, 85)),
+    ITALIC('o', new Color(255, 255, 255), new Color(85, 85, 255));
 
     public static final MCColor[] VALUES = values();
 
