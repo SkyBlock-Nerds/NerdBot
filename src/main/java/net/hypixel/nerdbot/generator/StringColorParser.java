@@ -28,7 +28,6 @@ public class StringColorParser {
     public StringColorParser() {
         parsedDescription = new ArrayList<>();
         currentString = new ColoredString();
-        currentString.setCurrentColor(MCColor.GRAY);
 
         charIndex = 0;
         lineLength = 0;
