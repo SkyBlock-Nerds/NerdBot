@@ -193,8 +193,9 @@ public class StringColorParser {
                     this.createNewLine();
                     charIndex += 2;
 
-                    if (description.charAt(charIndex) == ' ')
+                    if (description.charAt(charIndex) == ' ') {
                         charIndex++;
+                    }
                     continue;
                 }
             }
@@ -207,8 +208,9 @@ public class StringColorParser {
             // finding the nearest place that can be line split at (spaces, %% \n or &)
             int nearestSplit = nextSpace;
             for (int item : new int[] {nextShortcut, nextNewLine, nextPotentialMCColor}) {
-                if (item != -1 && (nearestSplit == -1 || item < nearestSplit))
+                if (item != -1 && (nearestSplit == -1 || item < nearestSplit)) {
                     nearestSplit = item;
+                }
             }
             // checks that there is a split that it can go to that isn't the end of the string
             if (nearestSplit == -1) {
@@ -218,9 +220,10 @@ public class StringColorParser {
             String currentSubstring = description.substring(charIndex, nearestSplit);
             if (lineLength + currentSubstring.length() > maxLineLength) {
                 // splitting the current string if it cannot fit onto a single line
-                if (currentSubstring.length() > maxLineLength)
+                if (currentSubstring.length() > maxLineLength) {
                     currentSubstring = currentSubstring.substring(0, maxLineLength + 1);
-
+                }
+                
                 this.createNewLine();
                 // checking if the first character is a space
                 if (currentSubstring.charAt(0) == ' ') {
