@@ -39,7 +39,7 @@ public class StringColorParser {
         return parsedDescription;
     }
 
-    public int requiredLines() {
+    public int getRequiredLines() {
         return parsedDescription.size();
     }
 
