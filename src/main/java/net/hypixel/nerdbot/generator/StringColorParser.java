@@ -224,7 +224,7 @@ public class StringColorParser {
                     currentSubstring = currentSubstring.substring(0, maxLineLength + 1);
                 }
                 
-                this.createNewLine();
+                createNewLine();
                 // checking if the first character is a space
                 if (currentSubstring.charAt(0) == ' ') {
                     currentSubstring = currentSubstring.substring(1);
