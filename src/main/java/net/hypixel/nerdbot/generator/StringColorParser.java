@@ -77,7 +77,7 @@ public class StringColorParser {
                     // check that there is a closing tag
                     if (closingIndex == -1) {
                         String surrondingErrorSubstring = description.substring(Math.max(charIndex - 10, 0), Math.min(charIndex + 10, description.length()));
-                        this.errorString = "It seems that you don't have a closing `%%` near `" + surrondingErrorSubstring + "`";
+                        this.errorString = "It seems that you don't have a closing `%%` near `" + stripString(surrondingErrorSubstring) + "`";
                         return;
                     }
 
@@ -313,4 +313,9 @@ public class StringColorParser {
 
         return null;
     }
+
+    private static String stripString(String normalString) {
+        return normalString.replaceAll("[^a-zA-Z0-9_ ]", "");
+    }
+
 }
