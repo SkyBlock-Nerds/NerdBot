@@ -183,8 +183,7 @@ public class MinecraftImage {
             sansSerif = new Font("SansSerif", Font.PLAIN, 20);
         }
 
-        fontsRegistered = true;
-
-        return true;
+        fontsRegistered = minecraftFonts[0] != null && minecraftFonts[1] != null && minecraftFonts[2] != null && minecraftFonts[3] != null;
+        return fontsRegistered;
     }
 }
