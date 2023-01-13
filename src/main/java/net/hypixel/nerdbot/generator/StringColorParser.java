@@ -1,6 +1,5 @@
 package net.hypixel.nerdbot.generator;
 
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Stat;
@@ -9,310 +8,299 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 public class StringColorParser {
+    private static final int maxLineLength = 38;
+    private final static MCColor[] colors = MCColor.VALUES;
+    private final static Stat[] stats = Stat.VALUES;
+    private final static Gemstone[] gemstones = Gemstone.VALUES;
 
-    /**
-     * Returns an array list that parses Minecraft Color Codes, newlines, and wrapping.
-     *
-     * @param description String to be parsed
-     * @param event       GuildSlashEvent to return errors to.
-     *
-     * @return Parsed description with a max of 35 characters, excluding special codes.
-     */
-    @Nullable
-    public static ArrayList<String> parseDescription(String description, GuildSlashEvent event) {
-        return parseDescriptionHelper(description, event);
+    // variables used to store the description
+    private final ArrayList<ArrayList<ColoredString>> parsedDescription;
+    private ArrayList<ColoredString> currentLine = new ArrayList<>();
+    private ColoredString currentString;
+
+    // variables for keeping track of line length and position
+    private int charIndex;
+    private int lineLength;
+
+    private String errorString;
+    private boolean successfullyParsed;
+
+    public StringColorParser() {
+        parsedDescription = new ArrayList<>();
+        currentString = new ColoredString();
+
+        charIndex = 0;
+        lineLength = 0;
+        successfullyParsed = false;
+    }
+
+    public ArrayList<ArrayList<ColoredString>> getParsedDescription() {
+        return parsedDescription;
+    }
+
+    public int getRequiredLines() {
+        return parsedDescription.size();
+    }
+
+    public boolean isSuccessfullyParsed() {
+        return successfullyParsed;
+    }
+
+    public String getErrorString() {
+        return errorString;
     }
 
     /**
-     * Returns an array list that parses Minecraft Color Codes, newlines, and wrapping.
+     * Returns an array list that parses color coded, bolded and line wrapped lines.
      *
      * @param description String to be parsed
-     *
-     * @return Parsed description with a max of 35 characters, excluding special codes. null if it cannot be parsed.
      */
-    @Nullable
-    public static ArrayList<String> parseDescription(String description) {
-        return parseDescriptionHelper(description, null);
-    }
+    public void parseString(StringBuilder description) {
+        int initialDescriptionLength = 2 * description.length();
+        int breakLoopCount = 0;
 
-    @Nullable
-    private static ArrayList<String> parseDescriptionHelper(String description, GuildSlashEvent event) {
-        ArrayList<String> parsed = new ArrayList<>();
-        MCColor[] colors = MCColor.VALUES;
-
-        StringBuilder currString = new StringBuilder();
-        int lineLength = 0; // where we are in curr string
-        int charIndex = 0;  // where we are in description
-        int breakLoopCount = 0; // break if we are hanging due to a runtime error
-
-        // Go through the entire description, break it apart to put into an arraylist for rendering
-        while (description.length() > charIndex) {
+        while (charIndex < description.length()) {
             // Make sure we're not looping infinitely and just hanging the thread
             breakLoopCount++;
-            if (breakLoopCount > description.length() * 2) {
-                if (event != null) {
-                    String debug = "length: " + description.length() + "\n" +
-                            "charIndex: " + charIndex + "\n" +
-                            "character failed on: " + description.charAt(charIndex) + "\n" +
-                            "string: " + description + "\n" +
-                            "If you see this debug, please ping a developer. Thanks!\n";
-                    event.getHook().sendMessage(debug).setEphemeral(true).queue();
-                }
-                return null;
+            if (breakLoopCount > initialDescriptionLength) {
+                errorString = "length: " + description.length() + "\n" +
+                        "charIndex: " + charIndex + "\n" +
+                        "character failed on: " + description.charAt(charIndex) + "\n" +
+                        "string: " + description + "\n" +
+                        "If you see this debug, please ping a developer. Thanks!\n";
+                return;
             }
 
-            boolean noColorFlag = false;
-            // This block checks colors, newline characters, soft-wrapping,
-            // and changes the text depending on those checks.
             if (charIndex + 1 < description.length()) {
-                // Color parsing
                 if (description.charAt(charIndex) == '%' && description.charAt(charIndex + 1) == '%') {
-                    int endCharIndex = 0;
-                    // If a parameter can be passed, put that here.
-                    StringBuilder specialSubString = new StringBuilder();
-                    boolean specialSubStringFlag = false;
-                    int specialSubStringIndex = -1;
-                    for (int i = charIndex + 2; i < charIndex + 100; i++) {
-                        if (i + 1 >= description.length()) {
-                            endCharIndex = -1;
-                            break;
-                        }
-
-                        if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
-                            if (specialSubStringFlag) {
-                                endCharIndex = specialSubStringIndex;
-                            } else {
-                                endCharIndex = i;
-                            }
-                            break;
-                        }
-
-                        if (specialSubStringFlag && description.charAt(i) != '%') {
-                            specialSubString.append(description.charAt(i));
-                        }
-
-                        // Special case for a specialSubString
-                        if (description.charAt(i) == ':') {
-                            specialSubStringFlag = true;
-                            specialSubStringIndex = i;
-                            continue;
-                        }
-
-                        if (i == 99) {
-                            endCharIndex = -1;
-                            break;
-                        }
-
-                        if (i + 2 > description.length()) {
-                            endCharIndex = -1;
-                            break;
-                        }
+                    int closingIndex = description.indexOf("%%", charIndex + 1);
+                    // check that there is a closing tag
+                    if (closingIndex == -1) {
+                        String surrondingErrorSubstring = description.substring(Math.max(charIndex - 10, 0), Math.min(charIndex + 10, description.length()));
+                        this.errorString = "It seems that you don't have a closing `%%` near `" + stripString(surrondingErrorSubstring) + "`";
+                        return;
                     }
 
-                    // If we can't find the end percents, just continue
-                    if (endCharIndex != -1) {
-                        // Move away from color code
-                        charIndex += 2;
-                        String getSpecialString = description.substring(charIndex, endCharIndex);
-
-                        // True if we find a valid color, stat, or gemstone.
-                        boolean foundColor = false;
-                        for (MCColor color : colors) {
-                            if (getSpecialString.equalsIgnoreCase(color.name())) {
-                                foundColor = true;
-                                currString.append("%%").append(color).append("%%");
-                                break;
-                            }
+                    String selectedCommand = description.substring(charIndex + 2, closingIndex);
+                    // checking if the command is a color code
+                    MCColor mcColor = (MCColor) findValue(colors, selectedCommand);
+                    if (mcColor != null) {
+                        // setting the correct option for the segment
+                        switch (mcColor) {
+                            case BOLD -> this.setBold(true);
+                            case ITALIC -> this.setItalic(true);
+                            default -> this.setColor(mcColor);
                         }
-
-                        // redundant check so we don't call for stats without needing them
-                        if (!foundColor) {
-                            for (Stat stat : Stat.VALUES) {
-                                if (getSpecialString.equalsIgnoreCase(stat.name())) {
-                                    foundColor = true;
-                                    if (specialSubStringFlag) {
-                                        currString.append("%%").append(stat.getSecondaryColor()).append("%%");
-                                        currString.append(specialSubString).append(" ");
-                                    }
-                                    currString.append("%%").append(stat.getColor()).append("%%");
-                                    currString.append(stat.getId());
-                                    currString.append("%%GRAY%% ");
-                                    lineLength += stat.getId().length();
-                                    break;
-                                }
-                            }
-                        }
-
-                        // redundant check so we don't call for gems without needing them
-                        if (!foundColor) {
-                            for (Gemstone gemstone : Gemstone.VALUES) {
-                                if (getSpecialString.equalsIgnoreCase(gemstone.name())) {
-                                    foundColor = true;
-                                    currString.append("%%DARK_GRAY%%").append(gemstone.getId()).append("%%GRAY%% ");
-                                    lineLength += 4;
-                                }
-                            }
-                        }
-
-                        if (getSpecialString.equalsIgnoreCase("bold")) {
-                            currString.append("%%BOLD%%");
-                            foundColor = true;
-                        }
-
-                        if (!foundColor) {
-                            if (event != null) {
-                                getSpecialString = getSpecialString.replaceAll("[^a-zA-Z0-9_ ]", "");
-                                StringBuilder failed = new StringBuilder("You used an invalid code `" + getSpecialString + "`. Valid colors:\n");
-                                for (MCColor color : colors) {
-                                    failed.append(color).append(" ");
-                                }
-                                failed.append("BOLD");
-                                failed.append("\nValid Stats:\n");
-                                for (Stat stat : Stat.VALUES) {
-                                    failed.append(stat).append(" ");
-                                }
-                                failed.append("\nValid Gems:\n");
-                                for (Gemstone gemstone : Gemstone.VALUES) {
-                                    failed.append(gemstone).append(" ");
-                                }
-                                event.getHook().sendMessage(failed.toString()).setEphemeral(true).queue();
-                            }
-                            return null;
-                        }
-
-                        // Move away from the color code
-                        charIndex = endCharIndex + 2;
-                        if (specialSubStringFlag) {
-                            charIndex += specialSubString.length() + 1;
-                            lineLength += specialSubString.length();
-                        }
+                        charIndex = closingIndex + 2;
                         continue;
                     }
-                    // if we can't find the endCharIndex, we just move on here and set a flag
-                    noColorFlag = true;
-                }
 
-                // Shorthand Color Parsing
-                if (description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
-                    for (MCColor color : colors) {
-                        if (color.getColorCode() == description.charAt(charIndex + 1)) {
-                            currString.append("%%").append(color).append("%%");
-                            break;
-                        }
+                    // checking if the command is a gemstone type
+                    Gemstone gemstone = (Gemstone) findValue(gemstones, selectedCommand);
+                    if (gemstone != null) {
+                        // replacing the selected space with the stat's text
+                        String replacementText = "%%DARK_GRAY%%" + gemstone.getId() + "%%GRAY%%";
+                        description.replace(charIndex, closingIndex + 2, replacementText);
+                        continue;
                     }
 
-                    if ('l' == description.charAt(charIndex + 1)) {
-                        currString.append("%%BOLD%%");
+                    String extraData = "";
+                    // checking if the command has extra special flags
+                    if (selectedCommand.indexOf(':') != -1) {
+                        int specialFlagIndex = selectedCommand.indexOf(':');
+                        extraData = selectedCommand.substring(specialFlagIndex + 1);
+                        selectedCommand = selectedCommand.substring(0, specialFlagIndex);
                     }
-                    charIndex += 2;
-                    continue;
+                    // checking if the command is a stat
+                    Stat stat = (Stat) findValue(stats, selectedCommand);
+                    if (stat != null) {
+                        // replacing the selected space with the stat's text
+                        String replacementText = "%%" + stat.getColor() + "%%" + extraData + stat.getId() + "%%GRAY%%";
+                        description.replace(charIndex, closingIndex + 2, replacementText);
+                        continue;
+                    }
+
+                    // creating an error message showing the available stats, gemstones and color codes available
+                    StringBuilder failedString = new StringBuilder("You used an invalid code `" + stripString(selectedCommand) + "`. Valid codes:\n");
+                    for (MCColor availableColors : colors) {
+                        failedString.append(availableColors).append(" ");
+                    }
+                    failedString.append("\nValid Stats:\n");
+                    for (Stat availableStats : Stat.VALUES) {
+                        failedString.append(availableStats).append(" ");
+                    }
+                    failedString.append("\nValid Gems:\n");
+                    for (Gemstone availableGemstones : Gemstone.VALUES) {
+                        failedString.append(availableGemstones).append(" ");
+                    }
+                    this.errorString = failedString.toString();
+                    return;
                 }
-
-                // Newline parsing
-                if (description.charAt(charIndex) == '\\' && description.charAt(charIndex + 1) == 'n') {
-                    parsed.add(currString.toString());
-                    currString.setLength(0);
-                    lineLength = 0;
-                    charIndex += 2;
-                    continue;
-                }
-
-                // Softwrap parsing
-                if (description.charAt(charIndex) == ' ') {
-                    charIndex++;
-
-                    int colorCheck = 36; // An extra buffer so we don't wrap colors
-                    boolean newLineFlag = true;
-                    for (int i = charIndex; i < charIndex + (colorCheck - lineLength); i++) {
-                        if (i + 1 > description.length()) {
-                            newLineFlag = false;
-                            break;
-                        }
-
-                        if (description.charAt(i) == ' ') {
-                            newLineFlag = false;
-                            break;
-                        }
-                        if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
-                            colorCheck += 2;
-
-                            // Let's see if there's a color here. We'll check if it's valid later.
-                            for (int j = i + 2; j < description.length(); j++) {
-                                if (j + 2 <= description.length() && description.charAt(j) == '%' && description.charAt(j + 1) == '%') {
-                                    break;
-                                }
-                                colorCheck++;
+                // checking if the user is using normal mc character codes
+                else if (description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
+                    char selectedCode = description.charAt(charIndex + 1);
+                    // checking that the colour code is real color
+                    boolean foundMatchingColor = false;
+                    for (MCColor mcColor : colors) {
+                        if (mcColor.getColorCode() == selectedCode) {
+                            foundMatchingColor = true;
+                            // setting the correct option for the segment
+                            switch (mcColor) {
+                                case BOLD -> this.setBold(true);
+                                case ITALIC -> this.setItalic(true);
+                                default -> this.setColor(mcColor);
                             }
+                            charIndex += 2;
+                            break;
                         }
                     }
 
-                    if (newLineFlag) {
-                        parsed.add(currString.toString());
-                        currString.setLength(0);
-                        lineLength = 0;
+                    // making sure that there was a color code found
+                    if (foundMatchingColor) {
+                        continue;
                     }
-                    continue;
-                }
 
-                // EOL Parsing
-                if (lineLength > 35) {
-                    parsed.add(currString.toString());
-                    currString.setLength(0);
-                    lineLength = 0;
+                    // creating error message for valid codes
+                    StringBuilder failedString = new StringBuilder();
+                    failedString.append("You used an invalid character code `").append(selectedCode).append("`. \nValid color codes include...");
+                    for (MCColor color : colors) {
+                        failedString.append(color).append(": ").append(color.getColorCode()).append(" ");
+                    }
+                    this.errorString = failedString.toString();
+                    return;
+                }
+                // checking if the current character is a new line
+                else if ((description.charAt(charIndex) == '\\' && description.charAt(charIndex + 1) == 'n')) {
+                    createNewLine();
+                    charIndex += 2;
+
+                    if (description.charAt(charIndex) == ' ') {
+                        charIndex++;
+                    }
                     continue;
                 }
             }
 
-            // Find next break
-            int findNextIndex = 0;
-            boolean spaceBreak = false;
-            for (int i = charIndex; i < description.length(); i++) {
-                if (i + 1 >= description.length()) {
-                    // Edge case for EOS
-                    findNextIndex++;
-                    break;
-                }
+            int nextSpace = description.indexOf(" ", charIndex + 1);
+            int nextShortcut = description.indexOf("%%", charIndex + 1);
+            int nextNewLine = description.indexOf("\\n", charIndex + 1);
+            int nextPotentialMCColor = description.indexOf("&", charIndex + 1);
 
-                if (description.charAt(i) == '%' && description.charAt(i + 1) == '%') {
-                    if (i + 2 >= description.length() || noColorFlag) {
-                        // Edge case for EOS or if color has already been determined to not be present
-                        findNextIndex++;
-                    }
-                    break;
+            // finding the nearest place that can be line split at (spaces, %% \n or &)
+            int nearestSplit = nextSpace;
+            for (int item : new int[] {nextShortcut, nextNewLine, nextPotentialMCColor}) {
+                if (item != -1 && (nearestSplit == -1 || item < nearestSplit)) {
+                    nearestSplit = item;
                 }
-
-                if (description.charAt(i) == '\\' && description.charAt(i + 1) == 'n') {
-                    break;
-                }
-
-                if (description.charAt(i) == '&' && description.charAt(i + 1) != ' ') {
-                    break;
-                }
-
-                if (description.charAt(i) == ' ') {
-                    spaceBreak = true;
-                    break;
-                }
-
-                // If we've reached the EOL
-                if (findNextIndex > (36 - lineLength)) {
-                    break;
-                }
-
-                findNextIndex++;
+            }
+            // checks that there is a split that it can go to that isn't the end of the string
+            if (nearestSplit == -1) {
+                nearestSplit = description.length();
             }
 
-            // We're not at EOL yet, so let's write what we've got so far
-            String subWriteString = description.substring(charIndex, charIndex + findNextIndex);
-            currString.append(subWriteString).append(spaceBreak ? " " : ""); // if we need a space, put it in
+            String currentSubstring = description.substring(charIndex, nearestSplit);
+            if (lineLength + currentSubstring.length() > maxLineLength) {
+                // splitting the current string if it cannot fit onto a single line
+                if (currentSubstring.length() > maxLineLength) {
+                    currentSubstring = currentSubstring.substring(0, maxLineLength + 1);
+                }
+                
+                createNewLine();
+                // checking if the first character is a space
+                if (currentSubstring.charAt(0) == ' ') {
+                    currentSubstring = currentSubstring.substring(1);
+                    charIndex++;
+                }
+            }
 
-            lineLength += findNextIndex;
-            charIndex += findNextIndex;
+            // adds the current string to the array
+            currentString.addString(currentSubstring);
+            lineLength += currentSubstring.length();
+            charIndex += currentSubstring.length();
         }
 
-        // Make sure to save the last word written
-        parsed.add(currString.toString());
+        // checks that the string is not empty before adding it.
+        if (!currentString.isEmpty()) {
+            currentLine.add(currentString);
+            parsedDescription.add(currentLine);
+        }
 
-        return parsed;
+        successfullyParsed = true;
     }
+
+    /**
+     * creates a new line within the arraylist, keeping the previous colour
+     */
+    private void createNewLine() {
+        currentLine.add(currentString);
+        parsedDescription.add(currentLine);
+        // creating a new line and segment
+        currentLine = new ArrayList<>();
+        currentString = new ColoredString(currentString);
+        lineLength = 0;
+    }
+
+    /**
+     * sets the color of the next segment
+     * @param color color to change to
+     */
+    private void setColor(MCColor color) {
+        // checking if there is text on the current string before changing the color
+        if (!currentString.isEmpty()) {
+            currentLine.add(currentString);
+            currentString = new ColoredString();
+        }
+
+        currentString.setCurrentColor(color);
+        currentString.setBold(false);
+        currentString.setItalic(false);
+    }
+
+    /**
+     * sets if the next segment is bolded
+     * @param isBold state of boldness to change to
+     */
+    private void setBold(boolean isBold) {
+        // checking if there is any text on the current string before changing it to bold
+        if (!currentString.isEmpty()) {
+            currentLine.add(currentString);
+            currentString = new ColoredString(currentString);
+        }
+        currentString.setBold(isBold);
+    }
+
+    /**
+     * sets if the next segment has italic
+     * @param isItalic state of italics to change to
+     */
+    private void setItalic(boolean isItalic) {
+        // checking if there is any text on the current string before changing it to italic
+        if (!currentString.isEmpty()) {
+            currentLine.add(currentString);
+            currentString = new ColoredString(currentString);
+        }
+        currentString.setItalic(isItalic);
+    }
+
+    /**
+     * Finds a matching value within a given set based on its name
+     *
+     * @param enumSet an array to search for the enum in
+     * @param match the value to find in the array
+     * @return returns the enum item or null if not found
+     */
+    @Nullable
+    private static Enum<?> findValue(Enum<?>[] enumSet, String match) {
+        for (Enum<?> enumItem : enumSet) {
+            if (match.equalsIgnoreCase(enumItem.name()))
+                return enumItem;
+        }
+
+        return null;
+    }
+
+    private static String stripString(String normalString) {
+        return normalString.replaceAll("[^a-zA-Z0-9_ ]", "");
+    }
+
 }
