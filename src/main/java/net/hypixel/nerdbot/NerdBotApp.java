@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 public class NerdBotApp {
 
     public static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
-    public static final Gson GSON = new GsonBuilder().create();
+    public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static final Cache<String, DiscordUser> USER_CACHE = Caffeine.newBuilder().expireAfterAccess(Duration.ofMinutes(10L)).scheduler(Scheduler.systemScheduler()).removalListener((key, value, cause) -> {
         DiscordUser discordUser = (DiscordUser) value;
         NerdBotApp.getBot().getDatabase().upsertDocument(NerdBotApp.getBot().getDatabase().getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
