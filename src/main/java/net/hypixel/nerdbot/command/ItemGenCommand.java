@@ -22,7 +22,6 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.stream.Collectors;
@@ -69,16 +68,12 @@ public class ItemGenCommand extends ApplicationCommand {
             return;
         }
 
-        Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
-        ArrayList<String> parsedDescription = StringColorParser.parseDescription(description, event);
-        if (parsedDescription == null || parsedDescription.isEmpty()) {
-            event.getHook().sendMessage("Please enter a valid description for the item!").setEphemeral(true).queue();
-            return;
-        }
+        StringBuilder itemLore = new StringBuilder(description);
 
-        // adds the items name to the array list
-        String createTitle = "%%" + itemRarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%";
-        parsedDescription.add(0, createTitle);
+        // adds the item's name to the array list
+        Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
+        String createTitle = "%%" + itemRarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%\\n";
+        itemLore.insert(0, createTitle);
 
         // writing the rarity if the rarity is not none
         if (itemRarity != Rarity.NONE) {
@@ -86,14 +81,28 @@ public class ItemGenCommand extends ApplicationCommand {
                 type = "";
             }
             // adds the items type in the description
-            parsedDescription.add(parsedDescription.size(), "");
-            String createRarity = "%%" + itemRarity.getRarityColor() + "%%%%BOLD%%" + itemRarity.getId().toUpperCase() + " " + type;
-            
-            parsedDescription.add(parsedDescription.size(), createRarity);
+            String createRarity = "\\n\\n%%" + itemRarity.getRarityColor() + "%%%%BOLD%%" + itemRarity.getId().toUpperCase() + " " + type;
+            itemLore.append(createRarity);
         }
 
-        MinecraftImage minecraftImage = new MinecraftImage(500, parsedDescription.size(), MCColor.GRAY);
-        minecraftImage.drawStrings(parsedDescription);
+        // creating a string parser to convert the string into color flagged text
+        StringColorParser colorParser = new StringColorParser();
+        colorParser.parseString(itemLore);
+
+        // checking that there were no errors while parsing the string
+        if (!colorParser.isSuccessfullyParsed()) {
+            event.getHook().sendMessage(colorParser.getErrorString()).setEphemeral(true).queue();
+            return;
+        }
+
+        // checking that the font's have been loaded into memory correctly
+        if (!MinecraftImage.registerFonts()) {
+            event.getHook().sendMessage("It seems that one of the font files couldn't be loaded correctly. Please contact a Bot Developer to have a look at it!").setEphemeral(true).queue();
+            return;
+        }
+
+        MinecraftImage minecraftImage = new MinecraftImage(500, colorParser.getRequiredLines(), MCColor.GRAY);
+        minecraftImage.drawStrings(colorParser.getParsedDescription());
 
         File imageFile = File.createTempFile("image", ".png");
         ImageIO.write(minecraftImage.getImage(), "png", imageFile);
