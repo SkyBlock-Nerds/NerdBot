@@ -36,7 +36,7 @@ public class BotConfig {
     /**
      * The {@link TextChannel} ID for the itemgen channel
      */
-    private String itemGenChannel;
+    private String[] itemGenChannel;
 
     /**
      * The minimum threshold of {@link MessageReaction reactions} needed for a suggestion to be considered greenlit

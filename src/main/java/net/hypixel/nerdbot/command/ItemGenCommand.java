@@ -39,17 +39,19 @@ public class ItemGenCommand extends ApplicationCommand {
             @Optional @AppOption(description = "The type of the item") String type
     ) throws IOException {
         String senderChannelId = event.getChannel().getId();
-        String itemGenChannelId = NerdBotApp.getBot().getConfig().getItemGenChannel();
+        String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
         event.deferReply(false).queue();
 
-        if (itemGenChannelId == null) {
+        if (itemGenChannelIds == null) {
             event.getHook().sendMessage("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
             return;
         }
 
-        if (!senderChannelId.equals(itemGenChannelId)) {
-            TextChannel channel = ChannelManager.getChannel(itemGenChannelId);
+        if (Arrays.stream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
+            //The top channel in the config should be considered the 'primary channel', which is referenced in the
+            //error message.
+            TextChannel channel = ChannelManager.getChannel(itemGenChannelIds[0]);
             if (channel == null) {
                 event.getHook().sendMessage("This can only be used in the item generating channel.").setEphemeral(true).queue();
                 return;
