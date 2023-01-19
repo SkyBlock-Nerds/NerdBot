@@ -67,10 +67,13 @@ public class NerdBot implements Bot {
                         new ChannelGroupMessageListener(),
                         new FeatureEventListener(),
                         new ShutdownListener(),
-                        new ActivityListener(),
-                        new ModMailListener()
+                        new ActivityListener()
                 ).setActivity(Activity.of(config.getActivityType(), config.getActivity()));
         configureMemoryUsage(builder);
+
+        if (config.getModMailConfig() != null) {
+            builder.addEventListeners(new ModMailListener());
+        }
 
         jda = builder.build();
         try {

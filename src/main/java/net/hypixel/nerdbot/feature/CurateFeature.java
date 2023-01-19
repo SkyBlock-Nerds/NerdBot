@@ -18,6 +18,11 @@ public class CurateFeature extends BotFeature {
 
     @Override
     public void onStart() {
+        if (NerdBotApp.getBot().getConfig().getSuggestionForumId() == null) {
+            log.info("Not starting CurateFeature as 'suggestionForumId' could not be found in the configuration file!");
+            return;
+        }
+
         Database database = NerdBotApp.getBot().getDatabase();
         TimerTask timerTask = new TimerTask() {
             @Override
