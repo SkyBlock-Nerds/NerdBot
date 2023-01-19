@@ -45,6 +45,10 @@ public class ModMailListener {
             return;
         }
 
+        if (modMailRoleMention == null || event.getGuild().getRoleById(modMailRoleMention) == null) {
+            return;
+        }
+
         Message message = event.getMessage();
         Optional<ThreadChannel> optional = forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getName().contains(author.getName())).findFirst();
         if (optional.isPresent()) {
