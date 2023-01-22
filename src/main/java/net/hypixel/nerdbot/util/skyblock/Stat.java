@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.util.skyblock;
 
+import net.hypixel.nerdbot.generator.StatColorParser;
+
 import java.util.function.BiFunction;
 
 public enum Stat {
@@ -28,7 +30,8 @@ public enum Stat {
     REQUIRE("❣ Requires", MCColor.RED, StatColorParser::postStatColorParser),
     REFORGABLE("This item can be reforged!", MCColor.DARK_GRAY),
     ITEM_STAT_RED("ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser),
-    ITEM_STAT_GREEN("ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser);
+    ITEM_STAT_GREEN("ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser),
+    ITEM_STAT_PURPLE("ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, StatColorParser::itemStatColorParser);
 
     public static final Stat[] VALUES = values();
 
