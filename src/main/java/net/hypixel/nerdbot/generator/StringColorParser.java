@@ -115,7 +115,7 @@ public class StringColorParser {
                     Stat stat = (Stat) findValue(stats, selectedCommand);
                     if (stat != null) {
                         // replacing the selected space with the stat's text
-                        String replacementText = stat.getParsedStat(extraData);
+                        String replacementText = stat.getParsedStat(extraData) + "%%GRAY%%";
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
@@ -139,7 +139,7 @@ public class StringColorParser {
                 // checking if the user is using normal mc character codes
                 else if (description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
                     char selectedCode = description.charAt(charIndex + 1);
-                    // checking that the colour code is real color
+                    // checking that the color code is real color
                     boolean foundMatchingColor = false;
                     for (MCColor mcColor : colors) {
                         if (mcColor.getColorCode() == selectedCode) {
@@ -229,7 +229,7 @@ public class StringColorParser {
     }
 
     /**
-     * creates a new line within the arraylist, keeping the previous colour
+     * creates a new line within the arraylist, keeping the previous color
      */
     private void createNewLine() {
         currentLine.add(currentString);
