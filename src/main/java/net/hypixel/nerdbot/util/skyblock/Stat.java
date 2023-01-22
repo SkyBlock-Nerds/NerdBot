@@ -25,7 +25,10 @@ public enum Stat {
     FORAGING_FORTUNE("☘ Foraging Fortune", MCColor.GOLD),
     SOULFLOW("⸎ Soulflow", MCColor.DARK_AQUA),
     RECIPE("Right-click to view recipes!", MCColor.YELLOW),
-    REQUIRE("❣ Requires", MCColor.RED);
+    REQUIRE("❣ Requires", MCColor.RED, StatColorParser::postStatColorParser),
+    REFORGABLE("This item can be reforged!", MCColor.DARK_GRAY),
+    ITEM_STAT_RED("ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser),
+    ITEM_STAT_GREEN("ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser);
 
     public static final Stat[] VALUES = values();
 
