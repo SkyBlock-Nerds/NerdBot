@@ -162,11 +162,11 @@ public class StringColorParser {
 
                     // creating error message for valid codes
                     StringBuilder failedString = new StringBuilder();
-                    failedString.append("You used an invalid character code `").append(selectedCode).append("`. \nValid color codes include...");
+                    failedString.append("You used an invalid character code `").append(selectedCode).append("`. \nValid color codes include...\n");
                     for (MCColor color : colors) {
-                        failedString.append(color).append(": ").append(color.getColorCode()).append(" ");
+                        failedString.append(color).append(": `").append(color.getColorCode()).append("`, ");
                     }
-                    this.errorString = failedString.toString();
+                    this.errorString = failedString.substring(0, failedString.length() - 2);
                     return;
                 }
                 // checking if the current character is a new line
