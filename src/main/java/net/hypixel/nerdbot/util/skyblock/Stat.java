@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.util.skyblock;
 
+import java.util.function.BiFunction;
+
 public enum Stat {
     STRENGTH("❁ Strength", MCColor.RED),
     DAMAGE("❁ Damage", MCColor.RED),
@@ -29,19 +31,27 @@ public enum Stat {
 
     private final String stat;
     private final MCColor color;
+    private final BiFunction<Stat, String, String> statColorParser;
     // Some stats have special colors which are used in conjunction to the normal color.
     private final MCColor subColor;
 
-    Stat(String stat, MCColor color) {
-        this.stat = stat;
-        this.color = color;
-        this.subColor = null;
-    }
-
-    Stat(String stat, MCColor color, MCColor subColor) {
+    Stat(String stat, MCColor color, MCColor subColor, BiFunction<Stat, String, String> statColorParser) {
         this.stat = stat;
         this.color = color;
         this.subColor = subColor;
+        this.statColorParser = statColorParser;
+    }
+
+    Stat(String stat, MCColor color) {
+        this(stat, color, null, StatColorParser::normalStatColorParser);
+    }
+
+    Stat(String stat, MCColor color, BiFunction<Stat, String, String> statColorParser) {
+        this(stat, color, null, statColorParser);
+    }
+
+    Stat(String stat, MCColor color, MCColor subColor) {
+        this(stat, color, subColor, StatColorParser::dualStatColorParser);
     }
 
     public String getId() {
@@ -50,6 +60,15 @@ public enum Stat {
 
     public MCColor getColor() {
         return color;
+    }
+
+    /**
+     * Parses the string into its color and id components
+     * @param extraData extra arguments provided in the section
+     * @return returns a color parsed replacement string
+     */
+    public String getParsedStat(String extraData) {
+        return statColorParser.apply(this, extraData);
     }
 
     /**
