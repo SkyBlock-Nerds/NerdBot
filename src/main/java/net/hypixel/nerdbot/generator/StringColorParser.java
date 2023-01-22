@@ -115,7 +115,7 @@ public class StringColorParser {
                     Stat stat = (Stat) findValue(stats, selectedCommand);
                     if (stat != null) {
                         // replacing the selected space with the stat's text
-                        String replacementText = "%%" + stat.getColor() + "%%" + extraData + stat.getId() + "%%GRAY%%";
+                        String replacementText = stat.getParsedStat(extraData);
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
