@@ -106,10 +106,18 @@ public class ModMailListener {
             return;
         }
 
+        Message message = event.getMessage();
+
+        // Stuffy: Check if message starts with ? and if so, ignore it, log it and send a message to the thread channel.
+        if(message.getContentRaw().startsWith("?")) {
+            threadChannel.sendMessage("Previous message hidden from receiver").queue();
+            log.info(author.getName() + " sent a hidden message (Thread ID: " + threadChannel.getId() + ")");
+            return;
+        }
+
         List<Message> allMessages = threadChannel.getIterableHistory().complete(true);
         Message firstPost = allMessages.get(allMessages.size() - 1);
         User requester = firstPost.getMentions().getUsers().get(0);
-        Message message = event.getMessage();
 
         MessageCreateBuilder builder = createMessage(message).setContent("**Response from " + author.getName() + " in SkyBlock Nerds:**\n" + message.getContentDisplay());
         requester.openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
