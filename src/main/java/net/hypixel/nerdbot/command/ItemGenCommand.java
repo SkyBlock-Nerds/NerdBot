@@ -37,7 +37,7 @@ public class ItemGenCommand extends ApplicationCommand {
             @AppOption(description = "The rarity of the item", autocomplete = "rarities") String rarity,
             @AppOption(description = "The description of the item") String description,
             @Optional @AppOption(description = "The type of the item") String type,
-            @Optional @AppOption(description = "If you will handle line breaks at the end of the item's description") String handleLineBreaks
+            @Optional @AppOption(description = "If you will handle line breaks at the end of the item's description") Boolean handleLineBreaks
     ) throws IOException {
         String senderChannelId = event.getChannel().getId();
         String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
@@ -85,7 +85,7 @@ public class ItemGenCommand extends ApplicationCommand {
                 type = "";
             }
             // checking if there is custom line break happening
-            if (handleLineBreaks == null || !handleLineBreaks.equalsIgnoreCase("true")) {
+            if (handleLineBreaks == null || !handleLineBreaks) {
                 itemLore.append("\\n");
             }
 
