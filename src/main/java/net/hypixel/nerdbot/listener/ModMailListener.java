@@ -45,7 +45,7 @@ public class ModMailListener {
             return;
         }
 
-        if (modMailRoleMention == null || event.getGuild().getRoleById(modMailRoleMention) == null) {
+        if (modMailRoleMention == null) {
             return;
         }
 
@@ -53,9 +53,11 @@ public class ModMailListener {
         Optional<ThreadChannel> optional = forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getName().contains(author.getName())).findFirst();
         if (optional.isPresent()) {
             ThreadChannel threadChannel = optional.get();
+
             if (threadChannel.isArchived()) {
                 threadChannel.getManager().setArchived(false).queue();
             }
+
             threadChannel.sendMessage(modMailRoleMention).queue();
             threadChannel.sendMessage(createMessage(message).build()).queue();
             log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
