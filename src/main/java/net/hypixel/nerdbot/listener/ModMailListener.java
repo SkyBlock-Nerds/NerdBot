@@ -110,7 +110,7 @@ public class ModMailListener {
 
         // Stuffy: Check if message starts with ? and if so, ignore it, log it and send a message to the thread channel.
         if(message.getContentRaw().startsWith("?")) {
-            threadChannel.sendMessage(createMessage("Previous message hidden from receiver").build()).queue();
+            threadChannel.sendMessage("Previous message hidden from receiver").queue();
             log.info(author.getName() + " sent a hidden message (Thread ID: " + threadChannel.getId() + ")");
             return;
         }
