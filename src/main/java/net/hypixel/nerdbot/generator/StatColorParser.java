@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.generator;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
 public class StatColorParser {
+
     /**
      * Displays the selected stat with its extra details and id in its primary color
      * @param stat the selected stat
