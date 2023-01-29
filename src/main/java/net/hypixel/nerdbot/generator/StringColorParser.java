@@ -115,7 +115,7 @@ public class StringColorParser {
                     Stat stat = (Stat) findValue(stats, selectedCommand);
                     if (stat != null) {
                         // replacing the selected space with the stat's text
-                        String replacementText = "%%" + stat.getColor() + "%%" + extraData + stat.getId() + "%%GRAY%%";
+                        String replacementText = stat.getParsedStat(extraData) + "%%GRAY%%";
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
@@ -139,7 +139,7 @@ public class StringColorParser {
                 // checking if the user is using normal mc character codes
                 else if (description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
                     char selectedCode = description.charAt(charIndex + 1);
-                    // checking that the colour code is real color
+                    // checking that the color code is real color
                     boolean foundMatchingColor = false;
                     for (MCColor mcColor : colors) {
                         if (mcColor.getColorCode() == selectedCode) {
@@ -162,11 +162,11 @@ public class StringColorParser {
 
                     // creating error message for valid codes
                     StringBuilder failedString = new StringBuilder();
-                    failedString.append("You used an invalid character code `").append(selectedCode).append("`. \nValid color codes include...");
+                    failedString.append("You used an invalid character code `").append(selectedCode).append("`. \nValid color codes include...\n");
                     for (MCColor color : colors) {
-                        failedString.append(color).append(": ").append(color.getColorCode()).append(" ");
+                        failedString.append(color).append(": `").append(color.getColorCode()).append("`, ");
                     }
-                    this.errorString = failedString.toString();
+                    this.errorString = failedString.substring(0, failedString.length() - 2);
                     return;
                 }
                 // checking if the current character is a new line
@@ -229,7 +229,7 @@ public class StringColorParser {
     }
 
     /**
-     * creates a new line within the arraylist, keeping the previous colour
+     * creates a new line within the arraylist, keeping the previous color
      */
     private void createNewLine() {
         currentLine.add(currentString);
