@@ -7,6 +7,9 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.hypixel.nerdbot.channel.ReactionChannel;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -87,4 +90,9 @@ public class BotConfig {
      * Configuration for anything related to the Mod Mail feature
      */
     private ModMailConfig modMailConfig;
+
+    /**
+     * Configuration for channels that will have reactions automatically added to all new messages
+     */
+    private List<ReactionChannel> reactionChannels;
 }

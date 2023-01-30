@@ -69,6 +69,7 @@ public class ModMailListener {
                 ThreadChannel threadChannel = forumPost.getThreadChannel();
                 List<Member> roleMembers = threadChannel.getGuild().getMembersWithRoles(Util.getRole("Mod Mail"));
                 AtomicInteger count = new AtomicInteger();
+
                 threadChannel.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
                 threadChannel.getGuild().getMembersWithRoles(Util.getRole("Mod Mail")).forEach(member -> threadChannel.addThreadMember(member).queue(unused -> {
                     if (count.incrementAndGet() == roleMembers.size()) {
