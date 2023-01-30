@@ -111,11 +111,17 @@ public class StringColorParser {
                         extraData = selectedCommand.substring(specialFlagIndex + 1);
                         selectedCommand = selectedCommand.substring(0, specialFlagIndex);
                     }
+                    // checking if the command is supposed to be the icon
+                    boolean isIcon = selectedCommand.indexOf('&') == 0;
+                    if (isIcon) {
+                        selectedCommand = selectedCommand.substring(1);
+                    }
+
                     // checking if the command is a stat
                     Stat stat = (Stat) findValue(stats, selectedCommand);
                     if (stat != null) {
                         // replacing the selected space with the stat's text
-                        String replacementText = stat.getParsedStat(extraData) + "%%GRAY%%";
+                        String replacementText = stat.getParsedStat(isIcon, extraData) + "%%GRAY%%";
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
@@ -300,7 +306,7 @@ public class StringColorParser {
     }
 
     private static String stripString(String normalString) {
-        return normalString.replaceAll("[^a-zA-Z0-9_ ]", "");
+        return normalString.replaceAll("[^a-zA-Z0-9_ &]", "");
     }
 
 }
