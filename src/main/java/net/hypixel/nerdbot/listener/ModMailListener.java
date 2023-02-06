@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.RateLimitedException;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
@@ -111,7 +112,9 @@ public class ModMailListener {
 
         // Stuffy: Check if message starts with ? and if so, ignore it, log it and send a message to the thread channel.
         if(message.getContentRaw().startsWith("?")) {
-            threadChannel.sendMessage("Previous message hidden from receiver").queue();
+            Emoji emoji = Emoji.fromUnicode("U+1F92B");
+            message.addReaction(emoji).queue();
+            //threadChannel.sendMessage("Previous message hidden from receiver").queue();
             log.info(author.getName() + " sent a hidden message (Thread ID: " + threadChannel.getId() + ")");
             return;
         }
