@@ -306,7 +306,7 @@ public class StringColorParser {
     }
 
     private static String stripString(String normalString) {
-        return normalString.replaceAll("[^a-zA-Z0-9_ &]", "");
+        return normalString.replaceAll("[^a-zA-Z0-9_ ]", "");
     }
 
 }
