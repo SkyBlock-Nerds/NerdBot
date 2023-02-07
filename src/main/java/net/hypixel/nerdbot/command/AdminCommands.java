@@ -19,9 +19,12 @@ public class AdminCommands extends ApplicationCommand {
     public void showChannelGroups(GuildSlashEvent event, @AppOption int amount) {
         List<Invite> invites = new ArrayList<>(amount);
 
+        event.deferReply(true).queue();
+
         for (int i = 0; i < amount; i++) {
             InviteAction action = event.getChannel().asTextChannel()
                     .createInvite()
+                    .setUnique(true)
                     .setMaxAge(7L, TimeUnit.DAYS)
                     .setMaxUses(1);
 
@@ -37,6 +40,6 @@ public class AdminCommands extends ApplicationCommand {
             stringBuilder.append(invite.getUrl()).append("\n");
         });
 
-        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
+        event.getHook().editOriginal(stringBuilder.toString()).queue();
     }
 }

@@ -82,11 +82,12 @@ public class ModLogListener {
                         + "\nTime created: " + invite.getTimeCreated()
                         + "\nChannel: " + invite.getChannel().getName()
                         + "\nMax Uses: " + invite.getMaxUses()
-                        + "\nMax Age: " + LocalTime.ofSecondOfDay(invite.getMaxAge()).toString()
+                        + "\nMax Age: " + LocalTime.ofSecondOfDay(Math.min(86_399, invite.getMaxAge())).toString()
                         + "\nTemporary? " + (invite.isTemporary() ? "Yes" : "No"))
                 .setThumbnail(member.getAvatarUrl())
                 .setColor(Color.GREEN)
                 .build();
+
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
 
@@ -94,9 +95,10 @@ public class ModLogListener {
     public void onInviteDelete(GuildInviteDeleteEvent event) {
         MessageEmbed messageEmbed = getDefaultEmbed()
                 .setTitle("Invite deleted")
-                .setDescription("Invite Code: https://discord.gg/" + event.getCode())
+                .setDescription("Invite Code: " + event.getUrl())
                 .setColor(Color.RED)
                 .build();
+
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
 
