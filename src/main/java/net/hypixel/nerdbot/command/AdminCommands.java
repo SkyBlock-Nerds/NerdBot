@@ -30,7 +30,7 @@ public class AdminCommands extends ApplicationCommand {
 
             Invite invite = action.complete();
             invites.add(invite);
-            log.info("Generated new temporary invite '" + invite.getUrl() + "'");
+            log.info("Generated new temporary invite '" + invite.getUrl() + "' by " + event.getUser().getAsTag());
         }
 
         StringBuilder stringBuilder = new StringBuilder("Generated invites (");
