@@ -115,7 +115,7 @@ public class InfoCommand extends ApplicationCommand {
                 .addField("Last Known VC Date", new DiscordTimestamp(lastActivity.getLastVoiceChannelJoinDate()).toRelativeTimestamp(), true)
                 .addField("Last Known Suggestion Date", new DiscordTimestamp(lastActivity.getLastSuggestionDate()).toRelativeTimestamp(), true)
                 .setColor(Color.GREEN)
-                .setThumbnail(member.getAvatarUrl());
+                .setThumbnail(member.getEffectiveAvatarUrl());
 
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
