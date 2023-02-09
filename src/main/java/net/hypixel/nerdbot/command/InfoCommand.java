@@ -4,7 +4,6 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.mongodb.client.MongoCollection;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -15,14 +14,14 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.user.LastActivity;
-import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.awt.*;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 @Log4j2
 public class InfoCommand extends ApplicationCommand {
@@ -126,15 +125,15 @@ public class InfoCommand extends ApplicationCommand {
             return;
         }
 
-        MongoCollection<DiscordUser> userCollection = database.getCollection("users", DiscordUser.class);
-        List<DiscordUser> allUsers = userCollection.find().into(new ArrayList<>());
-        List<DiscordUser> users = getPage(allUsers.stream().filter(discordUser -> discordUser.getLastActivity().getLastGlobalActivity() == -1L).toList(), page, 25);
+        List<DiscordUser> allUsers = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
+        List<DiscordUser> inactiveUsers = allUsers.stream().filter(discordUser -> discordUser.getLastActivity().getLastGlobalActivity() == -1L).toList();
+        List<DiscordUser> users = getPage(inactiveUsers, page, 25);
         Map<String, Integer> roles = new HashMap<>();
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
-        System.out.println("Found " + allUsers.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
-
-        for (DiscordUser all : allUsers) {
+        System.out.println("Found " + inactiveUsers.size() + " inactive user" + (inactiveUsers.size() == 1 ? "" : "s") + "!");
+        // Do some logging stuff
+        for (DiscordUser all : inactiveUsers) {
             Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(all.getDiscordId());
             if (member == null) {
                 log.error("Couldn't find member " + all.getDiscordId());
@@ -146,9 +145,12 @@ public class InfoCommand extends ApplicationCommand {
                 continue;
             }
 
-            roles.put(member.getRoles().get(0).getName(), roles.getOrDefault(member.getRoles().get(0).getName(), 0) + 1);
+            if (all.getLastActivity().getLastGlobalActivity() == -1) {
+                roles.put(member.getRoles().get(0).getName(), roles.getOrDefault(member.getRoles().get(0).getName(), 0) + 1);
+            }
         }
 
+        // Create the page
         for (DiscordUser user : users) {
             Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(user.getDiscordId());
             if (member == null) {
