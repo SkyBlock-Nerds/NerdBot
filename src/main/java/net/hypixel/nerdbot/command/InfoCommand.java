@@ -137,7 +137,7 @@ public class InfoCommand extends ApplicationCommand {
                 continue;
             }
 
-            roles.put(member.getRoles().get(0).getName(), roles.getOrDefault(member.getRoles().get(0).getName(), 1));
+            roles.put(member.getRoles().get(0).getName(), roles.getOrDefault(member.getRoles().get(0).getName(), 0) + 1);
 
             if (member.getRoles().contains(Util.getRole("Ultimate Nerd"))
                     || member.getRoles().contains(Util.getRole("Ultimate Nerd But Red"))
