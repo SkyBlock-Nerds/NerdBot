@@ -107,6 +107,7 @@ public class InfoCommand extends ApplicationCommand {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.addField("Username", member.getEffectiveName(), true)
                 .addField("Discord ID", member.getId(), true)
+                .addBlankField(true)
                 .addField("Total Agree Reactions", String.valueOf(discordUser.getAgrees().size()), true)
                 .addField("Total Disagree Reactions", String.valueOf(discordUser.getDisagrees().size()), true)
                 .addBlankField(true)
