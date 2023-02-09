@@ -21,9 +21,7 @@ import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
+import java.util.*;
 import java.util.List;
 
 @Log4j2
@@ -129,7 +127,8 @@ public class InfoCommand extends ApplicationCommand {
         }
 
         MongoCollection<DiscordUser> userCollection = database.getCollection("users", DiscordUser.class);
-        List<DiscordUser> users = getPage(userCollection.find().into(new ArrayList<>()).stream().filter(discordUser -> discordUser.getLastActivity().getLastGlobalActivity() == -1L).toList(), page, 15);
+        List<DiscordUser> users = getPage(userCollection.find().into(new ArrayList<>()).stream().filter(discordUser -> discordUser.getLastActivity().getLastGlobalActivity() == -1L).toList(), page, 25);
+        Map<String, Integer> roles = new HashMap<>();
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
         for (DiscordUser user : users) {
             Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(user.getDiscordId());
@@ -138,8 +137,11 @@ public class InfoCommand extends ApplicationCommand {
                 continue;
             }
 
-            if (member.getRoles().contains(Util.getRole("Ultimate Nerd")) || member.getRoles().contains(Util.getRole("Ultimate Nerd But Red")) ||
-                    member.getRoles().contains(Util.getRole("Game Master"))) {
+            roles.put(member.getRoles().get(0).getName(), roles.getOrDefault(member.getRoles().get(0).getName(), 1));
+
+            if (member.getRoles().contains(Util.getRole("Ultimate Nerd"))
+                    || member.getRoles().contains(Util.getRole("Ultimate Nerd But Red"))
+                    || member.getRoles().contains(Util.getRole("Game Master"))) {
                 log.info("Would have added " + member.getEffectiveName() + " as an inactive user but they have a special role!");
                 continue;
             }
@@ -147,6 +149,7 @@ public class InfoCommand extends ApplicationCommand {
             stringBuilder.append(" • ").append(member.getUser().getAsMention()).append("\n");
         }
 
+        log.info("Breakdown by role: " + roles);
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
     }
 
