@@ -89,7 +89,13 @@ public class InfoCommand extends ApplicationCommand {
             return;
         }
 
-        DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", member.getId()).first();
+        DiscordUser discordUser;
+        if (NerdBotApp.USER_CACHE.getIfPresent(member.getId()) != null) {
+            discordUser = NerdBotApp.USER_CACHE.getIfPresent(member.getId());
+        } else {
+            discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", member.getId()).first();
+        }
+
         if (discordUser == null) {
             event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
             return;
@@ -100,7 +106,7 @@ public class InfoCommand extends ApplicationCommand {
         builder.append("User stats for ").append(member.getAsMention()).append("\n");
         builder.append(" • Total known agree reactions: ").append(discordUser.getAgrees().size()).append("\n");
         builder.append(" • Total known disagree reactions: ").append(discordUser.getDisagrees().size()).append("\n");
-        builder.append(" • Last known activity date: ").append(new DiscordTimestamp(lastActivity.getLastGlobalActivity()).toRelativeTimestamp()).append("\n");
+        builder.append(" • Last known global activity date: ").append(new DiscordTimestamp(lastActivity.getLastGlobalActivity()).toRelativeTimestamp()).append("\n");
         builder.append(" • Last known activity date (alpha): ").append(new DiscordTimestamp(lastActivity.getLastAlphaActivity()).toRelativeTimestamp()).append("\n");
         builder.append(" • Last known voice channel activity date: ").append(new DiscordTimestamp(lastActivity.getLastVoiceChannelJoinDate()).toRelativeTimestamp()).append("\n");
         builder.append(" • Last known suggestion date: ").append(new DiscordTimestamp(lastActivity.getLastSuggestionDate()).toRelativeTimestamp()).append("\n");
