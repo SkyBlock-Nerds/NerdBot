@@ -6,6 +6,7 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.mongodb.client.MongoCollection;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.SelfUser;
@@ -19,6 +20,7 @@ import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -101,17 +103,21 @@ public class InfoCommand extends ApplicationCommand {
             return;
         }
 
-        StringBuilder builder = new StringBuilder();
         LastActivity lastActivity = discordUser.getLastActivity();
-        builder.append("User stats for ").append(member.getAsMention()).append("\n");
-        builder.append(" • Total known agree reactions: ").append(discordUser.getAgrees().size()).append("\n");
-        builder.append(" • Total known disagree reactions: ").append(discordUser.getDisagrees().size()).append("\n");
-        builder.append(" • Last known global activity date: ").append(new DiscordTimestamp(lastActivity.getLastGlobalActivity()).toRelativeTimestamp()).append("\n");
-        builder.append(" • Last known activity date (alpha): ").append(new DiscordTimestamp(lastActivity.getLastAlphaActivity()).toRelativeTimestamp()).append("\n");
-        builder.append(" • Last known voice channel activity date: ").append(new DiscordTimestamp(lastActivity.getLastVoiceChannelJoinDate()).toRelativeTimestamp()).append("\n");
-        builder.append(" • Last known suggestion date: ").append(new DiscordTimestamp(lastActivity.getLastSuggestionDate()).toRelativeTimestamp()).append("\n");
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.addField("Username", member.getEffectiveName(), true)
+                .addField("Discord ID", member.getId(), true)
+                .addField("Total Agree Reactions", String.valueOf(discordUser.getAgrees().size()), true)
+                .addField("Total Disagree Reactions", String.valueOf(discordUser.getDisagrees().size()), true)
+                .addBlankField(true)
+                .addField("Last Known Global Activity", new DiscordTimestamp(lastActivity.getLastGlobalActivity()).toRelativeTimestamp(), true)
+                .addField("Last Known Alpha Activity", new DiscordTimestamp(lastActivity.getLastAlphaActivity()).toRelativeTimestamp(), true)
+                .addField("Last Known VC Date", new DiscordTimestamp(lastActivity.getLastVoiceChannelJoinDate()).toRelativeTimestamp(), true)
+                .addField("Last Known Suggestion Date", new DiscordTimestamp(lastActivity.getLastSuggestionDate()).toRelativeTimestamp(), true)
+                .setColor(Color.GREEN)
+                .setThumbnail(member.getAvatarUrl());
 
-        event.reply(builder.toString()).setEphemeral(true).queue();
+        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "activity", description = "View information regarding user activity", defaultLocked = true)
