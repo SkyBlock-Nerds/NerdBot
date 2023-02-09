@@ -141,7 +141,7 @@ public class InfoCommand extends ApplicationCommand {
                 continue;
             }
 
-            if (member.getRoles().size() == 0) {
+            if (member.getRoles().isEmpty()) {
                 log.info(member.getEffectiveName() + " doesn't have any roles!");
                 continue;
             }
