@@ -140,6 +140,12 @@ public class InfoCommand extends ApplicationCommand {
                 log.error("Couldn't find member " + all.getDiscordId());
                 continue;
             }
+
+            if (member.getRoles().size() == 0) {
+                log.info(member.getEffectiveName() + " doesn't have any roles!");
+                continue;
+            }
+
             roles.put(member.getRoles().get(0).getName(), roles.getOrDefault(member.getRoles().get(0).getName(), 0) + 1);
         }
 
