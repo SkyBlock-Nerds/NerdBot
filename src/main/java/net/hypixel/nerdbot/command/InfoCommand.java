@@ -127,11 +127,21 @@ public class InfoCommand extends ApplicationCommand {
         }
 
         MongoCollection<DiscordUser> userCollection = database.getCollection("users", DiscordUser.class);
-        List<DiscordUser> users = getPage(userCollection.find().into(new ArrayList<>()).stream().filter(discordUser -> discordUser.getLastActivity().getLastGlobalActivity() == -1L).toList(), page, 25);
+        List<DiscordUser> allUsers = userCollection.find().into(new ArrayList<>());
+        List<DiscordUser> users = getPage(allUsers.stream().filter(discordUser -> discordUser.getLastActivity().getLastGlobalActivity() == -1L).toList(), page, 25);
         Map<String, Integer> roles = new HashMap<>();
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
-        System.out.println("Found " + users.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
+        System.out.println("Found " + allUsers.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
+
+        for (DiscordUser all : allUsers) {
+            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(all.getDiscordId());
+            if (member == null) {
+                log.error("Couldn't find member " + all.getDiscordId());
+                continue;
+            }
+            roles.put(member.getRoles().get(0).getName(), roles.getOrDefault(member.getRoles().get(0).getName(), 0) + 1);
+        }
 
         for (DiscordUser user : users) {
             Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(user.getDiscordId());
@@ -139,8 +149,6 @@ public class InfoCommand extends ApplicationCommand {
                 log.error("Couldn't find member " + user.getDiscordId());
                 continue;
             }
-
-            roles.put(member.getRoles().get(0).getName(), roles.getOrDefault(member.getRoles().get(0).getName(), 0) + 1);
 
             if (member.getRoles().contains(Util.getRole("Ultimate Nerd"))
                     || member.getRoles().contains(Util.getRole("Ultimate Nerd But Red"))
