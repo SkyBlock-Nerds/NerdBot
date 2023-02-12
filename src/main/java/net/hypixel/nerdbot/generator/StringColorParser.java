@@ -80,7 +80,7 @@ public class StringColorParser {
                         this.errorString = "It seems that you don't have a closing `%%` near `" + stripString(surrondingErrorSubstring) + "`";
                         return;
                     }
-                    if (closingIndex > charIndex + 2) {
+                    if (closingIndex <= charIndex + 2) {
                         this.errorString = "It seems that you are missing a starting/ending `%%` for a color code or stat.";
                         return;
                     }
