@@ -44,7 +44,7 @@ public class InfoGenCommand extends ApplicationCommand {
         StringBuilder builder = new StringBuilder();
         builder.append("Welcome to the Item Generator bot!\n");
         builder.append("This is a bot used to create custom items to be used in suggestions. You can use the bot with /itemgen, and it accepts a few various arguments:\n\n");
-        builder.append("`name:` The name of the item. Defaults to the rarity color, unless the rarirty is none.\n");
+        builder.append("`name:` The name of the item. Defaults to the rarity color, unless the rarity is none.\n");
         builder.append("`rarity:` Takes any SkyBlock rarity. Can be left as NONE.\n");
         builder.append("`description:` Parses a description, including color codes, bold, italics, and newlines.\n");
         builder.append("`type:` The type of the item, such as a Sword or Wand. Can be left blank.\n");
