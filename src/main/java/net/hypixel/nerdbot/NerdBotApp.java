@@ -29,6 +29,7 @@ public class NerdBotApp {
                 DiscordUser discordUser = (DiscordUser) value;
                 Database database = NerdBotApp.getBot().getDatabase();
                 database.upsertDocument(database.getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
+                log.info("Upserted cached user '" + discordUser.getDiscordId() + "'");
             }).build();
 
     private static MessageCache messageCache;

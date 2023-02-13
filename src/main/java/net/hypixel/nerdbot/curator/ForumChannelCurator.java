@@ -4,6 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.exceptions.RateLimitedException;
@@ -48,6 +49,9 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 .stream()
                 .filter(threadChannel -> threadChannel.getAppliedTags().stream().anyMatch(tag -> !tag.getName().equalsIgnoreCase("greenlit")))
                 .toList();
+
+        log.info("Found " + threads.size() + " non-greenlit forum post(s)!");
+
         for (ThreadChannel thread : threads) {
             log.info("[" + (index++) + "/" + threads.size() + "] Curating thread: " + thread.getName() + " (Thread ID: " + thread.getId() + ")");
 
@@ -57,6 +61,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 Message firstPost = allMessages.get(allMessages.size() - 1);
                 Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
                 Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
+                Emoji neutralEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getNeutralEmojiId());
                 DiscordUser discordUser = Util.getOrAddUserToCache(database, firstPost.getAuthor().getId());
                 if (discordUser == null) {
                     continue;
@@ -67,36 +72,38 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     log.info("Updating last suggestion time for " + firstPost.getAuthor().getName() + " to " + firstPost.getTimeCreated().toEpochSecond());
                 }
 
-                if (agreeEmoji == null || disagreeEmoji == null) {
-                    log.error("Couldn't find the agree or disagree emoji, time to yell!");
+                if (agreeEmoji == null || disagreeEmoji == null || neutralEmoji == null) {
+                    log.error("Couldn't find an emoji, time to yell!");
                     if (ChannelManager.getLogChannel() != null) {
-                        ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH).getAsMention() + " I couldn't find the agree or disagree emoji for some reason, check logs!").queue();
+                        ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH).getAsMention() + " I couldn't find an emoji for some reason, check logs!").queue();
                     }
                     break;
                 }
 
                 // Add the reactions if they're missing
                 // Theoretically the agree reaction should be there by default but lets check anyway just in case
-                int agreeReaction = firstPost.getReaction(agreeEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(agreeEmoji)).getCount();
-                int disagreeReaction = firstPost.getReaction(disagreeEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(disagreeEmoji)).getCount();
+                int agreeReactions = firstPost.getReaction(agreeEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(agreeEmoji)).getCount();
+                int disagreeReactions = firstPost.getReaction(disagreeEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(disagreeEmoji)).getCount();
+                int neutralReactions = firstPost.getReaction(neutralEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(neutralEmoji)).getCount();
 
-                if (agreeReaction < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
+                if (agreeReactions < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
                     log.info("Post " + firstPost.getId() + " doesn't have enough agree reactions, skipping...");
                     continue;
                 }
 
                 // Get the ratio of reactions and greenlight it if it's over the threshold
-                double ratio = getRatio(agreeReaction, disagreeReaction);
+                double ratio = getRatio(agreeReactions, disagreeReactions, neutralReactions);
                 if (ratio >= NerdBotApp.getBot().getConfig().getPercentage()) {
                     GreenlitMessage greenlitMessage = GreenlitMessage.builder()
-                            .agrees(agreeReaction)
-                            .disagrees(disagreeReaction)
+                            .agrees(agreeReactions)
+                            .disagrees(disagreeReactions)
                             .messageId(firstPost.getId())
                             .userId(firstPost.getAuthor().getId())
                             .suggestionUrl(firstPost.getJumpUrl())
                             .suggestionTitle(thread.getName())
                             .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
                             .suggestionContent(firstPost.getContentRaw())
+                            .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
                             .build();
 
                     log.info("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
