@@ -11,6 +11,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 public class MinecraftImage {
+    private static final int START_X = 15;
+    private static final int Y_INCREMENT = 23;
+
     private final GraphicsEnvironment ge;
     private final Graphics2D g2d;
     private static boolean fontsRegistered = false;
@@ -20,7 +23,7 @@ public class MinecraftImage {
     private MCColor currentColor;
     private Font currentFont;
     private BufferedImage image;
-    private int locationX = 10;
+    private int locationX = START_X;
     private int locationY = 25;
     private int largestWidth = 0;
 
@@ -41,20 +44,42 @@ public class MinecraftImage {
     }
 
     /**
+     * Creates an image, then initialized a Graphics2D object from that image.
+     *
+     * @return G2D object
+     */
+    private Graphics2D initG2D(int width, int height) {
+        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+        Graphics2D graphics = image.createGraphics();
+        // draw the black background
+        graphics.setColor(Color.BLACK);
+        graphics.fillRect(0, 0, width, height);
+
+        return graphics;
+    }
+
+    /**
      * Crops the image down to closely fit the size taken up
      */
     public void cropImage() {
-        image = image.getSubimage(0, 0, largestWidth + 10, image.getHeight());
+        image = image.getSubimage(0, 0, largestWidth + START_X, image.getHeight());
     }
 
     /**
      * Creates the purple border around the image
      */
     public void createImageBorder() {
+        int imageWidth = image.getWidth();
+        int imageHeight = image.getHeight();
+        final int borderSize = 3; // a constant value used to determine the width of the outer border and corners
+
         // drawing the purple rectangle around the edge
         g2d.setColor(new Color(41, 5, 96));
-        g2d.drawRect(1, 1, image.getWidth() - 3, image.getHeight() - 3);
-        g2d.drawRect(2, 2, image.getWidth() - 5, image.getHeight() - 5);
+        g2d.fillRect(0, 0, imageWidth, borderSize); //top
+        g2d.fillRect(0, 0, borderSize, imageHeight); //left
+        g2d.fillRect(0, imageHeight - borderSize, imageWidth, borderSize); //bottom
+        g2d.fillRect(imageWidth - borderSize, 0, borderSize, imageHeight); //right
     }
 
     /**
@@ -132,37 +157,12 @@ public class MinecraftImage {
      * Moves the string to print to the next line.
      */
     private void newLine() {
-        locationY += 23;
+        locationY += Y_INCREMENT;
 
         if (locationX > largestWidth) {
             largestWidth = locationX;
         }
-        locationX = 10;
-    }
-
-    /**
-     * Creates an image, then initialized a Graphics2D object from that image.
-     *
-     * @return G2D object
-     */
-    private Graphics2D initG2D(int width, int height) {
-        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
-        final int borderSize = 3; // a constant value used to determine the width of the outer border and corners
-
-        Graphics2D graphics = image.createGraphics();
-        // draw the black background
-        graphics.setColor(Color.BLACK);
-        graphics.fillRect(0, 0, width, height);
-
-        // draw each border individually in black, preserving corners. we do this to use borderSize arg
-        graphics.setColor(new Color(41, 5, 96));
-        graphics.fillRect(0, 0, width, borderSize); //top
-        graphics.fillRect(0, 0, borderSize, height); //left
-        graphics.fillRect(0, height - borderSize, width, borderSize); //bottom
-        graphics.fillRect(width - borderSize, 0, borderSize, height); //right
-
-        return graphics;
+        locationX = START_X;
     }
 
     /**
