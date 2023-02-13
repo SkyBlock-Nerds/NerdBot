@@ -40,6 +40,23 @@ public class MinecraftImage {
     }
 
     /**
+     * Creates an image, then initialized a Graphics2D object from that image.
+     *
+     * @return G2D object
+     */
+    private Graphics2D initG2D(int width, int height) {
+        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+        Graphics2D graphics = image.createGraphics();
+        // drawing the purple rectangle around the edge
+        graphics.setColor(new Color(41, 5, 96));
+        graphics.drawRect(1, 1, width - 3, height - 3);
+        graphics.drawRect(2, 2, width - 3, height - 3);
+
+        return graphics;
+    }
+
+    /**
      * Draws the strings to the generated image.
      *
      * @param parsedString A string with valid color codes, such as through #parseDescription().
@@ -116,23 +133,6 @@ public class MinecraftImage {
      */
     private void newLine() {
         locationY += 23;
-    }
-
-    /**
-     * Creates an image, then initialized a Graphics2D object from that image.
-     *
-     * @return G2D object
-     */
-    private Graphics2D initG2D(int width, int height) {
-        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-
-        Graphics2D graphics = image.createGraphics();
-        // drawing the purple rectangle around the edge
-        graphics.setColor(new Color(41, 5, 96));
-        graphics.drawRect(1, 1, width - 3, height - 3);
-        graphics.drawRect(2, 2, width - 3, height - 3);
-
-        return graphics;
     }
 
     /**
