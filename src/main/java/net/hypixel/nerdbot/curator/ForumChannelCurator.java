@@ -4,6 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.exceptions.RateLimitedException;
@@ -100,6 +101,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                             .suggestionTitle(thread.getName())
                             .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
                             .suggestionContent(firstPost.getContentRaw())
+                            .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
                             .build();
 
                     log.info("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
