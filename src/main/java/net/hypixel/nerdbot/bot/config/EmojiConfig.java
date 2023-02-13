@@ -20,6 +20,11 @@ public class EmojiConfig {
     private String disagreeEmojiId;
 
     /**
+     * The ID of the reaction for the neutral emoji
+     */
+    private String neutralEmojiId;
+
+    /**
      * The ID of the reaction for the greenlit emoji
      */
     private String greenlitEmojiId;

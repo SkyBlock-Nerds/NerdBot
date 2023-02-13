@@ -48,11 +48,11 @@ public class InfoGenCommand extends ApplicationCommand {
         builder.append("`rarity:` Takes any SkyBlock rarity. Can be left as NONE.\n");
         builder.append("`description:` Parses a description, including color codes, bold, italics, and newlines.\n");
         builder.append("`type:` The type of the item, such as a Sword or Wand. Can be left blank.\n");
-        builder.append("`handle_line_breaks- (true/false)`: To be used if you're manually handling line breaks.\n\n");
+        builder.append("`handle_line_breaks- (true/false)`: To be used if you're manually handling line breaks between the description and rarity.\n\n");
         builder.append("The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or `%%DARK_BLUE%%`.\n");
         builder.append("You can use this same format for stats, such as `%%PRISTINE%%`. \nThis format can also have numbers, where `%%PRISTINE:1%%` will become \"1 ✧ Pristine\"\n");
         builder.append("Finally, you can move your text to a newline by using \\n. This format can be forced with the handle_line_breaks argument.\n\n");
-        builder.append("Have fun making items! You can click the blue /itemgen command above anyone's image to see what text they're using to create their command. Thanks!\n\n");
+        builder.append("Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!\n\n");
         builder.append("The item generation bot is maintained by mrkeith. Feel free to tag him with any issues.");
 
 
