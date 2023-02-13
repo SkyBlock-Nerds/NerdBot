@@ -184,7 +184,7 @@ public class MinecraftImage {
             return true;
 
         if (minecraftFonts[0] == null) {
-            minecraftFonts[0] = initFont("/Minecraft/minecraft.ttf", 16f);
+            minecraftFonts[0] = initFont("/Minecraft/minecraft.otf", 16f);
         }
         if (minecraftFonts[1] == null) {
             minecraftFonts[1] = initFont("/Minecraft/3_Minecraft-Bold.otf", 22f);
