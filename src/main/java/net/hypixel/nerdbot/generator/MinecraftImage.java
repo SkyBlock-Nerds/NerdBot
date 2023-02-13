@@ -22,6 +22,7 @@ public class MinecraftImage {
     private BufferedImage image;
     private int locationX = 10;
     private int locationY = 25;
+    private int largestWidth = 0;
 
     public MinecraftImage(int imageWidth, int linesToPrint, MCColor defaultColor) {
         this.ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -47,13 +48,24 @@ public class MinecraftImage {
     private Graphics2D initG2D(int width, int height) {
         this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
-        Graphics2D graphics = image.createGraphics();
-        // drawing the purple rectangle around the edge
-        graphics.setColor(new Color(41, 5, 96));
-        graphics.drawRect(1, 1, width - 3, height - 3);
-        graphics.drawRect(2, 2, width - 3, height - 3);
+        return image.createGraphics();
+    }
 
-        return graphics;
+    /**
+     * Crops the image down to closely fit the size taken up
+     */
+    public void cropImage() {
+        image = image.getSubimage(0, 0, largestWidth + 10, image.getHeight());
+    }
+
+    /**
+     * Creates the purple border around the image
+     */
+    public void createImageBorder() {
+        // drawing the purple rectangle around the edge
+        g2d.setColor(new Color(41, 5, 96));
+        g2d.drawRect(1, 1, image.getWidth() - 3, image.getHeight() - 3);
+        g2d.drawRect(2, 2, image.getWidth() - 5, image.getHeight() - 5);
     }
 
     /**
@@ -63,7 +75,6 @@ public class MinecraftImage {
      */
     public void drawStrings(ArrayList<ArrayList<ColoredString>> parsedString) {
         for (ArrayList<ColoredString> line : parsedString) {
-            locationX = 10;
             for (ColoredString colorSegment : line) {
                 // setting the font if it is meant to be bold or italicised
                 currentFont = minecraftFonts[(colorSegment.isBold() ? 1 : 0) + (colorSegment.isItalic() ? 2 : 0)];
@@ -133,6 +144,11 @@ public class MinecraftImage {
      */
     private void newLine() {
         locationY += 23;
+
+        if (locationX > largestWidth) {
+            largestWidth = locationX;
+        }
+        locationX = 10;
     }
 
     /**
