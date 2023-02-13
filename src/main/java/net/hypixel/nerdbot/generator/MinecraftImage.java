@@ -41,17 +41,6 @@ public class MinecraftImage {
     }
 
     /**
-     * Creates an image, then initialized a Graphics2D object from that image.
-     *
-     * @return G2D object
-     */
-    private Graphics2D initG2D(int width, int height) {
-        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-
-        return image.createGraphics();
-    }
-
-    /**
      * Crops the image down to closely fit the size taken up
      */
     public void cropImage() {
@@ -152,9 +141,34 @@ public class MinecraftImage {
     }
 
     /**
+     * Creates an image, then initialized a Graphics2D object from that image.
+     *
+     * @return G2D object
+     */
+    private Graphics2D initG2D(int width, int height) {
+        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+        final int borderSize = 3; // a constant value used to determine the width of the outer border and corners
+
+        Graphics2D graphics = image.createGraphics();
+        // draw the black background
+        graphics.setColor(Color.BLACK);
+        graphics.fillRect(0, 0, width, height);
+
+        // draw each border individually in black, preserving corners. we do this to use borderSize arg
+        graphics.setColor(new Color(41, 5, 96));
+        graphics.fillRect(0, 0, width, borderSize); //top
+        graphics.fillRect(0, 0, borderSize, height); //left
+        graphics.fillRect(0, height - borderSize, width, borderSize); //bottom
+        graphics.fillRect(width - borderSize, 0, borderSize, height); //right
+
+        return graphics;
+    }
+
+    /**
      * Initializes a font.
      *
-     * @param path The path to the font in the resources folder.
+     * @param path The path to the font in the resources' folder.
      *
      * @return The initialized font.
      */
