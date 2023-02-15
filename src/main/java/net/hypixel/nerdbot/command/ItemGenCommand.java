@@ -37,7 +37,8 @@ public class ItemGenCommand extends ApplicationCommand {
             @AppOption(description = "The rarity of the item", autocomplete = "rarities") String rarity,
             @AppOption(description = "The description of the item") String description,
             @Optional @AppOption(description = "The type of the item") String type,
-            @Optional @AppOption(description = "If you will handle line breaks at the end of the item's description") Boolean handleLineBreaks
+            @Optional @AppOption(description = "If you will handle line breaks at the end of the item's description") Boolean handleLineBreaks,
+            @Optional @AppOption(description = "If you want the image to be semitransparent") Boolean transparent
     ) throws IOException {
         String senderChannelId = event.getChannel().getId();
         String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
@@ -110,7 +111,12 @@ public class ItemGenCommand extends ApplicationCommand {
             return;
         }
 
-        MinecraftImage minecraftImage = new MinecraftImage(500, colorParser.getRequiredLines(), MCColor.GRAY);
+        // checks if the image transparency was set
+        if (transparent == null) {
+            transparent = false;
+        }
+
+        MinecraftImage minecraftImage = new MinecraftImage(500, colorParser.getRequiredLines(), MCColor.GRAY, transparent);
         minecraftImage.drawStrings(colorParser.getParsedDescription());
         minecraftImage.cropImage();
         minecraftImage.createImageBorder();
