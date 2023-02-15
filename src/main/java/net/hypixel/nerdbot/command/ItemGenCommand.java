@@ -112,6 +112,8 @@ public class ItemGenCommand extends ApplicationCommand {
 
         MinecraftImage minecraftImage = new MinecraftImage(500, colorParser.getRequiredLines(), MCColor.GRAY);
         minecraftImage.drawStrings(colorParser.getParsedDescription());
+        minecraftImage.cropImage();
+        minecraftImage.createImageBorder();
 
         File imageFile = File.createTempFile("image", ".png");
         ImageIO.write(minecraftImage.getImage(), "png", imageFile);
