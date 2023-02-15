@@ -11,8 +11,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 public class MinecraftImage {
-    private static final int START_X = 15;
-    private static final int Y_INCREMENT = 23;
+    private static final int PIXEL_SIZE = 2;
+    private static final int START_XY = PIXEL_SIZE * 5;
+    private static final int Y_INCREMENT = PIXEL_SIZE * 10;
 
     private final GraphicsEnvironment ge;
     private final Graphics2D g2d;
@@ -23,11 +24,12 @@ public class MinecraftImage {
     private MCColor currentColor;
     private Font currentFont;
     private BufferedImage image;
-    private int locationX = START_X;
-    private int locationY = 25;
+    private int locationX = START_XY;
+    private int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
     private int largestWidth = 0;
+    private int alphaValue = 255;
 
-    public MinecraftImage(int imageWidth, int linesToPrint, MCColor defaultColor) {
+    public MinecraftImage(int imageWidth, int linesToPrint, MCColor defaultColor, boolean transparent) {
         this.ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 
         // registers the static fonts
@@ -35,7 +37,11 @@ public class MinecraftImage {
             ge.registerFont(font);
         }
 
-        this.g2d = initG2D(imageWidth, linesToPrint * 23 + 13);
+        if (transparent) {
+            this.alphaValue = 245;
+        }
+
+        this.g2d = initG2D(imageWidth, linesToPrint * Y_INCREMENT + START_XY + PIXEL_SIZE * 4, transparent);
         this.currentColor = defaultColor;
     }
 
@@ -48,38 +54,43 @@ public class MinecraftImage {
      *
      * @return G2D object
      */
-    private Graphics2D initG2D(int width, int height) {
+    private Graphics2D initG2D(int width, int height, boolean transparent) {
         this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
         Graphics2D graphics = image.createGraphics();
-        // draw the black background
-        graphics.setColor(Color.BLACK);
-        graphics.fillRect(0, 0, width, height);
+
+        // drawing main background
+        graphics.setColor(new Color(18, 3, 18, alphaValue));
+        graphics.fillRect(PIXEL_SIZE * 2, PIXEL_SIZE * 2, width - PIXEL_SIZE * 4, height - PIXEL_SIZE * 4);
 
         return graphics;
+    }
+
+    /**
+     * Creates the purple border (and border around that) around the image
+     */
+    public void createImageBorder() {
+        final int width = image.getWidth();
+        final int height = image.getHeight();
+
+        // draws darker purple border around purple rectangle
+        g2d.setColor(new Color(18, 3, 18, alphaValue));
+        g2d.fillRect(0, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2);
+        g2d.fillRect(PIXEL_SIZE, 0, width - PIXEL_SIZE * 2, PIXEL_SIZE);
+        g2d.fillRect(width - PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2);
+        g2d.fillRect(PIXEL_SIZE, height - PIXEL_SIZE, width - PIXEL_SIZE * 2, PIXEL_SIZE);
+
+        // drawing the purple rectangle around the edge
+        g2d.setColor(new Color(37, 0, 94, alphaValue));
+        g2d.drawRect(PIXEL_SIZE, PIXEL_SIZE, width - PIXEL_SIZE * 2 - 1, height - PIXEL_SIZE * 2 - 1);
+        g2d.drawRect(PIXEL_SIZE + 1, PIXEL_SIZE + 1, width - PIXEL_SIZE * 3 - 1, height - PIXEL_SIZE * 3 - 1);
     }
 
     /**
      * Crops the image down to closely fit the size taken up
      */
     public void cropImage() {
-        image = image.getSubimage(0, 0, largestWidth + START_X, image.getHeight());
-    }
-
-    /**
-     * Creates the purple border around the image
-     */
-    public void createImageBorder() {
-        int imageWidth = image.getWidth();
-        int imageHeight = image.getHeight();
-        final int borderSize = 3; // a constant value used to determine the width of the outer border and corners
-
-        // drawing the purple rectangle around the edge
-        g2d.setColor(new Color(41, 5, 96));
-        g2d.fillRect(0, 0, imageWidth, borderSize); //top
-        g2d.fillRect(0, 0, borderSize, imageHeight); //left
-        g2d.fillRect(0, imageHeight - borderSize, imageWidth, borderSize); //bottom
-        g2d.fillRect(imageWidth - borderSize, 0, borderSize, imageHeight); //right
+        image = image.getSubimage(0, 0, largestWidth + START_XY, image.getHeight());
     }
 
     /**
@@ -114,7 +125,7 @@ public class MinecraftImage {
 
                 drawStringWithBackground(subWord.toString());
             }
-            newLine();
+            newLine(parsedString.indexOf(line) == 0);
         }
     }
 
@@ -155,14 +166,19 @@ public class MinecraftImage {
 
     /**
      * Moves the string to print to the next line.
+     *
+     * @param increaseGap - Increase number of pixels between next line
      */
-    private void newLine() {
+    private void newLine(boolean increaseGap) {
         locationY += Y_INCREMENT;
+        if (increaseGap) {
+            locationY += PIXEL_SIZE * 2;
+        }
 
         if (locationX > largestWidth) {
             largestWidth = locationX;
         }
-        locationX = START_X;
+        locationX = START_XY;
     }
 
     /**
