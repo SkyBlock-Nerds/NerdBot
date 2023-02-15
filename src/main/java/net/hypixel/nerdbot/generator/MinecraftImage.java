@@ -11,6 +11,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 public class MinecraftImage {
+    private static final int START_X = 15;
+    private static final int Y_INCREMENT = 23;
+
     private final GraphicsEnvironment ge;
     private final Graphics2D g2d;
     private static boolean fontsRegistered = false;
@@ -20,8 +23,9 @@ public class MinecraftImage {
     private MCColor currentColor;
     private Font currentFont;
     private BufferedImage image;
-    private int locationX = 10;
+    private int locationX = START_X;
     private int locationY = 25;
+    private int largestWidth = 0;
 
     public MinecraftImage(int imageWidth, int linesToPrint, MCColor defaultColor) {
         this.ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -40,13 +44,51 @@ public class MinecraftImage {
     }
 
     /**
+     * Creates an image, then initialized a Graphics2D object from that image.
+     *
+     * @return G2D object
+     */
+    private Graphics2D initG2D(int width, int height) {
+        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+        Graphics2D graphics = image.createGraphics();
+        // draw the black background
+        graphics.setColor(Color.BLACK);
+        graphics.fillRect(0, 0, width, height);
+
+        return graphics;
+    }
+
+    /**
+     * Crops the image down to closely fit the size taken up
+     */
+    public void cropImage() {
+        image = image.getSubimage(0, 0, largestWidth + START_X, image.getHeight());
+    }
+
+    /**
+     * Creates the purple border around the image
+     */
+    public void createImageBorder() {
+        int imageWidth = image.getWidth();
+        int imageHeight = image.getHeight();
+        final int borderSize = 3; // a constant value used to determine the width of the outer border and corners
+
+        // drawing the purple rectangle around the edge
+        g2d.setColor(new Color(41, 5, 96));
+        g2d.fillRect(0, 0, imageWidth, borderSize); //top
+        g2d.fillRect(0, 0, borderSize, imageHeight); //left
+        g2d.fillRect(0, imageHeight - borderSize, imageWidth, borderSize); //bottom
+        g2d.fillRect(imageWidth - borderSize, 0, borderSize, imageHeight); //right
+    }
+
+    /**
      * Draws the strings to the generated image.
      *
      * @param parsedString A string with valid color codes, such as through #parseDescription().
      */
     public void drawStrings(ArrayList<ArrayList<ColoredString>> parsedString) {
         for (ArrayList<ColoredString> line : parsedString) {
-            locationX = 10;
             for (ColoredString colorSegment : line) {
                 // setting the font if it is meant to be bold or italicised
                 currentFont = minecraftFonts[(colorSegment.isBold() ? 1 : 0) + (colorSegment.isItalic() ? 2 : 0)];
@@ -115,32 +157,12 @@ public class MinecraftImage {
      * Moves the string to print to the next line.
      */
     private void newLine() {
-        locationY += 23;
-    }
+        locationY += Y_INCREMENT;
 
-    /**
-     * Creates an image, then initialized a Graphics2D object from that image.
-     *
-     * @return G2D object
-     */
-    private Graphics2D initG2D(int width, int height) {
-        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
-        final int borderSize = 3; // a constant value used to determine the width of the outer border and corners
-
-        Graphics2D graphics = image.createGraphics();
-        // draw the black background
-        graphics.setColor(Color.BLACK);
-        graphics.fillRect(0, 0, width, height);
-
-        // draw each border individually in black, preserving corners. we do this to use borderSize arg
-        graphics.setColor(new Color(41, 5, 96));
-        graphics.fillRect(0, 0, width, borderSize); //top
-        graphics.fillRect(0, 0, borderSize, height); //left
-        graphics.fillRect(0, height - borderSize, width, borderSize); //bottom
-        graphics.fillRect(width - borderSize, 0, borderSize, height); //right
-
-        return graphics;
+        if (locationX > largestWidth) {
+            largestWidth = locationX;
+        }
+        locationX = START_X;
     }
 
     /**
@@ -176,7 +198,7 @@ public class MinecraftImage {
             return true;
 
         if (minecraftFonts[0] == null) {
-            minecraftFonts[0] = initFont("/Minecraft/minecraft.ttf", 16f);
+            minecraftFonts[0] = initFont("/Minecraft/minecraft.otf", 16f);
         }
         if (minecraftFonts[1] == null) {
             minecraftFonts[1] = initFont("/Minecraft/3_Minecraft-Bold.otf", 22f);
