@@ -105,13 +105,11 @@ public class InfoCommand extends ApplicationCommand {
         embedBuilder.addField("Username", member.getEffectiveName(), true)
                 .addField("Discord ID", member.getId(), true)
                 .addBlankField(true)
-                .addField("Total Agree Reactions", String.valueOf(discordUser.getAgrees().size()), true)
-                .addField("Total Disagree Reactions", String.valueOf(discordUser.getDisagrees().size()), true)
-                .addBlankField(true)
                 .addField("Last Known Global Activity", new DiscordTimestamp(lastActivity.getLastGlobalActivity()).toRelativeTimestamp(), true)
                 .addField("Last Known Alpha Activity", new DiscordTimestamp(lastActivity.getLastAlphaActivity()).toRelativeTimestamp(), true)
-                .addField("Last Known VC Date", new DiscordTimestamp(lastActivity.getLastVoiceChannelJoinDate()).toRelativeTimestamp(), true)
+                .addField("Last Known VC Activity Date", new DiscordTimestamp(lastActivity.getLastVoiceChannelJoinDate()).toRelativeTimestamp(), true)
                 .addField("Last Known Suggestion Date", new DiscordTimestamp(lastActivity.getLastSuggestionDate()).toRelativeTimestamp(), true)
+                .addField("Last Known Item Generator Activity", new DiscordTimestamp(lastActivity.getLastItemGenUsage()).toRelativeTimestamp(), true)
                 .setColor(Color.GREEN)
                 .setThumbnail(member.getEffectiveAvatarUrl());
 
