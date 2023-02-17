@@ -1,9 +1,13 @@
 package net.hypixel.nerdbot.curator;
 
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageHistory;
+import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
@@ -27,7 +31,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         Database database = NerdBotApp.getBot().getDatabase();
         BotConfig config = NerdBotApp.getBot().getConfig();
         EmojiConfig emojiConfig = config.getEmojiConfig();
-        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        ForumTag greenlitTag = forumChannel.getAvailableTagById(config.getTagConfig().getGreenlit());
         List<GreenlitMessage> output = new ArrayList<>();
 
         setStartTime(System.currentTimeMillis());
@@ -97,7 +101,22 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     continue;
                 }
 
-                // TODO apply greenlit tag and save to database
+                List<ForumTag> tags = thread.getAppliedTags();
+                tags.add(greenlitTag);
+                thread.getManager().setAppliedTags(tags).complete();
+
+                GreenlitMessage greenlitMessage = GreenlitMessage.builder()
+                        .agrees(agree)
+                        .disagrees(disagree)
+                        .messageId(message.getId())
+                        .userId(message.getAuthor().getId())
+                        .suggestionUrl(message.getJumpUrl())
+                        .suggestionTitle(thread.getName())
+                        .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
+                        .suggestionContent(message.getContentRaw())
+                        .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
+                        .build();
+                output.add(greenlitMessage);
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
