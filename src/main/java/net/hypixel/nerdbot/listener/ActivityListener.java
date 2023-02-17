@@ -1,6 +1,5 @@
 package net.hypixel.nerdbot.listener;
 
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
@@ -74,22 +73,5 @@ public class ActivityListener {
         }
         discordUser.getLastActivity().setLastVoiceChannelJoinDate(System.currentTimeMillis());
         log.info("Updating last voice channel activity date for " + member.getEffectiveName() + " to " + System.currentTimeMillis());
-    }
-
-    @SubscribeEvent
-    public void onSlashCommand(GuildSlashEvent event) {
-        Member member = event.getMember();
-
-        if (member.getUser().isBot()) {
-            return;
-        }
-
-        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
-        if (discordUser == null) {
-            return;
-        }
-
-        discordUser.getLastActivity().setLastItemGenUsage(System.currentTimeMillis());
-        log.info("Updating last item-gen usage date for " + member.getEffectiveName() + " to " + System.currentTimeMillis());
     }
 }
