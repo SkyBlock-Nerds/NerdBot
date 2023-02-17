@@ -36,6 +36,11 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         setStartTime(System.currentTimeMillis());
 
+        if (greenlitTag == null) {
+            log.error("Couldn't find the greenlit tag from the bot config!");
+            return output;
+        }
+
         if (!database.isConnected()) {
             setEndTime(System.currentTimeMillis());
             log.error("Couldn't curate messages as the database is not connected!");
