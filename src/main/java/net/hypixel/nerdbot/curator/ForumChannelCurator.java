@@ -40,7 +40,6 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
-        int index = 0;
         List<ThreadChannel> threads = forumChannel.getThreadChannels()
                 .stream()
                 .filter(threadChannel -> threadChannel.getAppliedTags().stream().anyMatch(tag -> !tag.getName().equalsIgnoreCase("greenlit")))
@@ -48,8 +47,9 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         log.info("Found " + threads.size() + " non-greenlit forum post(s)!");
 
+        int index = 0;
         for (ThreadChannel thread : threads) {
-            log.info("Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+            log.info("["+ (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
             Message message = history.getRetrievedHistory().get(0);
