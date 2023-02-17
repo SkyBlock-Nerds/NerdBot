@@ -53,7 +53,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                     return;
                 }
 
-                log.info("Found matching greenlit thread for message " + greenlitMessage.getMessageId());
+                log.info("Found matching thread for greenlit message " + greenlitMessage.getMessageId() + ": '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
                 MessageHistory history = thread.getHistoryFromBeginning(1).complete();
                 Message message = history.getRetrievedHistory().get(0);
