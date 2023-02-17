@@ -9,6 +9,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 
 import java.util.ArrayList;
@@ -24,7 +25,8 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
     @Override
     public List<GreenlitMessage> curate(ForumChannel forumChannel) {
         Database database = NerdBotApp.getBot().getDatabase();
-        EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+        BotConfig config = NerdBotApp.getBot().getConfig();
+        EmojiConfig emojiConfig = config.getEmojiConfig();
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
         List<GreenlitMessage> output = new ArrayList<>();
 
@@ -53,7 +55,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
             Message message = history.getRetrievedHistory().get(0);
             if (message == null) {
                 log.error("Message for thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is null!");
-                return output;
+                continue;
             }
 
             try {
@@ -64,7 +66,6 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
                         .toList();
 
-                // Get agree reactions or default to 0
                 int agree = reactions.stream()
                         .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId()))
                         .mapToInt(MessageReaction::getCount)
@@ -80,8 +81,23 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         .mapToInt(MessageReaction::getCount)
                         .findFirst()
                         .orElse(0);
+                double ratio = getRatio(agree, neutral, disagree);
 
-                log.info("Agree: " + agree + ", disagree: " + disagree + ", neutral: " + neutral);
+                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has " + agree + " agree reactions, " + neutral + " neutral reactions, and " + disagree + " disagree reactions with a ratio of " + ratio + "%");
+
+                if ((agree < config.getMinimumThreshold()) || (ratio < config.getPercentage())) {
+                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does not meet the minimum requirements to be greenlit!");
+                    continue;
+                }
+
+                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") meets the minimum requirements to be greenlit!");
+
+                if (isReadOnly()) {
+                    log.info("Skipping thread '" + thread.getName() + "' (ID: " + thread.getId() + ") as the curator is in read-only mode!");
+                    continue;
+                }
+
+                // TODO apply greenlit tag and save to database
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
