@@ -107,8 +107,6 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 tags.add(greenlitTag);
                 thread.getManager().setAppliedTags(tags).complete();
 
-                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") will have tags: " + tags.stream().map(BaseForumTag::getName).toList());
-
                 GreenlitMessage greenlitMessage = GreenlitMessage.builder()
                         .agrees(agree)
                         .disagrees(disagree)

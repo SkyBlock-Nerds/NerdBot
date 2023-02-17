@@ -41,7 +41,10 @@ public class CurateFeature extends BotFeature {
                     } else {
                         log.info("Greenlit " + result.size() + " new suggestions in " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!");
                     }
-                    result.forEach(greenlitMessage -> database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage));
+                    result.forEach(greenlitMessage -> {
+                        database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage);
+                    });
+                    log.info("Inserted " + result.size() + " new greenlit messages into the database!");
                 });
             }
         };
