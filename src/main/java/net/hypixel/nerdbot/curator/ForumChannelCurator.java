@@ -51,6 +51,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         for (ThreadChannel thread : threads) {
             if (thread.getOwner() == null) {
+                log.info("Retrieving owner for thread '" + thread.getName() + "' (ID: " + thread.getId() + ") by ID: " + thread.getOwnerId());
                 guild.retrieveMemberById(thread.getOwnerId()).complete();
             }
 
