@@ -34,7 +34,7 @@ public class CurateFeature extends BotFeature {
                     return;
                 }
 
-                NerdBotApp.EXECUTOR_SERVICE.submit(() -> {
+                NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
                     List<GreenlitMessage> result = forumChannelCurator.curate(forumChannel);
                     if (result.isEmpty()) {
                         log.info("No new suggestions were greenlit this time!");

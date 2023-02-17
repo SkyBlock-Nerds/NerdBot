@@ -59,24 +59,30 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
             log.info("Found message: " + message.getContentRaw());
 
-            // Get agree reactions or default to 0
-            int agree = message.getReactions().stream()
-                    .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId()))
-                    .mapToInt(MessageReaction::getCount)
-                    .findFirst()
-                    .orElse(0);
-            int disagree = message.getReactions().stream()
-                    .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
-                    .mapToInt(MessageReaction::getCount)
-                    .findFirst()
-                    .orElse(0);
-            int neutral = message.getReactions().stream()
-                    .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getNeutralEmojiId()))
-                    .mapToInt(MessageReaction::getCount)
-                    .findFirst()
-                    .orElse(0);
+            try {
+                log.info("Checking reaction counts for message ID: " + message.getId());
 
-            log.info("Agree: " + agree + ", disagree: " + disagree + ", neutral: " + neutral);
+                // Get agree reactions or default to 0
+                int agree = message.getReactions().stream()
+                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId()))
+                        .mapToInt(MessageReaction::getCount)
+                        .findFirst()
+                        .orElse(0);
+                int disagree = message.getReactions().stream()
+                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
+                        .mapToInt(MessageReaction::getCount)
+                        .findFirst()
+                        .orElse(0);
+                int neutral = message.getReactions().stream()
+                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getNeutralEmojiId()))
+                        .mapToInt(MessageReaction::getCount)
+                        .findFirst()
+                        .orElse(0);
+
+                log.info("Agree: " + agree + ", disagree: " + disagree + ", neutral: " + neutral);
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
         }
 
         setEndTime(System.currentTimeMillis());
