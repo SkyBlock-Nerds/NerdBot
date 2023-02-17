@@ -34,7 +34,12 @@ public class GreenlitUpdateFeature extends BotFeature {
 
         if (greenlitThreads.size() < greenlits.size()) {
             log.warn("The number of greenlit threads and greenlit messages in the database do not match!");
-            greenlitThreads.addAll(suggestions.retrieveArchivedPublicThreadChannels().complete());
+            suggestions.retrieveArchivedPublicThreadChannels().complete().forEach(threadChannel -> {
+                if (!greenlitThreads.contains(threadChannel)) {
+                    log.info("Adding thread " + threadChannel.getName() + " to the list of greenlit threads!");
+                    greenlitThreads.add(threadChannel);
+                }
+            });
             log.info("New size: " + greenlitThreads.size());
         }
 
