@@ -18,6 +18,7 @@ import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.CurateFeature;
+import net.hypixel.nerdbot.feature.GreenlitUpdateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
@@ -37,7 +38,8 @@ public class NerdBot implements Bot {
     private static final List<BotFeature> FEATURES = Arrays.asList(
             new HelloGoodbyeFeature(),
             new CurateFeature(),
-            new UserGrabberFeature()
+            new UserGrabberFeature(),
+            new GreenlitUpdateFeature()
     );
 
     private final Database database = new Database(System.getProperty("mongodb.uri"), "skyblock_nerds");
