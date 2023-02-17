@@ -9,6 +9,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.bot.config.EmojiConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.List;
 public class ForumChannelCurator extends Curator<ForumChannel> {
 
     private final Database database = NerdBotApp.getBot().getDatabase();
+    private final EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
@@ -49,7 +51,25 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
             Message message = history.getRetrievedHistory().get(0);
 
-            log.info("Message: " + message.getContentDisplay());
+            if (message == null) {
+                log.error("Message for thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is null!");
+                return output;
+            }
+
+            int agreeReactions = (int) message.getReactions()
+                    .stream()
+                    .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId()))
+                    .count();
+            int disagreeReactions = (int) message.getReactions()
+                    .stream()
+                    .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
+                    .count();
+            int neutralReactions = (int) message.getReactions()
+                    .stream()
+                    .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getNeutralEmojiId()))
+                    .count();
+
+            log.info("Found " + agreeReactions + " agree reaction(s), " + disagreeReactions + " disagree reaction(s), and " + neutralReactions + " neutral reaction(s) for thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
         }
 
         setEndTime(System.currentTimeMillis());
