@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.curator;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
+import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -56,20 +57,22 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 return output;
             }
 
-            int agreeReactions = (int) message.getReactions()
-                    .stream()
-                    .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId()))
-                    .count();
-            int disagreeReactions = (int) message.getReactions()
-                    .stream()
-                    .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
-                    .count();
-            int neutralReactions = (int) message.getReactions()
-                    .stream()
-                    .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getNeutralEmojiId()))
-                    .count();
+            log.info("Found message: " + message.getContentRaw());
 
-            log.info("Found " + agreeReactions + " agree reaction(s), " + disagreeReactions + " disagree reaction(s), and " + neutralReactions + " neutral reaction(s) for thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+            long agree = message.getReactions().stream().filter(reaction -> {
+                System.out.println("Reaction: " + reaction.getEmoji().asCustom().getId());
+                return reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId());
+            }).mapToLong(MessageReaction::getCount).sum();
+            long disagree = message.getReactions().stream().filter(reaction -> {
+                System.out.println("Reaction: " + reaction.getEmoji().asCustom().getId());
+                return reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId());
+            }).mapToLong(MessageReaction::getCount).sum();
+            long neutral = message.getReactions().stream().filter(reaction -> {
+                System.out.println("Reaction: " + reaction.getEmoji().asCustom().getId());
+                return reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getNeutralEmojiId());
+            }).mapToLong(MessageReaction::getCount).sum();
+
+            log.info("Agree: " + agree + ", disagree: " + disagree + ", neutral: " + neutral);
         }
 
         setEndTime(System.currentTimeMillis());
