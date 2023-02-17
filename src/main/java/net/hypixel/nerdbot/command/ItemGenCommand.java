@@ -8,13 +8,16 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.generator.MinecraftImage;
 import net.hypixel.nerdbot.generator.StringColorParser;
+import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 
@@ -124,6 +127,16 @@ public class ItemGenCommand extends ApplicationCommand {
         File imageFile = File.createTempFile("image", ".png");
         ImageIO.write(minecraftImage.getImage(), "png", imageFile);
         event.getHook().sendFiles(FileUpload.fromData(imageFile)).setEphemeral(false).queue();
+
+        Member member = event.getMember();
+        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), member.getId());
+        if (discordUser == null) {
+            log.info("Not updating last item generator activity date for " + member.getEffectiveName() + " (ID: " + member.getId() + ") since we cannot find a user!");
+            return;
+        }
+
+        discordUser.getLastActivity().setLastItemGenUsage(System.currentTimeMillis());
+        log.info("Updating last item generator activity date for " + member.getEffectiveName() + " to " + System.currentTimeMillis());
     }
 
     @AutocompletionHandler(name = "rarities", mode = AutocompletionMode.CONTINUITY, showUserInput = false)
