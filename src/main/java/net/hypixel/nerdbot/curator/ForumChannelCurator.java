@@ -113,6 +113,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
                 GreenlitMessage greenlitMessage = GreenlitMessage.builder()
                         .agrees(agree)
+                        .neutrals(neutral)
                         .disagrees(disagree)
                         .messageId(message.getId())
                         .userId(message.getAuthor().getId())
