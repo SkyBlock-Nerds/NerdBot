@@ -1,10 +1,7 @@
 package net.hypixel.nerdbot.curator;
 
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageHistory;
-import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -50,12 +47,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         log.info("Found " + threads.size() + " non-greenlit forum post(s)!");
 
         for (ThreadChannel thread : threads) {
-            if (thread.getOwner() == null) {
-                log.info("Retrieving owner for thread '" + thread.getName() + "' (ID: " + thread.getId() + ") by ID: " + thread.getOwnerId());
-                guild.retrieveMemberById(thread.getOwnerId()).complete();
-            }
-
-            log.info("Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ") by " + thread.getOwner().getEffectiveName());
+            log.info("Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
             Message message = history.getRetrievedHistory().get(0);
