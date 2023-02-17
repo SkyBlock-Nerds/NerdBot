@@ -217,13 +217,13 @@ public class MinecraftImage {
             minecraftFonts[0] = initFont("/Minecraft/minecraft.otf", 16f);
         }
         if (minecraftFonts[1] == null) {
-            minecraftFonts[1] = initFont("/Minecraft/3_Minecraft-Bold.otf", 22f);
+            minecraftFonts[1] = initFont("/Minecraft/3_Minecraft-Bold.otf", 20.5f);
         }
         if (minecraftFonts[2] == null) {
-            minecraftFonts[2] = initFont("/Minecraft/2_Minecraft-Italic.otf", 22f);
+            minecraftFonts[2] = initFont("/Minecraft/2_Minecraft-Italic.otf", 20.5f);
         }
         if (minecraftFonts[3] == null) {
-            minecraftFonts[3] = initFont("/Minecraft/4_Minecraft-BoldItalic.otf", 22f);
+            minecraftFonts[3] = initFont("/Minecraft/4_Minecraft-BoldItalic.otf", 20.5f);
         }
         if (sansSerif == null) {
             sansSerif = new Font("SansSerif", Font.PLAIN, 20);
