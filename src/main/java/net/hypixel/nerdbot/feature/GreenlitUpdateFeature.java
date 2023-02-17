@@ -28,11 +28,12 @@ public class GreenlitUpdateFeature extends BotFeature {
         log.info("Found " + suggestions.getThreadChannels().size() + " threads in the suggestion forum channel!");
 
         List<ThreadChannel> greenlitThreads = new ArrayList<>(suggestions.getThreadChannels().stream().filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("Greenlit")).toList());
-
-        suggestions.retrieveArchivedPublicThreadChannels().queue(archivedThreads -> {
-            greenlitThreads.addAll(archivedThreads.stream().filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("Greenlit")).toList());
-            log.info("Found " + greenlitThreads.size() + " greenlit threads in the suggestion forum channel!");
-        });
+        List<ThreadChannel> archived = suggestions.retrieveArchivedPublicThreadChannels().complete();
+        log.info("Found " + archived.size() + " archived threads in the suggestion forum channel!");
+        greenlitThreads.addAll(archived.stream()
+                .filter(threadChannel -> !greenlitThreads.contains(threadChannel))
+                .filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("Greenlit"))
+                .toList());
 
         List<GreenlitMessage> greenlits = NerdBotApp.getBot().getDatabase().getCollection("greenlit_messages", GreenlitMessage.class).find().into(new ArrayList<>());
         log.info("Found " + greenlitThreads.size() + " greenlit threads in the suggestion forum channel!");
