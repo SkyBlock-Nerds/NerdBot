@@ -24,21 +24,26 @@ public class GreenlitUpdateFeature extends BotFeature {
             return;
         }
 
-        log.info("Found suggestion forum channel with ID " + suggestions.getId());
-        log.info("Found " + suggestions.getThreadChannels().size() + " threads in the suggestion forum channel!");
-
         List<ThreadChannel> greenlitThreads = new ArrayList<>(suggestions.getThreadChannels().stream().filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("Greenlit")).toList());
         List<ThreadChannel> archived = suggestions.retrieveArchivedPublicThreadChannels().complete();
+
+        log.info("Found " + suggestions.getThreadChannels().size() + " threads in the suggestion forum channel!");
         log.info("Found " + archived.size() + " archived threads in the suggestion forum channel!");
+
         greenlitThreads.addAll(archived.stream()
                 .filter(threadChannel -> !greenlitThreads.contains(threadChannel))
                 .filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("Greenlit"))
                 .toList());
 
         List<GreenlitMessage> greenlits = NerdBotApp.getBot().getDatabase().getCollection("greenlit_messages", GreenlitMessage.class).find().into(new ArrayList<>());
-        log.info("Found " + greenlitThreads.size() + " greenlit threads in the suggestion forum channel!");
+        log.info("Found " + greenlitThreads.size() + " total greenlit threads");
         log.info("Found " + greenlits.size() + " greenlit messages in the database!");
 
+        greenlits.forEach(greenlitMessage -> {
+            if (greenlitThreads.stream().anyMatch(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId()))) {
+                log.info("Found matching greenlit thread for message " + greenlitMessage.getMessageId());
+            }
+        });
     }
 
     @Override
