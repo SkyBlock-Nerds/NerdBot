@@ -101,7 +101,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     continue;
                 }
 
-                List<ForumTag> tags = thread.getAppliedTags();
+                List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
                 tags.add(greenlitTag);
                 thread.getManager().setAppliedTags(tags).complete();
 
