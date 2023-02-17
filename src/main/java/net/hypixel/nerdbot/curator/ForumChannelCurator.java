@@ -69,7 +69,6 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         .stream()
                         .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
                         .toList();
-
                 int agree = reactions.stream()
                         .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId()))
                         .mapToInt(MessageReaction::getCount)

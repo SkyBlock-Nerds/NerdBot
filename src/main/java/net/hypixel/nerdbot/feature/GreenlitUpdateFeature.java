@@ -1,13 +1,20 @@
 package net.hypixel.nerdbot.feature;
 
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageHistory;
+import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
+import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
+import net.hypixel.nerdbot.bot.config.EmojiConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +48,51 @@ public class GreenlitUpdateFeature extends BotFeature {
 
         greenlits.forEach(greenlitMessage -> {
             if (greenlitThreads.stream().anyMatch(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId()))) {
+                ThreadChannel thread = greenlitThreads.stream().filter(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId())).findFirst().orElse(null);
+                if (thread == null) {
+                    return;
+                }
+
                 log.info("Found matching greenlit thread for message " + greenlitMessage.getMessageId());
+
+                MessageHistory history = thread.getHistoryFromBeginning(1).complete();
+                Message message = history.getRetrievedHistory().get(0);
+                if (message == null) {
+                    log.error("Message for thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is null!");
+                    return;
+                }
+
+                EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+                List<MessageReaction> reactions = message.getReactions()
+                        .stream()
+                        .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+                        .toList();
+                int agree = reactions.stream()
+                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId()))
+                        .mapToInt(MessageReaction::getCount)
+                        .findFirst()
+                        .orElse(0);
+                int disagree = reactions.stream()
+                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
+                        .mapToInt(MessageReaction::getCount)
+                        .findFirst()
+                        .orElse(0);
+                int neutral = reactions.stream()
+                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getNeutralEmojiId()))
+                        .mapToInt(MessageReaction::getCount)
+                        .findFirst()
+                        .orElse(0);
+
+                greenlitMessage.setSuggestionTitle(thread.getName());
+                greenlitMessage.setSuggestionContent(message.getContentRaw());
+                greenlitMessage.setTags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList());
+                greenlitMessage.setAgrees(agree);
+                greenlitMessage.setDisagrees(disagree);
+                greenlitMessage.setNeutrals(neutral);
+
+                Database database = NerdBotApp.getBot().getDatabase();
+                database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage);
+                log.info("Updated greenlit message " + greenlitMessage.getMessageId() + " in the database!");
             }
         });
     }
