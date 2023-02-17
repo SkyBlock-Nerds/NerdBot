@@ -101,9 +101,13 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     continue;
                 }
 
+                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has tags: " + thread.getAppliedTags().stream().map(BaseForumTag::getName).toList());
+
                 List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
                 tags.add(greenlitTag);
                 thread.getManager().setAppliedTags(tags).complete();
+
+                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") will have tags: " + tags.stream().map(BaseForumTag::getName).toList());
 
                 GreenlitMessage greenlitMessage = GreenlitMessage.builder()
                         .agrees(agree)
