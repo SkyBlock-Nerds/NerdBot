@@ -65,6 +65,11 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         for (ThreadChannel thread : threads) {
             log.info("[" + (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
+            if (thread.getAppliedTags().stream().map(ForumTag::getName).anyMatch(s -> s.equalsIgnoreCase("docced"))) {
+                log.info("Skipping thread '" + thread.getName() + "' (ID: " + thread.getId() + ") as it is already docced!");
+                continue;
+            }
+
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
             Message message = history.getRetrievedHistory().get(0);
             if (message == null) {
