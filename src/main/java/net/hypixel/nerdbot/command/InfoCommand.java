@@ -22,6 +22,7 @@ import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import java.awt.*;
 import java.util.List;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Log4j2
 public class InfoCommand extends ApplicationCommand {
@@ -50,8 +51,7 @@ public class InfoCommand extends ApplicationCommand {
                 .into(new ArrayList<>())
                 .stream()
                 .filter(greenlitMessage -> greenlitMessage.getTags() != null && greenlitMessage.getTags().contains("Docced"))
-                .toList();
-
+                .collect(Collectors.toList());
         List<GreenlitMessage> pages = getPage(greenlit, page, 10);
         pages.sort(Comparator.comparingLong(GreenlitMessage::getSuggestionTimestamp));
 
