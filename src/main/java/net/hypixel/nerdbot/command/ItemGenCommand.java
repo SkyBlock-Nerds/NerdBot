@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,7 +42,7 @@ public class ItemGenCommand extends ApplicationCommand {
             @AppOption(description = "The description of the item") String description,
             @Optional @AppOption(description = "The type of the item") String type,
             @Optional @AppOption(description = "If you will handle line breaks at the end of the item's description") Boolean handleLineBreaks,
-            @Optional @AppOption(description = "If you want the image to be semitransparent") Boolean transparent
+            @Optional @AppOption(description = "Sets the background transparency level, 0 for transparent, 255 for opaque") Integer alpha
     ) throws IOException {
         String senderChannelId = event.getChannel().getId();
         String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
@@ -114,12 +115,11 @@ public class ItemGenCommand extends ApplicationCommand {
             return;
         }
 
-        // checks if the image transparency was set
-        if (transparent == null) {
-            transparent = false;
-        }
+        // alpha value validation
+        alpha = Objects.requireNonNullElse(alpha, 255); // checks if the image transparency was set
+        alpha = Math.min(255, Math.max(alpha, 0)); // ensure range between 0-254
 
-        MinecraftImage minecraftImage = new MinecraftImage(500, colorParser.getRequiredLines(), MCColor.GRAY, transparent);
+        MinecraftImage minecraftImage = new MinecraftImage(500, colorParser.getRequiredLines(), MCColor.GRAY, alpha);
         minecraftImage.drawStrings(colorParser.getParsedDescription());
         minecraftImage.cropImage();
         minecraftImage.createImageBorder();
