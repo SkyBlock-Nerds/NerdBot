@@ -56,7 +56,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         List<ThreadChannel> threads = forumChannel.getThreadChannels()
                 .stream()
-                .filter(threadChannel -> threadChannel.getAppliedTags().stream().noneMatch(tag -> tag.getName().equalsIgnoreCase("greenlit")))
+                .filter(threadChannel -> threadChannel.getAppliedTags().stream().noneMatch(tag -> tag.getName().equalsIgnoreCase("greenlit") || tag.getName().equalsIgnoreCase("docced")))
                 .toList();
 
         log.info("Found " + threads.size() + " non-greenlit forum post(s)!");
