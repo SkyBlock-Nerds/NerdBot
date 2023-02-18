@@ -42,7 +42,18 @@ public class GreenlitUpdateFeature extends BotFeature {
                 .filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("Greenlit"))
                 .toList());
 
-        List<GreenlitMessage> greenlits = NerdBotApp.getBot().getDatabase().getCollection("greenlit_messages", GreenlitMessage.class).find().into(new ArrayList<>());
+        Database database = nerdBot.getDatabase();
+        if (!database.isConnected()) {
+            log.info("Database is not connected, skipping greenlit message update!");
+            return;
+        }
+
+        List<GreenlitMessage> greenlits = database.getCollection("greenlit_messages", GreenlitMessage.class).find().into(new ArrayList<>());
+        if (greenlits.size() == 0) {
+            log.info("No greenlit messages found in the database to update!");
+            return;
+        }
+
         log.info("Found " + greenlitThreads.size() + " total greenlit threads");
         log.info("Found " + greenlits.size() + " greenlit messages in the database!");
 
@@ -62,7 +73,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                     return;
                 }
 
-                EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+                EmojiConfig emojiConfig = nerdBot.getConfig().getEmojiConfig();
                 List<MessageReaction> reactions = message.getReactions()
                         .stream()
                         .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
@@ -90,7 +101,6 @@ public class GreenlitUpdateFeature extends BotFeature {
                 greenlitMessage.setDisagrees(disagree);
                 greenlitMessage.setNeutrals(neutral);
 
-                Database database = NerdBotApp.getBot().getDatabase();
                 database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage);
                 log.info("Updated greenlit message " + greenlitMessage.getMessageId() + " in the database!");
             }
