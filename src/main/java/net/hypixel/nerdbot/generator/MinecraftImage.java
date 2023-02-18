@@ -29,7 +29,7 @@ public class MinecraftImage {
     private int largestWidth = 0;
     private int alphaValue = 255;
 
-    public MinecraftImage(int imageWidth, int linesToPrint, MCColor defaultColor, boolean transparent) {
+    public MinecraftImage(int imageWidth, int linesToPrint, MCColor defaultColor, Integer alphaValue) {
         this.ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 
         // registers the static fonts
@@ -37,11 +37,8 @@ public class MinecraftImage {
             ge.registerFont(font);
         }
 
-        if (transparent) {
-            this.alphaValue = 245;
-        }
-
-        this.g2d = initG2D(imageWidth, linesToPrint * Y_INCREMENT + START_XY + PIXEL_SIZE * 4, transparent);
+        this.alphaValue = alphaValue;
+        this.g2d = initG2D(imageWidth, linesToPrint * Y_INCREMENT + START_XY + PIXEL_SIZE * 4);
         this.currentColor = defaultColor;
     }
 
@@ -54,7 +51,7 @@ public class MinecraftImage {
      *
      * @return G2D object
      */
-    private Graphics2D initG2D(int width, int height, boolean transparent) {
+    private Graphics2D initG2D(int width, int height) {
         this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
         Graphics2D graphics = image.createGraphics();
