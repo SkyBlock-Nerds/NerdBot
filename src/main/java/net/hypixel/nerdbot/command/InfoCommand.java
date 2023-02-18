@@ -49,7 +49,7 @@ public class InfoCommand extends ApplicationCommand {
                 .find()
                 .into(new ArrayList<>())
                 .stream()
-                .filter(greenlitMessage -> greenlitMessage.getTags().contains("Docced"))
+                .filter(greenlitMessage -> greenlitMessage.getTags() != null && greenlitMessage.getTags().contains("Docced"))
                 .toList();
 
         List<GreenlitMessage> pages = getPage(greenlit, page, 10);
