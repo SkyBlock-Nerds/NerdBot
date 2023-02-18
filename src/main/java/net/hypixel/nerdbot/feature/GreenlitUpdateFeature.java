@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 @Log4j2
 public class GreenlitUpdateFeature extends BotFeature {
@@ -114,7 +115,7 @@ public class GreenlitUpdateFeature extends BotFeature {
         };
 
         Timer timer = new Timer();
-        timer.scheduleAtFixedRate(timerTask, 0L, NerdBotApp.getBot().getConfig().getInterval());
+        timer.scheduleAtFixedRate(timerTask, 0L, NerdBotApp.getBot().getConfig().getInterval() + (TimeUnit.MINUTES.toMillis(5)));
     }
 
     @Override
