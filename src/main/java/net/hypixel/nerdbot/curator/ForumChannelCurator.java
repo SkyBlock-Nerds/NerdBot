@@ -28,11 +28,16 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
     @Override
     public List<GreenlitMessage> curate(ForumChannel forumChannel) {
+        List<GreenlitMessage> output = new ArrayList<>();
         Database database = NerdBotApp.getBot().getDatabase();
+        if (!database.isConnected()) {
+            log.error("Couldn't curate messages as the database is not connected!");
+            return output;
+        }
+
         BotConfig config = NerdBotApp.getBot().getConfig();
         EmojiConfig emojiConfig = config.getEmojiConfig();
         ForumTag greenlitTag = forumChannel.getAvailableTagById(config.getTagConfig().getGreenlit());
-        List<GreenlitMessage> output = new ArrayList<>();
 
         setStartTime(System.currentTimeMillis());
 
@@ -58,7 +63,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         int index = 0;
         for (ThreadChannel thread : threads) {
-            log.info("["+ (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+            log.info("[" + (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
             Message message = history.getRetrievedHistory().get(0);
