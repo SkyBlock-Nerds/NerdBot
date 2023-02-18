@@ -214,7 +214,7 @@ public class MinecraftImage {
             minecraftFonts[0] = initFont("/Minecraft/minecraft.otf", 15.5f);
         }
         if (minecraftFonts[1] == null) {
-            minecraftFonts[1] = initFont("/Minecraft/3_Minecraft-Bold.otf", 20.5f);
+            minecraftFonts[1] = initFont("/Minecraft/3_Minecraft-Bold.otf", 20.0f);
         }
         if (minecraftFonts[2] == null) {
             minecraftFonts[2] = initFont("/Minecraft/2_Minecraft-Italic.otf", 20.5f);
