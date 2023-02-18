@@ -34,14 +34,17 @@ public class CurateFeature extends BotFeature {
                     return;
                 }
 
-                NerdBotApp.EXECUTOR_SERVICE.submit(() -> {
+                NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
                     List<GreenlitMessage> result = forumChannelCurator.curate(forumChannel);
                     if (result.isEmpty()) {
                         log.info("No new suggestions were greenlit this time!");
                     } else {
                         log.info("Greenlit " + result.size() + " new suggestions in " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!");
                     }
-                    result.forEach(greenlitMessage -> database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage));
+                    result.forEach(greenlitMessage -> {
+                        database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage);
+                    });
+                    log.info("Inserted " + result.size() + " new greenlit messages into the database!");
                 });
             }
         };

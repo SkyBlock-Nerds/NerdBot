@@ -27,7 +27,7 @@ public class GreenlitMessage {
     private String userId, messageId, greenlitMessageId, suggestionTitle, suggestionContent, suggestionUrl, channelGroupName;
     private List<String> tags;
     private long suggestionTimestamp;
-    private int agrees, disagrees;
+    private int agrees, disagrees, neutrals;
 
     public GreenlitMessage() {
     }
