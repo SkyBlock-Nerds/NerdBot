@@ -115,7 +115,7 @@ public class GreenlitUpdateFeature extends BotFeature {
         };
 
         Timer timer = new Timer();
-        timer.scheduleAtFixedRate(timerTask, 0L, NerdBotApp.getBot().getConfig().getInterval() + (TimeUnit.MINUTES.toMillis(5)));
+        timer.scheduleAtFixedRate(timerTask, TimeUnit.MINUTES.toMillis(5), NerdBotApp.getBot().getConfig().getInterval() + (TimeUnit.MINUTES.toMillis(5)));
     }
 
     @Override
