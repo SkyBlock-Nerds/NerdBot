@@ -2,30 +2,25 @@ package net.hypixel.nerdbot.curator;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageHistory;
+import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.exceptions.RateLimitedException;
-import net.dv8tion.jda.internal.entities.ForumTagImpl;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
-import net.hypixel.nerdbot.api.database.user.DiscordUser;
-import net.hypixel.nerdbot.util.discord.Users;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.bot.config.BotConfig;
+import net.hypixel.nerdbot.bot.config.EmojiConfig;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Log4j2
 public class ForumChannelCurator extends Curator<ForumChannel> {
-
-    private final Database database = NerdBotApp.getBot().getDatabase();
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
@@ -34,7 +29,22 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
     @Override
     public List<GreenlitMessage> curate(ForumChannel forumChannel) {
         List<GreenlitMessage> output = new ArrayList<>();
+        Database database = NerdBotApp.getBot().getDatabase();
+        if (!database.isConnected()) {
+            log.error("Couldn't curate messages as the database is not connected!");
+            return output;
+        }
+
+        BotConfig config = NerdBotApp.getBot().getConfig();
+        EmojiConfig emojiConfig = config.getEmojiConfig();
+        ForumTag greenlitTag = forumChannel.getAvailableTagById(config.getTagConfig().getGreenlit());
+
         setStartTime(System.currentTimeMillis());
+
+        if (greenlitTag == null) {
+            log.error("Couldn't find the greenlit tag from the bot config!");
+            return output;
+        }
 
         if (!database.isConnected()) {
             setEndTime(System.currentTimeMillis());
@@ -44,78 +54,83 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
-        int index = 0;
         List<ThreadChannel> threads = forumChannel.getThreadChannels()
                 .stream()
-                .filter(threadChannel -> threadChannel.getAppliedTags().stream().anyMatch(tag -> !tag.getName().equalsIgnoreCase("greenlit")))
+                .filter(threadChannel -> threadChannel.getAppliedTags().stream().noneMatch(tag -> tag.getName().equalsIgnoreCase("greenlit")))
                 .toList();
 
         log.info("Found " + threads.size() + " non-greenlit forum post(s)!");
 
+        int index = 0;
         for (ThreadChannel thread : threads) {
-            log.info("[" + (index++) + "/" + threads.size() + "] Curating thread: " + thread.getName() + " (Thread ID: " + thread.getId() + ")");
+            log.info("[" + (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+
+            MessageHistory history = thread.getHistoryFromBeginning(1).complete();
+            Message message = history.getRetrievedHistory().get(0);
+            if (message == null) {
+                log.error("Message for thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is null!");
+                continue;
+            }
 
             try {
-                // This is a stupid way to do it but it's the only way that works right now
-                List<Message> allMessages = thread.getIterableHistory().complete(true);
-                Message firstPost = allMessages.get(allMessages.size() - 1);
-                Emoji agreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
-                Emoji disagreeEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
-                Emoji neutralEmoji = getJDA().getEmojiById(NerdBotApp.getBot().getConfig().getEmojiConfig().getNeutralEmojiId());
-                DiscordUser discordUser = Util.getOrAddUserToCache(database, firstPost.getAuthor().getId());
-                if (discordUser == null) {
+                log.info("Checking reaction counts for message ID: " + message.getId());
+
+                List<MessageReaction> reactions = message.getReactions()
+                        .stream()
+                        .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+                        .toList();
+                int agree = reactions.stream()
+                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId()))
+                        .mapToInt(MessageReaction::getCount)
+                        .findFirst()
+                        .orElse(0);
+                int disagree = reactions.stream()
+                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
+                        .mapToInt(MessageReaction::getCount)
+                        .findFirst()
+                        .orElse(0);
+                int neutral = reactions.stream()
+                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getNeutralEmojiId()))
+                        .mapToInt(MessageReaction::getCount)
+                        .findFirst()
+                        .orElse(0);
+                double ratio = getRatio(agree, neutral, disagree);
+
+                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has " + agree + " agree reactions, " + neutral + " neutral reactions, and " + disagree + " disagree reactions with a ratio of " + ratio + "%");
+
+                if ((agree < config.getMinimumThreshold()) || (ratio < config.getPercentage())) {
+                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does not meet the minimum requirements to be greenlit!");
                     continue;
                 }
 
-                if (discordUser.getLastActivity().getLastSuggestionDate() < firstPost.getTimeCreated().toInstant().toEpochMilli()) {
-                    discordUser.getLastActivity().setLastSuggestionDate(firstPost.getTimeCreated().toInstant().toEpochMilli());
-                    log.info("Updating last suggestion time for " + firstPost.getAuthor().getName() + " to " + firstPost.getTimeCreated().toEpochSecond());
-                }
+                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") meets the minimum requirements to be greenlit!");
 
-                if (agreeEmoji == null || disagreeEmoji == null || neutralEmoji == null) {
-                    log.error("Couldn't find an emoji, time to yell!");
-                    if (ChannelManager.getLogChannel() != null) {
-                        ChannelManager.getLogChannel().sendMessage(Users.getUser(Users.AERH).getAsMention() + " I couldn't find an emoji for some reason, check logs!").queue();
-                    }
-                    break;
-                }
-
-                // Add the reactions if they're missing
-                // Theoretically the agree reaction should be there by default but lets check anyway just in case
-                int agreeReactions = firstPost.getReaction(agreeEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(agreeEmoji)).getCount();
-                int disagreeReactions = firstPost.getReaction(disagreeEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(disagreeEmoji)).getCount();
-                int neutralReactions = firstPost.getReaction(neutralEmoji) == null ? 0 : Objects.requireNonNull(firstPost.getReaction(neutralEmoji)).getCount();
-
-                if (agreeReactions < NerdBotApp.getBot().getConfig().getMinimumThreshold()) {
-                    log.info("Post " + firstPost.getId() + " doesn't have enough agree reactions, skipping...");
+                if (isReadOnly()) {
+                    log.info("Skipping thread '" + thread.getName() + "' (ID: " + thread.getId() + ") as the curator is in read-only mode!");
                     continue;
                 }
 
-                // Get the ratio of reactions and greenlight it if it's over the threshold
-                double ratio = getRatio(agreeReactions, disagreeReactions, neutralReactions);
-                if (ratio >= NerdBotApp.getBot().getConfig().getPercentage()) {
-                    GreenlitMessage greenlitMessage = GreenlitMessage.builder()
-                            .agrees(agreeReactions)
-                            .disagrees(disagreeReactions)
-                            .messageId(firstPost.getId())
-                            .userId(firstPost.getAuthor().getId())
-                            .suggestionUrl(firstPost.getJumpUrl())
-                            .suggestionTitle(thread.getName())
-                            .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
-                            .suggestionContent(firstPost.getContentRaw())
-                            .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
-                            .build();
+                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has tags: " + thread.getAppliedTags().stream().map(BaseForumTag::getName).toList());
 
-                    log.info("Greenlighting thread '" + thread.getName() + "' (Thread ID: " + thread.getId() + ") with a ratio of " + ratio + "%");
-                    List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
-                    tags.add(new ForumTagImpl(Long.parseLong(NerdBotApp.getBot().getConfig().getTagConfig().getGreenlit())));
-                    thread.getManager().setAppliedTags(tags).queue();
-                    output.add(greenlitMessage);
-                    log.debug("Added " + greenlitMessage + " to curator output");
-                }
-            } catch (RateLimitedException exception) {
-                log.info("Currently being rate limited so the curation process has to stop!");
-                break;
+                List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+                tags.add(greenlitTag);
+                thread.getManager().setAppliedTags(tags).complete();
+
+                GreenlitMessage greenlitMessage = GreenlitMessage.builder()
+                        .agrees(agree)
+                        .neutrals(neutral)
+                        .disagrees(disagree)
+                        .messageId(message.getId())
+                        .userId(message.getAuthor().getId())
+                        .suggestionUrl(message.getJumpUrl())
+                        .suggestionTitle(thread.getName())
+                        .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
+                        .suggestionContent(message.getContentRaw())
+                        .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
+                        .build();
+                output.add(greenlitMessage);
+            } catch (Exception exception) {
+                exception.printStackTrace();
             }
         }
 

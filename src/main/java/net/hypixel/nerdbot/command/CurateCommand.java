@@ -26,7 +26,7 @@ public class CurateCommand extends ApplicationCommand {
         }
 
         Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(readOnly);
-        NerdBotApp.EXECUTOR_SERVICE.submit(() -> {
+        NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
             event.deferReply(true).queue();
             List<GreenlitMessage> output = forumChannelCurator.curate(channel);
             if (output.isEmpty()) {
