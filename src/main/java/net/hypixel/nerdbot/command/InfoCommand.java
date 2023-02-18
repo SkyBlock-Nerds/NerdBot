@@ -50,7 +50,7 @@ public class InfoCommand extends ApplicationCommand {
                 .find()
                 .into(new ArrayList<>())
                 .stream()
-                .filter(greenlitMessage -> greenlitMessage.getTags() != null && greenlitMessage.getTags().contains("Docced"))
+                .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.getTags().contains("Docced"))
                 .collect(Collectors.toList());
         List<GreenlitMessage> pages = getPage(greenlit, page, 10);
         pages.sort(Comparator.comparingLong(GreenlitMessage::getSuggestionTimestamp));
