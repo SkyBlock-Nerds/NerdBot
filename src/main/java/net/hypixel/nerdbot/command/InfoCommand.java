@@ -45,14 +45,21 @@ public class InfoCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "info", subcommand = "greenlit", description = "View some information on greenlit messages", defaultLocked = true)
     public void greenlitInfo(GuildSlashEvent event, @AppOption int page) {
-        List<GreenlitMessage> greenlits = getPage(database.getCollection("greenlit_messages", GreenlitMessage.class).find().into(new ArrayList<>()), page, 10);
-        greenlits.sort(Comparator.comparingLong(GreenlitMessage::getSuggestionTimestamp));
+        List<GreenlitMessage> greenlit = database.getCollection("greenlit_messages", GreenlitMessage.class)
+                .find()
+                .into(new ArrayList<>())
+                .stream()
+                .filter(greenlitMessage -> greenlitMessage.getTags().contains("Docced"))
+                .toList();
+
+        List<GreenlitMessage> pages = getPage(greenlit, page, 10);
+        pages.sort(Comparator.comparingLong(GreenlitMessage::getSuggestionTimestamp));
 
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
-        if (greenlits.isEmpty()) {
+        if (pages.isEmpty()) {
             stringBuilder.append("No results found");
         } else {
-            for (GreenlitMessage greenlitMessage : greenlits) {
+            for (GreenlitMessage greenlitMessage : pages) {
                 stringBuilder.append(" • [").append(greenlitMessage.getSuggestionTitle()).append("](").append(greenlitMessage.getSuggestionUrl()).append(")\n");
             }
         }
