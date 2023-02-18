@@ -49,6 +49,7 @@ public class InfoGenCommand extends ApplicationCommand {
         builder.append("`description:` Parses a description, including color codes, bold, italics, and newlines.\n");
         builder.append("`type:` The type of the item, such as a Sword or Wand. Can be left blank.\n");
         builder.append("`handle_line_breaks- (true/false)`: To be used if you're manually handling line breaks between the description and rarity.\n\n");
+        builder.append("`alpha- (0-255)`: To be used to change the transparency of the background layer. 0 for transparent, 255 for opaque. 245 for overlay.\n\n");
         builder.append("The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or `%%DARK_BLUE%%`.\n");
         builder.append("You can use this same format for stats, such as `%%PRISTINE%%`. \nThis format can also have numbers, where `%%PRISTINE:1%%` will become \"1 ✧ Pristine\"\n");
         builder.append("Finally, you can move your text to a newline by using \\n. This format can be forced with the handle_line_breaks argument.\n\n");
