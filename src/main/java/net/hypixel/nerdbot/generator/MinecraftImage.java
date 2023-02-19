@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator;
 
-import net.hypixel.nerdbot.command.ItemGenCommand;
+import net.hypixel.nerdbot.command.ItemGenCommands;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 
 import javax.annotation.Nullable;
@@ -189,7 +189,7 @@ public class MinecraftImage {
     private static Font initFont(String path, float size) {
         Font font;
         try {
-            InputStream fontStream = ItemGenCommand.class.getResourceAsStream(path);
+            InputStream fontStream = ItemGenCommands.class.getResourceAsStream(path);
             if (fontStream == null) {
                 return null;
             }
