@@ -2,8 +2,12 @@ package net.hypixel.nerdbot.feature;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.session.ShutdownEvent;
+import net.dv8tion.jda.api.hooks.SubscribeEvent;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.api.feature.BotFeature;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.time.OffsetDateTime;
@@ -38,5 +42,10 @@ public class HelloGoodbyeFeature extends BotFeature {
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(GOODBYE).queue();
         }
+    }
+
+    @SubscribeEvent
+    public void onEvent(@NotNull ShutdownEvent event) {
+        NerdBotApp.getBot().onEnd();
     }
 }
