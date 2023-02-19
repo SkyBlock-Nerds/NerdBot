@@ -68,7 +68,6 @@ public class NerdBot implements Bot {
                         new ModLogListener(),
                         new ChannelGroupMessageListener(),
                         new FeatureEventListener(),
-                        new ShutdownListener(),
                         new ActivityListener(),
                         new ReactionChannelListener()
                 ).setActivity(Activity.of(config.getActivityType(), config.getActivity()));
@@ -147,6 +146,7 @@ public class NerdBot implements Bot {
 
     @Override
     public void onEnd() {
+        log.info("Shutting down Nerd Bot...");
         for (BotFeature feature : FEATURES) {
             feature.onEnd();
         }
