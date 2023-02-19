@@ -112,7 +112,7 @@ public class InfoCommand extends ApplicationCommand {
 
         embedBuilder.setColor(Color.GREEN)
                 .setThumbnail(member.getEffectiveAvatarUrl())
-                .setTitle(member.getEffectiveName() + "(" + member.getId() + ")")
+                .setTitle(member.getEffectiveName() + " (" + member.getId() + ")")
                 .setDescription("**Last Known Activity**")
                 .addField("Global", new DiscordTimestamp(lastActivity.getLastGlobalActivity()).toRelativeTimestamp(), true)
                 .addField("Alpha", new DiscordTimestamp(lastActivity.getLastAlphaActivity()).toRelativeTimestamp(), true)
