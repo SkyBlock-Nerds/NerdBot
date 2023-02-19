@@ -32,7 +32,7 @@ public class GetNamesCommand extends ApplicationCommand {
 
     private final Queue<String> usernameQueue = new LinkedList<>();
 
-    @JDASlashCommand(name = "getnames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)
+    @JDASlashCommand(name = "getusernames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)
     public void getNerdNames(GuildSlashEvent event) throws IOException {
         event.deferReply(true).queue();
         Guild guild = event.getGuild();
@@ -41,7 +41,7 @@ public class GetNamesCommand extends ApplicationCommand {
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
 
-    @JDASlashCommand(name = "getnames", subcommand = "all", description = "Get a list of all Minecraft names/UUIDs from members in the server", defaultLocked = true)
+    @JDASlashCommand(name = "getusernames", subcommand = "all", description = "Get a list of all Minecraft names/UUIDs from members in the server", defaultLocked = true)
     public void getEveryonesNames(GuildSlashEvent event) throws IOException {
         event.deferReply(true).queue();
         Guild guild = event.getGuild();

@@ -18,11 +18,15 @@ import java.util.List;
 public class CurateCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "curate", description = "Manually run the curation process", defaultLocked = true)
-    public void curate(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Run the curator without greenlighting suggestions") boolean readOnly) {
+    public void curate(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Run the curator without greenlighting suggestions") Boolean readOnly) {
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
             log.error("Couldn't connect to the database!");
             return;
+        }
+
+        if (readOnly == null) {
+            readOnly = false;
         }
 
         Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(readOnly);
@@ -32,7 +36,7 @@ public class CurateCommand extends ApplicationCommand {
             if (output.isEmpty()) {
                 event.getHook().editOriginal("No suggestions were greenlit!").queue();
             } else {
-                event.getHook().editOriginal("Greenlit " + output.size() + " suggestions in " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!").queue();
+                event.getHook().editOriginal("Greenlit " + output.size() + " suggestion(s) in " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!").queue();
             }
         });
     }
