@@ -44,7 +44,7 @@ public class InfoCommand extends ApplicationCommand {
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "info", subcommand = "greenlit", description = "View some information on greenlit messages", defaultLocked = true)
+    @JDASlashCommand(name = "info", subcommand = "greenlit", description = "Get a list of all non-docced greenlit messages. May not be 100% accurate!", defaultLocked = true)
     public void greenlitInfo(GuildSlashEvent event, @AppOption int page) {
         List<GreenlitMessage> greenlit = database.getCollection("greenlit_messages", GreenlitMessage.class)
                 .find()
@@ -76,7 +76,7 @@ public class InfoCommand extends ApplicationCommand {
                 + guild.getMembersWithRoles(Util.getRole("Game Master")).size();
 
         builder.append("Server name: ").append(guild.getName()).append(" (Server ID: ").append(guild.getId()).append(")\n")
-                .append("Created: ").append(new DiscordTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()).toRelativeTimestamp()).append("\n")
+                .append("Created at: ").append(new DiscordTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()).toRelativeTimestamp()).append("\n")
                 .append("Boosters: ").append(guild.getBoostCount()).append(" (").append(guild.getBoostTier().name()).append(")\n")
                 .append("Channels: ").append(guild.getChannels().size()).append("\n")
                 .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
@@ -109,16 +109,17 @@ public class InfoCommand extends ApplicationCommand {
 
         LastActivity lastActivity = discordUser.getLastActivity();
         EmbedBuilder embedBuilder = new EmbedBuilder();
-        embedBuilder.addField("Username", member.getEffectiveName(), true)
-                .addField("Discord ID", member.getId(), true)
-                .addBlankField(true)
-                .addField("Last Known Global Activity", new DiscordTimestamp(lastActivity.getLastGlobalActivity()).toRelativeTimestamp(), true)
-                .addField("Last Known Alpha Activity", new DiscordTimestamp(lastActivity.getLastAlphaActivity()).toRelativeTimestamp(), true)
-                .addField("Last Known VC Activity Date", new DiscordTimestamp(lastActivity.getLastVoiceChannelJoinDate()).toRelativeTimestamp(), true)
-                .addField("Last Known Suggestion Date", new DiscordTimestamp(lastActivity.getLastSuggestionDate()).toRelativeTimestamp(), true)
-                .addField("Last Known Item Generator Activity", new DiscordTimestamp(lastActivity.getLastItemGenUsage()).toRelativeTimestamp(), true)
-                .setColor(Color.GREEN)
-                .setThumbnail(member.getEffectiveAvatarUrl());
+
+        embedBuilder.setColor(Color.GREEN)
+                .setThumbnail(member.getEffectiveAvatarUrl())
+                .setTitle(member.getEffectiveName() + "(" + member.getId() + ")")
+                .setDescription("**Last Known Activity**")
+                .addField("Global", new DiscordTimestamp(lastActivity.getLastGlobalActivity()).toRelativeTimestamp(), true)
+                .addField("Alpha", new DiscordTimestamp(lastActivity.getLastAlphaActivity()).toRelativeTimestamp(), true)
+                .addField("Voice Chat", new DiscordTimestamp(lastActivity.getLastVoiceChannelJoinDate()).toRelativeTimestamp(), true)
+                .addField("Suggestions", new DiscordTimestamp(lastActivity.getLastSuggestionDate()).toRelativeTimestamp(), true)
+                .addField("Item Generator", new DiscordTimestamp(lastActivity.getLastItemGenUsage()).toRelativeTimestamp(), true)
+                .addBlankField(true);
 
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
@@ -175,14 +176,6 @@ public class InfoCommand extends ApplicationCommand {
 
         log.info("Breakdown by role: " + roles);
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
-    }
-
-    private String getDateString(long timestamp) {
-        if (timestamp == -1) {
-            return "N/A";
-        }
-
-        return Time.GLOBAL_DATE_TIME_FORMAT.format(new Date(timestamp));
     }
 
     /**
