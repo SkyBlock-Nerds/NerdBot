@@ -48,7 +48,13 @@ public class ActivityListener {
 
         GuildChannel channel = event.getGuildChannel();
         long time = System.currentTimeMillis();
-        if (channel.getName().toLowerCase().contains("alpha")) {
+
+        if (channel.getId().equals(NerdBotApp.getBot().getConfig().getSuggestionForumId())) {
+            discordUser.getLastActivity().setLastSuggestionDate(time);
+            log.info("Updating last suggestion activity date for " + member.getEffectiveName() + " to " + time);
+        }
+
+        if (channel.getName().contains("alpha")) {
             discordUser.getLastActivity().setLastAlphaActivity(time);
             log.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
         }
