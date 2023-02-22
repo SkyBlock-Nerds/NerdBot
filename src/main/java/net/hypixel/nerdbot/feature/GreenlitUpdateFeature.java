@@ -104,6 +104,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                         greenlitMessage.setSuggestionContent(message.getContentRaw());
                         greenlitMessage.setTags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList());
                         greenlitMessage.setAgrees(agree);
+                        greenlitMessage.setNeutrals(neutral);
                         greenlitMessage.setDisagrees(disagree);
                         greenlitMessage.setNeutrals(neutral);
 
@@ -115,7 +116,7 @@ public class GreenlitUpdateFeature extends BotFeature {
         };
 
         Timer timer = new Timer();
-        timer.scheduleAtFixedRate(timerTask, TimeUnit.MINUTES.toMillis(5), NerdBotApp.getBot().getConfig().getInterval() + (TimeUnit.MINUTES.toMillis(5)));
+        timer.scheduleAtFixedRate(timerTask, 0L, TimeUnit.HOURS.toMillis(1L));
     }
 
     @Override
