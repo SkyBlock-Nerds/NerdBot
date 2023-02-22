@@ -5,7 +5,12 @@
   "interval": 120000,
   "guildId": "123456789012345678",
   "logChannel": "123456789012345678",
-  "suggestionForumId": "123456789012345678",
+  "suggestionForumIds": [
+    "123456789012345678"
+  ],
+  "alphaSuggestionForumIds": [
+    "123456789012345678"
+  ],
   "emojiConfig": {
     "agree": "123456789012345678",
     "disagree": "123456789012345678",
