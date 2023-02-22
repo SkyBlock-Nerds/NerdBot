@@ -37,7 +37,7 @@ public class UserGrabberFeature extends BotFeature {
                 return;
             }
 
-            if (users == null) {
+            if (users.isEmpty()) {
                 return;
             }
 
