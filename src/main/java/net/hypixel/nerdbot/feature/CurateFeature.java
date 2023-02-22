@@ -16,8 +16,6 @@ import java.util.stream.Stream;
 @Log4j2
 public class CurateFeature extends BotFeature {
 
-    private final Timer timer = new Timer();
-
     @Override
     public void onStart() {
         if (NerdBotApp.getBot().getConfig().getSuggestionForumIds() == null) {
