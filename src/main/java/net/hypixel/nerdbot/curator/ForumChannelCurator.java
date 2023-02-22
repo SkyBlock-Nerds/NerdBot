@@ -99,7 +99,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         .mapToInt(MessageReaction::getCount)
                         .findFirst()
                         .orElse(0);
-                double ratio = getRatio(agree, neutral, disagree);
+                double ratio = getRatio(agree, disagree);
 
                 log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has " + agree + " agree reactions, " + neutral + " neutral reactions, and " + disagree + " disagree reactions with a ratio of " + ratio + "%");
 
