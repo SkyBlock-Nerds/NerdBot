@@ -11,21 +11,21 @@ import java.util.function.Function;
 public class LastActivity {
 
     // Global Activity
-    private long lastGlobalActivity = -1L; // TODO: Migrate to globalMostRecent
-    private long lastVoiceChannelJoinDate = -1L; // TODO: Migrate to globalVoiceJoinDate
-    private long lastItemGenUsage = -1L; // TODO: Migrate to itemGenUsage
+    private long lastGlobalActivity = -1L;
+    private long lastVoiceChannelJoinDate = -1L;
+    private long lastItemGenUsage = -1L;
 
     // Suggestion Activity
-    private long lastSuggestionDate = -1L; // TODO: Migrate to suggestionCreationDate
+    private long lastSuggestionDate = -1L;
     private long suggestionVoteDate = -1L;
     private long suggestionCommentDate = -1L;
 
     // Alpha Activity
-    private long lastAlphaActivity = -1L; // TODO: Migrate to alphaMostRecent
+    private long lastAlphaActivity = -1L;
     private long alphaVoiceJoinDate = -1L;
 
     // Alpha Suggestion Activity
-    private long lastAlphaSuggestionDate = -1L; // TODO: Migrate to alphaSuggestionCreationDate
+    private long lastAlphaSuggestionDate = -1L;
     private long alphaSuggestionVoteDate = -1L;
     private long alphaSuggestionCommentDate = -1L;
 
