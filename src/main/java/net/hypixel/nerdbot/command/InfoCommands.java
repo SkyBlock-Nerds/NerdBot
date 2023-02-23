@@ -88,7 +88,7 @@ public class InfoCommands extends ApplicationCommand {
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "info", subcommand = "user", description = "View some information about a user", defaultLocked = true)
+    @JDASlashCommand(name = "info", subcommand = "user", description = "View information about a user", defaultLocked = true)
     public void userInfo(GuildSlashEvent event, @AppOption(description = "The user to search") Member member) {
         if (!database.isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
@@ -108,20 +108,36 @@ public class InfoCommands extends ApplicationCommand {
         }
 
         LastActivity lastActivity = discordUser.getLastActivity();
-        EmbedBuilder embedBuilder = new EmbedBuilder();
+        EmbedBuilder globalEmbedBuilder = new EmbedBuilder();
+        EmbedBuilder alphaEmbedBuilder = new EmbedBuilder();
 
-        embedBuilder.setColor(Color.GREEN)
+        // Global Activity
+        globalEmbedBuilder.setColor(Color.GREEN)
+                .setAuthor(member.getEffectiveName() + " (" + member.getId() + ")")
                 .setThumbnail(member.getEffectiveAvatarUrl())
-                .setTitle(member.getEffectiveName() + " (" + member.getId() + ")")
-                .setDescription("**Last Known Activity**")
-                .addField("Global", new DiscordTimestamp(lastActivity.getLastGlobalActivity()).toRelativeTimestamp(), true)
-                .addField("Alpha", new DiscordTimestamp(lastActivity.getLastAlphaActivity()).toRelativeTimestamp(), true)
-                .addField("Voice Chat", new DiscordTimestamp(lastActivity.getLastVoiceChannelJoinDate()).toRelativeTimestamp(), true)
-                .addField("Suggestions", new DiscordTimestamp(lastActivity.getLastSuggestionDate()).toRelativeTimestamp(), true)
-                .addField("Item Generator", new DiscordTimestamp(lastActivity.getLastItemGenUsage()).toRelativeTimestamp(), true)
-                .addBlankField(true);
+                .setTitle("Last Global Activity")
+                .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastGlobalActivity), true)
+                .addField("Most Recent Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
+                .addField("Item Generator", lastActivity.toRelativeTimestamp(LastActivity::getLastItemGenUsage), true)
+                // Suggestions
+                .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastSuggestionDate), true)
+                .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionVoteDate), true)
+                .addField("Commented on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentDate), true);
 
-        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
+        // Alpha Activity
+        alphaEmbedBuilder.setColor(Color.RED)
+                .setTitle("Last Alpha Activity")
+                .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaActivity), true)
+                .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getAlphaVoiceJoinDate), true)
+                .addBlankField(true)
+                // Suggestions
+                .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaSuggestionDate), true)
+                .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionVoteDate), true)
+                .addField("Commented on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentDate), true);
+
+        event.replyEmbeds(globalEmbedBuilder.build(), alphaEmbedBuilder.build())
+                .setEphemeral(true)
+                .queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "activity", description = "View information regarding user activity", defaultLocked = true)

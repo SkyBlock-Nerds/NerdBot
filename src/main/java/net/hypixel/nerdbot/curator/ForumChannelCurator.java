@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
@@ -16,11 +17,15 @@ import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 public class ForumChannelCurator extends Curator<ForumChannel> {
+
+    private final static List<String> greenlitTags = Arrays.asList("greenlit", "docced");
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
@@ -56,7 +61,10 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         List<ThreadChannel> threads = forumChannel.getThreadChannels()
                 .stream()
-                .filter(threadChannel -> threadChannel.getAppliedTags().stream().noneMatch(tag -> tag.getName().equalsIgnoreCase("greenlit") || tag.getName().equalsIgnoreCase("docced")))
+                .filter(threadChannel -> threadChannel.getAppliedTags()
+                        .stream()
+                        .noneMatch(tag -> greenlitTags.contains(tag.getName().toLowerCase()))
+                )
                 .toList();
 
         log.info("Found " + threads.size() + " non-greenlit forum post(s)!");
@@ -84,21 +92,29 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         .stream()
                         .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
                         .toList();
-                int agree = reactions.stream()
-                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId()))
-                        .mapToInt(MessageReaction::getCount)
-                        .findFirst()
-                        .orElse(0);
-                int disagree = reactions.stream()
-                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
-                        .mapToInt(MessageReaction::getCount)
-                        .findFirst()
-                        .orElse(0);
-                int neutral = reactions.stream()
-                        .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getNeutralEmojiId()))
-                        .mapToInt(MessageReaction::getCount)
-                        .findFirst()
-                        .orElse(0);
+
+                Map<String, Integer> votes = Stream.of(
+                                emojiConfig.getAgreeEmojiId(),
+                                emojiConfig.getNeutralEmojiId(),
+                                emojiConfig.getDisagreeEmojiId()
+                        )
+                        .map(emojiId -> Pair.of(
+                                emojiId,
+                                reactions.stream()
+                                        .filter(reaction -> reaction.getEmoji()
+                                                .asCustom()
+                                                .getId()
+                                                .equalsIgnoreCase(emojiId)
+                                        )
+                                        .mapToInt(MessageReaction::getCount)
+                                        .findFirst()
+                                        .orElse(0)
+                        ))
+                        .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+
+                int agree = votes.get(emojiConfig.getAgreeEmojiId());
+                int neutral = votes.get(emojiConfig.getNeutralEmojiId());
+                int disagree = votes.get(emojiConfig.getDisagreeEmojiId());
                 double ratio = getRatio(agree, disagree);
 
                 log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has " + agree + " agree reactions, " + neutral + " neutral reactions, and " + disagree + " disagree reactions with a ratio of " + ratio + "%");
@@ -127,6 +143,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         .disagrees(disagree)
                         .messageId(message.getId())
                         .userId(message.getAuthor().getId())
+                        .alpha(forumChannel.getName().toLowerCase().contains("alpha"))
                         .suggestionUrl(message.getJumpUrl())
                         .suggestionTitle(thread.getName())
                         .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())

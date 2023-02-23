@@ -28,6 +28,7 @@ public class GreenlitMessage {
     private List<String> tags;
     private long suggestionTimestamp;
     private int agrees, disagrees, neutrals;
+    private boolean alpha;
 
     public GreenlitMessage() {
     }

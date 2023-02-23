@@ -32,9 +32,14 @@ public class BotConfig {
     private String botManagerRoleId;
 
     /**
-     * The {@link TextChannel} ID for the suggestion forum
+     * The {@link TextChannel} IDs for the suggestion forums
      */
-    private String suggestionForumId;
+    private String[] suggestionForumIds;
+
+    /**
+     * The {@link TextChannel} IDs for the alpha suggestion forums
+     */
+    private String[] alphaSuggestionForumIds;
 
     /**
      * The {@link TextChannel} ID for the itemgen channel
