@@ -33,7 +33,8 @@ public class CurateFeature extends BotFeature {
                     Stream.concat(
                             Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).map(forumId -> Pair.of(forumId, false)),
                             Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).map(forumId -> Pair.of(forumId, true))
-                    ).forEach(suggestionForum -> {
+                    ).filter(pair -> Objects.nonNull(pair.getLeft()))
+                    .forEach(suggestionForum -> {
                         String id = suggestionForum.getLeft();
                         boolean alpha = suggestionForum.getRight();
                         ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(id);
