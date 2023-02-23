@@ -11,7 +11,6 @@ import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
@@ -32,7 +31,8 @@ public class GreenlitUpdateFeature extends BotFeature {
                 Stream.concat(
                         Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).map(forumId -> Pair.of(forumId, false)),
                         Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).map(forumId -> Pair.of(forumId, true))
-                ).forEach(suggestionForum -> {
+                ).filter(pair -> Objects.nonNull(pair.getLeft()))
+                .forEach(suggestionForum -> {
                     String id = suggestionForum.getLeft();
                     boolean alpha = suggestionForum.getRight();
                     ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(id);
