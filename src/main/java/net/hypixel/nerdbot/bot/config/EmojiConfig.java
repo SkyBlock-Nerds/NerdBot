@@ -35,8 +35,9 @@ public class EmojiConfig {
     private String greenlitEmojiId;
 
     public boolean isEquals(MessageReaction reaction, Function<EmojiConfig, String> function) {
-        if (reaction.getEmoji().getType() != Emoji.Type.CUSTOM)
+        if (reaction.getEmoji().getType() != Emoji.Type.CUSTOM) {
             return false;
+        }
 
         return Objects.equals(reaction.getEmoji().asCustom().getId(), function.apply(this));
     }

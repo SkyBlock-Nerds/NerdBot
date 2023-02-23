@@ -41,17 +41,20 @@ public class ActivityListener {
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (!event.isFromGuild())
+        if (!event.isFromGuild()) {
             return; // Ignore Non Guild
+        }
 
         Member member = event.getMember();
-        if (member == null || member.getUser().isBot())
+        if (member == null || member.getUser().isBot()) {
             return; // Ignore Empty Member
+        }
 
         DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
 
-        if (discordUser == null)
+        if (discordUser == null) {
             return; // Ignore Empty User
+        }
 
         GuildMessageChannelUnion guildChannel = event.getGuildChannel();
         String channelId = guildChannel.getId();
@@ -102,15 +105,18 @@ public class ActivityListener {
     public void onVoiceChannelJoin(GuildVoiceUpdateEvent event) {
         Member member = event.getMember();
 
-        if (member.getUser().isBot())
+        if (member.getUser().isBot()) {
             return; // Ignore Bots
+        }
 
         DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
-        if (discordUser == null)
+        if (discordUser == null) {
             return; // Ignore Empty User
+        }
 
-        if (event.getChannelJoined() == null)
+        if (event.getChannelJoined() == null) {
             return; // Ignore Leave Events
+        }
 
         long time = System.currentTimeMillis();
         if (event.getChannelJoined().getName().toLowerCase().contains("alpha")) {
@@ -124,20 +130,24 @@ public class ActivityListener {
 
     @SubscribeEvent
     public void onReactionReceived(MessageReactionAddEvent event) {
-        if (!event.isFromGuild())
+        if (!event.isFromGuild()) {
             return; // Ignore Non Guild
+        }
 
         Member member = event.getMember();
-        if (member == null || member.getUser().isBot())
+        if (member == null || member.getUser().isBot()) {
             return; // Ignore Empty Member
+        }
 
         DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
 
-        if (discordUser == null)
+        if (discordUser == null) {
             return; // Ignore Empty User
+        }
 
-        if (event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM)
+        if (event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
             return; // Ignore Native Emojis
+        }
 
         if (event.getGuildChannel() instanceof ThreadChannel) {
             BotConfig config = NerdBotApp.getBot().getConfig();
