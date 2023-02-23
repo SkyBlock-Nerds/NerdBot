@@ -51,7 +51,6 @@ public class ActivityListener {
         }
 
         DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
-
         if (discordUser == null) {
             return; // Ignore Empty User
         }
