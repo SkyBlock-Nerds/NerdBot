@@ -117,12 +117,12 @@ public class InfoCommands extends ApplicationCommand {
                 .setThumbnail(member.getEffectiveAvatarUrl())
                 .setTitle("Last Global Activity")
                 .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastGlobalActivity), true)
-                .addField("Most Recent Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
+                .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
                 .addField("Item Generator", lastActivity.toRelativeTimestamp(LastActivity::getLastItemGenUsage), true)
                 // Suggestions
                 .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastSuggestionDate), true)
                 .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionVoteDate), true)
-                .addField("Commented on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentDate), true);
+                .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentDate), true);
 
         // Alpha Activity
         alphaEmbedBuilder.setColor(Color.RED)
@@ -133,7 +133,7 @@ public class InfoCommands extends ApplicationCommand {
                 // Suggestions
                 .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaSuggestionDate), true)
                 .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionVoteDate), true)
-                .addField("Commented on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentDate), true);
+                .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentDate), true);
 
         event.replyEmbeds(globalEmbedBuilder.build(), alphaEmbedBuilder.build())
                 .setEphemeral(true)
