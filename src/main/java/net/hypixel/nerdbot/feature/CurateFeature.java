@@ -31,8 +31,8 @@ public class CurateFeature extends BotFeature {
                     final Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(NerdBotApp.getBot().isReadOnly());
 
                     Stream.concat(
-                            Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).map(forumId -> Pair.of(forumId, false)),
-                            Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).map(forumId -> Pair.of(forumId, true))
+                        Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).map(forumId -> Pair.of(forumId, false)),
+                        Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).map(forumId -> Pair.of(forumId, true))
                     ).filter(pair -> Objects.nonNull(pair.getLeft()))
                     .forEach(suggestionForum -> {
                         String id = suggestionForum.getLeft();
@@ -54,13 +54,13 @@ public class CurateFeature extends BotFeature {
 
                         // Update Database
                         result.forEach(greenlitMessage -> database.upsertDocument(
-                                database.getCollection(
-                                        "greenlit_messages",
-                                        GreenlitMessage.class
-                                ),
-                                "messageId",
-                                greenlitMessage.getMessageId(),
-                                greenlitMessage
+                            database.getCollection(
+                                "greenlit_messages",
+                                GreenlitMessage.class
+                            ),
+                            "messageId",
+                            greenlitMessage.getMessageId(),
+                            greenlitMessage
                         ));
                         log.info("Inserted " + result.size() + " new greenlit messages into the database!");
                     });
