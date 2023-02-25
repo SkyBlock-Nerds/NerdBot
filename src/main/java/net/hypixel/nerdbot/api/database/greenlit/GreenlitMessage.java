@@ -70,7 +70,7 @@ public class GreenlitMessage {
         builder.setDescription(description.toString());
         builder.addField("Agrees", String.valueOf(this.agrees), true);
         builder.addField("Disagrees", String.valueOf(this.disagrees), true);
-        builder.addField("Neutrals", String.valueOf(this.disagrees), true);
+        builder.addField("Neutrals", String.valueOf(this.neutrals), true);
         builder.addBlankField(true);
         builder.setTimestamp(Instant.ofEpochMilli(this.suggestionTimestamp));
 
