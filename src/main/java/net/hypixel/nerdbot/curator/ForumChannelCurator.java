@@ -4,6 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
@@ -18,7 +19,6 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,26 +60,22 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
         List<ThreadChannel> threads = forumChannel.getThreadChannels()
+            .stream()
+            .filter(threadChannel -> threadChannel.getAppliedTags()
                 .stream()
-                .filter(threadChannel -> threadChannel.getAppliedTags()
-                        .stream()
-                        .noneMatch(tag -> greenlitTags.contains(tag.getName().toLowerCase()))
-                )
-                .toList();
+                .noneMatch(tag -> greenlitTags.contains(tag.getName().toLowerCase()))
+            )
+            .toList();
 
-        log.info("Found " + threads.size() + " non-greenlit forum post(s)!");
+        log.info("Found " + threads.size() + " non-greenlit/docced forum post(s)!");
 
         int index = 0;
         for (ThreadChannel thread : threads) {
             log.info("[" + (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
-            if (thread.getAppliedTags().stream().map(ForumTag::getName).anyMatch(s -> s.equalsIgnoreCase("docced"))) {
-                log.info("Skipping thread '" + thread.getName() + "' (ID: " + thread.getId() + ") as it is already docced!");
-                continue;
-            }
-
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
             Message message = history.getRetrievedHistory().get(0);
+
             if (message == null) {
                 log.error("Message for thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is null!");
                 continue;
@@ -89,28 +85,28 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 log.info("Checking reaction counts for message ID: " + message.getId());
 
                 List<MessageReaction> reactions = message.getReactions()
-                        .stream()
-                        .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
-                        .toList();
+                    .stream()
+                    .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+                    .toList();
 
                 Map<String, Integer> votes = Stream.of(
-                                emojiConfig.getAgreeEmojiId(),
-                                emojiConfig.getNeutralEmojiId(),
-                                emojiConfig.getDisagreeEmojiId()
-                        )
-                        .map(emojiId -> Pair.of(
-                                emojiId,
-                                reactions.stream()
-                                        .filter(reaction -> reaction.getEmoji()
-                                                .asCustom()
-                                                .getId()
-                                                .equalsIgnoreCase(emojiId)
-                                        )
-                                        .mapToInt(MessageReaction::getCount)
-                                        .findFirst()
-                                        .orElse(0)
-                        ))
-                        .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+                        emojiConfig.getAgreeEmojiId(),
+                        emojiConfig.getNeutralEmojiId(),
+                        emojiConfig.getDisagreeEmojiId()
+                    )
+                    .map(emojiId -> Pair.of(
+                        emojiId,
+                        reactions.stream()
+                            .filter(reaction -> reaction.getEmoji()
+                                .asCustom()
+                                .getId()
+                                .equalsIgnoreCase(emojiId)
+                            )
+                            .mapToInt(MessageReaction::getCount)
+                            .findFirst()
+                            .orElse(0)
+                    ))
+                    .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
 
                 int agree = votes.get(emojiConfig.getAgreeEmojiId());
                 int neutral = votes.get(emojiConfig.getNeutralEmojiId());
@@ -138,18 +134,28 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 thread.getManager().setAppliedTags(tags).complete();
 
                 GreenlitMessage greenlitMessage = GreenlitMessage.builder()
-                        .agrees(agree)
-                        .neutrals(neutral)
-                        .disagrees(disagree)
-                        .messageId(message.getId())
-                        .userId(message.getAuthor().getId())
-                        .alpha(forumChannel.getName().toLowerCase().contains("alpha"))
-                        .suggestionUrl(message.getJumpUrl())
-                        .suggestionTitle(thread.getName())
-                        .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
-                        .suggestionContent(message.getContentRaw())
-                        .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
-                        .build();
+                    .agrees(agree)
+                    .neutrals(neutral)
+                    .disagrees(disagree)
+                    .messageId(message.getId())
+                    .userId(message.getAuthor().getId())
+                    .alpha(forumChannel.getName().toLowerCase().contains("alpha"))
+                    .suggestionUrl(message.getJumpUrl())
+                    .suggestionTitle(thread.getName())
+                    .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
+                    .suggestionContent(message.getContentRaw())
+                    .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
+                    .positiveVoterIDs(
+                        reactions.stream()
+                            .filter(reaction -> emojiConfig.isEquals(reaction, EmojiConfig::getAgreeEmojiId))
+                            .flatMap(reaction -> reaction.retrieveUsers()
+                                .complete()
+                                .stream()
+                            )
+                            .map(User::getId)
+                            .collect(Collectors.toList())
+                    )
+                    .build();
                 output.add(greenlitMessage);
             } catch (Exception exception) {
                 exception.printStackTrace();
