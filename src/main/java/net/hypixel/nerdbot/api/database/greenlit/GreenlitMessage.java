@@ -76,7 +76,7 @@ public class GreenlitMessage {
 
         if (this.positiveVoterIDs != null && !this.positiveVoterIDs.isEmpty()) {
             builder.addField(
-                "Pre-Greenlit Votes",
+                "Pre-Greenlit Voters",
                 this.positiveVoterIDs.stream()
                     .map(userId -> ("<@" + userId + ">"))
                     .collect(Collectors.joining(", ")),
