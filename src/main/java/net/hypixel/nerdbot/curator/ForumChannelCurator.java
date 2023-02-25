@@ -145,7 +145,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
                     .suggestionContent(message.getContentRaw())
                     .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
-                    .positiveVoterIDs(
+                    .positiveVoterIds(
                         reactions.stream()
                             .filter(reaction -> emojiConfig.isEquals(reaction, EmojiConfig::getAgreeEmojiId))
                             .flatMap(reaction -> reaction.retrieveUsers()

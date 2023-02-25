@@ -27,7 +27,7 @@ public class GreenlitMessage {
     private ObjectId id;
     private String userId, messageId, greenlitMessageId, suggestionTitle, suggestionContent, suggestionUrl, channelGroupName;
     private List<String> tags;
-    private List<String> positiveVoterIDs;
+    private List<String> positiveVoterIds;
     private long suggestionTimestamp;
     private int agrees, disagrees, neutrals;
     private boolean alpha;
@@ -74,10 +74,10 @@ public class GreenlitMessage {
         builder.addBlankField(true);
         builder.setTimestamp(Instant.ofEpochMilli(this.suggestionTimestamp));
 
-        if (this.positiveVoterIDs != null && !this.positiveVoterIDs.isEmpty()) {
+        if (this.positiveVoterIds != null && !this.positiveVoterIds.isEmpty()) {
             builder.addField(
                 "Pre-Greenlit Voters",
-                this.positiveVoterIDs.stream()
+                this.positiveVoterIds.stream()
                     .map(userId -> ("<@" + userId + ">"))
                     .collect(Collectors.joining(", ")),
                 false
