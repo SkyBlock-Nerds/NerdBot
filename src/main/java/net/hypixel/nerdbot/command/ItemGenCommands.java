@@ -42,7 +42,8 @@ public class ItemGenCommands extends ApplicationCommand {
             @AppOption(description = "The description of the item") String description,
             @Optional @AppOption(description = "The type of the item") String type,
             @Optional @AppOption(description = "If you will handle line breaks at the end of the item's description") Boolean handleLineBreaks,
-            @Optional @AppOption(description = "Sets the background transparency level, 0 for transparent, 255 for opaque") Integer alpha
+            @Optional @AppOption(description = "Sets the background transparency level, 0 for transparent, 255 for opaque") Integer alpha,
+            @Optional @AppOption(description = "Sets the transparent padding around the image, 0 for none, 1 for discord") Integer padding
     ) throws IOException {
         String senderChannelId = event.getChannel().getId();
         String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
@@ -110,7 +111,7 @@ public class ItemGenCommands extends ApplicationCommand {
         }
 
         // checking that the font's have been loaded into memory correctly
-        if (!MinecraftImage.registerFonts()) {
+        if (!MinecraftImage.isFontsRegistered()) {
             event.getHook().sendMessage("It seems that one of the font files couldn't be loaded correctly. Please contact a Bot Developer to have a look at it!").setEphemeral(true).queue();
             return;
         }
@@ -119,14 +120,15 @@ public class ItemGenCommands extends ApplicationCommand {
         alpha = Objects.requireNonNullElse(alpha, 255); // checks if the image transparency was set
         alpha = Math.min(255, Math.max(alpha, 0)); // ensure range between 0-254
 
-        MinecraftImage minecraftImage = new MinecraftImage(500, colorParser.getRequiredLines(), MCColor.GRAY, alpha);
-        minecraftImage.drawStrings(colorParser.getParsedDescription());
-        minecraftImage.cropImage();
-        minecraftImage.createImageBorder();
+        // padding value validation
+        padding = Objects.requireNonNullElse(padding, 0);
+        padding = Math.max(0, padding);
 
-        File imageFile = File.createTempFile("image", ".png");
-        ImageIO.write(minecraftImage.getImage(), "png", imageFile);
-        event.getHook().sendFiles(FileUpload.fromData(imageFile)).setEphemeral(false).queue();
+        File minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, 500, alpha, padding)
+            .render()
+            .toFile();
+
+        event.getHook().sendFiles(FileUpload.fromData(minecraftImage)).setEphemeral(false).queue();
 
         Member member = event.getMember();
         DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), member.getId());
