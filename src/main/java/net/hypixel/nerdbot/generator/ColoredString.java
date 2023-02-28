@@ -13,6 +13,8 @@ public class ColoredString {
 
     private boolean isBold;
     private boolean isItalic;
+    private boolean isStrikethrough;
+    private boolean isUnderlined;
 
     public ColoredString() {
         this.currentString = new StringBuilder(36);

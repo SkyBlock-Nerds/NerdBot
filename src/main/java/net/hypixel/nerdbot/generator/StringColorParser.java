@@ -38,10 +38,6 @@ public class StringColorParser {
         return parsedDescription;
     }
 
-    public int getRequiredLines() {
-        return parsedDescription.size();
-    }
-
     public boolean isSuccessfullyParsed() {
         return successfullyParsed;
     }
@@ -93,6 +89,8 @@ public class StringColorParser {
                         switch (mcColor) {
                             case BOLD -> this.setBold(true);
                             case ITALIC -> this.setItalic(true);
+                            case STRIKETHROUGH -> this.setStrikethrough(true);
+                            case UNDERLINE -> this.setUnderlined(true);
                             default -> this.setColor(mcColor);
                         }
                         charIndex = closingIndex + 2;
@@ -158,6 +156,8 @@ public class StringColorParser {
                             switch (mcColor) {
                                 case BOLD -> this.setBold(true);
                                 case ITALIC -> this.setItalic(true);
+                                case STRIKETHROUGH -> this.setStrikethrough(true);
+                                case UNDERLINE -> this.setUnderlined(true);
                                 default -> this.setColor(mcColor);
                             }
                             charIndex += 2;
@@ -264,6 +264,8 @@ public class StringColorParser {
         currentString.setCurrentColor(color);
         currentString.setBold(false);
         currentString.setItalic(false);
+        currentString.setStrikethrough(false);
+        currentString.setUnderlined(false);
     }
 
     /**
@@ -290,6 +292,32 @@ public class StringColorParser {
             currentString = new ColoredString(currentString);
         }
         currentString.setItalic(isItalic);
+    }
+
+    /**
+     * sets if the next segment has strikethrough
+     * @param isStrikethrough state of strikethrough to change to
+     */
+    private void setStrikethrough(boolean isStrikethrough) {
+        // checking if there is any text on the current string before changing it to italic
+        if (!currentString.isEmpty()) {
+            currentLine.add(currentString);
+            currentString = new ColoredString(currentString);
+        }
+        currentString.setStrikethrough(isStrikethrough);
+    }
+
+    /**
+     * sets if the next segment has underlined
+     * @param isUnderlined state of underlined to change to
+     */
+    private void setUnderlined(boolean isUnderlined) {
+        // checking if there is any text on the current string before changing it to italic
+        if (!currentString.isEmpty()) {
+            currentLine.add(currentString);
+            currentString = new ColoredString(currentString);
+        }
+        currentString.setUnderlined(isUnderlined);
     }
 
     /**
