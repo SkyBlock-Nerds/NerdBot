@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -30,7 +31,7 @@ public class LastActivity {
     private long alphaSuggestionVoteDate = -1L;
     private long alphaSuggestionCommentDate = -1L;
 
-    private Map<String, Integer> channelActivity;
+    private Map<String, Integer> channelActivity = new HashMap<>();
 
     public LastActivity() {
     }
