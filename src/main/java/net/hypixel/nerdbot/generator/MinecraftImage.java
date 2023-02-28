@@ -199,12 +199,14 @@ public class MinecraftImage {
         int nextBounds = (int) font.getStringBounds(value, this.getGraphics().getFontRenderContext()).getWidth();
 
         // Draw Strikethrough Drop Shadow
-        if (segment.isStrikethrough())
+        if (segment.isStrikethrough()) {
             this.drawThickLine(nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, true);
+        }
 
         // Draw Underlined Drop Shadow
-        if (segment.isUnderlined())
+        if (segment.isUnderlined()) {
             this.drawThickLine(nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, true);
+        }
 
         // Draw Drop Shadow Text
         this.getGraphics().setColor(this.currentColor.getBackgroundColor());
@@ -215,12 +217,14 @@ public class MinecraftImage {
         this.getGraphics().drawString(value, this.locationX, this.locationY);
 
         // Draw Strikethrough
-        if (segment.isStrikethrough())
+        if (segment.isStrikethrough()) {
             this.drawThickLine(nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, false);
+        }
 
         // Draw Underlined
-        if (segment.isUnderlined())
+        if (segment.isUnderlined()) {
             this.drawThickLine(nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, false);
+        }
 
         // Update Draw Pointer Location
         this.locationX += nextBounds;
