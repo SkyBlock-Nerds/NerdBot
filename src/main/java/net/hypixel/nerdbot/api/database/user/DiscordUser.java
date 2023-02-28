@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.api.database.user;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import net.hypixel.nerdbot.api.database.user.stats.LastActivity;
 
 import java.util.List;
 
