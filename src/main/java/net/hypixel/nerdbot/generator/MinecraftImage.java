@@ -169,7 +169,10 @@ public class MinecraftImage {
                 this.drawString(subWord.toString(), segment);
             }
 
-            this.updatePositionAndSize(this.getLines().indexOf(line) == 0);
+            // increase size of first line if there are more than one lines present
+            if (this.getLines().size() != 0) {
+                this.updatePositionAndSize(this.getLines().indexOf(line) == 0);
+            }
         }
     }
 
