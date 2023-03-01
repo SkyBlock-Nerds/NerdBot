@@ -81,8 +81,10 @@ public class ItemGenCommands extends ApplicationCommand {
 
         // adds the item's name to the array list
         Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
-        String createTitle = "%%" + itemRarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%\\n";
-        itemLore.insert(0, createTitle);
+        if (!name.equalsIgnoreCase("NONE")) { // allow user to pass NONE for the title
+            String createTitle = "%%" + itemRarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%\\n";
+            itemLore.insert(0, createTitle);
+        }
 
         // writing the rarity if the rarity is not none
         if (itemRarity != Rarity.NONE) {
