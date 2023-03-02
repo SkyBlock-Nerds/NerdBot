@@ -2,7 +2,6 @@ package net.hypixel.nerdbot.feature;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -77,18 +76,17 @@ public class GreenlitUpdateFeature extends BotFeature {
 
                     greenlits.forEach(greenlitMessage -> {
                         log.info("Processing greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + " )");
+                        ThreadChannel thread = greenlitThreads.stream().filter(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId())).findFirst().orElse(null);
+                        if (thread == null) {
+                            log.warn("Couldn't find thread for greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + " )!");
+                            return;
+                        }
 
-                        if (greenlitThreads.stream().anyMatch(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId()))) {
-                            ThreadChannel thread = greenlitThreads.stream().filter(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId())).findFirst().orElse(null);
-                            if (thread == null) {
-                                log.warn("Couldn't find thread for greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + " )!");
-                                return;
-                            }
+                        log.info("Found matching thread for greenlit message " + greenlitMessage.getMessageId() + ": '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
-                            log.info("Found matching thread for greenlit message " + greenlitMessage.getMessageId() + ": '" + thread.getName() + "' (ID: " + thread.getId() + ")");
-
-                            MessageHistory history = thread.getHistoryFromBeginning(1).complete();
-                            Message message = history.getRetrievedHistory().get(0);
+                        thread.getHistoryFromBeginning(1).queue(messageHistory -> {
+                            log.info("Retrieved history for thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+                            Message message = messageHistory.getRetrievedHistory().get(0);
                             if (message == null) {
                                 log.error("Message for thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is null!");
                                 return;
@@ -96,28 +94,28 @@ public class GreenlitUpdateFeature extends BotFeature {
 
                             EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
                             List<MessageReaction> reactions = message.getReactions()
-                                .stream()
-                                .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
-                                .toList();
+                                    .stream()
+                                    .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+                                    .toList();
 
                             Map<String, Integer> votes = Stream.of(
-                                    emojiConfig.getAgreeEmojiId(),
-                                    emojiConfig.getNeutralEmojiId(),
-                                    emojiConfig.getDisagreeEmojiId()
-                                )
-                                .map(emojiId -> Pair.of(
-                                    emojiId,
-                                    reactions.stream()
-                                        .filter(reaction -> reaction.getEmoji()
-                                            .asCustom()
-                                            .getId()
-                                            .equalsIgnoreCase(emojiId)
-                                        )
-                                        .mapToInt(MessageReaction::getCount)
-                                        .findFirst()
-                                        .orElse(0)
-                                ))
-                                .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+                                            emojiConfig.getAgreeEmojiId(),
+                                            emojiConfig.getNeutralEmojiId(),
+                                            emojiConfig.getDisagreeEmojiId()
+                                    )
+                                    .map(emojiId -> Pair.of(
+                                            emojiId,
+                                            reactions.stream()
+                                                    .filter(reaction -> reaction.getEmoji()
+                                                            .asCustom()
+                                                            .getId()
+                                                            .equalsIgnoreCase(emojiId)
+                                                    )
+                                                    .mapToInt(MessageReaction::getCount)
+                                                    .findFirst()
+                                                    .orElse(0)
+                                    ))
+                                    .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
 
                             int agree = votes.get(emojiConfig.getAgreeEmojiId());
                             int neutral = votes.get(emojiConfig.getNeutralEmojiId());
@@ -132,7 +130,7 @@ public class GreenlitUpdateFeature extends BotFeature {
 
                             database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage);
                             log.info("Updated greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + ") in the database!");
-                        }
+                        }, throwable -> log.error("Failed to retrieve history for thread '" + thread.getName() + "' (ID: " + thread.getId() + ")", throwable));
                     });
                 });
             }
