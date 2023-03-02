@@ -51,13 +51,9 @@ public class NerdBotApp {
             USER_CACHE.asMap().forEach((s, discordUser) -> {
                 bot.getDatabase().upsertDocument(bot.getDatabase().getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
             });
+            NerdBotApp.getBot().onEnd();
         });
         Runtime.getRuntime().addShutdownHook(userSavingTask);
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Shutting down Nerd Bot...");
-            NerdBotApp.getBot().onEnd();
-        }));
     }
 
     public static Bot getBot() {
