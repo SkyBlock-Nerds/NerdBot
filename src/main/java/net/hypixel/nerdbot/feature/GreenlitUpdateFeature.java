@@ -23,6 +23,11 @@ import java.util.stream.Stream;
 @Log4j2
 public class GreenlitUpdateFeature extends BotFeature {
 
+    private static final String[] INCLUDED_TAGS = {
+            "Greenlit",
+            "Docced"
+    };
+
     @Override
     public void onStart() {
         this.timer.scheduleAtFixedRate(new TimerTask() {
@@ -44,17 +49,21 @@ public class GreenlitUpdateFeature extends BotFeature {
                         return;
                     }
 
-                    List<ThreadChannel> greenlitThreads = new ArrayList<>(forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("Greenlit")).toList());
+                    List<ThreadChannel> threads = new ArrayList<>(forumChannel.getThreadChannels()
+                            .stream()
+                            .filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).anyMatch(tag -> Arrays.asList(INCLUDED_TAGS).contains(tag)))
+                            .toList());
                     List<ThreadChannel> archived = forumChannel.retrieveArchivedPublicThreadChannels().complete();
 
-                    greenlitThreads.addAll(
+                    threads.addAll(
                         archived.stream()
-                            .filter(threadChannel -> !greenlitThreads.contains(threadChannel))
-                            .filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("Greenlit"))
+                            .filter(threadChannel -> !threads.contains(threadChannel))
+                            .filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).anyMatch(tag -> Arrays.asList(INCLUDED_TAGS).contains(tag)))
                             .toList()
                     );
 
-                    if (greenlitThreads.isEmpty()) {
+
+                    if (threads.isEmpty()) {
                         log.info("No greenlit threads found in the suggestion forum channel!");
                         return;
                     }
@@ -72,12 +81,12 @@ public class GreenlitUpdateFeature extends BotFeature {
                     }
 
                     log.info("Found " + forumChannel.getThreadChannels().size() + " threads in the suggestion forum channel!");
-                    log.info("Found " + greenlitThreads.size() + " unarchived greenlit threads in the suggestion forum channel!");
+                    log.info("Found " + threads.size() + " unarchived greenlit threads in the suggestion forum channel!");
                     log.info("Found " + archived.size() + " archived threads in the suggestion forum channel!");
 
                     greenlits.forEach(greenlitMessage -> {
                         log.info("Processing greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + ")");
-                        ThreadChannel thread = greenlitThreads.stream().filter(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId()) || threadChannel.getName().equalsIgnoreCase(greenlitMessage.getSuggestionTitle())).findFirst().orElse(null);
+                        ThreadChannel thread = threads.stream().filter(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId()) || threadChannel.getName().equalsIgnoreCase(greenlitMessage.getSuggestionTitle())).findFirst().orElse(null);
                         if (thread == null) {
                             log.warn("Couldn't find thread for greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + ")!");
                             return;
