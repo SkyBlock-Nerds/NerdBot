@@ -14,6 +14,7 @@ import org.bson.types.ObjectId;
 
 import java.awt.*;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -33,6 +34,13 @@ public class GreenlitMessage {
     private boolean alpha;
 
     public GreenlitMessage() {
+    }
+
+    public List<String> getTags() {
+        if (tags == null) {
+            tags = new ArrayList<>();
+        }
+        return tags;
     }
 
     public GreenlitMessage setSuggestionTitle(String suggestionTitle) {
