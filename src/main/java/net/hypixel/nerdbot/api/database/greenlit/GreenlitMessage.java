@@ -50,6 +50,10 @@ public class GreenlitMessage {
         return this;
     }
 
+    public boolean isDocced() {
+        return tags.contains("Docced");
+    }
+
     @BsonIgnore
     public EmbedBuilder getEmbed() {
         EmbedBuilder builder = new EmbedBuilder();
