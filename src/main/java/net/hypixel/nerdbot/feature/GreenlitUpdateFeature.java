@@ -59,8 +59,6 @@ public class GreenlitUpdateFeature extends BotFeature {
                             .toList()
                     );
 
-                    log.info("Found " + greenlitThreads.size() + " total greenlit threads!");
-
                     Database database = NerdBotApp.getBot().getDatabase();
                     if (!database.isConnected()) {
                         log.info("Database is not connected, skipping greenlit message update!");
