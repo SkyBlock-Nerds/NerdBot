@@ -65,11 +65,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                         return;
                     }
 
-                    List<GreenlitMessage> greenlits = database.getCollection("greenlit_messages", GreenlitMessage.class).find()
-                            .into(new ArrayList<>())
-                            .stream()
-                            .filter(greenlitMessage -> !greenlitMessage.isDocced()).
-                            toList();
+                    List<GreenlitMessage> greenlits = database.getCollection("greenlit_messages", GreenlitMessage.class).find().into(new ArrayList<>());
 
                     if (greenlits.isEmpty()) {
                         log.info("No greenlit messages found in the database to update!");
@@ -80,6 +76,8 @@ public class GreenlitUpdateFeature extends BotFeature {
                     log.info("Found " + greenlits.size() + " greenlit messages in the database!");
 
                     greenlits.forEach(greenlitMessage -> {
+                        log.info("Processing greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + " )");
+
                         if (greenlitThreads.stream().anyMatch(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId()))) {
                             ThreadChannel thread = greenlitThreads.stream().filter(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId())).findFirst().orElse(null);
                             if (thread == null) {
