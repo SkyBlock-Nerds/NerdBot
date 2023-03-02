@@ -2,17 +2,13 @@ package net.hypixel.nerdbot.feature;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.events.GenericEvent;
-import net.dv8tion.jda.api.events.session.ShutdownEvent;
-import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.feature.BotFeature;
-import net.hypixel.nerdbot.api.feature.FeatureListener;
 import net.hypixel.nerdbot.channel.ChannelManager;
 
 import java.awt.*;
 import java.time.OffsetDateTime;
 
-public class HelloGoodbyeFeature extends BotFeature implements FeatureListener {
+public class HelloGoodbyeFeature extends BotFeature {
 
     private static final MessageEmbed HELLO_THERE = new EmbedBuilder()
             .setTitle("Hello there!")
@@ -41,13 +37,6 @@ public class HelloGoodbyeFeature extends BotFeature implements FeatureListener {
     public void onEnd() {
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(GOODBYE).queue();
-        }
-    }
-
-    @Override
-    public void onEvent(GenericEvent event) {
-        if (event instanceof ShutdownEvent) {
-            NerdBotApp.getBot().onEnd();
         }
     }
 }
