@@ -75,10 +75,10 @@ public class GreenlitUpdateFeature extends BotFeature {
                     log.info("Found " + greenlits.size() + " greenlit messages in the database!");
 
                     greenlits.forEach(greenlitMessage -> {
-                        log.info("Processing greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + " )");
-                        ThreadChannel thread = greenlitThreads.stream().filter(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId())).findFirst().orElse(null);
+                        log.info("Processing greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + ")");
+                        ThreadChannel thread = greenlitThreads.stream().filter(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId()) || threadChannel.getName().equalsIgnoreCase(greenlitMessage.getSuggestionTitle())).findFirst().orElse(null);
                         if (thread == null) {
-                            log.warn("Couldn't find thread for greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + " )!");
+                            log.warn("Couldn't find thread for greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + ")!");
                             return;
                         }
 
