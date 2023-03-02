@@ -49,7 +49,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                     List<ThreadChannel> archived = forumChannel.retrieveArchivedPublicThreadChannels().complete();
 
                     log.info("Found " + forumChannel.getThreadChannels().size() + " threads in the suggestion forum channel!");
-                    log.info("Found " + greenlitThreads + " unarchived greenlit threads in the suggestion forum channel!");
+                    log.info("Found " + greenlitThreads.size() + " unarchived greenlit threads in the suggestion forum channel!");
                     log.info("Found " + archived.size() + " archived threads in the suggestion forum channel!");
 
                     greenlitThreads.addAll(
