@@ -37,6 +37,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                     String id = suggestionForum.getLeft();
                     boolean alpha = suggestionForum.getRight();
                     ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(id);
+
                     log.info("Processing" + (alpha ? " alpha" : "") + " suggestion forum channel with ID " + id + ".");
 
                     if (forumChannel == null) {
@@ -57,13 +58,20 @@ public class GreenlitUpdateFeature extends BotFeature {
                             .toList()
                     );
 
+                    log.info("There are now " + greenlitThreads.size() + " total greenlit threads!");
+
                     Database database = NerdBotApp.getBot().getDatabase();
                     if (!database.isConnected()) {
                         log.info("Database is not connected, skipping greenlit message update!");
                         return;
                     }
 
-                    List<GreenlitMessage> greenlits = database.getCollection("greenlit_messages", GreenlitMessage.class).find().into(new ArrayList<>());
+                    List<GreenlitMessage> greenlits = database.getCollection("greenlit_messages", GreenlitMessage.class).find()
+                            .into(new ArrayList<>())
+                            .stream()
+                            .filter(greenlitMessage -> !greenlitMessage.isDocced()).
+                            toList();
+
                     if (greenlits.size() == 0) {
                         log.info("No greenlit messages found in the database to update!");
                         return;
@@ -76,6 +84,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                         if (greenlitThreads.stream().anyMatch(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId()))) {
                             ThreadChannel thread = greenlitThreads.stream().filter(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId())).findFirst().orElse(null);
                             if (thread == null) {
+                                log.warn("Couldn't find thread for greenlit message " + greenlitMessage.getMessageId() + "!");
                                 return;
                             }
 
@@ -89,7 +98,6 @@ public class GreenlitUpdateFeature extends BotFeature {
                             }
 
                             EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
-
                             List<MessageReaction> reactions = message.getReactions()
                                 .stream()
                                 .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
@@ -126,7 +134,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                             greenlitMessage.setNeutrals(neutral);
 
                             database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage);
-                            log.info("Updated greenlit message " + greenlitMessage.getMessageId() + " in the database!");
+                            log.info("Updated greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + ") in the database!");
                         }
                     });
                 });
