@@ -59,7 +59,7 @@ public class GreenlitMessage {
     }
 
     public boolean isDocced() {
-        return tags.contains("Docced");
+        return getTags().contains("Docced");
     }
 
     @BsonIgnore
