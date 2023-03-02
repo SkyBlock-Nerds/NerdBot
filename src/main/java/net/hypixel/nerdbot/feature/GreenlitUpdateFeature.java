@@ -73,7 +73,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                             .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.isDocced()).
                             toList();
 
-                    if (greenlits.size() == 0) {
+                    if (greenlits.isEmpty()) {
                         log.info("No greenlit messages found in the database to update!");
                         return;
                     }
