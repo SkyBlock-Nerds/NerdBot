@@ -53,6 +53,11 @@ public class NerdBotApp {
             });
         });
         Runtime.getRuntime().addShutdownHook(userSavingTask);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Shutting down Nerd Bot...");
+            NerdBotApp.getBot().onEnd();
+        }));
     }
 
     public static Bot getBot() {
