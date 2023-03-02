@@ -49,6 +49,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                     List<ThreadChannel> archived = forumChannel.retrieveArchivedPublicThreadChannels().complete();
 
                     log.info("Found " + forumChannel.getThreadChannels().size() + " threads in the suggestion forum channel!");
+                    log.info("Found " + greenlitThreads + " unarchived greenlit threads in the suggestion forum channel!");
                     log.info("Found " + archived.size() + " archived threads in the suggestion forum channel!");
 
                     greenlitThreads.addAll(
@@ -58,7 +59,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                             .toList()
                     );
 
-                    log.info("There are now " + greenlitThreads.size() + " total greenlit threads!");
+                    log.info("Found " + greenlitThreads.size() + " total greenlit threads!");
 
                     Database database = NerdBotApp.getBot().getDatabase();
                     if (!database.isConnected()) {
@@ -69,7 +70,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                     List<GreenlitMessage> greenlits = database.getCollection("greenlit_messages", GreenlitMessage.class).find()
                             .into(new ArrayList<>())
                             .stream()
-                            .filter(greenlitMessage -> !greenlitMessage.isDocced()).
+                            .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.isDocced()).
                             toList();
 
                     if (greenlits.size() == 0) {
