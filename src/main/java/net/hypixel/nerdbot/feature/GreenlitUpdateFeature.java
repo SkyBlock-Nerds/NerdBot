@@ -47,16 +47,17 @@ public class GreenlitUpdateFeature extends BotFeature {
                     List<ThreadChannel> greenlitThreads = new ArrayList<>(forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("Greenlit")).toList());
                     List<ThreadChannel> archived = forumChannel.retrieveArchivedPublicThreadChannels().complete();
 
-                    log.info("Found " + forumChannel.getThreadChannels().size() + " threads in the suggestion forum channel!");
-                    log.info("Found " + greenlitThreads.size() + " unarchived greenlit threads in the suggestion forum channel!");
-                    log.info("Found " + archived.size() + " archived threads in the suggestion forum channel!");
-
                     greenlitThreads.addAll(
                         archived.stream()
                             .filter(threadChannel -> !greenlitThreads.contains(threadChannel))
                             .filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("Greenlit"))
                             .toList()
                     );
+
+                    if (greenlitThreads.isEmpty()) {
+                        log.info("No greenlit threads found in the suggestion forum channel!");
+                        return;
+                    }
 
                     Database database = NerdBotApp.getBot().getDatabase();
                     if (!database.isConnected()) {
@@ -65,14 +66,14 @@ public class GreenlitUpdateFeature extends BotFeature {
                     }
 
                     List<GreenlitMessage> greenlits = database.getCollection("greenlit_messages", GreenlitMessage.class).find().into(new ArrayList<>());
-
                     if (greenlits.isEmpty()) {
                         log.info("No greenlit messages found in the database to update!");
                         return;
                     }
 
-                    log.info("Found " + greenlitThreads.size() + " total greenlit threads");
-                    log.info("Found " + greenlits.size() + " greenlit messages in the database!");
+                    log.info("Found " + forumChannel.getThreadChannels().size() + " threads in the suggestion forum channel!");
+                    log.info("Found " + greenlitThreads.size() + " unarchived greenlit threads in the suggestion forum channel!");
+                    log.info("Found " + archived.size() + " archived threads in the suggestion forum channel!");
 
                     greenlits.forEach(greenlitMessage -> {
                         log.info("Processing greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + ")");
