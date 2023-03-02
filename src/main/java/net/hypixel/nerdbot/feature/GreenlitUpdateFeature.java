@@ -70,7 +70,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                     List<GreenlitMessage> greenlits = database.getCollection("greenlit_messages", GreenlitMessage.class).find()
                             .into(new ArrayList<>())
                             .stream()
-                            .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.isDocced()).
+                            .filter(greenlitMessage -> !greenlitMessage.isDocced()).
                             toList();
 
                     if (greenlits.isEmpty()) {
@@ -85,7 +85,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                         if (greenlitThreads.stream().anyMatch(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId()))) {
                             ThreadChannel thread = greenlitThreads.stream().filter(threadChannel -> threadChannel.getId().equals(greenlitMessage.getMessageId())).findFirst().orElse(null);
                             if (thread == null) {
-                                log.warn("Couldn't find thread for greenlit message " + greenlitMessage.getMessageId() + "!");
+                                log.warn("Couldn't find thread for greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + " )!");
                                 return;
                             }
 
