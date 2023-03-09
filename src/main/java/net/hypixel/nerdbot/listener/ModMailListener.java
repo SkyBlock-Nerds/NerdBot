@@ -51,12 +51,16 @@ public class ModMailListener {
         }
 
         Message message = event.getMessage();
-        Optional<ThreadChannel> optional = forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getName().contains(author.getName())).findFirst();
+        Optional<ThreadChannel> optional = forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getName().contains(author.getName()) || threadChannel.getName().contains(author.getId())).findFirst();
         if (optional.isPresent()) {
             ThreadChannel threadChannel = optional.get();
 
             if (threadChannel.isArchived()) {
-                threadChannel.getManager().setArchived(false).queue();
+                threadChannel.getManager().setArchived(false).complete();
+            }
+
+            if (!threadChannel.getName().contains(author.getName()) || !threadChannel.getName().contains(author.getId())) {
+                threadChannel.getManager().setName("[Mod Mail] " + author.getName() + " (" + author.getId() + ")").complete();
             }
 
             threadChannel.sendMessage(modMailRoleMention).queue();
@@ -64,7 +68,7 @@ public class ModMailListener {
             log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
         } else {
             forumChannel.createForumPost(
-                    "[Mod Mail] " + author.getName(),
+                    "[Mod Mail] " + author.getName() + " (" + author.getId() + ")",
                     MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
             ).queue(forumPost -> {
                 ThreadChannel threadChannel = forumPost.getThreadChannel();
