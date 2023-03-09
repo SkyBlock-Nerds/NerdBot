@@ -123,9 +123,12 @@ public class ModMailListener {
             return;
         }
 
-        List<Message> allMessages = threadChannel.getIterableHistory().complete(true);
-        Message firstPost = allMessages.get(allMessages.size() - 1);
-        User requester = firstPost.getMentions().getUsers().get(0);
+        String userId = threadChannel.getName().substring(threadChannel.getName().lastIndexOf("(") + 1, threadChannel.getName().lastIndexOf(")"));
+        User requester = NerdBotApp.getBot().getJDA().getUserById(userId);
+        if (requester == null) {
+            log.error("Unable to find user with ID " + userId + " for thread " + threadChannel.getId() + "!");
+            return;
+        }
 
         MessageCreateBuilder builder = createMessage(message).setContent("**Response from " + author.getName() + " in SkyBlock Nerds:**\n" + message.getContentDisplay());
         requester.openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
