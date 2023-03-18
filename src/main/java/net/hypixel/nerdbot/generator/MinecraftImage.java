@@ -74,15 +74,16 @@ public class MinecraftImage {
         this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
         // Draw Primary Background
-        graphics.setColor(new Color(18, 3, 18, this.getAlpha()));
-        graphics.fillRect(
+        Graphics2D g2d = this.getImage().createGraphics();
+        g2d.setColor(new Color(18, 3, 18, this.getAlpha()));
+        g2d.fillRect(
             PIXEL_SIZE * 2,
             PIXEL_SIZE * 2,
             width - PIXEL_SIZE * 4,
             height - PIXEL_SIZE * 4
         );
 
-        return graphics;
+        return g2d;
     }
 
     /**
