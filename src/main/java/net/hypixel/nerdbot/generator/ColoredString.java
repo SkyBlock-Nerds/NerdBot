@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
+import org.jetbrains.annotations.NotNull;
 
 @Getter
 @Setter
@@ -21,7 +22,7 @@ public class ColoredString {
         this.currentColor = MCColor.GRAY;
     }
 
-    public ColoredString(ColoredString previousColoredString) {
+    public ColoredString(@NotNull ColoredString previousColoredString) {
         this();
         this.setCurrentColor(previousColoredString.currentColor);
         this.setBold(previousColoredString.isBold);

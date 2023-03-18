@@ -21,7 +21,6 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 
-import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -35,15 +34,15 @@ import java.util.stream.Stream;
 public class ItemGenCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "itemgen", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock")
-    public void askForInfo(
+    public void generateItem(
             GuildSlashEvent event,
             @AppOption(description = "The name of the item") String name,
             @AppOption(description = "The rarity of the item", autocomplete = "rarities") String rarity,
             @AppOption(description = "The description of the item") String description,
             @Optional @AppOption(description = "The type of the item") String type,
             @Optional @AppOption(description = "If you will handle line breaks at the end of the item's description") Boolean handleLineBreaks,
-            @Optional @AppOption(description = "Sets the background transparency level, 0 for transparent, 255 for opaque") Integer alpha,
-            @Optional @AppOption(description = "Sets the transparent padding around the image, 0 for none, 1 for discord") Integer padding
+            @Optional @AppOption(description = "Sets the background transparency level (0 = transparent, 255 = opaque)") Integer alpha,
+            @Optional @AppOption(description = "Sets the transparent padding around the image (0 = none, 1 = discord)") Integer padding
     ) throws IOException {
         String senderChannelId = event.getChannel().getId();
         String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
@@ -60,10 +59,10 @@ public class ItemGenCommands extends ApplicationCommand {
             //error message.
             TextChannel channel = ChannelManager.getChannel(itemGenChannelIds[0]);
             if (channel == null) {
-                event.getHook().sendMessage("This can only be used in the item generating channel.").setEphemeral(true).queue();
-                return;
+                event.getHook().sendMessage("This can only be used in an item generator channel.").setEphemeral(true).queue();
+            } else {
+                event.getHook().sendMessage("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue();
             }
-            event.getHook().sendMessage("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue();
             return;
         }
 

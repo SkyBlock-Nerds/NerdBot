@@ -6,7 +6,7 @@ import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.ToLongFunction;
 
 @Getter
 @Setter
@@ -36,11 +36,11 @@ public class LastActivity {
     public LastActivity() {
     }
 
-    public DiscordTimestamp toTimestamp(Function<LastActivity, Long> function) {
-        return new DiscordTimestamp(function.apply(this));
+    public DiscordTimestamp toTimestamp(ToLongFunction<LastActivity> function) {
+        return new DiscordTimestamp(function.applyAsLong(this));
     }
 
-    public String toRelativeTimestamp(Function<LastActivity, Long> function) {
+    public String toRelativeTimestamp(ToLongFunction<LastActivity> function) {
         return this.toTimestamp(function).toRelativeTimestamp();
     }
 }

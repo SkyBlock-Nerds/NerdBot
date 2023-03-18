@@ -15,8 +15,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 public class MinecraftImage {
 
@@ -25,12 +25,11 @@ public class MinecraftImage {
     private static final int Y_INCREMENT = PIXEL_SIZE * 10;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
-    private static boolean fontsRegistered = false;
     private static final Font[] minecraftFonts;
-    private static Font sansSerif = null;
+    private static final Font sansSerif;
 
     // Current Settings
-    @Getter private final ArrayList<ArrayList<ColoredString>> lines;
+    @Getter private final List<ArrayList<ColoredString>> lines;
     @Getter private final int alpha;
     @Getter private final int padding;
     @Getter(AccessLevel.PRIVATE)
@@ -57,7 +56,7 @@ public class MinecraftImage {
         Arrays.stream(minecraftFonts).forEach(GraphicsEnvironment.getLocalGraphicsEnvironment()::registerFont);
     }
 
-    public MinecraftImage(ArrayList<ArrayList<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding) {
+    public MinecraftImage(List<ArrayList<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding) {
         this.alpha = alpha;
         this.padding = padding;
         this.lines = lines;
@@ -75,7 +74,6 @@ public class MinecraftImage {
         this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
         // Draw Primary Background
-        Graphics2D graphics = this.getImage().createGraphics();
         graphics.setColor(new Color(18, 3, 18, this.getAlpha()));
         graphics.fillRect(
             PIXEL_SIZE * 2,

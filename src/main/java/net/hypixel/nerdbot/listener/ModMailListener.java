@@ -9,7 +9,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.exceptions.RateLimitedException;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
@@ -82,7 +81,7 @@ public class ModMailListener {
                             threadChannel.sendMessage(modMailRoleMention).queue();
                             threadChannel.sendMessage(createMessage(message).build()).queue();
                         } catch (ExecutionException | InterruptedException e) {
-                            throw new RuntimeException(e);
+                            e.printStackTrace();
                         }
                     }
                 }));
@@ -91,7 +90,7 @@ public class ModMailListener {
     }
 
     @SubscribeEvent
-    public void onModMailResponse(MessageReceivedEvent event) throws RateLimitedException, ExecutionException, InterruptedException {
+    public void onModMailResponse(MessageReceivedEvent event) throws ExecutionException, InterruptedException {
         if (event.getChannelType() != ChannelType.GUILD_PUBLIC_THREAD) {
             return;
         }
@@ -118,7 +117,6 @@ public class ModMailListener {
         if(message.getContentRaw().startsWith("?")) {
             Emoji emoji = Emoji.fromUnicode("U+1F92B");
             message.addReaction(emoji).queue();
-            //threadChannel.sendMessage("Previous message hidden from receiver").queue();
             log.info(author.getName() + " sent a hidden message (Thread ID: " + threadChannel.getId() + ")");
             return;
         }
@@ -136,7 +134,7 @@ public class ModMailListener {
 
     private MessageCreateBuilder createMessage(Message message) throws ExecutionException, InterruptedException {
         MessageCreateBuilder data = new MessageCreateBuilder();
-        data.setContent(String.format("**%s:**\n%s", message.getAuthor().getName(), message.getContentDisplay()));
+        data.setContent(String.format("**%s:**%s%s", message.getAuthor().getName(), "\n", message.getContentDisplay()));
 
         // TODO split into another message, but I don't anticipate someone sending a giant essay yet
         if (data.getContent().length() > 2000) {

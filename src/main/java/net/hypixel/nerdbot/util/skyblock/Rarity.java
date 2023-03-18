@@ -16,16 +16,16 @@ public enum Rarity {
 
     public static final Rarity[] VALUES = values();
 
-    private final String rarity;
+    private final String display;
     private final MCColor color;
 
-    Rarity(String rarity, MCColor color) {
-        this.rarity = rarity;
+    Rarity(String display, MCColor color) {
+        this.display = display;
         this.color = color;
     }
 
     public String getId() {
-        return rarity;
+        return display;
     }
 
     public MCColor getRarityColor() {

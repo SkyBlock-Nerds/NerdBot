@@ -21,6 +21,7 @@ public class ReactionChannelListener {
         if (reactionChannels == null) {
             return;
         }
+
         Optional<ReactionChannel> reactionChannel = reactionChannels.stream().filter(channel -> channel.getDiscordChannelId().equals(event.getChannel().getId())).findFirst();
         if (reactionChannel.isPresent()) {
             Message message = event.getMessage();

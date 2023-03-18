@@ -8,8 +8,6 @@ public class FeatureEventListener {
 
     @SubscribeEvent
     public void onEvent(GenericEvent event) {
-        NerdBotApp.getBot().getFeatures().stream().filter(botFeature -> botFeature instanceof FeatureListener).toList().forEach(botFeature -> {
-            ((FeatureListener) botFeature).onEvent(event);
-        });
+        NerdBotApp.getBot().getFeatures().stream().filter(FeatureListener.class::isInstance).toList().forEach(botFeature -> ((FeatureListener) botFeature).onEvent(event));
     }
 }

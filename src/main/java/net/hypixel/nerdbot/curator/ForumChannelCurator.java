@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 @Log4j2
 public class ForumChannelCurator extends Curator<ForumChannel> {
 
-    private final static List<String> greenlitTags = Arrays.asList("greenlit", "docced");
+    private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
@@ -63,7 +63,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
             .stream()
             .filter(threadChannel -> threadChannel.getAppliedTags()
                 .stream()
-                .noneMatch(tag -> greenlitTags.contains(tag.getName().toLowerCase()))
+                .noneMatch(tag -> GREENLIT_TAGS.contains(tag.getName().toLowerCase()))
             )
             .toList();
 
@@ -153,7 +153,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                                 .stream()
                             )
                             .map(User::getId)
-                            .collect(Collectors.toList())
+                            .toList()
                     )
                     .build();
                 output.add(greenlitMessage);

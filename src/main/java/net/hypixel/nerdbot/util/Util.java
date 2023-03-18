@@ -103,13 +103,16 @@ public class Util {
             log.warn("Could not cache user because there is not a database connected!");
             return null;
         }
+
         DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", userId).first();
         if (discordUser == null) {
             discordUser = new DiscordUser(userId, new ArrayList<>(), new ArrayList<>(), new LastActivity());
         }
+
         if (NerdBotApp.USER_CACHE.getIfPresent(userId) == null) {
             NerdBotApp.USER_CACHE.put(userId, discordUser);
         }
+
         return NerdBotApp.USER_CACHE.getIfPresent(userId);
     }
 }
