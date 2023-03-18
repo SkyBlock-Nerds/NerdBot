@@ -57,13 +57,7 @@ public class UserGrabberFeature extends BotFeature {
 
     @Override
     public void onEnd() {
-    }
-
-    private boolean containsUser(List<DiscordUser> users, String id) {
-        if (users != null) {
-            return users.stream().anyMatch(user -> user.getDiscordId().equals(id));
-        }
-        return false;
+        log.info("Finished grabbing all users from guild " + Util.getGuild(NerdBotApp.getBot().getConfig().getGuildId()).getName());
     }
 
     private DiscordUser getUser(List<DiscordUser> users, String id) {

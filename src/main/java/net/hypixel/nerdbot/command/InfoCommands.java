@@ -22,10 +22,11 @@ import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import java.awt.*;
 import java.util.List;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
+
+    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
 
     private final Database database = NerdBotApp.getBot().getDatabase();
 
@@ -51,7 +52,7 @@ public class InfoCommands extends ApplicationCommand {
                 .into(new ArrayList<>())
                 .stream()
                 .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.getTags().contains("Docced"))
-                .collect(Collectors.toList());
+                .toList();
         List<GreenlitMessage> pages = getPage(greenlit, page, 10);
         pages.sort(Comparator.comparingLong(GreenlitMessage::getSuggestionTimestamp));
 
@@ -71,9 +72,15 @@ public class InfoCommands extends ApplicationCommand {
     public void serverInfo(GuildSlashEvent event) {
         Guild guild = event.getGuild();
         StringBuilder builder = new StringBuilder();
-        int staff = guild.getMembersWithRoles(Util.getRole("Ultimate Nerd")).size()
-                + guild.getMembersWithRoles(Util.getRole("Ultimate Nerd But Red")).size()
-                + guild.getMembersWithRoles(Util.getRole("Game Master")).size();
+
+        int staff = 0;
+        for (String roleName : SPECIAL_ROLES) {
+            if (guild.getRoleById(roleName) == null) {
+                log.warn("Role {} not found", roleName);
+                continue;
+            }
+            staff += guild.getMembersWithRoles(guild.getRoleById(roleName)).size();
+        }
 
         builder.append("Server name: ").append(guild.getName()).append(" (Server ID: ").append(guild.getId()).append(")\n")
                 .append("Created at: ").append(new DiscordTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()).toRelativeTimestamp()).append("\n")
@@ -153,17 +160,11 @@ public class InfoCommands extends ApplicationCommand {
         Map<String, Integer> roles = new HashMap<>();
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
-        System.out.println("Found " + inactiveUsers.size() + " inactive user" + (inactiveUsers.size() == 1 ? "" : "s") + "!");
-        // Do some logging stuff
+        log.info("Found " + inactiveUsers.size() + " inactive user" + (inactiveUsers.size() == 1 ? "" : "s") + "!");
         for (DiscordUser all : inactiveUsers) {
             Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(all.getDiscordId());
-            if (member == null) {
+            if (member == null || member.getRoles().isEmpty()) {
                 log.error("Couldn't find member " + all.getDiscordId());
-                continue;
-            }
-
-            if (member.getRoles().isEmpty()) {
-                log.info(member.getEffectiveName() + " doesn't have any roles!");
                 continue;
             }
 

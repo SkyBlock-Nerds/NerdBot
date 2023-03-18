@@ -25,6 +25,10 @@ public class ModLogListener {
 
     @SubscribeEvent
     public void onJoin(GuildMemberJoinEvent event) {
+        if (ChannelManager.getLogChannel() == null) {
+            return;
+        }
+
         Member member = event.getMember();
         MessageEmbed messageEmbed = getDefaultEmbed()
                 .setTitle("Member joined")
@@ -32,11 +36,16 @@ public class ModLogListener {
                 .setThumbnail(member.getAvatarUrl())
                 .setColor(Color.GREEN)
                 .build();
+
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onMemberRemove(GuildMemberRemoveEvent event) {
+        if (ChannelManager.getLogChannel() == null) {
+            return;
+        }
+
         Member member = event.getMember();
         MessageEmbed messageEmbed = getDefaultEmbed()
                 .setTitle("Member removed")
@@ -44,11 +53,16 @@ public class ModLogListener {
                 .setThumbnail(member.getAvatarUrl())
                 .setColor(Color.BLUE)
                 .build();
+
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onGuildBan(GuildBanEvent event) {
+        if (ChannelManager.getLogChannel() == null) {
+            return;
+        }
+
         User member = event.getUser();
         MessageEmbed messageEmbed = getDefaultEmbed()
                 .setTitle("Member banned")
@@ -56,11 +70,16 @@ public class ModLogListener {
                 .setThumbnail(member.getAvatarUrl())
                 .setColor(Color.RED)
                 .build();
+
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onGuildUnban(GuildUnbanEvent event) {
+        if (ChannelManager.getLogChannel() == null) {
+            return;
+        }
+
         User member = event.getUser();
         MessageEmbed messageEmbed = getDefaultEmbed()
                 .setTitle("Member unbanned")
@@ -68,11 +87,16 @@ public class ModLogListener {
                 .setThumbnail(member.getAvatarUrl())
                 .setColor(Color.GREEN)
                 .build();
+
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onInviteCreate(GuildInviteCreateEvent event) {
+        if (ChannelManager.getLogChannel() == null) {
+            return;
+        }
+
         User member = event.getInvite().getInviter();
         Invite invite = event.getInvite();
         MessageEmbed messageEmbed = getDefaultEmbed()
@@ -93,6 +117,10 @@ public class ModLogListener {
 
     @SubscribeEvent
     public void onInviteDelete(GuildInviteDeleteEvent event) {
+        if (ChannelManager.getLogChannel() == null) {
+            return;
+        }
+
         MessageEmbed messageEmbed = getDefaultEmbed()
                 .setTitle("Invite deleted")
                 .setDescription("Invite Code: " + event.getUrl())
@@ -104,6 +132,10 @@ public class ModLogListener {
 
     @SubscribeEvent
     public void onRoleAdd(GuildMemberRoleAddEvent event) {
+        if (ChannelManager.getLogChannel() == null) {
+            return;
+        }
+
         Member member = event.getMember();
         StringBuilder stringBuilder = new StringBuilder("Roles added to " + member.getAsMention() + ":\n");
 
@@ -122,31 +154,36 @@ public class ModLogListener {
 
     @SubscribeEvent
     public void onRoleRemove(GuildMemberRoleRemoveEvent event) {
-        Member member = event.getMember();
-        StringBuilder stringBuilder = new StringBuilder("Roles removed from " + member.getAsMention() + ":\n");
-
-        for (Role role : event.getRoles()) {
-            stringBuilder.append(" • ").append(role.getName()).append("\n");
+        if (ChannelManager.getLogChannel() == null) {
+            return;
         }
 
+        Member member = event.getMember();
+        StringBuilder stringBuilder = new StringBuilder("Roles removed from " + member.getAsMention() + ":\n");
+        event.getRoles().forEach(role -> stringBuilder.append(" • ").append(role.getName()).append("\n"));
         MessageEmbed messageEmbed = getDefaultEmbed()
                 .setTitle("Role(s) removed")
                 .setDescription(stringBuilder.toString())
                 .setThumbnail(member.getAvatarUrl())
                 .setColor(Color.RED)
                 .build();
+
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onMessageDelete(MessageDeleteEvent event) {
+        if (ChannelManager.getLogChannel() == null) {
+            return;
+        }
+
         Message message = NerdBotApp.getMessageCache().getMessage(event.getMessageId());
         if (message == null) {
             return;
         }
+
         User user = message.getAuthor();
         Channel channel = message.getChannel();
-
         EmbedBuilder messageEmbed = getDefaultEmbed()
                 .setTitle("Message deleted")
                 .setThumbnail(user.getAvatarUrl())
@@ -158,9 +195,7 @@ public class ModLogListener {
 
         if (!message.getAttachments().isEmpty()) {
             StringBuilder attachments = new StringBuilder();
-            message.getAttachments().forEach(attachment -> {
-                attachments.append(attachment.getUrl()).append("\n");
-            });
+            message.getAttachments().forEach(attachment -> attachments.append(attachment.getUrl()).append("\n"));
             messageEmbed.addField("Attachments", attachments.toString(), false);
         }
 
@@ -169,7 +204,7 @@ public class ModLogListener {
 
     @SubscribeEvent
     public void onMessageEdit(MessageUpdateEvent event) {
-        if (event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
+        if (ChannelManager.getLogChannel() == null || event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
             return;
         }
 
@@ -177,12 +212,11 @@ public class ModLogListener {
         Message after = event.getMessage();
         User user = before.getAuthor();
         Channel channel = before.getChannel();
-
         MessageEmbed messageEmbed = getDefaultEmbed()
                 .setTitle("Message edited")
                 .setThumbnail(user.getAvatarUrl())
                 .setColor(Color.YELLOW)
-                .addField("User", before == null ? "N/A" : user.getAsMention(), false)
+                .addField("User", user.getAsMention(), false)
                 .addField("Channel", channel.getAsMention(), false)
                 .addField("User ID", user.getId(), false)
                 .addField("Before", before.getContentDisplay(), true)

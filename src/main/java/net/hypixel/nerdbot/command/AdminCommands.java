@@ -88,10 +88,7 @@ public class AdminCommands extends ApplicationCommand {
         StringBuilder stringBuilder = new StringBuilder("Generated invites (");
         stringBuilder.append(invites.size()).append("):\n");
 
-        invites.forEach(invite -> {
-            stringBuilder.append(invite.getUrl()).append("\n");
-        });
-
+        invites.forEach(invite -> stringBuilder.append(invite.getUrl()).append("\n"));
         event.getHook().editOriginal(stringBuilder.toString()).queue();
     }
 
@@ -197,7 +194,7 @@ public class AdminCommands extends ApplicationCommand {
                 jsonArray.add(obj.get("id").getAsString());
             } catch (IOException | URISyntaxException | InterruptedException e) {
                 log.error("Encountered an error while looking up UUID: " + e.getMessage());
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         }
 
@@ -212,7 +209,7 @@ public class AdminCommands extends ApplicationCommand {
             log.info("Sending request to " + httpRequest.uri());
             HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             return response.body();
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             log.error(String.format("Encountered error while looking up Minecraft account of %s!", name));
             e.printStackTrace();
         }

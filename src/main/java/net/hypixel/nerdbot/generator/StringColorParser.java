@@ -6,15 +6,18 @@ import net.hypixel.nerdbot.util.skyblock.Stat;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.List;
 
 public class StringColorParser {
-    private static final int maxLineLength = 38;
-    private final static MCColor[] colors = MCColor.VALUES;
-    private final static Stat[] stats = Stat.VALUES;
-    private final static Gemstone[] gemstones = Gemstone.VALUES;
+
+    private static final int MAX_LINE_LENGTH = 38;
+
+    private static final MCColor[] colors = MCColor.VALUES;
+    private static final Stat[] stats = Stat.VALUES;
+    private static final Gemstone[] gemstones = Gemstone.VALUES;
 
     // variables used to store the description
-    private final ArrayList<ArrayList<ColoredString>> parsedDescription;
+    private final List<ArrayList<ColoredString>> parsedDescription;
     private ArrayList<ColoredString> currentLine = new ArrayList<>();
     private ColoredString currentString;
 
@@ -34,7 +37,7 @@ public class StringColorParser {
         successfullyParsed = false;
     }
 
-    public ArrayList<ArrayList<ColoredString>> getParsedDescription() {
+    public List<ArrayList<ColoredString>> getParsedDescription() {
         return parsedDescription;
     }
 
@@ -72,8 +75,8 @@ public class StringColorParser {
                     int closingIndex = description.indexOf("%%", charIndex + 1);
                     // check that there is a closing tag
                     if (closingIndex == -1) {
-                        String surrondingErrorSubstring = description.substring(Math.max(charIndex - 10, 0), Math.min(charIndex + 10, description.length()));
-                        this.errorString = "It seems that you don't have a closing `%%` near `" + stripString(surrondingErrorSubstring) + "`";
+                        String surroundingError = description.substring(Math.max(charIndex - 10, 0), Math.min(charIndex + 10, description.length()));
+                        this.errorString = "It seems that you don't have a closing `%%` near `" + stripString(surroundingError) + "`";
                         return;
                     }
                     if (closingIndex <= charIndex + 2) {
@@ -209,10 +212,10 @@ public class StringColorParser {
             }
 
             String currentSubstring = description.substring(charIndex, nearestSplit);
-            if (lineLength + currentSubstring.length() > maxLineLength) {
+            if (lineLength + currentSubstring.length() > MAX_LINE_LENGTH) {
                 // splitting the current string if it cannot fit onto a single line
-                if (currentSubstring.length() > maxLineLength) {
-                    currentSubstring = currentSubstring.substring(0, maxLineLength + 1);
+                if (currentSubstring.length() > MAX_LINE_LENGTH) {
+                    currentSubstring = currentSubstring.substring(0, MAX_LINE_LENGTH + 1);
                 }
                 
                 createNewLine();
@@ -270,54 +273,54 @@ public class StringColorParser {
 
     /**
      * sets if the next segment is bolded
-     * @param isBold state of boldness to change to
+     * @param bold state of boldness to change to
      */
-    private void setBold(boolean isBold) {
+    private void setBold(boolean bold) {
         // checking if there is any text on the current string before changing it to bold
         if (!currentString.isEmpty()) {
             currentLine.add(currentString);
             currentString = new ColoredString(currentString);
         }
-        currentString.setBold(isBold);
+        currentString.setBold(bold);
     }
 
     /**
      * sets if the next segment has italic
-     * @param isItalic state of italics to change to
+     * @param italic state of italics to change to
      */
-    private void setItalic(boolean isItalic) {
+    private void setItalic(boolean italic) {
         // checking if there is any text on the current string before changing it to italic
         if (!currentString.isEmpty()) {
             currentLine.add(currentString);
             currentString = new ColoredString(currentString);
         }
-        currentString.setItalic(isItalic);
+        currentString.setItalic(italic);
     }
 
     /**
      * sets if the next segment has strikethrough
-     * @param isStrikethrough state of strikethrough to change to
+     * @param strikethrough state of strikethrough to change to
      */
-    private void setStrikethrough(boolean isStrikethrough) {
+    private void setStrikethrough(boolean strikethrough) {
         // checking if there is any text on the current string before changing it to italic
         if (!currentString.isEmpty()) {
             currentLine.add(currentString);
             currentString = new ColoredString(currentString);
         }
-        currentString.setStrikethrough(isStrikethrough);
+        currentString.setStrikethrough(strikethrough);
     }
 
     /**
      * sets if the next segment has underlined
-     * @param isUnderlined state of underlined to change to
+     * @param underline state of underlined to change to
      */
-    private void setUnderlined(boolean isUnderlined) {
+    private void setUnderlined(boolean underline) {
         // checking if there is any text on the current string before changing it to italic
         if (!currentString.isEmpty()) {
             currentLine.add(currentString);
             currentString = new ColoredString(currentString);
         }
-        currentString.setUnderlined(isUnderlined);
+        currentString.setUnderlined(underline);
     }
 
     /**

@@ -16,12 +16,11 @@ import net.dv8tion.jda.internal.requests.CompletedRestAction;
 import net.hypixel.nerdbot.NerdBotApp;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 public class MessageCache implements EventListener {
 
-    private final Cache<String, Message> messageCache = Caffeine.newBuilder()
+    private final Cache<String, Message> cache = Caffeine.newBuilder()
             .maximumSize(10_000)
             .expireAfterWrite(7, TimeUnit.DAYS)
             .build();
@@ -30,35 +29,31 @@ public class MessageCache implements EventListener {
         NerdBotApp.getBot().getJDA().addEventListener(this);
     }
 
-    private Collection<Message> getCachedMessages() {
-        return messageCache.asMap().values();
-    }
-
     public RestAction<Message> getMessage(MessageChannel channel, String messageId) {
         Message message = getMessage(messageId);
         return message == null ? channel.retrieveMessageById(messageId) : new CompletedRestAction<>(NerdBotApp.getBot().getJDA(), message);
     }
 
     public Message getMessage(String id) {
-        return messageCache.asMap().get(id);
+        return cache.asMap().get(id);
     }
 
     @SubscribeEvent
     public void onEvent(@NotNull GenericEvent event) {
         if (event instanceof MessageReceivedEvent messageReceivedEvent) {
-            messageCache.put(messageReceivedEvent.getMessage().getId(), messageReceivedEvent.getMessage());
+            cache.put(messageReceivedEvent.getMessage().getId(), messageReceivedEvent.getMessage());
         }
 
         if (event instanceof MessageUpdateEvent messageUpdateEvent) {
-            messageCache.put(messageUpdateEvent.getMessage().getId(), messageUpdateEvent.getMessage());
+            cache.put(messageUpdateEvent.getMessage().getId(), messageUpdateEvent.getMessage());
         }
 
         if (event instanceof MessageDeleteEvent messageDeleteEvent) {
-            messageCache.asMap().remove(messageDeleteEvent.getMessageId());
+            cache.asMap().remove(messageDeleteEvent.getMessageId());
         }
 
         if (event instanceof MessageBulkDeleteEvent messageBulkDeleteEvent) {
-            messageBulkDeleteEvent.getMessageIds().forEach(messageCache.asMap().keySet()::remove);
+            messageBulkDeleteEvent.getMessageIds().forEach(cache.asMap().keySet()::remove);
         }
     }
 }

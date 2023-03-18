@@ -17,13 +17,13 @@ public enum Gemstone {
 
     public static final Gemstone[] VALUES = values();
 
-    private final String gemstone;
+    private final String icon;
 
-    Gemstone(String gemstone) {
-        this.gemstone = gemstone;
+    Gemstone(String icon) {
+        this.icon = icon;
     }
 
     public String getId() {
-        return gemstone;
+        return icon;
     }
 }

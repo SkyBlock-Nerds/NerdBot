@@ -28,7 +28,7 @@ public class Database implements ServerMonitorListener {
     private static final FindOneAndReplaceOptions REPLACE_OPTIONS = new FindOneAndReplaceOptions().upsert(true);
 
     private final MongoClient mongoClient;
-    private final MongoDatabase database;
+    private final MongoDatabase mongoDatabase;
     private final ConnectionString connectionString;
     private boolean connected;
 
@@ -36,7 +36,7 @@ public class Database implements ServerMonitorListener {
         if (uri == null || uri.isBlank() || databaseName == null || databaseName.isBlank()) {
             log.warn("Couldn't connect to the Database due to an invalid URI or Database Name!");
             mongoClient = null;
-            database = null;
+            mongoDatabase = null;
             connectionString = null;
             connected = false;
             return;
@@ -46,7 +46,7 @@ public class Database implements ServerMonitorListener {
         CodecRegistry codecRegistry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
         MongoClientSettings clientSettings = MongoClientSettings.builder().applyConnectionString(connectionString).codecRegistry(codecRegistry).applyToServerSettings(builder -> builder.addServerMonitorListener(this)).build();
         mongoClient = MongoClients.create(clientSettings);
-        database = mongoClient.getDatabase(databaseName);
+        mongoDatabase = mongoClient.getDatabase(databaseName);
         connected = true;
     }
 
@@ -68,8 +68,8 @@ public class Database implements ServerMonitorListener {
         return connectionString;
     }
 
-    public MongoDatabase getDatabase() {
-        return database;
+    public MongoDatabase getMongoDatabase() {
+        return mongoDatabase;
     }
 
     public boolean isConnected() {
@@ -83,25 +83,25 @@ public class Database implements ServerMonitorListener {
 
     @Nullable
     public <T> MongoCollection<T> getCollection(String collectionName, Class<T> clazz) {
-        if (database == null) {
+        if (mongoDatabase == null) {
             return null;
         }
-        return database.getCollection(collectionName, clazz);
+        return mongoDatabase.getCollection(collectionName, clazz);
     }
 
     @Nullable
     public MongoCollection<Document> getCollection(String collectionName) {
-        if (database == null) {
+        if (mongoDatabase == null) {
             return null;
         }
-        return database.getCollection(collectionName);
+        return mongoDatabase.getCollection(collectionName);
     }
 
     public void createCollection(String collectionName) {
-        if (database == null) {
+        if (mongoDatabase == null) {
             return;
         }
-        database.createCollection(collectionName);
+        mongoDatabase.createCollection(collectionName);
     }
 
     @Nullable
@@ -120,12 +120,11 @@ public class Database implements ServerMonitorListener {
         return collection.insertMany(objects);
     }
 
-    @Nullable
-    public <T> T upsertDocument(MongoCollection<T> collection, String key, Object value, T object) {
+    public <T> void upsertDocument(MongoCollection<T> collection, String key, Object value, T object) {
         if (collection == null) {
-            return null;
+            return;
         }
-        return collection.findOneAndReplace(Filters.eq(key, value), object, REPLACE_OPTIONS);
+        collection.findOneAndReplace(Filters.eq(key, value), object, REPLACE_OPTIONS);
     }
 
     @Nullable
