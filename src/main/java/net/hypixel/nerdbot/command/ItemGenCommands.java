@@ -194,12 +194,12 @@ public class ItemGenCommands extends ApplicationCommand {
     public void showAllStats(GuildSlashEvent event) {
         StringBuilder builder = new StringBuilder();
 
-        builder.append("Stats:\n\n```");
+        builder.append("Stats:\n```");
         for (Stat stat : Stat.VALUES) {
             if (stat.name().startsWith("ITEM_STAT")) {
                 continue;
             }
-            builder.append(stat.getDisplay()).append(": ").append(stat.getIcon()).append("\n");
+            builder.append(stat.getStat()).append(": ").append(stat.getIcon()).append("\n");
         }
 
         builder.append("```");
