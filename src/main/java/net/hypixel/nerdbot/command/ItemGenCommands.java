@@ -20,6 +20,7 @@ import net.hypixel.nerdbot.generator.StringColorParser;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
+import net.hypixel.nerdbot.util.skyblock.Stat;
 
 import java.io.File;
 import java.io.IOException;
@@ -148,7 +149,7 @@ public class ItemGenCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "infogen", description = "Get a little bit of help with how to use the Generator bot.")
-    public void askForInfo(GuildSlashEvent event) throws IOException {
+    public void askForInfo(GuildSlashEvent event) {
         String senderChannelId = event.getChannel().getId();
         String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
@@ -186,6 +187,22 @@ public class ItemGenCommands extends ApplicationCommand {
         builder.append("The item generation bot is maintained by mrkeith. Feel free to tag him with any issues.");
 
 
+        event.reply(builder.toString()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "statsymbols", description = "Show a list of all stats symbols")
+    public void showAllStats(GuildSlashEvent event) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("Stats:\n\n```");
+        for (Stat stat : Stat.VALUES) {
+            if (stat.name().startsWith("ITEM_STAT")) {
+                continue;
+            }
+            builder.append(stat.getDisplay()).append(": ").append(stat.getIcon()).append("\n");
+        }
+
+        builder.append("```");
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
 }
