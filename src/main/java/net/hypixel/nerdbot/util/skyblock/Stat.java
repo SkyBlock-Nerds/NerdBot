@@ -54,6 +54,7 @@ public enum Stat {
 
     private final String icon;
     private final String stat;
+    private final String display;
     private final MCColor color;
     private final BiFunction<Stat, String, String> statColorParser;
     // Some stats have special colors which are used in conjunction to the normal color.
@@ -62,7 +63,8 @@ public enum Stat {
     Stat(String icon, String stat, MCColor color, MCColor subColor, BiFunction<Stat, String, String> statColorParser) {
         this.icon = icon;
         this.color = color;
-        this.stat = icon + "%%" + color + "%% " + stat;
+        this.stat = stat;
+        this.display = icon + "%%" + color + "%% " + stat;
         this.subColor = subColor;
         this.statColorParser = statColorParser;
     }
@@ -83,8 +85,12 @@ public enum Stat {
         return icon;
     }
 
-    public String getDisplay() {
+    public String getStat() {
         return stat;
+    }
+
+    public String getDisplay() {
+        return display;
     }
 
     public MCColor getColor() {
