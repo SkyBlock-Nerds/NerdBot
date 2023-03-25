@@ -33,7 +33,7 @@ public enum Stat {
     FORAGING_FORTUNE("☘", "Foraging Fortune", MCColor.GOLD),
     SOULFLOW("⸎", "Soulflow", MCColor.DARK_AQUA),
     RECIPE("", "Right-click to view recipes!", MCColor.YELLOW),
-    REQUIRE("❣",  "Requires", MCColor.RED, StatColorParser::postStatColorParser),
+    REQUIRE("❣", "Requires", MCColor.RED, StatColorParser::postStatColorParser),
     REFORGABLE("", "This item can be reforged!", MCColor.DARK_GRAY),
     ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser),
     ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser),
@@ -79,9 +79,11 @@ public enum Stat {
         this(icon, stat, color, subColor, StatColorParser::dualStatColorParser);
     }
 
-    public String getIcon() { return icon; }
+    public String getIcon() {
+        return icon;
+    }
 
-    public String getId() {
+    public String getDisplay() {
         return stat;
     }
 
@@ -91,8 +93,10 @@ public enum Stat {
 
     /**
      * Parses the string into its color and id components
-     * @param isIcon specifying if the stat's icon is meant to be displayed
+     *
+     * @param isIcon    specifying if the stat's icon is meant to be displayed
      * @param extraData extra arguments provided in the section
+     *
      * @return returns a color parsed replacement string
      */
     public String getParsedStat(boolean isIcon, String extraData) {

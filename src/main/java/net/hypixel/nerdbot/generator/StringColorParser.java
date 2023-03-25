@@ -104,7 +104,7 @@ public class StringColorParser {
                     Gemstone gemstone = (Gemstone) findValue(gemstones, selectedCommand);
                     if (gemstone != null) {
                         // replacing the selected space with the stat's text
-                        String replacementText = "%%DARK_GRAY%%" + gemstone.getId() + "%%GRAY%%";
+                        String replacementText = "%%DARK_GRAY%%" + gemstone.getIcon() + "%%GRAY%%";
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
