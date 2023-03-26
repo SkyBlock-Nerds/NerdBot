@@ -42,6 +42,7 @@ public class ItemGenCommands extends ApplicationCommand {
     private final static String DESC_HANDLE_LINE_BREAKS = "If you will handle line breaks at the end of the item's description";
     private final static String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
     private final static String DESC_PADDING = "Sets the transparent padding around the image (0 = none, 1 = discord)";
+    private final static String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (0 - " + StringColorParser.MAX_LINE_LENGTH + ")";
     private final static String DESC_HEAD_ID = "The ID of the skin or the Player Name (set is_player_name to True if it is a player name)";
     private final static String DESC_IS_PLAYER_NAME = "If the skin ID given describes the player's name";
 
@@ -52,7 +53,7 @@ public class ItemGenCommands extends ApplicationCommand {
             return;
         }
 
-        MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", description, "", true, 0, 1);
+        MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", description, "", true, 0, 1, StringColorParser.MAX_LINE_LENGTH);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(generatedImage.toFile())).setEphemeral(false).queue();
         }
@@ -66,13 +67,14 @@ public class ItemGenCommands extends ApplicationCommand {
                              @Optional @AppOption(description = DESC_TYPE) String type,
                              @Optional @AppOption(description = DESC_HANDLE_LINE_BREAKS) Boolean handleLineBreaks,
                              @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
-                             @Optional @AppOption(description = DESC_PADDING) Integer padding) throws IOException {
+                             @Optional @AppOption(description = DESC_PADDING) Integer padding,
+                             @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength) throws IOException {
         event.deferReply(false).queue();
         if (isIncorrectChannel(event)) {
             return;
         }
 
-        MinecraftImage generatedImage = buildItem(event, name, rarity, description, type, handleLineBreaks, alpha, padding);
+        MinecraftImage generatedImage = buildItem(event, name, rarity, description, type, handleLineBreaks, alpha, padding, maxLineLength);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(generatedImage.toFile())).setEphemeral(false).queue();
         }
@@ -103,6 +105,7 @@ public class ItemGenCommands extends ApplicationCommand {
                                  @Optional @AppOption(description = DESC_HANDLE_LINE_BREAKS) Boolean handleLineBreaks,
                                  @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
                                  @Optional @AppOption(description = DESC_PADDING) Integer padding,
+                                 @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
                                  @Optional @AppOption(description = DESC_IS_PLAYER_NAME) Boolean isPlayerName) throws IOException {
         event.deferReply(false).queue();
         if (isIncorrectChannel(event)) {
@@ -113,7 +116,7 @@ public class ItemGenCommands extends ApplicationCommand {
         if (generatedHead == null) {
             return;
         }
-        MinecraftImage generatedDescription = buildItem(event, name, rarity, description, type, handleLineBreaks, alpha, padding);
+        MinecraftImage generatedDescription = buildItem(event, name, rarity, description, type, handleLineBreaks, alpha, padding, maxLineLength);
         if (generatedDescription == null) {
             return;
         }
@@ -200,7 +203,7 @@ public class ItemGenCommands extends ApplicationCommand {
     }
 
     private MinecraftImage buildItem(GuildSlashEvent event, String name, String rarity, String description, String type,
-                                    Boolean handleLineBreaks, Integer alpha, Integer padding) {
+                                    Boolean handleLineBreaks, Integer alpha, Integer padding, Integer maxLineLength) {
         // checking that the font's have been loaded into memory correctly
         if (!MinecraftImage.isFontsRegistered()) {
             event.getHook().sendMessage("It seems that one of the font files couldn't be loaded correctly. Please contact a Bot Developer to have a look at it!").setEphemeral(true).queue();
@@ -243,7 +246,7 @@ public class ItemGenCommands extends ApplicationCommand {
         }
 
         // creating a string parser to convert the string into color flagged text
-        StringColorParser colorParser = new StringColorParser();
+        StringColorParser colorParser = new StringColorParser(maxLineLength);
         colorParser.parseString(itemLore);
 
         // checking that there were no errors while parsing the string

@@ -7,10 +7,10 @@ import net.hypixel.nerdbot.util.skyblock.Stat;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class StringColorParser {
-
-    private static final int MAX_LINE_LENGTH = 38;
+    public static final int MAX_LINE_LENGTH = 38;
 
     private static final MCColor[] colors = MCColor.VALUES;
     private static final Stat[] stats = Stat.VALUES;
@@ -24,17 +24,21 @@ public class StringColorParser {
     // variables for keeping track of line length and position
     private int charIndex;
     private int lineLength;
+    private final int maxLineLength;
 
     private String errorString;
     private boolean successfullyParsed;
 
-    public StringColorParser() {
+    public StringColorParser(Integer maxLength) {
         parsedDescription = new ArrayList<>();
         currentString = new ColoredString();
 
         charIndex = 0;
         lineLength = 0;
         successfullyParsed = false;
+
+        maxLength = Objects.requireNonNullElse(maxLength, StringColorParser.MAX_LINE_LENGTH);
+        maxLineLength = Math.min(StringColorParser.MAX_LINE_LENGTH, Math.max(0, maxLength));
     }
 
     public List<ArrayList<ColoredString>> getParsedDescription() {
@@ -212,10 +216,10 @@ public class StringColorParser {
             }
 
             String currentSubstring = description.substring(charIndex, nearestSplit);
-            if (lineLength + currentSubstring.length() > MAX_LINE_LENGTH) {
+            if (lineLength + currentSubstring.length() > maxLineLength) {
                 // splitting the current string if it cannot fit onto a single line
-                if (currentSubstring.length() > MAX_LINE_LENGTH) {
-                    currentSubstring = currentSubstring.substring(0, MAX_LINE_LENGTH + 1);
+                if (currentSubstring.length() > maxLineLength) {
+                    currentSubstring = currentSubstring.substring(0, maxLineLength + 1);
                 }
                 
                 createNewLine();
