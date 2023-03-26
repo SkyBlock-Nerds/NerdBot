@@ -14,6 +14,14 @@ public class StatColorParser {
         return "%%" + stat.getColor() + "%%" + extraDetails + stat.getDisplay();
     }
 
+    public static String boldedIconColorParser(Stat stat, String extraDetails) {
+        return "%%" + stat.getColor() + "%%" + extraDetails + "%%BOLD%%" + stat.getIcon() + "%%" + stat.getColor() + "%% " + stat.getStat();
+    }
+
+    public static String boldedIconParser(Stat stat) {
+        return "%%" + stat.getColor() + "%%%%BOLD%%" + stat.getIcon();
+    }
+
     /**
      * Displays the selected stat with numbers in the secondary color and remaining text in primary color
      * @param stat the stat selected
