@@ -7,7 +7,10 @@ import java.io.File;
 import java.io.IOException;
 
 public class MinecraftHead {
-    private final BufferedImage image, skin;
+    private final static int HEAD_SCALE_UP = 3;
+    private final static int HEAD_SCALE_DOWN = 2;
+    private BufferedImage image;
+    private final BufferedImage skin;
     private final Graphics2D g2d;
 
     /***
@@ -136,8 +139,23 @@ public class MinecraftHead {
      * Gets the generated image
      * @return the buffered image containing the head
      */
-    public BufferedImage getImage() {
+    public BufferedImage getImage(boolean smoothHead) {
+        if (smoothHead) {
+            return scaleHead();
+        }
         return this.image;
+    }
+
+    private BufferedImage scaleHead() {
+        Image rescaledImage = image.getScaledInstance(image.getWidth() * HEAD_SCALE_UP, image.getHeight() * HEAD_SCALE_UP, Image.SCALE_SMOOTH).getScaledInstance(image.getWidth() / HEAD_SCALE_DOWN, image.getHeight() / HEAD_SCALE_DOWN, Image.SCALE_AREA_AVERAGING);
+        BufferedImage finalHead = new BufferedImage(rescaledImage.getWidth(null), rescaledImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+
+        // Draw the image on to the buffered image
+        Graphics2D rescaledGraphics = finalHead.createGraphics();
+        rescaledGraphics.drawImage(rescaledImage, 0, 0, null);
+        rescaledGraphics.dispose();
+
+        return finalHead;
     }
 
     /***
@@ -145,9 +163,9 @@ public class MinecraftHead {
      * @return a file which can be shared
      * @throws IOException If the file cannot be saved
      */
-    public File toFile() throws IOException {
+    public File toFile(boolean smoothHead) throws IOException {
         File tempFile = File.createTempFile("image", ".png");
-        ImageIO.write(this.getImage(), "PNG", tempFile);
+        ImageIO.write(getImage(smoothHead), "PNG", tempFile);
         return tempFile;
     }
 }

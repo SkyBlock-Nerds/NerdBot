@@ -26,6 +26,7 @@ import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.*;
@@ -91,7 +92,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         MinecraftHead head = buildHead(event, skinId, isPlayerName);
         if (head != null) {
-            event.getHook().sendFiles(FileUpload.fromData(head.toFile())).setEphemeral(false).queue();
+            event.getHook().sendFiles(FileUpload.fromData(head.toFile(true))).setEphemeral(false).queue();
         }
     }
 
@@ -121,7 +122,7 @@ public class ItemGenCommands extends ApplicationCommand {
             return;
         }
 
-        ImageMerger merger = new ImageMerger(generatedDescription.getImage(), generatedHead.getImage());
+        ImageMerger merger = new ImageMerger(generatedDescription.getImage(), generatedHead.getImage(true));
         merger.drawFinalImage();
         event.getHook().sendFiles(FileUpload.fromData(merger.toFile())).setEphemeral(false).queue();
     }
