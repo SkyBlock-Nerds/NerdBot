@@ -3,19 +3,19 @@ package net.hypixel.nerdbot.util.skyblock;
 import net.hypixel.nerdbot.generator.StatColorParser;
 
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public enum Stat {
     STRENGTH("❁", "Strength", MCColor.RED),
     DAMAGE("❁", "Damage", MCColor.RED),
-    HEALTH("❤", "Health", MCColor.RED, MCColor.GREEN, StatColorParser::normalStatColorParser),
+    HEALTH("❤", "Health", MCColor.RED, MCColor.GREEN, StatColorParser::normalStatColorParser, null),
     DEFENSE("❈", "Defense", MCColor.GREEN),
     TRUE_DEFENSE("❂", "True Defense", MCColor.WHITE),
-    SPEED("✦", "Speed", MCColor.WHITE, MCColor.GREEN, StatColorParser::normalStatColorParser),
+    SPEED("✦", "Speed", MCColor.WHITE, MCColor.GREEN, StatColorParser::normalStatColorParser, null),
     INTELLIGENCE("✎", "Intelligence", MCColor.AQUA),
-    OVERFLOW_MANA("ʬ", "Overflow Mana", MCColor.DARK_AQUA),
     CRIT_CHANCE("☣", "Critical Chance", MCColor.BLUE),
     CRIT_DAMAGE("☠", "Critical Damage", MCColor.BLUE),
-    ATTACK_SPEED("⚔", "Bonus Attack Speed", MCColor.YELLOW, MCColor.GREEN, StatColorParser::normalStatColorParser),
+    ATTACK_SPEED("⚔", "Bonus Attack Speed", MCColor.YELLOW, MCColor.GREEN, StatColorParser::normalStatColorParser, null),
     FEROCITY("⫽", "Ferocity", MCColor.RED),
     MENDING("☄", "Mending", MCColor.GREEN),
     VITALITY("♨", "Vitality", MCColor.DARK_RED),
@@ -32,12 +32,13 @@ public enum Stat {
     FARMING_FORTUNE("☘", "Farming Fortune", MCColor.GOLD),
     FORAGING_FORTUNE("☘", "Foraging Fortune", MCColor.GOLD),
     SOULFLOW("⸎", "Soulflow", MCColor.DARK_AQUA),
+    OVERFLOW_MANA("ʬ", "Overflow Mana", MCColor.DARK_AQUA),
     REQUIRE("❣",  "Requires", MCColor.RED, StatColorParser::postStatColorParser),
-    RECIPE("Right-click to view recipes!", MCColor.YELLOW),
-    REFORGABLE("This item can be reforged!", MCColor.DARK_GRAY),
-    ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser),
-    ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser),
-    ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, StatColorParser::itemStatColorParser),
+    RECIPE("", "Right-click to view recipes!", MCColor.YELLOW, StatColorParser::noParsing),
+    REFORGABLE("", "This item can be reforged!", MCColor.DARK_GRAY, StatColorParser::noParsing),
+    ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser, null),
+    ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser, null),
+    ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, StatColorParser::itemStatColorParser, null),
     COMBAT_WISDOM("☯", "Combat Wisdom", MCColor.DARK_AQUA),
     MINING_WISDOM("☯", "Mining Wisdom", MCColor.DARK_AQUA),
     FARMING_WISDOM("☯", "Farming Wisdom", MCColor.DARK_AQUA),
@@ -53,43 +54,41 @@ public enum Stat {
 
     private final String icon;
     private final String stat;
+    private final String display;
     private final MCColor color;
     private final BiFunction<Stat, String, String> statColorParser;
+    private final Function<Stat, String> iconColorParser;
     // Some stats have special colors which are used in conjunction to the normal color.
     private final MCColor subColor;
 
-    Stat(String icon, String stat, MCColor color, MCColor subColor, BiFunction<Stat, String, String> statColorParser) {
+    Stat(String icon, String stat, MCColor color, MCColor subColor, BiFunction<Stat, String, String> statColorParser, Function<Stat, String> iconColorParser) {
         this.icon = icon;
+        this.stat = stat;
+        this.display = icon + " " + stat;
         this.color = color;
-        this.stat = icon + " " + stat;
         this.subColor = subColor;
         this.statColorParser = statColorParser;
-    }
-
-    Stat(String stat, MCColor color) {
-        this.icon = "";
-        this.color = color;
-        this.stat = stat;
-        this.subColor = color;
-        this.statColorParser = StatColorParser::noParsing;
+        this.iconColorParser = iconColorParser;
     }
 
     Stat(String icon, String stat, MCColor color) {
-        this(icon, stat, color, null, StatColorParser::normalStatColorParser);
+        this(icon, stat, color, null, StatColorParser::normalStatColorParser, null);
     }
 
     Stat(String icon, String stat, MCColor color, BiFunction<Stat, String, String> statColorParser) {
-        this(icon, stat, color, null, statColorParser);
+        this(icon, stat, color, null, statColorParser, null);
     }
 
-    Stat(String icon, String stat, MCColor color, MCColor subColor) {
-        this(icon, stat, color, subColor, StatColorParser::dualStatColorParser);
+    public String getIcon() {
+        return icon;
     }
 
-    public String getIcon() { return icon; }
-
-    public String getId() {
+    public String getStat() {
         return stat;
+    }
+
+    public String getDisplay() {
+        return display;
     }
 
     public MCColor getColor() {
@@ -104,7 +103,11 @@ public enum Stat {
      */
     public String getParsedStat(boolean isIcon, String extraData) {
         if (isIcon) {
-            return "%%" + getColor() + "%%" + getIcon();
+            if (iconColorParser == null) {
+                return "%%" + getColor() + "%%" + getIcon();
+            }
+
+            return iconColorParser.apply(this);
         }
 
         return statColorParser.apply(this, extraData);
