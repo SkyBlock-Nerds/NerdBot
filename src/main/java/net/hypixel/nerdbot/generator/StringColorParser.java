@@ -104,7 +104,7 @@ public class StringColorParser {
                     Gemstone gemstone = (Gemstone) findValue(gemstones, selectedCommand);
                     if (gemstone != null) {
                         // replacing the selected space with the stat's text
-                        String replacementText = "%%DARK_GRAY%%" + gemstone.getIcon() + "%%GRAY%%";
+                        String replacementText = "%%DARK_GRAY%%" + gemstone.getIcon() + "%%" + currentString.getCurrentColor() + "%%";
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
@@ -126,7 +126,7 @@ public class StringColorParser {
                     Stat stat = (Stat) findValue(stats, selectedCommand);
                     if (stat != null) {
                         // replacing the selected space with the stat's text
-                        String replacementText = stat.getParsedStat(isIcon, extraData) + "%%GRAY%%";
+                        String replacementText = stat.getParsedStat(isIcon, extraData) + "%%" + currentString.getCurrentColor() + "%%";
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
