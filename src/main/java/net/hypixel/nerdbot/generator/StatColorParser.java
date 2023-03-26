@@ -28,6 +28,16 @@ public class StatColorParser {
         return "%%" + stat.getSecondaryColor() + "%%" + extraDetails + "%%" + stat.getColor() + "%%" + stat.getId();
     }
 
+    /***
+     * Displays the stat with no extra details added on
+     * @param stat the stat selected
+     * @param extraDetails the extra arguments provided (ignored)
+     * @return returns the color parsed replacement string
+     */
+    public static String noParsing(Stat stat, String extraDetails) {
+        return "%%" + stat.getColor() + "%%" + stat.getId();
+    }
+
     /**
      * Displays the selected stat with extra data after the id.
      * @param stat the stat selected

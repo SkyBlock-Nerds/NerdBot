@@ -32,9 +32,9 @@ public enum Stat {
     FARMING_FORTUNE("☘", "Farming Fortune", MCColor.GOLD),
     FORAGING_FORTUNE("☘", "Foraging Fortune", MCColor.GOLD),
     SOULFLOW("⸎", "Soulflow", MCColor.DARK_AQUA),
-    RECIPE("", "Right-click to view recipes!", MCColor.YELLOW),
     REQUIRE("❣",  "Requires", MCColor.RED, StatColorParser::postStatColorParser),
-    REFORGABLE("", "This item can be reforged!", MCColor.DARK_GRAY),
+    RECIPE("Right-click to view recipes!", MCColor.YELLOW),
+    REFORGABLE("This item can be reforged!", MCColor.DARK_GRAY),
     ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser),
     ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser),
     ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, StatColorParser::itemStatColorParser),
@@ -49,7 +49,6 @@ public enum Stat {
     RUNECRAFTING_WISDOM("☯", "Runecrafting Wisdom", MCColor.DARK_AQUA),
     SOCIAL_WISDOM("☯", "Social Wisdom", MCColor.DARK_AQUA);
 
-
     public static final Stat[] VALUES = values();
 
     private final String icon;
@@ -62,9 +61,17 @@ public enum Stat {
     Stat(String icon, String stat, MCColor color, MCColor subColor, BiFunction<Stat, String, String> statColorParser) {
         this.icon = icon;
         this.color = color;
-        this.stat = icon + "%%" + color + "%% " + stat;
+        this.stat = icon + " " + stat;
         this.subColor = subColor;
         this.statColorParser = statColorParser;
+    }
+
+    Stat(String stat, MCColor color) {
+        this.icon = "";
+        this.color = color;
+        this.stat = stat;
+        this.subColor = color;
+        this.statColorParser = StatColorParser::noParsing;
     }
 
     Stat(String icon, String stat, MCColor color) {
