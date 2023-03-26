@@ -144,7 +144,8 @@ public class ItemGenCommands extends ApplicationCommand {
         builder.append("`padding`: Adds transparency around the entire image. Must be 0 (default) or higher.\n");
         builder.append("`max_line_length`: Defines the maximum length that the line can be. Must be 0 or higher (capped at ").append(StringColorParser.MAX_LINE_LENGTH).append(").\n\n");
         builder.append("The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or `%%DARK_BLUE%%`.\n");
-        builder.append("You can use this same format for stats, such as `%%PRISTINE%%`. \nThis format can also have numbers, where `%%PRISTINE:1%%` will become \"1 ✧ Pristine\"\n");
+        builder.append("You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:1%%` will become \"1 ✧ Pristine\".\n");
+        builder.append("If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/statsymbols` command.\n");
         builder.append("Finally, you can move your text to a newline by using \\n. If you don't want the extra line break at the end, set the `handle_line_breaks` argument to True.\n\n");
         builder.append("You can also check out `/iteminfogen` for more information about rendering items next to your creations!");
         builder.append("Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!\n\n");
