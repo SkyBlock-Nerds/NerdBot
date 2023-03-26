@@ -50,50 +50,59 @@ public class MinecraftHead {
      * @param face which part of the head (top, bottom, left, right, etc)
      */
     private void drawFace(double startingX, double startingY, Side side, Face face) {
-        int pixelTrackUp, newLineDisplacement;
-        double squareDistance = side.getDistance();
+        int newLineDisplacement = 0;
+        double pixelTrackUp;
+        double sideDistance = side.getDistance();
         double xDistance = side.getXDistance();
         double yDistance = side.getYDistance();
 
         // applys transforms to the starting X/Y position to ensure it is in the correct place
         switch (side) {
             case RIGHT_SIDE, RIGHT_HAT_SIDE -> {
-                pixelTrackUp = -1;
-                newLineDisplacement = 0;
-                startingY += squareDistance * 7;
+                pixelTrackUp = sideDistance;
+                startingY += sideDistance * 7;
             }
             case LEFT_SIDE, LEFT_HAT_SIDE -> {
-                pixelTrackUp = 1;
-                newLineDisplacement = 0;
+                pixelTrackUp = sideDistance;
                 startingX -= xDistance * 8;
                 startingY += yDistance * 6;
+                yDistance = -yDistance;
             }
             case TOP_SIDE, TOP_HAT_SIDE -> {
-                pixelTrackUp = 1;
-                newLineDisplacement = 1;
-                startingX -= xDistance * 7;
-                startingY -= yDistance + squareDistance * 3.99;
+                pixelTrackUp = yDistance;
+                newLineDisplacement = -1;
+                startingY -= sideDistance;
             }
             default -> {
                 pixelTrackUp = 0;
-                newLineDisplacement = 0;
             }
         }
+
+        boolean isFlipped = false;
+        switch (face) {
+            case HEAD_BACK, HAT_BACK, HEAD_RIGHT, HAT_RIGHT -> {
+                isFlipped = true;
+            }
+            default -> {}
+        }
+        int increment = isFlipped ? -1 : 1;
 
         double defaultX = startingX;
         double defaultY = startingY;
 
         for (int y = face.getStartY() + 7; y >= face.getStartY(); y--) {
-            for (int x = face.getStartX(); x < face.getStartX() + 8; x++) {
-                g2d.setColor(new Color(skin.getRGB(x, y), true));
+            int imageX = face.getStartX() + (isFlipped ? 7 : 0);
+            for (int x = 0; x < 8; x++) {
+                g2d.setColor(new Color(skin.getRGB(imageX, y), true));
                 paintSquare(startingX, startingY, side);
                 startingX += xDistance;
-                startingY += yDistance * pixelTrackUp;
-            }
+                startingY -= yDistance;
 
+                imageX += increment;
+            }
             defaultX += newLineDisplacement * xDistance;
             startingX = defaultX;
-            defaultY -= (squareDistance - (newLineDisplacement * yDistance)) ;
+            defaultY -= pixelTrackUp;
             startingY = defaultY;
         }
     }
@@ -107,16 +116,18 @@ public class MinecraftHead {
         int startingY = this.image.getHeight() / 2;
 
         drawFace(startingX, startingY + HeadTransforms.squareHatDistance * 8, Side.TOP_HAT_SIDE, Face.HAT_BOTTOM);
-        drawFace(startingX - HeadTransforms.xDistanceHat * 8, startingY - HeadTransforms.yDistanceHat * 8, Side.RIGHT_HAT_SIDE, Face.HAT_LEFT);
-        drawFace(startingX + HeadTransforms.xDistanceHat * 8, startingY - HeadTransforms.yDistanceHat * 8, Side.LEFT_HAT_SIDE, Face.HAT_BACK);
+        drawFace(startingX - HeadTransforms.xDistanceHat * 8, startingY - HeadTransforms.yDistanceHat * 8, Side.RIGHT_HAT_SIDE, Face.HAT_BACK);
+        drawFace(startingX + HeadTransforms.xDistanceHat * 8, startingY - HeadTransforms.yDistanceHat * 8, Side.LEFT_HAT_SIDE, Face.HAT_RIGHT);
 
         drawFace(startingX, startingY, Side.TOP_SIDE, Face.HEAD_TOP);
-        drawFace(startingX, startingY, Side.RIGHT_SIDE,  Face.HEAD_RIGHT);
-        drawFace(startingX, startingY, Side.LEFT_SIDE, Face.HEAD_FRONT);
+        drawFace(startingX, startingY, Side.RIGHT_SIDE,  Face.HEAD_FRONT);
+        drawFace(startingX, startingY, Side.LEFT_SIDE, Face.HEAD_LEFT);
 
         drawFace(startingX, startingY, Side.TOP_HAT_SIDE, Face.HAT_TOP);
-        drawFace(startingX, startingY, Side.RIGHT_HAT_SIDE, Face.HAT_RIGHT);
-        drawFace(startingX, startingY, Side.LEFT_HAT_SIDE, Face.HAT_FRONT);
+        drawFace(startingX, startingY, Side.RIGHT_HAT_SIDE, Face.HAT_FRONT);
+        drawFace(startingX, startingY, Side.LEFT_HAT_SIDE, Face.HAT_LEFT);
+
+        g2d.dispose();
 
         return this;
     }
@@ -145,10 +156,10 @@ public class MinecraftHead {
  * Standard distances between points on the isometric grid.
  */
 class HeadTransforms {
-    public static int squareDistance = 15;
+    public static int squareDistance = 33;
     public static double xDistance = squareDistance * Math.cos(Math.toRadians(30));
     public static double yDistance = squareDistance * Math.sin(Math.toRadians(30));
-    public static double squareHatDistance = squareDistance * 1.05;
+    public static double squareHatDistance = squareDistance * 1.07;
     public static double xDistanceHat = squareHatDistance * Math.cos(Math.toRadians(30));
     public static double yDistanceHat = squareHatDistance * Math.sin(Math.toRadians(30));
 }
