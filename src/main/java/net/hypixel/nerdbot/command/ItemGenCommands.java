@@ -127,7 +127,7 @@ public class ItemGenCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "infogen", description = "Get a little bit of help with how to use the Generator bot.")
-    public void askForInfo(GuildSlashEvent event) throws IOException {
+    public void askForInfo(GuildSlashEvent event) {
         if (isIncorrectChannel(event)) {
             return;
         }
@@ -135,21 +135,37 @@ public class ItemGenCommands extends ApplicationCommand {
         StringBuilder builder = new StringBuilder();
         builder.append("Welcome to the Item Generator bot!\n");
         builder.append("This is a bot used to create custom items to be used in suggestions. You can use the bot with `/itemgen` and it accepts a few various arguments:\n");
-        builder.append("`name:` The name of the item. Defaults to the rarity color, unless the rarity is none.\n");
-        builder.append("`rarity:` Takes any SkyBlock rarity. Can be left as NONE.\n");
-        builder.append("`description:` Parses a description, including color codes, bold, italics, and newlines.\n");
-        builder.append("`type:` The type of the item, such as a Sword or Wand. Can be left blank.\n");
+        builder.append("`name`: The name of the item. Defaults to the rarity color, unless the rarity is none.\n");
+        builder.append("`rarity`: Takes any SkyBlock rarity. Can be left as NONE.\n");
+        builder.append("`description`: Parses a description, including color codes, bold, italics, and newlines.\n");
+        builder.append("`type`: The type of the item, such as a Sword or Wand. Can be left blank.\n");
         builder.append("`handle_line_breaks (true/false)`: To be used if you're manually handling line breaks between the description and rarity.\n");
-        builder.append("`alpha:`: Sets the transparency of the background layer. 0 for transparent, 255 for opaque (default). 245 for overlay.\n");
-        builder.append("`padding:`: Adds transparency around the entire image. Must be 0 (default) or higher.\n\n");
-        builder.append("There is also the `/headgen` which will display a rendered Minecraft Head from a Skin (or player) you chose!\n");
-        builder.append("`skin_id:` The skin ID or the player name of the person you wish to grab the skin from\n");
-        builder.append("\tThis is the string written after `http://textures.minecraft.net/texture/...`\n");
-        builder.append("`is_player_head:` set to True if the skin ID is a player's name\n\n");
-        builder.append("If you are feeling extra spicy, you can combine these two elements by using the `/fullgen` command with arguments mentioned previously.\n");
+        builder.append("`alpha`: Sets the transparency of the background layer. 0 for transparent, 255 for opaque (default). 245 for overlay.\n");
+        builder.append("`padding`: Adds transparency around the entire image. Must be 0 (default) or higher.\n");
+        builder.append("`max_line_length`: Defines the maximum length that the line can be. Must be 0 or higher (capped at ").append(StringColorParser.MAX_LINE_LENGTH).append(").\n\n");
         builder.append("The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or `%%DARK_BLUE%%`.\n");
         builder.append("You can use this same format for stats, such as `%%PRISTINE%%`. \nThis format can also have numbers, where `%%PRISTINE:1%%` will become \"1 ✧ Pristine\"\n");
         builder.append("Finally, you can move your text to a newline by using \\n. If you don't want the extra line break at the end, set the `handle_line_breaks` argument to True.\n\n");
+        builder.append("You can also check out `/iteminfogen` for more information about rendering items next to your creations!");
+        builder.append("Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!\n\n");
+        builder.append("The item generation bot is maintained by mrkeith. Feel free to tag him with any issues.");
+
+        event.reply(builder.toString()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "infoitemgen", description = "Get a little bit of help with how to use the Head Rendering functions of the Generator bot.")
+    public void askForRenderHelp(GuildSlashEvent event) {
+        if (isIncorrectChannel(event)) {
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("Welcome to the Item Generator bot!\n");
+        builder.append("There is the `/headgen` which will display a rendered Minecraft Head from a Skin (or player) you chose!\n");
+        builder.append("`skin_id:` The skin ID or the player name of the person you wish to grab the skin from\n");
+        builder.append("\t\t(This is the string written after `http://textures.minecraft.net/texture/...`)\n");
+        builder.append("`is_player_head:` set to True if the skin ID is a player's name\n\n");
+        builder.append("If you are feeling extra spicy, you can combine these two elements by using the `/fullgen` command with arguments mentioned previously.\n");
         builder.append("Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!\n\n");
         builder.append("The item generation bot is maintained by mrkeith. Feel free to tag him with any issues.");
 
