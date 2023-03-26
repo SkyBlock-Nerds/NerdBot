@@ -11,7 +11,7 @@ public class StatColorParser {
      * @return returns the color parsed replacement string
      */
     public static String normalStatColorParser(Stat stat, String extraDetails) {
-        return "%%" + stat.getColor() + "%%" + extraDetails + stat.getId();
+        return "%%" + stat.getColor() + "%%" + extraDetails + stat.getDisplay();
     }
 
     /**
@@ -25,7 +25,7 @@ public class StatColorParser {
             return normalStatColorParser(stat, extraDetails);
         }
 
-        return "%%" + stat.getSecondaryColor() + "%%" + extraDetails + "%%" + stat.getColor() + "%%" + stat.getId();
+        return "%%" + stat.getSecondaryColor() + "%%" + extraDetails + "%%" + stat.getColor() + "%%" + stat.getDisplay();
     }
 
     /***
@@ -45,7 +45,7 @@ public class StatColorParser {
      * @return returns the color parsed replacement string
      */
     public static String postStatColorParser(Stat stat, String extraDetails) {
-        return "%%" + stat.getColor() + "%%" + stat.getId() + " " + extraDetails;
+        return "%%" + stat.getColor() + "%%" + stat.getDisplay() + " " + extraDetails;
     }
 
     /**

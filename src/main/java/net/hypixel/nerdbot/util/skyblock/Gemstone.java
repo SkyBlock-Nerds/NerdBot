@@ -23,7 +23,7 @@ public enum Gemstone {
         this.icon = icon;
     }
 
-    public String getId() {
+    public String getIcon() {
         return icon;
     }
 }
