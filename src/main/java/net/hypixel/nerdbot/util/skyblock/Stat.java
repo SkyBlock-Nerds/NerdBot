@@ -22,7 +22,7 @@ public enum Stat {
     HEALTH_REGEN("❣", "Health Regen", MCColor.RED),
     MAGIC_FIND("✯", "Magic Find", MCColor.AQUA),
     PET_LUCK("♣", "Pet Luck", MCColor.LIGHT_PURPLE, MCColor.WHITE, StatColorParser::normalStatColorParser),
-    SEA_CREATURE_CHANCE("%%BOLD%%α", "Sea Creature Chance", MCColor.DARK_AQUA),
+    SEA_CREATURE_CHANCE("%%BOLD%%α&3", "Sea Creature Chance", MCColor.DARK_AQUA),
     FISHING_SPEED("☂", "Fishing Speed", MCColor.AQUA),
     ABILITY_DAMAGE("๑", "Ability Damage", MCColor.RED),
     MINING_SPEED("⸕", "Mining Speed", MCColor.GOLD),
