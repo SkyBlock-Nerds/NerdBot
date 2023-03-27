@@ -14,6 +14,14 @@ public class StatColorParser {
         return "%%" + stat.getColor() + "%%" + extraDetails + stat.getDisplay();
     }
 
+    public static String boldedIconColorParser(Stat stat, String extraDetails) {
+        return "%%" + stat.getColor() + "%%" + extraDetails + "%%BOLD%%" + stat.getIcon() + "%%" + stat.getColor() + "%% " + stat.getStat();
+    }
+
+    public static String boldedIconParser(Stat stat) {
+        return "%%" + stat.getColor() + "%%%%BOLD%%" + stat.getIcon();
+    }
+
     /**
      * Displays the selected stat with numbers in the secondary color and remaining text in primary color
      * @param stat the stat selected
@@ -26,6 +34,16 @@ public class StatColorParser {
         }
 
         return "%%" + stat.getSecondaryColor() + "%%" + extraDetails + "%%" + stat.getColor() + "%%" + stat.getDisplay();
+    }
+
+    /***
+     * Displays the stat with no extra details added on
+     * @param stat the stat selected
+     * @param extraDetails the extra arguments provided (ignored)
+     * @return returns the color parsed replacement string
+     */
+    public static String noParsing(Stat stat, String extraDetails) {
+        return "%%" + stat.getColor() + "%%" + stat.getStat();
     }
 
     /**

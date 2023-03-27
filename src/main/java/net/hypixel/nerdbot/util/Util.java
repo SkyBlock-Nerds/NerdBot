@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.util;
 
+import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -9,6 +10,10 @@ import net.hypixel.nerdbot.api.database.user.stats.LastActivity;
 
 import javax.annotation.Nullable;
 import java.io.*;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -114,5 +119,16 @@ public class Util {
         }
 
         return NerdBotApp.USER_CACHE.getIfPresent(userId);
+    }
+
+    public static JsonObject makeHttpRequest(String url) throws IOException, InterruptedException {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format(url))).GET().build();
+        String requestResponse;
+
+        HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        requestResponse = response.body();
+
+        return NerdBotApp.GSON.fromJson(requestResponse, JsonObject.class);
     }
 }
