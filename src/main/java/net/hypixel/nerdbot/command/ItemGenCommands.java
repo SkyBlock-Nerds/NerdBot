@@ -55,7 +55,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", description, "", true, 0, 1, StringColorParser.MAX_LINE_LENGTH);
         if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(generatedImage.toFile())).setEphemeral(false).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(false).queue();
         }
     }
 
@@ -76,7 +76,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         MinecraftImage generatedImage = buildItem(event, name, rarity, description, type, handleLineBreaks, alpha, padding, maxLineLength);
         if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(generatedImage.toFile())).setEphemeral(false).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(false).queue();
         }
     }
 
@@ -123,7 +123,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         ImageMerger merger = new ImageMerger(generatedDescription.getImage(), generatedHead.getImage(true));
         merger.drawFinalImage();
-        event.getHook().sendFiles(FileUpload.fromData(merger.toFile())).setEphemeral(false).queue();
+        event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(false).queue();
     }
 
     @JDASlashCommand(name = "infogen", description = "Get a little bit of help with how to use the Generator bot.")

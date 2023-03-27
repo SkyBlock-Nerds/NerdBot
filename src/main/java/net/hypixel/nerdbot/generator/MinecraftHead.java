@@ -150,17 +150,6 @@ public class MinecraftHead {
 
         return finalHead;
     }
-
-    /***
-     * Saves the image to a file
-     * @return a file which can be shared
-     * @throws IOException If the file cannot be saved
-     */
-    public File toFile(boolean smoothHead) throws IOException {
-        File tempFile = File.createTempFile("image", ".png");
-        ImageIO.write(getImage(smoothHead), "PNG", tempFile);
-        return tempFile;
-    }
 }
 
 /***

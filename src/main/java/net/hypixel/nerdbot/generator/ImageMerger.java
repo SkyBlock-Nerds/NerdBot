@@ -40,18 +40,7 @@ public class ImageMerger {
      * Gets the drawn image
      * @return the drawn image
      */
-    private BufferedImage getImage() {
+    public BufferedImage getImage() {
         return this.finalImage;
-    }
-
-    /***
-     * Saves the image to a file
-     * @return a file which can be shared
-     * @throws IOException If the file cannot be saved
-     */
-    public File toFile() throws IOException {
-        File tempFile = File.createTempFile("image", ".png");
-        ImageIO.write(this.getImage(), "PNG", tempFile);
-        return tempFile;
     }
 }
