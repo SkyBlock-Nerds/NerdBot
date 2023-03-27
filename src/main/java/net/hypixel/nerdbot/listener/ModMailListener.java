@@ -96,6 +96,10 @@ public class ModMailListener {
         }
 
         ThreadChannel threadChannel = event.getChannel().asThreadChannel();
+        if (!(threadChannel.getParentChannel() instanceof ForumChannel)) {
+            return;
+        }
+
         ForumChannel parent = threadChannel.getParentChannel().asForumChannel();
         if (!parent.getId().equals(modMailChannelId)) {
             return;
