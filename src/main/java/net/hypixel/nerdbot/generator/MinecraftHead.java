@@ -174,12 +174,12 @@ public class MinecraftHead {
  * Standard distances between points on the isometric grid.
  */
 class HeadTransforms {
-    public static int squareDistance = 33;
-    public static double xDistance = squareDistance * Math.cos(Math.toRadians(30));
-    public static double yDistance = squareDistance * Math.sin(Math.toRadians(30));
-    public static double squareHatDistance = squareDistance * 1.07;
-    public static double xDistanceHat = squareHatDistance * Math.cos(Math.toRadians(30));
-    public static double yDistanceHat = squareHatDistance * Math.sin(Math.toRadians(30));
+    public static final int squareDistance = 33;
+    public static final double xDistance = squareDistance * Math.cos(Math.toRadians(30));
+    public static final double yDistance = squareDistance * Math.sin(Math.toRadians(30));
+    public static final double squareHatDistance = squareDistance * 1.07;
+    public static final double xDistanceHat = squareHatDistance * Math.cos(Math.toRadians(30));
+    public static final double yDistanceHat = squareHatDistance * Math.sin(Math.toRadians(30));
 }
 
 /***
