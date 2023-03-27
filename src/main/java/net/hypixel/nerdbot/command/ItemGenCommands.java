@@ -201,7 +201,7 @@ public class ItemGenCommands extends ApplicationCommand {
         String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
         if (itemGenChannelIds == null) {
-            event.reply("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
+            event.getHook().sendMessage("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
             return true;
         }
 
@@ -210,10 +210,10 @@ public class ItemGenCommands extends ApplicationCommand {
             //error message.
             TextChannel channel = ChannelManager.getChannel(itemGenChannelIds[0]);
             if (channel == null) {
-                event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue();
+                event.getHook().sendMessage("This can only be used in the item generating channel.").setEphemeral(true).queue();
                 return true;
             }
-            event.reply("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue();
+            event.getHook().sendMessage("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue();
             return true;
         }
 
