@@ -222,7 +222,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
     private MinecraftImage buildItem(GuildSlashEvent event, String name, String rarity, String description, String type,
                                     Boolean handleLineBreaks, Integer alpha, Integer padding, Integer maxLineLength) {
-        // checking that the font's have been loaded into memory correctly
+        // Checking that the fonts have been loaded correctly
         if (!MinecraftImage.isFontsRegistered()) {
             event.getHook().sendMessage("It seems that one of the font files couldn't be loaded correctly. Please contact a Bot Developer to have a look at it!").setEphemeral(true).queue();
             return null;
