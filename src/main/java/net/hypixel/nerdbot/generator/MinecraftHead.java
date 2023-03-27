@@ -132,11 +132,8 @@ public class MinecraftHead {
      * Gets the generated image
      * @return the buffered image containing the head
      */
-    public BufferedImage getImage(boolean smoothHead) {
-        if (smoothHead) {
-            return scaleHead();
-        }
-        return this.image;
+    public BufferedImage getImage() {
+        return scaleHead();
     }
 
     private BufferedImage scaleHead() {

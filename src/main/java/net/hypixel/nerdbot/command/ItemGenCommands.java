@@ -91,7 +91,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         MinecraftHead head = buildHead(event, skinId, isPlayerName);
         if (head != null) {
-            event.getHook().sendFiles(FileUpload.fromData(head.toFile(true))).setEphemeral(false).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(head.getImage()))).setEphemeral(false).queue();
         }
     }
 
@@ -122,7 +122,7 @@ public class ItemGenCommands extends ApplicationCommand {
             return;
         }
 
-        ImageMerger merger = new ImageMerger(generatedDescription.getImage(), generatedHead.getImage(true));
+        ImageMerger merger = new ImageMerger(generatedDescription.getImage(), generatedHead.getImage());
         merger.drawFinalImage();
         event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(false).queue();
     }
