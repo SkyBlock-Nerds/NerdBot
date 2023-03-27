@@ -289,12 +289,6 @@ public class MinecraftImage {
         return this;
     }
 
-    public File toFile() throws IOException {
-        File tempFile = File.createTempFile("image", ".png");
-        ImageIO.write(this.getImage(), "PNG", tempFile);
-        return tempFile;
-    }
-
     /**
      * Moves the pointer to draw on the next line.
      *

@@ -55,7 +55,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", description, "", true, 0, 1, StringColorParser.MAX_LINE_LENGTH);
         if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(generatedImage.toFile())).setEphemeral(false).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(false).queue();
         }
     }
 
@@ -76,7 +76,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         MinecraftImage generatedImage = buildItem(event, name, rarity, description, type, handleLineBreaks, alpha, padding, maxLineLength);
         if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(generatedImage.toFile())).setEphemeral(false).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(false).queue();
         }
     }
 
@@ -91,7 +91,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         MinecraftHead head = buildHead(event, skinId, isPlayerName);
         if (head != null) {
-            event.getHook().sendFiles(FileUpload.fromData(head.toFile(true))).setEphemeral(false).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(head.getImage()))).setEphemeral(false).queue();
         }
     }
 
@@ -122,9 +122,9 @@ public class ItemGenCommands extends ApplicationCommand {
             return;
         }
 
-        ImageMerger merger = new ImageMerger(generatedDescription.getImage(), generatedHead.getImage(true));
+        ImageMerger merger = new ImageMerger(generatedDescription.getImage(), generatedHead.getImage());
         merger.drawFinalImage();
-        event.getHook().sendFiles(FileUpload.fromData(merger.toFile())).setEphemeral(false).queue();
+        event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(false).queue();
     }
 
     @JDASlashCommand(name = "infogen", description = "Get a little bit of help with how to use the Generator bot.")
@@ -201,7 +201,7 @@ public class ItemGenCommands extends ApplicationCommand {
         String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
         if (itemGenChannelIds == null) {
-            event.reply("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
+            event.getHook().sendMessage("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
             return true;
         }
 
@@ -210,10 +210,10 @@ public class ItemGenCommands extends ApplicationCommand {
             //error message.
             TextChannel channel = ChannelManager.getChannel(itemGenChannelIds[0]);
             if (channel == null) {
-                event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue();
+                event.getHook().sendMessage("This can only be used in the item generating channel.").setEphemeral(true).queue();
                 return true;
             }
-            event.reply("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue();
+            event.getHook().sendMessage("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue();
             return true;
         }
 
