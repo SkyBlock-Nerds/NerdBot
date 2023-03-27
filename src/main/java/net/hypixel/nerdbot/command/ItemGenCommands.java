@@ -150,7 +150,7 @@ public class ItemGenCommands extends ApplicationCommand {
         builder.append("Finally, you can move your text to a newline by using \\n. If you don't want the extra line break at the end, set the `handle_line_breaks` argument to True.\n\n");
         builder.append("You can also check out `/iteminfogen` for more information about rendering items next to your creations!");
         builder.append("Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!\n\n");
-        builder.append("The item generation bot is maintained by mrkeith. Feel free to tag him with any issues.");
+        builder.append("The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.");
 
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
@@ -169,7 +169,7 @@ public class ItemGenCommands extends ApplicationCommand {
         builder.append("`is_player_head:` set to True if the skin ID is a player's name\n\n");
         builder.append("If you are feeling extra spicy, you can combine these two elements by using the `/fullgen` command with arguments mentioned previously.\n");
         builder.append("Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!\n\n");
-        builder.append("The item generation bot is maintained by mrkeith. Feel free to tag him with any issues.");
+        builder.append("The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.");
 
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
