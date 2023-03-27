@@ -18,8 +18,8 @@ public class MinecraftHead {
      * @param targetSkin the skin which is meant to be created
      */
     public MinecraftHead(BufferedImage targetSkin) {
-        int width = (int) Math.round(17 * HeadTransforms.xDistanceHat);
-        int height = (int) Math.round(17 * HeadTransforms.squareHatDistance);
+        int width = (int) Math.round(17 * HeadTransforms.X_DISTANCE_HAT);
+        int height = (int) Math.round(17 * HeadTransforms.SQUARE_HAT_DISTANCE);
 
         this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         this.g2d = this.image.createGraphics();
@@ -52,7 +52,7 @@ public class MinecraftHead {
      * @param side the direction the square is facing
      * @param face which part of the head (top, bottom, left, right, etc)
      */
-    private void drawFace(double startingX, double startingY, Side side, Face face) {
+    private void drawFace(double startingX, double startingY, boolean isFlipped, Side side, Face face) {
         int newLineDisplacement = 0;
         double pixelTrackUp;
         double sideDistance = side.getDistance();
@@ -81,13 +81,6 @@ public class MinecraftHead {
             }
         }
 
-        boolean isFlipped = false;
-        switch (face) {
-            case HEAD_BACK, HAT_BACK, HEAD_RIGHT, HAT_RIGHT -> {
-                isFlipped = true;
-            }
-            default -> {}
-        }
         int increment = isFlipped ? -1 : 1;
 
         double defaultX = startingX;
@@ -118,17 +111,17 @@ public class MinecraftHead {
         int startingX = this.image.getWidth() / 2;
         int startingY = this.image.getHeight() / 2;
 
-        drawFace(startingX, startingY + HeadTransforms.squareHatDistance * 8, Side.TOP_HAT_SIDE, Face.HAT_BOTTOM);
-        drawFace(startingX - HeadTransforms.xDistanceHat * 8, startingY - HeadTransforms.yDistanceHat * 8, Side.RIGHT_HAT_SIDE, Face.HAT_BACK);
-        drawFace(startingX + HeadTransforms.xDistanceHat * 8, startingY - HeadTransforms.yDistanceHat * 8, Side.LEFT_HAT_SIDE, Face.HAT_RIGHT);
+        drawFace(startingX, startingY + HeadTransforms.SQUARE_HAT_DISTANCE * 8, false, Side.TOP_HAT_SIDE, Face.HAT_BOTTOM);
+        drawFace(startingX - HeadTransforms.X_DISTANCE_HAT * 8, startingY - HeadTransforms.Y_DISTANCE_HAT * 8, true, Side.RIGHT_HAT_SIDE, Face.HAT_BACK);
+        drawFace(startingX + HeadTransforms.X_DISTANCE_HAT * 8, startingY - HeadTransforms.Y_DISTANCE_HAT * 8, true, Side.LEFT_HAT_SIDE, Face.HAT_RIGHT);
 
-        drawFace(startingX, startingY, Side.TOP_SIDE, Face.HEAD_TOP);
-        drawFace(startingX, startingY, Side.RIGHT_SIDE,  Face.HEAD_FRONT);
-        drawFace(startingX, startingY, Side.LEFT_SIDE, Face.HEAD_LEFT);
+        drawFace(startingX, startingY, false, Side.TOP_SIDE, Face.HEAD_TOP);
+        drawFace(startingX, startingY, false, Side.RIGHT_SIDE,  Face.HEAD_FRONT);
+        drawFace(startingX, startingY, false, Side.LEFT_SIDE, Face.HEAD_LEFT);
 
-        drawFace(startingX, startingY, Side.TOP_HAT_SIDE, Face.HAT_TOP);
-        drawFace(startingX, startingY, Side.RIGHT_HAT_SIDE, Face.HAT_FRONT);
-        drawFace(startingX, startingY, Side.LEFT_HAT_SIDE, Face.HAT_LEFT);
+        drawFace(startingX, startingY, false, Side.TOP_HAT_SIDE, Face.HAT_TOP);
+        drawFace(startingX, startingY, false, Side.RIGHT_HAT_SIDE, Face.HAT_FRONT);
+        drawFace(startingX, startingY, false, Side.LEFT_HAT_SIDE, Face.HAT_LEFT);
 
         g2d.dispose();
 
