@@ -43,9 +43,9 @@ public class ImageMerger {
 
         //Scale the itemHead image to the size of the itemDescription
         BufferedImage scaledImage = new BufferedImage((int) (newHeadWidth * HEAD_SCALE), (int) (newHeadHeight * HEAD_SCALE), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = scaledImage.createGraphics();
-        g2d.drawImage(this.itemHead, 0, 0, (int) (newHeadWidth * HEAD_SCALE), (int) (newHeadHeight * HEAD_SCALE), null);
-        g2d.dispose();
+        Graphics2D scaledImageGraphics = scaledImage.createGraphics();
+        scaledImageGraphics.drawImage(this.itemHead, 0, 0, (int) (newHeadWidth * HEAD_SCALE), (int) (newHeadHeight * HEAD_SCALE), null);
+        scaledImageGraphics.dispose();
 
         this.g2d.drawImage(scaledImage, PADDING, centerLine - scaledImage.getHeight() / 2, null);
         this.g2d.drawImage(this.itemDescription, PADDING * 2 + (int) (newHeadWidth), centerLine - this.itemDescription.getHeight() / 2, null);
