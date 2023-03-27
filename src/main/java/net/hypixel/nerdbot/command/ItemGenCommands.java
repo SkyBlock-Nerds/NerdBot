@@ -26,7 +26,6 @@ import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.*;
@@ -36,16 +35,16 @@ import java.util.stream.Stream;
 
 @Log4j2
 public class ItemGenCommands extends ApplicationCommand {
-    private final static String DESC_NAME = "The name of the item";
-    private final static String DESC_RARITY = "The rarity of the item";
-    private final static String DESC_DESCRIPTION = "The description of the item";
-    private final static String DESC_TYPE = "The type of the item";
-    private final static String DESC_HANDLE_LINE_BREAKS = "If you will handle line breaks at the end of the item's description";
-    private final static String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
-    private final static String DESC_PADDING = "Sets the transparent padding around the image (0 = none, 1 = discord)";
-    private final static String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (0 - " + StringColorParser.MAX_LINE_LENGTH + ")";
-    private final static String DESC_HEAD_ID = "The ID of the skin or the Player Name (set is_player_name to True if it is a player name)";
-    private final static String DESC_IS_PLAYER_NAME = "If the skin ID given describes the player's name";
+    private static final String DESC_NAME = "The name of the item";
+    private static final String DESC_RARITY = "The rarity of the item";
+    private static final String DESC_DESCRIPTION = "The description of the item";
+    private static final String DESC_TYPE = "The type of the item";
+    private static final String DESC_HANDLE_LINE_BREAKS = "If you will handle line breaks at the end of the item's description";
+    private static final String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
+    private static final String DESC_PADDING = "Sets the transparent padding around the image (0 = none, 1 = discord)";
+    private static final String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (0 - " + StringColorParser.MAX_LINE_LENGTH + ")";
+    private static final String DESC_HEAD_ID = "The ID of the skin or the Player Name (set is_player_name to True if it is a player name)";
+    private static final String DESC_IS_PLAYER_NAME = "If the skin ID given describes the player's name";
 
     @JDASlashCommand(name = "textgen", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
     public void generateText(GuildSlashEvent event, @AppOption(description = DESC_DESCRIPTION) String description) throws IOException {
