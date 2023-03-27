@@ -191,7 +191,7 @@ public class StringColorParser {
                     createNewLine();
                     charIndex += 2;
 
-                    if (description.charAt(charIndex) == ' ') {
+                    if (charIndex < description.length() && description.charAt(charIndex) == ' ') {
                         charIndex++;
                     }
                     continue;

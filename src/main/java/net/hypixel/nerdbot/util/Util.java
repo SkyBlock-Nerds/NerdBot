@@ -9,6 +9,8 @@ import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.user.stats.LastActivity;
 
 import javax.annotation.Nullable;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -130,5 +132,16 @@ public class Util {
         requestResponse = response.body();
 
         return NerdBotApp.GSON.fromJson(requestResponse, JsonObject.class);
+    }
+
+    /***
+     * Saves the image to a file
+     * @return a file which can be shared
+     * @throws IOException If the file cannot be saved
+     */
+    public static File toFile(BufferedImage imageToSave) throws IOException {
+        File tempFile = File.createTempFile("image", ".png");
+        ImageIO.write(imageToSave, "PNG", tempFile);
+        return tempFile;
     }
 }

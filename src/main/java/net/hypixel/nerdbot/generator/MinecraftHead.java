@@ -115,6 +115,10 @@ public class MinecraftHead {
         drawFace(startingX - HeadTransforms.X_DISTANCE_HAT * 8, startingY - HeadTransforms.Y_DISTANCE_HAT * 8, true, Side.RIGHT_HAT_SIDE, Face.HAT_BACK);
         drawFace(startingX + HeadTransforms.X_DISTANCE_HAT * 8, startingY - HeadTransforms.Y_DISTANCE_HAT * 8, true, Side.LEFT_HAT_SIDE, Face.HAT_RIGHT);
 
+        drawFace(startingX, startingY + HeadTransforms.SQUARE_DISTANCE * 8, false, Side.TOP_SIDE, Face.HEAD_BOTTOM);
+        drawFace(startingX - HeadTransforms.X_DISTANCE * 8, startingY - HeadTransforms.Y_DISTANCE * 8, true, Side.RIGHT_SIDE, Face.HEAD_BACK);
+        drawFace(startingX + HeadTransforms.X_DISTANCE * 8, startingY - HeadTransforms.Y_DISTANCE * 8, true, Side.LEFT_SIDE, Face.HEAD_RIGHT);
+
         drawFace(startingX, startingY, false, Side.TOP_SIDE, Face.HEAD_TOP);
         drawFace(startingX, startingY, false, Side.RIGHT_SIDE,  Face.HEAD_FRONT);
         drawFace(startingX, startingY, false, Side.LEFT_SIDE, Face.HEAD_LEFT);
@@ -132,11 +136,8 @@ public class MinecraftHead {
      * Gets the generated image
      * @return the buffered image containing the head
      */
-    public BufferedImage getImage(boolean smoothHead) {
-        if (smoothHead) {
-            return scaleHead();
-        }
-        return this.image;
+    public BufferedImage getImage() {
+        return scaleHead();
     }
 
     private BufferedImage scaleHead() {
@@ -149,17 +150,6 @@ public class MinecraftHead {
         rescaledGraphics.dispose();
 
         return finalHead;
-    }
-
-    /***
-     * Saves the image to a file
-     * @return a file which can be shared
-     * @throws IOException If the file cannot be saved
-     */
-    public File toFile(boolean smoothHead) throws IOException {
-        File tempFile = File.createTempFile("image", ".png");
-        ImageIO.write(getImage(smoothHead), "PNG", tempFile);
-        return tempFile;
     }
 }
 
