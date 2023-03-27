@@ -116,6 +116,7 @@ public class ItemGenCommands extends ApplicationCommand {
         if (generatedHead == null) {
             return;
         }
+
         MinecraftImage generatedDescription = buildItem(event, name, rarity, description, type, handleLineBreaks, alpha, padding, maxLineLength);
         if (generatedDescription == null) {
             return;
