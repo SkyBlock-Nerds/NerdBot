@@ -115,6 +115,10 @@ public class MinecraftHead {
         drawFace(startingX - HeadTransforms.X_DISTANCE_HAT * 8, startingY - HeadTransforms.Y_DISTANCE_HAT * 8, true, Side.RIGHT_HAT_SIDE, Face.HAT_BACK);
         drawFace(startingX + HeadTransforms.X_DISTANCE_HAT * 8, startingY - HeadTransforms.Y_DISTANCE_HAT * 8, true, Side.LEFT_HAT_SIDE, Face.HAT_RIGHT);
 
+        drawFace(startingX, startingY + HeadTransforms.SQUARE_DISTANCE * 8, false, Side.TOP_SIDE, Face.HEAD_BOTTOM);
+        drawFace(startingX - HeadTransforms.X_DISTANCE * 8, startingY - HeadTransforms.Y_DISTANCE * 8, true, Side.RIGHT_SIDE, Face.HEAD_BACK);
+        drawFace(startingX + HeadTransforms.X_DISTANCE * 8, startingY - HeadTransforms.Y_DISTANCE * 8, true, Side.LEFT_SIDE, Face.HEAD_RIGHT);
+
         drawFace(startingX, startingY, false, Side.TOP_SIDE, Face.HEAD_TOP);
         drawFace(startingX, startingY, false, Side.RIGHT_SIDE,  Face.HEAD_FRONT);
         drawFace(startingX, startingY, false, Side.LEFT_SIDE, Face.HEAD_LEFT);
