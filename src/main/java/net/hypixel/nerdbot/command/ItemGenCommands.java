@@ -305,7 +305,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         if (textureID.contains("http://textures.minecraft.net/texture/")) {
             textureID = textureID.replace("http://textures.minecraft.net/texture/", "");
-            event.getHook().sendMessage("Hey, a small heads up, but you only need to include the ID of the skin\n (not the `http://textures.minecraft.net/texture/` part")
+            event.getHook().sendMessage("Hey, a small heads up - you don't need to include the full URL! Only the skin ID is required")
                     .setEphemeral(true).queue();
         }
 
@@ -317,7 +317,7 @@ public class ItemGenCommands extends ApplicationCommand {
             event.getHook().sendMessage("Hey, you kinda got this url wrong... ").setEphemeral(false).queue();
             return null;
         } catch (IOException e) {
-            textureID = textureID.replaceAll("[^a-zA-Z0-9_ idk]", "");
+            textureID = textureID.replaceAll("[^a-zA-Z0-9_ ]", "");
             event.getHook().sendMessage("It seems that the URL you entered in doesn't link to anything...\nEntered URL: `http://textures.minecraft.net/texture/" + textureID + "`").setEphemeral(false).queue();
             return null;
         }
