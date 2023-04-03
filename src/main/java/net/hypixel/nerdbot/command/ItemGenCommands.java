@@ -45,17 +45,19 @@ public class ItemGenCommands extends ApplicationCommand {
     private static final String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (0 - " + StringColorParser.MAX_LINE_LENGTH + ")";
     private static final String DESC_HEAD_ID = "The ID of the skin or the Player Name (set is_player_name to True if it is a player name)";
     private static final String DESC_IS_PLAYER_NAME = "If the skin ID given describes the player's name";
+    private static final String DESC_HIDDEN = "If you only want the generated image visible to yourself";
 
     @JDASlashCommand(name = "textgen", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
-    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_DESCRIPTION) String description) throws IOException {
-        event.deferReply(false).queue();
+    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_DESCRIPTION) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+        hidden = (hidden != null && hidden);
+        event.deferReply(hidden).queue();
         if (isIncorrectChannel(event)) {
             return;
         }
 
         MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", description, "", true, 0, 1, StringColorParser.MAX_LINE_LENGTH);
         if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(false).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(hidden).queue();
         }
     }
 
@@ -68,30 +70,34 @@ public class ItemGenCommands extends ApplicationCommand {
                              @Optional @AppOption(description = DESC_HANDLE_LINE_BREAKS) Boolean handleLineBreaks,
                              @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
                              @Optional @AppOption(description = DESC_PADDING) Integer padding,
-                             @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength) throws IOException {
-        event.deferReply(false).queue();
+                             @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
+                             @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+        hidden = (hidden != null && hidden);
+        event.deferReply(hidden).queue();
         if (isIncorrectChannel(event)) {
             return;
         }
 
         MinecraftImage generatedImage = buildItem(event, name, rarity, description, type, handleLineBreaks, alpha, padding, maxLineLength);
         if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(false).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(hidden).queue();
         }
     }
 
     @JDASlashCommand(name = "headgen", description = "Draws a minecraft head into a file")
     public void generateHead(GuildSlashEvent event,
                              @AppOption(description = DESC_HEAD_ID) String skinId,
-                             @Optional @AppOption(description = DESC_IS_PLAYER_NAME) Boolean isPlayerName) throws IOException {
-        event.deferReply(false).queue();
+                             @Optional @AppOption(description = DESC_IS_PLAYER_NAME) Boolean isPlayerName,
+                             @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+        hidden = (hidden != null && hidden);
+        event.deferReply(hidden).queue();
         if (isIncorrectChannel(event)) {
             return;
         }
 
         MinecraftHead head = buildHead(event, skinId, isPlayerName);
         if (head != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(head.getImage()))).setEphemeral(false).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(head.getImage()))).setEphemeral(hidden).queue();
         }
     }
 
@@ -106,8 +112,10 @@ public class ItemGenCommands extends ApplicationCommand {
                                  @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
                                  @Optional @AppOption(description = DESC_PADDING) Integer padding,
                                  @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
+                                 @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden,
                                  @Optional @AppOption(description = DESC_IS_PLAYER_NAME) Boolean isPlayerName) throws IOException {
-        event.deferReply(false).queue();
+        hidden = (hidden != null && hidden);
+        event.deferReply(hidden).queue();
         if (isIncorrectChannel(event)) {
             return;
         }
@@ -124,7 +132,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         ImageMerger merger = new ImageMerger(generatedDescription.getImage(), generatedHead.getImage());
         merger.drawFinalImage();
-        event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(false).queue();
+        event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
     }
 
     @JDASlashCommand(name = "infogen", description = "Get a little bit of help with how to use the Generator bot.")
