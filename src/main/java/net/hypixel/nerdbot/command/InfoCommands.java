@@ -75,11 +75,11 @@ public class InfoCommands extends ApplicationCommand {
 
         int staff = 0;
         for (String roleName : SPECIAL_ROLES) {
-            if (guild.getRoleById(roleName) == null) {
+            if (Util.getRole(roleName) == null) {
                 log.warn("Role {} not found", roleName);
                 continue;
             }
-            staff += guild.getMembersWithRoles(guild.getRoleById(roleName)).size();
+            staff += guild.getMembersWithRoles(Util.getRole(roleName)).size();
         }
 
         builder.append("Server name: ").append(guild.getName()).append(" (Server ID: ").append(guild.getId()).append(")\n")
