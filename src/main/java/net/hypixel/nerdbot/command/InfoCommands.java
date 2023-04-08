@@ -59,7 +59,6 @@ public class InfoCommands extends ApplicationCommand {
                 .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.getTags().contains("Docced"))
                 .toList();
         List<GreenlitMessage> pages = getPage(greenlit, page, 10);
-        pages.sort(Comparator.comparingLong(GreenlitMessage::getSuggestionTimestamp));
 
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
         if (pages.isEmpty()) {
