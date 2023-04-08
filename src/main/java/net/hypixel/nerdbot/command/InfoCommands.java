@@ -174,19 +174,19 @@ public class InfoCommands extends ApplicationCommand {
             return Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s));
         });
 
-        StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
         log.info("Found " + users.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
+        users.sort(Comparator.comparingLong(discordUser -> discordUser.getLastActivity().getLastGlobalActivity()));
+        StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
-        // Create the page
-        for (DiscordUser user : users) {
-            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(user.getDiscordId());
+        getPage(users, page, 10).forEach(discordUser -> {
+            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
             if (member == null) {
-                log.error("Couldn't find member " + user.getDiscordId());
-                continue;
+                log.error("Couldn't find member " + discordUser.getDiscordId());
+                return;
             }
 
             stringBuilder.append(" • ").append(member.getUser().getAsMention()).append("\n");
-        }
+        });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
     }
