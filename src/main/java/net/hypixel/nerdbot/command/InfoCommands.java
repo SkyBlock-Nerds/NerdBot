@@ -21,9 +21,12 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.awt.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
@@ -159,13 +162,17 @@ public class InfoCommands extends ApplicationCommand {
         List<DiscordUser> users = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
         users.removeIf(discordUser -> {
             Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+
             if (member == null) {
+                return true;
+            }
+
+            if (Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(14)))) {
                 return true;
             }
 
             return Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s));
         });
-        users.removeIf(discordUser -> discordUser.getLastActivity().getLastGlobalActivity() != -1L && discordUser.getLastActivity().getLastGlobalActivity() < System.currentTimeMillis() - TimeUnit.DAYS.toMillis(14));
 
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
         log.info("Found " + users.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
