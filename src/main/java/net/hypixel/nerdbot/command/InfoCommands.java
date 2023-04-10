@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
@@ -20,8 +21,12 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.awt.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
-import java.util.*;
 
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
@@ -54,7 +59,6 @@ public class InfoCommands extends ApplicationCommand {
                 .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.getTags().contains("Docced"))
                 .toList();
         List<GreenlitMessage> pages = getPage(greenlit, page, 10);
-        pages.sort(Comparator.comparingLong(GreenlitMessage::getSuggestionTimestamp));
 
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
         if (pages.isEmpty()) {
@@ -154,44 +158,35 @@ public class InfoCommands extends ApplicationCommand {
             return;
         }
 
-        List<DiscordUser> allUsers = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
-        List<DiscordUser> inactiveUsers = allUsers.stream().filter(discordUser -> discordUser.getLastActivity().getLastGlobalActivity() == -1L).toList();
-        List<DiscordUser> users = getPage(inactiveUsers, page, 25);
-        Map<String, Integer> roles = new HashMap<>();
+        List<DiscordUser> users = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
+        users.removeIf(discordUser -> {
+            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+
+            if (member == null) {
+                return true;
+            }
+
+            if (Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(14)))) {
+                return true;
+            }
+
+            return Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s));
+        });
+
+        log.info("Found " + users.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
+        users.sort(Comparator.comparingLong(discordUser -> discordUser.getLastActivity().getLastGlobalActivity()));
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
-        log.info("Found " + inactiveUsers.size() + " inactive user" + (inactiveUsers.size() == 1 ? "" : "s") + "!");
-        for (DiscordUser all : inactiveUsers) {
-            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(all.getDiscordId());
-            if (member == null || member.getRoles().isEmpty()) {
-                log.error("Couldn't find member " + all.getDiscordId());
-                continue;
-            }
-
-            if (all.getLastActivity().getLastGlobalActivity() == -1) {
-                roles.put(member.getRoles().get(0).getName(), roles.getOrDefault(member.getRoles().get(0).getName(), 0) + 1);
-            }
-        }
-
-        // Create the page
-        for (DiscordUser user : users) {
-            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(user.getDiscordId());
+        getPage(users, page, 10).forEach(discordUser -> {
+            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
             if (member == null) {
-                log.error("Couldn't find member " + user.getDiscordId());
-                continue;
+                log.error("Couldn't find member " + discordUser.getDiscordId());
+                return;
             }
 
-            if (member.getRoles().contains(Util.getRole("Ultimate Nerd"))
-                    || member.getRoles().contains(Util.getRole("Ultimate Nerd But Red"))
-                    || member.getRoles().contains(Util.getRole("Game Master"))) {
-                log.info("Would have added " + member.getEffectiveName() + " as an inactive user but they have a special role!");
-                continue;
-            }
+            stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(new DiscordTimestamp(discordUser.getLastActivity().getLastGlobalActivity()).toLongDateTime()).append(")").append("\n");
+        });
 
-            stringBuilder.append(" • ").append(member.getUser().getAsMention()).append("\n");
-        }
-
-        log.info("Breakdown by role: " + roles);
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
     }
 
