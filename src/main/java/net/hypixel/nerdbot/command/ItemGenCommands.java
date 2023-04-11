@@ -56,7 +56,7 @@ public class ItemGenCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
 
-        MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", description, "", true, 0, 1, StringColorParser.MAX_LINE_LENGTH);
+        MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", description, "", true, 0, 1, StringColorParser.MAX_STANDARD_LINE_LENGTH);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(hidden).queue();
         }
@@ -390,6 +390,8 @@ public class ItemGenCommands extends ApplicationCommand {
             // adds the items type in the description
             String createRarity = "\\n%%" + itemRarity.getRarityColor() + "%%%%BOLD%%" + itemRarity.getId().toUpperCase() + " " + type;
             itemLore.append(createRarity);
+        } else {
+            itemLore.append("\\n");
         }
 
         // creating a string parser to convert the string into color flagged text
