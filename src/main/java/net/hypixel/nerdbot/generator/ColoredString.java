@@ -16,6 +16,7 @@ public class ColoredString {
     private boolean isItalic;
     private boolean isStrikethrough;
     private boolean isUnderlined;
+    private boolean isObfuscated;
 
     public ColoredString() {
         this.currentString = new StringBuilder(36);

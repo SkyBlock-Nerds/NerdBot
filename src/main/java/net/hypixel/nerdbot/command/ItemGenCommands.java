@@ -45,10 +45,11 @@ public class ItemGenCommands extends ApplicationCommand {
     private static final String DESC_HANDLE_LINE_BREAKS = "If you will handle line breaks at the end of the item's description";
     private static final String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
     private static final String DESC_PADDING = "Sets the transparent padding around the image (0 = none, 1 = discord)";
-    private static final String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (0 - " + StringColorParser.MAX_LINE_LENGTH + ")";
+    private static final String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (1 - " + StringColorParser.MAX_FINAL_LINE_LENGTH + ") default " + StringColorParser.MAX_STANDARD_LINE_LENGTH;
     private static final String DESC_HEAD_ID = "The ID of the skin or the Player Name (set is_player_name to True if it is a player name)";
     private static final String DESC_IS_PLAYER_NAME = "If the skin ID given describes the player's name";
     private static final String DESC_HIDDEN = "If you only want the generated image visible to yourself";
+    private static final String DESC_PARSE_ITEM = "Item JSON Display Data (in the form {\"Lore\": [...], \"Name\": \"\"}";
 
     @JDASlashCommand(name = "textgen", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
     public void generateText(GuildSlashEvent event, @AppOption(description = DESC_DESCRIPTION) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
@@ -137,6 +138,82 @@ public class ItemGenCommands extends ApplicationCommand {
         merger.drawFinalImage();
         event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
     }
+
+    @JDASlashCommand(name = "itemgenparse", description = "Converts a minecraft item into a Nerd Bot item!")
+    public void parseItemDescription(GuildSlashEvent event,
+                                     @AppOption(description = DESC_PARSE_ITEM) String description,
+                                     @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+        if (isIncorrectChannel(event)) {
+            return;
+        }
+        hidden = (hidden != null && hidden);
+        event.deferReply(hidden).queue();
+
+        JsonObject itemJSON;
+        String itemName;
+        JsonArray itemLoreArray;
+        StringBuilder itemGenCommand = new StringBuilder("```/itemgen");
+
+        try {
+            itemJSON = NerdBotApp.GSON.fromJson(description, JsonObject.class);
+        } catch (JsonSyntaxException e) {
+            event.getHook().sendMessage("""
+                                        This JSON object seems to not be valid. It should follow a similar format to...
+                                        ```json
+                                        {"Lore": ["lore array goes here"], "Name": "item name goes here"}
+                                        ```""").queue();
+            return;
+        }
+
+        // checking that there is a name string in the JsonObject
+        try {
+            itemName = itemJSON.get("Name").getAsString().replaceAll("§", "&");
+        } catch (NullPointerException e) {
+            event.getHook().sendMessage("It seems that you are missing a `Name` variable in your item's display tag").queue();
+            return;
+        }
+
+        // checking that there is a lore array in the JsonObject
+        try {
+            itemLoreArray = itemJSON.get("Lore").getAsJsonArray();
+        } catch (NullPointerException e) {
+            event.getHook().sendMessage("It seems that you are missing a `Lore` variable in your item's display tag").queue();
+            return;
+        }
+
+        // adding all the text to the string builders
+        StringBuilder itemText = new StringBuilder();
+        itemText.append(itemName).append("\\n");
+        itemGenCommand.append(" name:").append(itemName).append(" rarity:<> description:");
+
+        for (JsonElement element : itemLoreArray) {
+            String itemLore = element.getAsString().replaceAll("§", "&");
+            itemText.append(itemLore).append("\\n");
+            itemGenCommand.append(itemLore.replaceAll("`", "")).append("\\n");
+        }
+        itemGenCommand.replace(itemGenCommand.length() - 2, itemGenCommand.length(), "");
+        itemGenCommand.append("```");
+
+        // creating a string parser to convert the string into color flagged text
+        StringColorParser colorParser = new StringColorParser(StringColorParser.MAX_FINAL_LINE_LENGTH);
+        colorParser.parseString(itemText);
+
+        // checking that there were no errors while parsing the string
+        if (!colorParser.isSuccessfullyParsed()) {
+            event.getHook().sendMessage("Here is a /itemgen command if you want it!\n" + itemGenCommand).setEphemeral(true).queue();
+            event.getHook().sendMessage(colorParser.getErrorString()).setEphemeral(true).queue();
+            return;
+        }
+
+        // creating the minecraft image and sending it to the user.
+        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, 500, 255, 0).render();
+        if (minecraftImage != null) {
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(minecraftImage.getImage()))).setEphemeral(false).queue();
+        }
+
+        event.getHook().sendMessage("Here is a /itemgen command if you want it!\n" + itemGenCommand).setEphemeral(true).queue();
+    }
+
 
     @JDASlashCommand(name = "infogen", description = "Get a little bit of help with how to use the Generator bot.")
     public void askForInfo(GuildSlashEvent event) {

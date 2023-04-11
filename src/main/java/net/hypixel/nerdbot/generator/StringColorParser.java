@@ -99,6 +99,7 @@ public class StringColorParser {
                             case ITALIC -> this.setItalic(true);
                             case STRIKETHROUGH -> this.setStrikethrough(true);
                             case UNDERLINE -> this.setUnderlined(true);
+                            case OBFUSCATED -> this.setObfuscated(true);
                             default -> this.setColor(mcColor);
                         }
                         charIndex = closingIndex + 2;
@@ -166,6 +167,7 @@ public class StringColorParser {
                                 case ITALIC -> this.setItalic(true);
                                 case STRIKETHROUGH -> this.setStrikethrough(true);
                                 case UNDERLINE -> this.setUnderlined(true);
+                                case OBFUSCATED -> this.setObfuscated(true);
                                 default -> this.setColor(mcColor);
                             }
                             charIndex += 2;
@@ -326,6 +328,19 @@ public class StringColorParser {
             currentString = new ColoredString(currentString);
         }
         currentString.setUnderlined(underline);
+    }
+
+    /**
+     * sets if the next segment has obfuscation
+     * @param obfuscated state of obfuscated to change to
+     */
+    private void setObfuscated(boolean obfuscated) {
+        // checking if there is any text on the current string before changing it to obfuscated
+        if (!currentString.isEmpty()) {
+            currentLine.add(currentString);
+            currentString = new ColoredString(currentString);
+        }
+        currentString.setStrikethrough(obfuscated);
     }
 
     /**
