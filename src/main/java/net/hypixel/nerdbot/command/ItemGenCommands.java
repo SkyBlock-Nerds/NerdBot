@@ -7,7 +7,7 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
@@ -18,10 +18,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.channel.ChannelManager;
-import net.hypixel.nerdbot.generator.ImageMerger;
-import net.hypixel.nerdbot.generator.MinecraftHead;
-import net.hypixel.nerdbot.generator.MinecraftImage;
-import net.hypixel.nerdbot.generator.StringColorParser;
+import net.hypixel.nerdbot.generator.*;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
@@ -53,11 +50,11 @@ public class ItemGenCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "textgen", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
     public void generateText(GuildSlashEvent event, @AppOption(description = DESC_DESCRIPTION) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
         if (isIncorrectChannel(event)) {
             return;
         }
+        hidden = (hidden != null && hidden);
+        event.deferReply(hidden).queue();
 
         MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", description, "", true, 0, 1, StringColorParser.MAX_LINE_LENGTH);
         if (generatedImage != null) {
@@ -76,11 +73,11 @@ public class ItemGenCommands extends ApplicationCommand {
                              @Optional @AppOption(description = DESC_PADDING) Integer padding,
                              @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
                              @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
         if (isIncorrectChannel(event)) {
             return;
         }
+        hidden = (hidden != null && hidden);
+        event.deferReply(hidden).queue();
 
         MinecraftImage generatedImage = buildItem(event, name, rarity, description, type, handleLineBreaks, alpha, padding, maxLineLength);
         if (generatedImage != null) {
@@ -93,11 +90,11 @@ public class ItemGenCommands extends ApplicationCommand {
                              @AppOption(description = DESC_HEAD_ID) String skinId,
                              @Optional @AppOption(description = DESC_IS_PLAYER_NAME) Boolean isPlayerName,
                              @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
         if (isIncorrectChannel(event)) {
             return;
         }
+        hidden = (hidden != null && hidden);
+        event.deferReply(hidden).queue();
 
         MinecraftHead head = buildHead(event, skinId, isPlayerName);
         if (head != null) {
@@ -118,11 +115,11 @@ public class ItemGenCommands extends ApplicationCommand {
                                  @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
                                  @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden,
                                  @Optional @AppOption(description = DESC_IS_PLAYER_NAME) Boolean isPlayerName) throws IOException {
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
         if (isIncorrectChannel(event)) {
             return;
         }
+        hidden = (hidden != null && hidden);
+        event.deferReply(hidden).queue();
 
         MinecraftHead generatedHead = buildHead(event, skinId, isPlayerName);
         if (generatedHead == null) {
@@ -333,7 +330,7 @@ public class ItemGenCommands extends ApplicationCommand {
         String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
 
         if (itemGenChannelIds == null) {
-            event.getHook().sendMessage("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
+            event.reply("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
             return true;
         }
 
@@ -342,10 +339,10 @@ public class ItemGenCommands extends ApplicationCommand {
             //error message.
             TextChannel channel = ChannelManager.getChannel(itemGenChannelIds[0]);
             if (channel == null) {
-                event.getHook().sendMessage("This can only be used in the item generating channel.").setEphemeral(true).queue();
+                event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue();
                 return true;
             }
-            event.getHook().sendMessage("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue();
+            event.reply("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue();
             return true;
         }
 
