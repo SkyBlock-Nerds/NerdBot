@@ -23,6 +23,7 @@ public enum MCColor {
     STRIKETHROUGH('m', new Color(255, 255, 255), new Color(255, 255, 255)),
     UNDERLINE('n', new Color(255, 255, 255), new Color(255, 255, 255)),
     ITALIC('o', new Color(255, 255, 255), new Color(85, 85, 255)),
+    OBFUSCATED('k', new Color(255, 255, 255), new Color(85, 85, 255)),
     RESET('r', new Color(170, 170, 170), new Color(42, 42, 42));
 
     public static final MCColor[] VALUES = values();
