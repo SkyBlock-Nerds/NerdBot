@@ -237,7 +237,7 @@ public class ItemGenCommands extends ApplicationCommand {
                 `handle_line_breaks (true/false)`: To be used if you're manually handling line breaks between the description and rarity.
                 `alpha`: Sets the transparency of the background layer. 0 for transparent, 255 for opaque (default). 245 for overlay.
                 `padding`: Adds transparency around the entire image. Must be 0 (default) or higher.
-                `max_line_length`: Defines the maximum length that the line can be. Can be between 0 and 38.
+                `max_line_length`: Defines the maximum length that the line can be. Can be between 1 and 54.
                 """, false);
 
         colorBuilder.setColor(Color.YELLOW)
@@ -252,6 +252,7 @@ public class ItemGenCommands extends ApplicationCommand {
         extraInfoBuilder.setColor(Color.GRAY)
             .addField("Other Information",
                 """
+                There is another command `/itemgenparse` which can be used to easily convert the display NBT Tag from a Minecraft item into a Generated Image. This display tag should be surrounded with curly brackets with a "Lore" (string array) and "Name" (string) attribute in them
                 You can also check out `/infoheadgen` for more information about rendering items next to your creations!
                 Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!
                 The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.

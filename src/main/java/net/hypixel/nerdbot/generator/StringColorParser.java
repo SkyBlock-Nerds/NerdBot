@@ -11,7 +11,7 @@ import java.util.Objects;
 
 public class StringColorParser {
     public static final int MAX_STANDARD_LINE_LENGTH = 38;
-    public static final int MAX_FINAL_LINE_LENGTH = 50;
+    public static final int MAX_FINAL_LINE_LENGTH = 54;
 
     private static final MCColor[] colors = MCColor.VALUES;
     private static final Stat[] stats = Stat.VALUES;
