@@ -41,6 +41,7 @@ public class ItemGenCommands extends ApplicationCommand {
     private static final String DESC_NAME = "The name of the item";
     private static final String DESC_RARITY = "The rarity of the item";
     private static final String DESC_DESCRIPTION = "The description of the item";
+    private static final String DESC_TEXT = "The text to display";
     private static final String DESC_TYPE = "The type of the item";
     private static final String DESC_HANDLE_LINE_BREAKS = "If you will handle line breaks at the end of the item's description";
     private static final String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
@@ -51,7 +52,7 @@ public class ItemGenCommands extends ApplicationCommand {
     private static final String DESC_HIDDEN = "If you only want the generated image visible to yourself";
 
     @JDASlashCommand(name = "textgen", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
-    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_DESCRIPTION) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
         if (isIncorrectChannel(event)) {
