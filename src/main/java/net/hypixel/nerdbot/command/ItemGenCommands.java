@@ -50,10 +50,7 @@ public class ItemGenCommands extends ApplicationCommand {
     private static final String DESC_PARSE_ITEM = "Item JSON Display Data (in the form {\"Lore\": [...], \"Name\": \"\"}";
 
     @JDASlashCommand(name = "textgen", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
-
     public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
         if (isIncorrectChannel(event)) {
             return;
         }
