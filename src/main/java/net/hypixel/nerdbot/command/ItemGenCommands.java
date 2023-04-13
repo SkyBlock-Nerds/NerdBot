@@ -50,10 +50,7 @@ public class ItemGenCommands extends ApplicationCommand {
     private static final String DESC_PARSE_ITEM = "Item JSON Display Data (in the form {\"Lore\": [...], \"Name\": \"\"}";
 
     @JDASlashCommand(name = "textgen", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
-
     public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
         if (isIncorrectChannel(event)) {
             return;
         }
@@ -207,7 +204,7 @@ public class ItemGenCommands extends ApplicationCommand {
         }
 
         // creating the minecraft image and sending it to the user.
-        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, 500, 255, 0).render();
+        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, StringColorParser.MAX_FINAL_LINE_LENGTH * 25, 255, 0).render();
         if (minecraftImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(minecraftImage.getImage()))).setEphemeral(false).queue();
         }
@@ -399,6 +396,8 @@ public class ItemGenCommands extends ApplicationCommand {
             itemLore.append("\\n");
         }
 
+        maxLineLength = Objects.requireNonNullElse(maxLineLength, StringColorParser.MAX_STANDARD_LINE_LENGTH);
+        maxLineLength = Math.min(StringColorParser.MAX_FINAL_LINE_LENGTH, Math.max(1, maxLineLength));
         // creating a string parser to convert the string into color flagged text
         StringColorParser colorParser = new StringColorParser(maxLineLength);
         colorParser.parseString(itemLore);
@@ -417,7 +416,7 @@ public class ItemGenCommands extends ApplicationCommand {
         padding = Objects.requireNonNullElse(padding, 0);
         padding = Math.max(0, padding);
 
-        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, 500, alpha, padding).render();
+        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, maxLineLength * 25, alpha, padding).render();
 
         Member member = event.getMember();
         DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), member.getId());
