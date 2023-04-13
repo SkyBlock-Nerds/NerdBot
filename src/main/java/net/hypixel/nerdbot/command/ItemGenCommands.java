@@ -139,7 +139,7 @@ public class ItemGenCommands extends ApplicationCommand {
     @JDASlashCommand(name = "itemgenparse", description = "Converts a minecraft item into a Nerd Bot item!")
     public void parseItemDescription(GuildSlashEvent event,
                                      @AppOption(description = DESC_PARSE_ITEM) String description,
-                                     @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+                                     @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
         }
