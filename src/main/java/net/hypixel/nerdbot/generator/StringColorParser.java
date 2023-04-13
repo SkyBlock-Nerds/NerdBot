@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class StringColorParser {
-    public static final int MAX_LINE_LENGTH = 38;
+    public static final int MAX_STANDARD_LINE_LENGTH = 38;
+    public static final int MAX_FINAL_LINE_LENGTH = 54;
 
     private static final MCColor[] colors = MCColor.VALUES;
     private static final Stat[] stats = Stat.VALUES;
@@ -37,8 +38,8 @@ public class StringColorParser {
         lineLength = 0;
         successfullyParsed = false;
 
-        maxLength = Objects.requireNonNullElse(maxLength, StringColorParser.MAX_LINE_LENGTH);
-        maxLineLength = Math.min(StringColorParser.MAX_LINE_LENGTH, Math.max(0, maxLength));
+        maxLength = Objects.requireNonNullElse(maxLength, StringColorParser.MAX_STANDARD_LINE_LENGTH);
+        maxLineLength = Math.min(StringColorParser.MAX_FINAL_LINE_LENGTH, Math.max(1, maxLength));
     }
 
     public List<ArrayList<ColoredString>> getParsedDescription() {
@@ -98,6 +99,7 @@ public class StringColorParser {
                             case ITALIC -> this.setItalic(true);
                             case STRIKETHROUGH -> this.setStrikethrough(true);
                             case UNDERLINE -> this.setUnderlined(true);
+                            case OBFUSCATED -> this.setObfuscated(true);
                             default -> this.setColor(mcColor);
                         }
                         charIndex = closingIndex + 2;
@@ -165,6 +167,7 @@ public class StringColorParser {
                                 case ITALIC -> this.setItalic(true);
                                 case STRIKETHROUGH -> this.setStrikethrough(true);
                                 case UNDERLINE -> this.setUnderlined(true);
+                                case OBFUSCATED -> this.setObfuscated(true);
                                 default -> this.setColor(mcColor);
                             }
                             charIndex += 2;
@@ -325,6 +328,19 @@ public class StringColorParser {
             currentString = new ColoredString(currentString);
         }
         currentString.setUnderlined(underline);
+    }
+
+    /**
+     * sets if the next segment has obfuscation
+     * @param obfuscated state of obfuscated to change to
+     */
+    private void setObfuscated(boolean obfuscated) {
+        // checking if there is any text on the current string before changing it to obfuscated
+        if (!currentString.isEmpty()) {
+            currentLine.add(currentString);
+            currentString = new ColoredString(currentString);
+        }
+        currentString.setStrikethrough(obfuscated);
     }
 
     /**
