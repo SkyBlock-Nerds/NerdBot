@@ -181,7 +181,7 @@ public class ItemGenCommands extends ApplicationCommand {
         // adding all the text to the string builders
         StringBuilder itemText = new StringBuilder();
         itemText.append(itemName).append("\\n");
-        itemGenCommand.append(" name:").append(itemName).append(" rarity:<> description:");
+        itemGenCommand.append(" name:").append(itemName).append(" rarity:NONE description:");
 
         for (JsonElement element : itemLoreArray) {
             String itemLore = element.getAsString().replaceAll("§", "&");
