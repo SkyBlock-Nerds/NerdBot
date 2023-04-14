@@ -9,13 +9,13 @@ import org.jetbrains.annotations.NotNull;
 @Getter
 @Setter
 public class ColoredString {
-    @Getter(AccessLevel.NONE) private final StringBuilder currentString;
+    @Getter(AccessLevel.NONE)
+    private final StringBuilder currentString;
     private MCColor currentColor;
-
-    private boolean isBold;
-    private boolean isItalic;
-    private boolean isStrikethrough;
-    private boolean isUnderlined;
+    private boolean bold;
+    private boolean italic;
+    private boolean strikethrough;
+    private boolean underlined;
 
     public ColoredString() {
         this.currentString = new StringBuilder(36);
@@ -25,8 +25,8 @@ public class ColoredString {
     public ColoredString(@NotNull ColoredString previousColoredString) {
         this();
         this.setCurrentColor(previousColoredString.currentColor);
-        this.setBold(previousColoredString.isBold);
-        this.setItalic(previousColoredString.isItalic);
+        this.setBold(previousColoredString.bold);
+        this.setItalic(previousColoredString.italic);
     }
 
     public boolean isEmpty() {

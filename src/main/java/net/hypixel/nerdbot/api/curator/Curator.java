@@ -8,7 +8,8 @@ import java.util.List;
 
 public abstract class Curator<T> {
 
-    private long startTime, endTime;
+    private long startTime;
+    private long endTime;
     private final boolean readOnly;
 
     protected Curator(boolean readOnly) {

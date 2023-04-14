@@ -17,7 +17,7 @@ public class StringColorParser {
     private static final Gemstone[] gemstones = Gemstone.VALUES;
 
     // variables used to store the description
-    private final List<ArrayList<ColoredString>> parsedDescription;
+    private final List<List<ColoredString>> parsedDescription;
     private ArrayList<ColoredString> currentLine = new ArrayList<>();
     private ColoredString currentString;
 
@@ -41,7 +41,7 @@ public class StringColorParser {
         maxLineLength = Math.min(StringColorParser.MAX_LINE_LENGTH, Math.max(0, maxLength));
     }
 
-    public List<ArrayList<ColoredString>> getParsedDescription() {
+    public List<List<ColoredString>> getParsedDescription() {
         return parsedDescription;
     }
 

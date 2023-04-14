@@ -4,10 +4,15 @@ import net.hypixel.nerdbot.util.skyblock.Stat;
 
 public class StatColorParser {
 
+    private StatColorParser() {
+    }
+
     /**
      * Displays the selected stat with its extra details and id in its primary color
-     * @param stat the selected stat
+     *
+     * @param stat         the selected stat
      * @param extraDetails the extra arguments provided
+     *
      * @return returns the color parsed replacement string
      */
     public static String normalStatColorParser(Stat stat, String extraDetails) {
@@ -24,8 +29,10 @@ public class StatColorParser {
 
     /**
      * Displays the selected stat with numbers in the secondary color and remaining text in primary color
-     * @param stat the stat selected
+     *
+     * @param stat         the stat selected
      * @param extraDetails the extra arguments provided
+     *
      * @return returns the color parsed replacement string
      */
     public static String dualStatColorParser(Stat stat, String extraDetails) {
@@ -39,17 +46,18 @@ public class StatColorParser {
     /***
      * Displays the stat with no extra details added on
      * @param stat the stat selected
-     * @param extraDetails the extra arguments provided (ignored)
      * @return returns the color parsed replacement string
      */
-    public static String noParsing(Stat stat, String extraDetails) {
+    public static String noParsing(Stat stat) {
         return "%%" + stat.getColor() + "%%" + stat.getStat();
     }
 
     /**
      * Displays the selected stat with extra data after the id.
-     * @param stat the stat selected
+     *
+     * @param stat         the stat selected
      * @param extraDetails the extra arguments provided
+     *
      * @return returns the color parsed replacement string
      */
     public static String postStatColorParser(Stat stat, String extraDetails) {
@@ -58,8 +66,10 @@ public class StatColorParser {
 
     /**
      * Displays the selected stat with an Item Stat and amount
-     * @param stat the stat selected
+     *
+     * @param stat         the stat selected
      * @param extraDetails the extra arguments provided
+     *
      * @return returns the color parsed replacements string
      */
     public static String itemStatColorParser(Stat stat, String extraDetails) {

@@ -17,11 +17,19 @@ import java.util.List;
 public class GreenlitMessage {
 
     private ObjectId id;
-    private String userId, messageId, greenlitMessageId, suggestionTitle, suggestionContent, suggestionUrl, channelGroupName;
+    private String userId;
+    private String messageId;
+    private String greenlitMessageId;
+    private String suggestionTitle;
+    private String suggestionContent;
+    private String suggestionUrl;
+    private String channelGroupName;
     private List<String> tags;
     private List<String> positiveVoterIds;
     private long suggestionTimestamp;
-    private int agrees, disagrees, neutrals;
+    private int agrees;
+    private int disagrees;
+    private int neutrals;
     private boolean alpha;
 
     public GreenlitMessage() {
