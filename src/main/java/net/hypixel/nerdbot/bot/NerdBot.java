@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.bot;
 
 import com.freya02.botcommands.api.CommandsBuilder;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -210,10 +211,10 @@ public class NerdBot implements Bot {
             fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
         }
 
+        Gson jsonConfig = new GsonBuilder().setPrettyPrinting().create();
         //Actually write the new config
-        Gson gsonConfig = new Gson();
         try {
-            gsonConfig.toJson(newConfig, new FileWriter(fileName));
+            jsonConfig.toJson(newConfig, new FileWriter(fileName));
         } catch (IOException e) {
             log.error("Could not save config file.");
             e.printStackTrace();
