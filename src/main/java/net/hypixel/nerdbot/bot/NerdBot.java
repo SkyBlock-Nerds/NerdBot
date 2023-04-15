@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.bot;
 
 import com.freya02.botcommands.api.CommandsBuilder;
+import com.google.gson.Gson;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -26,6 +27,8 @@ import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
 import net.hypixel.nerdbot.util.discord.Users;
+import org.bson.json.JsonObject;
+import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
 import java.io.*;
@@ -194,5 +197,28 @@ public class NerdBot implements Bot {
             log.error("Could not find config file " + fileName);
             System.exit(-1);
         }
+    }
+
+    public boolean writeConfig(@NotNull BotConfig newConfig) {
+        //Get the location that we're saving the config at
+        String fileName;
+        if (System.getProperty("bot.config") != null) {
+            fileName = System.getProperty("bot.config");
+            log.info("Found config property: " + fileName);
+        } else {
+            log.info("Config property not defined, going to default path!");
+            fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
+        }
+
+        //Actually write the new config
+        Gson gsonConfig = new Gson();
+        try {
+            gsonConfig.toJson(newConfig, new FileWriter(fileName));
+        } catch (IOException e) {
+            log.error("Could not save config file.");
+            e.printStackTrace();
+        }
+
+        return true;
     }
 }
