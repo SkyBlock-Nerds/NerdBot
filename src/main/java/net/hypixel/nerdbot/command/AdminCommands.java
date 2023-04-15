@@ -6,6 +6,7 @@ import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
@@ -21,6 +22,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.util.Util;
 
@@ -108,7 +110,7 @@ public class AdminCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "config", subcommand = "show", description = "View the currently loaded config", defaultLocked = true)
     public void showConfig(GuildSlashEvent event) {
-        Gson jsonConfig = new Gson();
+        Gson jsonConfig = new GsonBuilder().setPrettyPrinting().create();
         event.reply("```json\n" + jsonConfig.toJson(NerdBotApp.getBot().getConfig()) + "```").setEphemeral(true).queue();
     }
 
@@ -121,11 +123,26 @@ public class AdminCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "config", subcommand = "edit", description = "Edit the config file", defaultLocked = true)
-    public void editConfig(GuildSlashEvent event) {
+    public void editConfig(GuildSlashEvent event, @AppOption() String json) {
+        Gson jsonConfig = new Gson();
+
+        try { //This should require all the fields of BotConfig.class to be filled
+            jsonConfig.toJson(json, BotConfig.class);
+        } catch(Exception e) {
+            event.reply("I failed to edit the config file. ):").setEphemeral(true).queue();
+            e.printStackTrace();
+            return;
+        }
+
+        BotConfig newConfig = new BotConfig();
+
         Bot bot = NerdBotApp.getBot();
-        bot.loadConfig();
-        bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
-        event.reply("Reloaded the config file!").setEphemeral(true).queue();
+        boolean success = bot.writeConfig(newConfig);
+        if (success) {
+            event.reply("Edited the config file!").setEphemeral(true).queue();
+        } else {
+            event.reply("I failed to edit the config file. ):").setEphemeral(true).queue();
+        }
     }
 
     @JDASlashCommand(name = "getusernames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)
