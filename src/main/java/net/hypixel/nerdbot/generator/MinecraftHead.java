@@ -56,7 +56,7 @@ public class MinecraftHead {
         double xDistance = side.getXDistance();
         double yDistance = side.getYDistance();
 
-        // Applies transforms to the starting X/Y position to ensure it is in the correct place
+        // Applies transformations to the starting X/Y position to ensure it is in the correct place
         switch (side) {
             case RIGHT_SIDE, RIGHT_HAT_SIDE -> {
                 pixelTrackUp = sideDistance;
