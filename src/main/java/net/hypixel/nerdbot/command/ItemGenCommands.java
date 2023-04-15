@@ -48,9 +48,10 @@ public class ItemGenCommands extends ApplicationCommand {
     private static final String DESC_IS_PLAYER_NAME = "If the skin ID given describes the player's name";
     private static final String DESC_HIDDEN = "If you only want the generated image visible to yourself";
     private static final String DESC_PARSE_ITEM = "Item JSON Display Data (in the form {\"Lore\": [...], \"Name\": \"\"}";
+    private static final String NAME_TEXT = "text";
 
     @JDASlashCommand(name = "textgen", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
-    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT, name = NAME_TEXT) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
         }
