@@ -209,18 +209,20 @@ public class NerdBot implements Bot {
         } else {
             log.info("Config property not defined, going to default path!");
             fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
-            return false;
         }
 
         Gson jsonConfig = new GsonBuilder().setPrettyPrinting().create();
         //Actually write the new config
         try {
-            jsonConfig.toJson(newConfig, new FileWriter(fileName));
+            //SPECIAL NOTE: You need to close the FileWriter or else it doesn't write the whole config :)
+            FileWriter fw = new FileWriter(fileName);
+            jsonConfig.toJson(newConfig, fw);
+            fw.close();
+            return true;
         } catch (IOException e) {
             log.error("Could not save config file.");
             e.printStackTrace();
             return false;
         }
-        return true;
     }
 }
