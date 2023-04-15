@@ -27,7 +27,6 @@ import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
 import net.hypixel.nerdbot.util.discord.Users;
-import org.bson.json.JsonObject;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
@@ -199,6 +198,7 @@ public class NerdBot implements Bot {
         }
     }
 
+    @Override
     public boolean writeConfig(@NotNull BotConfig newConfig) {
         //Get the location that we're saving the config at
         String fileName;
