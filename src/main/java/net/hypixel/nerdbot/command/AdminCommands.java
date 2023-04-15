@@ -5,6 +5,7 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
@@ -107,11 +108,20 @@ public class AdminCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "config", subcommand = "show", description = "View the currently loaded config", defaultLocked = true)
     public void showConfig(GuildSlashEvent event) {
-        event.reply("```json\n" + NerdBotApp.getBot().getConfig().toString() + "```").setEphemeral(true).queue();
+        Gson jsonConfig = new Gson();
+        event.reply("```json\n" + jsonConfig.toJson(NerdBotApp.getBot().getConfig()) + "```").setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "config", subcommand = "reload", description = "Reload the config file", defaultLocked = true)
     public void reloadConfig(GuildSlashEvent event) {
+        Bot bot = NerdBotApp.getBot();
+        bot.loadConfig();
+        bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
+        event.reply("Reloaded the config file!").setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "config", subcommand = "edit", description = "Edit the config file", defaultLocked = true)
+    public void editConfig(GuildSlashEvent event) {
         Bot bot = NerdBotApp.getBot();
         bot.loadConfig();
         bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
