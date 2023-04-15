@@ -124,24 +124,25 @@ public class AdminCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "config", subcommand = "edit", description = "Edit the config file", defaultLocked = true)
     public void editConfig(GuildSlashEvent event, @AppOption() String json) {
+//         json = json.replace(" ", "");
         Gson jsonConfig = new Gson();
+        BotConfig newConfig;
 
         try { //This should require all the fields of BotConfig.class to be filled
-            jsonConfig.toJson(json, BotConfig.class);
+            newConfig = jsonConfig.fromJson(json, BotConfig.class);
         } catch(Exception e) {
-            event.reply("I failed to edit the config file. ):").setEphemeral(true).queue();
+            event.reply("I failed to edit the config file because I couldn't parse the json. ):").setEphemeral(true).queue();
             e.printStackTrace();
             return;
         }
-
-        BotConfig newConfig = new BotConfig();
 
         Bot bot = NerdBotApp.getBot();
         boolean success = bot.writeConfig(newConfig);
         if (success) {
             event.reply("Edited the config file!").setEphemeral(true).queue();
+            log.info(event.getUser().getName() + " edited the config!\n" + newConfig);
         } else {
-            event.reply("I failed to edit the config file. ):").setEphemeral(true).queue();
+            event.reply("I failed to edit the config file because I couldn't write the config. ):").setEphemeral(true).queue();
         }
     }
 
