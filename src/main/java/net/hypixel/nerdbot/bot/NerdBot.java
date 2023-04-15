@@ -209,6 +209,7 @@ public class NerdBot implements Bot {
         } else {
             log.info("Config property not defined, going to default path!");
             fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
+            return false;
         }
 
         Gson jsonConfig = new GsonBuilder().setPrettyPrinting().create();
@@ -218,8 +219,8 @@ public class NerdBot implements Bot {
         } catch (IOException e) {
             log.error("Could not save config file.");
             e.printStackTrace();
+            return false;
         }
-
         return true;
     }
 }
