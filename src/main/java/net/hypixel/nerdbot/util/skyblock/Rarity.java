@@ -32,9 +32,3 @@ public enum Rarity {
         return color;
     }
 }
-
-public enum Soulbound {
-    COOP_SOULBOUND("* Co-op Soulbound *", MCColor.GRAY, StatColorParser::noParsing),
-    SOULBOUND("* Soulbound *", MCColor.GRAY, StatColorParser::noParsing);'
-        //idk what anything after this does in the rarity part so i'm just gonna ignore it
-    }
