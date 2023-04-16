@@ -371,6 +371,9 @@ public class ItemGenCommands extends ApplicationCommand {
         }
 
         StringBuilder itemLore = new StringBuilder(description);
+        
+        // check if there is a soulbound tag
+        boolean isSoulbound = description.contains("SOULBOUND%%");
 
         // adds the item's name to the array list
         Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
@@ -386,7 +389,7 @@ public class ItemGenCommands extends ApplicationCommand {
                 type = "";
             }
             // checking if there is custom line break happening
-            if (handleLineBreaks == null || !handleLineBreaks) {
+            if ((handleLineBreaks == null || !handleLineBreaks) && !isSoulbound) {
                 itemLore.append("\\n");
             }
 

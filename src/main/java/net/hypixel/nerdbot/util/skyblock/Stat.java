@@ -36,6 +36,8 @@ public enum Stat {
     OVERFLOW_MANA("ʬ", "Overflow Mana", MCColor.DARK_AQUA),
     REQUIRE("❣",  "Requires", MCColor.RED, StatColorParser::postStatColorParser),
     RECIPE("", "Right-click to view recipes!", MCColor.YELLOW, StatColorParser::noParsing),
+    COOP_SOULBOUND("", "* Co-op Soulbound *", MCColor.DARK_GRAY, StatColorParser::noParsing),
+    SOULBOUND("", "* Soulbound *", MCColor.DARK_GRAY, StatColorParser::noParsing),
     REFORGABLE("", "This item can be reforged!", MCColor.DARK_GRAY, StatColorParser::noParsing),
     ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser, null),
     ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser, null),
