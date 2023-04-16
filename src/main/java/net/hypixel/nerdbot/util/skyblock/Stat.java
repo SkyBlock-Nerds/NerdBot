@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.util.skyblock;
 import net.hypixel.nerdbot.generator.StatColorParser;
 
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public enum Stat {
