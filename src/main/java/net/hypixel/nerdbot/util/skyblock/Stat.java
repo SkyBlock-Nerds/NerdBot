@@ -36,7 +36,7 @@ public enum Stat {
     REQUIRE("❣",  "Requires", MCColor.RED, StatColorParser::postStatColorParser),
     RECIPE("", "Right-click to view recipes!", MCColor.YELLOW, StatColorParser::noParsing),
     COOP_SOULBOUND("", "\n\n* Co-op Soulbound *", MCColor.GRAY, StatColorParser::noParsing),
-    SOULBOUND("", "\n\n* Soulbound *", MCColor.GRAY, StatColorParser::noParsing),
+    SOULBOUND("", "\\n* Soulbound *", MCColor.GRAY, StatColorParser::noParsing),
     REFORGABLE("", "This item can be reforged!", MCColor.DARK_GRAY, StatColorParser::noParsing),
     ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser, null),
     ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser, null),
