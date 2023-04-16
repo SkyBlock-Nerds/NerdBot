@@ -393,7 +393,7 @@ public class ItemGenCommands extends ApplicationCommand {
                 itemLore.append("\\n");
             }
             // removes line break between rarity if it is soulbound
-            if (isSoulbound == "True") {
+            if (isSoulbound = "True") {
                 itemLore.append("\\n");
             }
 
