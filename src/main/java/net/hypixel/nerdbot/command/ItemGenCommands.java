@@ -373,7 +373,7 @@ public class ItemGenCommands extends ApplicationCommand {
         StringBuilder itemLore = new StringBuilder(description);
         
         // check if there is a soulbound tag
-        isSoulbound = description.contains("COOP_SOULBOUND" || "SOULBOUND");
+        boolean isSoulbound == description.contains("COOP_SOULBOUND" || "SOULBOUND");
 
         // adds the item's name to the array list
         Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
@@ -393,7 +393,7 @@ public class ItemGenCommands extends ApplicationCommand {
                 itemLore.append("\\n");
             }
             // removes line break between rarity if it is soulbound
-            if (isSoulbound == True) {
+            if (isSoulbound == "True") {
                 itemLore.append("\\n");
             }
 
