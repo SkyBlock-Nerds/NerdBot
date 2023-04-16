@@ -13,7 +13,8 @@ import java.util.List;
 public class DiscordUser {
 
     private String discordId;
-    private List<String> agrees, disagrees;
+    private List<String> agrees;
+    private List<String> disagrees;
     private LastActivity lastActivity;
 
     public DiscordUser() {
