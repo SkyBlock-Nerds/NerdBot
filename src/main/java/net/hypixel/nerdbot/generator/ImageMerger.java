@@ -1,20 +1,16 @@
 package net.hypixel.nerdbot.generator;
 
-import lombok.extern.log4j.Log4j2;
-
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.logging.Logger;
 
 public class ImageMerger {
     private static final int PADDING = 15; //The amount of space between the head and the description.
     private static final double HEAD_SCALE = 0.9; //The scale in which the head appears to the size of the description.
     private static final double HEAD_RATIO = 0.8666; //The ratio for which the width and height of the head exist.
     private final Graphics2D g2d;
-    private final BufferedImage itemDescription, itemHead, finalImage;
+    private final BufferedImage itemDescription;
+    private final BufferedImage itemHead;
+    private final BufferedImage finalImage;
 
     /***
      * Merges two existing images (Minecraft Item Description and a Head)
@@ -48,7 +44,7 @@ public class ImageMerger {
         scaledImageGraphics.dispose();
 
         this.g2d.drawImage(scaledImage, PADDING, centerLine - scaledImage.getHeight() / 2, null);
-        this.g2d.drawImage(this.itemDescription, PADDING * 2 + (int) (newHeadWidth), centerLine - this.itemDescription.getHeight() / 2, null);
+        this.g2d.drawImage(this.itemDescription, PADDING * 2 + (newHeadWidth), centerLine - this.itemDescription.getHeight() / 2, null);
     }
 
     /***

@@ -7,13 +7,10 @@ import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -29,7 +26,7 @@ public class MinecraftImage {
     private static final Font sansSerif;
 
     // Current Settings
-    @Getter private final List<ArrayList<ColoredString>> lines;
+    @Getter private final List<List<ColoredString>> lines;
     @Getter private final int alpha;
     @Getter private final int padding;
     @Getter(AccessLevel.PRIVATE)
@@ -56,7 +53,7 @@ public class MinecraftImage {
         Arrays.stream(minecraftFonts).forEach(GraphicsEnvironment.getLocalGraphicsEnvironment()::registerFont);
     }
 
-    public MinecraftImage(List<ArrayList<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding) {
+    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding) {
         this.alpha = alpha;
         this.padding = padding;
         this.lines = lines;
@@ -140,7 +137,7 @@ public class MinecraftImage {
      * Draws the strings to the generated image.
      */
     public void drawLines() {
-        for (ArrayList<ColoredString> line : this.getLines()) {
+        for (List<ColoredString> line : this.getLines()) {
             for (ColoredString segment : line) {
                 // setting the font if it is meant to be bold or italicised
                 currentFont = minecraftFonts[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];

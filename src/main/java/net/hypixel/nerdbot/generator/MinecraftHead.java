@@ -1,15 +1,12 @@
 package net.hypixel.nerdbot.generator;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 
 public class MinecraftHead {
     private static final int HEAD_SCALE_UP = 3;
     private static final int HEAD_SCALE_DOWN = 2;
-    private BufferedImage image;
+    private final BufferedImage image;
     private final BufferedImage skin;
     private final Graphics2D g2d;
 
@@ -59,7 +56,7 @@ public class MinecraftHead {
         double xDistance = side.getXDistance();
         double yDistance = side.getYDistance();
 
-        // applys transforms to the starting X/Y position to ensure it is in the correct place
+        // Applies transformations to the starting X/Y position to ensure it is in the correct place
         switch (side) {
             case RIGHT_SIDE, RIGHT_HAT_SIDE -> {
                 pixelTrackUp = sideDistance;
@@ -76,9 +73,7 @@ public class MinecraftHead {
                 newLineDisplacement = -1;
                 startingY -= sideDistance;
             }
-            default -> {
-                pixelTrackUp = 0;
-            }
+            default -> pixelTrackUp = 0;
         }
 
         int increment = isFlipped ? -1 : 1;
@@ -120,7 +115,7 @@ public class MinecraftHead {
         drawFace(startingX + HeadTransforms.X_DISTANCE * 8, startingY - HeadTransforms.Y_DISTANCE * 8, true, Side.LEFT_SIDE, Face.HEAD_RIGHT);
 
         drawFace(startingX, startingY, false, Side.TOP_SIDE, Face.HEAD_TOP);
-        drawFace(startingX, startingY, false, Side.RIGHT_SIDE,  Face.HEAD_FRONT);
+        drawFace(startingX, startingY, false, Side.RIGHT_SIDE, Face.HEAD_FRONT);
         drawFace(startingX, startingY, false, Side.LEFT_SIDE, Face.HEAD_LEFT);
 
         drawFace(startingX, startingY, false, Side.TOP_HAT_SIDE, Face.HAT_TOP);
@@ -163,18 +158,21 @@ class HeadTransforms {
     public static final double SQUARE_HAT_DISTANCE = SQUARE_DISTANCE * 1.07;
     public static final double X_DISTANCE_HAT = SQUARE_HAT_DISTANCE * Math.cos(Math.toRadians(30));
     public static final double Y_DISTANCE_HAT = SQUARE_HAT_DISTANCE * Math.sin(Math.toRadians(30));
+
+    private HeadTransforms() {
+    }
 }
 
 /***
  * Describes the 4 points of the square which fit the isometric pattern
  */
 enum Side {
-    LEFT_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[] {0, 0, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.SQUARE_DISTANCE + HeadTransforms.Y_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
-    RIGHT_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[] {0, 0, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.SQUARE_DISTANCE - HeadTransforms.Y_DISTANCE, HeadTransforms.X_DISTANCE, -HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
-    TOP_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[] {0, 0, -HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
-    LEFT_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[] {0, 0, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.SQUARE_HAT_DISTANCE + HeadTransforms.Y_DISTANCE_HAT, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT),
-    RIGHT_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[] {0, 0, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.SQUARE_HAT_DISTANCE - HeadTransforms.Y_DISTANCE_HAT, HeadTransforms.X_DISTANCE_HAT, -HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT),
-    TOP_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[] {0, 0, -HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT);
+    LEFT_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.SQUARE_DISTANCE + HeadTransforms.Y_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
+    RIGHT_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.SQUARE_DISTANCE - HeadTransforms.Y_DISTANCE, HeadTransforms.X_DISTANCE, -HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
+    TOP_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[]{0, 0, -HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
+    LEFT_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.SQUARE_HAT_DISTANCE + HeadTransforms.Y_DISTANCE_HAT, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT),
+    RIGHT_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.SQUARE_HAT_DISTANCE - HeadTransforms.Y_DISTANCE_HAT, HeadTransforms.X_DISTANCE_HAT, -HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT),
+    TOP_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[]{0, 0, -HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT);
 
     private final double distance;
     private final double[] transforms;
@@ -212,7 +210,8 @@ enum Face {
     HEAD_FRONT(8, 8), HEAD_BACK(24, 8), HEAD_LEFT(0, 8), HEAD_RIGHT(16, 8), HEAD_TOP(8, 0), HEAD_BOTTOM(16, 0),
     HAT_FRONT(40, 8), HAT_BACK(56, 8), HAT_LEFT(32, 8), HAT_RIGHT(48, 8), HAT_TOP(40, 0), HAT_BOTTOM(48, 0);
 
-    private final int startX, startY;
+    private final int startX;
+    private final int startY;
 
     Face(int startX, int startY) {
         this.startX = startX;
