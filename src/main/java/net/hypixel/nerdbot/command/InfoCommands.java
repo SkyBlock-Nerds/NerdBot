@@ -166,11 +166,11 @@ public class InfoCommands extends ApplicationCommand {
                 return true;
             }
 
-            if (Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(14)))) {
+            if (Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
                 return true;
             }
 
-            return Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s));
+            return !Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(14)));
         });
 
         log.info("Found " + users.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
