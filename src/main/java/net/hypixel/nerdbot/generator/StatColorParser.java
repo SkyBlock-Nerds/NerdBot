@@ -58,7 +58,7 @@ public class StatColorParser {
      * @param stat the stat selected
      * @return returns the color parsed replacement string
      */
-    public static String noParsing(Stat stat) {
+    public static String noParsing(Stat stat, String e) {
         return "%%" + stat.getColor() + "%%" + stat.getStat();
     }
 
