@@ -32,3 +32,9 @@ public enum Rarity {
         return color;
     }
 }
+
+public enum Soulbound {
+    COOP_SOULBOUND("* Co-op Soulbound *", MCColor.GRAY),
+    SOULBOUND("* Soulbound *", MCColor.GRAY);'
+        //idk what anything after this does in the rarity part so i'm just gonna ignore it
+    }
