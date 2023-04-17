@@ -49,20 +49,6 @@ public class ItemGenCommands extends ApplicationCommand {
     private static final String DESC_HIDDEN = "If you only want the generated image visible to yourself";
     private static final String DESC_PARSE_ITEM = "Item JSON Display Data (in the form {\"Lore\": [...], \"Name\": \"\"}";
 
-    @JDASlashCommand(name = "itemgen", subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
-    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
-        if (isIncorrectChannel(event)) {
-            return;
-        }
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
-
-        MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", description, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH);
-        if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(hidden).queue();
-        }
-    }
-
     @JDASlashCommand(name = "itemgen", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock")
     public void generateItem(GuildSlashEvent event,
                              @AppOption(description = DESC_NAME) String name,
@@ -81,6 +67,20 @@ public class ItemGenCommands extends ApplicationCommand {
         event.deferReply(hidden).queue();
 
         MinecraftImage generatedImage = buildItem(event, name, rarity, description, type, handleLineBreaks, alpha, padding, maxLineLength);
+        if (generatedImage != null) {
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(hidden).queue();
+        }
+    }
+
+    @JDASlashCommand(name = "itemgen", subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
+    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+        if (isIncorrectChannel(event)) {
+            return;
+        }
+        hidden = (hidden != null && hidden);
+        event.deferReply(hidden).queue();
+
+        MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", description, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(hidden).queue();
         }
