@@ -48,10 +48,9 @@ public class ItemGenCommands extends ApplicationCommand {
     private static final String DESC_IS_PLAYER_NAME = "If the skin ID given describes the player's name";
     private static final String DESC_HIDDEN = "If you only want the generated image visible to yourself";
     private static final String DESC_PARSE_ITEM = "Item JSON Display Data (in the form {\"Lore\": [...], \"Name\": \"\"}";
-    private static final String NAME_TEXT = "text";
 
-    @JDASlashCommand(name = "textgen", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
-    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT, name = NAME_TEXT) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+    @JDASlashCommand(name = "itemgen", subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
+    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
         }
@@ -87,7 +86,7 @@ public class ItemGenCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "headgen", description = "Draws a minecraft head into a file")
+    @JDASlashCommand(name = "itemgen", subcommand = "head", description = "Draws a minecraft head into a file")
     public void generateHead(GuildSlashEvent event,
                              @AppOption(description = DESC_HEAD_ID) String skinId,
                              @Optional @AppOption(description = DESC_IS_PLAYER_NAME) Boolean isPlayerName,
@@ -104,7 +103,7 @@ public class ItemGenCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "fullgen", description = "Generates a full item stack!")
+    @JDASlashCommand(name = "itemgen", subcommand = "full", description = "Generates a full item stack!")
     public void generateFullItem(GuildSlashEvent event,
                                  @AppOption(description = DESC_NAME) String name,
                                  @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
@@ -138,7 +137,7 @@ public class ItemGenCommands extends ApplicationCommand {
         event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
     }
 
-    @JDASlashCommand(name = "itemgenparse", description = "Converts a minecraft item into a Nerd Bot item!")
+    @JDASlashCommand(name = "itemgen", subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
     public void parseItemDescription(GuildSlashEvent event,
                                      @AppOption(description = DESC_PARSE_ITEM) String description,
                                      @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
@@ -214,7 +213,7 @@ public class ItemGenCommands extends ApplicationCommand {
     }
 
 
-    @JDASlashCommand(name = "infogen", description = "Get a little bit of help with how to use the Generator bot.")
+    @JDASlashCommand(name = "itemgen", subcommand = "help", description = "Get a little bit of help with how to use the Generator bot.")
     public void askForInfo(GuildSlashEvent event) {
         if (isIncorrectChannel(event)) {
             return;
@@ -225,40 +224,40 @@ public class ItemGenCommands extends ApplicationCommand {
         EmbedBuilder colorBuilder = new EmbedBuilder();
         EmbedBuilder extraInfoBuilder = new EmbedBuilder();
         infoBuilder.setColor(Color.CYAN)
-            .setAuthor("SkyBlock Nerd Bot")
-            .setTitle("Item Generation")
-            .addField("Basic Info", "This is a bot used to create custom items to be used in suggestions. You can use the bot with `/itemgen`, `/headgen`, and `/fullgen`.", true);
+                .setAuthor("SkyBlock Nerd Bot")
+                .setTitle("Item Generation")
+                .addField("Basic Info", "This is a bot used to create custom items to be used in suggestions. You can use the bot with `/itemgen`, `/headgen`, and `/fullgen`.", true);
 
         argumentBuilder.setColor(Color.GREEN)
-            .addField("Arguments",
-                """
-                `name`: The name of the item. Defaults to the rarity color, unless the rarity is none.
-                `rarity`: Takes any SkyBlock rarity. Can be left as NONE.
-                `description`: Parses a description, including color codes, bold, italics, and newlines.
-                `type`: The type of the item, such as a Sword or Wand. Can be left blank.
-                `handle_line_breaks (true/false)`: To be used if you're manually handling line breaks between the description and rarity.
-                `alpha`: Sets the transparency of the background layer. 0 for transparent, 255 for opaque (default). 245 for overlay.
-                `padding`: Adds transparency around the entire image. Must be 0 (default) or higher.
-                `max_line_length`: Defines the maximum length that the line can be. Can be between 1 and 54.
-                """, false);
+                .addField("Arguments",
+                        """
+                        `name`: The name of the item. Defaults to the rarity color, unless the rarity is none.
+                        `rarity`: Takes any SkyBlock rarity. Can be left as NONE.
+                        `description`: Parses a description, including color codes, bold, italics, and newlines.
+                        `type`: The type of the item, such as a Sword or Wand. Can be left blank.
+                        `handle_line_breaks (true/false)`: To be used if you're manually handling line breaks between the description and rarity.
+                        `alpha`: Sets the transparency of the background layer. 0 for transparent, 255 for opaque (default). 245 for overlay.
+                        `padding`: Adds transparency around the entire image. Must be 0 (default) or higher.
+                        `max_line_length`: Defines the maximum length that the line can be. Can be between 1 and 54.
+                        """, false);
 
         colorBuilder.setColor(Color.YELLOW)
-            .addField("Color Codes",
-            """
-                The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
-                You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:+1%%` will become "+1 ✧ Pristine".
-                If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/statsymbols` command.
-                Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `handle_line_breaks` argument to True.
-                """, false);
+                .addField("Color Codes",
+                        """
+                            The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
+                            You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:+1%%` will become "+1 ✧ Pristine".
+                            If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/statsymbols` command.
+                            Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `handle_line_breaks` argument to True.
+                            """, false);
 
         extraInfoBuilder.setColor(Color.GRAY)
-            .addField("Other Information",
-                """
-                There is another command `/itemgenparse` which can be used to easily convert the display NBT Tag from a Minecraft item into a Generated Image. This display tag should be surrounded with curly brackets with a "Lore" (string array) and "Name" (string) attribute in them
-                You can also check out `/infoheadgen` for more information about rendering items next to your creations!
-                Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!
-                The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
-                """, false);
+                .addField("Other Information",
+                        """
+                        There is another command `/itemgenparse` which can be used to easily convert the display NBT Tag from a Minecraft item into a Generated Image. This display tag should be surrounded with curly brackets with a "Lore" (string array) and "Name" (string) attribute in them
+                        You can also check out `/infoheadgen` for more information about rendering items next to your creations!
+                        Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!
+                        The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
+                        """, false);
 
         Collection<MessageEmbed> embeds = new ArrayList<>();
         embeds.add(infoBuilder.build());
@@ -269,7 +268,7 @@ public class ItemGenCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "infoheadgen", description = "Get a little bit of help with how to use the Head Rendering functions of the Generator bot.")
+    @JDASlashCommand(name = "itemgen", subcommand = "head_help", description = "Get a little bit of help with how to use the Head Rendering functions of the Generator bot.")
     public void askForRenderHelp(GuildSlashEvent event) {
         if (isIncorrectChannel(event)) {
             return;
@@ -280,23 +279,23 @@ public class ItemGenCommands extends ApplicationCommand {
         EmbedBuilder extraInfoBuilder = new EmbedBuilder();
 
         infoBuilder.setColor(Color.CYAN)
-            .setAuthor("SkyBlock Nerd Bot")
-            .setTitle("Head Generation")
-            .addField("Basic Info", "The command `/headgen` which will display a rendered Minecraft Head from a Skin (or player) you chose!", true);
+                .setAuthor("SkyBlock Nerd Bot")
+                .setTitle("Head Generation")
+                .addField("Basic Info", "The command `/headgen` which will display a rendered Minecraft Head from a Skin (or player) you chose!", true);
 
         argumentBuilder.setColor(Color.GREEN)
-            .addField("Arguments",
-               """
-               `skin_id:` The skin ID or the player name of the person you wish to grab the skin from. (This is the string written after `http://textures.minecraft.net/texture/...`
-               `is_player_head:` set to True if the skin ID is a player's name
-               """, false);
+                .addField("Arguments",
+                        """
+                        `skin_id:` The skin ID or the player name of the person you wish to grab the skin from. (This is the string written after `http://textures.minecraft.net/texture/...`
+                        `is_player_head:` set to True if the skin ID is a player's name
+                        """, false);
 
         extraInfoBuilder.setColor(Color.GRAY)
-            .addField("Other Information",
-                """
-                If you are feeling extra spicy, you can combine these two elements by using the `/fullgen` command with arguments mentioned previously.
-                The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
-                """, false);
+                .addField("Other Information",
+                        """
+                        If you are feeling extra spicy, you can combine these two elements by using the `/fullgen` command with arguments mentioned previously.
+                        The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
+                        """, false);
 
         Collection<MessageEmbed> embeds = new ArrayList<>();
         embeds.add(infoBuilder.build());
@@ -306,7 +305,7 @@ public class ItemGenCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "statsymbols", description = "Show a list of all stats symbols")
+    @JDASlashCommand(name = "itemgen", subcommand = "statsymbols", description = "Show a list of all stats symbols")
     public void showAllStats(GuildSlashEvent event) {
         StringBuilder builder = new StringBuilder();
 
@@ -353,7 +352,7 @@ public class ItemGenCommands extends ApplicationCommand {
     }
 
     private MinecraftImage buildItem(GuildSlashEvent event, String name, String rarity, String description, String type,
-                                    Boolean handleLineBreaks, Integer alpha, Integer padding, Integer maxLineLength) {
+                                     Boolean handleLineBreaks, Integer alpha, Integer padding, Integer maxLineLength) {
         // Checking that the fonts have been loaded correctly
         if (!MinecraftImage.isFontsRegistered()) {
             event.getHook().sendMessage("It seems that one of the font files couldn't be loaded correctly. Please contact a Bot Developer to have a look at it!").setEphemeral(true).queue();
@@ -371,9 +370,6 @@ public class ItemGenCommands extends ApplicationCommand {
         }
 
         StringBuilder itemLore = new StringBuilder(description);
-        
-        // check if there is a soulbound tag
-        boolean isSoulbound = description.contains("SOULBOUND%%");
 
         // adds the item's name to the array list
         Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
@@ -389,7 +385,7 @@ public class ItemGenCommands extends ApplicationCommand {
                 type = "";
             }
             // checking if there is custom line break happening
-            if ((handleLineBreaks == null || !handleLineBreaks) && !isSoulbound) {
+            if (handleLineBreaks == null || !handleLineBreaks) {
                 itemLore.append("\\n");
             }
 
