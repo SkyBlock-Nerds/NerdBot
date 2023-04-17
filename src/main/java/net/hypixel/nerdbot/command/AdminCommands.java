@@ -5,8 +5,7 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
@@ -21,6 +20,8 @@ import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
+import net.hypixel.nerdbot.util.Environment;
+import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
 
 import java.io.File;
@@ -107,7 +108,8 @@ public class AdminCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "config", subcommand = "show", description = "View the currently loaded config", defaultLocked = true)
     public void showConfig(GuildSlashEvent event) {
-        event.reply("```json\n" + NerdBotApp.getBot().getConfig().toString() + "```").setEphemeral(true).queue();
+        Gson jsonConfig = new GsonBuilder().setPrettyPrinting().create();
+        event.reply("```json\n" + jsonConfig.toJson(NerdBotApp.getBot().getConfig()) + "```").setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "config", subcommand = "reload", description = "Reload the config file", defaultLocked = true)
@@ -116,6 +118,28 @@ public class AdminCommands extends ApplicationCommand {
         bot.loadConfig();
         bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
         event.reply("Reloaded the config file!").setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "config", subcommand = "edit", description = "Edit the config file", defaultLocked = true)
+    public void editConfig(GuildSlashEvent event, @AppOption String key, @AppOption String value) {
+        // We should store the name of the config file on boot lol this is bad
+        String fileName = System.getProperty("bot.config") != null ? System.getProperty("bot.config") : Environment.getEnvironment().name().toLowerCase() + ".config.json";
+        JsonObject obj = JsonUtil.readJsonFile(fileName);
+        if (obj == null) {
+            event.reply("An error occurred when reading the JSON file, please try again later!").setEphemeral(true).queue();
+            return;
+        }
+
+        JsonElement element;
+        try {
+            element = JsonParser.parseString(value);
+        } catch (JsonSyntaxException e) {
+            event.reply("You specified an invalid value! (`" + e.getMessage() + "`)").setEphemeral(true).queue();
+            return;
+        }
+
+        JsonUtil.writeJsonFile(fileName, JsonUtil.setJsonValue(obj, key, element));
+        event.reply("Successfully updated the JSON file!").setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "getusernames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)

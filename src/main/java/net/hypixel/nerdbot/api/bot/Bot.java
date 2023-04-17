@@ -5,8 +5,10 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.bot.config.BotConfig;
+import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
+import java.io.IOException;
 import java.util.List;
 
 public interface Bot {
@@ -32,4 +34,7 @@ public interface Bot {
     long getUptime();
 
     boolean isReadOnly();
+
+    boolean writeConfig(@NotNull BotConfig newConfig);
+
 }
