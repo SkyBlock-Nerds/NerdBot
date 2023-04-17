@@ -138,6 +138,7 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
+        log.info(event.getUser().getName() + " edited the config file!");
         JsonUtil.writeJsonFile(fileName, JsonUtil.setJsonValue(obj, key, element));
         event.reply("Successfully updated the JSON file!").setEphemeral(true).queue();
     }
