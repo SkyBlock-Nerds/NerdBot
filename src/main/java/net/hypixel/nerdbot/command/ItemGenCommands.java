@@ -49,7 +49,7 @@ public class ItemGenCommands extends ApplicationCommand {
     private static final String DESC_HIDDEN = "If you only want the generated image visible to yourself";
     private static final String DESC_PARSE_ITEM = "Item JSON Display Data (in the form {\"Lore\": [...], \"Name\": \"\"}";
 
-    @JDASlashCommand(name = "textgen", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
+    @JDASlashCommand(name = "itemgen", subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
     public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT) String description, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
@@ -86,7 +86,7 @@ public class ItemGenCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "headgen", description = "Draws a minecraft head into a file")
+    @JDASlashCommand(name = "itemgen", subcommand = "head", description = "Draws a minecraft head into a file")
     public void generateHead(GuildSlashEvent event,
                              @AppOption(description = DESC_HEAD_ID) String skinId,
                              @Optional @AppOption(description = DESC_IS_PLAYER_NAME) Boolean isPlayerName,
@@ -103,7 +103,7 @@ public class ItemGenCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "fullgen", description = "Generates a full item stack!")
+    @JDASlashCommand(name = "itemgen", subcommand = "full", description = "Generates a full item stack!")
     public void generateFullItem(GuildSlashEvent event,
                                  @AppOption(description = DESC_NAME) String name,
                                  @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
@@ -137,7 +137,7 @@ public class ItemGenCommands extends ApplicationCommand {
         event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
     }
 
-    @JDASlashCommand(name = "itemgenparse", description = "Converts a minecraft item into a Nerd Bot item!")
+    @JDASlashCommand(name = "itemgen", subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
     public void parseItemDescription(GuildSlashEvent event,
                                      @AppOption(description = DESC_PARSE_ITEM) String description,
                                      @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
@@ -213,7 +213,7 @@ public class ItemGenCommands extends ApplicationCommand {
     }
 
 
-    @JDASlashCommand(name = "infogen", description = "Get a little bit of help with how to use the Generator bot.")
+    @JDASlashCommand(name = "itemgen", subcommand = "help", description = "Get a little bit of help with how to use the Generator bot.")
     public void askForInfo(GuildSlashEvent event) {
         if (isIncorrectChannel(event)) {
             return;
@@ -268,7 +268,7 @@ public class ItemGenCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "infoheadgen", description = "Get a little bit of help with how to use the Head Rendering functions of the Generator bot.")
+    @JDASlashCommand(name = "itemgen", subcommand = "head_help", description = "Get a little bit of help with how to use the Head Rendering functions of the Generator bot.")
     public void askForRenderHelp(GuildSlashEvent event) {
         if (isIncorrectChannel(event)) {
             return;
@@ -305,7 +305,7 @@ public class ItemGenCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "statsymbols", description = "Show a list of all stats symbols")
+    @JDASlashCommand(name = "itemgen", subcommand = "statsymbols", description = "Show a list of all stats symbols")
     public void showAllStats(GuildSlashEvent event) {
         StringBuilder builder = new StringBuilder();
 
