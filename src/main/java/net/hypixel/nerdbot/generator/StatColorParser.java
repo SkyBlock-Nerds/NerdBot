@@ -62,6 +62,17 @@ public class StatColorParser {
         return "%%" + stat.getColor() + "%%" + stat.getStat();
     }
 
+
+    /***
+     * Displays the stat with bolded asterisk around it
+     *
+     * @param stat the stat selected
+     * @return the color parsed replacement string
+     */
+    public static String soulboundColorParsing(Stat stat, String e) {
+        return "%%" + stat.getColor() + "%%%%BOLD%%* %%" + stat.getColor() + "%%" + stat.getStat() + " %%BOLD%%*";
+    }
+
     /**
      * Displays the selected stat with extra data after the id.
      *
