@@ -49,7 +49,7 @@ public class ItemGenCommands extends ApplicationCommand {
     private static final String DESC_HIDDEN = "If you only want the generated image visible to yourself";
     private static final String DESC_PARSE_ITEM = "Item JSON Display Data (in the form {\"Lore\": [...], \"Name\": \"\"}";
 
-    @JDASlashCommand(name = "itemgen", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock")
+    @JDASlashCommand(name = "itemgen", subcommand = "item", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock")
     public void generateItem(GuildSlashEvent event,
                              @AppOption(description = DESC_NAME) String name,
                              @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
