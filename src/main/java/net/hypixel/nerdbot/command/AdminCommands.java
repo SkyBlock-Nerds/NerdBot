@@ -7,6 +7,7 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Invite;
@@ -19,6 +20,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
@@ -45,6 +47,7 @@ public class AdminCommands extends ApplicationCommand {
     private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
 
     private final Queue<String> usernameQueue = new LinkedList<>();
+
     @JDASlashCommand(name = "curate", description = "Manually run the curation process", defaultLocked = true)
     public void curate(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Run the curator without greenlighting suggestions") Boolean readOnly) {
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
@@ -75,6 +78,14 @@ public class AdminCommands extends ApplicationCommand {
 
         event.deferReply(true).queue();
 
+        if (ChannelManager.getLogChannel() != null) {
+            ChannelManager.getLogChannel().sendMessageEmbeds(new EmbedBuilder()
+                    .setTitle("Invites generated")
+                    .setDescription("Generating " + amount + " invite(s) for " + channel.getAsMention() + " by " + event.getUser().getAsMention())
+                    .build()
+            ).queue();
+        }
+
         for (int i = 0; i < amount; i++) {
             InviteAction action = channel.createInvite()
                     .setUnique(true)
@@ -103,6 +114,13 @@ public class AdminCommands extends ApplicationCommand {
             log.info(event.getUser().getAsTag() + " deleted invite " + invite.getUrl());
         });
 
+        if (ChannelManager.getLogChannel() != null) {
+            ChannelManager.getLogChannel().sendMessageEmbeds(new EmbedBuilder()
+                    .setTitle("Invites deleted")
+                    .setDescription("Deleted " + invites.size() + " invite(s) by " + event.getUser().getAsMention())
+                    .build()
+            ).queue();
+        }
         event.getHook().editOriginal("Deleted " + invites.size() + " invites").queue();
     }
 
