@@ -184,13 +184,18 @@ public class ItemGenCommands extends ApplicationCommand {
         itemText.append(itemName).append("\\n");
         itemGenCommand.append(" name:").append(itemName).append(" rarity:NONE item_lore:");
 
+        int maxLineLength = 0;
         for (JsonElement element : itemLoreArray) {
-            String itemLore = element.getAsString().replaceAll("§", "&");
+            String itemLore = element.getAsString().replaceAll("§", "&").replaceAll("`", "");
             itemText.append(itemLore).append("\\n");
-            itemGenCommand.append(itemLore.replaceAll("`", "")).append("\\n");
+            itemGenCommand.append(itemLore).append("\\n");
+
+            if (maxLineLength < itemLore.length()) {
+                maxLineLength = itemLore.length();
+            }
         }
         itemGenCommand.replace(itemGenCommand.length() - 2, itemGenCommand.length(), "");
-        itemGenCommand.append("```");
+        itemGenCommand.append(" max_line_length:").append(maxLineLength).append("```");
 
         // creating a string parser to convert the string into color flagged text
         StringColorParser colorParser = new StringColorParser(StringColorParser.MAX_FINAL_LINE_LENGTH);
