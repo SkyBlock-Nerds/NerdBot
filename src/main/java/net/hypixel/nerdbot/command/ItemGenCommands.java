@@ -318,7 +318,13 @@ public class ItemGenCommands extends ApplicationCommand {
             builder.append(stat).append(": ").append(" ".repeat(length)).append(stat.getDisplay()).append("\n");
         }
 
-        builder.append("```");
+        builder.append("\nOther Useful Icons");
+        builder.append("\n");
+        for (String icon : Stat.OTHER_ICONS) {
+            builder.append(icon).append("    ");
+        }
+
+        builder.append("\n```");
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
 

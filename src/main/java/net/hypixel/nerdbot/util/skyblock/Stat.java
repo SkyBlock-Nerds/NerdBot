@@ -57,6 +57,7 @@ public enum Stat {
     RIFT_TIME("ф", "Rift Time", MCColor.GREEN);
 
     public static final Stat[] VALUES = values();
+    public static final String[] OTHER_ICONS = {"•"};
 
     private final String icon;
     private final String stat;
