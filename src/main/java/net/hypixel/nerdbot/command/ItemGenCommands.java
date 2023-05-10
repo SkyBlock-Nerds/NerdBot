@@ -150,7 +150,7 @@ public class ItemGenCommands extends ApplicationCommand {
         JsonObject itemJSON;
         String itemName;
         JsonArray itemLoreArray;
-        StringBuilder itemGenCommand = new StringBuilder("```/itemgen");
+        StringBuilder itemGenCommand = new StringBuilder("```/itemgen item");
 
         try {
             itemJSON = NerdBotApp.GSON.fromJson(nbtDisplayTag, JsonObject.class);
