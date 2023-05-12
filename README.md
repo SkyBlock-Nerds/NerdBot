@@ -45,5 +45,5 @@ Requirements:
 To start the bot, run the following command:
 
 ```shell
-$ java -Dmongodb.uri="YOUR_DATABASE_CONNECTION_STRING" -Dbot.token="YOUR_DISCORD_BOT_TOKEN" -Dbot.region="REGION" [-options] -jar NerdBot.jar
+$ java -Dbot.token="DISCORD_BOT_TOKEN" -Dmongodb.uri="MONGODB_URI" -Dbot.environment="ENVIRONMENT" -Dbot.config="INSERT_CONFIG_PATH_HERE" -jar NerdBot.jar
 ```
