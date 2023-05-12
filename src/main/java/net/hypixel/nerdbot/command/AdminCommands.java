@@ -5,13 +5,11 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import com.freya02.botcommands.api.prefixed.annotations.TextOption;
 import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Invite;
-import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
@@ -25,7 +23,9 @@ import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.minecraft.Minecraft;
 
+import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -42,11 +42,6 @@ import java.util.regex.Pattern;
 
 @Log4j2
 public class AdminCommands extends ApplicationCommand {
-
-    private static final String REGEX = "^[a-zA-Z0-9_]{2,16}";
-    private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
-
-    private final Queue<String> usernameQueue = new LinkedList<>();
 
     @JDASlashCommand(name = "curate", description = "Manually run the curation process", defaultLocked = true)
     public void curate(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Run the curator without greenlighting suggestions") Boolean readOnly) {
@@ -161,102 +156,20 @@ public class AdminCommands extends ApplicationCommand {
         event.reply("Successfully updated the JSON file!").setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "getusernames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)
-    public void getNerdNames(GuildSlashEvent event) throws IOException {
+    @JDASlashCommand(name = "getuuids", description = "Get a list of all Minecraft UUIDs from a role in the server", defaultLocked = true)
+    public void getNerdNames(GuildSlashEvent event, @AppOption(description = "The role to fetch for") Role role) throws IOException {
         event.deferReply(true).queue();
         Guild guild = event.getGuild();
-        JsonArray array = getNames(guild, true);
+        JsonArray array = Minecraft.getUUIDs(guild, role);
         File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(array));
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
 
-    @JDASlashCommand(name = "getusernames", subcommand = "all", description = "Get a list of all Minecraft names/UUIDs from members in the server", defaultLocked = true)
-    public void getEveryonesNames(GuildSlashEvent event) throws IOException {
-        event.deferReply(true).queue();
-        Guild guild = event.getGuild();
-        JsonArray array = getNames(guild, false);
-        File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(array));
-        event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+    @JDASlashCommand(name = "getuuid", description = "Get a single members Minecraft UUID")
+    public void getUUID(GuildSlashEvent event, @AppOption(description = "The user to fetch") Member member) {
+        String username = Minecraft.getName(member);
+        String uuid = Minecraft.getUUID(username);
+        event.reply(String.format("%s: %s", username, uuid)).setEphemeral(true).queue();
     }
 
-    private JsonArray getNames(Guild guild, boolean nerdsOnly) {
-        JsonArray jsonArray = new JsonArray();
-
-        List<Member> members = guild.loadMembers().get()
-                .stream()
-                .filter(member -> Util.hasRole(member, "Member"))
-                .toList();
-
-        if (nerdsOnly) {
-            members = members.stream().filter(member -> Util.hasRole(member, "Nerd") || Util.hasRole(member, "HPC") || Util.hasRole(member, "Grape")).toList();
-        }
-
-        log.info("Found " + members.size() + " members meeting requirements");
-        members.forEach(member -> {
-            // removes non-standard ascii characters from the discord nickname
-            String plainUsername = member.getEffectiveName().trim().replaceAll("[^\u0000-\u007F]", "");
-            String memberMCUsername = null;
-
-            // checks if the member's username has flair
-            if (!Pattern.matches(REGEX, plainUsername)) {
-                // removes start and end characters ([example], {example}, |example| or (example)).
-                // also strips spaces from the username
-                plainUsername = plainUsername.replaceAll(SURROUND_REGEX, "").replace(" ", "");
-                String[] splitUsername = plainUsername.split("[^a-zA-Z0-9_]");
-
-                // gets the first item that matches the name constraints
-                for (String item : splitUsername) {
-                    if (Pattern.matches(REGEX, item)) {
-                        memberMCUsername = item;
-                        break;
-                    }
-                }
-            } else {
-                memberMCUsername = plainUsername.replace(" ", "");
-            }
-
-            // checks if there was a valid match found
-            if (memberMCUsername != null) {
-                log.info("Found match: " + memberMCUsername);
-                usernameQueue.add(memberMCUsername);
-                log.info(String.format("Added %s (%s) to the username lookup queue!", member.getEffectiveName(), memberMCUsername));
-            } else {
-                log.info(String.format("Didn't add %s to the username lookup queue", member.getEffectiveName()));
-            }
-        });
-
-        while (!usernameQueue.isEmpty()) {
-            try {
-                String username = usernameQueue.poll();
-                String response = sendRequest(username);
-                JsonObject obj = NerdBotApp.GSON.fromJson(response, JsonObject.class);
-                if (obj == null || obj.get("id") == null) {
-                    log.info("Skipping over " + username + "!");
-                    continue;
-                }
-                jsonArray.add(obj.get("id").getAsString());
-            } catch (IOException | URISyntaxException | InterruptedException e) {
-                log.error("Encountered an error while looking up UUID: " + e.getMessage());
-                e.printStackTrace();
-            }
-        }
-
-        return jsonArray;
-    }
-
-    private String sendRequest(String name) throws IOException, URISyntaxException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format("https://api.mojang.com/users/profiles/minecraft/%s", name))).GET().build();
-
-        try {
-            log.info("Sending request to " + httpRequest.uri());
-            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            return response.body();
-        } catch (InterruptedException e) {
-            log.error(String.format("Encountered error while looking up Minecraft account of %s!", name));
-            e.printStackTrace();
-        }
-
-        return null;
-    }
 }

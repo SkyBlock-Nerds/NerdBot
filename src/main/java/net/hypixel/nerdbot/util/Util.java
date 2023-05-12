@@ -47,6 +47,10 @@ public class Util {
         return roles.stream().anyMatch(role -> role.getName().equalsIgnoreCase(name));
     }
 
+    public static boolean hasRole(Member member, Role role) {
+        return member.getRoles().contains(role);
+    }
+
     @Nullable
     public static Role getRole(String name) {
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
