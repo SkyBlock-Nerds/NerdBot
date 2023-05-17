@@ -170,7 +170,7 @@ public class InfoCommands extends ApplicationCommand {
                 return true;
             }
 
-            return !Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(14)));
+            return !Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getInactivityDays())));
         });
 
         log.info("Found " + users.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
