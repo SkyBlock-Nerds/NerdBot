@@ -164,8 +164,7 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "getusernames", subcommand = "nerds", description = "Get a list of all Minecraft names/UUIDs from Nerd roles in the server", defaultLocked = true)
     public void getNerdNames(GuildSlashEvent event) throws IOException {
         event.deferReply(true).queue();
-        Guild guild = event.getGuild();
-        JsonArray array = getNames(guild, true);
+        JsonArray array = getNames(event.getGuild(), true);
         File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(array));
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
@@ -173,8 +172,7 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "getusernames", subcommand = "all", description = "Get a list of all Minecraft names/UUIDs from members in the server", defaultLocked = true)
     public void getEveryonesNames(GuildSlashEvent event) throws IOException {
         event.deferReply(true).queue();
-        Guild guild = event.getGuild();
-        JsonArray array = getNames(guild, false);
+        JsonArray array = getNames(event.getGuild(), false);
         File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(array));
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
@@ -231,7 +229,7 @@ public class AdminCommands extends ApplicationCommand {
                 String response = sendRequest(username);
                 JsonObject obj = NerdBotApp.GSON.fromJson(response, JsonObject.class);
                 if (obj == null || obj.get("id") == null) {
-                    log.info("Skipping over " + username + "!");
+                    log.info("Couldn't find UUID for " + username + "!");
                     continue;
                 }
                 jsonArray.add(obj.get("id").getAsString());
