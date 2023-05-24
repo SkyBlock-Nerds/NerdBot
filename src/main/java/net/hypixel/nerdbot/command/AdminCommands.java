@@ -20,6 +20,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.api.database.user.DiscordUser;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.util.Environment;
@@ -175,6 +176,17 @@ public class AdminCommands extends ApplicationCommand {
         JsonArray array = getNames(event.getGuild(), false);
         File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(array));
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+    }
+
+    @JDASlashCommand(name = "forcesave", description = "Forcefully save a user's data", defaultLocked = true)
+    public void forceSaveUser(GuildSlashEvent event, @AppOption(description = "The user to save") Member member) {
+        if (NerdBotApp.USER_CACHE.getIfPresent(member.getId()) != null) {
+            DiscordUser discordUser = NerdBotApp.USER_CACHE.getIfPresent(member.getId());
+            NerdBotApp.getBot().getDatabase().upsertDocument(NerdBotApp.getBot().getDatabase().getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
+            event.reply("Saved data for " + member.getAsMention()).setEphemeral(true).queue();
+        } else {
+            event.reply("That user is not in the cache!").setEphemeral(true).queue();
+        }
     }
 
     private JsonArray getNames(Guild guild, boolean nerdsOnly) {

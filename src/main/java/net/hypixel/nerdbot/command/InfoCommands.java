@@ -23,15 +23,13 @@ import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
+import java.util.*;
 
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
 
-    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
+    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master", "HPC"};
 
     private final Database database = NerdBotApp.getBot().getDatabase();
 
@@ -121,6 +119,7 @@ public class InfoCommands extends ApplicationCommand {
         LastActivity lastActivity = discordUser.getLastActivity();
         EmbedBuilder globalEmbedBuilder = new EmbedBuilder();
         EmbedBuilder alphaEmbedBuilder = new EmbedBuilder();
+        EmbedBuilder topChannelEmbedBuilder = new EmbedBuilder();
 
         // Global Activity
         globalEmbedBuilder.setColor(Color.GREEN)
@@ -146,7 +145,21 @@ public class InfoCommands extends ApplicationCommand {
                 .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionVoteDate), true)
                 .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentDate), true);
 
-        event.replyEmbeds(globalEmbedBuilder.build(), alphaEmbedBuilder.build())
+        // Top Channels
+        StringBuilder builder = new StringBuilder();
+        if (discordUser.getLastActivity().getChannelActivity().isEmpty()) {
+            builder.append("No activity found");
+        } else {
+            discordUser.getLastActivity().getChannelActivity().entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                    .forEach(entry -> builder.append("<#").append(entry.getKey()).append(">: ").append(entry.getValue()).append("\n"));
+        }
+
+        topChannelEmbedBuilder.setColor(Color.BLUE)
+                .setTitle("Favorite Channels")
+                .setDescription(builder.toString());
+
+        event.replyEmbeds(globalEmbedBuilder.build(), alphaEmbedBuilder.build(), topChannelEmbedBuilder.build())
                 .setEphemeral(true)
                 .queue();
     }
@@ -175,10 +188,12 @@ public class InfoCommands extends ApplicationCommand {
 
         log.info("Found " + users.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
         users.sort(Comparator.comparingLong(discordUser -> discordUser.getLastActivity().getLastGlobalActivity()));
+
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
-        getPage(users, page, 10).forEach(discordUser -> {
+        getPage(users, page, 25).forEach(discordUser -> {
             Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+
             if (member == null) {
                 log.error("Couldn't find member " + discordUser.getDiscordId());
                 return;

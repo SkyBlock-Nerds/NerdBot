@@ -139,7 +139,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     .disagrees(disagree)
                     .messageId(message.getId())
                     .userId(message.getAuthor().getId())
-                    .alpha(forumChannel.getName().toLowerCase().contains("alpha"))
+                    .alpha(forumChannel.getName().toLowerCase().contains("alpha") || forumChannel.getParentCategory().getName().contains("alpha"))
                     .suggestionUrl(message.getJumpUrl())
                     .suggestionTitle(thread.getName())
                     .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())

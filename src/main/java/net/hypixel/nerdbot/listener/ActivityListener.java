@@ -59,15 +59,16 @@ public class ActivityListener {
         String channelId = guildChannel.getId();
         long time = System.currentTimeMillis();
         boolean isAlphaChannel = guildChannel.getName().contains("alpha");
+        BotConfig config = NerdBotApp.getBot().getConfig();
 
         // New Suggestions
-        if (Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).anyMatch(channelId::equalsIgnoreCase)) {
+        if (config.getSuggestionForumIds() != null && Arrays.stream(config.getSuggestionForumIds()).anyMatch(channelId::equalsIgnoreCase)) {
             discordUser.getLastActivity().setLastSuggestionDate(time);
             log.info("Updating new suggestion activity date for " + member.getEffectiveName() + " to " + time);
         }
 
         // New Alpha Suggestions
-        if (Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(channelId::equalsIgnoreCase)) {
+        if (config.getAlphaSuggestionForumIds() != null && Arrays.stream(config.getAlphaSuggestionForumIds()).anyMatch(channelId::equalsIgnoreCase)) {
             isAlphaChannel = true;
             discordUser.getLastActivity().setLastAlphaSuggestionDate(time);
             log.info("Updating new alpha suggestion activity date for " + member.getEffectiveName() + " to " + time);
@@ -78,13 +79,13 @@ public class ActivityListener {
             String forumChannelId = guildChannel.asThreadChannel().getParentChannel().getId();
 
             // New Suggestion Comments
-            if (Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            if (Arrays.stream(config.getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().setSuggestionCommentDate(time);
                 log.info("Updating suggestion comment activity date for " + member.getEffectiveName() + " to " + time);
             }
 
             // New Alpha Suggestion Comments
-            if (Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            if (Arrays.stream(config.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 isAlphaChannel = true;
                 discordUser.getLastActivity().setAlphaSuggestionCommentDate(time);
                 log.info("Updating alpha suggestion comment activity date for " + member.getEffectiveName() + " to " + time);
@@ -168,13 +169,13 @@ public class ActivityListener {
                 long time = System.currentTimeMillis();
 
                 // New Suggestion Voting
-                if (Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+                if (Arrays.stream(config.getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setSuggestionVoteDate(time);
                     log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
 
                 // New Alpha Suggestion Voting
-                if (Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+                if (Arrays.stream(config.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setAlphaSuggestionVoteDate(time);
                     log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
