@@ -9,6 +9,9 @@ import javax.annotation.Nullable;
 @Log4j2
 public class ChannelManager {
 
+    private ChannelManager() {
+    }
+
     @Nullable
     public static TextChannel getChannel(String channel) {
         TextChannel textChannel = NerdBotApp.getBot().getJDA().getTextChannelById(channel);

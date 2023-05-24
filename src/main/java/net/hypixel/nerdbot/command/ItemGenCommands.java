@@ -249,11 +249,11 @@ public class ItemGenCommands extends ApplicationCommand {
         colorBuilder.setColor(Color.YELLOW)
                 .addField("Color Codes",
                         """
-                            The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
-                            You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:+1%%` will become "+1 ✧ Pristine".
-                            If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/statsymbols` command.
-                            Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `disable_rarity_linebreak` argument to True.
-                            """, false);
+                        The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
+                        You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:+1%%` will become "+1 ✧ Pristine".
+                        If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/statsymbols` command.
+                        Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `disable_rarity_linebreak` argument to True.
+                        """, false);
 
         extraInfoBuilder.setColor(Color.GRAY)
                 .addField("Other Information",
@@ -348,8 +348,8 @@ public class ItemGenCommands extends ApplicationCommand {
         }
 
         if (Arrays.stream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
-            //The top channel in the config should be considered the 'primary channel', which is referenced in the
-            //error message.
+            // The top channel in the config should be considered the 'primary channel', which is referenced in the
+            // error message.
             TextChannel channel = ChannelManager.getChannel(itemGenChannelIds[0]);
             if (channel == null) {
                 event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue();

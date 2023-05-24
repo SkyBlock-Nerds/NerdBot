@@ -3,7 +3,6 @@ package net.hypixel.nerdbot.util.skyblock;
 import net.hypixel.nerdbot.generator.StatColorParser;
 
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public enum Stat {
@@ -34,7 +33,7 @@ public enum Stat {
     FORAGING_FORTUNE("☘", "Foraging Fortune", MCColor.GOLD),
     SOULFLOW("⸎", "Soulflow", MCColor.DARK_AQUA),
     OVERFLOW_MANA("ʬ", "Overflow Mana", MCColor.DARK_AQUA),
-    REQUIRE("❣",  "Requires", MCColor.RED, StatColorParser::postStatColorParser),
+    REQUIRE("❣", "Requires", MCColor.RED, StatColorParser::postStatColorParser),
     RECIPE("", "Right-click to view recipes!", MCColor.YELLOW, StatColorParser::noParsing),
     COOP_SOULBOUND("", "Co-op Soulbound", MCColor.DARK_GRAY, StatColorParser::soulboundColorParsing),
     SOULBOUND("", "Soulbound", MCColor.DARK_GRAY, StatColorParser::soulboundColorParsing),
@@ -104,8 +103,10 @@ public enum Stat {
 
     /**
      * Parses the string into its color and id components
-     * @param isIcon specifying if the stat's icon is meant to be displayed
+     *
+     * @param isIcon    specifying if the stat's icon is meant to be displayed
      * @param extraData extra arguments provided in the section
+     *
      * @return returns a color parsed replacement string
      */
     public String getParsedStat(boolean isIcon, String extraData) {

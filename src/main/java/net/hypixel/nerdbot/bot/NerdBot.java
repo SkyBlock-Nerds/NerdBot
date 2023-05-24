@@ -201,7 +201,7 @@ public class NerdBot implements Bot {
 
     @Override
     public boolean writeConfig(@NotNull BotConfig newConfig) {
-        //Get the location that we're saving the config at
+        // Get the location that we're saving the config at
         String fileName;
         if (System.getProperty("bot.config") != null) {
             fileName = System.getProperty("bot.config");
@@ -212,9 +212,9 @@ public class NerdBot implements Bot {
         }
 
         Gson jsonConfig = new GsonBuilder().setPrettyPrinting().create();
-        //Actually write the new config
+        // Actually write the new config
         try {
-            //SPECIAL NOTE: You need to close the FileWriter or else it doesn't write the whole config :)
+            // SPECIAL NOTE: You need to close the FileWriter or else it doesn't write the whole config :)
             FileWriter fw = new FileWriter(fileName);
             jsonConfig.toJson(newConfig, fw);
             fw.close();
