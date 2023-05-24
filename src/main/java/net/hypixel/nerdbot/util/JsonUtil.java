@@ -9,6 +9,9 @@ import java.nio.charset.StandardCharsets;
 
 public class JsonUtil {
 
+    private JsonUtil() {
+    }
+
     public static JsonObject readJsonFile(String filename) {
         try {
             Reader reader = new InputStreamReader(new FileInputStream(filename), StandardCharsets.UTF_8);

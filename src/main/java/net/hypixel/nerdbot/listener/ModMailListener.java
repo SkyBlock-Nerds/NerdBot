@@ -118,7 +118,7 @@ public class ModMailListener {
         Message message = event.getMessage();
 
         // Stuffy: Check if message starts with ? and if so, ignore it, log it and send a message to the thread channel.
-        if(message.getContentRaw().startsWith("?")) {
+        if (message.getContentRaw().startsWith("?")) {
             Emoji emoji = Emoji.fromUnicode("U+1F92B");
             message.addReaction(emoji).queue();
             log.info(author.getName() + " sent a hidden message (Thread ID: " + threadChannel.getId() + ")");

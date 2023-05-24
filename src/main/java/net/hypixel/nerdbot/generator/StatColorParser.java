@@ -21,8 +21,10 @@ public class StatColorParser {
 
     /**
      * Displays the selected stat with its icon bolded extra details and id in its primary color
-     * @param stat the selected stat
+     *
+     * @param stat         the selected stat
      * @param extraDetails the extra arguments provided
+     *
      * @return the color parsed replacement string
      */
     public static String boldedIconColorParser(Stat stat, String extraDetails) {
@@ -31,7 +33,9 @@ public class StatColorParser {
 
     /**
      * Displays the selected stat with its icon bolded
+     *
      * @param stat the selected stat
+     *
      * @return the color parsed replacement string
      */
     public static String boldedIconParser(Stat stat) {
@@ -43,6 +47,7 @@ public class StatColorParser {
      *
      * @param stat         the stat selected
      * @param extraDetails the extra arguments provided
+     *
      * @return returns the color parsed replacement string
      */
     public static String dualStatColorParser(Stat stat, String extraDetails) {
@@ -78,6 +83,7 @@ public class StatColorParser {
      *
      * @param stat         the stat selected
      * @param extraDetails the extra arguments provided
+     *
      * @return returns the color parsed replacement string
      */
     public static String postStatColorParser(Stat stat, String extraDetails) {
@@ -120,8 +126,10 @@ public class StatColorParser {
 
     /**
      * Displays the selected stat with an Ability name and amount
-     * @param stat the stat selected (ABILITY)
+     *
+     * @param stat         the stat selected (ABILITY)
      * @param extraDetails the extra arguments provided
+     *
      * @return the color parsed replacements string
      */
     public static String abilityColorParser(Stat stat, String extraDetails) {
