@@ -184,6 +184,7 @@ public class AdminCommands extends ApplicationCommand {
             DiscordUser discordUser = NerdBotApp.USER_CACHE.getIfPresent(member.getId());
             NerdBotApp.getBot().getDatabase().upsertDocument(NerdBotApp.getBot().getDatabase().getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
             event.reply("Saved data for " + member.getAsMention()).setEphemeral(true).queue();
+            NerdBotApp.USER_CACHE.invalidate(member.getId());
         } else {
             event.reply("That user is not in the cache!").setEphemeral(true).queue();
         }
