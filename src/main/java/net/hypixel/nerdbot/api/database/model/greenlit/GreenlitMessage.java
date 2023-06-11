@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.api.database.greenlit;
+package net.hypixel.nerdbot.api.database.model.greenlit;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

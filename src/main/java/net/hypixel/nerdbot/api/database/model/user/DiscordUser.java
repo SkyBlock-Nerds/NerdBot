@@ -1,9 +1,9 @@
-package net.hypixel.nerdbot.api.database.user;
+package net.hypixel.nerdbot.api.database.model.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import net.hypixel.nerdbot.api.database.user.stats.LastActivity;
+import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 
 import java.util.List;
 
