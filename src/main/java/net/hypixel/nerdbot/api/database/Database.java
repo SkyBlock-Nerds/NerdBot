@@ -14,6 +14,7 @@ import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
+import org.bson.UuidRepresentation;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
@@ -42,9 +43,16 @@ public class Database implements ServerMonitorListener {
             return;
         }
         connectionString = new ConnectionString(uri);
+
         CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build());
         CodecRegistry codecRegistry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
-        MongoClientSettings clientSettings = MongoClientSettings.builder().applyConnectionString(connectionString).codecRegistry(codecRegistry).applyToServerSettings(builder -> builder.addServerMonitorListener(this)).build();
+        MongoClientSettings clientSettings = MongoClientSettings.builder()
+                .applyConnectionString(connectionString)
+                .uuidRepresentation(UuidRepresentation.STANDARD)
+                .codecRegistry(codecRegistry)
+                .applyToServerSettings(builder -> builder.addServerMonitorListener(this))
+                .build();
+
         mongoClient = MongoClients.create(clientSettings);
         mongoDatabase = mongoClient.getDatabase(databaseName);
         connected = true;
@@ -152,11 +160,27 @@ public class Database implements ServerMonitorListener {
     }
 
     @Nullable
+    public <T> FindIterable<T> findDocument(MongoCollection<T> collection, Bson filter) {
+        if (collection == null) {
+            return null;
+        }
+        return collection.find(filter);
+    }
+
+    @Nullable
     public <T> FindIterable<T> findAllDocuments(MongoCollection<T> collection) {
         if (collection == null) {
             return null;
         }
         return collection.find();
+    }
+
+    @Nullable
+    public <T> FindIterable<T> findAllDocuments(MongoCollection<T> collection, Bson filter) {
+        if (collection == null) {
+            return null;
+        }
+        return collection.find(filter);
     }
 
     public <T> long countDocuments(MongoCollection<T> collection) {
