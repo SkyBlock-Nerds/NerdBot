@@ -15,7 +15,7 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.util.Util;

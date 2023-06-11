@@ -19,7 +19,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.curator.Curator;
-import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.util.Environment;
