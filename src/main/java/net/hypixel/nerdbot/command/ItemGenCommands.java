@@ -66,7 +66,7 @@ public class ItemGenCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
 
-        MinecraftImage generatedImage = buildItem(event, name, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength);
+        MinecraftImage generatedImage = buildItem(event, name, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(hidden).queue();
         }
@@ -80,7 +80,7 @@ public class ItemGenCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
 
-        MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", message, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH);
+        MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", message, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(hidden).queue();
         }
@@ -127,7 +127,7 @@ public class ItemGenCommands extends ApplicationCommand {
             return;
         }
 
-        MinecraftImage generatedDescription = buildItem(event, name, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength);
+        MinecraftImage generatedDescription = buildItem(event, name, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
         if (generatedDescription == null) {
             return;
         }
@@ -209,7 +209,7 @@ public class ItemGenCommands extends ApplicationCommand {
         }
 
         // creating the minecraft image and sending it to the user.
-        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, StringColorParser.MAX_FINAL_LINE_LENGTH * 25, 255, 0).render();
+        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, StringColorParser.MAX_FINAL_LINE_LENGTH * 25, 255, 0, true).render();
         if (minecraftImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(minecraftImage.getImage()))).setEphemeral(false).queue();
         }
@@ -363,7 +363,7 @@ public class ItemGenCommands extends ApplicationCommand {
     }
 
     private MinecraftImage buildItem(GuildSlashEvent event, String name, String rarity, String itemLoreString, String type,
-                                     Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength) {
+                                     Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isChatMessage) {
         // Checking that the fonts have been loaded correctly
         if (!MinecraftImage.isFontsRegistered()) {
             event.getHook().sendMessage("It seems that one of the font files couldn't be loaded correctly. Please contact a Bot Developer to have a look at it!").setEphemeral(true).queue();
@@ -427,7 +427,7 @@ public class ItemGenCommands extends ApplicationCommand {
         padding = Objects.requireNonNullElse(padding, 0);
         padding = Math.max(0, padding);
 
-        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, maxLineLength * 25, alpha, padding).render();
+        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, maxLineLength * 25, alpha, padding, isChatMessage).render();
 
         Member member = event.getMember();
         DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), member.getId());
