@@ -155,11 +155,7 @@ public class ItemGenCommands extends ApplicationCommand {
         try {
             itemJSON = NerdBotApp.GSON.fromJson(nbtDisplayTag, JsonObject.class);
         } catch (JsonSyntaxException e) {
-            event.getHook().sendMessage("""
-                                        This JSON object seems to not be valid. It should follow a similar format to...
-                                        ```json
-                                        {"Lore": ["lore array goes here"], "Name": "item name goes here"}
-                                        ```""").queue();
+            event.getHook().sendMessage(GeneratorStrings.ITEM_PARSE_JSON_FORMAT).queue();
             return;
         }
 
@@ -167,7 +163,7 @@ public class ItemGenCommands extends ApplicationCommand {
         try {
             itemName = itemJSON.get("Name").getAsString().replaceAll("§", "&");
         } catch (NullPointerException e) {
-            event.getHook().sendMessage("It seems that you are missing a `Name` variable in your item's display tag").queue();
+            event.getHook().sendMessage(GeneratorStrings.MISSING_NAME_VARIABLE).queue();
             return;
         }
 
@@ -175,7 +171,7 @@ public class ItemGenCommands extends ApplicationCommand {
         try {
             itemLoreArray = itemJSON.get("Lore").getAsJsonArray();
         } catch (NullPointerException e) {
-            event.getHook().sendMessage("It seems that you are missing a `Lore` variable in your item's display tag").queue();
+            event.getHook().sendMessage(GeneratorStrings.MISSING_LORE_VARIABLE).queue();
             return;
         }
 
@@ -203,7 +199,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         // checking that there were no errors while parsing the string
         if (!colorParser.isSuccessfullyParsed()) {
-            event.getHook().sendMessage("Here is a /itemgen command if you want it!\n" + itemGenCommand).setEphemeral(true).queue();
+            event.getHook().sendMessage(String.format(GeneratorStrings.ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
             event.getHook().sendMessage(colorParser.getErrorString()).setEphemeral(true).queue();
             return;
         }
@@ -214,7 +210,7 @@ public class ItemGenCommands extends ApplicationCommand {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(minecraftImage.getImage()))).setEphemeral(false).queue();
         }
 
-        event.getHook().sendMessage("Here is a /itemgen command if you want it!\n" + itemGenCommand).setEphemeral(true).queue();
+        event.getHook().sendMessage(String.format(GeneratorStrings.ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
     }
 
 
@@ -312,25 +308,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "itemgen", subcommand = "statsymbols", description = "Show a list of all stats symbols")
     public void showAllStats(GuildSlashEvent event) {
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("Stats:\n```");
-        for (Stat stat : Stat.VALUES) {
-            if (stat.name().startsWith("ITEM_STAT")) {
-                continue;
-            }
-            int length = 25 - stat.toString().length();
-            builder.append(stat).append(": ").append(" ".repeat(length)).append(stat.getDisplay()).append("\n");
-        }
-
-        builder.append("\nOther Useful Icons");
-        builder.append("\n");
-        for (String icon : Stat.OTHER_ICONS) {
-            builder.append(icon).append("    ");
-        }
-
-        builder.append("\n```");
-        event.reply(builder.toString()).setEphemeral(true).queue();
+        event.reply(GeneratorStrings.STAT_SYMBOLS).setEphemeral(true).queue();
     }
 
     @AutocompletionHandler(name = "rarities", mode = AutocompletionMode.CONTINUITY, showUserInput = false)
@@ -366,17 +344,13 @@ public class ItemGenCommands extends ApplicationCommand {
                                      Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isChatMessage) {
         // Checking that the fonts have been loaded correctly
         if (!MinecraftImage.isFontsRegistered()) {
-            event.getHook().sendMessage("It seems that one of the font files couldn't be loaded correctly. Please contact a Bot Developer to have a look at it!").setEphemeral(true).queue();
+            event.getHook().sendMessage(GeneratorStrings.FONTS_NOT_REGISTERED).setEphemeral(true).queue();
             return null;
         }
 
         // verify rarity argument
-        String finalRarity = rarity;
-        if (Arrays.stream(Rarity.VALUES).noneMatch(rarity1 -> finalRarity.equalsIgnoreCase(rarity1.name()))) {
-            rarity = rarity.replaceAll("[^a-zA-Z0-9_ ]", "");
-            StringBuilder failedRarity = new StringBuilder("You used an invalid rarity, `" + rarity + "`. Valid rarities:\n");
-            Arrays.stream(Rarity.VALUES).forEachOrdered(rarity1 -> failedRarity.append(rarity1.name()).append(" "));
-            event.getHook().sendMessage(failedRarity.toString()).setEphemeral(true).queue();
+        if (Arrays.stream(Rarity.VALUES).noneMatch(rarity1 -> rarity.equalsIgnoreCase(rarity1.name()))) {
+            event.getHook().sendMessage(String.format(GeneratorStrings.INVALID_RARITY, GeneratorStrings.stripString(rarity))).setEphemeral(true).queue();
             return null;
         }
 
@@ -451,8 +425,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         if (textureID.contains("http://textures.minecraft.net/texture/")) {
             textureID = textureID.replace("http://textures.minecraft.net/texture/", "");
-            event.getHook().sendMessage("Hey, a small heads up - you don't need to include the full URL! Only the skin ID is required")
-                    .setEphemeral(true).queue();
+            event.getHook().sendMessage(GeneratorStrings.HEAD_URL_REMINDER).setEphemeral(true).queue();
         }
 
         BufferedImage skin;
@@ -460,11 +433,10 @@ public class ItemGenCommands extends ApplicationCommand {
             URL target = new URL("http://textures.minecraft.net/texture/" + textureID);
             skin = ImageIO.read(target);
         } catch (MalformedURLException e) {
-            event.getHook().sendMessage("Hey, you kinda got this url wrong... ").setEphemeral(false).queue();
+            event.getHook().sendMessage(GeneratorStrings.MALFORMED_HEAD_URL).setEphemeral(false).queue();
             return null;
         } catch (IOException e) {
-            textureID = textureID.replaceAll("[^a-zA-Z0-9_ ]", "");
-            event.getHook().sendMessage("It seems that the URL you entered in doesn't link to anything...\nEntered URL: `http://textures.minecraft.net/texture/" + textureID + "`").setEphemeral(false).queue();
+            event.getHook().sendMessage(String.format(GeneratorStrings.INVALID_HEAD_URL, GeneratorStrings.stripString(textureID))).setEphemeral(false).queue();
             return null;
         }
 
@@ -472,18 +444,18 @@ public class ItemGenCommands extends ApplicationCommand {
     }
 
     private String getPlayerHeadURL(GuildSlashEvent event, String playerName) {
-        playerName = playerName.replaceAll("[^a-zA-Z0-9_ ]", "");
+        playerName = GeneratorStrings.stripString(playerName);
 
         JsonObject userUUID;
         try {
             userUUID = Util.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
         } catch (IOException | InterruptedException e) {
-            event.getHook().sendMessage("There was an error trying to send a request to get the UUID of this player...").queue();
+            event.getHook().sendMessage(GeneratorStrings.REQUEST_PLAYER_UUID_ERROR).queue();
             return null;
         }
 
         if (userUUID == null || userUUID.get("id") == null) {
-            event.getHook().sendMessage("It seems that there is no one with the name `" + playerName + "`").queue();
+            event.getHook().sendMessage(GeneratorStrings.PLAYER_NOT_FOUND).queue();
             return null;
         }
 
@@ -491,12 +463,12 @@ public class ItemGenCommands extends ApplicationCommand {
         try {
             userProfile = Util.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
         } catch (IOException | InterruptedException e) {
-            event.getHook().sendMessage("There was an error trying to send a request to get the UUID of this player...").queue();
+            event.getHook().sendMessage(GeneratorStrings.REQUEST_PLAYER_UUID_ERROR).queue();
             return null;
         }
 
         if (userProfile == null || userProfile.get("properties") == null) {
-            event.getHook().sendMessage("There was a weird issue when trying to get the profile data for `" + playerName + "`").queue();
+            event.getHook().sendMessage(String.format(GeneratorStrings.MALFORMED_PLAYER_PROFILE, GeneratorStrings.stripString(playerName))).queue();
             return null;
         }
 

@@ -81,11 +81,11 @@ public class StringColorParser {
                     // check that there is a closing tag
                     if (closingIndex == -1) {
                         String surroundingError = description.substring(Math.max(charIndex - 10, 0), Math.min(charIndex + 10, description.length()));
-                        this.errorString = "It seems that you don't have a closing `%%` near `" + stripString(surroundingError) + "`";
+                        this.errorString = String.format(GeneratorStrings.PERCENT_NOT_FOUND, GeneratorStrings.stripString(surroundingError));
                         return;
                     }
                     if (closingIndex <= charIndex + 2) {
-                        this.errorString = "It seems that you are missing a starting/ending `%%` for a color code or stat.";
+                        this.errorString = GeneratorStrings.PERCENT_OUT_OF_RANGE;
                         return;
                     }
 
@@ -138,19 +138,7 @@ public class StringColorParser {
                     }
 
                     // creating an error message showing the available stats, gemstones and color codes available
-                    StringBuilder failedString = new StringBuilder("You used an invalid code `" + stripString(selectedCommand) + "`. Valid codes:\n");
-                    for (MCColor availableColors : colors) {
-                        failedString.append(availableColors).append(" ");
-                    }
-                    failedString.append("\nValid Stats:\n");
-                    for (Stat availableStats : Stat.VALUES) {
-                        failedString.append(availableStats).append(" ");
-                    }
-                    failedString.append("\nValid Gems:\n");
-                    for (Gemstone availableGemstones : Gemstone.VALUES) {
-                        failedString.append(availableGemstones).append(" ");
-                    }
-                    this.errorString = failedString.toString();
+                    this.errorString = String.format(GeneratorStrings.INVALID_STAT_CODE, GeneratorStrings.stripString(selectedCommand));
                     return;
                 }
                 // checking if the user is using normal mc character codes
@@ -181,12 +169,7 @@ public class StringColorParser {
                     }
 
                     // creating error message for valid codes
-                    StringBuilder failedString = new StringBuilder();
-                    failedString.append("You used an invalid character code `").append(selectedCode).append("`. \nValid color codes include...\n");
-                    for (MCColor color : colors) {
-                        failedString.append(color).append(": `").append(color.getColorCode()).append("`, ");
-                    }
-                    this.errorString = failedString.substring(0, failedString.length() - 2);
+                    this.errorString = GeneratorStrings.INVALID_MINECRAFT_COLOR_CODE;
                     return;
                 }
                 // checking if the current character is a new line
@@ -365,10 +348,6 @@ public class StringColorParser {
         }
 
         return null;
-    }
-
-    private static String stripString(String normalString) {
-        return normalString.replaceAll("[^a-zA-Z0-9_ ]", "");
     }
 
 }
