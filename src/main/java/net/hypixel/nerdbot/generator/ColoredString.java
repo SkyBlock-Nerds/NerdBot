@@ -30,11 +30,15 @@ public class ColoredString {
     }
 
     public boolean isEmpty() {
-        return currentString.toString().stripLeading().length() == 0;
+        return this.currentString.toString().stripLeading().length() == 0;
     }
 
     public void addString(String newString) {
         this.currentString.append(newString);
+    }
+
+    public boolean hasSpecialFormatting() {
+        return this.bold || this.italic || this.strikethrough || this.underlined;
     }
 
     @Override

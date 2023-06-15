@@ -106,11 +106,15 @@ public class StringColorParser {
                         continue;
                     }
 
+                    String currentColor = "&" + currentString.getCurrentColor().getColorCode() + (currentString.hasSpecialFormatting() ?
+                                    (currentString.isBold() ? "&l" : "") + (currentString.isItalic() ? "&o" : "") + (currentString.isStrikethrough() ? "&m" : "") +
+                                    (currentString.isUnderlined() ? "&n" : "") : "");
+
                     // checking if the command is a gemstone type
                     Gemstone gemstone = (Gemstone) findValue(gemstones, selectedCommand);
                     if (gemstone != null) {
                         // replacing the selected space with the stat's text
-                        String replacementText = "%%DARK_GRAY%%" + gemstone.getIcon() + "%%" + currentString.getCurrentColor() + "%%";
+                        String replacementText = "%%DARK_GRAY%%" + gemstone.getIcon() + currentColor;
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
@@ -132,7 +136,7 @@ public class StringColorParser {
                     Stat stat = (Stat) findValue(stats, selectedCommand);
                     if (stat != null) {
                         // replacing the selected space with the stat's text
-                        String replacementText = stat.getParsedStat(isIcon, extraData) + "%%" + currentString.getCurrentColor() + "%%";
+                        String replacementText = stat.getParsedStat(isIcon, extraData) + currentColor;
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
