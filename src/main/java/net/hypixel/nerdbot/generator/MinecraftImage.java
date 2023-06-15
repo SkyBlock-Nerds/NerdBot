@@ -65,7 +65,7 @@ public class MinecraftImage {
         this.padding = padding;
         this.lines = lines;
         this.isChatMessage = isChatMessage;
-        this.graphics = this.initG2D(defaultWidth, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4);
+        this.graphics = this.initG2D(defaultWidth + START_XY, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4);
         this.currentColor = defaultColor;
     }
 
