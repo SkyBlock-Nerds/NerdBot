@@ -141,6 +141,15 @@ public class StringColorParser {
                         continue;
                     }
 
+                    // checking if the command is supposed to only trigger for the text inside it
+                    MCColor tempStatColor = (MCColor) findValue(colors, selectedCommand);
+                    if (tempStatColor != null) {
+                        // setting the correct color option for the segment
+                        String replacementText = "&" + tempStatColor.getColorCode() + extraData + currentColor;
+                        description.replace(charIndex, closingIndex + 2, replacementText);
+                        continue;
+                    }
+
                     // creating an error message showing the available stats, gemstones and color codes available
                     this.errorString = String.format(GeneratorStrings.INVALID_STAT_CODE, GeneratorStrings.stripString(selectedCommand));
                     return;
