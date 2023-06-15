@@ -202,10 +202,10 @@ public class StringColorParser {
             }
 
             String currentSubstring = description.substring(charIndex, nearestSplit);
-            if (lineLength + currentSubstring.length() > maxLineLength) {
+            if (lineLength + currentSubstring.length() >= maxLineLength) {
                 // splitting the current string if it cannot fit onto a single line
-                if (currentSubstring.length() > maxLineLength) {
-                    currentSubstring = currentSubstring.substring(0, maxLineLength + 1);
+                if (currentSubstring.length() >= maxLineLength) {
+                    currentSubstring = currentSubstring.substring(0, maxLineLength);
                 }
 
                 createNewLine();
