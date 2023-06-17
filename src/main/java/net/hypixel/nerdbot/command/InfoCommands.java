@@ -184,13 +184,19 @@ public class InfoCommands extends ApplicationCommand {
      * @return custom error can be given instead of returning emptyList
      */
     public static <T> List<T> getPage(List<T> sourceList, int page, int pageSize) {
-        if (pageSize <= 0 || page <= 0) {
-            throw new IllegalArgumentException("Invalid page: " + pageSize);
+        if (sourceList == null) {
+            throw new IllegalArgumentException("Invalid source list");
         }
 
+        if (pageSize <= 0) {
+            throw new IllegalArgumentException("Invalid page size: " + pageSize);
+        }
+
+        page = Math.max(page, 1);
         int fromIndex = (page - 1) * pageSize;
-        if (sourceList == null || sourceList.size() <= fromIndex) {
-            return new ArrayList<>();
+
+        if (sourceList.size() <= fromIndex) {
+            return getPage(sourceList, page - 1, pageSize); // Revert to last page
         }
 
         return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
