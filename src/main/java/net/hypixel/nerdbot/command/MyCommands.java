@@ -47,6 +47,7 @@ public class MyCommands extends ApplicationCommand {
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
         final Member searchMember = (member == null) ? event.getMember() : member;
+        final boolean isAlpha = (alpha != null && alpha);
         final String[] suggestionForumIds = (alpha != null && alpha) ? config.getAlphaSuggestionForumIds() : config.getSuggestionForumIds();
 
         List<Suggestion> suggestions = Arrays.stream(suggestionForumIds)
@@ -66,7 +67,7 @@ public class MyCommands extends ApplicationCommand {
                     .toLowerCase()
                     .contains(title.toLowerCase())
                 )
-                .map(thread -> new Suggestion(thread, alpha))
+                .map(thread -> new Suggestion(thread, isAlpha))
             )
             .toList();
 
@@ -106,7 +107,7 @@ public class MyCommands extends ApplicationCommand {
                 true
             )
             .addBlankField(true)
-            .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No"));
+            .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (isAlpha ? "Yes" : "No"));
 
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
