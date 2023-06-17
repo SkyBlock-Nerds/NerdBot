@@ -23,6 +23,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 
 import java.awt.*;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 public class MyCommands extends ApplicationCommand {
 
     private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
+    private static final DecimalFormat PERCENTAGE_FORMAT = new DecimalFormat("#.##");
 
     @JDASlashCommand(name = "suggestions", description = "View user suggestions.")
     public void mySuggestions(
@@ -84,6 +86,8 @@ public class MyCommands extends ApplicationCommand {
         List<Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
         int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
         List<List<String>> fieldData = new ArrayList<>();
+        double total = suggestions.size();
+        double greenlit = suggestions.stream().filter(Suggestion::isGreenlit).count();
 
         for (Suggestion suggestion : pages) {
             String link = "[" + suggestion.getThread().getName() + "](" + suggestion.getThread().getJumpUrl() + ")" +
@@ -113,7 +117,11 @@ public class MyCommands extends ApplicationCommand {
                 String.valueOf(suggestions.stream().filter(Suggestion::isGreenlit).count()),
                 true
             )
-            .addBlankField(true)
+            .addField(
+                "",
+                String.valueOf(PERCENTAGE_FORMAT.format((greenlit / total) * 100.0)),
+                true
+            )
             .addField(
                 "Suggestion",
                 fieldData.stream()
