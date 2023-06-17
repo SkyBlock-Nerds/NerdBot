@@ -99,7 +99,10 @@ public class MyCommands extends ApplicationCommand {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setColor(Color.GREEN)
             .setAuthor(searchMember.getEffectiveName())
-            .setTitle((tag != null ? tag : "All") + " Suggestions")
+            .setTitle("Suggestions")
+            .setDescription(
+                (tag != null ? "- Filtered by tag: `" + tag + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "")
+            )
             .addField(
                 "Total",
                 String.valueOf(suggestions.size()),
