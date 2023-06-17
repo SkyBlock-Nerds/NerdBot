@@ -109,7 +109,7 @@ public class MyCommands extends ApplicationCommand {
                 true
             )
             .addField(
-                "Greenlit",
+                ("<:creative:" + config.getEmojiConfig().getGreenlitEmojiId() + ">"),
                 String.valueOf(suggestions.stream().filter(Suggestion::isGreenlit).count()),
                 true
             )
@@ -122,14 +122,14 @@ public class MyCommands extends ApplicationCommand {
                 true
             )
             .addField(
-                "<:agree:" + config.getEmojiConfig().getAgreeEmojiId() + "> Agrees",
+                ("<:agree:" + config.getEmojiConfig().getAgreeEmojiId() + ">"),
                 fieldData.stream()
                     .map(list -> list.get(1))
                     .collect(Collectors.joining("\n")),
                 true
             )
             .addField(
-                "<:disagree:" + config.getEmojiConfig().getDisagreeEmojiId() + "> Disagrees",
+                ("<:disagree:" + config.getEmojiConfig().getDisagreeEmojiId() + ">"),
                 fieldData.stream()
                     .map(list -> list.get(2))
                     .collect(Collectors.joining("\n")),
