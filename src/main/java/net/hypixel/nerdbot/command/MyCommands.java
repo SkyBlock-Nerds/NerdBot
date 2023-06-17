@@ -90,7 +90,12 @@ public class MyCommands extends ApplicationCommand {
         double greenlit = suggestions.stream().filter(Suggestion::isGreenlit).count();
 
         for (Suggestion suggestion : pages) {
-            String link = "[" + suggestion.getThread().getName() + "](" + suggestion.getThread().getJumpUrl() + ")" +
+            String name = suggestion.getThread().getName();
+            if (name.length() > 50) {
+                name = name.substring(0, 50);
+                name += "...";
+            }
+            String link = "[" + name + "](" + suggestion.getThread().getJumpUrl() + ")" +
                 (suggestion.isGreenlit() ? " <:creative:" + config.getEmojiConfig().getGreenlitEmojiId() + ">" : "");
 
             fieldData.add(Arrays.asList(
@@ -109,12 +114,12 @@ public class MyCommands extends ApplicationCommand {
             )
             .addField(
                 "Total",
-                String.valueOf(total),
+                String.valueOf((int) total),
                 true
             )
             .addField(
                 ("<:creative:" + config.getEmojiConfig().getGreenlitEmojiId() + ">"),
-                String.valueOf(greenlit),
+                String.valueOf((int) greenlit),
                 true
             )
             .addField(
