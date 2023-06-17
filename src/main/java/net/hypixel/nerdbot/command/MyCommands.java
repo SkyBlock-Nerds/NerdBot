@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.StringJoiner;
 
 @Log4j2
 public class MyCommands extends ApplicationCommand {
@@ -49,6 +48,11 @@ public class MyCommands extends ApplicationCommand {
         final Member searchMember = (member == null) ? event.getMember() : member;
         final boolean isAlpha = (alpha != null && alpha);
         final String[] suggestionForumIds = (alpha != null && alpha) ? config.getAlphaSuggestionForumIds() : config.getSuggestionForumIds();
+
+        if (suggestionForumIds == null || suggestionForumIds.length == 0) {
+            event.reply("No " + (isAlpha ? "alpha " : "") + "suggestion forums are setup in the config.").setEphemeral(true).queue();
+            return;
+        }
 
         List<Suggestion> suggestions = Arrays.stream(suggestionForumIds)
             .filter(Objects::nonNull)
@@ -72,30 +76,31 @@ public class MyCommands extends ApplicationCommand {
             .toList();
 
         if (suggestions.isEmpty()) {
-            event.reply("You have no suggestions" + (tag != null ? " with the " + tag + " tag" : "") + ".").setEphemeral(true).queue();
+            event.reply("You have no suggestions matched with tag " + (tag != null ? ("`" + tag + "`") : "*ANY*") + "` or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").setEphemeral(true).queue();
             return;
         }
 
         List<Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
         int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
-        StringJoiner description = new StringJoiner("\n");
+        StringBuilder description = new StringBuilder();
 
         for (Suggestion suggestion : pages) {
-            description.add("- [")
-                .add(suggestion.getThread().getName())
-                .add("](")
-                .add(suggestion.getThread().getJumpUrl())
-                .add(") ")
-                .add("[<:agree:751221045926559875> **" + suggestion.getAgrees() + "** | ")
-                .add("<:disagree:751221022954618942> **" + suggestion.getDisagrees() + "**]")
-                .add(suggestion.isGreenlit() ? " <:creative:812826605243465758>" : "");
+            description.append("- [")
+                .append(suggestion.getThread().getName())
+                .append("](")
+                .append(suggestion.getThread().getJumpUrl())
+                .append(") ")
+                .append("[<:agree:" + config.getEmojiConfig().getAgreeEmojiId() + "> **" + suggestion.getAgrees() + "** | ")
+                .append("<:disagree:" + config.getEmojiConfig().getDisagreeEmojiId() + "> **" + suggestion.getDisagrees() + "**]")
+                .append(suggestion.isGreenlit() ? " <:creative:812826605243465758>" : "")
+                .append("\n");
         }
 
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setColor(Color.GREEN)
             .setAuthor(searchMember.getEffectiveName())
             .setTitle((tag != null ? tag : "All") + " Suggestions")
-            .setDescription(description.toString())
+            .setDescription(description.toString().replaceFirst("\n$", ""))
             .addField(
                 "Total",
                 String.valueOf(suggestions.size()),
