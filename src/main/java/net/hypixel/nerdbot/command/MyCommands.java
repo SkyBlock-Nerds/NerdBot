@@ -143,7 +143,7 @@ public class MyCommands extends ApplicationCommand {
         double greenlit = suggestions.stream().filter(Suggestion::isGreenlit).count();
 
         for (Suggestion suggestion : pages) {
-            String name = suggestion.getThread().getName();
+            String name = suggestion.getThread().getName().replaceAll("`", "");
             if (name.length() > 50) {
                 name = name.substring(0, 50);
                 name += "...";
