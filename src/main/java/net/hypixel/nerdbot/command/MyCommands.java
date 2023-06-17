@@ -37,16 +37,17 @@ public class MyCommands extends ApplicationCommand {
     @JDASlashCommand(name = "suggestions", description = "View user suggestions.")
     public void mySuggestions(
         GuildSlashEvent event,
-        @AppOption @Optional int page,
+        @AppOption @Optional Integer page,
         @AppOption(description = "Member to view.") @Optional Member member,
         @AppOption(description = "Exact tag to filter for.") @Optional String tag,
         @AppOption(description = "Words to filter title for.") @Optional String title,
-        @AppOption(description = "Toggle alpha suggestions.") @Optional boolean alpha
+        @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
     ) {
         BotConfig config = NerdBotApp.getBot().getConfig();
+        page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
         final Member searchMember = (member == null) ? event.getMember() : member;
-        final String[] suggestionForumIds = alpha ? config.getAlphaSuggestionForumIds() : config.getSuggestionForumIds();
+        final String[] suggestionForumIds = (alpha != null && alpha) ? config.getAlphaSuggestionForumIds() : config.getSuggestionForumIds();
 
         List<Suggestion> suggestions = Arrays.stream(suggestionForumIds)
             .filter(Objects::nonNull)
