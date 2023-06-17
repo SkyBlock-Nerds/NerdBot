@@ -39,8 +39,8 @@ public class MyCommands extends ApplicationCommand {
         GuildSlashEvent event,
         @AppOption @Optional int page,
         @AppOption(description = "Member to view.") @Optional Member member,
-        @AppOption(description = "Tag to filter for.") @Optional String tag,
-        @AppOption(description = "Title to filter for.") @Optional String title,
+        @AppOption(description = "Exact tag to filter for.") @Optional String tag,
+        @AppOption(description = "Words to filter title for.") @Optional String title,
         @AppOption(description = "Toggle alpha suggestions.") @Optional boolean alpha
     ) {
         BotConfig config = NerdBotApp.getBot().getConfig();
