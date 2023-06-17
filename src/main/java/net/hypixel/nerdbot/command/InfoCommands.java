@@ -11,11 +11,11 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
+import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
@@ -123,37 +123,16 @@ public class InfoCommands extends ApplicationCommand {
             return;
         }
 
-        LastActivity lastActivity = discordUser.getLastActivity();
-        EmbedBuilder globalEmbedBuilder = new EmbedBuilder();
-        EmbedBuilder alphaEmbedBuilder = new EmbedBuilder();
+        Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = MyCommands.getActivityEmbeds(event.getMember());
 
-        // Global Activity
-        globalEmbedBuilder.setColor(Color.GREEN)
-                .setAuthor(member.getEffectiveName() + " (" + member.getId() + ")")
-                .setThumbnail(member.getEffectiveAvatarUrl())
-                .setTitle("Last Global Activity")
-                .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastGlobalActivity), true)
-                .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
-                .addField("Item Generator", lastActivity.toRelativeTimestamp(LastActivity::getLastItemGenUsage), true)
-                // Suggestions
-                .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastSuggestionDate), true)
-                .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionVoteDate), true)
-                .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentDate), true);
+        if (activityEmbeds.getLeft() == null || activityEmbeds.getRight() == null) {
+            event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
+            return;
+        }
 
-        // Alpha Activity
-        alphaEmbedBuilder.setColor(Color.RED)
-                .setTitle("Last Alpha Activity")
-                .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaActivity), true)
-                .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getAlphaVoiceJoinDate), true)
-                .addBlankField(true)
-                // Suggestions
-                .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaSuggestionDate), true)
-                .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionVoteDate), true)
-                .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentDate), true);
-
-        event.replyEmbeds(globalEmbedBuilder.build(), alphaEmbedBuilder.build())
-                .setEphemeral(true)
-                .queue();
+        event.replyEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build())
+            .setEphemeral(true)
+            .queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "activity", description = "View information regarding user activity", defaultLocked = true)
