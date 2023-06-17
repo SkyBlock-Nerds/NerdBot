@@ -109,12 +109,12 @@ public class MyCommands extends ApplicationCommand {
             )
             .addField(
                 "Total",
-                String.valueOf(suggestions.size()),
+                String.valueOf(total),
                 true
             )
             .addField(
                 ("<:creative:" + config.getEmojiConfig().getGreenlitEmojiId() + ">"),
-                String.valueOf(suggestions.stream().filter(Suggestion::isGreenlit).count()),
+                String.valueOf(greenlit),
                 true
             )
             .addField(
