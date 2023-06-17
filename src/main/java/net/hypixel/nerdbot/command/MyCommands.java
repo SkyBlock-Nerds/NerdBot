@@ -48,7 +48,7 @@ public class MyCommands extends ApplicationCommand {
         final Member searchMember = (member == null) ? event.getMember() : member;
         final String[] suggestionForumIds = alpha ? config.getAlphaSuggestionForumIds() : config.getSuggestionForumIds();
 
-        List<Suggestion> totalSuggestions = Arrays.stream(suggestionForumIds)
+        List<Suggestion> suggestions = Arrays.stream(suggestionForumIds)
             .filter(Objects::nonNull)
             .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
             .filter(Objects::nonNull)
@@ -57,21 +57,15 @@ public class MyCommands extends ApplicationCommand {
                 .sorted(Comparator.comparingLong(thread -> thread.getTimeCreated().toInstant().toEpochMilli())) // Sort by most recent
                 .filter(thread -> thread.getOwnerIdLong() == searchMember.getIdLong())
                 .filter(thread -> thread.getHistoryFromBeginning(1).complete().getRetrievedHistory().get(0) != null) // Lol
+                .filter(thread -> tag == null || thread.getAppliedTags()
+                    .stream()
+                    .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
+                )
+                .filter(thread -> title == null || thread.getName()
+                    .toLowerCase()
+                    .contains(title.toLowerCase())
+                )
                 .map(thread -> new Suggestion(thread, alpha))
-            )
-            .toList();
-
-        // Apply filters
-        List<Suggestion> suggestions = totalSuggestions.stream()
-            .filter(suggestion -> tag == null || suggestion.getThread()
-                .getAppliedTags()
-                .stream()
-                .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
-            )
-            .filter(suggestion -> title == null || suggestion.getThread()
-                .getName()
-                .toLowerCase()
-                .contains(title.toLowerCase())
             )
             .toList();
 
@@ -81,7 +75,7 @@ public class MyCommands extends ApplicationCommand {
         }
 
         List<Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
-        int totalPages = (int) Math.ceil(pages.size() / 10.0);
+        int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
         StringJoiner description = new StringJoiner("\n");
 
         for (Suggestion suggestion : pages) {
