@@ -9,6 +9,7 @@ import com.joestelmach.natty.Parser;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.InsertOneResult;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
@@ -55,7 +56,10 @@ public class UserCommands extends ApplicationCommand {
         InsertOneResult result = reminder.save();
 
         if (result != null && result.wasAcknowledged() && result.getInsertedId() != null) {
-            event.reply("I will remind you at " + new DiscordTimestamp(date.getTime()).toLongDateTime() + " about `" + description + "`!").setEphemeral(true).queue();
+            event.reply("I will remind you at " + new DiscordTimestamp(date.getTime()).toLongDateTime() + " about:")
+                    .addEmbeds(new EmbedBuilder().setDescription(description).build())
+                    .setEphemeral(true)
+                    .queue();
             reminder.schedule();
         } else {
             event.reply("Could not save your reminder, please try again later!").queue();
@@ -63,7 +67,7 @@ public class UserCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "remind", subcommand = "list")
+    @JDASlashCommand(name = "remind", subcommand = "list", description = "View your reminders")
     public void listReminders(GuildSlashEvent event) {
         List<Reminder> reminders = NerdBotApp.getBot().getDatabase().findAllDocuments(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.eq("userId", event.getUser().getId())).into(new ArrayList<>());
 
@@ -92,7 +96,7 @@ public class UserCommands extends ApplicationCommand {
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "remind", subcommand = "delete")
+    @JDASlashCommand(name = "remind", subcommand = "delete", description = "Delete a reminder")
     public void deleteReminder(GuildSlashEvent event, @AppOption String uuid) {
         UUID parsed = UUID.fromString(uuid);
         Reminder reminder = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.and(Filters.eq("userId", event.getUser().getId()), Filters.eq("uuid", parsed))).first();
