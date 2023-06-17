@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -93,14 +94,19 @@ public class AdminCommands extends ApplicationCommand {
         }
 
         for (int i = 0; i < amount; i++) {
-            InviteAction action = channel.createInvite()
-                    .setUnique(true)
-                    .setMaxAge(7L, TimeUnit.DAYS)
-                    .setMaxUses(1);
+            try {
+                InviteAction action = channel.createInvite()
+                        .setUnique(true)
+                        .setMaxAge(7L, TimeUnit.DAYS)
+                        .setMaxUses(1);
 
-            Invite invite = action.complete();
-            invites.add(invite);
-            log.info("Generated new temporary invite '" + invite.getUrl() + "' for channel " + channel.getName() + " by " + event.getUser().getAsTag());
+                Invite invite = action.complete();
+                invites.add(invite);
+                log.info("Generated new temporary invite '" + invite.getUrl() + "' for channel " + channel.getName() + " by " + event.getUser().getAsTag());
+            } catch (InsufficientPermissionException exception) {
+                event.getHook().editOriginal("I don't have permission to create invites in " + channel.getAsMention() + "!").queue();
+                return;
+            }
         }
 
         StringBuilder stringBuilder = new StringBuilder("Generated invites (");
