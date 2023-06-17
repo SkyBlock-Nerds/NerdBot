@@ -119,7 +119,7 @@ public class MyCommands extends ApplicationCommand {
             )
             .addField(
                 "",
-                PERCENTAGE_FORMAT.format((greenlit / total) * 100.0),
+                PERCENTAGE_FORMAT.format((greenlit / total) * 100.0) + "%",
                 true
             )
             .addField(
