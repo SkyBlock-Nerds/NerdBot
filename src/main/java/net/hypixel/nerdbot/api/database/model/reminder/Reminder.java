@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -66,7 +67,9 @@ public class Reminder {
         User user = NerdBotApp.getBot().getJDA().getUserById(userId);
 
         if (channel != null && user != null) {
-            channel.sendMessage(user.getAsMention() + ", you asked me to remind you at " + new DiscordTimestamp(time.getTime()).toLongDateTime() + " about " + description).queue();
+            channel.sendMessage(user.getAsMention() + ", you asked me to remind you at " + new DiscordTimestamp(time.getTime()).toLongDateTime() + " about: ")
+                    .addEmbeds(new EmbedBuilder().setDescription(description).build())
+                    .queue();
         } else if (channel == null && user != null) {
             user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Reminder: " + description).queue());
         } else {
