@@ -21,7 +21,6 @@ import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
-import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;

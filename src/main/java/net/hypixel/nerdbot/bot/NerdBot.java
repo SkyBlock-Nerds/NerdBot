@@ -23,7 +23,10 @@ import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.GreenlitUpdateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
-import net.hypixel.nerdbot.listener.*;
+import net.hypixel.nerdbot.listener.ActivityListener;
+import net.hypixel.nerdbot.listener.ModLogListener;
+import net.hypixel.nerdbot.listener.ModMailListener;
+import net.hypixel.nerdbot.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
@@ -31,7 +34,12 @@ import net.hypixel.nerdbot.util.discord.Users;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 

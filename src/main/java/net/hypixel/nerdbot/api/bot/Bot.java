@@ -8,7 +8,6 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
-import java.io.IOException;
 import java.util.List;
 
 public interface Bot {
