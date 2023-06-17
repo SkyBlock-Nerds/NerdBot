@@ -92,7 +92,7 @@ public class MyCommands extends ApplicationCommand {
                 .append(") ")
                 .append("[<:agree:" + config.getEmojiConfig().getAgreeEmojiId() + "> **" + suggestion.getAgrees() + "** | ")
                 .append("<:disagree:" + config.getEmojiConfig().getDisagreeEmojiId() + "> **" + suggestion.getDisagrees() + "**]")
-                .append(suggestion.isGreenlit() ? " <:creative:812826605243465758>" : "")
+                .append(suggestion.isGreenlit() ? " <:creative:" + config.getEmojiConfig().getGreenlitEmojiId() + ">" : "")
                 .append("\n");
         }
 
