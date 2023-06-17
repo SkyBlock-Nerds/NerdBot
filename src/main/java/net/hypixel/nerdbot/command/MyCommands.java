@@ -59,7 +59,7 @@ public class MyCommands extends ApplicationCommand {
         List<Suggestion> suggestions = getSuggestions(suggestionForumIds, searchMember, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.reply("You have no suggestions matched with tags " + (tags != null ? ("`" + tags + "`") : "*ANY*") + "` or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").setEphemeral(true).queue();
+            event.reply("You have no suggestions matched with tags " + (tags != null ? ("`" + tags + "`") : "*ANY*") + " or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").setEphemeral(true).queue();
             return;
         }
 
@@ -88,7 +88,7 @@ public class MyCommands extends ApplicationCommand {
         List<Suggestion> suggestions = getSuggestions(suggestionForumIds, null, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.reply("You have no suggestions matched with tags " + (tags != null ? ("`" + tags + "`") : "*ANY*") + "` or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").setEphemeral(true).queue();
+            event.reply("You have no suggestions matched with tags " + (tags != null ? ("`" + tags + "`") : "*ANY*") + " or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").setEphemeral(true).queue();
             return;
         }
 
