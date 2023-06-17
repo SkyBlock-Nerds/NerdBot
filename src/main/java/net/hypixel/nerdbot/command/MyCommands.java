@@ -21,6 +21,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.bot.config.BotConfig;
+import net.hypixel.nerdbot.bot.config.EmojiConfig;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -34,12 +35,12 @@ public class MyCommands extends ApplicationCommand {
 
     private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
 
-    @JDASlashCommand(name = "suggestions", description = "View user suggestions.")
+    @JDASlashCommand(name = "suggestions", subcommand = "by-member", description = "View user suggestions.")
     public void mySuggestions(
         GuildSlashEvent event,
         @AppOption @Optional Integer page,
         @AppOption(description = "Member to view.") @Optional Member member,
-        @AppOption(description = "Exact tag to filter for.") @Optional String tag,
+        @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
         @AppOption(description = "Words to filter title for.") @Optional String title,
         @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
     ) {
@@ -55,96 +56,43 @@ public class MyCommands extends ApplicationCommand {
             return;
         }
 
-        List<Suggestion> suggestions = Arrays.stream(suggestionForumIds)
-            .filter(Objects::nonNull)
-            .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
-            .filter(Objects::nonNull)
-            .flatMap(forumChannel -> forumChannel.getThreadChannels()
-                .stream()
-                .sorted((o1, o2) -> Long.compare(o2.getTimeCreated().toInstant().toEpochMilli(), o1.getTimeCreated().toInstant().toEpochMilli())) // Sort by most recent
-                .filter(thread -> thread.getOwnerIdLong() == searchMember.getIdLong())
-                .filter(thread -> thread.getHistoryFromBeginning(1).complete().getRetrievedHistory().get(0) != null) // Lol
-                .filter(thread -> tag == null || thread.getAppliedTags()
-                    .stream()
-                    .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
-                )
-                .filter(thread -> title == null || thread.getName()
-                    .toLowerCase()
-                    .contains(title.toLowerCase())
-                )
-                .map(thread -> new Suggestion(thread, isAlpha))
-            )
-            .toList();
+        List<Suggestion> suggestions = getSuggestions(suggestionForumIds, searchMember, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.reply("You have no suggestions matched with tag " + (tag != null ? ("`" + tag + "`") : "*ANY*") + "` or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").setEphemeral(true).queue();
+            event.reply("You have no suggestions matched with tags " + (tags != null ? ("`" + tags + "`") : "*ANY*") + "` or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").setEphemeral(true).queue();
             return;
         }
 
-        List<Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
-        int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
-        List<List<String>> fieldData = new ArrayList<>();
-        double total = suggestions.size();
-        double greenlit = suggestions.stream().filter(Suggestion::isGreenlit).count();
+        event.replyEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).setAuthor(searchMember.getEffectiveName()).build()).setEphemeral(true).queue();
+    }
 
-        for (Suggestion suggestion : pages) {
-            String name = suggestion.getThread().getName();
-            if (name.length() > 50) {
-                name = name.substring(0, 50);
-                name += "...";
-            }
-            String link = "[" + name + "](" + suggestion.getThread().getJumpUrl() + ")" +
-                (suggestion.isGreenlit() ? " <:creative:" + config.getEmojiConfig().getGreenlitEmojiId() + ">" : "");
+    @JDASlashCommand(name = "suggestions", subcommand = "by-everyone", description = "View all suggestions.")
+    public void allSuggestions(
+        GuildSlashEvent event,
+        @AppOption @Optional Integer page,
+        @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
+        @AppOption(description = "Words to filter title for.") @Optional String title,
+        @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
+    ) {
+        BotConfig config = NerdBotApp.getBot().getConfig();
+        page = (page == null) ? 1 : page;
+        final int pageNum = Math.max(page, 1);
+        final boolean isAlpha = (alpha != null && alpha);
+        final String[] suggestionForumIds = isAlpha ? config.getAlphaSuggestionForumIds() : config.getSuggestionForumIds();
 
-            fieldData.add(Arrays.asList(
-                link,
-                String.valueOf(suggestion.getAgrees()),
-                String.valueOf(suggestion.getDisagrees())
-            ));
+        if (suggestionForumIds == null || suggestionForumIds.length == 0) {
+            event.reply("No " + (isAlpha ? "alpha " : "") + "suggestion forums are setup in the config.").setEphemeral(true).queue();
+            return;
         }
 
-        EmbedBuilder embedBuilder = new EmbedBuilder();
-        embedBuilder.setColor(Color.GREEN)
-            .setAuthor(searchMember.getEffectiveName())
-            .setTitle("Suggestions")
-            .setDescription(
-                (tag != null ? "- Filtered by tag: `" + tag + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "")
-            )
-            .addField(
-                "Total",
-                String.valueOf((int) total),
-                true
-            )
-            .addField(
-                ("<:creative:" + config.getEmojiConfig().getGreenlitEmojiId() + ">"),
-                (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
-                true
-            )
-            .addBlankField(true)
-            .addField(
-                "Suggestion",
-                fieldData.stream()
-                    .map(list -> list.get(0))
-                    .collect(Collectors.joining("\n")),
-                true
-            )
-            .addField(
-                ("<:agree:" + config.getEmojiConfig().getAgreeEmojiId() + ">"),
-                fieldData.stream()
-                    .map(list -> list.get(1))
-                    .collect(Collectors.joining("\n")),
-                true
-            )
-            .addField(
-                ("<:disagree:" + config.getEmojiConfig().getDisagreeEmojiId() + ">"),
-                fieldData.stream()
-                    .map(list -> list.get(2))
-                    .collect(Collectors.joining("\n")),
-                true
-            )
-            .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (isAlpha ? "Yes" : "No"));
+        List<Suggestion> suggestions = getSuggestions(suggestionForumIds, null, tags, title, isAlpha);
 
-        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
+        if (suggestions.isEmpty()) {
+            event.reply("You have no suggestions matched with tags " + (tags != null ? ("`" + tags + "`") : "*ANY*") + "` or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").setEphemeral(true).queue();
+            return;
+        }
+
+        event.replyEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).build()).setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "activity", description = "View your recent activity.")
@@ -159,6 +107,98 @@ public class MyCommands extends ApplicationCommand {
         event.replyEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build())
             .setEphemeral(true)
             .queue();
+    }
+
+    private static List<Suggestion> getSuggestions(String[] suggestionForumIds, Member member, String tags, String title, boolean alpha) {
+        final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
+
+        return Arrays.stream(suggestionForumIds)
+            .filter(Objects::nonNull)
+            .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
+            .filter(Objects::nonNull)
+            .flatMap(forumChannel -> forumChannel.getThreadChannels()
+                .stream()
+                .sorted((o1, o2) -> Long.compare(o2.getTimeCreated().toInstant().toEpochMilli(), o1.getTimeCreated().toInstant().toEpochMilli())) // Sort by most recent
+                .filter(thread -> member == null || thread.getOwnerIdLong() == member.getIdLong())
+                .filter(thread -> thread.getHistoryFromBeginning(1).complete().getRetrievedHistory().get(0) != null) // Lol
+                .filter(thread -> thread.getAppliedTags()
+                    .stream()
+                    .anyMatch(forumTag -> searchTags.stream().anyMatch(forumTag.getName()::equalsIgnoreCase))
+                )
+                .filter(thread -> title == null || thread.getName()
+                    .toLowerCase()
+                    .contains(title.toLowerCase())
+                )
+                .map(thread -> new Suggestion(thread, alpha))
+            )
+            .toList();
+    }
+
+    private static EmbedBuilder buildSuggestionsEmbed(List<Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum) {
+        EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+        List<Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
+        int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
+        List<List<String>> fieldData = new ArrayList<>();
+        double total = suggestions.size();
+        double greenlit = suggestions.stream().filter(Suggestion::isGreenlit).count();
+
+        for (Suggestion suggestion : pages) {
+            String name = suggestion.getThread().getName();
+            if (name.length() > 50) {
+                name = name.substring(0, 50);
+                name += "...";
+            }
+            String link = "[" + name + "](" + suggestion.getThread().getJumpUrl() + ")" +
+                (suggestion.isGreenlit() ? " <:creative:" + emojiConfig.getGreenlitEmojiId() + ">" : "");
+
+            fieldData.add(Arrays.asList(
+                link,
+                String.valueOf(suggestion.getAgrees()),
+                String.valueOf(suggestion.getDisagrees())
+            ));
+        }
+
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setColor(Color.GREEN)
+            .setTitle("All Suggestions")
+            .setDescription(
+                (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "")
+            )
+            .addField(
+                "Total",
+                String.valueOf((int) total),
+                true
+            )
+            .addField(
+                ("<:creative:" + emojiConfig.getGreenlitEmojiId() + ">"),
+                (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
+                true
+            )
+            .addBlankField(true)
+            .addField(
+                "Links",
+                fieldData.stream()
+                    .map(list -> list.get(0))
+                    .collect(Collectors.joining("\n")),
+                true
+            )
+            .addField(
+                ("<:agree:" + emojiConfig.getAgreeEmojiId() + ">"),
+                fieldData.stream()
+                    .map(list -> list.get(1))
+                    .collect(Collectors.joining("\n")),
+                true
+            )
+            .addField(
+                ("<:disagree:" + emojiConfig.getDisagreeEmojiId() + ">"),
+                fieldData.stream()
+                    .map(list -> list.get(2))
+                    .collect(Collectors.joining("\n")),
+                true
+            )
+            .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No"));
+
+        return embedBuilder;
     }
 
     public static Pair<EmbedBuilder, EmbedBuilder> getActivityEmbeds(Member member) {
