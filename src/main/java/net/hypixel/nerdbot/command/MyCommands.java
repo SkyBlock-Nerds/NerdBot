@@ -121,10 +121,10 @@ public class MyCommands extends ApplicationCommand {
                 .sorted((o1, o2) -> Long.compare(o2.getTimeCreated().toInstant().toEpochMilli(), o1.getTimeCreated().toInstant().toEpochMilli())) // Sort by most recent
                 .filter(thread -> member == null || thread.getOwnerIdLong() == member.getIdLong())
                 .filter(thread -> thread.getHistoryFromBeginning(1).complete().getRetrievedHistory().get(0) != null) // Lol
-                .filter(thread -> thread.getAppliedTags()
+                .filter(thread -> searchTags.stream().allMatch(tag -> thread.getAppliedTags()
                     .stream()
-                    .anyMatch(forumTag -> searchTags.stream().anyMatch(forumTag.getName()::equalsIgnoreCase))
-                )
+                    .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
+                ))
                 .filter(thread -> title == null || thread.getName()
                     .toLowerCase()
                     .contains(title.toLowerCase())
