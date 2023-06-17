@@ -23,7 +23,6 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 
 import java.awt.*;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +33,6 @@ import java.util.stream.Collectors;
 public class MyCommands extends ApplicationCommand {
 
     private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
-    private static final DecimalFormat PERCENTAGE_FORMAT = new DecimalFormat("#.##");
 
     @JDASlashCommand(name = "suggestions", description = "View user suggestions.")
     public void mySuggestions(
@@ -119,7 +117,7 @@ public class MyCommands extends ApplicationCommand {
             )
             .addField(
                 ("<:creative:" + config.getEmojiConfig().getGreenlitEmojiId() + ">"),
-                (int) greenlit + " (" + PERCENTAGE_FORMAT.format((greenlit / total) * 100.0) + "%)",
+                (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
                 true
             )
             .addBlankField(true)
