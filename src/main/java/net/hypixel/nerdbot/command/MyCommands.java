@@ -81,6 +81,7 @@ public class MyCommands extends ApplicationCommand {
         }
 
         List<Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
+        int totalPages = (int) Math.ceil(pages.size() / 10.0);
         StringJoiner description = new StringJoiner("\n");
 
         for (Suggestion suggestion : pages) {
@@ -110,7 +111,7 @@ public class MyCommands extends ApplicationCommand {
                 true
             )
             .addBlankField(true)
-            .setFooter("Page: " + pageNum + " | Alpha: " + (alpha ? "Yes" : "No"));
+            .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No"));
 
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
