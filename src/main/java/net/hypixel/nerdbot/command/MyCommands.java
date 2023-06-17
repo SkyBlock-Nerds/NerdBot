@@ -23,10 +23,11 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Log4j2
 public class MyCommands extends ApplicationCommand {
@@ -60,7 +61,7 @@ public class MyCommands extends ApplicationCommand {
             .filter(Objects::nonNull)
             .flatMap(forumChannel -> forumChannel.getThreadChannels()
                 .stream()
-                .sorted(Comparator.comparingLong(thread -> thread.getTimeCreated().toInstant().toEpochMilli())) // Sort by most recent
+                .sorted((o1, o2) -> Long.compare(o2.getTimeCreated().toInstant().toEpochMilli(), o1.getTimeCreated().toInstant().toEpochMilli())) // Sort by most recent
                 .filter(thread -> thread.getOwnerIdLong() == searchMember.getIdLong())
                 .filter(thread -> thread.getHistoryFromBeginning(1).complete().getRetrievedHistory().get(0) != null) // Lol
                 .filter(thread -> tag == null || thread.getAppliedTags()
@@ -82,25 +83,23 @@ public class MyCommands extends ApplicationCommand {
 
         List<Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
         int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
-        StringBuilder description = new StringBuilder();
+        List<List<String>> fieldData = new ArrayList<>();
 
         for (Suggestion suggestion : pages) {
-            description.append("- [")
-                .append(suggestion.getThread().getName())
-                .append("](")
-                .append(suggestion.getThread().getJumpUrl())
-                .append(") ")
-                .append("[<:agree:" + config.getEmojiConfig().getAgreeEmojiId() + "> **" + suggestion.getAgrees() + "** | ")
-                .append("<:disagree:" + config.getEmojiConfig().getDisagreeEmojiId() + "> **" + suggestion.getDisagrees() + "**]")
-                .append(suggestion.isGreenlit() ? " <:creative:" + config.getEmojiConfig().getGreenlitEmojiId() + ">" : "")
-                .append("\n");
+            String link = "[" + suggestion.getThread().getName() + "](" + suggestion.getThread().getJumpUrl() + ")" +
+                (suggestion.isGreenlit() ? " <:creative:" + config.getEmojiConfig().getGreenlitEmojiId() + ">" : "");
+
+            fieldData.add(Arrays.asList(
+                link,
+                String.valueOf(suggestion.getAgrees()),
+                String.valueOf(suggestion.getDisagrees())
+            ));
         }
 
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setColor(Color.GREEN)
             .setAuthor(searchMember.getEffectiveName())
             .setTitle((tag != null ? tag : "All") + " Suggestions")
-            .setDescription(description.toString().replaceFirst("\n$", ""))
             .addField(
                 "Total",
                 String.valueOf(suggestions.size()),
@@ -112,6 +111,27 @@ public class MyCommands extends ApplicationCommand {
                 true
             )
             .addBlankField(true)
+            .addField(
+                "Suggestion",
+                fieldData.stream()
+                    .map(list -> list.get(0))
+                    .collect(Collectors.joining("\n")),
+                true
+            )
+            .addField(
+                "<:agree:" + config.getEmojiConfig().getAgreeEmojiId() + "> Agrees",
+                fieldData.stream()
+                    .map(list -> list.get(1))
+                    .collect(Collectors.joining("\n")),
+                true
+            )
+            .addField(
+                "<:disagree:" + config.getEmojiConfig().getDisagreeEmojiId() + "> Disagrees",
+                fieldData.stream()
+                    .map(list -> list.get(2))
+                    .collect(Collectors.joining("\n")),
+                true
+            )
             .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (isAlpha ? "Yes" : "No"));
 
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
