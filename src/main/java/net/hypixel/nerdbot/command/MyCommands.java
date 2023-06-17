@@ -119,14 +119,10 @@ public class MyCommands extends ApplicationCommand {
             )
             .addField(
                 ("<:creative:" + config.getEmojiConfig().getGreenlitEmojiId() + ">"),
-                String.valueOf((int) greenlit),
+                (int) greenlit + " (" + PERCENTAGE_FORMAT.format((greenlit / total) * 100.0) + "%)",
                 true
             )
-            .addField(
-                "",
-                PERCENTAGE_FORMAT.format((greenlit / total) * 100.0) + "%",
-                true
-            )
+            .addBlankField(true)
             .addField(
                 "Suggestion",
                 fieldData.stream()
