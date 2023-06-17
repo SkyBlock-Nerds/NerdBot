@@ -121,7 +121,7 @@ public class MyCommands extends ApplicationCommand {
                 .sorted((o1, o2) -> Long.compare(o2.getTimeCreated().toInstant().toEpochMilli(), o1.getTimeCreated().toInstant().toEpochMilli())) // Sort by most recent
                 .filter(thread -> member == null || thread.getOwnerIdLong() == member.getIdLong())
                 .filter(thread -> thread.getHistoryFromBeginning(1).complete().getRetrievedHistory().get(0) != null) // Lol
-                .filter(thread -> searchTags.stream().allMatch(tag -> thread.getAppliedTags()
+                .filter(thread -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> thread.getAppliedTags()
                     .stream()
                     .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
                 ))
