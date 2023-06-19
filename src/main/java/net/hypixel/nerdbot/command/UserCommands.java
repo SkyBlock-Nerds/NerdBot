@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 public class UserCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
-    public void createReminder(GuildSlashEvent event, @AppOption String time, @AppOption String description) {
+    public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description) {
         Date date = null;
         boolean parsed = false;
 
