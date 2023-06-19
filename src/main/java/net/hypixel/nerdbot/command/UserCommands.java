@@ -319,7 +319,6 @@ public class UserCommands extends ApplicationCommand {
     }
 
     private static EmbedBuilder buildSuggestionsEmbed(List<Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum) {
-        EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
         List<Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
         int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
         List<List<String>> fieldData = new ArrayList<>();
@@ -433,11 +432,7 @@ public class UserCommands extends ApplicationCommand {
     }
 
     private static String getEmojiFormat(Function<EmojiConfig, String> emojiIdFunction) {
-        return getEmojiFormat(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getEmojiConfig()));
-    }
-
-    private static String getEmojiFormat(String emojiId) {
-        return NerdBotApp.getBot().getJDA().getEmojiById(emojiId).getFormatted();
+        return NerdBotApp.getBot().getJDA().getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getEmojiConfig())).getFormatted();
     }
 
     @RequiredArgsConstructor
