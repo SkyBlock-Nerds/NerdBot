@@ -67,15 +67,20 @@ public class Reminder {
     public void sendReminder(boolean late) {
         TextChannel channel = NerdBotApp.getBot().getJDA().getTextChannelById(channelId);
         User user = NerdBotApp.getBot().getJDA().getUserById(userId);
+        String message;
+        String timestamp = new DiscordTimestamp(time.getTime()).toLongDateTime();
 
         if (user != null && silent) {
-            user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Reminder: " + description).queue());
+            if (late) {
+                message = user.getAsMention() + ", while I was offline, you asked me to remind you at " + timestamp + " about: ";
+            } else {
+                message = user.getAsMention() + ", you asked me to remind you at " + timestamp + " about: ";
+            }
+            String finalMessage = message;
+            user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(finalMessage).queue());
         }
 
         if (channel != null && user != null) {
-            String message;
-            String timestamp = new DiscordTimestamp(time.getTime()).toLongDateTime();
-
             if (late) {
                 message = user.getAsMention() + ", while I was offline, you asked me to remind you at " + timestamp + " about: ";
             } else {
