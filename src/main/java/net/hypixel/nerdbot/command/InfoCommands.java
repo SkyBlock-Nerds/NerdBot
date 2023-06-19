@@ -122,7 +122,7 @@ public class InfoCommands extends ApplicationCommand {
             return;
         }
 
-        Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = MyCommands.getActivityEmbeds(event.getMember());
+        Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = UserCommands.getActivityEmbeds(event.getMember());
 
         if (activityEmbeds.getLeft() == null || activityEmbeds.getRight() == null) {
             event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
