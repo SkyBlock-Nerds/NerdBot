@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.bot;
 import com.freya02.botcommands.api.CommandsBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mongodb.client.MongoCollection;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -117,7 +118,15 @@ public class NerdBot implements Bot {
             return;
         }
 
-        database.getCollection("reminders", Reminder.class).find().forEach(t -> {
+        log.info("Loading all reminders from database...");
+
+        MongoCollection<Reminder> collection = database.getCollection("reminders", Reminder.class);
+        if (collection == null) {
+            log.error("Failed to load reminders from database, collection is null!");
+            return;
+        }
+
+        collection.find().forEach(t -> {
             Date now = new Date();
 
             if (now.after(t.getTime())) {
@@ -129,6 +138,8 @@ public class NerdBot implements Bot {
             t.schedule();
             log.info("Loaded reminder from database: " + t);
         });
+
+        log.info("Loaded " + collection.countDocuments() + " reminders from the database!");
     }
 
     @Override
