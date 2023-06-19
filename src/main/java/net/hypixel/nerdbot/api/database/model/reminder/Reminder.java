@@ -77,7 +77,7 @@ public class Reminder {
                 message = user.getAsMention() + ", you asked me to remind you at " + timestamp + " about: ";
             }
             String finalMessage = message;
-            user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(finalMessage).queue());
+            user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(finalMessage).addEmbeds(new EmbedBuilder().setDescription(description).build()).queue());
             return;
         }
 
