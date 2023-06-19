@@ -78,6 +78,7 @@ public class Reminder {
             }
             String finalMessage = message;
             user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(finalMessage).queue());
+            return;
         }
 
         if (channel != null && user != null) {
