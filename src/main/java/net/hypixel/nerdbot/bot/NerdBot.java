@@ -130,7 +130,7 @@ public class NerdBot implements Bot {
             Date now = new Date();
 
             if (now.after(t.getTime())) {
-                t.sendReminder();
+                t.sendReminder(true);
                 log.info("Sent reminder " + t + " because it was not sent yet!");
                 return;
             }

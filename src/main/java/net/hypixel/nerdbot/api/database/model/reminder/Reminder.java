@@ -52,7 +52,7 @@ public class Reminder {
 
             if (result != null && result.wasAcknowledged() && result.getDeletedCount() > 0) {
                 timer.cancel();
-                sendReminder();
+                sendReminder(false);
             }
         }
     }
@@ -62,12 +62,21 @@ public class Reminder {
         timer.schedule(new ReminderTask(), time);
     }
 
-    public void sendReminder() {
+    public void sendReminder(boolean late) {
         TextChannel channel = NerdBotApp.getBot().getJDA().getTextChannelById(channelId);
         User user = NerdBotApp.getBot().getJDA().getUserById(userId);
 
         if (channel != null && user != null) {
-            channel.sendMessage(user.getAsMention() + ", you asked me to remind you at " + new DiscordTimestamp(time.getTime()).toLongDateTime() + " about: ")
+            String message;
+            String timestamp = new DiscordTimestamp(time.getTime()).toLongDateTime();
+
+            if (late) {
+                message = user.getAsMention() + ", while I was offline, you asked me to remind you at " + timestamp + " about: ";
+            } else {
+                message = user.getAsMention() + ", you asked me to remind you at " + timestamp + " about: ";
+            }
+
+            channel.sendMessage(message)
                     .addEmbeds(new EmbedBuilder().setDescription(description).build())
                     .queue();
         } else if (channel == null && user != null) {
