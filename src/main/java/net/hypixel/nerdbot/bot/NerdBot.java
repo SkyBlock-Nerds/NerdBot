@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.bot;
 import com.freya02.botcommands.api.CommandsBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mongodb.client.MongoCollection;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -15,6 +16,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.bot.config.BotConfig;
@@ -41,6 +43,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 @Log4j2
@@ -111,6 +114,37 @@ public class NerdBot implements Bot {
         }
 
         NerdBotApp.getBot().onStart();
+        loadRemindersFromDatabase();
+    }
+
+    private void loadRemindersFromDatabase() {
+        if (!database.isConnected()) {
+            log.error("Failed to load reminders from database, database is not connected!");
+            return;
+        }
+
+        log.info("Loading all reminders from database...");
+
+        MongoCollection<Reminder> collection = database.getCollection("reminders", Reminder.class);
+        if (collection == null) {
+            log.error("Failed to load reminders from database, collection is null!");
+            return;
+        }
+
+        collection.find().forEach(t -> {
+            Date now = new Date();
+
+            if (now.after(t.getTime())) {
+                t.sendReminder(true);
+                log.info("Sent reminder " + t + " because it was not sent yet!");
+                return;
+            }
+
+            t.schedule();
+            log.info("Loaded reminder from database: " + t);
+        });
+
+        log.info("Loaded " + collection.countDocuments() + " reminders from the database!");
     }
 
     @Override
