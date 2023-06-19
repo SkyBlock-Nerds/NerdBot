@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.command;
 
+import com.freya02.botcommands.api.annotations.Optional;
 import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
@@ -31,7 +32,7 @@ import java.util.regex.Pattern;
 public class UserCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
-    public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description) {
+    public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description, @AppOption @Optional Boolean silent) {
         // Check if the bot has permission to send messages in the channel
         if (!event.getGuild().getSelfMember().hasPermission(event.getGuildChannel(), Permission.MESSAGE_SEND)) {
             event.reply("I don't have permission to send messages in this channel!").setEphemeral(true).queue();
@@ -75,8 +76,12 @@ public class UserCommands extends ApplicationCommand {
             return;
         }
 
+        if (silent == null) {
+            silent = false;
+        }
+
         // Create a new reminder and save it to the database
-        Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId());
+        Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId(), silent);
         InsertOneResult result = reminder.save();
 
         // Check if the reminder was saved successfully, schedule it and send a confirmation message

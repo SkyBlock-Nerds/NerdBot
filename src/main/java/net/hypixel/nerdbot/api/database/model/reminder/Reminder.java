@@ -34,16 +34,18 @@ public class Reminder {
     private String channelId;
     private String userId;
     private Date time;
+    private boolean silent;
 
     public Reminder() {
     }
 
-    public Reminder(String description, Date time, String channelId, String userId) {
+    public Reminder(String description, Date time, String channelId, String userId, boolean silent) {
         this.uuid = UUID.randomUUID();
         this.description = description;
         this.channelId = channelId;
         this.userId = userId;
         this.time = time;
+        this.silent = silent;
     }
 
     class ReminderTask extends TimerTask {
@@ -65,6 +67,10 @@ public class Reminder {
     public void sendReminder(boolean late) {
         TextChannel channel = NerdBotApp.getBot().getJDA().getTextChannelById(channelId);
         User user = NerdBotApp.getBot().getJDA().getUserById(userId);
+
+        if (user != null && silent) {
+            user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Reminder: " + description).queue());
+        }
 
         if (channel != null && user != null) {
             String message;
