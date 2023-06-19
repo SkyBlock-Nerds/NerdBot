@@ -29,7 +29,8 @@ public class UserCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
     public void createReminder(GuildSlashEvent event, @AppOption String time, @AppOption String description) {
-        Date date;
+        Date date = null;
+        boolean parsed = false;
 
         try {
             Parser parser = new Parser();
@@ -38,11 +39,15 @@ public class UserCommands extends ApplicationCommand {
 
             List<Date> dates = group.getDates();
             date = dates.get(0);
-        } catch (IndexOutOfBoundsException exception) {
+            parsed = true;
+        } catch (IndexOutOfBoundsException ignored) {
+        }
+
+        if (!parsed) {
             try {
                 date = parseCustomFormat(time);
             } catch (DateTimeParseException exception2) {
-                event.reply("Could not parse date: " + time).setEphemeral(true).queue();
+                event.reply("Could not parse the provided time!").setEphemeral(true).queue();
                 return;
             }
         }
