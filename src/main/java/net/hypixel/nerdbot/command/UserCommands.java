@@ -76,6 +76,11 @@ public class UserCommands extends ApplicationCommand {
     public void listReminders(GuildSlashEvent event) {
         List<Reminder> reminders = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.eq("userId", event.getUser().getId())).into(new ArrayList<>());
 
+        if (reminders.isEmpty()) {
+            event.reply("You have no reminders!").setEphemeral(true).queue();
+            return;
+        }
+
         // Sort these by newest first
         reminders.sort((o1, o2) -> {
             if (o1.getTime().before(o2.getTime())) {
@@ -86,11 +91,6 @@ public class UserCommands extends ApplicationCommand {
                 return 0;
             }
         });
-
-        if (reminders.isEmpty()) {
-            event.reply("You have no reminders!").setEphemeral(true).queue();
-            return;
-        }
 
         StringBuilder builder = new StringBuilder("**Your reminders:**\n");
         for (Reminder reminder : reminders) {
