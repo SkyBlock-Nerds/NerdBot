@@ -7,6 +7,7 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import com.joestelmach.natty.DateGroup;
 import com.joestelmach.natty.Parser;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -112,13 +113,19 @@ public class UserCommands extends ApplicationCommand {
                 return;
             }
 
-            if (reminder.getTimer() != null) {
-                reminder.getTimer().cancel();
-            }
+            DeleteResult result = reminder.delete();
 
-            reminder.delete();
-            log.info("Deleted reminder: " + uuid + " for user: " + event.getUser().getId());
-            event.reply("Deleted reminder: " + uuid).setEphemeral(true).queue();
+            if (result != null && result.wasAcknowledged()) {
+                if (reminder.getTimer() != null) {
+                    reminder.getTimer().cancel();
+                }
+
+                event.reply("Deleted reminder: " + uuid + " (" + reminder.getDescription() + ")").setEphemeral(true).queue();
+                log.info("Deleted reminder: " + uuid + " for user: " + event.getUser().getId());
+            } else {
+                event.reply("Could not delete reminder: " + uuid).setEphemeral(true).queue();
+                log.info("Could not delete reminder " + uuid + " for user: " + event.getUser().getId() + " (" + result + ")");
+            }
         } catch (IllegalArgumentException exception) {
             event.reply("Please enter a valid UUID!").setEphemeral(true).queue();
         }
