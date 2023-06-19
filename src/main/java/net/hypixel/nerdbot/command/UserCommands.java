@@ -69,7 +69,7 @@ public class UserCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "remind", subcommand = "list", description = "View your reminders")
     public void listReminders(GuildSlashEvent event) {
-        List<Reminder> reminders = NerdBotApp.getBot().getDatabase().findAllDocuments(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.eq("userId", event.getUser().getId())).into(new ArrayList<>());
+        List<Reminder> reminders = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.eq("userId", event.getUser().getId())).into(new ArrayList<>());
 
         // Sort these by newest first
         reminders.sort((o1, o2) -> {
