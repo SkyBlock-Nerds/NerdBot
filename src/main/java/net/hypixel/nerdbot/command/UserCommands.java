@@ -7,6 +7,7 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.joestelmach.natty.DateGroup;
 import com.joestelmach.natty.Parser;
+import com.mongodb.Function;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
@@ -219,7 +220,7 @@ public class UserCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-member", description = "View user suggestions.")
-    public void mySuggestions(
+    public void viewOwnSuggestions(
         GuildSlashEvent event,
         @AppOption @Optional Integer page,
         @AppOption(description = "Member to view.") @Optional Member member,
@@ -242,7 +243,7 @@ public class UserCommands extends ApplicationCommand {
         List<Suggestion> suggestions = getSuggestions(suggestionForumIds, searchMember, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.reply("You have no suggestions matched with tags " + (tags != null ? ("`" + tags + "`") : "*ANY*") + " or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").setEphemeral(true).queue();
+            event.reply("Found no suggestions matching the specified filters!").setEphemeral(true).queue();
             return;
         }
 
@@ -250,7 +251,7 @@ public class UserCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-everyone", description = "View all suggestions.")
-    public void allSuggestions(
+    public void viewAllSuggestions(
         GuildSlashEvent event,
         @AppOption @Optional Integer page,
         @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
@@ -279,7 +280,7 @@ public class UserCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "activity", description = "View your recent activity.")
-    public void myActivity(GuildSlashEvent event) {
+    public void viewOwnActivity(GuildSlashEvent event) {
         Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = getActivityEmbeds(event.getMember());
 
         if (activityEmbeds.getLeft() == null || activityEmbeds.getRight() == null) {
@@ -331,8 +332,9 @@ public class UserCommands extends ApplicationCommand {
                 name = name.substring(0, 50);
                 name += "...";
             }
+
             String link = "[" + name + "](" + suggestion.getThread().getJumpUrl() + ")" +
-                (suggestion.isGreenlit() ? " <:creative:" + emojiConfig.getGreenlitEmojiId() + ">" : "");
+                (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "");
 
             fieldData.add(Arrays.asList(
                 link,
@@ -353,7 +355,7 @@ public class UserCommands extends ApplicationCommand {
                 true
             )
             .addField(
-                ("<:creative:" + emojiConfig.getGreenlitEmojiId() + ">"),
+                getEmojiFormat(EmojiConfig::getGreenlitEmojiId),
                 (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
                 true
             )
@@ -366,14 +368,14 @@ public class UserCommands extends ApplicationCommand {
                 true
             )
             .addField(
-                ("<:agree:" + emojiConfig.getAgreeEmojiId() + ">"),
+                getEmojiFormat(EmojiConfig::getAgreeEmojiId),
                 fieldData.stream()
                     .map(list -> list.get(1))
                     .collect(Collectors.joining("\n")),
                 true
             )
             .addField(
-                ("<:disagree:" + emojiConfig.getDisagreeEmojiId() + ">"),
+                getEmojiFormat(EmojiConfig::getDisagreeEmojiId),
                 fieldData.stream()
                     .map(list -> list.get(2))
                     .collect(Collectors.joining("\n")),
@@ -428,6 +430,14 @@ public class UserCommands extends ApplicationCommand {
             .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentDate), true);
 
         return Pair.of(globalEmbedBuilder, alphaEmbedBuilder);
+    }
+
+    private static String getEmojiFormat(Function<EmojiConfig, String> emojiIdFunction) {
+        return getEmojiFormat(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getEmojiConfig()));
+    }
+
+    private static String getEmojiFormat(String emojiId) {
+        return NerdBotApp.getBot().getJDA().getEmojiById(emojiId).getFormatted();
     }
 
     @RequiredArgsConstructor
