@@ -11,7 +11,6 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.Permission;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
@@ -31,13 +30,6 @@ public class UserCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
     public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description) {
-        // Check if the bot has permission to send messages in the channel
-        if (!event.getGuild().getSelfMember().hasPermission(event.getGuildChannel(), Permission.MESSAGE_SEND)
-        || !event.getGuild().getSelfMember().hasPermission(event.getChannel().asThreadChannel(), Permission.MESSAGE_SEND_IN_THREADS)) {
-            event.reply("I don't have permission to send messages in this channel!").setEphemeral(true).queue();
-            return;
-        }
-
         Date date = null;
         boolean parsed = false;
 
