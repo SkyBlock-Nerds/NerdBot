@@ -103,21 +103,25 @@ public class UserCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "remind", subcommand = "delete", description = "Delete a reminder")
     public void deleteReminder(GuildSlashEvent event, @AppOption String uuid) {
-        UUID parsed = UUID.fromString(uuid);
-        Reminder reminder = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.and(Filters.eq("userId", event.getUser().getId()), Filters.eq("uuid", parsed))).first();
+        try {
+            UUID parsed = UUID.fromString(uuid);
+            Reminder reminder = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.and(Filters.eq("userId", event.getUser().getId()), Filters.eq("uuid", parsed))).first();
 
-        if (reminder == null) {
-            event.reply("Could not find reminder: " + uuid).setEphemeral(true).queue();
-            return;
+            if (reminder == null) {
+                event.reply("Could not find reminder: " + uuid).setEphemeral(true).queue();
+                return;
+            }
+
+            if (reminder.getTimer() != null) {
+                reminder.getTimer().cancel();
+            }
+
+            reminder.delete();
+            log.info("Deleted reminder: " + uuid + " for user: " + event.getUser().getId());
+            event.reply("Deleted reminder: " + uuid).setEphemeral(true).queue();
+        } catch (IllegalArgumentException exception) {
+            event.reply("Please enter a valid UUID!").setEphemeral(true).queue();
         }
-
-        if (reminder.getTimer() != null) {
-            reminder.getTimer().cancel();
-        }
-
-        reminder.delete();
-        log.info("Deleted reminder: " + uuid + " for user: " + event.getUser().getId());
-        event.reply("Deleted reminder: " + uuid).setEphemeral(true).queue();
     }
 
     public static Date parseCustomFormat(String time) throws DateTimeParseException {
