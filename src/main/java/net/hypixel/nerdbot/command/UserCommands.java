@@ -226,7 +226,7 @@ public class UserCommands extends ApplicationCommand {
         final Member searchMember = (member == null) ? event.getMember() : member;
         final boolean isAlpha = (alpha != null && alpha);
 
-        List<Suggestion> suggestions = getSuggestions(suggestionForumIds, searchMember, tags, title, isAlpha);
+        List<SuggestionCache.Suggestion> suggestions = getSuggestions(searchMember, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
             event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
