@@ -264,33 +264,35 @@ public class UserCommands extends ApplicationCommand {
         final boolean isAlpha = (alpha != null && alpha);
         final String[] suggestionForumIds = isAlpha ? config.getAlphaSuggestionForumIds() : config.getSuggestionForumIds();
 
+        event.deferReply(true).queue();
+
         if (suggestionForumIds == null || suggestionForumIds.length == 0) {
-            event.reply("No " + (isAlpha ? "alpha " : "") + "suggestion forums are setup in the config.").setEphemeral(true).queue();
+            event.getHook().editOriginal("No " + (isAlpha ? "alpha " : "") + "suggestion forums are setup in the config.").queue();
             return;
         }
 
         List<Suggestion> suggestions = getSuggestions(suggestionForumIds, null, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.reply("You have no suggestions matched with tags " + (tags != null ? ("`" + tags + "`") : "*ANY*") + " or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").setEphemeral(true).queue();
+            event.getHook().editOriginal("You have no suggestions matched with tags " + (tags != null ? ("`" + tags + "`") : "*ANY*") + " or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").queue();
             return;
         }
 
-        event.replyEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).build()).setEphemeral(true).queue();
+        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).build()).queue();
     }
 
     @JDASlashCommand(name = "activity", description = "View your recent activity.")
     public void viewOwnActivity(GuildSlashEvent event) {
         Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = getActivityEmbeds(event.getMember());
 
+        event.deferReply(true).queue();
+
         if (activityEmbeds.getLeft() == null || activityEmbeds.getRight() == null) {
-            event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
+            event.getHook().editOriginal("Couldn't find that user in the database!").queue();
             return;
         }
 
-        event.replyEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build())
-            .setEphemeral(true)
-            .queue();
+        event.getHook().editOriginalEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build()).queue();
     }
 
     private static List<Suggestion> getSuggestions(String[] suggestionForumIds, Member member, String tags, String title, boolean alpha) {
