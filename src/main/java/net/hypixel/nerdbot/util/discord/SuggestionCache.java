@@ -79,6 +79,7 @@ public class SuggestionCache {
         @Getter private final int agrees;
         @Getter private final int disagrees;
         @Getter private final boolean greenlit;
+        @Getter private final boolean deleted;
 
         public Suggestion(ThreadChannel thread) {
             this.thread = thread;
@@ -86,8 +87,9 @@ public class SuggestionCache {
             this.alpha = Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase) || thread.getName().toLowerCase().contains("alpha");
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
             Message message = history.getRetrievedHistory().get(0);
-            this.agrees = getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
-            this.disagrees = getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
+            this.deleted = message == null;
+            this.agrees = this.deleted ? 0 : getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
+            this.disagrees = this.deleted ? 0 : getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
             this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> GREENLIT_TAGS.contains(forumTag.getName().toLowerCase()));
         }
 
@@ -103,6 +105,10 @@ public class SuggestionCache {
                 .mapToInt(MessageReaction::getCount)
                 .findFirst()
                 .orElse(0);
+        }
+
+        public boolean notDeleted() {
+            return !this.isDeleted();
         }
 
     }
