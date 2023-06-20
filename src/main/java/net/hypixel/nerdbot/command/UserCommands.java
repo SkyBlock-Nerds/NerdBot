@@ -332,8 +332,8 @@ public class UserCommands extends ApplicationCommand {
                 name += "...";
             }
 
-            String link = "[" + name + "](" + suggestion.getThread().getJumpUrl() + ")" +
-                (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "");
+            String link = suggestion.getThread().getJumpUrl() +
+                    (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "");
 
             fieldData.add(Arrays.asList(
                 link,
