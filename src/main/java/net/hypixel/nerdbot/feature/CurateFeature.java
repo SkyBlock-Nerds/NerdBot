@@ -10,7 +10,10 @@ import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.TimerTask;
 import java.util.stream.Stream;
 
 @Log4j2
