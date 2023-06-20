@@ -5,12 +5,14 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.discord.MessageCache;
+import net.hypixel.nerdbot.util.discord.SuggestionCache;
 
 import javax.security.auth.login.LoginException;
 import java.time.Duration;
@@ -32,8 +34,9 @@ public class NerdBotApp {
                 log.info("Upserted cached user '" + discordUser.getDiscordId() + "'");
             }).build();
 
-    private static MessageCache messageCache;
-    private static Bot bot;
+    @Getter private static SuggestionCache suggestionCache;
+    @Getter private static MessageCache messageCache;
+    @Getter private static Bot bot;
 
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();
@@ -41,6 +44,7 @@ public class NerdBotApp {
         try {
             nerdBot.create(args);
             messageCache = new MessageCache();
+            suggestionCache = new SuggestionCache();
         } catch (LoginException e) {
             log.error("Failed to find login for bot!");
             System.exit(-1);
@@ -56,11 +60,4 @@ public class NerdBotApp {
         Runtime.getRuntime().addShutdownHook(userSavingTask);
     }
 
-    public static Bot getBot() {
-        return bot;
-    }
-
-    public static MessageCache getMessageCache() {
-        return messageCache;
-    }
 }

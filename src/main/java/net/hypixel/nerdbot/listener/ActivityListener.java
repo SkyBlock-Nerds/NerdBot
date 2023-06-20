@@ -4,9 +4,11 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.GuildMessageChannelUnion;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
@@ -19,6 +21,7 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.util.Util;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 
@@ -40,6 +43,39 @@ public class ActivityListener {
     }
 
     @SubscribeEvent
+    public void onThreadCreateEvent(@NotNull ChannelCreateEvent event) {
+        if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD) {
+            MessageHistory messageHistory = event.getChannel().asThreadChannel().getHistoryFromBeginning(1).complete();
+            Message message = messageHistory.getRetrievedHistory().get(0);
+
+            Member member = message.getMember();
+            if (member == null || member.getUser().isBot()) {
+                return; // Ignore Empty Member
+            }
+
+            DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
+            if (discordUser == null) {
+                return; // Ignore Empty User
+            }
+
+            String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
+            long time = System.currentTimeMillis();
+
+            // New Suggestions
+            if (Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+                discordUser.getLastActivity().setLastSuggestionDate(time);
+                log.info("Updating new suggestion activity date for " + member.getEffectiveName() + " to " + time);
+            }
+
+            // New Alpha Suggestions
+            if (Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+                discordUser.getLastActivity().setLastAlphaSuggestionDate(time);
+                log.info("Updating new alpha suggestion activity date for " + member.getEffectiveName() + " to " + time);
+            }
+        }
+    }
+
+    @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {
         if (!event.isFromGuild()) {
             return; // Ignore Non Guild
@@ -56,25 +92,11 @@ public class ActivityListener {
         }
 
         GuildMessageChannelUnion guildChannel = event.getGuildChannel();
-        String channelId = guildChannel.getId();
         long time = System.currentTimeMillis();
         boolean isAlphaChannel = guildChannel.getName().contains("alpha");
 
-        // New Suggestions
-        if (Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).anyMatch(channelId::equalsIgnoreCase)) {
-            discordUser.getLastActivity().setLastSuggestionDate(time);
-            log.info("Updating new suggestion activity date for " + member.getEffectiveName() + " to " + time);
-        }
-
-        // New Alpha Suggestions
-        if (Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(channelId::equalsIgnoreCase)) {
-            isAlphaChannel = true;
-            discordUser.getLastActivity().setLastAlphaSuggestionDate(time);
-            log.info("Updating new alpha suggestion activity date for " + member.getEffectiveName() + " to " + time);
-        }
-
         // New Suggestion Comments
-        if (guildChannel instanceof ThreadChannel) {
+        if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
             String forumChannelId = guildChannel.asThreadChannel().getParentChannel().getId();
 
             // New Suggestion Comments

@@ -11,26 +11,20 @@ import com.mongodb.Function;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageHistory;
-import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
-import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
+import net.hypixel.nerdbot.util.discord.SuggestionCache;
 
 import java.awt.*;
 import java.time.Duration;
@@ -40,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,7 +42,7 @@ import java.util.stream.Collectors;
 @Log4j2
 public class UserCommands extends ApplicationCommand {
 
-    private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
+    private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
 
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
     public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description, @AppOption(description = "Send the reminder through DMs") @Optional Boolean silent) {
@@ -187,8 +180,7 @@ public class UserCommands extends ApplicationCommand {
      * @throws DateTimeParseException If the string could not be parsed
      */
     public static Date parseCustomFormat(String time) throws DateTimeParseException {
-        Pattern pattern = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
-        Matcher matcher = pattern.matcher(time);
+        Matcher matcher = DURATION.matcher(time);
 
         if (!matcher.matches()) {
             throw new DateTimeParseException("Could not parse date: " + time, time, 0);
@@ -220,7 +212,7 @@ public class UserCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-member", description = "View user suggestions.")
-    public void viewOwnSuggestions(
+    public void viewMemberSuggestions(
         GuildSlashEvent event,
         @AppOption @Optional Integer page,
         @AppOption(description = "Member to view.") @Optional Member member,
@@ -228,21 +220,13 @@ public class UserCommands extends ApplicationCommand {
         @AppOption(description = "Words to filter title for.") @Optional String title,
         @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
     ) {
-        BotConfig config = NerdBotApp.getBot().getConfig();
+        event.deferReply(true).queue();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
         final Member searchMember = (member == null) ? event.getMember() : member;
         final boolean isAlpha = (alpha != null && alpha);
-        final String[] suggestionForumIds = (alpha != null && alpha) ? config.getAlphaSuggestionForumIds() : config.getSuggestionForumIds();
 
-        event.deferReply(true).queue();
-
-        if (suggestionForumIds == null || suggestionForumIds.length == 0) {
-            event.getHook().editOriginal("No " + (isAlpha ? "alpha " : "") + "suggestion forums are setup in the config.").queue();
-            return;
-        }
-
-        List<Suggestion> suggestions = getSuggestions(suggestionForumIds, searchMember, tags, title, isAlpha);
+        List<SuggestionCache.Suggestion> suggestions = getSuggestions(searchMember, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
             event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
@@ -260,23 +244,15 @@ public class UserCommands extends ApplicationCommand {
         @AppOption(description = "Words to filter title for.") @Optional String title,
         @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
     ) {
-        BotConfig config = NerdBotApp.getBot().getConfig();
+        event.deferReply(true).queue();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
         final boolean isAlpha = (alpha != null && alpha);
-        final String[] suggestionForumIds = isAlpha ? config.getAlphaSuggestionForumIds() : config.getSuggestionForumIds();
 
-        event.deferReply(true).queue();
-
-        if (suggestionForumIds == null || suggestionForumIds.length == 0) {
-            event.getHook().editOriginal("No " + (isAlpha ? "alpha " : "") + "suggestion forums are setup in the config.").queue();
-            return;
-        }
-
-        List<Suggestion> suggestions = getSuggestions(suggestionForumIds, null, tags, title, isAlpha);
+        List<SuggestionCache.Suggestion> suggestions = getSuggestions(null, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.getHook().editOriginal("You have no suggestions matched with tags " + (tags != null ? ("`" + tags + "`") : "*ANY*") + " or title containing " + (title != null ? ("`" + title + "`") : "*ANYTHING*") + ".").queue();
+            event.reply("Found no suggestions matching the specified filters!").setEphemeral(true).queue();
             return;
         }
 
@@ -287,57 +263,51 @@ public class UserCommands extends ApplicationCommand {
     public void viewOwnActivity(GuildSlashEvent event) {
         Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = getActivityEmbeds(event.getMember());
 
-        event.deferReply(true).queue();
-
         if (activityEmbeds.getLeft() == null || activityEmbeds.getRight() == null) {
             event.getHook().editOriginal("Couldn't find that user in the database!").queue();
             return;
         }
 
-        event.getHook().editOriginalEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build()).queue();
+        event.replyEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build()).setEphemeral(true).queue();
     }
 
-    private static List<Suggestion> getSuggestions(String[] suggestionForumIds, Member member, String tags, String title, boolean alpha) {
+    private static List<SuggestionCache.Suggestion> getSuggestions(Member member, String tags, String title, boolean alpha) {
         final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
 
-        return Arrays.stream(suggestionForumIds)
-            .filter(Objects::nonNull)
-            .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
-            .filter(Objects::nonNull)
-            .flatMap(forumChannel -> forumChannel.getThreadChannels()
+        return NerdBotApp.getSuggestionCache()
+            .getSuggestions()
+            .stream()
+            .filter(suggestion -> suggestion.isAlpha() == alpha)
+            .filter(SuggestionCache.Suggestion::notDeleted)
+            .filter(suggestion -> member == null || suggestion.getThread().getOwnerIdLong() == member.getIdLong())
+            .filter(suggestion -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> suggestion.getThread()
+                .getAppliedTags()
                 .stream()
-                .sorted((o1, o2) -> Long.compare(o2.getTimeCreated().toInstant().toEpochMilli(), o1.getTimeCreated().toInstant().toEpochMilli())) // Sort by most recent
-                .filter(thread -> member == null || thread.getOwnerIdLong() == member.getIdLong())
-                .filter(thread -> thread.getHistoryFromBeginning(1).complete().getRetrievedHistory().get(0) != null) // Lol
-                .filter(thread -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> thread.getAppliedTags()
-                    .stream()
-                    .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
-                ))
-                .filter(thread -> title == null || thread.getName()
-                    .toLowerCase()
-                    .contains(title.toLowerCase())
-                )
-                .map(thread -> new Suggestion(thread, alpha))
+                .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
+            ))
+            .filter(suggestion -> title == null || suggestion.getThread()
+                .getName()
+                .toLowerCase()
+                .contains(title.toLowerCase())
             )
             .toList();
     }
 
-    private static EmbedBuilder buildSuggestionsEmbed(List<Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum) {
-        List<Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
+    private static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum) {
+        List<SuggestionCache.Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
         int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
         List<List<String>> fieldData = new ArrayList<>();
         double total = suggestions.size();
-        double greenlit = suggestions.stream().filter(Suggestion::isGreenlit).count();
+        double greenlit = suggestions.stream().filter(SuggestionCache.Suggestion::isGreenlit).count();
 
-        for (Suggestion suggestion : pages) {
+        for (SuggestionCache.Suggestion suggestion : pages) {
             String name = suggestion.getThread().getName().replaceAll("`", "");
             if (name.length() > 50) {
                 name = name.substring(0, 50);
                 name += "...";
             }
 
-            String link = suggestion.getThread().getJumpUrl() +
-                    (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "");
+            String link = suggestion.getThread().getJumpUrl() + (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "");
 
             fieldData.add(Arrays.asList(
                 link,
@@ -437,42 +407,6 @@ public class UserCommands extends ApplicationCommand {
 
     private static String getEmojiFormat(Function<EmojiConfig, String> emojiIdFunction) {
         return NerdBotApp.getBot().getJDA().getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getEmojiConfig())).getFormatted();
-    }
-
-    @RequiredArgsConstructor
-    private static class Suggestion {
-
-        @Getter
-        private final ThreadChannel thread;
-        @Getter private final boolean alpha;
-        @Getter private final int agrees;
-        @Getter private final int disagrees;
-        @Getter private final boolean greenlit;
-
-        public Suggestion(ThreadChannel thread, boolean alpha) {
-            this.thread = thread;
-            this.alpha = alpha;
-            MessageHistory history = thread.getHistoryFromBeginning(1).complete();
-            Message message = history.getRetrievedHistory().get(0);
-            this.agrees = getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
-            this.disagrees = getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
-            this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> GREENLIT_TAGS.contains(forumTag.getName().toLowerCase()));
-        }
-
-        public static int getReactionCount(Message message, String emojiId) {
-            return message.getReactions()
-                .stream()
-                .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
-                .filter(reaction -> reaction.getEmoji()
-                    .asCustom()
-                    .getId()
-                    .equalsIgnoreCase(emojiId)
-                )
-                .mapToInt(MessageReaction::getCount)
-                .findFirst()
-                .orElse(0);
-        }
-
     }
 
 }

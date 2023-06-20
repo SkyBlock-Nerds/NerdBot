@@ -40,6 +40,7 @@ public class MessageCache implements EventListener {
 
     @SubscribeEvent
     public void onEvent(@NotNull GenericEvent event) {
+
         if (event instanceof MessageReceivedEvent messageReceivedEvent) {
             cache.put(messageReceivedEvent.getMessage().getId(), messageReceivedEvent.getMessage());
         }
