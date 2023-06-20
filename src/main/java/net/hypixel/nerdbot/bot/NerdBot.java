@@ -29,6 +29,7 @@ import net.hypixel.nerdbot.listener.ActivityListener;
 import net.hypixel.nerdbot.listener.ModLogListener;
 import net.hypixel.nerdbot.listener.ModMailListener;
 import net.hypixel.nerdbot.listener.ReactionChannelListener;
+import net.hypixel.nerdbot.listener.SuggestionListener;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
@@ -82,7 +83,8 @@ public class NerdBot implements Bot {
                         new ModLogListener(),
                         new FeatureEventListener(),
                         new ActivityListener(),
-                        new ReactionChannelListener()
+                        new ReactionChannelListener(),
+                        new SuggestionListener()
                 ).setActivity(Activity.of(config.getActivityType(), config.getActivity()));
         configureMemoryUsage(builder);
 
