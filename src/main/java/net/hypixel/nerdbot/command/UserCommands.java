@@ -226,10 +226,10 @@ public class UserCommands extends ApplicationCommand {
         final Member searchMember = (member == null) ? event.getMember() : member;
         final boolean isAlpha = (alpha != null && alpha);
 
-        List<SuggestionCache.Suggestion> suggestions = getSuggestions(searchMember, tags, title, isAlpha);
+        List<Suggestion> suggestions = getSuggestions(suggestionForumIds, searchMember, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.reply("Found no suggestions matching the specified filters!").setEphemeral(true).queue();
+            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
             return;
         }
 
@@ -264,7 +264,7 @@ public class UserCommands extends ApplicationCommand {
         Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = getActivityEmbeds(event.getMember());
 
         if (activityEmbeds.getLeft() == null || activityEmbeds.getRight() == null) {
-            event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
+            event.getHook().editOriginal("Couldn't find that user in the database!").queue();
             return;
         }
 
