@@ -235,19 +235,21 @@ public class UserCommands extends ApplicationCommand {
         final boolean isAlpha = (alpha != null && alpha);
         final String[] suggestionForumIds = (alpha != null && alpha) ? config.getAlphaSuggestionForumIds() : config.getSuggestionForumIds();
 
+        event.deferReply(true).queue();
+
         if (suggestionForumIds == null || suggestionForumIds.length == 0) {
-            event.reply("No " + (isAlpha ? "alpha " : "") + "suggestion forums are setup in the config.").setEphemeral(true).queue();
+            event.getHook().editOriginal("No " + (isAlpha ? "alpha " : "") + "suggestion forums are setup in the config.").queue();
             return;
         }
 
         List<Suggestion> suggestions = getSuggestions(suggestionForumIds, searchMember, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.reply("Found no suggestions matching the specified filters!").setEphemeral(true).queue();
+            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
             return;
         }
 
-        event.replyEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).setAuthor(searchMember.getEffectiveName()).build()).setEphemeral(true).queue();
+        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).setAuthor(searchMember.getEffectiveName()).build()).queue();
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-everyone", description = "View all suggestions.")
