@@ -278,6 +278,7 @@ public class UserCommands extends ApplicationCommand {
             .getSuggestions()
             .stream()
             .filter(suggestion -> suggestion.isAlpha() == alpha)
+            .filter(SuggestionCache.Suggestion::notDeleted)
             .filter(suggestion -> member == null || suggestion.getThread().getOwnerIdLong() == member.getIdLong())
             .filter(suggestion -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> suggestion.getThread()
                 .getAppliedTags()
