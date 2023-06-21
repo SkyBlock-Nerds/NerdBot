@@ -57,6 +57,16 @@ public class UserCommands extends ApplicationCommand {
             return;
         }
 
+        if (description == null) {
+            event.reply("You need to provide a description for your reminder!").setEphemeral(true).queue();
+            return;
+        }
+
+        if (description.length() > 4_096) {
+            event.reply("Your reminder description is too long!").setEphemeral(true).queue();
+            return;
+        }
+
         Date date = null;
         boolean parsed = false;
 
