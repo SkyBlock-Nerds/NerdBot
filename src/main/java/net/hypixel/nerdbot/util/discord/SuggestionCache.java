@@ -27,7 +27,6 @@ public class SuggestionCache {
             .build(id -> new Suggestion(NerdBotApp.getBot().getJDA().getThreadChannelById(id)));
 
     public SuggestionCache() {
-
         Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds())
                 .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
                 .flatMap(forumChannel -> forumChannel.getThreadChannels().stream())
