@@ -46,6 +46,8 @@ public class SuggestionCache {
                         log.info("Loaded alpha suggestion thread: " + threadChannel.getName());
                     });
         }
+
+        log.info("Loaded " + this.cache.estimatedSize() + " suggestion threads into the cache.");
     }
 
     public void addSuggestion(ThreadChannel threadChannel) {
