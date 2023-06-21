@@ -41,6 +41,9 @@ public class NerdBotApp {
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();
         bot = nerdBot;
+
+        log.info("Creating bot...");
+
         try {
             nerdBot.create(args);
             messageCache = new MessageCache();
@@ -50,6 +53,8 @@ public class NerdBotApp {
             log.error("Failed to find login for bot!");
             System.exit(-1);
         }
+
+        log.info("Registering shutdown hook...");
 
         Thread userSavingTask = new Thread(() -> {
             log.info("Attempting to save " + USER_CACHE.estimatedSize() + " cached users");

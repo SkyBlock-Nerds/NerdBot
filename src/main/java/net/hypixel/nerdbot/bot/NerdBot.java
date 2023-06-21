@@ -117,6 +117,8 @@ public class NerdBot implements Bot {
 
         NerdBotApp.getBot().onStart();
         loadRemindersFromDatabase();
+
+        log.info("Bot is ready!");
     }
 
     private void loadRemindersFromDatabase() {
