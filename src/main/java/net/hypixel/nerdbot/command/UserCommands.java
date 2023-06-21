@@ -232,7 +232,7 @@ public class UserCommands extends ApplicationCommand {
             return;
         }
 
-        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).setAuthor(searchMember.getEffectiveName()).build()).queue();
+        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).setAuthor(searchMember.getEffectiveName()).setThumbnail(searchMember.getEffectiveAvatarUrl()).build()).queue();
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-everyone", description = "View all suggestions.")
