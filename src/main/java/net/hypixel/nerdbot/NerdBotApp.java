@@ -42,6 +42,8 @@ public class NerdBotApp {
         NerdBot nerdBot = new NerdBot();
         bot = nerdBot;
 
+        log.info("Starting bot...");
+
         try {
             log.info("Attempting to create bot...");
             nerdBot.create(args);
@@ -50,6 +52,10 @@ public class NerdBotApp {
             log.info("Bot created!");
         } catch (LoginException e) {
             log.error("Failed to find login for bot!");
+            System.exit(-1);
+        } catch (Exception exception) {
+            log.error("Failed to create bot!");
+            exception.printStackTrace();
             System.exit(-1);
         }
 
