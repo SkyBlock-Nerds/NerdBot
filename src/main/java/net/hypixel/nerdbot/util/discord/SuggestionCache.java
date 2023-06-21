@@ -23,7 +23,11 @@ import java.util.stream.Stream;
 public class SuggestionCache {
 
     private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
-    private final Cache<String, Suggestion> cache = Caffeine.newBuilder().scheduler(Scheduler.systemScheduler()).refreshAfterWrite(60, TimeUnit.MINUTES).softValues().build(id -> new Suggestion(NerdBotApp.getBot().getJDA().getThreadChannelById(id)));
+    private final Cache<String, Suggestion> cache = Caffeine.newBuilder()
+        .scheduler(Scheduler.systemScheduler())
+        .refreshAfterWrite(60, TimeUnit.MINUTES)
+        .softValues()
+        .build(id -> new Suggestion(NerdBotApp.getBot().getJDA().getThreadChannelById(id)));
 
     @Getter
     private boolean loaded;
@@ -93,7 +97,7 @@ public class SuggestionCache {
         public Suggestion(ThreadChannel thread) {
             this.thread = thread;
             this.parentId = thread.getParentChannel().asForumChannel().getId();
-            this.alpha = true;
+            this.alpha = Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase) || thread.getName().toLowerCase().contains("alpha");
 
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
             Message message = history.getRetrievedHistory().get(0);
