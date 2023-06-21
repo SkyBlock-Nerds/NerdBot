@@ -330,12 +330,11 @@ public class UserCommands extends ApplicationCommand {
                 true
             )
             .addBlankField(true)
-            .addField(
-                "Filters",
-                filters.isEmpty() ? "None" : filters,
-                false
-            )
             .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No") + (NerdBotApp.getSuggestionCache().isLoaded() ? "" : " | Caching is in progress!"));
+
+        if (!filters.isEmpty()) {
+            embedBuilder.addField("Filters", filters,  false);
+        }
 
         return embedBuilder;
     }
