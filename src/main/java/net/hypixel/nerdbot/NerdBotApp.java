@@ -43,13 +43,12 @@ public class NerdBotApp {
         bot = nerdBot;
         try {
             nerdBot.create(args);
+            messageCache = new MessageCache();
+            suggestionCache = new SuggestionCache();
         } catch (LoginException e) {
             log.error("Failed to find login for bot!");
             System.exit(-1);
         }
-
-        messageCache = new MessageCache();
-        suggestionCache = new SuggestionCache();
 
         Thread userSavingTask = new Thread(() -> {
             log.info("Attempting to save " + USER_CACHE.estimatedSize() + " cached users");
