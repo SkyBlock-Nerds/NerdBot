@@ -34,6 +34,11 @@ public class EmojiConfig {
      */
     private String greenlitEmojiId;
 
+    /**
+     * The ID of the reaction for the blank emoji
+     */
+    private String blankEmojiId;
+
     public boolean isEquals(MessageReaction reaction, Function<EmojiConfig, String> function) {
         if (reaction.getEmoji().getType() != Emoji.Type.CUSTOM) {
             return false;
