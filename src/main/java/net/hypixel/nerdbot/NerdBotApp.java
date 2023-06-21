@@ -34,8 +34,8 @@ public class NerdBotApp {
                 log.info("Upserted cached user '" + discordUser.getDiscordId() + "'");
             }).build();
 
-    private static SuggestionCache suggestionCache;
-    private static MessageCache messageCache;
+    @Getter private static SuggestionCache suggestionCache;
+    @Getter private static MessageCache messageCache;
     @Getter private static Bot bot;
 
     public static void main(String[] args) {
@@ -43,12 +43,13 @@ public class NerdBotApp {
         bot = nerdBot;
         try {
             nerdBot.create(args);
-            messageCache = new MessageCache();
-            suggestionCache = new SuggestionCache();
         } catch (LoginException e) {
             log.error("Failed to find login for bot!");
             System.exit(-1);
         }
+
+        messageCache = new MessageCache();
+        suggestionCache = new SuggestionCache();
 
         Thread userSavingTask = new Thread(() -> {
             log.info("Attempting to save " + USER_CACHE.estimatedSize() + " cached users");
@@ -60,11 +61,4 @@ public class NerdBotApp {
         Runtime.getRuntime().addShutdownHook(userSavingTask);
     }
 
-    public static SuggestionCache getSuggestionCache() {
-        return suggestionCache;
-    }
-
-    public static MessageCache getMessageCache() {
-        return messageCache;
-    }
 }

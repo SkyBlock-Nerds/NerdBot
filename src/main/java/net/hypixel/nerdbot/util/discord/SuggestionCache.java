@@ -27,15 +27,25 @@ public class SuggestionCache {
             .build(id -> new Suggestion(NerdBotApp.getBot().getJDA().getThreadChannelById(id)));
 
     public SuggestionCache() {
-        Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds())
-                .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
-                .flatMap(forumChannel -> forumChannel.getThreadChannels().stream())
-                .forEach(threadChannel -> this.cache.put(threadChannel.getId(), new Suggestion(threadChannel)));
+        if (NerdBotApp.getBot().getConfig().getSuggestionForumIds() != null && NerdBotApp.getBot().getConfig().getSuggestionForumIds().length > 0) {
+            Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds())
+                    .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
+                    .flatMap(forumChannel -> forumChannel.getThreadChannels().stream())
+                    .forEach(threadChannel -> {
+                        this.cache.put(threadChannel.getId(), new Suggestion(threadChannel));
+                        log.info("Loaded suggestion thread: " + threadChannel.getName());
+                    });
+        }
 
-        Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
-                .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
-                .flatMap(forumChannel -> forumChannel.getThreadChannels().stream())
-                .forEach(threadChannel -> this.cache.put(threadChannel.getId(), new Suggestion(threadChannel)));
+        if (NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds() != null && NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds().length > 0) {
+            Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
+                    .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
+                    .flatMap(forumChannel -> forumChannel.getThreadChannels().stream())
+                    .forEach(threadChannel -> {
+                        this.cache.put(threadChannel.getId(), new Suggestion(threadChannel));
+                        log.info("Loaded alpha suggestion thread: " + threadChannel.getName());
+                    });
+        }
     }
 
     public void addSuggestion(ThreadChannel threadChannel) {
@@ -87,9 +97,11 @@ public class SuggestionCache {
         public Suggestion(ThreadChannel thread) {
             this.thread = thread;
             this.parentId = thread.getParentChannel().asForumChannel().getId();
-            this.alpha = Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase) || thread.getName().toLowerCase().contains("alpha");
+            this.alpha = true;
+
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
             Message message = history.getRetrievedHistory().get(0);
+
             this.deleted = message == null;
             this.agrees = this.deleted ? 0 : getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
             this.disagrees = this.deleted ? 0 : getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());

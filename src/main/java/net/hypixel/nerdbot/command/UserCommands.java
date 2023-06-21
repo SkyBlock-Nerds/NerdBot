@@ -252,7 +252,7 @@ public class UserCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(null, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.reply("Found no suggestions matching the specified filters!").setEphemeral(true).queue();
+            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
             return;
         }
 
@@ -268,11 +268,13 @@ public class UserCommands extends ApplicationCommand {
             return;
         }
 
-        event.replyEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build()).setEphemeral(true).queue();
+        event.getHook().editOriginalEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build()).queue();
     }
 
     private static List<SuggestionCache.Suggestion> getSuggestions(Member member, String tags, String title, boolean alpha) {
         final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
+
+        log.info(NerdBotApp.getSuggestionCache().toString());
 
         return NerdBotApp.getSuggestionCache()
             .getSuggestions()
