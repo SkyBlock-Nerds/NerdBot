@@ -41,11 +41,10 @@ public class NerdBotApp {
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();
         bot = nerdBot;
-        messageCache = new MessageCache();
-        suggestionCache = new SuggestionCache();
-
         try {
             nerdBot.create(args);
+            messageCache = new MessageCache();
+            suggestionCache = new SuggestionCache();
         } catch (LoginException e) {
             log.error("Failed to find login for bot!");
             System.exit(-1);
