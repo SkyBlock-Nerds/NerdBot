@@ -305,6 +305,12 @@ public class UserCommands extends ApplicationCommand {
         double greenlit = suggestions.stream().filter(SuggestionCache.Suggestion::isGreenlit).count();
 
         for (SuggestionCache.Suggestion suggestion : pages) {
+            String name = suggestion.getThread().getName().replaceAll("`", "");
+            if (name.length() > 50) {
+                name = name.substring(0, 50);
+                name += "...";
+            }
+
             String link = suggestion.getThread().getJumpUrl() + (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "");
 
             fieldData.add(Arrays.asList(
@@ -334,25 +340,25 @@ public class UserCommands extends ApplicationCommand {
             .addField(
                 "Links",
                 fieldData.stream()
-                    .map(list -> list.get(0) + getEmojiFormat(EmojiConfig::getBlankEmojiId))
+                    .map(list -> list.get(0))
                     .collect(Collectors.joining("\n")),
                 true
             )
             .addField(
                 getEmojiFormat(EmojiConfig::getAgreeEmojiId),
                 fieldData.stream()
-                    .map(list -> list.get(1) + getEmojiFormat(EmojiConfig::getBlankEmojiId))
+                    .map(list -> list.get(1))
                     .collect(Collectors.joining("\n")),
                 true
             )
             .addField(
                 getEmojiFormat(EmojiConfig::getDisagreeEmojiId),
                 fieldData.stream()
-                    .map(list -> list.get(2) + getEmojiFormat(EmojiConfig::getBlankEmojiId))
+                    .map(list -> list.get(2))
                     .collect(Collectors.joining("\n")),
                 true
             )
-            .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No") + (NerdBotApp.getSuggestionCache().isLoaded() ? "" : " | Caching is in progress!"));
+            .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No") + (NerdBotApp.getSuggestionCache().isLoaded() ? "" : " | _Caching is in progress..._"));
         return embedBuilder;
     }
 
