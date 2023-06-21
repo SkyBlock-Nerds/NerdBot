@@ -20,16 +20,11 @@ import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.GreenlitUpdateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
-import net.hypixel.nerdbot.listener.ActivityListener;
-import net.hypixel.nerdbot.listener.ModLogListener;
-import net.hypixel.nerdbot.listener.ModMailListener;
-import net.hypixel.nerdbot.listener.ReactionChannelListener;
-import net.hypixel.nerdbot.listener.SuggestionListener;
+import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
@@ -41,8 +36,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -67,14 +60,6 @@ public class NerdBot implements Bot {
 
     @Override
     public void create(String[] args) throws LoginException {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            e.printStackTrace();
-            e.printStackTrace(pw);
-            ChannelManager.getLogChannel().sendMessage(jda.getRoleById(config.getBotManagerRoleId()).getAsMention() + "\n\n" + sw).queue();
-        });
-
         loadConfig();
 
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
