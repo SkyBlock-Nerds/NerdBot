@@ -62,10 +62,12 @@ public class NerdBotApp {
     }
 
     public static SuggestionCache getSuggestionCache() {
+        log.info("suggestionCache: " + suggestionCache.toString());
         return suggestionCache;
     }
 
     public static MessageCache getMessageCache() {
+        log.info("messageCache: " + messageCache.toString());
         return messageCache;
     }
 }
