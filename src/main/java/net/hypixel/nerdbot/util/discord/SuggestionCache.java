@@ -27,6 +27,8 @@ public class SuggestionCache {
             .build(id -> new Suggestion(NerdBotApp.getBot().getJDA().getThreadChannelById(id)));
 
     public SuggestionCache() {
+        log.info("Suggestion cache initialized");
+
         if (NerdBotApp.getBot().getConfig().getSuggestionForumIds() != null && NerdBotApp.getBot().getConfig().getSuggestionForumIds().length > 0) {
             Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds())
                     .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))

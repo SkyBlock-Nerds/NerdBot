@@ -45,6 +45,7 @@ public class NerdBotApp {
             nerdBot.create(args);
             messageCache = new MessageCache();
             suggestionCache = new SuggestionCache();
+            log.info("Bot created!");
         } catch (LoginException e) {
             log.error("Failed to find login for bot!");
             System.exit(-1);
