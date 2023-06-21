@@ -29,7 +29,7 @@ public class SuggestionCache {
     private boolean loaded;
 
     public SuggestionCache() {
-        CompletableFuture.supplyAsync(this::initialize).whenComplete((value, throwable) -> this.loaded = value);
+        CompletableFuture.supplyAsync(this::initialize).thenAccept(value -> this.loaded = value);
     }
 
     private boolean initialize() {
