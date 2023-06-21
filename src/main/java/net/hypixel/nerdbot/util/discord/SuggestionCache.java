@@ -39,7 +39,10 @@ public class SuggestionCache {
                     .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
                     .filter(Objects::nonNull).flatMap(forumChannel -> Stream.concat(forumChannel.getThreadChannels().stream(), forumChannel.retrieveArchivedPublicThreadChannels().stream()))
                     .distinct()
-                    .forEach(thread -> this.cache.put(thread.getId(), new Suggestion(thread)));
+                    .forEach(thread -> {
+                        this.cache.put(thread.getId(), new Suggestion(thread));
+                        log.info("Loaded suggestion thread: " + thread.getName() + " by " + thread.getOwner().getUser().getName());
+                    });
         } catch (Exception ex) {
             return false;
         }
