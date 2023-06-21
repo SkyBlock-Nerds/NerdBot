@@ -34,13 +34,16 @@ public class NerdBotApp {
                 log.info("Upserted cached user '" + discordUser.getDiscordId() + "'");
             }).build();
 
-    @Getter private static SuggestionCache suggestionCache = new SuggestionCache();
-    @Getter private static MessageCache messageCache = new MessageCache();
+    @Getter private static SuggestionCache suggestionCache;
+    @Getter private static MessageCache messageCache;
     @Getter private static Bot bot;
 
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();
         bot = nerdBot;
+        messageCache = new MessageCache();
+        suggestionCache = new SuggestionCache();
+
         try {
             nerdBot.create(args);
         } catch (LoginException e) {
