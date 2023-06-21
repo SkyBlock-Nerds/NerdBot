@@ -236,7 +236,6 @@ public class NerdBot implements Bot {
             config = (BotConfig) Util.jsonToObject(file, BotConfig.class);
 
             log.info("Loaded config from " + file.getAbsolutePath());
-            log.info(config.toString());
         } catch (FileNotFoundException exception) {
             log.error("Could not find config file " + fileName);
             System.exit(-1);
