@@ -30,11 +30,10 @@ import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Log4j2
 public class UserCommands extends ApplicationCommand {
@@ -300,26 +299,24 @@ public class UserCommands extends ApplicationCommand {
     private static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum) {
         List<SuggestionCache.Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
         int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
-        List<List<String>> fieldData = new ArrayList<>();
+        StringJoiner links = new StringJoiner("\n");
+        links.add("\t\t\t\t\t" + getEmojiFormat(EmojiConfig::getAgreeEmojiId) + "\t" + getEmojiFormat(EmojiConfig::getDisagreeEmojiId));
         double total = suggestions.size();
         double greenlit = suggestions.stream().filter(SuggestionCache.Suggestion::isGreenlit).count();
+        String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "");
 
         for (SuggestionCache.Suggestion suggestion : pages) {
-            String link = suggestion.getThread().getJumpUrl() + (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "");
-
-            fieldData.add(Arrays.asList(
-                link,
-                String.valueOf(suggestion.getAgrees()),
-                String.valueOf(suggestion.getDisagrees())
-            ));
+            String link = suggestion.getThread().getJumpUrl() + "\t";
+            link += (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "") + "\t";
+            link += suggestion.getAgrees() + "\t";
+            link += suggestion.getDisagrees();
+            links.add(link);
         }
 
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setColor(Color.GREEN)
             .setTitle("Suggestions")
-            .setDescription(
-                (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "")
-            )
+            .setDescription(links.toString())
             .addField(
                 "Total",
                 String.valueOf((int) total),
@@ -332,27 +329,12 @@ public class UserCommands extends ApplicationCommand {
             )
             .addBlankField(true)
             .addField(
-                "Links",
-                fieldData.stream()
-                    .map(list -> list.get(0))
-                    .collect(Collectors.joining("\n")),
-                true
-            )
-            .addField(
-                getEmojiFormat(EmojiConfig::getAgreeEmojiId),
-                fieldData.stream()
-                    .map(list -> list.get(1))
-                    .collect(Collectors.joining("\n")),
-                true
-            )
-            .addField(
-                getEmojiFormat(EmojiConfig::getDisagreeEmojiId),
-                fieldData.stream()
-                    .map(list -> list.get(2))
-                    .collect(Collectors.joining("\n")),
-                true
+                "Filters",
+                filters.isEmpty() ? "None" : filters,
+                false
             )
             .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No") + (NerdBotApp.getSuggestionCache().isLoaded() ? "" : " | Caching is in progress!"));
+
         return embedBuilder;
     }
 
