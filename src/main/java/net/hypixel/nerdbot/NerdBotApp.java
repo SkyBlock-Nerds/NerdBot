@@ -42,9 +42,8 @@ public class NerdBotApp {
         NerdBot nerdBot = new NerdBot();
         bot = nerdBot;
 
-        log.info("Creating bot...");
-
         try {
+            log.info("Attempting to create bot...");
             nerdBot.create(args);
             messageCache = new MessageCache();
             suggestionCache = new SuggestionCache();
