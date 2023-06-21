@@ -274,8 +274,6 @@ public class UserCommands extends ApplicationCommand {
     private static List<SuggestionCache.Suggestion> getSuggestions(Member member, String tags, String title, boolean alpha) {
         final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
 
-        log.info(NerdBotApp.getSuggestionCache().toString());
-
         return NerdBotApp.getSuggestionCache()
             .getSuggestions()
             .stream()
