@@ -176,7 +176,9 @@ public class UserCommands extends ApplicationCommand {
      * Parse a time string in the format of {@code 1w2d3h4m5s} into a Date
      *
      * @param time The time string to parse
+     *
      * @return The parsed string as a Date
+     *
      * @throws DateTimeParseException If the string could not be parsed
      */
     public static Date parseCustomFormat(String time) throws DateTimeParseException {
@@ -213,12 +215,12 @@ public class UserCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-member", description = "View user suggestions.")
     public void viewMemberSuggestions(
-        GuildSlashEvent event,
-        @AppOption @Optional Integer page,
-        @AppOption(description = "Member to view.") @Optional Member member,
-        @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
-        @AppOption(description = "Words to filter title for.") @Optional String title,
-        @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
+            GuildSlashEvent event,
+            @AppOption @Optional Integer page,
+            @AppOption(description = "Member to view.") @Optional Member member,
+            @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
+            @AppOption(description = "Words to filter title for.") @Optional String title,
+            @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
     ) {
         event.deferReply(true).queue();
         page = (page == null) ? 1 : page;
@@ -238,11 +240,11 @@ public class UserCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-everyone", description = "View all suggestions.")
     public void viewAllSuggestions(
-        GuildSlashEvent event,
-        @AppOption @Optional Integer page,
-        @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
-        @AppOption(description = "Words to filter title for.") @Optional String title,
-        @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
+            GuildSlashEvent event,
+            @AppOption @Optional Integer page,
+            @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
+            @AppOption(description = "Words to filter title for.") @Optional String title,
+            @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
     ) {
         event.deferReply(true).queue();
         page = (page == null) ? 1 : page;
@@ -275,22 +277,22 @@ public class UserCommands extends ApplicationCommand {
         final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
 
         return NerdBotApp.getSuggestionCache()
-            .getSuggestions()
-            .stream()
-            .filter(suggestion -> suggestion.isAlpha() == alpha)
-            .filter(SuggestionCache.Suggestion::notDeleted)
-            .filter(suggestion -> member == null || suggestion.getThread().getOwnerIdLong() == member.getIdLong())
-            .filter(suggestion -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> suggestion.getThread()
-                .getAppliedTags()
+                .getSuggestions()
                 .stream()
-                .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
-            ))
-            .filter(suggestion -> title == null || suggestion.getThread()
-                .getName()
-                .toLowerCase()
-                .contains(title.toLowerCase())
-            )
-            .toList();
+                .filter(suggestion -> suggestion.isAlpha() == alpha)
+                .filter(SuggestionCache.Suggestion::notDeleted)
+                .filter(suggestion -> member == null || suggestion.getThread().getOwnerIdLong() == member.getIdLong())
+                .filter(suggestion -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> suggestion.getThread()
+                        .getAppliedTags()
+                        .stream()
+                        .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
+                ))
+                .filter(suggestion -> title == null || suggestion.getThread()
+                        .getName()
+                        .toLowerCase()
+                        .contains(title.toLowerCase())
+                )
+                .toList();
     }
 
     private static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum) {
@@ -310,52 +312,51 @@ public class UserCommands extends ApplicationCommand {
             String link = suggestion.getThread().getJumpUrl() + (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "");
 
             fieldData.add(Arrays.asList(
-                link,
-                String.valueOf(suggestion.getAgrees()),
-                String.valueOf(suggestion.getDisagrees())
+                    link,
+                    String.valueOf(suggestion.getAgrees()),
+                    String.valueOf(suggestion.getDisagrees())
             ));
         }
 
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setColor(Color.GREEN)
-            .setTitle("Suggestions")
-            .setDescription(
-                (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "")
-            )
-            .addField(
-                "Total",
-                String.valueOf((int) total),
-                true
-            )
-            .addField(
-                getEmojiFormat(EmojiConfig::getGreenlitEmojiId),
-                (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
-                true
-            )
-            .addBlankField(true)
-            .addField(
-                "Links",
-                fieldData.stream()
-                    .map(list -> list.get(0))
-                    .collect(Collectors.joining("\n")),
-                true
-            )
-            .addField(
-                getEmojiFormat(EmojiConfig::getAgreeEmojiId),
-                fieldData.stream()
-                    .map(list -> list.get(1))
-                    .collect(Collectors.joining("\n")),
-                true
-            )
-            .addField(
-                getEmojiFormat(EmojiConfig::getDisagreeEmojiId),
-                fieldData.stream()
-                    .map(list -> list.get(2))
-                    .collect(Collectors.joining("\n")),
-                true
-            )
-            .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No"));
-
+                .setTitle("Suggestions")
+                .setDescription(
+                        (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "")
+                )
+                .addField(
+                        "Total",
+                        String.valueOf((int) total),
+                        true
+                )
+                .addField(
+                        getEmojiFormat(EmojiConfig::getGreenlitEmojiId),
+                        (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
+                        true
+                )
+                .addBlankField(true)
+                .addField(
+                        "Links",
+                        fieldData.stream()
+                                .map(list -> list.get(0))
+                                .collect(Collectors.joining("\n")),
+                        true
+                )
+                .addField(
+                        getEmojiFormat(EmojiConfig::getAgreeEmojiId),
+                        fieldData.stream()
+                                .map(list -> list.get(1))
+                                .collect(Collectors.joining("\n")),
+                        true
+                )
+                .addField(
+                        getEmojiFormat(EmojiConfig::getDisagreeEmojiId),
+                        fieldData.stream()
+                                .map(list -> list.get(2))
+                                .collect(Collectors.joining("\n")),
+                        true
+                )
+                .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No") + (NerdBotApp.getSuggestionCache().isLoaded() ? "" : " | _Caching is in progress..._"));
         return embedBuilder;
     }
 
@@ -380,27 +381,27 @@ public class UserCommands extends ApplicationCommand {
 
         // Global Activity
         globalEmbedBuilder.setColor(Color.GREEN)
-            .setAuthor(member.getEffectiveName() + " (" + member.getId() + ")")
-            .setThumbnail(member.getEffectiveAvatarUrl())
-            .setTitle("Last Global Activity")
-            .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastGlobalActivity), true)
-            .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
-            .addField("Item Generator", lastActivity.toRelativeTimestamp(LastActivity::getLastItemGenUsage), true)
-            // Suggestions
-            .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastSuggestionDate), true)
-            .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionVoteDate), true)
-            .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentDate), true);
+                .setAuthor(member.getEffectiveName() + " (" + member.getId() + ")")
+                .setThumbnail(member.getEffectiveAvatarUrl())
+                .setTitle("Last Global Activity")
+                .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastGlobalActivity), true)
+                .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
+                .addField("Item Generator", lastActivity.toRelativeTimestamp(LastActivity::getLastItemGenUsage), true)
+                // Suggestions
+                .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastSuggestionDate), true)
+                .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionVoteDate), true)
+                .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentDate), true);
 
         // Alpha Activity
         alphaEmbedBuilder.setColor(Color.RED)
-            .setTitle("Last Alpha Activity")
-            .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaActivity), true)
-            .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getAlphaVoiceJoinDate), true)
-            .addBlankField(true)
-            // Suggestions
-            .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaSuggestionDate), true)
-            .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionVoteDate), true)
-            .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentDate), true);
+                .setTitle("Last Alpha Activity")
+                .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaActivity), true)
+                .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getAlphaVoiceJoinDate), true)
+                .addBlankField(true)
+                // Suggestions
+                .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaSuggestionDate), true)
+                .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionVoteDate), true)
+                .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentDate), true);
 
         return Pair.of(globalEmbedBuilder, alphaEmbedBuilder);
     }

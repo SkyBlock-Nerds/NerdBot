@@ -15,6 +15,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -24,18 +25,26 @@ public class SuggestionCache {
     private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
     private final Cache<String, Suggestion> cache = Caffeine.newBuilder().scheduler(Scheduler.systemScheduler()).refreshAfterWrite(60, TimeUnit.MINUTES).softValues().build(id -> new Suggestion(NerdBotApp.getBot().getJDA().getThreadChannelById(id)));
 
+    @Getter
+    private boolean loaded;
+
     public SuggestionCache() {
-        log.info("Suggestion cache initialized");
+        CompletableFuture.supplyAsync(this::initialize).whenComplete((value, throwable) -> this.loaded = value);
+    }
 
-        Stream.concat(Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()), Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()))
-                .filter(Objects::nonNull)
-                .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
-                .filter(Objects::nonNull)
-                .flatMap(forumChannel -> Stream.concat(forumChannel.getThreadChannels().stream(), forumChannel.retrieveArchivedPublicThreadChannels().complete().stream()))
-                .distinct()
-                .forEach(thread -> this.cache.put(thread.getId(), new Suggestion(thread)));
+    private boolean initialize() {
+        try {
+            Stream.concat(Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()), Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()))
+                    .filter(Objects::nonNull)
+                    .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
+                    .filter(Objects::nonNull).flatMap(forumChannel -> Stream.concat(forumChannel.getThreadChannels().stream(), forumChannel.retrieveArchivedPublicThreadChannels().stream()))
+                    .distinct()
+                    .forEach(thread -> this.cache.put(thread.getId(), new Suggestion(thread)));
+        } catch (Exception ex) {
+            return false;
+        }
 
-        log.info("Loaded " + this.cache.estimatedSize() + " suggestion threads into the cache.");
+        return true;
     }
 
     public void addSuggestion(ThreadChannel threadChannel) {
