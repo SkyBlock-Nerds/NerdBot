@@ -299,17 +299,17 @@ public class UserCommands extends ApplicationCommand {
     private static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum) {
         List<SuggestionCache.Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
         int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
+
         StringJoiner links = new StringJoiner("\n");
-        links.add("\t\t\t\t\t" + getEmojiFormat(EmojiConfig::getAgreeEmojiId) + "\t" + getEmojiFormat(EmojiConfig::getDisagreeEmojiId));
         double total = suggestions.size();
         double greenlit = suggestions.stream().filter(SuggestionCache.Suggestion::isGreenlit).count();
         String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "");
 
         for (SuggestionCache.Suggestion suggestion : pages) {
-            String link = suggestion.getThread().getJumpUrl() + "\t";
-            link += (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "") + "\t";
-            link += suggestion.getAgrees() + "\t";
-            link += suggestion.getDisagrees();
+            String link = suggestion.getThread().getJumpUrl();
+            link += (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "") + "\n";
+            link += "- " + getEmojiFormat(EmojiConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\n";
+            link += "- " + getEmojiFormat(EmojiConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees();
             links.add(link);
         }
 
