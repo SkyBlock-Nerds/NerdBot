@@ -43,6 +43,11 @@ public class GreenlitUpdateFeature extends BotFeature {
                         Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).map(forumId -> Pair.of(forumId, true))
                 ).filter(pair -> Objects.nonNull(pair.getLeft()))
                 .forEach(suggestionForum -> {
+                    if (NerdBotApp.getBot().isReadOnly()) {
+                        log.info("Bot is in read-only mode, skipping greenlit suggestion update task!");
+                        return;
+                    }
+
                     String id = suggestionForum.getLeft();
                     boolean alpha = suggestionForum.getRight();
                     ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(id);
