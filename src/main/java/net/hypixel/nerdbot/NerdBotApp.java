@@ -34,8 +34,8 @@ public class NerdBotApp {
                 log.info("Upserted cached user '" + discordUser.getDiscordId() + "'");
             }).build();
 
-    private static SuggestionCache suggestionCache;
-    private static MessageCache messageCache;
+    @Getter private static SuggestionCache suggestionCache;
+    @Getter private static MessageCache messageCache;
     @Getter private static Bot bot;
 
     public static void main(String[] args) {
@@ -69,13 +69,5 @@ public class NerdBotApp {
             NerdBotApp.getBot().onEnd();
         });
         Runtime.getRuntime().addShutdownHook(userSavingTask);
-    }
-
-    public static SuggestionCache getSuggestionCache() {
-        return suggestionCache;
-    }
-
-    public static MessageCache getMessageCache() {
-        return messageCache;
     }
 }
