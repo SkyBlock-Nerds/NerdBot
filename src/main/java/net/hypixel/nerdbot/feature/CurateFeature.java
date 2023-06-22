@@ -30,12 +30,6 @@ public class CurateFeature extends BotFeature {
             @Override
             public void run() {
                 NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
-                    if (NerdBotApp.getBot().isReadOnly()) {
-                        // Temporary
-                        log.info("Bot is in read-only mode, skipping suggestion curator task!");
-                        return;
-                    }
-
                     Database database = NerdBotApp.getBot().getDatabase();
                     final Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(NerdBotApp.getBot().isReadOnly());
 
