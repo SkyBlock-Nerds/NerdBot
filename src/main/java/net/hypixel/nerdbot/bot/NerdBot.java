@@ -51,10 +51,10 @@ import java.util.List;
 public class NerdBot implements Bot {
 
     private static final List<BotFeature> FEATURES = Arrays.asList(
-            new HelloGoodbyeFeature(),
-            new CurateFeature(),
-            new UserGrabberFeature(),
-            new GreenlitUpdateFeature()
+        new HelloGoodbyeFeature(),
+        new CurateFeature(),
+        new UserGrabberFeature(),
+        new GreenlitUpdateFeature()
     );
 
     private final Database database = new Database(System.getProperty("mongodb.uri"), "skyblock_nerds");
@@ -78,14 +78,14 @@ public class NerdBot implements Bot {
         loadConfig();
 
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
-                .setEventManager(new AnnotatedEventManager())
-                .addEventListeners(
-                        new ModLogListener(),
-                        new FeatureEventListener(),
-                        new ActivityListener(),
-                        new ReactionChannelListener(),
-                        new SuggestionListener()
-                ).setActivity(Activity.of(config.getActivityType(), config.getActivity()));
+            .setEventManager(new AnnotatedEventManager())
+            .addEventListeners(
+                new ModLogListener(),
+                new FeatureEventListener(),
+                new ActivityListener(),
+                new ReactionChannelListener(),
+                new SuggestionListener()
+            ).setActivity(Activity.of(config.getActivityType(), config.getActivity()));
         configureMemoryUsage(builder);
 
         if (config.getModMailConfig() != null) {
@@ -103,8 +103,8 @@ public class NerdBot implements Bot {
 
         try {
             CommandsBuilder commandsBuilder = CommandsBuilder
-                    .newBuilder(Long.parseLong(Users.AERH.getUserId()))
-                    .extensionsBuilder(extensionsBuilder -> extensionsBuilder.registerParameterResolver(new ForumChannelResolver()));
+                .newBuilder(Long.parseLong(Users.AERH.getUserId()))
+                .extensionsBuilder(extensionsBuilder -> extensionsBuilder.registerParameterResolver(new ForumChannelResolver()));
             commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
         } catch (IOException exception) {
             log.error("Couldn't create the command builder! Reason: " + exception.getMessage());

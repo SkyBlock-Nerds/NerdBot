@@ -36,11 +36,11 @@ public class ModLogListener {
 
         Member member = event.getMember();
         MessageEmbed messageEmbed = getDefaultEmbed()
-                .setTitle("Member joined")
-                .setDescription(member.getAsMention())
-                .setThumbnail(member.getAvatarUrl())
-                .setColor(Color.GREEN)
-                .build();
+            .setTitle("Member joined")
+            .setDescription(member.getAsMention())
+            .setThumbnail(member.getAvatarUrl())
+            .setColor(Color.GREEN)
+            .build();
 
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
@@ -53,11 +53,11 @@ public class ModLogListener {
 
         Member member = event.getMember();
         MessageEmbed messageEmbed = getDefaultEmbed()
-                .setTitle("Member removed")
-                .setDescription(member.getAsMention())
-                .setThumbnail(member.getAvatarUrl())
-                .setColor(Color.BLUE)
-                .build();
+            .setTitle("Member removed")
+            .setDescription(member.getAsMention())
+            .setThumbnail(member.getAvatarUrl())
+            .setColor(Color.BLUE)
+            .build();
 
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
@@ -70,11 +70,11 @@ public class ModLogListener {
 
         User member = event.getUser();
         MessageEmbed messageEmbed = getDefaultEmbed()
-                .setTitle("Member banned")
-                .setDescription(member.getAsMention())
-                .setThumbnail(member.getAvatarUrl())
-                .setColor(Color.RED)
-                .build();
+            .setTitle("Member banned")
+            .setDescription(member.getAsMention())
+            .setThumbnail(member.getAvatarUrl())
+            .setColor(Color.RED)
+            .build();
 
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
@@ -87,11 +87,11 @@ public class ModLogListener {
 
         User member = event.getUser();
         MessageEmbed messageEmbed = getDefaultEmbed()
-                .setTitle("Member unbanned")
-                .setDescription(member.getAsMention())
-                .setThumbnail(member.getAvatarUrl())
-                .setColor(Color.GREEN)
-                .build();
+            .setTitle("Member unbanned")
+            .setDescription(member.getAsMention())
+            .setThumbnail(member.getAvatarUrl())
+            .setColor(Color.GREEN)
+            .build();
 
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
@@ -105,17 +105,17 @@ public class ModLogListener {
         User member = event.getInvite().getInviter();
         Invite invite = event.getInvite();
         MessageEmbed messageEmbed = getDefaultEmbed()
-                .setTitle("Invite created")
-                .setDescription("Created by " + member.getAsMention()
-                        + "\n\nInvite URL: " + invite.getUrl()
-                        + "\nTime created: " + invite.getTimeCreated()
-                        + "\nChannel: " + invite.getChannel().getName()
-                        + "\nMax Uses: " + invite.getMaxUses()
-                        + "\nMax Age: " + LocalTime.ofSecondOfDay(Math.min(86_399, invite.getMaxAge())).toString()
-                        + "\nTemporary? " + (invite.isTemporary() ? "Yes" : "No"))
-                .setThumbnail(member.getAvatarUrl())
-                .setColor(Color.GREEN)
-                .build();
+            .setTitle("Invite created")
+            .setDescription("Created by " + member.getAsMention()
+                + "\n\nInvite URL: " + invite.getUrl()
+                + "\nTime created: " + invite.getTimeCreated()
+                + "\nChannel: " + invite.getChannel().getName()
+                + "\nMax Uses: " + invite.getMaxUses()
+                + "\nMax Age: " + LocalTime.ofSecondOfDay(Math.min(86_399, invite.getMaxAge())).toString()
+                + "\nTemporary? " + (invite.isTemporary() ? "Yes" : "No"))
+            .setThumbnail(member.getAvatarUrl())
+            .setColor(Color.GREEN)
+            .build();
 
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
@@ -127,10 +127,10 @@ public class ModLogListener {
         }
 
         MessageEmbed messageEmbed = getDefaultEmbed()
-                .setTitle("Invite deleted")
-                .setDescription("Invite Code: " + event.getUrl())
-                .setColor(Color.RED)
-                .build();
+            .setTitle("Invite deleted")
+            .setDescription("Invite Code: " + event.getUrl())
+            .setColor(Color.RED)
+            .build();
 
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
@@ -149,11 +149,11 @@ public class ModLogListener {
         }
 
         MessageEmbed messageEmbed = getDefaultEmbed()
-                .setTitle("Role(s) added")
-                .setDescription(stringBuilder.toString())
-                .setThumbnail(member.getAvatarUrl())
-                .setColor(Color.GREEN)
-                .build();
+            .setTitle("Role(s) added")
+            .setDescription(stringBuilder.toString())
+            .setThumbnail(member.getAvatarUrl())
+            .setColor(Color.GREEN)
+            .build();
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
 
@@ -167,11 +167,11 @@ public class ModLogListener {
         StringBuilder stringBuilder = new StringBuilder("Roles removed from " + member.getAsMention() + ":\n");
         event.getRoles().forEach(role -> stringBuilder.append(" • ").append(role.getName()).append("\n"));
         MessageEmbed messageEmbed = getDefaultEmbed()
-                .setTitle("Role(s) removed")
-                .setDescription(stringBuilder.toString())
-                .setThumbnail(member.getAvatarUrl())
-                .setColor(Color.RED)
-                .build();
+            .setTitle("Role(s) removed")
+            .setDescription(stringBuilder.toString())
+            .setThumbnail(member.getAvatarUrl())
+            .setColor(Color.RED)
+            .build();
 
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }
@@ -190,13 +190,13 @@ public class ModLogListener {
         User user = message.getAuthor();
         Channel channel = message.getChannel();
         EmbedBuilder messageEmbed = getDefaultEmbed()
-                .setTitle("Message deleted")
-                .setThumbnail(user.getAvatarUrl())
-                .setColor(Color.RED)
-                .addField("User", user.getAsMention(), false)
-                .addField("Channel", channel.getAsMention(), false)
-                .addField("User ID", user.getId(), false)
-                .addField("Content", message.getContentDisplay(), false);
+            .setTitle("Message deleted")
+            .setThumbnail(user.getAvatarUrl())
+            .setColor(Color.RED)
+            .addField("User", user.getAsMention(), false)
+            .addField("Channel", channel.getAsMention(), false)
+            .addField("User ID", user.getId(), false)
+            .addField("Content", message.getContentDisplay(), false);
 
         if (!message.getAttachments().isEmpty()) {
             StringBuilder attachments = new StringBuilder();
@@ -218,15 +218,15 @@ public class ModLogListener {
         User user = before.getAuthor();
         Channel channel = before.getChannel();
         MessageEmbed messageEmbed = getDefaultEmbed()
-                .setTitle("Message edited")
-                .setThumbnail(user.getAvatarUrl())
-                .setColor(Color.YELLOW)
-                .addField("User", user.getAsMention(), false)
-                .addField("Channel", channel.getAsMention(), false)
-                .addField("User ID", user.getId(), false)
-                .addField("Before", before.getContentDisplay(), true)
-                .addField("After", after.getContentDisplay(), true)
-                .build();
+            .setTitle("Message edited")
+            .setThumbnail(user.getAvatarUrl())
+            .setColor(Color.YELLOW)
+            .addField("User", user.getAsMention(), false)
+            .addField("Channel", channel.getAsMention(), false)
+            .addField("User ID", user.getId(), false)
+            .addField("Before", before.getContentDisplay(), true)
+            .addField("After", after.getContentDisplay(), true)
+            .build();
 
         ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
     }

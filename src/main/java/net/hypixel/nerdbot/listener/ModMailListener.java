@@ -67,8 +67,8 @@ public class ModMailListener {
             log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
         } else {
             forumChannel.createForumPost(
-                    "[Mod Mail] " + author.getName() + " (" + author.getId() + ")",
-                    MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
+                "[Mod Mail] " + author.getName() + " (" + author.getId() + ")",
+                MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
             ).queue(forumPost -> {
                 ThreadChannel threadChannel = forumPost.getThreadChannel();
                 List<Member> roleMembers = threadChannel.getGuild().getMembersWithRoles(Util.getRole("Mod Mail"));

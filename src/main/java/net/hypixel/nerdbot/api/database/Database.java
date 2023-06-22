@@ -51,11 +51,11 @@ public class Database implements ServerMonitorListener {
         CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build());
         CodecRegistry codecRegistry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
         MongoClientSettings clientSettings = MongoClientSettings.builder()
-                .applyConnectionString(connectionString)
-                .uuidRepresentation(UuidRepresentation.STANDARD)
-                .codecRegistry(codecRegistry)
-                .applyToServerSettings(builder -> builder.addServerMonitorListener(this))
-                .build();
+            .applyConnectionString(connectionString)
+            .uuidRepresentation(UuidRepresentation.STANDARD)
+            .codecRegistry(codecRegistry)
+            .applyToServerSettings(builder -> builder.addServerMonitorListener(this))
+            .build();
 
         mongoClient = MongoClients.create(clientSettings);
         mongoDatabase = mongoClient.getDatabase(databaseName);

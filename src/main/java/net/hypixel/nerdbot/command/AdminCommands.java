@@ -87,18 +87,18 @@ public class AdminCommands extends ApplicationCommand {
 
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(new EmbedBuilder()
-                    .setTitle("Invites generated")
-                    .setDescription("Generating " + amount + " invite(s) for " + channel.getAsMention() + " by " + event.getUser().getAsMention())
-                    .build()
+                .setTitle("Invites generated")
+                .setDescription("Generating " + amount + " invite(s) for " + channel.getAsMention() + " by " + event.getUser().getAsMention())
+                .build()
             ).queue();
         }
 
         for (int i = 0; i < amount; i++) {
             try {
                 InviteAction action = channel.createInvite()
-                        .setUnique(true)
-                        .setMaxAge(7L, TimeUnit.DAYS)
-                        .setMaxUses(1);
+                    .setUnique(true)
+                    .setMaxAge(7L, TimeUnit.DAYS)
+                    .setMaxUses(1);
 
                 Invite invite = action.complete();
                 invites.add(invite);
@@ -128,9 +128,9 @@ public class AdminCommands extends ApplicationCommand {
 
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(new EmbedBuilder()
-                    .setTitle("Invites deleted")
-                    .setDescription("Deleted " + invites.size() + " invite(s) by " + event.getUser().getAsMention())
-                    .build()
+                .setTitle("Invites deleted")
+                .setDescription("Deleted " + invites.size() + " invite(s) by " + event.getUser().getAsMention())
+                .build()
             ).queue();
         }
         event.getHook().editOriginal("Deleted " + invites.size() + " invites").queue();
@@ -193,9 +193,9 @@ public class AdminCommands extends ApplicationCommand {
         JsonArray jsonArray = new JsonArray();
 
         List<Member> members = guild.loadMembers().get()
-                .stream()
-                .filter(member -> Util.hasRole(member, "Member"))
-                .toList();
+            .stream()
+            .filter(member -> Util.hasRole(member, "Member"))
+            .toList();
 
         if (nerdsOnly) {
             members = members.stream().filter(member -> Util.hasRole(member, "Nerd") || Util.hasRole(member, "HPC") || Util.hasRole(member, "Grape")).toList();
