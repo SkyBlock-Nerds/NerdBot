@@ -15,6 +15,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
@@ -233,7 +234,7 @@ public class UserCommands extends ApplicationCommand {
             return;
         }
 
-        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).setAuthor(searchMember.getEffectiveName()).setThumbnail(searchMember.getEffectiveAvatarUrl()).build()).queue();
+        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false).setAuthor(searchMember.getEffectiveName()).setThumbnail(searchMember.getEffectiveAvatarUrl()).build()).queue();
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-everyone", description = "View all suggestions.")
@@ -256,7 +257,7 @@ public class UserCommands extends ApplicationCommand {
             return;
         }
 
-        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).build()).queue();
+        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, true).build()).queue();
     }
 
     @JDASlashCommand(name = "activity", description = "View your recent activity.")
@@ -298,7 +299,7 @@ public class UserCommands extends ApplicationCommand {
             .toList();
     }
 
-    private static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum) {
+    private static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum, boolean showNames) {
         List<SuggestionCache.Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
         int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
 
@@ -311,6 +312,14 @@ public class UserCommands extends ApplicationCommand {
             String link = suggestion.getThread().getJumpUrl();
             link += (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "") + "\n";
             link += suggestion.getThread().getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "\n";
+
+            if (showNames) {
+                User user = NerdBotApp.getBot().getJDA().getUserById(suggestion.getThread().getOwnerIdLong());
+                if (user != null) {
+                    link += "Created by " + user.getEffectiveName() + "\n";
+                }
+            }
+
             link += getEmojiFormat(EmojiConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + getEmojiFormat(EmojiConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
             links.add(link);
         }
