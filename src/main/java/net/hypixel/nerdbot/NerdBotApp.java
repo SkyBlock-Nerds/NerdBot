@@ -25,18 +25,21 @@ public class NerdBotApp {
     public static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static final Cache<String, DiscordUser> USER_CACHE = Caffeine.newBuilder()
-            .expireAfterAccess(Duration.ofMinutes(10L))
-            .scheduler(Scheduler.systemScheduler())
-            .removalListener((key, value, cause) -> {
-                DiscordUser discordUser = (DiscordUser) value;
-                Database database = NerdBotApp.getBot().getDatabase();
-                database.upsertDocument(database.getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
-                log.info("Upserted cached user '" + discordUser.getDiscordId() + "'");
-            }).build();
+        .expireAfterAccess(Duration.ofMinutes(10L))
+        .scheduler(Scheduler.systemScheduler())
+        .removalListener((key, value, cause) -> {
+            DiscordUser discordUser = (DiscordUser) value;
+            Database database = NerdBotApp.getBot().getDatabase();
+            database.upsertDocument(database.getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
+            log.info("Upserted cached user '" + discordUser.getDiscordId() + "'");
+        }).build();
 
-    @Getter private static SuggestionCache suggestionCache;
-    @Getter private static MessageCache messageCache;
-    @Getter private static Bot bot;
+    @Getter
+    private static SuggestionCache suggestionCache;
+    @Getter
+    private static MessageCache messageCache;
+    @Getter
+    private static Bot bot;
 
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();

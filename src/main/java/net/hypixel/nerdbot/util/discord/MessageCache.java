@@ -21,9 +21,9 @@ import java.util.concurrent.TimeUnit;
 public class MessageCache implements EventListener {
 
     private final Cache<String, Message> cache = Caffeine.newBuilder()
-            .maximumSize(10_000)
-            .expireAfterWrite(7, TimeUnit.DAYS)
-            .build();
+        .maximumSize(10_000)
+        .expireAfterWrite(7, TimeUnit.DAYS)
+        .build();
 
     public MessageCache() {
         NerdBotApp.getBot().getJDA().addEventListener(this);

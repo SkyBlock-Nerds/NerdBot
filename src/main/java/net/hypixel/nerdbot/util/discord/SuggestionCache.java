@@ -39,7 +39,7 @@ public class SuggestionCache {
                 forumChannel.retrieveArchivedPublicThreadChannels().stream()
             ))
             .distinct()
-                .forEach(thread -> this.cache.put(thread.getId(), new Suggestion(thread)));
+            .forEach(thread -> this.cache.put(thread.getId(), new Suggestion(thread)));
     }
 
     public void addSuggestion(ThreadChannel threadChannel) {
@@ -73,13 +73,20 @@ public class SuggestionCache {
 
     public static class Suggestion {
 
-        @Getter private final ThreadChannel thread;
-        @Getter private final String parentId;
-        @Getter private final boolean alpha;
-        @Getter private final int agrees;
-        @Getter private final int disagrees;
-        @Getter private final boolean greenlit;
-        @Getter private final boolean deleted;
+        @Getter
+        private final ThreadChannel thread;
+        @Getter
+        private final String parentId;
+        @Getter
+        private final boolean alpha;
+        @Getter
+        private final int agrees;
+        @Getter
+        private final int disagrees;
+        @Getter
+        private final boolean greenlit;
+        @Getter
+        private final boolean deleted;
 
         public Suggestion(ThreadChannel thread) {
             this.thread = thread;
