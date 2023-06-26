@@ -34,39 +34,39 @@ public class CurateFeature extends BotFeature {
                     final Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(NerdBotApp.getBot().isReadOnly());
 
                     Stream.concat(
-                        Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).map(forumId -> Pair.of(forumId, false)),
-                        Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).map(forumId -> Pair.of(forumId, true))
-                    ).filter(pair -> Objects.nonNull(pair.getLeft()))
-                    .forEach(suggestionForum -> {
-                        String id = suggestionForum.getLeft();
-                        boolean alpha = suggestionForum.getRight();
-                        ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(id);
-                        log.info("Processing" + (alpha ? " alpha" : "") + " suggestion forum channel with ID " + id + ".");
+                            Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).map(forumId -> Pair.of(forumId, false)),
+                            Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).map(forumId -> Pair.of(forumId, true))
+                        ).filter(pair -> Objects.nonNull(pair.getLeft()))
+                        .forEach(suggestionForum -> {
+                            String id = suggestionForum.getLeft();
+                            boolean alpha = suggestionForum.getRight();
+                            ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(id);
+                            log.info("Processing" + (alpha ? " alpha" : "") + " suggestion forum channel with ID " + id + ".");
 
-                        if (forumChannel == null) {
-                            log.error("Couldn't find the suggestion forum channel with ID " + id + "!");
-                            return;
-                        }
+                            if (forumChannel == null) {
+                                log.error("Couldn't find the suggestion forum channel with ID " + id + "!");
+                                return;
+                            }
 
-                        List<GreenlitMessage> result = forumChannelCurator.curate(forumChannel);
-                        if (result.isEmpty()) {
-                            log.info("No new suggestions were greenlit from ID " + id + " this time!");
-                        } else {
-                            log.info("Greenlit " + result.size() + " new suggestions from ID " + id + ". Took " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!");
-                        }
+                            List<GreenlitMessage> result = forumChannelCurator.curate(forumChannel);
+                            if (result.isEmpty()) {
+                                log.info("No new suggestions were greenlit from ID " + id + " this time!");
+                            } else {
+                                log.info("Greenlit " + result.size() + " new suggestions from ID " + id + ". Took " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!");
+                            }
 
-                        // Update Database
-                        result.forEach(greenlitMessage -> database.upsertDocument(
-                            database.getCollection(
-                                "greenlit_messages",
-                                GreenlitMessage.class
-                            ),
-                            "messageId",
-                            greenlitMessage.getMessageId(),
-                            greenlitMessage
-                        ));
-                        log.info("Inserted " + result.size() + " new greenlit messages into the database!");
-                    });
+                            // Update Database
+                            result.forEach(greenlitMessage -> database.upsertDocument(
+                                database.getCollection(
+                                    "greenlit_messages",
+                                    GreenlitMessage.class
+                                ),
+                                "messageId",
+                                greenlitMessage.getMessageId(),
+                                greenlitMessage
+                            ));
+                            log.info("Inserted " + result.size() + " new greenlit messages into the database!");
+                        });
                 });
             }
         }, 30_000L, NerdBotApp.getBot().getConfig().getInterval());

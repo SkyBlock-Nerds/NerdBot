@@ -110,9 +110,9 @@ public class UserCommands extends ApplicationCommand {
         // Check if the reminder was saved successfully, schedule it and send a confirmation message
         if (result != null && result.wasAcknowledged() && result.getInsertedId() != null) {
             event.reply("I will remind you at " + new DiscordTimestamp(date.getTime()).toLongDateTime() + " about:")
-                    .addEmbeds(new EmbedBuilder().setDescription(description).build())
-                    .setEphemeral(true)
-                    .queue();
+                .addEmbeds(new EmbedBuilder().setDescription(description).build())
+                .setEphemeral(true)
+                .queue();
             reminder.schedule();
         } else {
             // If the reminder could not be saved, send an error message and log the error too
@@ -186,7 +186,9 @@ public class UserCommands extends ApplicationCommand {
      * Parse a time string in the format of {@code 1w2d3h4m5s} into a Date
      *
      * @param time The time string to parse
+     *
      * @return The parsed string as a Date
+     *
      * @throws DateTimeParseException If the string could not be parsed
      */
     public static Date parseCustomFormat(String time) throws DateTimeParseException {

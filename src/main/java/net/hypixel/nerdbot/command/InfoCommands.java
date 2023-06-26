@@ -43,9 +43,9 @@ public class InfoCommands extends ApplicationCommand {
         long totalMemory = Runtime.getRuntime().totalMemory();
 
         builder.append(" • Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n")
-                .append("• Environment: ").append(Environment.getEnvironment()).append("\n")
-                .append("• Uptime: ").append(Time.formatMs(NerdBotApp.getBot().getUptime())).append("\n")
-                .append("• Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
+            .append("• Environment: ").append(Environment.getEnvironment()).append("\n")
+            .append("• Uptime: ").append(Time.formatMs(NerdBotApp.getBot().getUptime())).append("\n")
+            .append("• Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
 
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
@@ -53,11 +53,11 @@ public class InfoCommands extends ApplicationCommand {
     @JDASlashCommand(name = "info", subcommand = "greenlit", description = "Get a list of all non-docced greenlit messages. May not be 100% accurate!", defaultLocked = true)
     public void greenlitInfo(GuildSlashEvent event, @AppOption int page, @AppOption @Optional String tag) {
         List<GreenlitMessage> greenlit = database.getCollection("greenlit_messages", GreenlitMessage.class)
-                .find()
-                .into(new ArrayList<>())
-                .stream()
-                .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.getTags().contains("Docced"))
-                .toList();
+            .find()
+            .into(new ArrayList<>())
+            .stream()
+            .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.getTags().contains("Docced"))
+            .toList();
 
         if (tag != null) {
             greenlit = greenlit.stream().filter(greenlitMessage -> greenlitMessage.getTags().contains(tag)).toList();
@@ -91,14 +91,14 @@ public class InfoCommands extends ApplicationCommand {
         }
 
         builder.append("Server name: ").append(guild.getName()).append(" (Server ID: ").append(guild.getId()).append(")\n")
-                .append("Created at: ").append(new DiscordTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()).toRelativeTimestamp()).append("\n")
-                .append("Boosters: ").append(guild.getBoostCount()).append(" (").append(guild.getBoostTier().name()).append(")\n")
-                .append("Channels: ").append(guild.getChannels().size()).append("\n")
-                .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
-                .append("  • Staff: ").append(staff).append("\n")
-                .append("  • HPC: ").append(guild.getMembersWithRoles(Util.getRole("HPC")).size()).append("\n")
-                .append("  • Grapes: ").append(guild.getMembersWithRoles(Util.getRole("Grape")).size()).append("\n")
-                .append("  • Nerds: ").append(guild.getMembersWithRoles(Util.getRole("Nerd")).size());
+            .append("Created at: ").append(new DiscordTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()).toRelativeTimestamp()).append("\n")
+            .append("Boosters: ").append(guild.getBoostCount()).append(" (").append(guild.getBoostTier().name()).append(")\n")
+            .append("Channels: ").append(guild.getChannels().size()).append("\n")
+            .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
+            .append("  • Staff: ").append(staff).append("\n")
+            .append("  • HPC: ").append(guild.getMembersWithRoles(Util.getRole("HPC")).size()).append("\n")
+            .append("  • Grapes: ").append(guild.getMembersWithRoles(Util.getRole("Grape")).size()).append("\n")
+            .append("  • Nerds: ").append(guild.getMembersWithRoles(Util.getRole("Nerd")).size());
 
         event.reply(builder.toString()).setEphemeral(true).queue();
     }

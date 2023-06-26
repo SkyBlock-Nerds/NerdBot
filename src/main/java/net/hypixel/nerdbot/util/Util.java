@@ -84,9 +84,9 @@ public class Util {
      */
     public static int getReactionCountExcludingList(MessageReaction reaction, List<User> users) {
         return (int) reaction.retrieveUsers()
-                .stream()
-                .filter(user -> !users.contains(user))
-                .count();
+            .stream()
+            .filter(user -> !users.contains(user))
+            .count();
     }
 
     public static Object jsonToObject(File file, Class<?> clazz) throws FileNotFoundException {
