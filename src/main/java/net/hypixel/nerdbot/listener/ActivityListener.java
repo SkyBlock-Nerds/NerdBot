@@ -62,13 +62,15 @@ public class ActivityListener {
             long time = System.currentTimeMillis();
 
             // New Suggestions
-            if (Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            BotConfig botConfig = NerdBotApp.getBot().getConfig();
+
+            if (botConfig.getSuggestionForumIds() != null && Arrays.stream(botConfig.getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().setLastSuggestionDate(time);
                 log.info("Updating new suggestion activity date for " + member.getEffectiveName() + " to " + time);
             }
 
             // New Alpha Suggestions
-            if (Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            if (botConfig.getAlphaSuggestionForumIds() != null && Arrays.stream(botConfig.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().setLastAlphaSuggestionDate(time);
                 log.info("Updating new alpha suggestion activity date for " + member.getEffectiveName() + " to " + time);
             }
