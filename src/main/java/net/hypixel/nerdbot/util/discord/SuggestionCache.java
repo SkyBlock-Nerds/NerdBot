@@ -1,72 +1,68 @@
 package net.hypixel.nerdbot.util.discord;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.Scheduler;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.util.Util;
 
+import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.stream.Stream;
 
 @Log4j2
-public class SuggestionCache {
+public class SuggestionCache extends TimerTask {
 
     private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
-    private final Cache<String, Suggestion> cache = Caffeine.newBuilder()
-        .scheduler(Scheduler.systemScheduler())
-        .refreshAfterWrite(60, TimeUnit.MINUTES)
-        .softValues()
-        .build(id -> new Suggestion(NerdBotApp.getBot().getJDA().getThreadChannelById(id)));
-
-    @Getter
-    private boolean loaded;
+    private Map<String, Suggestion> cache = new HashMap<>();
+    @Getter private boolean loaded;
+    @Getter private long lastUpdated;
+    @Getter private final Timer timer = new Timer();
 
     public SuggestionCache() {
-        CompletableFuture.supplyAsync(this::initialize).thenAccept(value -> this.loaded = value);
+        this.timer.scheduleAtFixedRate(this, 0, Duration.ofMinutes(60).toMillis());
     }
 
-    private boolean initialize() {
+    @Override
+    public void run() {
         try {
-            Stream.concat(Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()), Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()))
-                    .filter(Objects::nonNull)
-                    .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
-                    .filter(Objects::nonNull).flatMap(forumChannel -> Stream.concat(forumChannel.getThreadChannels().stream(), forumChannel.retrieveArchivedPublicThreadChannels().stream()))
-                    .distinct()
-                    .forEach(thread -> {
-                        this.cache.put(thread.getId(), new Suggestion(thread));
-                        log.info("Loaded suggestion thread: " + thread.getName() + " by " + thread.getOwner().getUser().getName());
-                    });
-        } catch (Exception ex) {
-            return false;
-        }
-
-        return true;
+            Map<String, Suggestion> updatedCache = new HashMap<>();
+            Util.concatStreams(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
+                .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
+                .filter(Objects::nonNull)
+                .flatMap(forumChannel -> Stream.concat(forumChannel.getThreadChannels().stream(), forumChannel.retrieveArchivedPublicThreadChannels().stream()))
+                .distinct()
+                .forEach(thread -> {
+                    updatedCache.put(thread.getId(), new Suggestion(thread));
+                    User user = NerdBotApp.getBot().getJDA().getUserById(thread.getOwnerIdLong());
+                    log.info("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") (User: " + (user != null ? user.getEffectiveName() + "/" : "") + thread.getOwnerId() + ") to the suggestion cache.");
+                });
+            this.cache = updatedCache;
+        } catch (Exception ignore) { }
     }
 
-    public void addSuggestion(ThreadChannel threadChannel) {
-        this.cache.put(threadChannel.getId(), new Suggestion(threadChannel));
-        log.info("Added suggestion '" + threadChannel.getName() + "' (ID: " + threadChannel.getId() + ") to the suggestion cache!");
+    public void addSuggestion(ThreadChannel thread) {
+        this.cache.put(thread.getId(), new Suggestion(thread));
+        log.info("Added new suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
     }
 
     public Suggestion getSuggestion(String id) {
-        return this.cache.getIfPresent(id);
+        return this.cache.get(id);
     }
 
     public List<Suggestion> getSuggestions() {
-        return this.cache.asMap()
-            .values()
+        return this.cache.values()
             .stream()
             .sorted((o1, o2) -> Long.compare( // Sort by most recent
                 o2.getThread().getTimeCreated().toInstant().toEpochMilli(),
@@ -75,45 +71,40 @@ public class SuggestionCache {
             .toList();
     }
 
-    public void removeSuggestion(ThreadChannel threadChannel) {
-        this.cache.invalidate(threadChannel.getId());
-        log.info("Removed suggestion '" + threadChannel.getName() + "' (ID: " + threadChannel.getId() + ") from the suggestion cache!");
+    public void removeSuggestion(ThreadChannel thread) {
+        this.cache.remove(thread.getId());
+        log.info("Removed suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") from the suggestion cache.");
     }
 
     public static class Suggestion {
 
-        @Getter
-        private final ThreadChannel thread;
-        @Getter
-        private final String parentId;
-        @Getter
-        private final boolean alpha;
-        @Getter
-        private final int agrees;
-        @Getter
-        private final int disagrees;
-        @Getter
-        private final boolean greenlit;
-        @Getter
-        private final boolean deleted;
+        @Getter private final ThreadChannel thread;
+        @Getter private final String parentId;
+        @Getter private final boolean alpha;
+        @Getter private final int agrees;
+        @Getter private final int disagrees;
+        @Getter private final boolean greenlit;
+        @Getter private final boolean deleted;
+        @Getter private final long lastUpdated = System.currentTimeMillis();
 
         public Suggestion(ThreadChannel thread) {
             this.thread = thread;
             this.parentId = thread.getParentChannel().asForumChannel().getId();
+            this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> GREENLIT_TAGS.contains(forumTag.getName().toLowerCase()));
 
+            // Alpha
+            boolean alpha = thread.getName().toLowerCase().contains("alpha");
             if (NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds() != null) {
-                this.alpha = Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
-            } else {
-                this.alpha = thread.getName().toLowerCase().contains("alpha");
+                alpha = alpha || Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
             }
+            this.alpha = alpha;
 
+            // Message & Reactions
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
             Message message = history.getRetrievedHistory().get(0);
-
             this.deleted = message == null;
             this.agrees = this.deleted ? 0 : getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
             this.disagrees = this.deleted ? 0 : getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
-            this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> GREENLIT_TAGS.contains(forumTag.getName().toLowerCase()));
         }
 
         public static int getReactionCount(Message message, String emojiId) {
