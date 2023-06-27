@@ -37,6 +37,7 @@ public class SuggestionCache extends TimerTask {
     @Override
     public void run() {
         try {
+            log.info("Started threaded suggestion cache update.");
             Map<String, Suggestion> updatedCache = new HashMap<>();
             Util.concatStreams(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
                 .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
@@ -49,6 +50,7 @@ public class SuggestionCache extends TimerTask {
                     log.info("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") (User: " + (user != null ? user.getEffectiveName() + "/" : "") + thread.getOwnerId() + ") to the suggestion cache.");
                 });
             this.cache = updatedCache;
+            log.info("Merged new suggestion cache.");
         } catch (Exception ignore) { }
     }
 
