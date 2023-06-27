@@ -56,8 +56,8 @@ public class ModMailListener {
 
             if (threadChannel.isArchived()) {
                 threadChannel.getManager().setArchived(false).complete();
-                // WiViW: This means that the user likely has sent a new request to Staff/Grapes (That way it's not always responding with this.), meaning they should get a response it is being looked at (Visible feedback to the user, rather than nothing it currently is).
-                MessageCreateBuilder builder = createMessage(message).setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.");
+                // WiViW: This means that the user likely has sent a new request to Staff/Grapes (That way it's not always responding with this message.), meaning they should get a response it is being looked at (Visible feedback to the user, rather than nothing it currently is).
+                MessageCreateBuilder builder = new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.");
                 event.getAuthor().openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
             }
 
@@ -69,6 +69,9 @@ public class ModMailListener {
             threadChannel.sendMessage(createMessage(message).build()).queue();
             log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
         } else {
+            // WiViW: The same as for above, except this time for any newly made Mod Mail requests, instead of only existing ones.
+            MessageCreateBuilder builder = new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.");
+            event.getAuthor().openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
             forumChannel.createForumPost(
                     "[Mod Mail] " + author.getName() + " (" + author.getId() + ")",
                     MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
