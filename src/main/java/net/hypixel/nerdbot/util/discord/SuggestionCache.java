@@ -23,7 +23,11 @@ import java.util.stream.Stream;
 public class SuggestionCache {
 
     private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
-    private final Cache<String, Suggestion> cache = Caffeine.newBuilder().scheduler(Scheduler.systemScheduler()).refreshAfterWrite(60, TimeUnit.MINUTES).softValues().build(id -> new Suggestion(NerdBotApp.getBot().getJDA().getThreadChannelById(id)));
+    private final Cache<String, Suggestion> cache = Caffeine.newBuilder()
+        .scheduler(Scheduler.systemScheduler())
+        .refreshAfterWrite(60, TimeUnit.MINUTES)
+        .softValues()
+        .build(id -> new Suggestion(NerdBotApp.getBot().getJDA().getThreadChannelById(id)));
 
     public SuggestionCache() {
         Stream<ThreadChannel> channels = Util.concatStreams(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
@@ -45,12 +49,16 @@ public class SuggestionCache {
     }
 
     public List<Suggestion> getSuggestions() {
-        return this.cache.asMap().values().stream().sorted((o1, o2) -> Long.compare( // Sort by most recent
-            o2.getThread().getTimeCreated().toInstant().toEpochMilli(), o1.getThread().getTimeCreated().toInstant().toEpochMilli())).toList();
+        return this.cache.asMap()
+            .values()
+            .stream()
+            .sorted((o1, o2) -> Long.compare(o2.getThread().getTimeCreated().toInstant().toEpochMilli(), o1.getThread().getTimeCreated().toInstant().toEpochMilli()))
+            .toList();
     }
 
     public void removeSuggestion(ThreadChannel threadChannel) {
         this.cache.invalidate(threadChannel.getId());
+        log.info("Removed suggestion '" + threadChannel.getName() + "' (ID: " + threadChannel.getId() + ") from the suggestion cache!");
     }
 
     public static class Suggestion {
