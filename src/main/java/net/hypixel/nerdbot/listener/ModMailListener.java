@@ -55,9 +55,6 @@ public class ModMailListener {
 
             if (threadChannel.isArchived()) {
                 threadChannel.getManager().setArchived(false).complete();
-                // WiViW: This means that the user likely has sent a new request to Staff/Grapes (That way it's not always responding with this.), meaning they should get a response it is being looked at (Visible feedback to the user, rather than nothing it currently is).
-                MessageCreateBuilder builder = createMessage(message).setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.");
-                event.getAuthor().openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
             }
 
             if (!threadChannel.getName().contains(author.getName()) || !threadChannel.getName().contains(author.getId())) {
