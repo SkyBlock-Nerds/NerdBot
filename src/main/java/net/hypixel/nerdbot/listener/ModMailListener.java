@@ -1,12 +1,12 @@
 package net.hypixel.nerdbot.listener;
 
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumPost;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Log4j2
 public class ModMailListener {
@@ -66,26 +65,21 @@ public class ModMailListener {
             threadChannel.sendMessage(createMessage(message).build()).queue();
             log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
         } else {
-            forumChannel.createForumPost(
+            ForumPost post = forumChannel.createForumPost(
                 "[Mod Mail] " + author.getName() + " (" + author.getId() + ")",
                 MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
-            ).queue(forumPost -> {
-                ThreadChannel threadChannel = forumPost.getThreadChannel();
-                List<Member> roleMembers = threadChannel.getGuild().getMembersWithRoles(Util.getRole("Mod Mail"));
-                AtomicInteger count = new AtomicInteger();
+            ).complete();
 
-                threadChannel.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
-                threadChannel.getGuild().getMembersWithRoles(Util.getRole("Mod Mail")).forEach(member -> threadChannel.addThreadMember(member).queue(unused -> {
-                    if (count.incrementAndGet() == roleMembers.size()) {
-                        try {
-                            threadChannel.sendMessage(modMailRoleMention).queue();
-                            threadChannel.sendMessage(createMessage(message).build()).queue();
-                        } catch (ExecutionException | InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }));
-            });
+            ThreadChannel threadChannel = post.getThreadChannel();
+            threadChannel.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
+            threadChannel.getGuild().getMembersWithRoles(Util.getRole("Mod Mail")).forEach(member -> threadChannel.addThreadMember(member).complete());
+
+            try {
+                threadChannel.sendMessage(modMailRoleMention).queue();
+                threadChannel.sendMessage(createMessage(message).build()).queue();
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
