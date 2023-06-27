@@ -15,7 +15,9 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
@@ -30,11 +32,8 @@ import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -245,7 +244,7 @@ public class UserCommands extends ApplicationCommand {
             return;
         }
 
-        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).setAuthor(searchMember.getEffectiveName()).build()).queue();
+        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false).setAuthor(searchMember.getEffectiveName()).setThumbnail(searchMember.getEffectiveAvatarUrl()).build()).queue();
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-everyone", description = "View all suggestions.")
@@ -264,11 +263,11 @@ public class UserCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(null, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.reply("Found no suggestions matching the specified filters!").setEphemeral(true).queue();
+            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
             return;
         }
 
-        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum).build()).queue();
+        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, true).build()).queue();
     }
 
     @JDASlashCommand(name = "activity", description = "View your recent activity.")
@@ -280,11 +279,16 @@ public class UserCommands extends ApplicationCommand {
             return;
         }
 
-        event.replyEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build()).setEphemeral(true).queue();
+        event.getHook().editOriginalEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build()).queue();
     }
 
     private static List<SuggestionCache.Suggestion> getSuggestions(Member member, String tags, String title, boolean alpha) {
         final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
+
+        if (NerdBotApp.getSuggestionCache().getSuggestions().isEmpty()) {
+            log.info("Suggestions cache is empty!");
+            return Collections.emptyList();
+        }
 
         return NerdBotApp.getSuggestionCache()
             .getSuggestions()
@@ -305,35 +309,35 @@ public class UserCommands extends ApplicationCommand {
             .toList();
     }
 
-    private static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum) {
+    private static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum, boolean showNames) {
         List<SuggestionCache.Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
         int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
-        List<List<String>> fieldData = new ArrayList<>();
+
+        StringJoiner links = new StringJoiner("\n");
         double total = suggestions.size();
         double greenlit = suggestions.stream().filter(SuggestionCache.Suggestion::isGreenlit).count();
+        String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "");
 
         for (SuggestionCache.Suggestion suggestion : pages) {
-            String name = suggestion.getThread().getName().replaceAll("`", "");
-            if (name.length() > 50) {
-                name = name.substring(0, 50);
-                name += "...";
+            String link = suggestion.getThread().getJumpUrl();
+            link += (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "") + "\n";
+            link += suggestion.getThread().getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "\n";
+
+            if (showNames) {
+                User user = NerdBotApp.getBot().getJDA().getUserById(suggestion.getThread().getOwnerIdLong());
+                if (user != null) {
+                    link += "Created by " + user.getEffectiveName() + "\n";
+                }
             }
 
-            String link = suggestion.getThread().getJumpUrl() + (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "");
-
-            fieldData.add(Arrays.asList(
-                link,
-                String.valueOf(suggestion.getAgrees()),
-                String.valueOf(suggestion.getDisagrees())
-            ));
+            link += getEmojiFormat(EmojiConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + getEmojiFormat(EmojiConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
+            links.add(link);
         }
 
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setColor(Color.GREEN)
             .setTitle("Suggestions")
-            .setDescription(
-                (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "")
-            )
+            .setDescription(links.toString())
             .addField(
                 "Total",
                 String.valueOf((int) total),
@@ -345,28 +349,11 @@ public class UserCommands extends ApplicationCommand {
                 true
             )
             .addBlankField(true)
-            .addField(
-                "Links",
-                fieldData.stream()
-                    .map(list -> list.get(0))
-                    .collect(Collectors.joining("\n")),
-                true
-            )
-            .addField(
-                getEmojiFormat(EmojiConfig::getAgreeEmojiId),
-                fieldData.stream()
-                    .map(list -> list.get(1))
-                    .collect(Collectors.joining("\n")),
-                true
-            )
-            .addField(
-                getEmojiFormat(EmojiConfig::getDisagreeEmojiId),
-                fieldData.stream()
-                    .map(list -> list.get(2))
-                    .collect(Collectors.joining("\n")),
-                true
-            )
-            .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No"));
+            .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No") + (NerdBotApp.getSuggestionCache().isLoaded() ? "" : " | Caching is in progress!"));
+
+        if (!filters.isEmpty()) {
+            embedBuilder.addField("Filters", filters,  false);
+        }
 
         return embedBuilder;
     }

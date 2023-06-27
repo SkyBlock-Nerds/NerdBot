@@ -16,6 +16,7 @@ import net.hypixel.nerdbot.util.Util;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -29,14 +30,29 @@ public class SuggestionCache {
         .softValues()
         .build(id -> new Suggestion(NerdBotApp.getBot().getJDA().getThreadChannelById(id)));
 
-    public SuggestionCache() {
-        Stream<ThreadChannel> channels = Util.concatStreams(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
-            .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
-            .filter(Objects::nonNull)
-            .flatMap(forumChannel -> Stream.concat(forumChannel.getThreadChannels().stream(), forumChannel.retrieveArchivedPublicThreadChannels().stream()))
-            .filter(thread -> thread.getAppliedTags().stream().map(tag -> tag.getName().toLowerCase()).anyMatch(GREENLIT_TAGS::contains));
+    @Getter
+    private boolean loaded;
 
-        channels.forEach(this::addSuggestion);
+    public SuggestionCache() {
+        CompletableFuture.supplyAsync(this::initialize).thenAccept(value -> this.loaded = value);
+    }
+
+    private boolean initialize() {
+        try {
+            Stream.concat(Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()), Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()))
+                    .filter(Objects::nonNull)
+                    .map(forumId -> NerdBotApp.getBot().getJDA().getForumChannelById(forumId))
+                    .filter(Objects::nonNull).flatMap(forumChannel -> Stream.concat(forumChannel.getThreadChannels().stream(), forumChannel.retrieveArchivedPublicThreadChannels().stream()))
+                    .distinct()
+                    .forEach(thread -> {
+                        this.cache.put(thread.getId(), new Suggestion(thread));
+                        log.info("Loaded suggestion thread: " + thread.getName() + " by " + thread.getOwner().getUser().getName());
+                    });
+        } catch (Exception ex) {
+            return false;
+        }
+
+        return true;
     }
 
     public void addSuggestion(ThreadChannel threadChannel) {
@@ -52,7 +68,10 @@ public class SuggestionCache {
         return this.cache.asMap()
             .values()
             .stream()
-            .sorted((o1, o2) -> Long.compare(o2.getThread().getTimeCreated().toInstant().toEpochMilli(), o1.getThread().getTimeCreated().toInstant().toEpochMilli()))
+            .sorted((o1, o2) -> Long.compare( // Sort by most recent
+                o2.getThread().getTimeCreated().toInstant().toEpochMilli(),
+                o1.getThread().getTimeCreated().toInstant().toEpochMilli())
+            )
             .toList();
     }
 

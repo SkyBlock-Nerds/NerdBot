@@ -44,14 +44,25 @@ public class NerdBotApp {
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();
         bot = nerdBot;
+
+        log.info("Starting bot...");
+
         try {
+            log.info("Attempting to create bot...");
             nerdBot.create(args);
             messageCache = new MessageCache();
             suggestionCache = new SuggestionCache();
+            log.info("Bot created!");
         } catch (LoginException e) {
             log.error("Failed to find login for bot!");
             System.exit(-1);
+        } catch (Exception exception) {
+            log.error("Failed to create bot!");
+            exception.printStackTrace();
+            System.exit(-1);
         }
+
+        log.info("Registering shutdown hook...");
 
         Thread userSavingTask = new Thread(() -> {
             log.info("Attempting to save " + USER_CACHE.estimatedSize() + " cached users");
@@ -62,5 +73,4 @@ public class NerdBotApp {
         });
         Runtime.getRuntime().addShutdownHook(userSavingTask);
     }
-
 }
