@@ -14,13 +14,9 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
+import net.hypixel.nerdbot.util.Util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -29,8 +25,8 @@ import java.util.stream.Stream;
 public class GreenlitUpdateFeature extends BotFeature {
 
     private static final String[] INCLUDED_TAGS = {
-            "Greenlit",
-            "Docced"
+        "Greenlit",
+        "Docced"
     };
 
     @Override
@@ -38,27 +34,26 @@ public class GreenlitUpdateFeature extends BotFeature {
         this.timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                Stream.concat(
-                        Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).map(forumId -> Pair.of(forumId, false)),
-                        Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).map(forumId -> Pair.of(forumId, true))
-                ).filter(pair -> Objects.nonNull(pair.getLeft()))
-                .forEach(suggestionForum -> {
-                    String id = suggestionForum.getLeft();
-                    boolean alpha = suggestionForum.getRight();
-                    ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(id);
+                Stream<ForumChannel> suggestions = Util.concatStreams(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
+                    .map(s -> NerdBotApp.getBot().getJDA().getForumChannelById(s))
+                    .filter(Objects::nonNull);
 
-                    log.info("Processing" + (alpha ? " alpha" : "") + " suggestion forum channel with ID " + id + ".");
+                suggestions.forEach(channel -> {
+                    boolean alpha;
 
-                    if (forumChannel == null) {
-                        log.error("Couldn't find the suggestion forum channel with ID " + id + "!");
-                        return;
+                    if (NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds() != null) {
+                        alpha = Arrays.asList(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).contains(channel.getId());
+                    } else {
+                        alpha = channel.getName().contains("alpha");
                     }
 
-                    List<ThreadChannel> threads = new ArrayList<>(forumChannel.getThreadChannels()
-                            .stream()
-                            .filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).anyMatch(tag -> Arrays.asList(INCLUDED_TAGS).contains(tag)))
-                            .toList());
-                    List<ThreadChannel> archived = forumChannel.retrieveArchivedPublicThreadChannels().complete();
+                    log.info("Processing" + (alpha ? " alpha" : "") + " suggestion forum channel '" + channel.getName() + "' (ID: " + channel.getId() + ")");
+
+                    List<ThreadChannel> threads = new ArrayList<>(channel.getThreadChannels()
+                        .stream()
+                        .filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).anyMatch(tag -> Arrays.asList(INCLUDED_TAGS).contains(tag)))
+                        .toList());
+                    List<ThreadChannel> archived = channel.retrieveArchivedPublicThreadChannels().complete();
 
                     threads.addAll(
                         archived.stream()
@@ -85,7 +80,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                         return;
                     }
 
-                    log.info("Found " + forumChannel.getThreadChannels().size() + " threads in the suggestion forum channel!");
+                    log.info("Found " + channel.getThreadChannels().size() + " threads in the suggestion forum channel!");
                     log.info("Found " + threads.size() + " unarchived greenlit threads in the suggestion forum channel!");
                     log.info("Found " + archived.size() + " archived threads in the suggestion forum channel!");
 
@@ -109,28 +104,28 @@ public class GreenlitUpdateFeature extends BotFeature {
 
                             EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
                             List<MessageReaction> reactions = message.getReactions()
-                                    .stream()
-                                    .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
-                                    .toList();
+                                .stream()
+                                .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+                                .toList();
 
                             Map<String, Integer> votes = Stream.of(
-                                            emojiConfig.getAgreeEmojiId(),
-                                            emojiConfig.getNeutralEmojiId(),
-                                            emojiConfig.getDisagreeEmojiId()
-                                    )
-                                    .map(emojiId -> Pair.of(
-                                            emojiId,
-                                            reactions.stream()
-                                                    .filter(reaction -> reaction.getEmoji()
-                                                            .asCustom()
-                                                            .getId()
-                                                            .equalsIgnoreCase(emojiId)
-                                                    )
-                                                    .mapToInt(MessageReaction::getCount)
-                                                    .findFirst()
-                                                    .orElse(0)
-                                    ))
-                                    .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+                                    emojiConfig.getAgreeEmojiId(),
+                                    emojiConfig.getNeutralEmojiId(),
+                                    emojiConfig.getDisagreeEmojiId()
+                                )
+                                .map(emojiId -> Pair.of(
+                                    emojiId,
+                                    reactions.stream()
+                                        .filter(reaction -> reaction.getEmoji()
+                                            .asCustom()
+                                            .getId()
+                                            .equalsIgnoreCase(emojiId)
+                                        )
+                                        .mapToInt(MessageReaction::getCount)
+                                        .findFirst()
+                                        .orElse(0)
+                                ))
+                                .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
 
                             int agree = votes.get(emojiConfig.getAgreeEmojiId());
                             int neutral = votes.get(emojiConfig.getNeutralEmojiId());

@@ -73,8 +73,8 @@ public class ModMailListener {
             MessageCreateBuilder builder = new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.");
             event.getAuthor().openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
             forumChannel.createForumPost(
-                    "[Mod Mail] " + author.getName() + " (" + author.getId() + ")",
-                    MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
+                "[Mod Mail] " + author.getName() + " (" + author.getId() + ")",
+                MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
             ).queue(forumPost -> {
                 ThreadChannel threadChannel = forumPost.getThreadChannel();
                 List<Member> roleMembers = threadChannel.getGuild().getMembersWithRoles(Util.getRole("Mod Mail"));

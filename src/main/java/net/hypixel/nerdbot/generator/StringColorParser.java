@@ -68,10 +68,10 @@ public class StringColorParser {
             breakLoopCount++;
             if (breakLoopCount > initialDescriptionLength) {
                 errorString = "length: " + description.length() + "\n" +
-                        "charIndex: " + charIndex + "\n" +
-                        "character failed on: " + description.charAt(charIndex) + "\n" +
-                        "string: " + description + "\n" +
-                        "If you see this debug, please ping a developer. Thanks!\n";
+                    "charIndex: " + charIndex + "\n" +
+                    "character failed on: " + description.charAt(charIndex) + "\n" +
+                    "string: " + description + "\n" +
+                    "If you see this debug, please ping a developer. Thanks!\n";
                 return;
             }
 

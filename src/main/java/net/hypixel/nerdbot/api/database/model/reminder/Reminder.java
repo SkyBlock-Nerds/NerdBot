@@ -89,8 +89,8 @@ public class Reminder {
             }
 
             channel.sendMessage(message)
-                    .addEmbeds(new EmbedBuilder().setDescription(description).build())
-                    .queue();
+                .addEmbeds(new EmbedBuilder().setDescription(description).build())
+                .queue();
         } else if (channel == null && user != null) {
             user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Reminder: " + description).queue());
         } else {
@@ -121,8 +121,8 @@ public class Reminder {
         }
 
         Reminder reminder = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection(COLLECTION_NAME, Reminder.class), "uuid", uuid)
-                .limit(1)
-                .first();
+            .limit(1)
+            .first();
 
         if (reminder == null) {
             return null;
