@@ -98,7 +98,8 @@ public class SuggestionCache {
         }
 
         public static int getReactionCount(Message message, String emojiId) {
-            return message.getReactions().stream().filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+            return message.getReactions().stream()
+                .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
                 .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiId))
                 .mapToInt(MessageReaction::getCount)
                 .findFirst()
