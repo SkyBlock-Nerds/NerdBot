@@ -29,15 +29,24 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @Log4j2
 public class Util {
 
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
+
+    public static Stream<String> concatStreams(String[] arr1, String[] arr2) {
+        Stream<String> stream1 = (arr1 != null) ? Arrays.stream(arr1) : Stream.empty();
+        Stream<String> stream2 = (arr2 != null) ? Arrays.stream(arr2) : Stream.empty();
+
+        return Stream.concat(stream1, stream2);
+    }
 
     public static void sleep(TimeUnit unit, long time) {
         try {
