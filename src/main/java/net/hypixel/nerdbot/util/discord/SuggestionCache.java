@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.util.Util;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,13 +56,8 @@ public class SuggestionCache {
     }
 
     public void addSuggestion(ThreadChannel threadChannel) {
-        String forumId = threadChannel.getParentChannel().asForumChannel().getId();
-        boolean suggestionForum = Arrays.stream(NerdBotApp.getBot().getConfig().getSuggestionForumIds()).anyMatch(forumId::equalsIgnoreCase);
-        boolean alphaSuggestionForum = Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(forumId::equalsIgnoreCase);
-
-        if (suggestionForum || alphaSuggestionForum) {
-            this.cache.put(threadChannel.getId(), new Suggestion(threadChannel));
-        }
+        this.cache.put(threadChannel.getId(), new Suggestion(threadChannel));
+        log.info("Added suggestion '" + threadChannel.getName() + "' (ID: " + threadChannel.getId() + ") to the suggestion cache!");
     }
 
     public Suggestion getSuggestion(String id) {
@@ -69,12 +65,19 @@ public class SuggestionCache {
     }
 
     public List<Suggestion> getSuggestions() {
-        return this.cache.asMap().values().stream().sorted((o1, o2) -> Long.compare( // Sort by most recent
-                o2.getThread().getTimeCreated().toInstant().toEpochMilli(), o1.getThread().getTimeCreated().toInstant().toEpochMilli())).toList();
+        return this.cache.asMap()
+            .values()
+            .stream()
+            .sorted((o1, o2) -> Long.compare( // Sort by most recent
+                o2.getThread().getTimeCreated().toInstant().toEpochMilli(),
+                o1.getThread().getTimeCreated().toInstant().toEpochMilli())
+            )
+            .toList();
     }
 
     public void removeSuggestion(ThreadChannel threadChannel) {
         this.cache.invalidate(threadChannel.getId());
+        log.info("Removed suggestion '" + threadChannel.getName() + "' (ID: " + threadChannel.getId() + ") from the suggestion cache!");
     }
 
     public static class Suggestion {
@@ -97,7 +100,12 @@ public class SuggestionCache {
         public Suggestion(ThreadChannel thread) {
             this.thread = thread;
             this.parentId = thread.getParentChannel().asForumChannel().getId();
-            this.alpha = Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase) || thread.getName().toLowerCase().contains("alpha");
+
+            if (NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds() != null) {
+                this.alpha = Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
+            } else {
+                this.alpha = thread.getName().toLowerCase().contains("alpha");
+            }
 
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
             Message message = history.getRetrievedHistory().get(0);
@@ -109,13 +117,17 @@ public class SuggestionCache {
         }
 
         public static int getReactionCount(Message message, String emojiId) {
-            return message.getReactions().stream().filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM).filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiId)).mapToInt(MessageReaction::getCount).findFirst().orElse(0);
+            return message.getReactions().stream()
+                .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+                .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiId))
+                .mapToInt(MessageReaction::getCount)
+                .findFirst()
+                .orElse(0);
         }
 
         public boolean notDeleted() {
             return !this.isDeleted();
         }
-
     }
 
 }
