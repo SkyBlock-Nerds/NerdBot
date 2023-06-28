@@ -12,6 +12,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -37,20 +38,28 @@ public class SuggestionCache extends TimerTask {
     @Override
     public void run() {
         try {
-            log.info("Started threaded suggestion cache update.");
-            Map<String, Suggestion> updatedCache = new HashMap<>();
+            log.info("Started suggestion cache update.");
+            this.loaded = false;
+            this.cache.forEach((key, suggestion) -> suggestion.setExpired());
             Util.concatStreams(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
                 .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
                 .filter(Objects::nonNull)
                 .flatMap(forumChannel -> Stream.concat(forumChannel.getThreadChannels().stream(), forumChannel.retrieveArchivedPublicThreadChannels().stream()))
                 .distinct()
                 .forEach(thread -> {
-                    updatedCache.put(thread.getId(), new Suggestion(thread));
+                    this.cache.put(thread.getId(), new Suggestion(thread));
                     User user = NerdBotApp.getBot().getJDA().getUserById(thread.getOwnerIdLong());
                     log.info("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") (User: " + (user != null ? user.getEffectiveName() + "/" : "") + thread.getOwnerId() + ") to the suggestion cache.");
                 });
-            this.cache = updatedCache;
-            log.info("Merged new suggestion cache.");
+
+            log.info("Removing expired suggestions.");
+            new ArrayList<>(cache.values())
+                .stream()
+                .filter(Suggestion::isExpired)
+                .forEach(suggestion -> this.removeSuggestion(suggestion.getThread()));
+
+            this.loaded = true;
+            log.info("Finished caching suggestions.");
         } catch (Exception ignore) { }
     }
 
@@ -68,8 +77,8 @@ public class SuggestionCache extends TimerTask {
             .stream()
             .sorted((o1, o2) -> Long.compare( // Sort by most recent
                 o2.getThread().getTimeCreated().toInstant().toEpochMilli(),
-                o1.getThread().getTimeCreated().toInstant().toEpochMilli())
-            )
+                o1.getThread().getTimeCreated().toInstant().toEpochMilli()
+            ))
             .toList();
     }
 
@@ -88,11 +97,13 @@ public class SuggestionCache extends TimerTask {
         @Getter private final boolean greenlit;
         @Getter private final boolean deleted;
         @Getter private final long lastUpdated = System.currentTimeMillis();
+        @Getter private boolean expired;
 
         public Suggestion(ThreadChannel thread) {
             this.thread = thread;
             this.parentId = thread.getParentChannel().asForumChannel().getId();
             this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> GREENLIT_TAGS.contains(forumTag.getName().toLowerCase()));
+            this.expired = false;
 
             // Alpha
             boolean alpha = thread.getName().toLowerCase().contains("alpha");
@@ -120,6 +131,10 @@ public class SuggestionCache extends TimerTask {
 
         public boolean notDeleted() {
             return !this.isDeleted();
+        }
+
+        private void setExpired() {
+            this.expired = true;
         }
     }
 
