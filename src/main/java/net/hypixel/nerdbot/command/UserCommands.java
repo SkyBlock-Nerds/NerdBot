@@ -316,7 +316,7 @@ public class UserCommands extends ApplicationCommand {
         StringJoiner links = new StringJoiner("\n");
         double total = suggestions.size();
         double greenlit = suggestions.stream().filter(SuggestionCache.Suggestion::isGreenlit).count();
-        String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "");
+        String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "") + (alpha ? "- Filtered by Alpha: `Yes`" : "");
 
         for (SuggestionCache.Suggestion suggestion : pages) {
             String link = suggestion.getThread().getJumpUrl();
@@ -349,7 +349,7 @@ public class UserCommands extends ApplicationCommand {
                 true
             )
             .addBlankField(true)
-            .setFooter("Page: " + pageNum + "/" + totalPages + " | Alpha: " + (alpha ? "Yes" : "No") + (NerdBotApp.getSuggestionCache().isLoaded() ? "" : " | Caching is in progress!"));
+            .setFooter("Page: " + pageNum + "/" + totalPages + (NerdBotApp.getSuggestionCache().isLoaded() ? "" : " | Caching is in progress!"));
 
         if (!filters.isEmpty()) {
             embedBuilder.addField("Filters", filters,  false);
