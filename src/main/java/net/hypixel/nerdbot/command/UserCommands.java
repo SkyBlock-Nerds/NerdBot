@@ -316,7 +316,7 @@ public class UserCommands extends ApplicationCommand {
         StringJoiner links = new StringJoiner("\n");
         double total = suggestions.size();
         double greenlit = suggestions.stream().filter(SuggestionCache.Suggestion::isGreenlit).count();
-        String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`" : "") + (alpha ? "- Filtered by Alpha: `Yes`" : "");
+        String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`\n" : "") + (alpha ? "- Filtered by Alpha: `Yes`" : "");
 
         for (SuggestionCache.Suggestion suggestion : pages) {
             String link = suggestion.getThread().getJumpUrl();
