@@ -222,6 +222,37 @@ public class UserCommands extends ApplicationCommand {
         return Date.from(date);
     }
 
+    @JDASlashCommand(name = "suggestions", subcommand = "by-id", description = "View user suggestions.")
+    public void viewMemberSuggestions(
+        GuildSlashEvent event,
+        @AppOption @Optional Integer page,
+        @AppOption(description = "User ID to view.") @Optional Long userID,
+        @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
+        @AppOption(description = "Words to filter title for.") @Optional String title,
+        @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
+    ) {
+        event.deferReply(true).queue();
+        page = (page == null) ? 1 : page;
+        final int pageNum = Math.max(page, 1);
+        final long searchMember = (userID == null) ? event.getMember().getIdLong() : userID;
+        final User searchUser = NerdBotApp.getBot().getJDA().getUserById(searchMember);
+        final boolean isAlpha = (alpha != null && alpha);
+
+        List<SuggestionCache.Suggestion> suggestions = getSuggestions(searchMember, tags, title, isAlpha);
+
+        if (suggestions.isEmpty()) {
+            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
+            return;
+        }
+
+        event.getHook().editOriginalEmbeds(
+            buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false)
+                .setAuthor(searchUser != null ? searchUser.getName() : String.valueOf(searchMember))
+                .setThumbnail(searchUser != null ? searchUser.getEffectiveAvatarUrl() : null)
+                .build()
+        ).queue();
+    }
+
     @JDASlashCommand(name = "suggestions", subcommand = "by-member", description = "View user suggestions.")
     public void viewMemberSuggestions(
         GuildSlashEvent event,
@@ -237,14 +268,19 @@ public class UserCommands extends ApplicationCommand {
         final Member searchMember = (member == null) ? event.getMember() : member;
         final boolean isAlpha = (alpha != null && alpha);
 
-        List<SuggestionCache.Suggestion> suggestions = getSuggestions(searchMember, tags, title, isAlpha);
+        List<SuggestionCache.Suggestion> suggestions = getSuggestions(searchMember.getIdLong(), tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
             event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
             return;
         }
 
-        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false).setAuthor(searchMember.getEffectiveName()).setThumbnail(searchMember.getEffectiveAvatarUrl()).build()).queue();
+        event.getHook().editOriginalEmbeds(
+            buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false)
+                .setAuthor(searchMember.getEffectiveName())
+                .setThumbnail(searchMember.getEffectiveAvatarUrl())
+                .build()
+        ).queue();
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-everyone", description = "View all suggestions.")
@@ -282,7 +318,7 @@ public class UserCommands extends ApplicationCommand {
         event.getHook().editOriginalEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build()).queue();
     }
 
-    private static List<SuggestionCache.Suggestion> getSuggestions(Member member, String tags, String title, boolean alpha) {
+    private static List<SuggestionCache.Suggestion> getSuggestions(Long userID, String tags, String title, boolean alpha) {
         final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
 
         if (NerdBotApp.getSuggestionCache().getSuggestions().isEmpty()) {
@@ -295,7 +331,7 @@ public class UserCommands extends ApplicationCommand {
             .stream()
             .filter(suggestion -> suggestion.isAlpha() == alpha)
             .filter(SuggestionCache.Suggestion::notDeleted)
-            .filter(suggestion -> member == null || suggestion.getThread().getOwnerIdLong() == member.getIdLong())
+            .filter(suggestion -> userID == null || suggestion.getThread().getOwnerIdLong() == userID)
             .filter(suggestion -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> suggestion.getThread()
                 .getAppliedTags()
                 .stream()
