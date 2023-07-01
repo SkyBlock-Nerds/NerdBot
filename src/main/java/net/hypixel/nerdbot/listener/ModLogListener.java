@@ -214,6 +214,10 @@ public class ModLogListener {
         }
 
         Message before = NerdBotApp.getMessageCache().getMessage(event.getMessageId());
+        if (before == null) {
+            return;
+        }
+
         Message after = event.getMessage();
         User user = before.getAuthor();
         Channel channel = before.getChannel();
