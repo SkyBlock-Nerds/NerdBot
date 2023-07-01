@@ -360,7 +360,7 @@ public class ItemGenCommands extends ApplicationCommand {
             return true;
         }
 
-        if (Arrays.stream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
+        if (Util.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
             // The top channel in the config should be considered the 'primary channel', which is referenced in the
             // error message.
             TextChannel channel = ChannelManager.getChannel(itemGenChannelIds[0]);

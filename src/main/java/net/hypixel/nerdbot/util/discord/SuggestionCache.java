@@ -41,7 +41,7 @@ public class SuggestionCache extends TimerTask {
             log.info("Started suggestion cache update.");
             this.loaded = false;
             this.cache.forEach((key, suggestion) -> suggestion.setExpired());
-            Util.concatStreams(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
+            Util.safeArrayStream(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
                 .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
                 .filter(Objects::nonNull)
                 .flatMap(forumChannel -> Stream.concat(forumChannel.getThreadChannels().stream(), forumChannel.retrieveArchivedPublicThreadChannels().stream()))
@@ -60,7 +60,9 @@ public class SuggestionCache extends TimerTask {
 
             this.loaded = true;
             log.info("Finished caching suggestions.");
-        } catch (Exception ignore) { }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     public void addSuggestion(ThreadChannel thread) {
@@ -104,20 +106,21 @@ public class SuggestionCache extends TimerTask {
             this.parentId = thread.getParentChannel().asForumChannel().getId();
             this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> GREENLIT_TAGS.contains(forumTag.getName().toLowerCase()));
             this.expired = false;
-
-            // Alpha
-            boolean alpha = thread.getName().toLowerCase().contains("alpha");
-            if (NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds() != null) {
-                alpha = alpha || Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
-            }
-            this.alpha = alpha;
+            this.alpha = thread.getName().toLowerCase().contains("alpha") || Util.safeArrayStream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
 
             // Message & Reactions
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
-            Message message = history.getRetrievedHistory().get(0);
-            this.deleted = message == null;
-            this.agrees = this.deleted ? 0 : getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
-            this.disagrees = this.deleted ? 0 : getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
+
+            if (history.isEmpty()) {
+                this.deleted = true;
+                this.agrees = 0;
+                this.disagrees = 0;
+            } else {
+                Message message = history.getRetrievedHistory().get(0);
+                this.deleted = message.getIdLong() != thread.getIdLong();
+                this.agrees = getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
+                this.disagrees = getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
+            }
         }
 
         public static int getReactionCount(Message message, String emojiId) {

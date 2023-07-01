@@ -34,7 +34,7 @@ public class GreenlitUpdateFeature extends BotFeature {
         this.timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                Stream<ForumChannel> suggestions = Util.concatStreams(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
+                Stream<ForumChannel> suggestions = Util.safeArrayStream(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
                     .map(s -> NerdBotApp.getBot().getJDA().getForumChannelById(s))
                     .filter(Objects::nonNull);
 
