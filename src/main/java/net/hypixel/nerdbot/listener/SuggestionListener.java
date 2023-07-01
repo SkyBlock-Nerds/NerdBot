@@ -28,7 +28,7 @@ public class SuggestionListener {
     }
 
     private boolean isInSuggestionChannel(GenericChannelEvent event) {
-        return Util.concatStreams(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
+        return Util.safeArrayStream(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
             .anyMatch(channelId -> channelId.equals(event.getChannel().getId()));
     }
 }
