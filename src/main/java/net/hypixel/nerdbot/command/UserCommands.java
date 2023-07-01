@@ -308,6 +308,8 @@ public class UserCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "activity", description = "View your recent activity.")
     public void viewOwnActivity(GuildSlashEvent event) {
+        event.deferReply(true).queue();
+
         Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = getActivityEmbeds(event.getMember());
 
         if (activityEmbeds.getLeft() == null || activityEmbeds.getRight() == null) {
