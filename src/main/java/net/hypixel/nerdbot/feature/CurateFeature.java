@@ -32,7 +32,7 @@ public class CurateFeature extends BotFeature {
                 NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
                     Database database = NerdBotApp.getBot().getDatabase();
                     Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(NerdBotApp.getBot().isReadOnly());
-                    Stream<ForumChannel> suggestions = Util.concatStreams(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
+                    Stream<ForumChannel> suggestions = Util.safeArrayStream(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
                         .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
                         .filter(Objects::nonNull);
 
