@@ -169,11 +169,12 @@ public class AdminCommands extends ApplicationCommand {
                 }
 
                 hook.sendFiles(FileUpload.fromData(file)).queue();
+            }).exceptionally(err -> {
+                String msg = "An error occurred when fetching a user's UUID!";
+                log.error(msg, err);
+                hook.sendMessage(msg);
+                return null;
             });
-        }).exceptionally(err -> {
-            String msg = "An error occurred when fetching UUIDs!";
-            log.error(msg, err);
-            return null;
         });
     }
 
@@ -184,11 +185,12 @@ public class AdminCommands extends ApplicationCommand {
                 Minecraft.getUUID(name).thenAccept(uuid -> {
                     hook.sendMessage(String.format("%s: %s", name, uuid)).setEphemeral(true).queue();
                 });
+            }).exceptionally(err -> {
+                String msg = "An error occurred when fetching a user's UUID!";
+                log.error(msg, err);
+                hook.sendMessage(msg);
+                return null;
             });
-        }).exceptionally(err -> {
-            String msg = "An error occurred when fetching a user's UUID!";
-            log.error(msg, err);
-            return null;
         });
     }
 
