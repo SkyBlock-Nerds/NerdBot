@@ -5,18 +5,13 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.freya02.botcommands.api.prefixed.annotations.TextOption;
 import com.google.gson.*;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Invite;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
@@ -33,20 +28,11 @@ import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.minecraft.Minecraft;
 
-import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 @Log4j2
 public class AdminCommands extends ApplicationCommand {
@@ -170,18 +156,40 @@ public class AdminCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "getuuids", description = "Get a list of all Minecraft UUIDs from a role in the server", defaultLocked = true)
-    public void getNerdNames(GuildSlashEvent event, @AppOption(description = "The role to fetch for") Role role) throws IOException {
-        event.deferReply(true).queue();
-        JsonArray array = Minecraft.getUUIDs(event.getGuild(), role);
-        File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(array));
-        event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+    public void getUUIDs(GuildSlashEvent event, @AppOption(description = "The role to fetch for") Role role) {
+        event.deferReply(true).submit().thenAccept(hook -> {
+            Minecraft.getUUIDs(event.getGuild(), role).thenAccept(uuids -> {
+                File file;
+                try {
+                    file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(uuids));
+                } catch (IOException e) {
+                    log.error("Failed to create uuids.txt, ", e);
+                    hook.sendMessage("An error occurred creating the uuids.txt file!");
+                    return;
+                }
+
+                hook.sendFiles(FileUpload.fromData(file)).queue();
+            });
+        }).exceptionally(err -> {
+            String msg = "An error occurred when fetching UUIDs!";
+            log.error(msg, err);
+            return null;
+        });
     }
 
     @JDASlashCommand(name = "getuuid", description = "Get a single members Minecraft UUID")
     public void getUUID(GuildSlashEvent event, @AppOption(description = "The user to fetch") Member member) {
-        String username = Minecraft.getName(member);
-        String uuid = Minecraft.getUUID(username);
-        event.reply(String.format("%s: %s", username, uuid)).setEphemeral(true).queue();
+        event.deferReply(true).submit().thenAccept(hook -> {
+            Minecraft.getName(member).thenAccept(name -> {
+                Minecraft.getUUID(name).thenAccept(uuid -> {
+                    hook.sendMessage(String.format("%s: %s", name, uuid)).setEphemeral(true).queue();
+                });
+            });
+        }).exceptionally(err -> {
+            String msg = "An error occurred when fetching a user's UUID!";
+            log.error(msg, err);
+            return null;
+        });
     }
 
 }

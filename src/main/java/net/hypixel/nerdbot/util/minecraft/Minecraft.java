@@ -14,9 +14,11 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 @Log4j2
@@ -26,7 +28,6 @@ public class Minecraft {
     private static final String NAME_REGEX = "[^a-zA-Z0-9_]";
     private static final String NON_ASCII_REGEX = "[^\u0000-\u007F]";
     private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
-    private static final Queue<String> USERNAME_QUEUE = new LinkedList<>();
 
     /**
      * Fetch a list of UUIDs from the Minecraft API
@@ -35,47 +36,48 @@ public class Minecraft {
      * @param role  The role to fetch UUIDs for
      * @return A list of UUIDs relating to the specified role
      */
-    public static JsonArray getUUIDs(Guild guild, Role role) {
-        List<Member> members = guild.getMembersWithRoles(role);
+    public static CompletableFuture<JsonArray> getUUIDs(Guild guild, Role role) {
+        List<String> names = new LinkedList<>();
+        List<CompletableFuture<Void>> nameFutures = new ArrayList<>();
 
+        List<Member> members = guild.getMembersWithRoles(role);
         log.info("Found " + members.size() + " members meeting requirements");
         for (Member member : members) {
-            String memberMCUsername = getName(member);
-
-            // checks if there was a valid match found
-            if (memberMCUsername != null) {
-                log.info("Found match: " + memberMCUsername);
-                USERNAME_QUEUE.add(memberMCUsername);
-                log.info(String.format("Added %s (%s) to the username lookup queue!", member.getEffectiveName(), memberMCUsername));
-            } else {
-                log.info(String.format("Didn't add %s to the username lookup queue", member.getEffectiveName()));
-            }
+            nameFutures.add(getName(member).thenAccept(name -> {
+                // checks if there was a valid match found
+                if (name != null) {
+                    log.info("Found match: " + name);
+                    names.add(name);
+                    log.info(String.format("Added %s (%s) to the username lookup queue!", member.getEffectiveName(), name));
+                } else {
+                    log.info(String.format("Didn't add %s to the username lookup queue", member.getEffectiveName()));
+                }
+            }));
         }
 
-        JsonArray jsonArray = new JsonArray();
-        while (!USERNAME_QUEUE.isEmpty()) {
-            String username = USERNAME_QUEUE.poll();
+        return CompletableFuture.allOf(nameFutures.toArray(new CompletableFuture[0])).thenApply(ignore -> {
+            JsonArray jsonArray = new JsonArray();
+            for (String name : names) {
+                String uuid = getUUID(name).join();
+                if (uuid == null) {
+                    log.info("Skipping over " + name + "!");
+                    continue;
+                }
 
-            String uuid = getUUID(username);
-            if (uuid == null) {
-                log.info("Skipping over " + username + "!");
-                continue;
+                jsonArray.add(uuid);
             }
 
-            jsonArray.add(uuid);
-        }
-
-        return jsonArray;
+            return jsonArray;
+        });
     }
 
     /**
      * Get a Minecraft username from a Discord username with flare
      *
      * @param member The member to get the Minecraft username of
-     * @return The Minecraft username of the target member
+     * @return A future of the Minecraft username of the target member or null if it couldn't find it
      */
-    @Nullable
-    public static String getName(Member member) {
+    public static CompletableFuture<String> getName(Member member) {
         // removes non-standard ascii characters from the discord nickname
         String plainUsername = member.getEffectiveName().trim().replaceAll(NON_ASCII_REGEX, "");
         String memberMCUsername = null;
@@ -98,7 +100,7 @@ public class Minecraft {
             memberMCUsername = plainUsername.replace(" ", "");
         }
 
-        return memberMCUsername;
+        return CompletableFuture.completedFuture(memberMCUsername);
     }
 
     /**
@@ -107,31 +109,30 @@ public class Minecraft {
      * @param username The username to query with
      * @return The UUID of the target user or null if they do not exist or the API fails to return
      */
-    @Nullable
-    public static String getUUID(String username) {
-        String response = requestUserData(username);
+    public static CompletableFuture<String> getUUID(String username) {
+        return requestUserData(username).thenApply(response -> {
+            JsonObject obj = NerdBotApp.GSON.fromJson(response, JsonObject.class);
+            if (obj == null || obj.get("id") == null) {
+                return null;
+            }
 
-        JsonObject obj = NerdBotApp.GSON.fromJson(response, JsonObject.class);
-        if (obj == null || obj.get("id") == null) {
-            return null;
-        }
-
-        return obj.get("id").getAsString();
+            return obj.get("id").getAsString();
+        });
     }
 
-    private static String requestUserData(String name) {
+    private static CompletableFuture<String> requestUserData(String name) {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format("https://api.mojang.com/users/profiles/minecraft/%s", name))).GET().build();
 
         try {
             log.info("Sending request to " + httpRequest.uri());
             HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            return response.body();
+            return CompletableFuture.completedFuture(response.body());
         } catch (InterruptedException | IOException e) {
             log.error(String.format("Encountered error while looking up Minecraft account of %s!", name), e);
         }
 
-        return null;
+        return CompletableFuture.completedFuture(null);
     }
 
 }
