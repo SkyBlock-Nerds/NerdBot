@@ -174,9 +174,7 @@ public class MinecraftImage {
             }
 
             // increase size of first line if there are more than one lines present
-            if (this.getLines().size() > 1) {
-                this.updatePositionAndSize(this.isChatMessage() && this.getLines().indexOf(line) == 0);
-            }
+            this.updatePositionAndSize(this.isChatMessage() && this.getLines().indexOf(line) == 0);
         }
     }
 
