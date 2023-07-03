@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.api.database.user.stats;
+package net.hypixel.nerdbot.api.database.model.user.stats;
 
 import lombok.Getter;
 import lombok.Setter;

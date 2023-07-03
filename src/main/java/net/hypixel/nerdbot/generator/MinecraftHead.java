@@ -21,6 +21,19 @@ public class MinecraftHead {
         this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         this.g2d = this.image.createGraphics();
         this.skin = targetSkin;
+
+        int invisibilityColor = this.skin.getRGB(32, 0);
+        int currentInvisibilityColor = invisibilityColor << 8;
+
+        // checks if the skin's head uses another color for transparency
+        if (currentInvisibilityColor != 0) {
+            for (int y = 0; y < 32; y++) {
+                for (int x = 32; x < 64; x++) {
+                    if (invisibilityColor == this.skin.getRGB(x, y))
+                        this.skin.setRGB(x, y, 0);
+                }
+            }
+        }
     }
 
     /***
@@ -106,18 +119,20 @@ public class MinecraftHead {
         int startingX = this.image.getWidth() / 2;
         int startingY = this.image.getHeight() / 2;
 
+        // draws the bottom 3 faces of the hat
         drawFace(startingX, startingY + HeadTransforms.SQUARE_HAT_DISTANCE * 8, false, Side.TOP_HAT_SIDE, Face.HAT_BOTTOM);
         drawFace(startingX - HeadTransforms.X_DISTANCE_HAT * 8, startingY - HeadTransforms.Y_DISTANCE_HAT * 8, true, Side.RIGHT_HAT_SIDE, Face.HAT_BACK);
         drawFace(startingX + HeadTransforms.X_DISTANCE_HAT * 8, startingY - HeadTransforms.Y_DISTANCE_HAT * 8, true, Side.LEFT_HAT_SIDE, Face.HAT_RIGHT);
 
+        // draws the entire head
         drawFace(startingX, startingY + HeadTransforms.SQUARE_DISTANCE * 8, false, Side.TOP_SIDE, Face.HEAD_BOTTOM);
         drawFace(startingX - HeadTransforms.X_DISTANCE * 8, startingY - HeadTransforms.Y_DISTANCE * 8, true, Side.RIGHT_SIDE, Face.HEAD_BACK);
         drawFace(startingX + HeadTransforms.X_DISTANCE * 8, startingY - HeadTransforms.Y_DISTANCE * 8, true, Side.LEFT_SIDE, Face.HEAD_RIGHT);
-
         drawFace(startingX, startingY, false, Side.TOP_SIDE, Face.HEAD_TOP);
         drawFace(startingX, startingY, false, Side.RIGHT_SIDE, Face.HEAD_FRONT);
         drawFace(startingX, startingY, false, Side.LEFT_SIDE, Face.HEAD_LEFT);
 
+        // draws the top 3 faces of the hat
         drawFace(startingX, startingY, false, Side.TOP_HAT_SIDE, Face.HAT_TOP);
         drawFace(startingX, startingY, false, Side.RIGHT_HAT_SIDE, Face.HAT_FRONT);
         drawFace(startingX, startingY, false, Side.LEFT_HAT_SIDE, Face.HAT_LEFT);

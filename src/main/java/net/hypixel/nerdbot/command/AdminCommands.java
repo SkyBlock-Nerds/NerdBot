@@ -7,17 +7,25 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.prefixed.annotations.TextOption;
 import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.curator.Curator;
-import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.util.Environment;
@@ -75,21 +83,26 @@ public class AdminCommands extends ApplicationCommand {
 
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(new EmbedBuilder()
-                    .setTitle("Invites generated")
-                    .setDescription("Generating " + amount + " invite(s) for " + channel.getAsMention() + " by " + event.getUser().getAsMention())
-                    .build()
+                .setTitle("Invites generated")
+                .setDescription("Generating " + amount + " invite(s) for " + channel.getAsMention() + " by " + event.getUser().getAsMention())
+                .build()
             ).queue();
         }
 
         for (int i = 0; i < amount; i++) {
-            InviteAction action = channel.createInvite()
+            try {
+                InviteAction action = channel.createInvite()
                     .setUnique(true)
                     .setMaxAge(7L, TimeUnit.DAYS)
                     .setMaxUses(1);
 
-            Invite invite = action.complete();
-            invites.add(invite);
-            log.info("Generated new temporary invite '" + invite.getUrl() + "' for channel " + channel.getName() + " by " + event.getUser().getAsTag());
+                Invite invite = action.complete();
+                invites.add(invite);
+                log.info("Generated new temporary invite '" + invite.getUrl() + "' for channel " + channel.getName() + " by " + event.getUser().getAsTag());
+            } catch (InsufficientPermissionException exception) {
+                event.getHook().editOriginal("I don't have permission to create invites in " + channel.getAsMention() + "!").queue();
+                return;
+            }
         }
 
         StringBuilder stringBuilder = new StringBuilder("Generated invites (");
@@ -111,9 +124,9 @@ public class AdminCommands extends ApplicationCommand {
 
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(new EmbedBuilder()
-                    .setTitle("Invites deleted")
-                    .setDescription("Deleted " + invites.size() + " invite(s) by " + event.getUser().getAsMention())
-                    .build()
+                .setTitle("Invites deleted")
+                .setDescription("Deleted " + invites.size() + " invite(s) by " + event.getUser().getAsMention())
+                .build()
             ).queue();
         }
         event.getHook().editOriginal("Deleted " + invites.size() + " invites").queue();
@@ -159,8 +172,7 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "getuuids", description = "Get a list of all Minecraft UUIDs from a role in the server", defaultLocked = true)
     public void getNerdNames(GuildSlashEvent event, @AppOption(description = "The role to fetch for") Role role) throws IOException {
         event.deferReply(true).queue();
-        Guild guild = event.getGuild();
-        JsonArray array = Minecraft.getUUIDs(guild, role);
+        JsonArray array = Minecraft.getUUIDs(event.getGuild(), role);
         File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(array));
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }

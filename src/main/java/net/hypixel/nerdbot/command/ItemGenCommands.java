@@ -7,7 +7,10 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
@@ -16,9 +19,12 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.channel.ChannelManager;
-import net.hypixel.nerdbot.generator.*;
+import net.hypixel.nerdbot.generator.ImageMerger;
+import net.hypixel.nerdbot.generator.MinecraftHead;
+import net.hypixel.nerdbot.generator.MinecraftImage;
+import net.hypixel.nerdbot.generator.StringColorParser;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
@@ -28,8 +34,15 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.net.*;
-import java.util.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Queue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -229,40 +242,40 @@ public class ItemGenCommands extends ApplicationCommand {
         EmbedBuilder colorBuilder = new EmbedBuilder();
         EmbedBuilder extraInfoBuilder = new EmbedBuilder();
         infoBuilder.setColor(Color.CYAN)
-                .setAuthor("SkyBlock Nerd Bot")
-                .setTitle("Item Generation")
-                .addField("Basic Info", "This is a bot used to create custom items to be used in suggestions. You can use the bot with `/itemgen item`, `/itemgen head`, and `/itemgen full`.", true);
+            .setAuthor("SkyBlock Nerd Bot")
+            .setTitle("Item Generation")
+            .addField("Basic Info", "This is a bot used to create custom items to be used in suggestions. You can use the bot with `/itemgen item`, `/itemgen head`, and `/itemgen full`.", true);
 
         argumentBuilder.setColor(Color.GREEN)
-                .addField("Arguments",
-                        """
-                        `name`: The name of the item. Defaults to the rarity color, unless the rarity is none.
-                        `rarity`: Takes any SkyBlock rarity. Can be left as NONE.
-                        `item_lore`: Parses a description, including color codes, bold, italics, and newlines.
-                        `type`: The type of the item, such as a Sword or Wand. Can be left blank.
-                        `disable_rarity_linebreak (true/false)`: To be used if you want to disable automatically adding the empty line between the item lore and rarity.
-                        `alpha`: Sets the transparency of the background layer. 0 for transparent, 255 for opaque (default). 245 for overlay.
-                        `padding`: Adds transparency around the entire image. Must be 0 (default) or higher.
-                        `max_line_length`: Defines the maximum length that the line can be. Can be between 1 and 54.
-                        """, false);
+            .addField("Arguments",
+                """
+                `name`: The name of the item. Defaults to the rarity color, unless the rarity is none.
+                `rarity`: Takes any SkyBlock rarity. Can be left as NONE.
+                `item_lore`: Parses a description, including color codes, bold, italics, and newlines.
+                `type`: The type of the item, such as a Sword or Wand. Can be left blank.
+                `disable_rarity_linebreak (true/false)`: To be used if you want to disable automatically adding the empty line between the item lore and rarity.
+                `alpha`: Sets the transparency of the background layer. 0 for transparent, 255 for opaque (default). 245 for overlay.
+                `padding`: Adds transparency around the entire image. Must be 0 (default) or higher.
+                `max_line_length`: Defines the maximum length that the line can be. Can be between 1 and 54.
+                """, false);
 
         colorBuilder.setColor(Color.YELLOW)
-                .addField("Color Codes",
-                        """
-                            The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
-                            You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:+1%%` will become "+1 ✧ Pristine".
-                            If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/statsymbols` command.
-                            Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `disable_rarity_linebreak` argument to True.
-                            """, false);
+            .addField("Color Codes",
+                """
+                The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
+                You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:+1%%` will become "+1 ✧ Pristine".
+                If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/statsymbols` command.
+                Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `disable_rarity_linebreak` argument to True.
+                """, false);
 
         extraInfoBuilder.setColor(Color.GRAY)
-                .addField("Other Information",
-                        """
-                        There is another command `/itemgen parse` which can be used to easily convert the display NBT Tag from a Minecraft item into a Generated Image. This display tag should be surrounded with curly brackets with a "Lore" (string array) and "Name" (string) attribute in them
-                        You can also check out `/itemgen head_help` for more information about rendering items next to your creations!
-                        Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!
-                        The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
-                        """, false);
+            .addField("Other Information",
+                """
+                There is another command `/itemgen parse` which can be used to easily convert the display NBT Tag from a Minecraft item into a Generated Image. This display tag should be surrounded with curly brackets with a "Lore" (string array) and "Name" (string) attribute in them
+                You can also check out `/itemgen head_help` for more information about rendering items next to your creations!
+                Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!
+                The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
+                """, false);
 
         Collection<MessageEmbed> embeds = new ArrayList<>();
         embeds.add(infoBuilder.build());
@@ -284,23 +297,23 @@ public class ItemGenCommands extends ApplicationCommand {
         EmbedBuilder extraInfoBuilder = new EmbedBuilder();
 
         infoBuilder.setColor(Color.CYAN)
-                .setAuthor("SkyBlock Nerd Bot")
-                .setTitle("Head Generation")
-                .addField("Basic Info", "The command `/itemgen head` which will display a rendered Minecraft Head from a Skin (or player) you chose!", true);
+            .setAuthor("SkyBlock Nerd Bot")
+            .setTitle("Head Generation")
+            .addField("Basic Info", "The command `/itemgen head` which will display a rendered Minecraft Head from a Skin (or player) you chose!", true);
 
         argumentBuilder.setColor(Color.GREEN)
-                .addField("Arguments",
-                        """
-                        `skin_id:` The skin ID or the player name of the person you wish to grab the skin from. (This is the string written after `http://textures.minecraft.net/texture/...`
-                        `is_player_head:` set to True if the skin ID is a player's name
-                        """, false);
+            .addField("Arguments",
+                """
+                `skin_id:` The skin ID or the player name of the person you wish to grab the skin from. (This is the string written after `http://textures.minecraft.net/texture/...`
+                `is_player_head:` set to True if the skin ID is a player's name
+                """, false);
 
         extraInfoBuilder.setColor(Color.GRAY)
-                .addField("Other Information",
-                        """
-                        If you are feeling extra spicy, you can combine these two elements by using the `/itemgen full` command with arguments mentioned previously.
-                        The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
-                        """, false);
+            .addField("Other Information",
+                """
+                If you are feeling extra spicy, you can combine these two elements by using the `/itemgen full` command with arguments mentioned previously.
+                The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
+                """, false);
 
         Collection<MessageEmbed> embeds = new ArrayList<>();
         embeds.add(infoBuilder.build());
@@ -347,9 +360,9 @@ public class ItemGenCommands extends ApplicationCommand {
             return true;
         }
 
-        if (Arrays.stream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
-            //The top channel in the config should be considered the 'primary channel', which is referenced in the
-            //error message.
+        if (Util.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
+            // The top channel in the config should be considered the 'primary channel', which is referenced in the
+            // error message.
             TextChannel channel = ChannelManager.getChannel(itemGenChannelIds[0]);
             if (channel == null) {
                 event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue();
@@ -452,7 +465,7 @@ public class ItemGenCommands extends ApplicationCommand {
         if (textureID.contains("http://textures.minecraft.net/texture/")) {
             textureID = textureID.replace("http://textures.minecraft.net/texture/", "");
             event.getHook().sendMessage("Hey, a small heads up - you don't need to include the full URL! Only the skin ID is required")
-                    .setEphemeral(true).queue();
+                .setEphemeral(true).queue();
         }
 
         BufferedImage skin;

@@ -14,11 +14,15 @@ import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
+import net.hypixel.nerdbot.bot.config.TagConfig;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,8 +37,11 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
     @Override
     public List<GreenlitMessage> curate(ForumChannel forumChannel) {
+        setStartTime(System.currentTimeMillis());
+
         List<GreenlitMessage> output = new ArrayList<>();
         Database database = NerdBotApp.getBot().getDatabase();
+
         if (!database.isConnected()) {
             log.error("Couldn't curate messages as the database is not connected!");
             return output;
@@ -42,9 +49,19 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         BotConfig config = NerdBotApp.getBot().getConfig();
         EmojiConfig emojiConfig = config.getEmojiConfig();
-        ForumTag greenlitTag = forumChannel.getAvailableTagById(config.getTagConfig().getGreenlit());
+        TagConfig tagConfig = config.getTagConfig();
 
-        setStartTime(System.currentTimeMillis());
+        if (emojiConfig == null) {
+            log.error("Couldn't find the emoji config from the bot config!");
+            return output;
+        }
+
+        if (tagConfig == null) {
+            log.error("Couldn't find the tag config from the bot config!");
+            return output;
+        }
+
+        ForumTag greenlitTag = forumChannel.getAvailableTagById(config.getTagConfig().getGreenlit());
 
         if (greenlitTag == null) {
             log.error("Couldn't find the greenlit tag from the bot config!");

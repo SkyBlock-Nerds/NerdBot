@@ -3,7 +3,11 @@ package net.hypixel.nerdbot.bot.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -100,4 +104,9 @@ public class BotConfig {
      * Configuration for channels that will have reactions automatically added to all new messages
      */
     private List<ReactionChannel> reactionChannels;
+
+    /**
+     * The amount of days that a user must be inactive for to show up in the inactive user list
+     */
+    private int inactivityDays;
 }

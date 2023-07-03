@@ -4,8 +4,8 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.user.stats.LastActivity;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.util.Util;
 
@@ -17,6 +17,11 @@ public class UserGrabberFeature extends BotFeature {
 
     @Override
     public void onStart() {
+        if (NerdBotApp.getBot().isReadOnly()) {
+            log.error("Bot is in read-only mode, skipping user grabber task!");
+            return;
+        }
+
         Guild guild = Util.getGuild(NerdBotApp.getBot().getConfig().getGuildId());
         if (guild == null) {
             log.error("Couldn't find the guild specified in the bot config!");

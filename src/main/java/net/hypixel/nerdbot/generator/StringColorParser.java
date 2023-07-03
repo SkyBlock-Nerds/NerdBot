@@ -68,10 +68,10 @@ public class StringColorParser {
             breakLoopCount++;
             if (breakLoopCount > initialDescriptionLength) {
                 errorString = "length: " + description.length() + "\n" +
-                        "charIndex: " + charIndex + "\n" +
-                        "character failed on: " + description.charAt(charIndex) + "\n" +
-                        "string: " + description + "\n" +
-                        "If you see this debug, please ping a developer. Thanks!\n";
+                    "charIndex: " + charIndex + "\n" +
+                    "character failed on: " + description.charAt(charIndex) + "\n" +
+                    "string: " + description + "\n" +
+                    "If you see this debug, please ping a developer. Thanks!\n";
                 return;
             }
 
@@ -208,7 +208,7 @@ public class StringColorParser {
 
             // finding the nearest place that can be line split at (spaces, %% \n or &)
             int nearestSplit = nextSpace;
-            for (int item : new int[] {nextShortcut, nextNewLine, nextPotentialMCColor}) {
+            for (int item : new int[]{nextShortcut, nextNewLine, nextPotentialMCColor}) {
                 if (item != -1 && (nearestSplit == -1 || item < nearestSplit)) {
                     nearestSplit = item;
                 }
@@ -224,7 +224,7 @@ public class StringColorParser {
                 if (currentSubstring.length() > maxLineLength) {
                     currentSubstring = currentSubstring.substring(0, maxLineLength + 1);
                 }
-                
+
                 createNewLine();
                 // checking if the first character is a space
                 if (currentSubstring.charAt(0) == ' ') {
@@ -262,6 +262,7 @@ public class StringColorParser {
 
     /**
      * sets the color of the next segment
+     *
      * @param color color to change to
      */
     private void setColor(MCColor color) {
@@ -280,6 +281,7 @@ public class StringColorParser {
 
     /**
      * sets if the next segment is bolded
+     *
      * @param bold state of boldness to change to
      */
     private void setBold(boolean bold) {
@@ -293,6 +295,7 @@ public class StringColorParser {
 
     /**
      * sets if the next segment has italic
+     *
      * @param italic state of italics to change to
      */
     private void setItalic(boolean italic) {
@@ -306,6 +309,7 @@ public class StringColorParser {
 
     /**
      * sets if the next segment has strikethrough
+     *
      * @param strikethrough state of strikethrough to change to
      */
     private void setStrikethrough(boolean strikethrough) {
@@ -319,6 +323,7 @@ public class StringColorParser {
 
     /**
      * sets if the next segment has underlined
+     *
      * @param underline state of underlined to change to
      */
     private void setUnderlined(boolean underline) {
@@ -332,6 +337,7 @@ public class StringColorParser {
 
     /**
      * sets if the next segment has obfuscation
+     *
      * @param obfuscated state of obfuscated to change to
      */
     private void setObfuscated(boolean obfuscated) {
@@ -347,7 +353,8 @@ public class StringColorParser {
      * Finds a matching value within a given set based on its name
      *
      * @param enumSet an array to search for the enum in
-     * @param match the value to find in the array
+     * @param match   the value to find in the array
+     *
      * @return returns the enum item or null if not found
      */
     @Nullable

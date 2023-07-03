@@ -2,16 +2,26 @@ package net.hypixel.nerdbot.util;
 
 import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.user.stats.LastActivity;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -19,15 +29,29 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @Log4j2
 public class Util {
 
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
+
+    public static Stream<String> safeArrayStream(String[]... arrays) {
+        Stream<String> stream = Stream.empty();
+
+        if (arrays != null) {
+            for (String[] array : arrays) {
+                stream = Stream.concat(stream, (array == null) ? Stream.empty() : Arrays.stream(array));
+            }
+        }
+
+        return stream;
+    }
 
     public static void sleep(TimeUnit unit, long time) {
         try {
@@ -78,9 +102,9 @@ public class Util {
      */
     public static int getReactionCountExcludingList(MessageReaction reaction, List<User> users) {
         return (int) reaction.retrieveUsers()
-                .stream()
-                .filter(user -> !users.contains(user))
-                .count();
+            .stream()
+            .filter(user -> !users.contains(user))
+            .count();
     }
 
     public static Object jsonToObject(File file, Class<?> clazz) throws FileNotFoundException {

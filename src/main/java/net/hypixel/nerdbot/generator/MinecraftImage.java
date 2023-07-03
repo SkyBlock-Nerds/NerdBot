@@ -26,13 +26,18 @@ public class MinecraftImage {
     private static final Font sansSerif;
 
     // Current Settings
-    @Getter private final List<List<ColoredString>> lines;
-    @Getter private final int alpha;
-    @Getter private final int padding;
+    @Getter
+    private final List<List<ColoredString>> lines;
+    @Getter
+    private final int alpha;
+    @Getter
+    private final int padding;
     @Getter(AccessLevel.PRIVATE)
     private final Graphics2D graphics;
-    @Getter private BufferedImage image;
-    @Getter private MCColor currentColor;
+    @Getter
+    private BufferedImage image;
+    @Getter
+    private MCColor currentColor;
     private Font currentFont;
 
     // Positioning & Size
@@ -42,7 +47,7 @@ public class MinecraftImage {
 
     static {
         sansSerif = new Font("SansSerif", Font.PLAIN, 20);
-        minecraftFonts = new Font[] {
+        minecraftFonts = new Font[]{
             initFont("/Minecraft/minecraft.otf", 15.5f),
             initFont("/Minecraft/3_Minecraft-Bold.otf", 20.0f),
             initFont("/Minecraft/2_Minecraft-Italic.otf", 20.5f),

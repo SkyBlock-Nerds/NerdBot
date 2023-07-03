@@ -4,10 +4,19 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.hypixel.nerdbot.NerdBotApp;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 
 public class JsonUtil {
+
+    private JsonUtil() {
+    }
 
     public static JsonObject readJsonFile(String filename) {
         try {
