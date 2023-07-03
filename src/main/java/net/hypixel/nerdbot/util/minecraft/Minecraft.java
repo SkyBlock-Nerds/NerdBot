@@ -7,12 +7,10 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.util.Util;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -25,9 +23,10 @@ import java.util.regex.Pattern;
 public class Minecraft {
 
     private static final String REGEX = "^[a-zA-Z0-9_]{2,16}";
+    private static final String NAME_REGEX = "[^a-zA-Z0-9_]";
+    private static final String NON_ASCII_REGEX = "[^\u0000-\u007F]";
     private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
-
-    private static final Queue<String> usernameQueue = new LinkedList<>();
+    private static final Queue<String> USERNAME_QUEUE = new LinkedList<>();
 
     /**
      * Fetch a list of UUIDs from the Minecraft API
@@ -46,7 +45,7 @@ public class Minecraft {
             // checks if there was a valid match found
             if (memberMCUsername != null) {
                 log.info("Found match: " + memberMCUsername);
-                usernameQueue.add(memberMCUsername);
+                USERNAME_QUEUE.add(memberMCUsername);
                 log.info(String.format("Added %s (%s) to the username lookup queue!", member.getEffectiveName(), memberMCUsername));
             } else {
                 log.info(String.format("Didn't add %s to the username lookup queue", member.getEffectiveName()));
@@ -54,8 +53,8 @@ public class Minecraft {
         }
 
         JsonArray jsonArray = new JsonArray();
-        while (!usernameQueue.isEmpty()) {
-            String username = usernameQueue.poll();
+        while (!USERNAME_QUEUE.isEmpty()) {
+            String username = USERNAME_QUEUE.poll();
 
             String uuid = getUUID(username);
             if (uuid == null) {
@@ -78,7 +77,7 @@ public class Minecraft {
     @Nullable
     public static String getName(Member member) {
         // removes non-standard ascii characters from the discord nickname
-        String plainUsername = member.getEffectiveName().trim().replaceAll("[^\u0000-\u007F]", "");
+        String plainUsername = member.getEffectiveName().trim().replaceAll(NON_ASCII_REGEX, "");
         String memberMCUsername = null;
 
         // checks if the member's username has flair
@@ -86,7 +85,7 @@ public class Minecraft {
             // removes start and end characters ([example], {example}, |example| or (example)).
             // also strips spaces from the username
             plainUsername = plainUsername.replaceAll(SURROUND_REGEX, "").replace(" ", "");
-            String[] splitUsername = plainUsername.split("[^a-zA-Z0-9_]");
+            String[] splitUsername = plainUsername.split(NAME_REGEX);
 
             // gets the first item that matches the name constraints
             for (String item : splitUsername) {
