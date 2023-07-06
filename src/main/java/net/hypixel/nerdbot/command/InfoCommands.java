@@ -156,8 +156,7 @@ public class InfoCommands extends ApplicationCommand {
             return !Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getInactivityDays())));
         });
 
-        log.info("Found " + users.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
-        users.sort(Comparator.comparingLong(discordUser -> discordUser.getLastActivity().getLastGlobalActivity()));
+        users.sort(Comparator.comparingInt(DiscordUser::getTotalMessageCount).reversed());
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
         getPage(users, page, 10).forEach(discordUser -> {
