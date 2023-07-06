@@ -14,7 +14,7 @@ import java.util.Optional;
 @Log4j2
 public class ReactionChannelListener {
 
-    private final List<ReactionChannel> reactionChannels = NerdBotApp.getBot().getConfig().getReactionChannels();
+    private final List<ReactionChannel> reactionChannels = NerdBotApp.getBot().getConfig().getChannelConfig().getReactionChannels();
 
     @SubscribeEvent
     public void onMessageReceive(MessageReceivedEvent event) {

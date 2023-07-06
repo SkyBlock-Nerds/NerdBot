@@ -7,6 +7,7 @@ import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
+import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.util.Util;
 
@@ -21,7 +22,7 @@ public class CurateFeature extends BotFeature {
 
     @Override
     public void onStart() {
-        if (NerdBotApp.getBot().getConfig().getSuggestionForumIds() == null) {
+        if (NerdBotApp.getBot().getConfig().getChannelConfig().getSuggestionForumIds() == null) {
             log.info("Not starting CurateFeature as 'suggestionForumIds' could not be found in the configuration file!");
             return;
         }
@@ -39,8 +40,8 @@ public class CurateFeature extends BotFeature {
                     suggestions.forEach(channel -> {
                         boolean alpha;
 
-                        if (NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds() != null) {
-                            alpha = Arrays.asList(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).contains(channel.getId());
+                        if (channelConfig.getAlphaSuggestionForumIds() != null) {
+                            alpha = Arrays.asList(channelConfig.getAlphaSuggestionForumIds()).contains(channel.getId());
                         } else {
                             alpha = channel.getName().contains("alpha");
                         }

@@ -41,7 +41,7 @@ public class SuggestionCache extends TimerTask {
             log.info("Started suggestion cache update.");
             this.loaded = false;
             this.cache.forEach((key, suggestion) -> suggestion.setExpired());
-            Util.concatStreams(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
+            Util.concatStreams(NerdBotApp.getBot().getConfig().getChannelConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getChannelConfig().getAlphaSuggestionForumIds())
                 .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
                 .filter(Objects::nonNull)
                 .flatMap(forumChannel -> Stream.concat(forumChannel.getThreadChannels().stream(), forumChannel.retrieveArchivedPublicThreadChannels().stream()))
@@ -107,8 +107,8 @@ public class SuggestionCache extends TimerTask {
 
             // Alpha
             boolean alpha = thread.getName().toLowerCase().contains("alpha");
-            if (NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds() != null) {
-                alpha = alpha || Arrays.stream(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
+            if (NerdBotApp.getBot().getConfig().getChannelConfig().getAlphaSuggestionForumIds() != null) {
+                alpha = alpha || Arrays.stream(NerdBotApp.getBot().getConfig().getChannelConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
             }
             this.alpha = alpha;
 
