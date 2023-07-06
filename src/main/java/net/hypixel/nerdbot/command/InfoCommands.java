@@ -166,7 +166,7 @@ public class InfoCommands extends ApplicationCommand {
                 return;
             }
 
-            stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(new DiscordTimestamp(discordUser.getLastActivity().getLastGlobalActivity()).toLongDateTime()).append(")").append("\n");
+            stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getTotalMessageCount())).append(")").append("\n");
         });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
