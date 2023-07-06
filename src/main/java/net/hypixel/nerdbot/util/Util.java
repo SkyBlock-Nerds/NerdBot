@@ -40,6 +40,7 @@ public class Util {
 
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
+    public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
 
     public static Stream<String> concatStreams(String[] arr1, String[] arr2) {
         Stream<String> stream1 = (arr1 != null) ? Arrays.stream(arr1) : Stream.empty();
