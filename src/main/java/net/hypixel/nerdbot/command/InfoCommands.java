@@ -31,7 +31,7 @@ import java.util.List;
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
 
-    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
+    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master", "HPC"};
 
     private final Database database = NerdBotApp.getBot().getDatabase();
 
