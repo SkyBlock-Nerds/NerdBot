@@ -353,7 +353,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
     private boolean isIncorrectChannel(GuildSlashEvent event) {
         String senderChannelId = event.getChannel().getId();
-        String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
+        String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getChannelConfig().getItemGenChannel();
 
         if (itemGenChannelIds == null) {
             event.reply("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
