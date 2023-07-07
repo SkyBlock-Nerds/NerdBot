@@ -156,6 +156,45 @@ public class InfoCommands extends ApplicationCommand {
             return !Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getInactivityDays())));
         });
 
+        log.info("Found " + users.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
+        users.sort(Comparator.comparingLong(discordUser -> discordUser.getLastActivity().getLastGlobalActivity()));
+        StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
+
+        getPage(users, page, 10).forEach(discordUser -> {
+            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+            if (member == null) {
+                log.error("Couldn't find member " + discordUser.getDiscordId());
+                return;
+            }
+
+            stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(new DiscordTimestamp(discordUser.getLastActivity().getLastGlobalActivity()).toLongDateTime()).append(")").append("\n");
+        });
+
+        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "info", subcommand = "messages", description = "View an ordered list of users with the most messages", defaultLocked = true)
+    public void userMessageInfo(GuildSlashEvent event, @AppOption int page) {
+        if (!database.isConnected()) {
+            event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
+            return;
+        }
+
+        List<DiscordUser> users = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
+        users.removeIf(discordUser -> {
+            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+
+            if (member == null) {
+                return true;
+            }
+
+            if (Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
+                return true;
+            }
+
+            return !Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getInactivityDays())));
+        });
+
         users.sort(Comparator.comparingInt(DiscordUser::getTotalMessageCount));
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
