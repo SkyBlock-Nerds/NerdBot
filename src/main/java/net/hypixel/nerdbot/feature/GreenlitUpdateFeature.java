@@ -13,6 +13,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
+import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.util.Util;
 
@@ -29,20 +30,23 @@ public class GreenlitUpdateFeature extends BotFeature {
         "Docced"
     };
 
+    private final ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
+    private final EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+
     @Override
     public void onStart() {
         this.timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                Stream<ForumChannel> suggestions = Util.safeArrayStream(NerdBotApp.getBot().getConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds())
+                Stream<ForumChannel> suggestions = Util.safeArrayStream(channelConfig.getSuggestionForumIds(), channelConfig.getAlphaSuggestionForumIds())
                     .map(s -> NerdBotApp.getBot().getJDA().getForumChannelById(s))
                     .filter(Objects::nonNull);
 
                 suggestions.forEach(channel -> {
                     boolean alpha;
 
-                    if (NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds() != null) {
-                        alpha = Arrays.asList(NerdBotApp.getBot().getConfig().getAlphaSuggestionForumIds()).contains(channel.getId());
+                    if (channelConfig.getAlphaSuggestionForumIds() != null) {
+                        alpha = Arrays.asList(channelConfig.getAlphaSuggestionForumIds()).contains(channel.getId());
                     } else {
                         alpha = channel.getName().contains("alpha");
                     }
@@ -102,7 +106,6 @@ public class GreenlitUpdateFeature extends BotFeature {
                                 return;
                             }
 
-                            EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
                             List<MessageReaction> reactions = message.getReactions()
                                 .stream()
                                 .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
