@@ -188,11 +188,7 @@ public class InfoCommands extends ApplicationCommand {
                 return true;
             }
 
-            if (Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
-                return true;
-            }
-
-            return !Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getInactivityDays())));
+            return Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s));
         });
 
         users.sort(Comparator.comparingInt(DiscordUser::getTotalMessageCount));
