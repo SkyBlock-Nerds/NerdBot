@@ -20,10 +20,10 @@ import java.util.stream.Stream;
 @Log4j2
 public class CurateFeature extends BotFeature {
 
-    private final ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
-
     @Override
     public void onStart() {
+        ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
+
         if (channelConfig.getSuggestionForumIds() == null) {
             log.info("Not starting CurateFeature as 'suggestionForumIds' could not be found in the configuration file!");
             return;

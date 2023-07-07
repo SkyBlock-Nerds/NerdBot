@@ -30,11 +30,11 @@ public class GreenlitUpdateFeature extends BotFeature {
         "Docced"
     };
 
-    private final ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
-    private final EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
-
     @Override
     public void onStart() {
+        ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
+        EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+
         this.timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
