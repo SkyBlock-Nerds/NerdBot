@@ -214,7 +214,7 @@ public class InfoCommands extends ApplicationCommand {
             return;
         }
 
-        DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", user.getIdLong()).first();
+        DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", user.getId()).first();
 
         if (discordUser == null) {
             event.getHook().editOriginal("Couldn't find that user in the database!").queue();
