@@ -63,7 +63,7 @@ public class ModMailListener {
 
             if (!threadChannel.getName().contains(author.getName()) || !threadChannel.getName().contains(author.getId())) {
                 // Stuffy: Add the display name to the thread
-                threadChannel.getManager().setName("[Mod Mail] " + author.getEffectiveName()  + " (@" + author.getName() + ": " + author.getId() + ")").complete();
+                threadChannel.getManager().setName("[Mod Mail] " + author.getEffectiveName()  + " @" + author.getName() + " (" + author.getId() + ")").complete();
             }
 
             threadChannel.sendMessage(modMailRoleMention).queue();
@@ -75,7 +75,7 @@ public class ModMailListener {
             event.getAuthor().openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
             ForumPost post = forumChannel.createForumPost(
                 // Stuffy: Add the display name to the thread
-                "[Mod Mail] " + author.getEffectiveName()  + " (@" + author.getName() + ": " + author.getId() + ")",
+                "[Mod Mail] " + author.getEffectiveName()  + " @" + author.getName() + " (" + author.getId() + ")",
                 MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
             ).complete();
 
