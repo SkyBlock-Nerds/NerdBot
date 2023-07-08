@@ -3,8 +3,7 @@ package net.hypixel.nerdbot.channel;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 @Log4j2
 public class ChannelManager {
