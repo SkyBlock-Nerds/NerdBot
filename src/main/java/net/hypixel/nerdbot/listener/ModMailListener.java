@@ -50,7 +50,8 @@ public class ModMailListener {
         }
 
         Message message = event.getMessage();
-        Optional<ThreadChannel> optional = forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getName().contains(author.getName()) || threadChannel.getName().contains(author.getId())).findFirst();
+        // Stuffy: Removed "threadChannel.getName().contains(author.getName())" as usernames can be changed.
+        Optional<ThreadChannel> optional = forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getName().contains(author.getId())).findFirst();
         if (optional.isPresent()) {
             ThreadChannel threadChannel = optional.get();
 
@@ -59,7 +60,8 @@ public class ModMailListener {
             }
 
             if (!threadChannel.getName().contains(author.getName()) || !threadChannel.getName().contains(author.getId())) {
-                threadChannel.getManager().setName("[Mod Mail] " + author.getName() + " (" + author.getId() + ")").complete();
+                // Stuffy: Add the display name to the thread
+                threadChannel.getManager().setName("[Mod Mail] " + author.getEffectiveName()  + " (@" + author.getName() + ": " + author.getId() + ")").complete();
             }
 
             threadChannel.sendMessage(modMailRoleMention).queue();
@@ -67,7 +69,8 @@ public class ModMailListener {
             log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
         } else {
             forumChannel.createForumPost(
-                "[Mod Mail] " + author.getName() + " (" + author.getId() + ")",
+                // Stuffy: Add the display name to the thread
+                "[Mod Mail] " + author.getEffectiveName()  + " (@" + author.getName() + ": " + author.getId() + ")",
                 MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
             ).queue(forumPost -> {
                 ThreadChannel threadChannel = forumPost.getThreadChannel();
@@ -138,7 +141,8 @@ public class ModMailListener {
 
     private MessageCreateBuilder createMessage(Message message) throws ExecutionException, InterruptedException {
         MessageCreateBuilder data = new MessageCreateBuilder();
-        data.setContent(String.format("**%s:**%s%s", message.getAuthor().getName(), "\n", message.getContentDisplay()));
+        // Stuffy: Switched to effective name (displayname)
+        data.setContent(String.format("**%s:**%s%s", message.getAuthor().getEffectiveName(), "\n", message.getContentDisplay()));
 
         // TODO split into another message, but I don't anticipate someone sending a giant essay yet
         if (data.getContent().length() > 2000) {
