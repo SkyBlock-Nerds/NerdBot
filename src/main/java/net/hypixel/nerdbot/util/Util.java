@@ -172,7 +172,7 @@ public class Util {
         return tempFile;
     }
 
-    public String getIgn(User user) {
+    public static String getIgn(User user) {
         // Stuffy: Gets display name from SBN guild
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
         if (guild == null) {
@@ -182,6 +182,6 @@ public class Util {
         if (sbnMember == null) {
             return null;
         }
-        return sbnMember.getEffectiveName();
+        return sbnMember.getNickname();
     }
 }
