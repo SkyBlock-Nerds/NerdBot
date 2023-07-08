@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import static net.hypixel.nerdbot.util.Util.getIgn;
+
 @Log4j2
 public class ModMailListener {
     private static final String MOD_MAIL_TITLE_TEMPLATE = "[Mod Mail] %s @%s (%s)";
@@ -62,9 +64,9 @@ public class ModMailListener {
                 event.getAuthor().openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
             }
 
-            if (!MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getIgn(message.getAuthor()), author.getName(), author.getId()).equals(threadChannel.getName())) {
+            if (!MOD_MAIL_TITLE_TEMPLATE.formatted(getIgn(message.getAuthor()), author.getName(), author.getId()).equals(threadChannel.getName())) {
                 // Stuffy: Add the display name to the thread
-                threadChannel.getManager().setName(MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getIgn(message.getAuthor()), author.getName(), author.getId())).complete();
+                threadChannel.getManager().setName(MOD_MAIL_TITLE_TEMPLATE.formatted(getIgn(message.getAuthor()), author.getName(), author.getId())).complete();
             }
 
             threadChannel.sendMessage(modMailRoleMention).queue();
@@ -76,7 +78,7 @@ public class ModMailListener {
             event.getAuthor().openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
             ForumPost post = forumChannel.createForumPost(
                 // Stuffy: Add the display name to the thread
-                MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getIgn(message.getAuthor()), author.getName(), author.getId()),
+                MOD_MAIL_TITLE_TEMPLATE.formatted(getIgn(message.getAuthor()), author.getName(), author.getId()),
                 MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
             ).complete();
 
@@ -135,14 +137,14 @@ public class ModMailListener {
             return;
         }
 
-        MessageCreateBuilder builder = createMessage(message).setContent("**Response from " + author.getEffectiveName() + " in SkyBlock Nerds:**\n" + message.getContentDisplay());
+        MessageCreateBuilder builder = createMessage(message).setContent("**Response from " + getIgn(author) + " in SkyBlock Nerds:**\n" + message.getContentDisplay());
         requester.openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
     }
 
     private MessageCreateBuilder createMessage(Message message) throws ExecutionException, InterruptedException {
         MessageCreateBuilder data = new MessageCreateBuilder();
         // Stuffy: Switched to effective name (displayname)
-        data.setContent(String.format("**%s:**%s%s", Util.getIgn(message.getAuthor()), "\n", message.getContentDisplay()));
+        data.setContent(String.format("**%s:**%s%s", getIgn(message.getAuthor()), "\n", message.getContentDisplay()));
 
         // TODO split into another message, but I don't anticipate someone sending a giant essay yet
         if (data.getContent().length() > 2000) {
