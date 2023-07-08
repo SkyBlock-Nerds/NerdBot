@@ -135,7 +135,7 @@ public class ModMailListener {
             return;
         }
 
-        MessageCreateBuilder builder = createMessage(message).setContent("**Response from " + author.getName() + " in SkyBlock Nerds:**\n" + message.getContentDisplay());
+        MessageCreateBuilder builder = createMessage(message).setContent("**Response from " + author.getEffectiveName() + " in SkyBlock Nerds:**\n" + message.getContentDisplay());
         requester.openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
     }
 
