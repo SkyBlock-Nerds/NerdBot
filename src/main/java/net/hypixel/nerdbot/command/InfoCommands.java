@@ -207,15 +207,17 @@ public class InfoCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "info", subcommand = "messagecount", description = "View a breakdown of a user's message count", defaultLocked = true)
     public void userMessageInfo(GuildSlashEvent event, @AppOption User user) {
+        event.deferReply(true).queue();
+
         if (!database.isConnected()) {
-            event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
+            event.getHook().editOriginal("Couldn't connect to the database!").queue();
             return;
         }
 
         DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", user.getIdLong()).first();
 
         if (discordUser == null) {
-            event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
+            event.getHook().editOriginal("Couldn't find that user in the database!").queue();
             return;
         }
 
@@ -234,7 +236,7 @@ public class InfoCommands extends ApplicationCommand {
             }
         });
 
-        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
+        event.getHook().editOriginal(stringBuilder.toString()).queue();
     }
 
     /**
