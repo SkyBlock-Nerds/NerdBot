@@ -7,10 +7,8 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.SelfUser;
+import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
@@ -202,6 +200,38 @@ public class InfoCommands extends ApplicationCommand {
             }
 
             stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getTotalMessageCount())).append(")").append("\n");
+        });
+
+        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "info", subcommand = "messages", description = "View a breakdown of a user's message count", defaultLocked = true)
+    public void userMessageInfo(GuildSlashEvent event, @AppOption User user) {
+        if (!database.isConnected()) {
+            event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
+            return;
+        }
+
+        DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", user.getIdLong()).first();
+
+        if (discordUser == null) {
+            event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
+            return;
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+
+        stringBuilder.append("User: ").append(user.getAsMention()).append("\n");
+        stringBuilder.append("Total messages: ").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getTotalMessageCount())).append("\n");
+        stringBuilder.append("Breakdown:\n");
+
+        discordUser.getLastActivity().getChannelActivity().forEach((channelId, channelActivity) -> {
+            TextChannel textChannel = NerdBotApp.getBot().getJDA().getTextChannelById(channelId);
+            if (textChannel == null) {
+                stringBuilder.append(" • Unknown channel (").append(channelId).append("): ").append(Util.COMMA_SEPARATED_FORMAT.format(channelActivity)).append("\n");
+            } else {
+                stringBuilder.append(" • ").append(textChannel.getAsMention()).append(": ").append(Util.COMMA_SEPARATED_FORMAT.format(channelActivity)).append("\n");
+            }
         });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
