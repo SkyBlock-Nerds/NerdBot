@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 
 @Log4j2
 public class ModMailListener {
-
+    private static final String MOD_MAIL_TITLE_TEMPLATE = "[Mod Mail] %s @%s (%s)";
     private final String modMailChannelId = NerdBotApp.getBot().getConfig().getModMailConfig().getReceivingChannelId();
     private final String modMailRoleMention = "<@&%s>".formatted(NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId());
 
@@ -62,9 +62,9 @@ public class ModMailListener {
                 event.getAuthor().openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
             }
 
-            if (!threadChannel.getName().contains(author.getName()) || !threadChannel.getName().contains(author.getId())) {
+            if (!MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getIgn(message.getAuthor()), author.getName(), author.getId()).equals(threadChannel.getName())) {
                 // Stuffy: Add the display name to the thread
-                threadChannel.getManager().setName("[Mod Mail] " + Util.getIgn(message.getAuthor())  + " @" + author.getName() + " (" + author.getId() + ")").complete();
+                threadChannel.getManager().setName(MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getIgn(message.getAuthor()), author.getName(), author.getId())).complete();
             }
 
             threadChannel.sendMessage(modMailRoleMention).queue();
@@ -76,7 +76,7 @@ public class ModMailListener {
             event.getAuthor().openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
             ForumPost post = forumChannel.createForumPost(
                 // Stuffy: Add the display name to the thread
-                "[Mod Mail] " + Util.getIgn(message.getAuthor())  + " @" + author.getName() + " (" + author.getId() + ")",
+                MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getIgn(message.getAuthor()), author.getName(), author.getId()),
                 MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
             ).complete();
 
