@@ -27,6 +27,7 @@ import static net.hypixel.nerdbot.util.Util.getIgn;
 
 @Log4j2
 public class ModMailListener {
+
     private static final String MOD_MAIL_TITLE_TEMPLATE = "[Mod Mail] %s @%s (%s)";
     private final String modMailChannelId = NerdBotApp.getBot().getConfig().getModMailConfig().getReceivingChannelId();
     private final String modMailRoleMention = "<@&%s>".formatted(NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId());
