@@ -129,7 +129,11 @@ public class ActivityListener {
             return;
         }
 
-        discordUser.getLastActivity().getChannelActivity().put(guildChannel.getId(), discordUser.getLastActivity().getChannelActivity().getOrDefault(guildChannel.getId(), 0) + 1);
+        if (guildChannel instanceof ThreadChannel) {
+            discordUser.getLastActivity().getChannelActivity().put(guildChannel.asThreadChannel().getParentChannel().getId(), discordUser.getLastActivity().getChannelActivity().getOrDefault(guildChannel.asThreadChannel().getParentChannel().getId(), 0) + 1);
+        } else {
+            discordUser.getLastActivity().getChannelActivity().put(guildChannel.getId(), discordUser.getLastActivity().getChannelActivity().getOrDefault(guildChannel.getId(), 0) + 1);
+        }
     }
 
     @SubscribeEvent
