@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.listener;
 
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -63,7 +64,9 @@ public class ModMailListener {
 
             if (!threadChannel.getName().contains(author.getName()) || !threadChannel.getName().contains(author.getId())) {
                 // Stuffy: Add the display name to the thread
-                threadChannel.getManager().setName("[Mod Mail] " + author.getEffectiveName()  + " @" + author.getName() + " (" + author.getId() + ")").complete();
+                Guild guild = threadChannel.getGuild();
+                String sbnName = guild.getMember(author).getEffectiveName();
+                threadChannel.getManager().setName("[Mod Mail] " + sbnName  + " @" + author.getName() + " (" + author.getId() + ")").complete();
             }
 
             threadChannel.sendMessage(modMailRoleMention).queue();
@@ -82,7 +85,6 @@ public class ModMailListener {
             ThreadChannel threadChannel = post.getThreadChannel();
             threadChannel.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
             threadChannel.getGuild().getMembersWithRoles(Util.getRole("Mod Mail")).forEach(member -> threadChannel.addThreadMember(member).complete());
-
             try {
                 threadChannel.sendMessage(modMailRoleMention).queue();
                 threadChannel.sendMessage(createMessage(message).build()).queue();
