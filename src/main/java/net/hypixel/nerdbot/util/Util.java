@@ -31,15 +31,30 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @Log4j2
 public class Util {
 
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
+    public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
+
+    public static Stream<String> safeArrayStream(String[]... arrays) {
+        Stream<String> stream = Stream.empty();
+
+        if (arrays != null) {
+            for (String[] array : arrays) {
+                stream = Stream.concat(stream, (array == null) ? Stream.empty() : Arrays.stream(array));
+            }
+        }
+
+        return stream;
+    }
 
     public static void sleep(TimeUnit unit, long time) {
         try {

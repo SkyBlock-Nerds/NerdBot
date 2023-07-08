@@ -31,7 +31,7 @@ import java.util.List;
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
 
-    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
+    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master", "HPC"};
 
     private final Database database = NerdBotApp.getBot().getDatabase();
 
@@ -168,6 +168,40 @@ public class InfoCommands extends ApplicationCommand {
             }
 
             stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(new DiscordTimestamp(discordUser.getLastActivity().getLastGlobalActivity()).toLongDateTime()).append(")").append("\n");
+        });
+
+        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "info", subcommand = "messages", description = "View an ordered list of users with the most messages", defaultLocked = true)
+    public void userMessageInfo(GuildSlashEvent event, @AppOption int page) {
+        if (!database.isConnected()) {
+            event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
+            return;
+        }
+
+        List<DiscordUser> users = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
+        users.removeIf(discordUser -> {
+            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+
+            if (member == null) {
+                return true;
+            }
+
+            return Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s));
+        });
+
+        users.sort(Comparator.comparingInt(DiscordUser::getTotalMessageCount));
+        StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
+
+        getPage(users, page, 10).forEach(discordUser -> {
+            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+            if (member == null) {
+                log.error("Couldn't find member " + discordUser.getDiscordId());
+                return;
+            }
+
+            stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getTotalMessageCount())).append(")").append("\n");
         });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();

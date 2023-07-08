@@ -19,4 +19,8 @@ public class DiscordUser {
 
     public DiscordUser() {
     }
+
+    public int getTotalMessageCount() {
+        return lastActivity.getChannelActivity().values().stream().mapToInt(Integer::intValue).sum();
+    }
 }

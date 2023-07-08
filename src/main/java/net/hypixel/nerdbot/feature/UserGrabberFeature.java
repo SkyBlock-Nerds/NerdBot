@@ -17,6 +17,11 @@ public class UserGrabberFeature extends BotFeature {
 
     @Override
     public void onStart() {
+        if (NerdBotApp.getBot().isReadOnly()) {
+            log.error("Bot is in read-only mode, skipping user grabber task!");
+            return;
+        }
+
         Guild guild = Util.getGuild(NerdBotApp.getBot().getConfig().getGuildId());
         if (guild == null) {
             log.error("Couldn't find the guild specified in the bot config!");

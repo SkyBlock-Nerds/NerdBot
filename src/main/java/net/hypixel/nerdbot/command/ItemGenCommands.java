@@ -353,14 +353,14 @@ public class ItemGenCommands extends ApplicationCommand {
 
     private boolean isIncorrectChannel(GuildSlashEvent event) {
         String senderChannelId = event.getChannel().getId();
-        String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
+        String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getChannelConfig().getItemGenChannel();
 
         if (itemGenChannelIds == null) {
             event.reply("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
             return true;
         }
 
-        if (Arrays.stream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
+        if (Util.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
             // The top channel in the config should be considered the 'primary channel', which is referenced in the
             // error message.
             TextChannel channel = ChannelManager.getChannel(itemGenChannelIds[0]);
