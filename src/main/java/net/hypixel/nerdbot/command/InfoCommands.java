@@ -205,7 +205,7 @@ public class InfoCommands extends ApplicationCommand {
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "info", subcommand = "messages", description = "View a breakdown of a user's message count", defaultLocked = true)
+    @JDASlashCommand(name = "info", subcommand = "messagecount", description = "View a breakdown of a user's message count", defaultLocked = true)
     public void userMessageInfo(GuildSlashEvent event, @AppOption User user) {
         if (!database.isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
