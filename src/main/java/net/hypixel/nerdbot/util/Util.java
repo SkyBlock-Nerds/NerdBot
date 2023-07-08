@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.util;
 
 import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -12,6 +13,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
+import net.hypixel.nerdbot.util.discord.Users;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
@@ -168,5 +170,18 @@ public class Util {
         File tempFile = File.createTempFile("image", ".png");
         ImageIO.write(imageToSave, "PNG", tempFile);
         return tempFile;
+    }
+
+    public static String getIgn(User user) {
+        // Stuffy: Gets display name from SBN guild
+        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        if (guild == null) {
+            return null;
+        }
+        Member sbnMember = guild.getMember(user);
+        if (sbnMember == null) {
+            return null;
+        }
+        return sbnMember.getNickname();
     }
 }
