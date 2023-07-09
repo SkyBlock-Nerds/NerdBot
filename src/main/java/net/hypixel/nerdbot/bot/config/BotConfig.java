@@ -3,7 +3,11 @@ package net.hypixel.nerdbot.bot.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 
@@ -53,6 +57,11 @@ public class BotConfig {
      * Default value is 100 {@link Message messages}
      */
     private int messageLimit = 100;
+
+    /**
+     * How long someone must be in the same voice channel for it to count towards activity, in seconds.
+     */
+    private long voiceThreshold = 60;
 
     /**
      * The percentage of positive {@link MessageReaction reactions} needed for a suggestion to be considered greenlit
