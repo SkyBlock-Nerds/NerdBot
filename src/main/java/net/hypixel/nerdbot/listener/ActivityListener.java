@@ -157,7 +157,7 @@ public class ActivityListener {
             if (channelLeft != null) {
                 long timeSpent = time - this.voiceActivity.get(member.getIdLong());
 
-                if ((timeSpent / 1000) > config.getVoiceThreshold()) {
+                if ((timeSpent / 1_000L) > config.getVoiceThreshold()) {
                     if (channelLeft.getName().toLowerCase().contains("alpha")) {
                         discordUser.getLastActivity().setAlphaVoiceJoinDate(time);
                         log.info("Updating last alpha voice activity for " + member.getEffectiveName() + " to " + time);
