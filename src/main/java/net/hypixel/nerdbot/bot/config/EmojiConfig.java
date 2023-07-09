@@ -17,22 +17,22 @@ public class EmojiConfig {
     /**
      * The ID of the reaction for the agree emoji
      */
-    private String agreeEmojiId;
+    private String agreeEmojiId = "";
 
     /**
      * The ID of the reaction for the disagree emoji
      */
-    private String disagreeEmojiId;
+    private String disagreeEmojiId = "";
 
     /**
      * The ID of the reaction for the neutral emoji
      */
-    private String neutralEmojiId;
+    private String neutralEmojiId = "";
 
     /**
      * The ID of the reaction for the greenlit emoji
      */
-    private String greenlitEmojiId;
+    private String greenlitEmojiId = "";
 
     public boolean isEquals(MessageReaction reaction, Function<EmojiConfig, String> function) {
         if (reaction.getEmoji().getType() != Emoji.Type.CUSTOM) {
