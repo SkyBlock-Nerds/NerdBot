@@ -15,32 +15,32 @@ public class BotConfig {
     /**
      * Configuration for anything related to the Mod Mail feature
      */
-    private ModMailConfig modMailConfig;
+    private ModMailConfig modMailConfig = new ModMailConfig();
 
     /**
      * {@link Emoji Emojis} that the bot will use to react to suggestions
      */
-    private EmojiConfig emojiConfig;
+    private EmojiConfig emojiConfig = new EmojiConfig();
 
     /**
      * {@link ForumTag Forum tags} for the bot to use, such as the greenlit tag to set suggestions as greenlit
      */
-    private TagConfig tagConfig;
+    private TagConfig tagConfig = new TagConfig();
 
     /**
      * Configuration for channels that the bot will be using
      */
-    private ChannelConfig channelConfig;
+    private ChannelConfig channelConfig = new ChannelConfig();
 
     /**
      * The {@link Guild} ID that the bot will be running in
      */
-    private String guildId;
+    private String guildId = "";
 
     /**
      * The {@link Role} ID of the Bot Manager role
      */
-    private String botManagerRoleId;
+    private String botManagerRoleId = "";
 
     /**
      * The minimum threshold of {@link MessageReaction reactions} needed for a suggestion to be considered greenlit
@@ -75,10 +75,10 @@ public class BotConfig {
     /**
      * The message being displayed as the bots {@link Activity} on its profile
      */
-    private String activity;
+    private String activity = "";
 
     /**
      * The amount of days that a user must be inactive for to show up in the inactive user list
      */
-    private int inactivityDays;
+    private int inactivityDays = 7;
 }

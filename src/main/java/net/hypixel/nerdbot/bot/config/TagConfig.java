@@ -14,6 +14,6 @@ public class TagConfig {
     /**
      * The ID of the {@link ForumTag tag} in a {@link ForumChannel forum channel}
      */
-    private String greenlit;
+    private String greenlit = "";
 
 }
