@@ -16,30 +16,30 @@ public class ChannelConfig {
     /**
      * The {@link TextChannel} ID that the bot will be logging to
      */
-    private String logChannel;
+    private String logChannel = "";
 
     /**
      * The {@link TextChannel} IDs for the suggestion forums
      */
-    private String[] suggestionForumIds;
+    private String[] suggestionForumIds = {};
 
     /**
      * The {@link TextChannel} IDs for the alpha suggestion forums
      */
-    private String[] alphaSuggestionForumIds;
+    private String[] alphaSuggestionForumIds = {};
 
     /**
      * The {@link TextChannel} ID for the itemgen channel
      */
-    private String[] itemGenChannel;
+    private String[] itemGenChannel = {};
 
     /**
      * Configuration for channels that will have reactions automatically added to all new messages
      */
-    private List<ReactionChannel> reactionChannels;
+    private List<ReactionChannel> reactionChannels = List.of();
 
     /**
      * The {@link TextChannel} IDs for the channels that the bot will ignore for activity tracking
      */
-    private String[] blacklistedChannels;
+    private String[] blacklistedChannels = {};
 }
