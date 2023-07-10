@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.entities.channel.unions.GuildMessageChannelUnion;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
@@ -25,6 +26,8 @@ import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @Log4j2
 public class ActivityListener {
@@ -32,6 +35,7 @@ public class ActivityListener {
     private final Database database = NerdBotApp.getBot().getDatabase();
     private final BotConfig config = NerdBotApp.getBot().getConfig();
     private final ChannelConfig channelConfig = config.getChannelConfig();
+    private final Map<Long, Long> voiceActivity = new HashMap<>();
 
     @SubscribeEvent
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
@@ -145,17 +149,30 @@ public class ActivityListener {
             return; // Ignore Empty User
         }
 
-        if (event.getChannelJoined() == null) {
-            return; // Ignore Leave Events
+        long time = System.currentTimeMillis();
+
+        if (this.voiceActivity.containsKey(member.getIdLong())) {
+            AudioChannelUnion channelLeft = event.getChannelLeft();
+
+            if (channelLeft != null) {
+                long timeSpent = time - this.voiceActivity.get(member.getIdLong());
+
+                if ((timeSpent / 1_000L) > config.getVoiceThreshold()) {
+                    if (channelLeft.getName().toLowerCase().contains("alpha")) {
+                        discordUser.getLastActivity().setAlphaVoiceJoinDate(time);
+                        log.info("Updating last alpha voice activity for " + member.getEffectiveName() + " to " + time);
+                    } else {
+                        discordUser.getLastActivity().setLastVoiceChannelJoinDate(time);
+                        log.info("Updating last global voice activity for " + member.getEffectiveName() + " to " + time);
+                    }
+                }
+            }
+
+            this.voiceActivity.remove(member.getIdLong());
         }
 
-        long time = System.currentTimeMillis();
-        if (event.getChannelJoined().getName().toLowerCase().contains("alpha")) {
-            discordUser.getLastActivity().setAlphaVoiceJoinDate(time);
-            log.info("Updating last alpha voice activity date for " + member.getEffectiveName() + " to " + time);
-        } else {
-            discordUser.getLastActivity().setLastVoiceChannelJoinDate(time);
-            log.info("Updating last global voice activity date for " + member.getEffectiveName() + " to " + time);
+        if (event.getChannelJoined() != null) {
+            this.voiceActivity.put(member.getIdLong(), time);
         }
     }
 
@@ -187,10 +204,10 @@ public class ActivityListener {
             if (emojiConfig.isEquals(event.getReaction(), EmojiConfig::getAgreeEmojiId) || emojiConfig.isEquals(event.getReaction(), EmojiConfig::getDisagreeEmojiId)) {
                 ThreadChannel threadChannel = event.getGuildChannel().asThreadChannel();
                 MessageHistory history = threadChannel.getHistoryFromBeginning(1).complete();
-                Message message = history.getRetrievedHistory().get(0);
+                boolean deleted = history.isEmpty() || history.getRetrievedHistory().get(0).getIdLong() != threadChannel.getIdLong();
 
-                if (message == null) {
-                    log.error("Message for thread '" + threadChannel.getName() + "' (ID: " + threadChannel.getId() + ") is null!");
+                if (deleted) {
+                    log.error("Original message for thread '" + threadChannel.getName() + "' (ID: " + threadChannel.getId() + ") is gone!");
                     return;
                 }
 
