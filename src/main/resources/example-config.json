@@ -24,6 +24,7 @@
   "botManagerRoleId": "",
   "minimumThreshold": 15,
   "messageLimit": 100,
+  "voiceThreshold": 60,
   "percentage": 75.0,
   "interval": 43200000,
   "activityType": "PLAYING",
