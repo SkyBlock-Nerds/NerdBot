@@ -32,6 +32,9 @@ public class Util {
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
     public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
 
+    private Util() {
+    }
+
     public static Stream<String> safeArrayStream(String[]... arrays) {
         Stream<String> stream = Stream.empty();
 
@@ -120,6 +123,7 @@ public class Util {
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
     }
 
+    @Nullable
     public static DiscordUser getOrAddUserToCache(Database database, String userId) {
         if (!database.isConnected()) {
             log.warn("Could not cache user because there is not a database connected!");
@@ -160,7 +164,7 @@ public class Util {
         return tempFile;
     }
 
-    @org.jetbrains.annotations.Nullable
+    @Nullable
     public static String getIgn(User user) {
         // Stuffy: Gets display name from SBN guild
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());

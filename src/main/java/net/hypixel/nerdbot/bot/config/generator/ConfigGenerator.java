@@ -21,6 +21,5 @@ public class ConfigGenerator {
         // Check if the generated config is valid
         BotConfig generatedConfig = NerdBotApp.GSON.fromJson(json, BotConfig.class);
         System.out.println(generatedConfig);
-
     }
 }

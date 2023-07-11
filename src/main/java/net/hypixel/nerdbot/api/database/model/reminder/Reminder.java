@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.jetbrains.annotations.Nullable;
@@ -65,7 +66,7 @@ public class Reminder {
     }
 
     public void sendReminder(boolean late) {
-        TextChannel channel = NerdBotApp.getBot().getJDA().getTextChannelById(channelId);
+        TextChannel channel = ChannelManager.getChannel(channelId);
         User user = NerdBotApp.getBot().getJDA().getUserById(userId);
         String message;
         String timestamp = new DiscordTimestamp(time.getTime()).toLongDateTime();
