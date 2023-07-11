@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.channel.GenericChannelEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,7 +29,8 @@ public class SuggestionListener {
     }
 
     private boolean isInSuggestionChannel(GenericChannelEvent event) {
-        return Util.safeArrayStream(NerdBotApp.getBot().getConfig().getChannelConfig().getSuggestionForumIds(), NerdBotApp.getBot().getConfig().getChannelConfig().getAlphaSuggestionForumIds())
+        ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
+        return Util.safeArrayStream(channelConfig.getSuggestionForumIds(), channelConfig.getAlphaSuggestionForumIds())
             .anyMatch(channelId -> channelId.equals(event.getChannel().getId()));
     }
 }
