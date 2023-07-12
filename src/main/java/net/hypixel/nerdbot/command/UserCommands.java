@@ -359,6 +359,7 @@ public class UserCommands extends ApplicationCommand {
         for (SuggestionCache.Suggestion suggestion : pages) {
             String link = suggestion.getThread().getJumpUrl();
             link += (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "") + "\n";
+            link += "Thread Name: " + suggestion.getThreadName() + "\n";
             link += suggestion.getThread().getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "\n";
 
             if (showNames) {
