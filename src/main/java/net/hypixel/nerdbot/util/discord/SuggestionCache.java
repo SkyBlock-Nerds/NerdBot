@@ -95,6 +95,7 @@ public class SuggestionCache extends TimerTask {
 
         @Getter private final ThreadChannel thread;
         @Getter private final String parentId;
+        @Getter private final String threadName;
         @Getter private final boolean alpha;
         @Getter private final int agrees;
         @Getter private final int disagrees;
@@ -106,6 +107,7 @@ public class SuggestionCache extends TimerTask {
         public Suggestion(ThreadChannel thread) {
             this.thread = thread;
             this.parentId = thread.getParentChannel().asForumChannel().getId();
+            this.threadName = thread.getName();
             this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> GREENLIT_TAGS.contains(forumTag.getName().toLowerCase()));
             this.expired = false;
             this.alpha = thread.getName().toLowerCase().contains("alpha") || Util.safeArrayStream(NerdBotApp.getBot().getConfig().getChannelConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
