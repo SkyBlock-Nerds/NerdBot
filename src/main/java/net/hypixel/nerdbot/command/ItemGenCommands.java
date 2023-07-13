@@ -35,19 +35,7 @@ import java.util.stream.Stream;
 
 @Log4j2
 public class ItemGenCommands extends ApplicationCommand {
-    private static final String DESC_NAME = "The name of the item";
-    private static final String DESC_RARITY = "The rarity of the item";
-    private static final String DESC_ITEM_LORE = "The lore of the item";
-    private static final String DESC_TEXT = "The text to display";
-    private static final String DESC_TYPE = "The type of the item";
-    private static final String DESC_DISABLE_RARITY_LINEBREAK = "If you will deal with the line break before the item's rarity";
-    private static final String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
-    private static final String DESC_PADDING = "Sets the transparent padding around the image (0 = none, 1 = discord)";
-    private static final String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (1 - " + StringColorParser.MAX_FINAL_LINE_LENGTH + ") default " + StringColorParser.MAX_STANDARD_LINE_LENGTH;
-    private static final String DESC_HEAD_ID = "The ID of the skin or the Player Name (set is_player_name to True if it is a player name)";
-    private static final String DESC_IS_PLAYER_NAME = "If the skin ID given describes the player's name";
-    private static final String DESC_HIDDEN = "If you only want the generated image visible to yourself";
-    private static final String DESC_PARSE_ITEM = "Item JSON Display Data (in the form {\"Lore\": [...], \"Name\": \"\"}";
+
 
     @JDASlashCommand(name = "itemgen", subcommand = "item", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock")
     public void generateItem(GuildSlashEvent event,
