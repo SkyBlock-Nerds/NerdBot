@@ -215,38 +215,16 @@ public class ItemGenCommands extends ApplicationCommand {
         infoBuilder.setColor(Color.CYAN)
                 .setAuthor("SkyBlock Nerd Bot")
                 .setTitle("Item Generation")
-                .addField("Basic Info", "This is a bot used to create custom items to be used in suggestions. You can use the bot with `/itemgen item`, `/itemgen head`, and `/itemgen full`.", true);
+                .addField("Basic Info", ITEM_BASIC_INFO, true);
 
         argumentBuilder.setColor(Color.GREEN)
-                .addField("Arguments",
-                        """
-                        `name`: The name of the item. Defaults to the rarity color, unless the rarity is none.
-                        `rarity`: Takes any SkyBlock rarity. Can be left as NONE.
-                        `item_lore`: Parses a description, including color codes, bold, italics, and newlines.
-                        `type`: The type of the item, such as a Sword or Wand. Can be left blank.
-                        `disable_rarity_linebreak (true/false)`: To be used if you want to disable automatically adding the empty line between the item lore and rarity.
-                        `alpha`: Sets the transparency of the background layer. 0 for transparent, 255 for opaque (default). 245 for overlay.
-                        `padding`: Adds transparency around the entire image. Must be 0 (default) or higher.
-                        `max_line_length`: Defines the maximum length that the line can be. Can be between 1 and 54.
-                        """, false);
+                .addField("Arguments", ITEM_INFO_ARGUMENTS, false);
 
         colorBuilder.setColor(Color.YELLOW)
-                .addField("Color Codes",
-                        """
-                        The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
-                        You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:+1%%` will become "+1 ✧ Pristine".
-                        If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/statsymbols` command.
-                        Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `disable_rarity_linebreak` argument to True.
-                        """, false);
+                .addField("Color Codes", ITEM_COLOR_CODES, false);
 
         extraInfoBuilder.setColor(Color.GRAY)
-                .addField("Other Information",
-                        """
-                        There is another command `/itemgen parse` which can be used to easily convert the display NBT Tag from a Minecraft item into a Generated Image. This display tag should be surrounded with curly brackets with a "Lore" (string array) and "Name" (string) attribute in them
-                        You can also check out `/itemgen head_help` for more information about rendering items next to your creations!
-                        Have fun making items! You can click the blue /itemgen command above anyone's image to see what command they're using to create their image. Thanks!
-                        The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
-                        """, false);
+                .addField("Other Information", ITEM_OTHER_INFO, false);
 
         Collection<MessageEmbed> embeds = new ArrayList<>();
         embeds.add(infoBuilder.build());
@@ -270,21 +248,13 @@ public class ItemGenCommands extends ApplicationCommand {
         infoBuilder.setColor(Color.CYAN)
                 .setAuthor("SkyBlock Nerd Bot")
                 .setTitle("Head Generation")
-                .addField("Basic Info", "The command `/itemgen head` which will display a rendered Minecraft Head from a Skin (or player) you chose!", true);
+                .addField("Basic Info", HEAD_INFO_BASIC, true);
 
         argumentBuilder.setColor(Color.GREEN)
-                .addField("Arguments",
-                        """
-                        `skin_id:` The skin ID or the player name of the person you wish to grab the skin from. (This is the string written after `http://textures.minecraft.net/texture/...`
-                        `is_player_head:` set to True if the skin ID is a player's name
-                        """, false);
+                .addField("Arguments", HEAD_INFO_ARGUMENTS, false);
 
         extraInfoBuilder.setColor(Color.GRAY)
-                .addField("Other Information",
-                        """
-                        If you are feeling extra spicy, you can combine these two elements by using the `/itemgen full` command with arguments mentioned previously.
-                        The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
-                        """, false);
+                .addField("Other Information", HEAD_INFO_OTHER_INFORMATION, false);
 
         Collection<MessageEmbed> embeds = new ArrayList<>();
         embeds.add(infoBuilder.build());
@@ -296,7 +266,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "itemgen", subcommand = "statsymbols", description = "Show a list of all stats symbols")
     public void showAllStats(GuildSlashEvent event) {
-        event.reply(GeneratorStrings.STAT_SYMBOLS).setEphemeral(true).queue();
+        event.reply(STAT_SYMBOLS).setEphemeral(true).queue();
     }
 
     @AutocompletionHandler(name = "rarities", mode = AutocompletionMode.CONTINUITY, showUserInput = false)
