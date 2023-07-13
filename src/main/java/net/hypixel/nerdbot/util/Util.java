@@ -7,9 +7,11 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
+import net.hypixel.nerdbot.command.ItemGenCommands;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URI;
@@ -143,5 +145,47 @@ public class Util {
         File tempFile = File.createTempFile("image", ".png");
         ImageIO.write(imageToSave, "PNG", tempFile);
         return tempFile;
+    }
+
+    /**
+     * Initializes a font.
+     *
+     * @param path The path to the font in the resources' folder.
+     *
+     * @return The initialized font.
+     */
+    @Nullable
+    public static Font initFont(String path, float size) {
+        Font font;
+        try {
+            InputStream fontStream = ItemGenCommands.class.getResourceAsStream(path);
+            if (fontStream == null) {
+                log.error("Couldn't initialise font: " + path);
+                return null;
+            }
+            font = Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(size);
+        } catch (IOException | FontFormatException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return font;
+    }
+
+    /**
+     * Finds a matching value within a given set based on its name
+     *
+     * @param enumSet an array to search for the enum in
+     * @param match   the value to find in the array
+     *
+     * @return returns the enum item or null if not found
+     */
+    @Nullable
+    public static Enum<?> findValue(Enum<?>[] enumSet, String match) {
+        for (Enum<?> enumItem : enumSet) {
+            if (match.equalsIgnoreCase(enumItem.name()))
+                return enumItem;
+        }
+
+        return null;
     }
 }

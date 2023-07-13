@@ -1,10 +1,10 @@
 package net.hypixel.nerdbot.generator;
 
+import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -91,7 +91,7 @@ public class StringColorParser {
 
                     String selectedCommand = description.substring(charIndex + 2, closingIndex);
                     // checking if the command is a color code
-                    MCColor mcColor = (MCColor) findValue(colors, selectedCommand);
+                    MCColor mcColor = (MCColor) Util.findValue(colors, selectedCommand);
                     if (mcColor != null) {
                         // setting the correct option for the segment
                         switch (mcColor) {
@@ -111,7 +111,7 @@ public class StringColorParser {
                                     (currentString.isUnderlined() ? "&n" : "") : "");
 
                     // checking if the command is a gemstone type
-                    Gemstone gemstone = (Gemstone) findValue(gemstones, selectedCommand);
+                    Gemstone gemstone = (Gemstone) Util.findValue(gemstones, selectedCommand);
                     if (gemstone != null) {
                         // replacing the selected space with the stat's text
                         String replacementText = "%%DARK_GRAY%%" + gemstone.getIcon() + currentColor;
@@ -133,7 +133,7 @@ public class StringColorParser {
                     }
 
                     // checking if the command is a stat
-                    Stat stat = (Stat) findValue(stats, selectedCommand);
+                    Stat stat = (Stat) Util.findValue(stats, selectedCommand);
                     if (stat != null) {
                         // replacing the selected space with the stat's text
                         String replacementText = stat.getParsedStat(isIcon, extraData) + currentColor;
@@ -142,7 +142,7 @@ public class StringColorParser {
                     }
 
                     // checking if the command is supposed to only trigger for the text inside it
-                    MCColor tempStatColor = (MCColor) findValue(colors, selectedCommand);
+                    MCColor tempStatColor = (MCColor) Util.findValue(colors, selectedCommand);
                     if (tempStatColor != null) {
                         // setting the correct color option for the segment
                         String replacementText = "&" + tempStatColor.getColorCode() + extraData + currentColor;
@@ -344,23 +344,4 @@ public class StringColorParser {
         }
         currentString.setStrikethrough(obfuscated);
     }
-
-    /**
-     * Finds a matching value within a given set based on its name
-     *
-     * @param enumSet an array to search for the enum in
-     * @param match   the value to find in the array
-     *
-     * @return returns the enum item or null if not found
-     */
-    @Nullable
-    private static Enum<?> findValue(Enum<?>[] enumSet, String match) {
-        for (Enum<?> enumItem : enumSet) {
-            if (match.equalsIgnoreCase(enumItem.name()))
-                return enumItem;
-        }
-
-        return null;
-    }
-
 }

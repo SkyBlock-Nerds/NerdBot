@@ -2,18 +2,16 @@ package net.hypixel.nerdbot.generator;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import net.hypixel.nerdbot.command.ItemGenCommands;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+
+import static net.hypixel.nerdbot.util.Util.initFont;
 
 public class MinecraftImage {
 
@@ -252,29 +250,6 @@ public class MinecraftImage {
         this.getGraphics().setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
         this.getGraphics().drawLine(xPosition1, yPosition, xPosition2, yPosition);
         this.getGraphics().drawLine(xPosition1, yPosition + 1, xPosition2, yPosition + 1);
-    }
-
-    /**
-     * Initializes a font.
-     *
-     * @param path The path to the font in the resources' folder.
-     *
-     * @return The initialized font.
-     */
-    @Nullable
-    private static Font initFont(String path, float size) {
-        Font font;
-        try {
-            InputStream fontStream = ItemGenCommands.class.getResourceAsStream(path);
-            if (fontStream == null) {
-                return null;
-            }
-            font = Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(size);
-        } catch (IOException | FontFormatException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return font;
     }
 
     public static boolean isFontsRegistered() {
