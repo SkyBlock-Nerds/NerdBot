@@ -171,7 +171,7 @@ public class Util {
         if (guild == null) {
             return null;
         }
-        Member sbnMember = guild.getMember(user);
+        Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
         if (sbnMember == null) {
             return null;
         }
