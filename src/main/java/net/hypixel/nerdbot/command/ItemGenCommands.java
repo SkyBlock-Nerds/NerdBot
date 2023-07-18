@@ -10,25 +10,19 @@ import com.freya02.botcommands.api.application.slash.autocomplete.annotations.Au
 import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.generator.*;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
-import net.hypixel.nerdbot.util.skyblock.Stat;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.net.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -132,7 +126,27 @@ public class ItemGenCommands extends ApplicationCommand {
         event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
     }
 
-    @JDASlashCommand(name = "itemgen", subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "recipe", description = "Generates a Minecraft Recipe Image")
+    public void generateRecipe(GuildSlashEvent event,
+                               @AppOption(description = DESC_RECIPE) String recipe,
+                               @Optional @AppOption(description = DESC_RENDER_INVENTORY) Boolean renderBackground,
+                               @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+        if (isIncorrectChannel(event)) {
+            return;
+        }
+        hidden = (hidden != null && hidden);
+        event.deferReply(hidden).queue();
+
+        renderBackground = (renderBackground == null || renderBackground);
+
+        // building the Minecraft recipe
+        BufferedImage generatedRecipe = builder.buildRecipe(event, recipe, renderBackground);
+        if (generatedRecipe != null) {
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedRecipe))).queue();
+        }
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
     public void parseItemDescription(GuildSlashEvent event,
                                      @AppOption(description = DESC_PARSE_ITEM) String nbtDisplayTag,
                                      @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
@@ -270,8 +284,36 @@ public class ItemGenCommands extends ApplicationCommand {
 
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "recipe_help", description = "Get a little bit of help with how to use the Recipe Rendering functions of the Generator bot.")
+    public void askForRecipeRenderHelp(GuildSlashEvent event) {
+        if (isIncorrectChannel(event)) {
+            return;
+        }
 
-    @JDASlashCommand(name = "itemgen", subcommand = "statsymbols", description = "Show a list of all stats symbols")
+        EmbedBuilder infoBuilder = new EmbedBuilder();
+        EmbedBuilder argumentBuilder = new EmbedBuilder();
+        EmbedBuilder extraInfoBuilder = new EmbedBuilder();
+
+        infoBuilder.setColor(Color.CYAN)
+                .setAuthor("Skyblock Nerd Bot")
+                .setTitle("Recipe Generation Help")
+                .addField("Basic Info", RECIPE_INFO_BASIC, true);
+
+        argumentBuilder.setColor(Color.GREEN)
+                .addField("Arguments", RECIPE_INFO_ARGUMENTS, false);
+
+        extraInfoBuilder.setColor(Color.GRAY)
+                .addField("Other Information", RECIPE_INFO_OTHER_INFORMATION, false);
+
+        Collection<MessageEmbed> embeds = new ArrayList<>();
+        embeds.add(infoBuilder.build());
+        embeds.add(argumentBuilder.build());
+        embeds.add(extraInfoBuilder.build());
+
+        event.replyEmbeds(embeds).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "statsymbols", description = "Show a list of all stats symbols")
     public void showAllStats(GuildSlashEvent event) {
         event.reply(STAT_SYMBOLS).setEphemeral(true).queue();
     }
