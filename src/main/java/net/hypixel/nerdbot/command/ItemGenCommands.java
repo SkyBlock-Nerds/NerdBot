@@ -38,7 +38,7 @@ public class ItemGenCommands extends ApplicationCommand {
         this.builder = new GeneratorBuilder();
     }
 
-    @JDASlashCommand(name = "itemgen", subcommand = "item", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "item", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock")
     public void generateItem(GuildSlashEvent event,
                              @AppOption(description = DESC_NAME) String name,
                              @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
@@ -61,7 +61,7 @@ public class ItemGenCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "itemgen", subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
     public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT) String message, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
@@ -75,7 +75,7 @@ public class ItemGenCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "itemgen", subcommand = "head", description = "Draws a minecraft head into a file")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "head", description = "Draws a minecraft head into a file")
     public void generateHead(GuildSlashEvent event,
                              @AppOption(description = DESC_HEAD_ID) String skinId,
                              @Optional @AppOption(description = DESC_IS_PLAYER_NAME) Boolean isPlayerName,
@@ -92,7 +92,7 @@ public class ItemGenCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "itemgen", subcommand = "full", description = "Generates a full item stack!")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Generates a full item stack!")
     public void generateFullItem(GuildSlashEvent event,
                                  @AppOption(description = DESC_NAME) String name,
                                  @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
@@ -223,7 +223,7 @@ public class ItemGenCommands extends ApplicationCommand {
     }
 
 
-    @JDASlashCommand(name = "itemgen", subcommand = "help", description = "Get a little bit of help with how to use the Generator bot.")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "help", description = "Get a little bit of help with how to use the Generator bot.")
     public void askForInfo(GuildSlashEvent event) {
         if (isIncorrectChannel(event)) {
             return;
@@ -256,7 +256,7 @@ public class ItemGenCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "itemgen", subcommand = "head_help", description = "Get a little bit of help with how to use the Head Rendering functions of the Generator bot.")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "head_help", description = "Get a little bit of help with how to use the Head Rendering functions of the Generator bot.")
     public void askForRenderHelp(GuildSlashEvent event) {
         if (isIncorrectChannel(event)) {
             return;
