@@ -31,7 +31,7 @@ public class MinecraftImage {
     @Getter
     private final int padding;
     @Getter
-    private final boolean isChatMessage;
+    private final boolean isNormalItem;
     @Getter(AccessLevel.PRIVATE)
     private final Graphics2D graphics;
     @Getter
@@ -58,11 +58,11 @@ public class MinecraftImage {
         Arrays.stream(minecraftFonts).forEach(GraphicsEnvironment.getLocalGraphicsEnvironment()::registerFont);
     }
 
-    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isChatMessage) {
+    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem) {
         this.alpha = alpha;
         this.padding = padding;
         this.lines = lines;
-        this.isChatMessage = isChatMessage;
+        this.isNormalItem = isNormalItem;
         this.graphics = this.initG2D(defaultWidth + START_XY, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4);
         this.currentColor = defaultColor;
     }
@@ -172,7 +172,7 @@ public class MinecraftImage {
             }
 
             // increase size of first line if there are more than one lines present
-            this.updatePositionAndSize(this.isChatMessage() && this.getLines().indexOf(line) == 0);
+            this.updatePositionAndSize(this.isNormalItem() && this.getLines().indexOf(line) == 0);
         }
     }
 
