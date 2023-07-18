@@ -33,9 +33,16 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static net.hypixel.nerdbot.generator.GeneratorStrings.*;
+
 @Log4j2
 public class ItemGenCommands extends ApplicationCommand {
+    private final GeneratorBuilder builder;
 
+    public ItemGenCommands() {
+        super();
+        this.builder = new GeneratorBuilder();
+    }
 
     @JDASlashCommand(name = "itemgen", subcommand = "item", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock")
     public void generateItem(GuildSlashEvent event,
@@ -53,10 +60,10 @@ public class ItemGenCommands extends ApplicationCommand {
         }
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
-
-        MinecraftImage generatedImage = buildItem(event, name, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
+        // building the item's description
+        BufferedImage generatedImage = builder.buildItem(event, name, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
         if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(hidden).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
     }
 
@@ -67,10 +74,10 @@ public class ItemGenCommands extends ApplicationCommand {
         }
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
-
-        MinecraftImage generatedImage = buildItem(event, "NONE", "NONE", message, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false);
+        // building the chat message
+        BufferedImage generatedImage = builder.buildItem(event, "NONE", "NONE", message, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false);
         if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage.getImage()))).setEphemeral(hidden).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
     }
 
@@ -85,9 +92,9 @@ public class ItemGenCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
 
-        MinecraftHead head = buildHead(event, skinId, isPlayerName);
+        BufferedImage head = builder.buildHead(event, skinId, isPlayerName);
         if (head != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(head.getImage()))).setEphemeral(hidden).queue();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(head))).setEphemeral(hidden).queue();
         }
     }
 
@@ -298,145 +305,5 @@ public class ItemGenCommands extends ApplicationCommand {
         return false;
     }
 
-    private MinecraftImage buildItem(GuildSlashEvent event, String name, String rarity, String itemLoreString, String type,
-                                     Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isChatMessage) {
-        // Checking that the fonts have been loaded correctly
-        if (!MinecraftImage.isFontsRegistered()) {
-            event.getHook().sendMessage(GeneratorStrings.FONTS_NOT_REGISTERED).setEphemeral(true).queue();
-            return null;
-        }
-
-        // verify rarity argument
-        if (Arrays.stream(Rarity.VALUES).noneMatch(rarity1 -> rarity.equalsIgnoreCase(rarity1.name()))) {
-            event.getHook().sendMessage(String.format(GeneratorStrings.INVALID_RARITY, GeneratorStrings.stripString(rarity))).setEphemeral(true).queue();
-            return null;
-        }
-
-        StringBuilder itemLore = new StringBuilder(itemLoreString);
-
-        // adds the item's name to the array list
-        Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
-        if (!name.equalsIgnoreCase("NONE")) { // allow user to pass NONE for the title
-            String createTitle = "%%" + itemRarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%\\n";
-            itemLore.insert(0, createTitle);
-        }
-
-        // writing the rarity if the rarity is not none
-        if (itemRarity != Rarity.NONE) {
-            // checks if there is a type for the item
-            if (type == null || type.equalsIgnoreCase("none")) {
-                type = "";
-            }
-            // checking if there is custom line break happening
-            if (addEmptyLine == null || !addEmptyLine) {
-                itemLore.append("\\n");
-            }
-
-            // adds the items type in the item lore
-            String createRarity = "\\n%%" + itemRarity.getRarityColor() + "%%%%BOLD%%" + itemRarity.getId().toUpperCase() + " " + type;
-            itemLore.append(createRarity);
-        } else {
-            itemLore.append("\\n");
-        }
-
-        maxLineLength = Objects.requireNonNullElse(maxLineLength, StringColorParser.MAX_STANDARD_LINE_LENGTH);
-        maxLineLength = Math.min(StringColorParser.MAX_FINAL_LINE_LENGTH, Math.max(1, maxLineLength));
-        // creating a string parser to convert the string into color flagged text
-        StringColorParser colorParser = new StringColorParser(maxLineLength);
-        colorParser.parseString(itemLore);
-
-        // checking that there were no errors while parsing the string
-        if (!colorParser.isSuccessfullyParsed()) {
-            event.getHook().sendMessage(colorParser.getErrorString()).setEphemeral(true).queue();
-            return null;
-        }
-
-        // alpha value validation
-        alpha = Objects.requireNonNullElse(alpha, 255); // checks if the image transparency was set
-        alpha = Math.min(255, Math.max(alpha, 0)); // ensure range between 0-254
-
-        // padding value validation
-        padding = Objects.requireNonNullElse(padding, 0);
-        padding = Math.max(0, padding);
-
-        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, maxLineLength * 25, alpha, padding, isChatMessage).render();
-
-        Member member = event.getMember();
-        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), member.getId());
-        if (discordUser == null) {
-            log.info("Not updating last item generator activity date for " + member.getEffectiveName() + " (ID: " + member.getId() + ") since we cannot find a user!");
-        } else {
-            discordUser.getLastActivity().setLastItemGenUsage(System.currentTimeMillis());
-            log.info("Updating last item generator activity date for " + member.getEffectiveName() + " to " + System.currentTimeMillis());
-        }
-
-        return minecraftImage;
-    }
-
-    private MinecraftHead buildHead(GuildSlashEvent event, String textureID, Boolean isPlayerName) {
-        if (isPlayerName != null && isPlayerName) {
-            textureID = getPlayerHeadURL(event, textureID);
-            if (textureID == null) {
-                return null;
-            }
-        }
-
-        if (textureID.contains("http://textures.minecraft.net/texture/")) {
-            textureID = textureID.replace("http://textures.minecraft.net/texture/", "");
-            event.getHook().sendMessage(GeneratorStrings.HEAD_URL_REMINDER).setEphemeral(true).queue();
-        }
-
-        BufferedImage skin;
-        try {
-            URL target = new URL("http://textures.minecraft.net/texture/" + textureID);
-            skin = ImageIO.read(target);
-        } catch (MalformedURLException e) {
-            event.getHook().sendMessage(GeneratorStrings.MALFORMED_HEAD_URL).setEphemeral(false).queue();
-            return null;
-        } catch (IOException e) {
-            event.getHook().sendMessage(String.format(GeneratorStrings.INVALID_HEAD_URL, GeneratorStrings.stripString(textureID))).setEphemeral(false).queue();
-            return null;
-        }
-
-        return new MinecraftHead(skin).drawHead();
-    }
-
-    private String getPlayerHeadURL(GuildSlashEvent event, String playerName) {
-        playerName = GeneratorStrings.stripString(playerName);
-
-        JsonObject userUUID;
-        try {
-            userUUID = Util.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
-        } catch (IOException | InterruptedException e) {
-            event.getHook().sendMessage(GeneratorStrings.REQUEST_PLAYER_UUID_ERROR).queue();
-            return null;
-        }
-
-        if (userUUID == null || userUUID.get("id") == null) {
-            event.getHook().sendMessage(GeneratorStrings.PLAYER_NOT_FOUND).queue();
-            return null;
-        }
-
-        JsonObject userProfile;
-        try {
-            userProfile = Util.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
-        } catch (IOException | InterruptedException e) {
-            event.getHook().sendMessage(GeneratorStrings.REQUEST_PLAYER_UUID_ERROR).queue();
-            return null;
-        }
-
-        if (userProfile == null || userProfile.get("properties") == null) {
-            event.getHook().sendMessage(String.format(GeneratorStrings.MALFORMED_PLAYER_PROFILE, GeneratorStrings.stripString(playerName))).queue();
-            return null;
-        }
-
-        String base64SkinData = userProfile.get("properties").getAsJsonArray().get(0).getAsJsonObject().get("value").getAsString();
-        JsonObject skinData = NerdBotApp.GSON.fromJson(new String(Base64.getDecoder().decode(base64SkinData)), JsonObject.class);
-
-        String finalSkinID = skinData.get("textures").getAsJsonObject().get("SKIN").getAsJsonObject().get("url").getAsString();
-        finalSkinID = finalSkinID.replace("http://textures.minecraft.net/texture/", "");
-
-        return finalSkinID;
-    }
 }
 
