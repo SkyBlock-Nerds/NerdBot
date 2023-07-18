@@ -97,31 +97,56 @@ public class ItemGenCommands extends ApplicationCommand {
                                  @AppOption(description = DESC_NAME) String name,
                                  @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
                                  @AppOption(description = DESC_ITEM_LORE) String itemLore,
-                                 @AppOption(description = DESC_HEAD_ID) String skinId,
+                                 @Optional @AppOption(description = DESC_ITEM_NAME) String itemName,
+                                 @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraModifiers,
                                  @Optional @AppOption(description = DESC_TYPE) String type,
                                  @Optional @AppOption(description = DESC_DISABLE_RARITY_LINEBREAK) Boolean disableRarityLinebreak,
                                  @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
                                  @Optional @AppOption(description = DESC_PADDING) Integer padding,
                                  @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
-                                 @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden,
-                                 @Optional @AppOption(description = DESC_IS_PLAYER_NAME) Boolean isPlayerName) throws IOException {
+                                 @Optional @AppOption(description = DESC_RECIPE) String recipe,
+                                 @Optional @AppOption(description = DESC_RENDER_INVENTORY) Boolean renderBackground,
+                                 @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
         }
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
 
-        MinecraftHead generatedHead = buildHead(event, skinId, isPlayerName);
-        if (generatedHead == null) {
+        // checking that there is a recipe and/or item to be displayed
+        if (itemName == null && recipe == null) {
+            event.getHook().sendMessage(MISSING_FULL_GEN_ITEM).queue();
             return;
         }
 
-        MinecraftImage generatedDescription = buildItem(event, name, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
+        extraModifiers = Objects.requireNonNullElse(extraModifiers, "");
+        renderBackground = Objects.requireNonNullElse(renderBackground, true);
+
+        // building the description for the item
+        BufferedImage generatedDescription = builder.buildItem(event, name, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
         if (generatedDescription == null) {
             return;
         }
 
-        ImageMerger merger = new ImageMerger(generatedDescription.getImage(), generatedHead.getImage());
+        // building the item for the which is beside the description
+        BufferedImage generatedItem = null;
+        if (itemName != null) {
+           generatedItem = builder.buildUnspecifiedItem(event, itemName, extraModifiers);
+            if (generatedItem == null) {
+                return;
+            }
+        }
+
+        // building the recipe for the item
+        BufferedImage generatedRecipe = null;
+        if (recipe != null) {
+            generatedRecipe = builder.buildRecipe(event, recipe, renderBackground);
+            if (generatedRecipe == null) {
+                return;
+            }
+        }
+
+        ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, generatedRecipe);
         merger.drawFinalImage();
         event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
     }
