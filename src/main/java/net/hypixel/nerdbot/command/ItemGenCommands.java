@@ -148,7 +148,8 @@ public class ItemGenCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
     public void parseItemDescription(GuildSlashEvent event,
-                                     @AppOption(description = DESC_PARSE_ITEM) String nbtDisplayTag,
+                                     @AppOption(description = DESC_PARSE_ITEM, name = "item_nbt") String itemNBT,
+                                     @Optional @AppOption (description = DESC_INCLUDE_ITEM) Boolean includeItem,
                                      @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
@@ -156,39 +157,119 @@ public class ItemGenCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
 
+        includeItem = Objects.requireNonNullElse(includeItem, false);
+
+        // converting the nbt into json
         JsonObject itemJSON;
-        String itemName;
-        JsonArray itemLoreArray;
-        StringBuilder itemGenCommand = new StringBuilder("```/itemgen item");
-
         try {
-            itemJSON = NerdBotApp.GSON.fromJson(nbtDisplayTag, JsonObject.class);
+            itemJSON = NerdBotApp.GSON.fromJson(itemNBT, JsonObject.class);
         } catch (JsonSyntaxException e) {
-            event.getHook().sendMessage(GeneratorStrings.ITEM_PARSE_JSON_FORMAT).queue();
+            event.getHook().sendMessage(ITEM_PARSE_JSON_FORMAT).queue();
             return;
         }
 
-        // checking that there is a name string in the JsonObject
-        try {
-            itemName = itemJSON.get("Name").getAsString().replaceAll("§", "&");
-        } catch (NullPointerException e) {
-            event.getHook().sendMessage(GeneratorStrings.MISSING_NAME_VARIABLE).queue();
+        // checking if the user has copied the text directly from in game
+        JsonObject tagJSON = Util.isJsonObject(itemJSON, "tag");
+        if (tagJSON == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag")).queue();
             return;
         }
 
-        // checking that there is a lore array in the JsonObject
-        try {
-            itemLoreArray = itemJSON.get("Lore").getAsJsonArray();
-        } catch (NullPointerException e) {
-            event.getHook().sendMessage(GeneratorStrings.MISSING_LORE_VARIABLE).queue();
+        // checking if there is a display tag
+        JsonObject displayJSON = Util.isJsonObject(tagJSON, "display");
+        if (displayJSON == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("display")).queue();
             return;
+        }
+        // checking that there is a name and lore parameters in the JsonObject
+        String itemName = Util.isJsonString(displayJSON, "Name");
+        JsonArray itemLoreArray = Util.isJsonArray(displayJSON, "Lore");
+        if (itemName == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Name")).queue();
+            return;
+        } else if (itemLoreArray == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Lore")).queue();
+            return;
+        }
+        itemName = itemName.replaceAll("§", "&");
+
+        String itemID = "";
+        String extraModifiers = "";
+        // checking if the user wants to create full gen
+        if (includeItem) {
+            itemID = Util.isJsonString(itemJSON, "id");
+            if (itemID == null) {
+                event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("id")).queue();
+                return;
+            }
+            itemID = itemID.replace("minecraft:", "");
+
+            if (itemID.equals("skull")) {
+                // checking if there is a SkullOwner json object within the main tag json
+                JsonObject skullOwnerJSON = Util.isJsonObject(tagJSON, "SkullOwner");
+                if (skullOwnerJSON == null) {
+                    event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("SkullOwner")).queue();
+                    return;
+                }
+                // checking if there is a Properties json object within SkullOwner
+                JsonObject propertiesJSON = Util.isJsonObject(skullOwnerJSON, "Properties");
+                if (propertiesJSON == null) {
+                    event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Properties")).queue();
+                    return;
+                }
+                // checking if there is a textures json object within properties
+                JsonArray texturesJSON = Util.isJsonArray(propertiesJSON, "textures");
+                if (texturesJSON == null) {
+                    event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("textures")).queue();
+                    return;
+                }
+                // checking that there is only one json object in the array
+                if (texturesJSON.size() != 1) {
+                    event.getHook().sendMessage(MULTIPLE_ITEM_SKULL_DATA).queue();
+                    return;
+                } else if (!texturesJSON.get(0).isJsonObject()) {
+                    event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
+                    return;
+                }
+                // checking that there is a Base64 skin url string
+                String base64String = Util.isJsonString(texturesJSON.get(0).getAsJsonObject(), "Value");
+                if (base64String == null) {
+                    event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
+                    return;
+                }
+                // converting the Base64 string into the Skin URL
+                try {
+                    extraModifiers = builder.base64ToSkinURL(base64String) + ",false";
+                } catch (NullPointerException | IllegalArgumentException e) {
+                    event.getHook().sendMessage(INVALID_BASE_64_SKIN_URL).queue();
+                    return;
+                }
+            }
+            else {
+                // checking if there is a color attribute present and adding it to the extra attributes
+                String color = Util.isJsonString(displayJSON, "color");
+                if (color != null) {
+                    try {
+                        Integer selectedColor = Integer.decode(color);
+                        extraModifiers = String.valueOf(selectedColor);
+                    } catch (NumberFormatException ignored) {}
+                }
+
+                // checking if the item is enchanted and applying the enchantment glint to the extra modifiers
+                JsonArray enchantJson = Util.isJsonArray(tagJSON, "ench");
+                if (enchantJson != null) {
+                    extraModifiers = extraModifiers.length() == 0 ? "enchant" : extraModifiers + ",enchant";
+                }
+            }
         }
 
         // adding all the text to the string builders
+        StringBuilder itemGenCommand = new StringBuilder("/").append(COMMAND_PREFIX).append(includeItem ? " full" : " item");
         StringBuilder itemText = new StringBuilder();
         itemText.append(itemName).append("\\n");
         itemGenCommand.append(" name:").append(itemName).append(" rarity:NONE item_lore:");
 
+        // adding the entire lore to the string builder
         int maxLineLength = 0;
         for (JsonElement element : itemLoreArray) {
             String itemLore = element.getAsString().replaceAll("§", "&").replaceAll("`", "");
@@ -199,27 +280,36 @@ public class ItemGenCommands extends ApplicationCommand {
                 maxLineLength = itemLore.length();
             }
         }
-        itemGenCommand.replace(itemGenCommand.length() - 2, itemGenCommand.length(), "");
-        itemGenCommand.append(" max_line_length:").append(maxLineLength).append("```");
+        maxLineLength++;
+        itemGenCommand.replace(itemGenCommand.length() - 2, itemGenCommand.length(), "").append(" max_line_length:").append(maxLineLength);
+        itemText.replace(itemText.length() - 2, itemText.length(), "");
+        // checking if there was supposed to be an item stack is displayed with the item
+        if (includeItem) {
+            itemGenCommand.append(" item_name:").append(itemID).append(extraModifiers.length() != 0 ? " extra_modifiers:" + extraModifiers : "");
+        }
 
-        // creating a string parser to convert the string into color flagged text
-        StringColorParser colorParser = new StringColorParser(StringColorParser.MAX_FINAL_LINE_LENGTH);
-        colorParser.parseString(itemText);
-
-        // checking that there were no errors while parsing the string
-        if (!colorParser.isSuccessfullyParsed()) {
-            event.getHook().sendMessage(String.format(GeneratorStrings.ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
-            event.getHook().sendMessage(colorParser.getErrorString()).setEphemeral(true).queue();
+        // creating the generated description
+        BufferedImage generatedDescription = builder.buildItem(event, "NONE", "NONE", itemText.toString(), "NONE", false, 255, 0, maxLineLength, true);
+        if (generatedDescription == null) {
+            event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
             return;
         }
 
-        // creating the minecraft image and sending it to the user.
-        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, StringColorParser.MAX_FINAL_LINE_LENGTH * 25, 255, 0, true).render();
-        if (minecraftImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(minecraftImage.getImage()))).setEphemeral(false).queue();
+        // checking if an item should be displayed alongside the description
+        if (includeItem) {
+            BufferedImage generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers);
+            if (generatedItem == null) {
+                return;
+            }
+
+            ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, null);
+            merger.drawFinalImage();
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
+        } else {
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedDescription))).setEphemeral(false).queue();
         }
 
-        event.getHook().sendMessage(String.format(GeneratorStrings.ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
+        event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
     }
 
 
