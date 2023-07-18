@@ -428,7 +428,7 @@ public class ItemGenCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "statsymbols", description = "Show a list of all stats symbols")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "stat_symbols", description = "Show a list of all stats symbols")
     public void showAllStats(GuildSlashEvent event) {
         event.reply(STAT_SYMBOLS).setEphemeral(true).queue();
     }

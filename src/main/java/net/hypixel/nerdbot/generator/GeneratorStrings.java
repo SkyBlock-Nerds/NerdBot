@@ -57,7 +57,7 @@ public class GeneratorStrings {
     public static final String ITEM_COLOR_CODES = """
                         The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
                         You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:+1%%` will become "+1 ✧ Pristine".
-                        If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/statsymbols` command.
+                        If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/stat_symbols` command.
                         Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `disable_rarity_linebreak` argument to True.
                         """;
     public static final String ITEM_OTHER_INFO = """
