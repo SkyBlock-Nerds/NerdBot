@@ -8,9 +8,11 @@ import net.hypixel.nerdbot.util.skyblock.Stat;
 import java.util.Arrays;
 
 public class GeneratorStrings {
+    public static final String COMMAND_PREFIX = "gen";
+
     // general messages
     public static final String FONTS_NOT_REGISTERED = "It seems that one of the font files couldn't be loaded correctly. Please contact a Bot Developer to have a look at it!";
-    public static final String TEXTURE_STREAM_NOT_REGISTERED = "It seems that the texture stream for recipe images couldn't be loaded correctly.";
+    public static final String ITEM_RESOURCE_NOT_LOADED = "It seems that the texture stream for recipe images couldn't be loaded correctly. Please contact a Bot Developer to have a look at it!";
 
     // generator argument descriptions
     public static final String DESC_NAME = "The name of the item";
@@ -23,21 +25,25 @@ public class GeneratorStrings {
     public static final String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
     public static final String DESC_PADDING = "Sets the transparent padding around the image (0 = none, 1 = discord)";
     public static final String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (1 - " + StringColorParser.MAX_FINAL_LINE_LENGTH + ") default " + StringColorParser.MAX_STANDARD_LINE_LENGTH;
+    public static final String DESC_ITEM_NAME = "The name of the Item stack you want to display";
     public static final String DESC_HEAD_ID = "The ID of the skin or the Player Name (set is_player_name to True if it is a player name)";
     public static final String DESC_IS_PLAYER_NAME = "If the skin ID given describes the player's name";
     public static final String DESC_HIDDEN = "If you only want the generated image visible to yourself";
     public static final String DESC_PARSE_ITEM = "Item JSON Display Data (in the form {\"Lore\": [...], \"Name\": \"\"}";
-    public static final String DESC_INCLUDE_ITEM = "Create a full item generation instead of just the description";
+    public static final String DESC_INCLUDE_ITEM = "Include the item along with the parsed description";
+    public static final String DESC_RENDER_INVENTORY = "If the Minecraft Inventory background should be drawn";
+    public static final String DESC_RECIPE = "The recipe for crafting the item (/gen recipe for more info)";
 
     // item gen item messages
-    public static final String INVALID_RARITY;
-    public static final String INVALID_STAT_CODE;
-    public static final String INVALID_MINECRAFT_COLOR_CODE;
+    public static final String INVALID_RARITY; // generated in static constructor
+    public static final String INVALID_STAT_CODE; // generated in static constructor
+    public static final String INVALID_MINECRAFT_COLOR_CODE; // generated in static constructor
     public static final String PERCENT_NOT_FOUND = "It seems that you don't have a closing `%%` near `%s`.";
     public static final String PERCENT_OUT_OF_RANGE = "It seems that you are missing a starting/ending `%%` for a color code or stat.";
+    public static final String MISSING_FULL_GEN_ITEM = "I hope you know that the normal item generator works fine if you aren't going to put a recipe and/or Minecraft item.";
 
     // item gen item help messages
-    public static final String ITEM_BASIC_INFO = "This is a bot used to create custom items to be used in suggestions. You can use the bot with `/%1$s item`, `/1$s head`, and `/1$s full`.".formatted(COMMAND_PREFIX);
+    public static final String ITEM_BASIC_INFO = "This is a bot used to create custom items to be used in suggestions. You can use the bot with `/%1$s item`, `/%1$s head`, and `/%1$s full`.".formatted(COMMAND_PREFIX);
     public static final String ITEM_INFO_ARGUMENTS = """
                         `name`: The name of the item. Defaults to the rarity color, unless the rarity is none.
                         `rarity`: Takes any SkyBlock rarity. Can be left as NONE.
@@ -55,9 +61,9 @@ public class GeneratorStrings {
                         Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `disable_rarity_linebreak` argument to True.
                         """;
     public static final String ITEM_OTHER_INFO = """
-                        There is another command `/%1$s parse` which can be used to easily convert the display NBT Tag from a Minecraft item into a Generated Image. This display tag should be surrounded with curly brackets with a "Lore" (string array) and "Name" (string) attribute in them
+                        There is another command `/%1$s parse` which can be used to easily convert the NBT Tag from a Minecraft item into a Generated Image. You can directly copy it from in game using one of the Minecraft Mods.
                         You can also check out `/%1$s head_help` for more information about rendering items next to your creations!
-                        Have fun making items! You can click the blue /%1$s command above anyone's image to see what command they're using to create their image. Thanks!
+                        Have fun making items! You can click the blue `/%1$s` command above anyone's image to see what command they're using to create their image. Thanks!
                         The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
                         """.formatted(COMMAND_PREFIX);
 
@@ -65,13 +71,12 @@ public class GeneratorStrings {
     public static final String HEAD_URL_REMINDER = "Hey, a small heads up - you don't need to include the full URL! Only the skin ID is required";
     public static final String MALFORMED_HEAD_URL = "Malformed... Url... Exception? (probably should contact one of the Bot Developers)";
     public static final String INVALID_HEAD_URL = "It seems that the URL you entered in doesn't link to anything...\nEntered URL: `http://textures.minecraft.net/texture/%s`";
-
     public static final String REQUEST_PLAYER_UUID_ERROR = "There was an error trying to send a request to get the UUID of this player...";
     public static final String PLAYER_NOT_FOUND = "It seems that there is no one with the name `%s`";
     public static final String MALFORMED_PLAYER_PROFILE = "There was a weird issue when trying to get the profile data for `%s`";
 
     // item gen head help messages
-    public static final String HEAD_INFO_BASIC = "The command `/%s head` which will display a rendered Minecraft Head from a Skin (or player) you chose!".formatted(COMMAND_PREFIX);
+    public static final String HEAD_INFO_BASIC = "The command `/%s head` will display a rendered Minecraft Head from a Skin (or player) you chose!".formatted(COMMAND_PREFIX);
     public static final String HEAD_INFO_ARGUMENTS = """
                         `skin_id:` The skin ID or the player name of the person you wish to grab the skin from. (This is the string written after `http://textures.minecraft.net/texture/...`
                         `is_player_head:` set to True if the skin ID is a player's name
@@ -90,11 +95,30 @@ public class GeneratorStrings {
     public static final String ITEM_PARSE_COMMAND = "Here is a Nerd Bot generation command if you want it!\n```%s```";
 
     // item gen recipe messages
+    public static final String UNKNOWN_EXTRA_DETAILS = "Not exactly sure what `%s` (extra_details: `\"%s\"`). Maybe you didn't write its name correctly.";
     public static final String MISSING_PARSED_RECIPE = "Did you even try to make a parsed recipe? Because I don't see the separator anywhere.";
     public static final String MISSING_FIELD_SEPARATOR = "This Recipe Item (`%s`) seems to not be valid\nIt should follow a similar format to... (each recipe item can be separated by %%)```json\n<item slot number>,<amount>,<item name>\n```";
-    public static final String RECIPE_SLOT_NOT_INTEGER = "You have entered in a recipe slot (`%s`) that isn't a number within the recipe item `%s`";
-    public static final String RECIPE_AMOUNT_NOT_INTEGER = "You have entered in a recipe amount (`%s`) that isn't a number within the recipe item `%s`";
+    public static final String RECIPE_SLOT_NOT_INTEGER = "You have entered in an item slot (`%s`) that isn't a number within the recipe item `%s`";
+    public static final String RECIPE_SLOT_DUPLICATED = "It appears that you are trying to put multiple items into one slot (slot number: `%d`, duplicated recipe item: `%s`).";
+    public static final String RECIPE_AMOUNT_NOT_INTEGER = "You have entered in an item amount (`%s`) that isn't a number within the recipe item `%s`";
+    public static final String RECIPE_AMOUNT_NOT_IN_RANGE = "You have entered an item amount (`%s`) for the recipe item `%s` that is not in the range of 1-64. It would be funny if there were negative items required for a recipe though.";
 
+    // item gen recipe help messages
+    public static final String RECIPE_INFO_BASIC = "the command `/%s recipe` will display a rendered 3x3 square of Minecraft Items or Heads (limited to just items and no blocks right now)".formatted(COMMAND_PREFIX);
+    public static final String RECIPE_INFO_ARGUMENTS = """
+                               `recipe`: A string containing all of the recipe data for slot number, amount and the item name, separated by a `%%` between different slots.
+                               
+                               Each recipe item should be separated with a comma.
+                               `slot number`: The slot you want the item displayed in (`1-9` starting in the top left).
+                               `amount`: The number of that item you want displayed.
+                               `name of item`: The id of the item with spaces replaced with underscores.
+                               `extra details` (optional): Any extra attributes that the item may have.
+           
+                               This item can be displayed as enchanted by using `ENCHANT` inside the extra details parameter. Example: `5,26,DEAD_BUSH,ENCHANT` will display an Enchanted Dead Bush in the middle slot (5) with 26 of them.
+                               
+                               If you want to use a skull for one of the items, use `SKULL` as the name of the item, then put `<the skin id or player name>,<true/false if this is a player name>`in the extra details.
+                               """;
+    public static String RECIPE_INFO_OTHER_INFORMATION = "No items with overlays? They probably didn't get initialised correctly. Feel free to contact a Bot Developer about it"; // generated after the GeneratorBuilder has been constructed
 
     // stat symbols text
     public static final String STAT_SYMBOLS;
