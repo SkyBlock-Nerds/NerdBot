@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -48,10 +49,10 @@ public class MinecraftImage {
     static {
         sansSerif = new Font("SansSerif", Font.PLAIN, 20);
         minecraftFonts = new Font[]{
-                initFont("/Minecraft/minecraft.otf", 15.5f),
-                initFont("/Minecraft/3_Minecraft-Bold.otf", 20.0f),
-                initFont("/Minecraft/2_Minecraft-Italic.otf", 20.5f),
-                initFont("/Minecraft/4_Minecraft-BoldItalic.otf", 20.5f)
+            initFont("/Minecraft/minecraft.otf", 15.5f),
+            initFont("/Minecraft/3_Minecraft-Bold.otf", 20.0f),
+            initFont("/Minecraft/2_Minecraft-Italic.otf", 20.5f),
+            initFont("/Minecraft/4_Minecraft-BoldItalic.otf", 20.5f)
         };
 
         // Register Minecraft Fonts
@@ -80,10 +81,10 @@ public class MinecraftImage {
         Graphics2D g2d = this.getImage().createGraphics();
         g2d.setColor(new Color(18, 3, 18, this.getAlpha()));
         g2d.fillRect(
-                PIXEL_SIZE * 2,
-                PIXEL_SIZE * 2,
-                width - PIXEL_SIZE * 4,
-                height - PIXEL_SIZE * 4
+            PIXEL_SIZE * 2,
+            PIXEL_SIZE * 2,
+            width - PIXEL_SIZE * 4,
+            height - PIXEL_SIZE * 4
         );
 
         return g2d;
@@ -94,10 +95,10 @@ public class MinecraftImage {
      */
     public void cropImage() {
         this.image = this.getImage().getSubimage(
-                0,
-                0,
-                this.largestWidth + START_XY,
-                this.getImage().getHeight()
+            0,
+            0,
+            this.largestWidth + START_XY,
+            this.getImage().getHeight()
         );
     }
 
@@ -107,9 +108,9 @@ public class MinecraftImage {
     public void addPadding() {
         if (this.getPadding() > 0) {
             BufferedImage resizedImage = new BufferedImage(
-                    this.getImage().getWidth() + this.getPadding() * 2,
-                    this.getImage().getHeight() + this.getPadding() * 2,
-                    BufferedImage.TYPE_INT_ARGB
+                this.getImage().getWidth() + this.getPadding() * 2,
+                this.getImage().getHeight() + this.getPadding() * 2,
+                BufferedImage.TYPE_INT_ARGB
             );
 
             Graphics2D graphics2D = resizedImage.createGraphics();

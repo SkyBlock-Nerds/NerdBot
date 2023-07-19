@@ -7,7 +7,10 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -16,7 +19,10 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.channel.ChannelManager;
-import net.hypixel.nerdbot.generator.*;
+import net.hypixel.nerdbot.generator.ImageMerger;
+import net.hypixel.nerdbot.generator.MinecraftHead;
+import net.hypixel.nerdbot.generator.MinecraftImage;
+import net.hypixel.nerdbot.generator.StringColorParser;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 
@@ -361,7 +367,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         extraInfoBuilder.setColor(Color.GRAY)
                 .addField("Other Information", ITEM_OTHER_INFO, false);
-
+      
         Collection<MessageEmbed> embeds = new ArrayList<>();
         embeds.add(infoBuilder.build());
         embeds.add(argumentBuilder.build());
@@ -391,6 +397,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
         extraInfoBuilder.setColor(Color.GRAY)
                 .addField("Other Information", HEAD_INFO_OTHER_INFORMATION, false);
+
 
         Collection<MessageEmbed> embeds = new ArrayList<>();
         embeds.add(infoBuilder.build());
@@ -440,14 +447,14 @@ public class ItemGenCommands extends ApplicationCommand {
 
     private boolean isIncorrectChannel(GuildSlashEvent event) {
         String senderChannelId = event.getChannel().getId();
-        String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getItemGenChannel();
+        String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getChannelConfig().getItemGenChannel();
 
         if (itemGenChannelIds == null) {
             event.reply("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
             return true;
         }
 
-        if (Arrays.stream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
+        if (Util.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
             // The top channel in the config should be considered the 'primary channel', which is referenced in the
             // error message.
             TextChannel channel = ChannelManager.getChannel(itemGenChannelIds[0]);
@@ -461,6 +468,5 @@ public class ItemGenCommands extends ApplicationCommand {
 
         return false;
     }
-
 }
 

@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.util;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -9,11 +10,9 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
-import net.hypixel.nerdbot.command.ItemGenCommands;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URI;
@@ -23,15 +22,33 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @Log4j2
 public class Util {
 
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
+    public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
+
+    private Util() {
+    }
+
+    public static Stream<String> safeArrayStream(String[]... arrays) {
+        Stream<String> stream = Stream.empty();
+
+        if (arrays != null) {
+            for (String[] array : arrays) {
+                stream = Stream.concat(stream, (array == null) ? Stream.empty() : Arrays.stream(array));
+            }
+        }
+
+        return stream;
+    }
 
     public static void sleep(TimeUnit unit, long time) {
         try {
@@ -78,9 +95,9 @@ public class Util {
      */
     public static int getReactionCountExcludingList(MessageReaction reaction, List<User> users) {
         return (int) reaction.retrieveUsers()
-                .stream()
-                .filter(user -> !users.contains(user))
-                .count();
+            .stream()
+            .filter(user -> !users.contains(user))
+            .count();
     }
 
     public static Object jsonToObject(File file, Class<?> clazz) throws FileNotFoundException {
@@ -109,6 +126,7 @@ public class Util {
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
     }
 
+    @Nullable
     public static DiscordUser getOrAddUserToCache(Database database, String userId) {
         if (!database.isConnected()) {
             log.warn("Could not cache user because there is not a database connected!");
@@ -149,29 +167,20 @@ public class Util {
         return tempFile;
     }
 
-    /**
-     * Initializes a font.
-     *
-     * @param path The path to the font in the resources' folder.
-     *
-     * @return The initialized font.
-     */
     @Nullable
-    public static Font initFont(String path, float size) {
-        Font font;
-        try (InputStream fontStream = ItemGenCommands.class.getResourceAsStream(path)) {
-            if (fontStream == null) {
-                log.error("Couldn't initialise font: " + path);
-                return null;
-            }
-            font = Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(size);
-        } catch (IOException | FontFormatException e) {
-            e.printStackTrace();
+    public static String getIgn(User user) {
+        // Stuffy: Gets display name from SBN guild
+        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        if (guild == null) {
             return null;
         }
-        return font;
+        Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
+        if (sbnMember == null) {
+            return null;
+        }
+        return sbnMember.getNickname();
     }
-
+  
     /**
      * Finds a matching value within a given set based on its name
      *

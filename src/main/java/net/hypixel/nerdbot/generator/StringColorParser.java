@@ -4,6 +4,7 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Stat;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,10 +69,10 @@ public class StringColorParser {
             breakLoopCount++;
             if (breakLoopCount > initialDescriptionLength) {
                 errorString = "length: " + description.length() + "\n" +
-                        "charIndex: " + charIndex + "\n" +
-                        "character failed on: " + description.charAt(charIndex) + "\n" +
-                        "string: " + description + "\n" +
-                        "If you see this debug, please ping a developer. Thanks!\n";
+                    "charIndex: " + charIndex + "\n" +
+                    "character failed on: " + description.charAt(charIndex) + "\n" +
+                    "string: " + description + "\n" +
+                    "If you see this debug, please ping a developer. Thanks!\n";
                 return;
             }
 

@@ -14,7 +14,7 @@ import java.util.Optional;
 @Log4j2
 public class ReactionChannelListener {
 
-    private final List<ReactionChannel> reactionChannels = NerdBotApp.getBot().getConfig().getReactionChannels();
+    private final List<ReactionChannel> reactionChannels = NerdBotApp.getBot().getConfig().getChannelConfig().getReactionChannels();
 
     @SubscribeEvent
     public void onMessageReceive(MessageReceivedEvent event) {
@@ -26,12 +26,12 @@ public class ReactionChannelListener {
         if (reactionChannel.isPresent()) {
             Message message = event.getMessage();
             reactionChannel.get().getEmojiIds().stream()
-                    .map(emojiId -> NerdBotApp.getBot().getJDA().getEmojiById(emojiId))
-                    .filter(Objects::nonNull)
-                    .forEachOrdered(emoji -> {
-                        message.addReaction(emoji).queue();
-                        log.info("Added reaction '" + emoji.getName() + "' to message " + message.getId() + " in reaction channel " + reactionChannel.get().getName());
-                    });
+                .map(emojiId -> NerdBotApp.getBot().getJDA().getEmojiById(emojiId))
+                .filter(Objects::nonNull)
+                .forEachOrdered(emoji -> {
+                    message.addReaction(emoji).queue();
+                    log.info("Added reaction '" + emoji.getName() + "' to message " + message.getId() + " in reaction channel " + reactionChannel.get().getName());
+                });
         }
     }
 }

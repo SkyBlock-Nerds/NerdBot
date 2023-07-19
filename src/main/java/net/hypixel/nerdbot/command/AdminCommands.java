@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -80,21 +81,26 @@ public class AdminCommands extends ApplicationCommand {
 
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(new EmbedBuilder()
-                    .setTitle("Invites generated")
-                    .setDescription("Generating " + amount + " invite(s) for " + channel.getAsMention() + " by " + event.getUser().getAsMention())
-                    .build()
+                .setTitle("Invites generated")
+                .setDescription("Generating " + amount + " invite(s) for " + channel.getAsMention() + " by " + event.getUser().getAsMention())
+                .build()
             ).queue();
         }
 
         for (int i = 0; i < amount; i++) {
-            InviteAction action = channel.createInvite()
+            try {
+                InviteAction action = channel.createInvite()
                     .setUnique(true)
                     .setMaxAge(7L, TimeUnit.DAYS)
                     .setMaxUses(1);
 
-            Invite invite = action.complete();
-            invites.add(invite);
-            log.info("Generated new temporary invite '" + invite.getUrl() + "' for channel " + channel.getName() + " by " + event.getUser().getAsTag());
+                Invite invite = action.complete();
+                invites.add(invite);
+                log.info("Generated new temporary invite '" + invite.getUrl() + "' for channel " + channel.getName() + " by " + event.getUser().getAsTag());
+            } catch (InsufficientPermissionException exception) {
+                event.getHook().editOriginal("I don't have permission to create invites in " + channel.getAsMention() + "!").queue();
+                return;
+            }
         }
 
         StringBuilder stringBuilder = new StringBuilder("Generated invites (");
@@ -116,9 +122,9 @@ public class AdminCommands extends ApplicationCommand {
 
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(new EmbedBuilder()
-                    .setTitle("Invites deleted")
-                    .setDescription("Deleted " + invites.size() + " invite(s) by " + event.getUser().getAsMention())
-                    .build()
+                .setTitle("Invites deleted")
+                .setDescription("Deleted " + invites.size() + " invite(s) by " + event.getUser().getAsMention())
+                .build()
             ).queue();
         }
         event.getHook().editOriginal("Deleted " + invites.size() + " invites").queue();
@@ -181,9 +187,9 @@ public class AdminCommands extends ApplicationCommand {
         JsonArray jsonArray = new JsonArray();
 
         List<Member> members = guild.loadMembers().get()
-                .stream()
-                .filter(member -> Util.hasRole(member, "Member"))
-                .toList();
+            .stream()
+            .filter(member -> Util.hasRole(member, "Member"))
+            .toList();
 
         if (nerdsOnly) {
             members = members.stream().filter(member -> Util.hasRole(member, "Nerd") || Util.hasRole(member, "HPC") || Util.hasRole(member, "Grape")).toList();

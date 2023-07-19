@@ -11,17 +11,16 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
+import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
-import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ import java.util.List;
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
 
-    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
+    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master", "HPC"};
 
     private final Database database = NerdBotApp.getBot().getDatabase();
 
@@ -44,9 +43,9 @@ public class InfoCommands extends ApplicationCommand {
         long totalMemory = Runtime.getRuntime().totalMemory();
 
         builder.append(" • Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n")
-                .append("• Environment: ").append(Environment.getEnvironment()).append("\n")
-                .append("• Uptime: ").append(Time.formatMs(NerdBotApp.getBot().getUptime())).append("\n")
-                .append("• Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
+            .append("• Environment: ").append(Environment.getEnvironment()).append("\n")
+            .append("• Uptime: ").append(Time.formatMs(NerdBotApp.getBot().getUptime())).append("\n")
+            .append("• Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
 
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
@@ -54,11 +53,11 @@ public class InfoCommands extends ApplicationCommand {
     @JDASlashCommand(name = "info", subcommand = "greenlit", description = "Get a list of all non-docced greenlit messages. May not be 100% accurate!", defaultLocked = true)
     public void greenlitInfo(GuildSlashEvent event, @AppOption int page, @AppOption @Optional String tag) {
         List<GreenlitMessage> greenlit = database.getCollection("greenlit_messages", GreenlitMessage.class)
-                .find()
-                .into(new ArrayList<>())
-                .stream()
-                .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.getTags().contains("Docced"))
-                .toList();
+            .find()
+            .into(new ArrayList<>())
+            .stream()
+            .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.getTags().contains("Docced"))
+            .toList();
 
         if (tag != null) {
             greenlit = greenlit.stream().filter(greenlitMessage -> greenlitMessage.getTags().contains(tag)).toList();
@@ -92,14 +91,14 @@ public class InfoCommands extends ApplicationCommand {
         }
 
         builder.append("Server name: ").append(guild.getName()).append(" (Server ID: ").append(guild.getId()).append(")\n")
-                .append("Created at: ").append(new DiscordTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()).toRelativeTimestamp()).append("\n")
-                .append("Boosters: ").append(guild.getBoostCount()).append(" (").append(guild.getBoostTier().name()).append(")\n")
-                .append("Channels: ").append(guild.getChannels().size()).append("\n")
-                .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
-                .append("  • Staff: ").append(staff).append("\n")
-                .append("  • HPC: ").append(guild.getMembersWithRoles(Util.getRole("HPC")).size()).append("\n")
-                .append("  • Grapes: ").append(guild.getMembersWithRoles(Util.getRole("Grape")).size()).append("\n")
-                .append("  • Nerds: ").append(guild.getMembersWithRoles(Util.getRole("Nerd")).size());
+            .append("Created at: ").append(new DiscordTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()).toRelativeTimestamp()).append("\n")
+            .append("Boosters: ").append(guild.getBoostCount()).append(" (").append(guild.getBoostTier().name()).append(")\n")
+            .append("Channels: ").append(guild.getChannels().size()).append("\n")
+            .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
+            .append("  • Staff: ").append(staff).append("\n")
+            .append("  • HPC: ").append(guild.getMembersWithRoles(Util.getRole("HPC")).size()).append("\n")
+            .append("  • Grapes: ").append(guild.getMembersWithRoles(Util.getRole("Grape")).size()).append("\n")
+            .append("  • Nerds: ").append(guild.getMembersWithRoles(Util.getRole("Nerd")).size());
 
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
@@ -123,37 +122,16 @@ public class InfoCommands extends ApplicationCommand {
             return;
         }
 
-        LastActivity lastActivity = discordUser.getLastActivity();
-        EmbedBuilder globalEmbedBuilder = new EmbedBuilder();
-        EmbedBuilder alphaEmbedBuilder = new EmbedBuilder();
+        Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = UserCommands.getActivityEmbeds(event.getMember());
 
-        // Global Activity
-        globalEmbedBuilder.setColor(Color.GREEN)
-                .setAuthor(member.getEffectiveName() + " (" + member.getId() + ")")
-                .setThumbnail(member.getEffectiveAvatarUrl())
-                .setTitle("Last Global Activity")
-                .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastGlobalActivity), true)
-                .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
-                .addField("Item Generator", lastActivity.toRelativeTimestamp(LastActivity::getLastItemGenUsage), true)
-                // Suggestions
-                .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastSuggestionDate), true)
-                .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionVoteDate), true)
-                .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentDate), true);
+        if (activityEmbeds.getLeft() == null || activityEmbeds.getRight() == null) {
+            event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
+            return;
+        }
 
-        // Alpha Activity
-        alphaEmbedBuilder.setColor(Color.RED)
-                .setTitle("Last Alpha Activity")
-                .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaActivity), true)
-                .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getAlphaVoiceJoinDate), true)
-                .addBlankField(true)
-                // Suggestions
-                .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaSuggestionDate), true)
-                .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionVoteDate), true)
-                .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentDate), true);
-
-        event.replyEmbeds(globalEmbedBuilder.build(), alphaEmbedBuilder.build())
-                .setEphemeral(true)
-                .queue();
+        event.replyEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build())
+            .setEphemeral(true)
+            .queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "activity", description = "View information regarding user activity", defaultLocked = true)
@@ -195,6 +173,40 @@ public class InfoCommands extends ApplicationCommand {
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
     }
 
+    @JDASlashCommand(name = "info", subcommand = "messages", description = "View an ordered list of users with the most messages", defaultLocked = true)
+    public void userMessageInfo(GuildSlashEvent event, @AppOption int page) {
+        if (!database.isConnected()) {
+            event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
+            return;
+        }
+
+        List<DiscordUser> users = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
+        users.removeIf(discordUser -> {
+            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+
+            if (member == null) {
+                return true;
+            }
+
+            return Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s));
+        });
+
+        users.sort(Comparator.comparingInt(DiscordUser::getTotalMessageCount));
+        StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
+
+        getPage(users, page, 10).forEach(discordUser -> {
+            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+            if (member == null) {
+                log.error("Couldn't find member " + discordUser.getDiscordId());
+                return;
+            }
+
+            stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getTotalMessageCount())).append(")").append("\n");
+        });
+
+        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
+    }
+
     /**
      * returns a view (not a new list) of the sourceList for the
      * range based on page and pageSize
@@ -206,13 +218,19 @@ public class InfoCommands extends ApplicationCommand {
      * @return custom error can be given instead of returning emptyList
      */
     public static <T> List<T> getPage(List<T> sourceList, int page, int pageSize) {
-        if (pageSize <= 0 || page <= 0) {
-            throw new IllegalArgumentException("Invalid page: " + pageSize);
+        if (sourceList == null) {
+            throw new IllegalArgumentException("Invalid source list");
         }
 
+        if (pageSize <= 0) {
+            throw new IllegalArgumentException("Invalid page size: " + pageSize);
+        }
+
+        page = Math.max(page, 1);
         int fromIndex = (page - 1) * pageSize;
-        if (sourceList == null || sourceList.size() <= fromIndex) {
-            return new ArrayList<>();
+
+        if (sourceList.size() <= fromIndex) {
+            return getPage(sourceList, page - 1, pageSize); // Revert to last page
         }
 
         return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));

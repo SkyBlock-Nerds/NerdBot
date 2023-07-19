@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.util.discord;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.GenericEvent;
@@ -18,15 +19,17 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.TimeUnit;
 
+@Log4j2
 public class MessageCache implements EventListener {
 
     private final Cache<String, Message> cache = Caffeine.newBuilder()
-            .maximumSize(10_000)
-            .expireAfterWrite(7, TimeUnit.DAYS)
-            .build();
+        .maximumSize(10_000)
+        .expireAfterWrite(7, TimeUnit.DAYS)
+        .build();
 
     public MessageCache() {
         NerdBotApp.getBot().getJDA().addEventListener(this);
+        log.info("Message cache initialized");
     }
 
     public RestAction<Message> getMessage(MessageChannel channel, String messageId) {
@@ -40,6 +43,7 @@ public class MessageCache implements EventListener {
 
     @SubscribeEvent
     public void onEvent(@NotNull GenericEvent event) {
+
         if (event instanceof MessageReceivedEvent messageReceivedEvent) {
             cache.put(messageReceivedEvent.getMessage().getId(), messageReceivedEvent.getMessage());
         }

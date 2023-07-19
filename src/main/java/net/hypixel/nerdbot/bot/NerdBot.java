@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.bot;
 import com.freya02.botcommands.api.CommandsBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mongodb.client.MongoCollection;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -15,10 +16,10 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.GreenlitUpdateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
@@ -31,18 +32,22 @@ import net.hypixel.nerdbot.util.discord.Users;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 @Log4j2
 public class NerdBot implements Bot {
 
     private static final List<BotFeature> FEATURES = Arrays.asList(
-            new HelloGoodbyeFeature(),
-            new CurateFeature(),
-            new UserGrabberFeature(),
-            new GreenlitUpdateFeature()
+        new HelloGoodbyeFeature(),
+        new CurateFeature(),
+        new UserGrabberFeature(),
+        new GreenlitUpdateFeature()
     );
 
     private final Database database = new Database(System.getProperty("mongodb.uri"), "skyblock_nerds");
@@ -55,24 +60,17 @@ public class NerdBot implements Bot {
 
     @Override
     public void create(String[] args) throws LoginException {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            e.printStackTrace();
-            e.printStackTrace(pw);
-            ChannelManager.getLogChannel().sendMessage(jda.getRoleById(config.getBotManagerRoleId()).getAsMention() + "\n\n" + sw).queue();
-        });
-
         loadConfig();
 
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
-                .setEventManager(new AnnotatedEventManager())
-                .addEventListeners(
-                        new ModLogListener(),
-                        new FeatureEventListener(),
-                        new ActivityListener(),
-                        new ReactionChannelListener()
-                ).setActivity(Activity.of(config.getActivityType(), config.getActivity()));
+            .setEventManager(new AnnotatedEventManager())
+            .addEventListeners(
+                new ModLogListener(),
+                new FeatureEventListener(),
+                new ActivityListener(),
+                new ReactionChannelListener(),
+                new SuggestionListener()
+            ).setActivity(Activity.of(config.getActivityType(), config.getActivity()));
         configureMemoryUsage(builder);
 
         if (config.getModMailConfig() != null) {
@@ -90,8 +88,8 @@ public class NerdBot implements Bot {
 
         try {
             CommandsBuilder commandsBuilder = CommandsBuilder
-                    .newBuilder(Long.parseLong(Users.AERH.getUserId()))
-                    .extensionsBuilder(extensionsBuilder -> extensionsBuilder.registerParameterResolver(new ForumChannelResolver()));
+                .newBuilder(Long.parseLong(Users.AERH.getUserId()))
+                .extensionsBuilder(extensionsBuilder -> extensionsBuilder.registerParameterResolver(new ForumChannelResolver()));
             commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
         } catch (IOException exception) {
             log.error("Couldn't create the command builder! Reason: " + exception.getMessage());
@@ -103,6 +101,39 @@ public class NerdBot implements Bot {
         }
 
         NerdBotApp.getBot().onStart();
+        loadRemindersFromDatabase();
+
+        log.info("Bot is ready!");
+    }
+
+    private void loadRemindersFromDatabase() {
+        if (!database.isConnected()) {
+            log.error("Failed to load reminders from database, database is not connected!");
+            return;
+        }
+
+        log.info("Loading all reminders from database...");
+
+        MongoCollection<Reminder> collection = database.getCollection("reminders", Reminder.class);
+        if (collection == null) {
+            log.error("Failed to load reminders from database, collection is null!");
+            return;
+        }
+
+        collection.find().forEach(t -> {
+            Date now = new Date();
+
+            if (now.after(t.getTime())) {
+                t.sendReminder(true);
+                log.info("Sent reminder " + t + " because it was not sent yet!");
+                return;
+            }
+
+            t.schedule();
+            log.info("Loaded reminder from database: " + t);
+        });
+
+        log.info("Loaded " + collection.countDocuments() + " reminders from the database!");
     }
 
     @Override
@@ -192,7 +223,6 @@ public class NerdBot implements Bot {
             config = (BotConfig) Util.jsonToObject(file, BotConfig.class);
 
             log.info("Loaded config from " + file.getAbsolutePath());
-            log.info(config.toString());
         } catch (FileNotFoundException exception) {
             log.error("Could not find config file " + fileName);
             System.exit(-1);

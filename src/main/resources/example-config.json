@@ -1,32 +1,33 @@
 {
-  "minimumThreshold": 10,
-  "messageLimit": 100,
-  "percentage": 75,
-  "interval": 120000,
-  "guildId": "123456789012345678",
-  "logChannel": "123456789012345678",
-  "itemGenChannel": [
-    "123456789012345678",
-    "123456789012345678"
-  ],
-  "suggestionForumIds": [
-    "123456789012345678"
-  ],
-  "alphaSuggestionForumIds": [
-    "123456789012345678"
-  ],
+  "modMailConfig": {
+    "receivingChannelId": "",
+    "roleId": ""
+  },
   "emojiConfig": {
-    "agree": "123456789012345678",
-    "disagree": "123456789012345678",
-    "greenlit": "123456789012345678"
+    "agreeEmojiId": "",
+    "disagreeEmojiId": "",
+    "neutralEmojiId": "",
+    "greenlitEmojiId": ""
   },
   "tagConfig": {
-    "greenlit": "1234567890123456789"
+    "greenlit": ""
   },
-  "activityType": "WATCHING",
-  "activity": "for suggestions",
-  "modMailConfig": {
-    "receivingChannelId": "123456789012345678",
-    "roleId": "123456789012345678"
-  }
+  "channelConfig": {
+    "logChannel": "",
+    "suggestionForumIds": [],
+    "alphaSuggestionForumIds": [],
+    "itemGenChannel": [],
+    "reactionChannels": [],
+    "blacklistedChannels": []
+  },
+  "guildId": "",
+  "botManagerRoleId": "",
+  "minimumThreshold": 15,
+  "messageLimit": 100,
+  "voiceThreshold": 60,
+  "percentage": 75.0,
+  "interval": 43200000,
+  "activityType": "PLAYING",
+  "activity": "",
+  "inactivityDays": 7
 }
