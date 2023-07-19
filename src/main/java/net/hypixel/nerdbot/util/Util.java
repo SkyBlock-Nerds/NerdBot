@@ -3,16 +3,17 @@ package net.hypixel.nerdbot.util;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
+import net.hypixel.nerdbot.command.ItemGenCommands;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URI;
@@ -179,6 +180,29 @@ public class Util {
             return null;
         }
         return sbnMember.getNickname();
+    }
+
+    /**
+     * Initializes a font.
+     *
+     * @param path The path to the font in the resources' folder.
+     *
+     * @return The initialized font.
+     */
+    @Nullable
+    public static Font initFont(String path, float size) {
+        Font font;
+        try (InputStream fontStream = ItemGenCommands.class.getResourceAsStream(path)) {
+            if (fontStream == null) {
+                log.error("Couldn't initialise font: " + path);
+                return null;
+            }
+            font = Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(size);
+        } catch (IOException | FontFormatException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return font;
     }
   
     /**

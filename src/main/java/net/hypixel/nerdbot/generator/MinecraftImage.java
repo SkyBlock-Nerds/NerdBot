@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;

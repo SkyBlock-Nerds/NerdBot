@@ -19,9 +19,8 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.generator.GeneratorBuilder;
 import net.hypixel.nerdbot.generator.ImageMerger;
-import net.hypixel.nerdbot.generator.MinecraftHead;
-import net.hypixel.nerdbot.generator.MinecraftImage;
 import net.hypixel.nerdbot.generator.StringColorParser;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
