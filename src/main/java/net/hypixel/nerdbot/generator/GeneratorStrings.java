@@ -95,9 +95,9 @@ public class GeneratorStrings {
     public static final String ITEM_PARSE_COMMAND = "Here is a Nerd Bot generation command if you want it!\n```%s```";
 
     // item gen recipe messages
-    public static final String UNKNOWN_EXTRA_DETAILS = "Not exactly sure what `%s` (extra_details: `\"%s\"`). Maybe you didn't write its name correctly.";
+    public static final String UNKNOWN_EXTRA_DETAILS = "Not exactly sure what `%s` (extra_details: `\"%s\"`). Maybe you didn't write its name correctly or forgot to add %%%% separators.";
     public static final String MISSING_PARSED_RECIPE = "Did you even try to make a parsed recipe? Because I don't see the separator anywhere.";
-    public static final String MISSING_FIELD_SEPARATOR = "This Recipe Item (`%s`) seems to not be valid\nIt should follow a similar format to: ```json\n<item slot number>,<amount>,<item name>\n```\nEach recipe item can be separated by %%";
+    public static final String MISSING_FIELD_SEPARATOR = "This Recipe Item (`%s`) seems to not be valid\nIt should follow a similar format to: ```json\n<item_slot_number>,<amount>,<item_name>,<optional extra_details: hex color/enchant>\n```\nEach recipe item can be separated by %%%%";
     public static final String RECIPE_SLOT_NOT_INTEGER = "You have entered in an item slot (`%s`) that isn't a number within the recipe item `%s`";
     public static final String RECIPE_SLOT_DUPLICATED = "It appears that you are trying to put multiple items into one slot (slot number: `%d`, duplicated recipe item: `%s`).";
     public static final String RECIPE_AMOUNT_NOT_INTEGER = "You have entered in an item amount (`%s`) that isn't a number within the recipe item `%s`";
