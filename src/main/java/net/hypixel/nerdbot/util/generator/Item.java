@@ -75,7 +75,7 @@ public class Item {
             overlay.applyOverlayColor(image, overlayColor);
         }
 
-        // applys
+        // applies the enchantment glint if "enchant" is present
         if (Arrays.stream(extraDetails).anyMatch(element -> element.equalsIgnoreCase("enchant"))) {
             Overlay.applyEnchantOverlay(image);
         }

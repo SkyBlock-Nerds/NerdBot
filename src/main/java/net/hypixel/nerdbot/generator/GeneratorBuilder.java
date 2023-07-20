@@ -365,7 +365,7 @@ public class GeneratorBuilder {
      */
     @Nullable
     public BufferedImage buildRecipe(GuildSlashEvent event, String recipeString, boolean renderBackground) {
-        // checking that the resources were correctly
+        // checking that the resources were correctly loaded into memory
         if (!MinecraftInventory.resourcesRegistered()) {
             event.getHook().sendMessage(ITEM_RESOURCE_NOT_LOADED).queue();
             return null;
