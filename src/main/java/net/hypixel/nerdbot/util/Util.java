@@ -1,15 +1,19 @@
 package net.hypixel.nerdbot.util;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.*;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
+import net.hypixel.nerdbot.command.ItemGenCommands;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URI;
@@ -176,5 +180,85 @@ public class Util {
             return null;
         }
         return sbnMember.getNickname();
+    }
+
+    /**
+     * Initializes a font.
+     *
+     * @param path The path to the font in the resources' folder.
+     *
+     * @return The initialized font.
+     */
+    @Nullable
+    public static Font initFont(String path, float size) {
+        Font font;
+        try (InputStream fontStream = ItemGenCommands.class.getResourceAsStream(path)) {
+            if (fontStream == null) {
+                log.error("Couldn't initialise font: " + path);
+                return null;
+            }
+            font = Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(size);
+        } catch (IOException | FontFormatException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return font;
+    }
+  
+    /**
+     * Finds a matching value within a given set based on its name
+     *
+     * @param enumSet an array to search for the enum in
+     * @param match   the value to find in the array
+     *
+     * @return returns the enum item or null if not found
+     */
+    @Nullable
+    public static Enum<?> findValue(Enum<?>[] enumSet, String match) {
+        for (Enum<?> enumItem : enumSet) {
+            if (match.equalsIgnoreCase(enumItem.name()))
+                return enumItem;
+        }
+
+        return null;
+    }
+
+    public static JsonObject isJsonObject(JsonObject obj, String element) {
+        // checking if the json object has the key
+        if (!obj.has(element)) {
+            return null;
+        }
+        // checking if the found element is actually a json object
+        JsonElement foundItem = obj.get(element);
+        if (!foundItem.isJsonObject()) {
+            return null;
+        }
+        return foundItem.getAsJsonObject();
+    }
+
+    public static String isJsonString(JsonObject obj, String element) {
+        // checking if the json object has the key
+        if (!obj.has(element)) {
+            return null;
+        }
+        // checking if the found element is a primitive type
+        JsonElement foundItem = obj.get(element);
+        if (!foundItem.isJsonPrimitive()) {
+            return null;
+        }
+        return foundItem.getAsJsonPrimitive().getAsString();
+    }
+
+    public static JsonArray isJsonArray(JsonObject obj, String element) {
+        // checking if the json object has the key
+        if (!obj.has(element)) {
+            return null;
+        }
+        // checking if the found element is an array
+        JsonElement foundItem = obj.get(element);
+        if (!foundItem.isJsonArray()) {
+            return null;
+        }
+        return foundItem.getAsJsonArray();
     }
 }
