@@ -32,7 +32,7 @@ public class GeneratorStrings {
     public static final String DESC_PARSE_ITEM = "The items NBT Data from in game";
     public static final String DESC_INCLUDE_ITEM = "Include the item along with the parsed description";
     public static final String DESC_RENDER_INVENTORY = "If the Minecraft Inventory background should be drawn";
-    public static final String DESC_RECIPE = "The recipe for crafting the item (/%s recipe_help for more info)".formatted(COMMAND_PREFIX);
+    public static final String DESC_RECIPE = "The recipe for crafting the item (see recipe_help for more info)";
 
     // item gen item messages
     public static final String INVALID_RARITY; // generated in static constructor
