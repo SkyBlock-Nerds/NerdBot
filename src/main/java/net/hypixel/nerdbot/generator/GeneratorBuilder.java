@@ -93,8 +93,8 @@ public class GeneratorBuilder {
 
             oneParameterItems.delete(oneParameterItems.length() - 2, oneParameterItems.length());
             twoParameterItems.delete(twoParameterItems.length() - 2, twoParameterItems.length());
-            GeneratorStrings.RECIPE_INFO_OTHER_INFORMATION = "Ability to Change One Layer (One Hex Color Parameter)\n" +
-                    oneParameterItems + "\n\nAbility to Change Both Layers (Two Hex Color Parameters)\n" + twoParameterItems;
+            GeneratorStrings.RECIPE_INFO_OTHER_INFORMATION = "**Ability to change one layer (One Hex Color Parameter)**\n" +
+                    oneParameterItems + "\n\n**Ability to change both layers (Two Hex Color Parameters)**\n" + twoParameterItems;
         } catch (IOException e) {
             log.error("Couldn't initialise the items for ItemStack Generation");
             log.error(e.getMessage());
