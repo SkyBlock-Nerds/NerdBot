@@ -7,6 +7,7 @@ import net.hypixel.nerdbot.command.ItemGenCommands;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -41,10 +42,10 @@ public class MinecraftInventory {
         // loading the inventory background into memory
         try (InputStream backgroundStream = ItemGenCommands.class.getResourceAsStream("/Minecraft/inventory_background.png")) {
             if (backgroundStream == null) {
-                throw new NullPointerException("inventory background stream was null");
+                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/inventory_background.png\"");
             }
             INVENTORY_IMAGE = ImageIO.read(backgroundStream);
-        } catch (IOException | NullPointerException e) {
+        } catch (IOException e) {
             log.error("Couldn't initialise the item stack file for ItemStack Generation");
             log.error(e.getMessage());
         }

@@ -16,10 +16,7 @@ import net.hypixel.nerdbot.util.skyblock.Rarity;
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -39,11 +36,11 @@ public class GeneratorBuilder {
         // loading all sprites for Minecraft Items
         try (InputStream itemStackStream = ItemGenCommands.class.getResourceAsStream("/Minecraft/item_stack_sprite_sheet.png")) {
             if (itemStackStream == null) {
-                throw new NullPointerException("The `item_stack_sprite_sheet.png` stream was null");
+                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/item_stack_sprite_sheet.png\"");
             }
 
             itemSpriteSheet = ImageIO.read(itemStackStream);
-        } catch (IOException | NullPointerException e) {
+        } catch (IOException e) {
             log.error("Couldn't initialise the item stack file for ItemStack Generation");
             log.error(e.getMessage());
             itemsInitialisedCorrectly = false;
@@ -52,14 +49,14 @@ public class GeneratorBuilder {
         // loading the overlays for some Minecraft Items
         try (InputStream overlayStream = ItemGenCommands.class.getResourceAsStream("/Minecraft/overlays.png")) {
             if (overlayStream == null) {
-                throw new NullPointerException("The `overlays.png` stream was null");
+                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/overlays.png\"");
             }
 
             BufferedImage overlayImage = ImageIO.read(overlayStream);
             for (Overlay overlay : Overlay.values()) {
                 overlay.setOverlayImage(overlayImage.getSubimage(overlay.getX(), overlay.getY(), 16, 16));
             }
-        } catch (IOException | NullPointerException e) {
+        } catch (IOException e) {
             log.error("Couldn't initialise the overlays for ItemStack Generation");
             log.error(e.getMessage());
             itemsInitialisedCorrectly = false;
@@ -68,7 +65,7 @@ public class GeneratorBuilder {
         // loading the items position in the sprite sheet
         try (InputStream itemStream = ItemGenCommands.class.getResourceAsStream("/Minecraft/items.json")) {
             if (itemStream == null) {
-                throw new NullPointerException("The `items.json` stream was null");
+                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/items.json\"");
             }
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(itemStream));
@@ -98,7 +95,7 @@ public class GeneratorBuilder {
             twoParameterItems.delete(twoParameterItems.length() - 2, twoParameterItems.length());
             GeneratorStrings.RECIPE_INFO_OTHER_INFORMATION = "Ability to Change One Layer (One Hex Color Parameter)\n" +
                     oneParameterItems + "\n\nAbility to Change Both Layers (Two Hex Color Parameters)\n" + twoParameterItems;
-        } catch (IOException | NullPointerException e) {
+        } catch (IOException e) {
             log.error("Couldn't initialise the items for ItemStack Generation");
             log.error(e.getMessage());
             itemsInitialisedCorrectly = false;
