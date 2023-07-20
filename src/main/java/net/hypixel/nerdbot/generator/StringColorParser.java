@@ -4,7 +4,7 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Stat;
-import org.jetbrains.annotations.Nullable;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -246,7 +246,7 @@ public class StringColorParser {
     }
 
     /**
-     * creates a new line within the arraylist, keeping the previous color
+     * Creates a new line within the arraylist, keeping the previous color
      */
     private void createNewLine() {
         currentLine.add(currentString);
@@ -258,7 +258,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets the color of the next segment
+     * Sets the color of the next segment
      *
      * @param color color to change to
      */
@@ -277,7 +277,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets if the next segment is bolded
+     * Sets if the next segment is bolded
      *
      * @param bold state of boldness to change to
      */
@@ -291,7 +291,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets if the next segment has italic
+     * Sets if the next segment has italic
      *
      * @param italic state of italics to change to
      */
@@ -305,7 +305,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets if the next segment has strikethrough
+     * Sets if the next segment has strikethrough
      *
      * @param strikethrough state of strikethrough to change to
      */
@@ -319,7 +319,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets if the next segment has underlined
+     * Sets if the next segment has underlined
      *
      * @param underline state of underlined to change to
      */
@@ -333,7 +333,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets if the next segment has obfuscation
+     * Sets if the next segment has obfuscation
      *
      * @param obfuscated state of obfuscated to change to
      */

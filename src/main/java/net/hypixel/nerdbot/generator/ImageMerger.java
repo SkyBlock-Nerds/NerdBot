@@ -14,10 +14,12 @@ public class ImageMerger {
     private final int[] headDimensions;
     private final int[] recipeDimensions;
 
-    /***
+    /**
      * Merges two existing images (Minecraft Item Description and a Head)
-     * @param itemDescription the item's description
-     * @param itemHead the item's visual appearance
+     *
+     * @param itemDescription   the item's description from {@link MinecraftImage}
+     * @param itemHead          the item's visual appearance
+     * @param itemRecipe        the item's recipe from {@link MinecraftInventory}
      */
     public ImageMerger(BufferedImage itemDescription, BufferedImage itemHead, BufferedImage itemRecipe) {
         this.itemDescription = itemDescription;
@@ -59,7 +61,7 @@ public class ImageMerger {
         return new int[] {width, height};
     }
 
-    /***
+    /**
      * Draws the final image onto one image
      */
     public void drawFinalImage() {
@@ -77,8 +79,9 @@ public class ImageMerger {
         this.g2d.dispose();
     }
 
-    /***
+    /**
      * Gets the drawn image
+     *
      * @return the drawn image
      */
     public BufferedImage getImage() {

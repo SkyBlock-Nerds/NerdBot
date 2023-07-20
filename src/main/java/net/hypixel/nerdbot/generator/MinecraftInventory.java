@@ -61,8 +61,9 @@ public class MinecraftInventory {
         this.g2d = this.initG2D();
     }
 
-    /***
+    /**
      * Creates an image, then initializes a Graphics2D object from that image.
+     *
      * @return G2D object
      */
     private Graphics2D initG2D() {
@@ -73,8 +74,8 @@ public class MinecraftInventory {
         return g2d;
     }
 
-    /***
-     * draws the background onto the image
+    /**
+     * Draws the background onto the image
      */
     private void createBackground() {
         if (this.renderBackground) {
@@ -82,8 +83,8 @@ public class MinecraftInventory {
         }
     }
 
-    /***
-     * draws the items and amounts onto the recipe
+    /**
+     * Draws the items and amounts onto the recipe
      */
     private void drawRecipeItems() {
         for (RecipeParser.RecipeItem item : this.recipe.values()) {
@@ -121,8 +122,9 @@ public class MinecraftInventory {
         }
     }
 
-    /***
+    /**
      * Renders the Minecraft crafting recipe
+     *
      * @return a minecraft crafting recipe image
      */
     public MinecraftInventory render() {

@@ -33,43 +33,48 @@ public enum Overlay {
         this(x, y, defaultOverlayColor, null);
     }
 
-    /***
+    /**
      * Gets the x coordinate in the overlay sprite sheet
+     *
      * @return the x coordinate of the sprite
      */
     public int getX() {
         return x;
     }
 
-    /***
+    /**
      * Gets the y coordinate in the overlay sprite sheet
+     *
      * @return the y coordinate of the sprite
      */
     public int getY() {
         return y;
     }
 
-    /***
+    /**
      * Sets the overlay image from the overlay sprite sheet
+     *
      * @param image the overlay sprite
      */
     public void setOverlayImage(BufferedImage image) {
         this.overlayImage = image;
     }
 
-    /***
+    /**
      * Gets the number of parameters that this overlay accepts
+     *
      * @return the number of parameters the overlay accepts (0, 1 or 2)
      */
     public int acceptedParameters() {
         return (this.defaultBaseColor != null ? 1 : 0) + (this.defaultOverlayColor != null ? 1 : 0);
     }
 
-    /***
+    /**
      * Applies an image modifier onto the selected image
-     * @param image the image the modifier is being applied to
-     * @param sourceImage the overlay source image
-     * @param color the color the image should be shifted by
+     *
+     * @param image         the image the modifier is being applied to
+     * @param sourceImage   the overlay source image
+     * @param color         the color the image should be shifted by
      */
     private void applyModifierOnImage(BufferedImage image, BufferedImage sourceImage, Color color) {
         HashMap<Integer, Integer> colorMap = new HashMap<>();
@@ -84,21 +89,22 @@ public enum Overlay {
 
                 // shifting the color based on the color supplied
                 int newColor = colorMap.computeIfAbsent(rgb, value -> {
-                            int selectedAlpha = (rgb >> 24) & 0xff;
-                            int selectedRed = (int) Math.round((((rgb >> 16) & 0xff) / 255.0) * color.getRed());
-                            int selectedGreen = (int) Math.round(((((rgb >> 8) & 0xff) / 255.0) * color.getGreen()));
-                            int selectedBlue = (int) Math.round((((rgb & 0xff) / 255.0) * color.getBlue()));
-                            return (selectedAlpha << 24) | (selectedRed << 16) | (selectedGreen << 8) | selectedBlue;
-                        });
+                    int selectedAlpha = (rgb >> 24) & 0xff;
+                    int selectedRed = (int) Math.round((((rgb >> 16) & 0xff) / 255.0) * color.getRed());
+                    int selectedGreen = (int) Math.round(((((rgb >> 8) & 0xff) / 255.0) * color.getGreen()));
+                    int selectedBlue = (int) Math.round((((rgb & 0xff) / 255.0) * color.getBlue()));
+                    return (selectedAlpha << 24) | (selectedRed << 16) | (selectedGreen << 8) | selectedBlue;
+                });
                 image.setRGB(x, y, newColor);
             }
         }
     }
 
-    /***
+    /**
      * Applies the overlay to the original image
-     * @param image the image the overlay should be applied to
-     * @param color the color the overlay image should have applied to it
+     *
+     * @param image     the image the overlay should be applied to
+     * @param color     the color the overlay image should have applied to it
      */
     public void applyOverlayColor(BufferedImage image, Color color) {
         // setting the color to the default value if a color wasn't supplied
@@ -119,8 +125,9 @@ public enum Overlay {
         applyModifierOnImage(image, image, color);
     }
 
-    /***
+    /**
      * Applies the enchantment glint onto the image provided
+     *
      * @param image the image to have the glint applied
      */
     public static void applyEnchantOverlay(BufferedImage image) {

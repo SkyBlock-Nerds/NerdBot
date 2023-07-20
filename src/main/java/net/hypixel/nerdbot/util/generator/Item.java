@@ -10,42 +10,47 @@ public class Item {
     private int y;
     private Overlay overlay;
 
-    /***
+    /**
      * Gets the name of the sprite
+     *
      * @return the sprite name
      */
     public String getName() {
         return name;
     }
 
-    /***
+    /**
      * Gets the x coordinate in the sprite sheet
+     *
      * @return the x coordinate of the sprite
      */
     public int getX() {
         return x;
     }
 
-    /***
+    /**
      * Gets the y coordinate in the sprite sheet
+     *
      * @return the y coordinate of the sprite
      */
     public int getY() {
         return y;
     }
 
-    /***
+    /**
      * Gets the overlay that should be applied to this item
+     *
      * @return the overlay for modifiers
      */
     public Overlay getOverlay() {
         return this.overlay;
     }
 
-    /***
+    /**
      * Applies image modifiers (overlay and enchantment glint) to the sprite
-     * @param image the image to apply the modifiers to
-     * @param extraDetails any extra details required for the modifiers
+     *
+     * @param image         the image to apply the modifiers to
+     * @param extraDetails  any extra details required for the modifiers
      */
     public void applyModifiers(BufferedImage image, String[] extraDetails) {
         if (extraDetails == null) {

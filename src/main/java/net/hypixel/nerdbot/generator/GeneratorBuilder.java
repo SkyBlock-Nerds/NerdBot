@@ -105,19 +105,21 @@ public class GeneratorBuilder {
         }
     }
 
-    /***
+    /**
      * Converts text into a Minecraft Item tooltip into a rendered image
-     * @param event the GuildSlashEvent which the command is triggered from
-     * @param name the name of the item
-     * @param rarity the rarity of the item
-     * @param itemLoreString the lore of the item
-     * @param type the type of the item
-     * @param addEmptyLine if there should be an extra line added between the lore and the final type line
-     * @param alpha the transparency of the generated image
-     * @param padding if there is any extra padding around the edges to prevent Discord from rounding the corners
-     * @param maxLineLength the maximum length before content overflows onto the next
-     * @param isNormalItem if the item should add an extra line between the title and first line
-     * @return a Minecraft item description
+     *
+     * @param event             the GuildSlashEvent which the command is triggered from
+     * @param name              the name of the item
+     * @param rarity            the rarity of the item
+     * @param itemLoreString    the lore of the item
+     * @param type              the type of the item
+     * @param addEmptyLine      if there should be an extra line added between the lore and the final type line
+     * @param alpha             the transparency of the generated image
+     * @param padding           if there is any extra padding around the edges to prevent Discord from rounding the corners
+     * @param maxLineLength     the maximum length before content overflows onto the next
+     * @param isNormalItem      if the item should add an extra line between the title and first line
+     *
+     * @return                  a Minecraft item description
      */
     @Nullable
     public BufferedImage buildItem(GuildSlashEvent event, String name, String rarity, String itemLoreString, String type,
@@ -195,12 +197,14 @@ public class GeneratorBuilder {
         return minecraftImage.getImage();
     }
 
-    /***
+    /**
      * Renders a Minecraft Head into an image
-     * @param event the GuildSlashEvent which the command is triggered from
-     * @param textureID the skin id/player name of the target skin
-     * @param isPlayerName if the provided textureID is a player name
-     * @return a rendered Minecraft head
+     *
+     * @param event           the GuildSlashEvent which the command is triggered from
+     * @param textureID       the skin id/player name of the target skin
+     * @param isPlayerName    if the provided textureID is a player name
+     *
+     * @return                a rendered Minecraft head
      */
     @Nullable
     public BufferedImage buildHead(GuildSlashEvent event, String textureID, Boolean isPlayerName) {
@@ -235,11 +239,13 @@ public class GeneratorBuilder {
         return new MinecraftHead(skin).drawHead().getImage();
     }
 
-    /***
+    /**
      * Converts a player name into a skin id
-     * @param event the GuildSlashEvent which the command is triggered from
-     * @param playerName the name of the player
-     * @return the skin id for the player's skin
+     *
+     * @param event         the GuildSlashEvent which the command is triggered from
+     * @param playerName    the name of the player
+     *
+     * @return              the skin id for the player's skin
      */
     @Nullable
     private String getPlayerHeadURL(GuildSlashEvent event, String playerName) {
@@ -275,22 +281,25 @@ public class GeneratorBuilder {
         return base64ToSkinURL(base64SkinData);
     }
 
-    /***
+    /**
      * Gets the Skin ID from a Base64 String
-     * @param base64SkinData Base64 Skin Data
-     * @return the skin id
+     *
+     * @param base64SkinData    Base64 Skin Data
+     * @return                  the skin id
      */
     public String base64ToSkinURL(String base64SkinData) {
         JsonObject skinData = NerdBotApp.GSON.fromJson(new String(Base64.getDecoder().decode(base64SkinData)), JsonObject.class);
         return skinData.get("textures").getAsJsonObject().get("SKIN").getAsJsonObject().get("url").getAsString().replace("http://textures.minecraft.net/texture/", "");
     }
 
-    /***
+    /**
      * Creates a rendered Minecraft Item image
-     * @param event the event associated to the command
-     * @param itemName the name of the item
-     * @param extraDetails any extra details about modifiers of the image
-     * @return a rendered minecraft image
+     *
+     * @param event         the event associated to the command
+     * @param itemName      the name of the item
+     * @param extraDetails  any extra details about modifiers of the image
+     *
+     * @return              a rendered minecraft image
      */
     @Nullable
     public BufferedImage buildItemStack(GuildSlashEvent event, String itemName, String[] extraDetails) {
@@ -315,12 +324,14 @@ public class GeneratorBuilder {
         return itemStack;
     }
 
-    /***
+    /**
      * Creates a rendered generic Minecraft item image of a Skull or Item Stack
-     * @param event the event associated to the command
-     * @param itemName the name of the item
-     * @param extraDetails any extra details about modifiers of the image
-     * @return a rendered minecraft image
+     *
+     * @param event         the event associated to the command
+     * @param itemName      the name of the item
+     * @param extraDetails  any extra details about modifiers of the image
+     *
+     * @return              a rendered minecraft image
      */
     @Nullable
     public BufferedImage buildUnspecifiedItem(GuildSlashEvent event, String itemName, String extraDetails) {
@@ -347,11 +358,13 @@ public class GeneratorBuilder {
         return itemImage;
     }
 
-    /***
+    /**
      * Creates a rendered Minecraft Inventory with up to 9 different slots in a 3x3 grid
-     * @param event the event associated to the command
-     * @param recipeString the string which contains the recipe items
-     * @return a rendered minecraft crafting recipe
+     *
+     * @param event             the event associated to the command
+     * @param recipeString      the string which contains the recipe items
+     *
+     * @return                  a rendered minecraft crafting recipe
      */
     @Nullable
     public BufferedImage buildRecipe(GuildSlashEvent event, String recipeString, boolean renderBackground) {

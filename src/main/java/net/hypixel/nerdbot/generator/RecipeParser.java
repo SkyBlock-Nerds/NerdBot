@@ -81,19 +81,23 @@ public class RecipeParser {
         this.successfullyParsed = true;
     }
 
-    /***
+    /**
      * Strips the string of any links or malicious data
-     * @param item the recipe item to clean
-     * @return a sanitized string
+     *
+     * @param item  the recipe item to clean
+     *
+     * @return      a sanitized string
      */
     private static String stripRecipeItem(String item) {
         return item.replaceAll("[^A-Za-z0-9,%#]", "");
     }
 
-    /***
+    /**
      * Attempts to convert the string into a number
-     * @param value the string to parse into an integer
-     * @return the number value of the string (null if it isn't a number)
+     *
+     * @param value     the string to parse into an integer
+     *
+     * @return          the number value of the string (null if it isn't a number)
      */
     @Nullable
     private static Integer tryParseInteger(String value) {
@@ -119,8 +123,9 @@ public class RecipeParser {
             this.extraDetails = extraDetails;
         }
 
-        /***
+        /**
          * Sets the rendered item stack for this item
+         *
          * @param image the image
          */
         public void setImage(BufferedImage image) {
