@@ -1,9 +1,10 @@
 package net.hypixel.nerdbot.generator;
 
+import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Stat;
-import org.jetbrains.annotations.Nullable;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,17 +82,17 @@ public class StringColorParser {
                     // check that there is a closing tag
                     if (closingIndex == -1) {
                         String surroundingError = description.substring(Math.max(charIndex - 10, 0), Math.min(charIndex + 10, description.length()));
-                        this.errorString = "It seems that you don't have a closing `%%` near `" + stripString(surroundingError) + "`";
+                        this.errorString = String.format(GeneratorStrings.PERCENT_NOT_FOUND, GeneratorStrings.stripString(surroundingError));
                         return;
                     }
                     if (closingIndex <= charIndex + 2) {
-                        this.errorString = "It seems that you are missing a starting/ending `%%` for a color code or stat.";
+                        this.errorString = GeneratorStrings.PERCENT_OUT_OF_RANGE;
                         return;
                     }
 
                     String selectedCommand = description.substring(charIndex + 2, closingIndex);
                     // checking if the command is a color code
-                    MCColor mcColor = (MCColor) findValue(colors, selectedCommand);
+                    MCColor mcColor = (MCColor) Util.findValue(colors, selectedCommand);
                     if (mcColor != null) {
                         // setting the correct option for the segment
                         switch (mcColor) {
@@ -106,11 +107,15 @@ public class StringColorParser {
                         continue;
                     }
 
+                    String currentColor = "&" + currentString.getCurrentColor().getColorCode() + (currentString.hasSpecialFormatting() ?
+                                    (currentString.isBold() ? "&l" : "") + (currentString.isItalic() ? "&o" : "") + (currentString.isStrikethrough() ? "&m" : "") +
+                                    (currentString.isUnderlined() ? "&n" : "") : "");
+
                     // checking if the command is a gemstone type
-                    Gemstone gemstone = (Gemstone) findValue(gemstones, selectedCommand);
+                    Gemstone gemstone = (Gemstone) Util.findValue(gemstones, selectedCommand);
                     if (gemstone != null) {
                         // replacing the selected space with the stat's text
-                        String replacementText = "%%DARK_GRAY%%" + gemstone.getIcon() + "%%" + currentString.getCurrentColor() + "%%";
+                        String replacementText = "%%DARK_GRAY%%" + gemstone.getIcon() + currentColor;
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
@@ -129,28 +134,25 @@ public class StringColorParser {
                     }
 
                     // checking if the command is a stat
-                    Stat stat = (Stat) findValue(stats, selectedCommand);
+                    Stat stat = (Stat) Util.findValue(stats, selectedCommand);
                     if (stat != null) {
                         // replacing the selected space with the stat's text
-                        String replacementText = stat.getParsedStat(isIcon, extraData) + "%%" + currentString.getCurrentColor() + "%%";
+                        String replacementText = stat.getParsedStat(isIcon, extraData) + currentColor;
+                        description.replace(charIndex, closingIndex + 2, replacementText);
+                        continue;
+                    }
+
+                    // checking if the command is supposed to only trigger for the text inside it
+                    MCColor tempStatColor = (MCColor) Util.findValue(colors, selectedCommand);
+                    if (tempStatColor != null) {
+                        // setting the correct color option for the segment
+                        String replacementText = "&" + tempStatColor.getColorCode() + extraData + currentColor;
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
 
                     // creating an error message showing the available stats, gemstones and color codes available
-                    StringBuilder failedString = new StringBuilder("You used an invalid code `" + stripString(selectedCommand) + "`. Valid codes:\n");
-                    for (MCColor availableColors : colors) {
-                        failedString.append(availableColors).append(" ");
-                    }
-                    failedString.append("\nValid Stats:\n");
-                    for (Stat availableStats : Stat.VALUES) {
-                        failedString.append(availableStats).append(" ");
-                    }
-                    failedString.append("\nValid Gems:\n");
-                    for (Gemstone availableGemstones : Gemstone.VALUES) {
-                        failedString.append(availableGemstones).append(" ");
-                    }
-                    this.errorString = failedString.toString();
+                    this.errorString = String.format(GeneratorStrings.INVALID_STAT_CODE, GeneratorStrings.stripString(selectedCommand));
                     return;
                 }
                 // checking if the user is using normal mc character codes
@@ -181,12 +183,7 @@ public class StringColorParser {
                     }
 
                     // creating error message for valid codes
-                    StringBuilder failedString = new StringBuilder();
-                    failedString.append("You used an invalid character code `").append(selectedCode).append("`. \nValid color codes include...\n");
-                    for (MCColor color : colors) {
-                        failedString.append(color).append(": `").append(color.getColorCode()).append("`, ");
-                    }
-                    this.errorString = failedString.substring(0, failedString.length() - 2);
+                    this.errorString = GeneratorStrings.INVALID_MINECRAFT_COLOR_CODE;
                     return;
                 }
                 // checking if the current character is a new line
@@ -219,10 +216,10 @@ public class StringColorParser {
             }
 
             String currentSubstring = description.substring(charIndex, nearestSplit);
-            if (lineLength + currentSubstring.length() > maxLineLength) {
+            if (lineLength + currentSubstring.length() >= maxLineLength) {
                 // splitting the current string if it cannot fit onto a single line
-                if (currentSubstring.length() > maxLineLength) {
-                    currentSubstring = currentSubstring.substring(0, maxLineLength + 1);
+                if (currentSubstring.length() >= maxLineLength) {
+                    currentSubstring = currentSubstring.substring(0, maxLineLength);
                 }
 
                 createNewLine();
@@ -249,7 +246,7 @@ public class StringColorParser {
     }
 
     /**
-     * creates a new line within the arraylist, keeping the previous color
+     * Creates a new line within the arraylist, keeping the previous color
      */
     private void createNewLine() {
         currentLine.add(currentString);
@@ -261,7 +258,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets the color of the next segment
+     * Sets the color of the next segment
      *
      * @param color color to change to
      */
@@ -280,7 +277,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets if the next segment is bolded
+     * Sets if the next segment is bolded
      *
      * @param bold state of boldness to change to
      */
@@ -294,7 +291,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets if the next segment has italic
+     * Sets if the next segment has italic
      *
      * @param italic state of italics to change to
      */
@@ -308,7 +305,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets if the next segment has strikethrough
+     * Sets if the next segment has strikethrough
      *
      * @param strikethrough state of strikethrough to change to
      */
@@ -322,7 +319,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets if the next segment has underlined
+     * Sets if the next segment has underlined
      *
      * @param underline state of underlined to change to
      */
@@ -336,7 +333,7 @@ public class StringColorParser {
     }
 
     /**
-     * sets if the next segment has obfuscation
+     * Sets if the next segment has obfuscation
      *
      * @param obfuscated state of obfuscated to change to
      */
@@ -348,27 +345,4 @@ public class StringColorParser {
         }
         currentString.setStrikethrough(obfuscated);
     }
-
-    /**
-     * Finds a matching value within a given set based on its name
-     *
-     * @param enumSet an array to search for the enum in
-     * @param match   the value to find in the array
-     *
-     * @return returns the enum item or null if not found
-     */
-    @Nullable
-    private static Enum<?> findValue(Enum<?>[] enumSet, String match) {
-        for (Enum<?> enumItem : enumSet) {
-            if (match.equalsIgnoreCase(enumItem.name()))
-                return enumItem;
-        }
-
-        return null;
-    }
-
-    private static String stripString(String normalString) {
-        return normalString.replaceAll("[^a-zA-Z0-9_ ]", "");
-    }
-
 }

@@ -58,21 +58,24 @@ public class StatColorParser {
         return "%%" + stat.getSecondaryColor() + "%%" + extraDetails + "%%" + stat.getColor() + "%%" + stat.getDisplay();
     }
 
-    /***
+    /**
      * Displays the stat with no extra details added on
-     * @param stat the stat selected
-     * @return returns the color parsed replacement string
+     *
+     * @param stat  the stat selected
+     *
+     * @return      returns the color parsed replacement string
      */
     public static String noParsing(Stat stat, String e) {
         return "%%" + stat.getColor() + "%%" + stat.getStat();
     }
 
 
-    /***
+    /**
      * Displays the stat with bolded asterisk around it
      *
-     * @param stat the stat selected
-     * @return the color parsed replacement string
+     * @param stat  the stat selected
+     *
+     * @return      the color parsed replacement string
      */
     public static String soulboundColorParsing(Stat stat, String e) {
         return "%%" + stat.getColor() + "%%%%BOLD%%* %%" + stat.getColor() + "%%" + stat.getStat() + " %%BOLD%%*";
@@ -90,11 +93,13 @@ public class StatColorParser {
         return "%%" + stat.getColor() + "%%" + stat.getDisplay() + " " + extraDetails;
     }
 
-    /***
+    /**
      * Displays the selected stat with the text after it changed color
-     * @param stat the stat selected
-     * @param extraDetails the extra arguments provided
-     * @return the color parsed replacement string
+     *
+     * @param stat          the stat selected
+     * @param extraDetails  the extra arguments provided
+     *
+     * @return              the color parsed replacement string
      */
     public static String postDualColorParser(Stat stat, String extraDetails) {
         return "%%" + stat.getColor() + "%%" + stat.getStat() + " %%" + stat.getSecondaryColor() + "%%" + extraDetails;

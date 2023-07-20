@@ -2,18 +2,16 @@ package net.hypixel.nerdbot.generator;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import net.hypixel.nerdbot.command.ItemGenCommands;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+
+import static net.hypixel.nerdbot.util.Util.initFont;
 
 public class MinecraftImage {
 
@@ -32,6 +30,8 @@ public class MinecraftImage {
     private final int alpha;
     @Getter
     private final int padding;
+    @Getter
+    private final boolean isNormalItem;
     @Getter(AccessLevel.PRIVATE)
     private final Graphics2D graphics;
     @Getter
@@ -58,11 +58,12 @@ public class MinecraftImage {
         Arrays.stream(minecraftFonts).forEach(GraphicsEnvironment.getLocalGraphicsEnvironment()::registerFont);
     }
 
-    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding) {
+    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem) {
         this.alpha = alpha;
         this.padding = padding;
         this.lines = lines;
-        this.graphics = this.initG2D(defaultWidth, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4);
+        this.isNormalItem = isNormalItem;
+        this.graphics = this.initG2D(defaultWidth + START_XY, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4);
         this.currentColor = defaultColor;
     }
 
@@ -171,9 +172,7 @@ public class MinecraftImage {
             }
 
             // increase size of first line if there are more than one lines present
-            if (this.getLines().size() != 0) {
-                this.updatePositionAndSize(this.getLines().indexOf(line) == 0);
-            }
+            this.updatePositionAndSize(this.isNormalItem() && this.getLines().indexOf(line) == 0);
         }
     }
 
@@ -251,29 +250,6 @@ public class MinecraftImage {
         this.getGraphics().setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
         this.getGraphics().drawLine(xPosition1, yPosition, xPosition2, yPosition);
         this.getGraphics().drawLine(xPosition1, yPosition + 1, xPosition2, yPosition + 1);
-    }
-
-    /**
-     * Initializes a font.
-     *
-     * @param path The path to the font in the resources' folder.
-     *
-     * @return The initialized font.
-     */
-    @Nullable
-    private static Font initFont(String path, float size) {
-        Font font;
-        try {
-            InputStream fontStream = ItemGenCommands.class.getResourceAsStream(path);
-            if (fontStream == null) {
-                return null;
-            }
-            font = Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(size);
-        } catch (IOException | FontFormatException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return font;
     }
 
     public static boolean isFontsRegistered() {
