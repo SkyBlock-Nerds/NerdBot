@@ -10,9 +10,10 @@ public class MinecraftHead {
     private final BufferedImage skin;
     private final Graphics2D g2d;
 
-    /***
+    /**
      * Creates a MinecraftHead renderer
-     * @param targetSkin the skin which is meant to be created
+     *
+     * @param targetSkin    the skin which is meant to be created
      */
     public MinecraftHead(BufferedImage targetSkin) {
         int width = (int) Math.round(17 * HeadTransforms.X_DISTANCE_HAT);
@@ -36,11 +37,12 @@ public class MinecraftHead {
         }
     }
 
-    /***
+    /**
      * Paints a single square on the image given the lower left point
-     * @param x starting x location to draw
-     * @param y starting y location to draw
-     * @param side the direction the square is facing
+     *
+     * @param x     starting x location to draw
+     * @param y     starting y location to draw
+     * @param side  the direction the square is facing
      */
     private void paintSquare(double x, double y, Side side) {
         int[] pointsX = new int[4];
@@ -55,12 +57,13 @@ public class MinecraftHead {
         g2d.fillPolygon(pointsX, pointsY, 4);
     }
 
-    /***
+    /**
      * Draws an entire face of the skin onto the image
-     * @param startingX starting x location to draw (the center vertex of the cube)
-     * @param startingY starting y location to draw (the center vertex of the cube)
-     * @param side the direction the square is facing
-     * @param face which part of the head (top, bottom, left, right, etc)
+     *
+     * @param startingX     starting x location to draw (the center vertex of the cube)
+     * @param startingY     starting y location to draw (the center vertex of the cube)
+     * @param side          the direction the square is facing
+     * @param face          which part of the head (top, bottom, left, right, etc)
      */
     private void drawFace(double startingX, double startingY, boolean isFlipped, Side side, Face face) {
         int newLineDisplacement = 0;
@@ -111,8 +114,9 @@ public class MinecraftHead {
         }
     }
 
-    /***
+    /**
      * Renders the Minecraft Head
+     *
      * @return a rendered Minecraft Head
      */
     public MinecraftHead drawHead() {
@@ -142,8 +146,9 @@ public class MinecraftHead {
         return this;
     }
 
-    /***
+    /**
      * Gets the generated image
+     *
      * @return the buffered image containing the head
      */
     public BufferedImage getImage() {
@@ -163,7 +168,7 @@ public class MinecraftHead {
     }
 }
 
-/***
+/**
  * Standard distances between points on the isometric grid.
  */
 class HeadTransforms {
@@ -178,7 +183,7 @@ class HeadTransforms {
     }
 }
 
-/***
+/**
  * Describes the 4 points of the square which fit the isometric pattern
  */
 enum Side {
@@ -218,7 +223,7 @@ enum Side {
     }
 }
 
-/***
+/**
  * The X/Y coordinates for where the head is located in the skin image
  */
 enum Face {
