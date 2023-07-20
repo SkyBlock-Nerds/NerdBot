@@ -25,14 +25,14 @@ public class GeneratorStrings {
     public static final String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
     public static final String DESC_PADDING = "Sets the transparent padding around the image (0 = none, 1 = discord)";
     public static final String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (1 - " + StringColorParser.MAX_FINAL_LINE_LENGTH + ") default " + StringColorParser.MAX_STANDARD_LINE_LENGTH;
-    public static final String DESC_ITEM_NAME = "The name of the Item stack you want to display";
-    public static final String DESC_HEAD_ID = "The ID of the skin or the Player Name (set is_player_name to True if it is a player name)";
-    public static final String DESC_IS_PLAYER_NAME = "If the skin ID given describes the player's name";
-    public static final String DESC_HIDDEN = "If you only want the generated image visible to yourself";
-    public static final String DESC_PARSE_ITEM = "Item JSON Display Data (in the form {\"Lore\": [...], \"Name\": \"\"}";
+    public static final String DESC_ITEM_NAME = "The name of the item you want to display";
+    public static final String DESC_HEAD_ID = "The skin ID or player name (set is_player_name to True if it is a player's name)";
+    public static final String DESC_IS_PLAYER_NAME = "If the skin ID is a player's username";
+    public static final String DESC_HIDDEN = "If you only want the generated image visible to be yourself";
+    public static final String DESC_PARSE_ITEM = "The items NBT Data from in game";
     public static final String DESC_INCLUDE_ITEM = "Include the item along with the parsed description";
     public static final String DESC_RENDER_INVENTORY = "If the Minecraft Inventory background should be drawn";
-    public static final String DESC_RECIPE = "The recipe for crafting the item (/gen recipe for more info)";
+    public static final String DESC_RECIPE = "The recipe for crafting the item (see recipe_help for more info)";
 
     // item gen item messages
     public static final String INVALID_RARITY; // generated in static constructor
@@ -69,14 +69,14 @@ public class GeneratorStrings {
 
     // item gen head messages
     public static final String HEAD_URL_REMINDER = "Hey, a small heads up - you don't need to include the full URL! Only the skin ID is required";
-    public static final String MALFORMED_HEAD_URL = "Malformed... Url... Exception? (probably should contact one of the Bot Developers)";
+    public static final String MALFORMED_HEAD_URL = "It seems that there is something wrong with the URL that was entered on the developer side of it. Please contact one of the Bot Developers!";
     public static final String INVALID_HEAD_URL = "It seems that the URL you entered in doesn't link to anything...\nEntered URL: `http://textures.minecraft.net/texture/%s`";
     public static final String REQUEST_PLAYER_UUID_ERROR = "There was an error trying to send a request to get the UUID of this player...";
     public static final String PLAYER_NOT_FOUND = "It seems that there is no one with the name `%s`";
     public static final String MALFORMED_PLAYER_PROFILE = "There was a weird issue when trying to get the profile data for `%s`";
 
     // item gen head help messages
-    public static final String HEAD_INFO_BASIC = "The command `/%s head` will display a rendered Minecraft Head from a Skin (or player) you chose!".formatted(COMMAND_PREFIX);
+    public static final String HEAD_INFO_BASIC = "The command `/%s head` will display a rendered Minecraft Head from a skin or player of your choice!".formatted(COMMAND_PREFIX);
     public static final String HEAD_INFO_ARGUMENTS = """
                         `skin_id:` The skin ID or the player name of the person you wish to grab the skin from. (This is the string written after `http://textures.minecraft.net/texture/...`
                         `is_player_head:` set to True if the skin ID is a player's name
@@ -89,30 +89,30 @@ public class GeneratorStrings {
     // item gen parse messages
     public static final String MISSING_ITEM_NBT = "It seems that you haven't copied the item's NBT from in game, or is in another format. (Missing NBT Element: `%s`)";
     public static final String MULTIPLE_ITEM_SKULL_DATA = "It seems that there is either too many or not enough skull Base64 strings inside the SkullOwner.Properties.textures array. Should check that there is only one (if not, ping a Bot Developer)";
-    public static final String INVALID_ITEM_SKULL_DATA = "It seems that there is something wrong with the value given for the SkullOwner.Properties.textures. You should probably check that it is in a Json style (or ping a Bot Developer).";
-    public static final String INVALID_BASE_64_SKIN_URL = "Either you are trying to be funny. Or there is something wrong with the Base64 string which this item's skull has.";
-    public static final String ITEM_PARSE_JSON_FORMAT = "This JSON object seems to not be valid.\nYou should either copy it from in game, or follow a similar format to...```json\n{\"Lore\": [\"lore array goes here\"], \"Name\": \"item name goes here\"}```";
+    public static final String INVALID_ITEM_SKULL_DATA = "It seems that there is something wrong with the value given for the SkullOwner.Properties.textures array. You should probably check that it is in a JSON style (or ping a Bot Developer).";
+    public static final String INVALID_BASE_64_SKIN_URL = "It seems that you have entered an invalid Base64 skin url. Please double-check that it is right";
+    public static final String ITEM_PARSE_JSON_FORMAT = "This JSON object seems to not be valid.\nYou should either copy it from in game, or follow a similar format to:```json\n{\n\tid: \"minecraft:stick\",\n\ttag: {\n\t\tdisplay: {\n\t\t\tLore: [\"§fJust your ordinary stick.\", \"\", \"§f§lCOMMON STICK\"],\n\t\t\tName: \"§fSticky\"\n\t\t}\n\t}\n}```";
     public static final String ITEM_PARSE_COMMAND = "Here is a Nerd Bot generation command if you want it!\n```%s```";
 
     // item gen recipe messages
     public static final String UNKNOWN_EXTRA_DETAILS = "Not exactly sure what `%s` (extra_details: `\"%s\"`). Maybe you didn't write its name correctly.";
     public static final String MISSING_PARSED_RECIPE = "Did you even try to make a parsed recipe? Because I don't see the separator anywhere.";
-    public static final String MISSING_FIELD_SEPARATOR = "This Recipe Item (`%s`) seems to not be valid\nIt should follow a similar format to... (each recipe item can be separated by %%)```json\n<item slot number>,<amount>,<item name>\n```";
+    public static final String MISSING_FIELD_SEPARATOR = "This Recipe Item (`%s`) seems to not be valid\nIt should follow a similar format to: ```json\n<item slot number>,<amount>,<item name>\n```\nEach recipe item can be separated by %%";
     public static final String RECIPE_SLOT_NOT_INTEGER = "You have entered in an item slot (`%s`) that isn't a number within the recipe item `%s`";
     public static final String RECIPE_SLOT_DUPLICATED = "It appears that you are trying to put multiple items into one slot (slot number: `%d`, duplicated recipe item: `%s`).";
     public static final String RECIPE_AMOUNT_NOT_INTEGER = "You have entered in an item amount (`%s`) that isn't a number within the recipe item `%s`";
     public static final String RECIPE_AMOUNT_NOT_IN_RANGE = "You have entered an item amount (`%s`) for the recipe item `%s` that is not in the range of 1-64. It would be funny if there were negative items required for a recipe though.";
 
     // item gen recipe help messages
-    public static final String RECIPE_INFO_BASIC = "the command `/%s recipe` will display a rendered 3x3 square of Minecraft Items or Heads (limited to just items and no blocks right now)".formatted(COMMAND_PREFIX);
+    public static final String RECIPE_INFO_BASIC = "The command `/%s recipe` will display a rendered 3x3 square of Minecraft Items or Heads (limited to just items and no blocks right now)".formatted(COMMAND_PREFIX);
     public static final String RECIPE_INFO_ARGUMENTS = """
                                `recipe`: A string containing all of the recipe data for slot number, amount and the item name, separated by a `%%` between different slots.
                                
                                Each recipe item should be separated with a comma.
-                               `slot number`: The slot you want the item displayed in (`1-9` starting in the top left).
+                               `slot_number`: The slot you want the item displayed in (`1-9` starting in the top left).
                                `amount`: The number of that item you want displayed.
-                               `name of item`: The id of the item with spaces replaced with underscores.
-                               `extra details` (optional): Any extra attributes that the item may have.
+                               `name_of_item`: The id of the item with spaces replaced with underscores.
+                               `extra_details` (optional): Any extra attributes that the item may have.
            
                                This item can be displayed as enchanted by using `ENCHANT` inside the extra details parameter. Example: `5,26,DEAD_BUSH,ENCHANT` will display an Enchanted Dead Bush in the middle slot (5) with 26 of them.
                                
