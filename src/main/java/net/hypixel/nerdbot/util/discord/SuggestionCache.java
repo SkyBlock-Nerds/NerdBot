@@ -51,7 +51,7 @@ public class SuggestionCache extends TimerTask {
                 .forEach(thread -> {
                     this.cache.put(thread.getId(), new Suggestion(thread));
                     User user = NerdBotApp.getBot().getJDA().getUserById(thread.getOwnerIdLong());
-                    log.info("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") (User: " + (user != null ? user.getEffectiveName() + "/" : "") + thread.getOwnerId() + ") to the suggestion cache.");
+                    //log.info("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") (User: " + (user != null ? user.getEffectiveName() + "/" : "") + thread.getOwnerId() + ") to the suggestion cache.");
                 });
 
             log.info("Removing expired suggestions.");
@@ -69,7 +69,7 @@ public class SuggestionCache extends TimerTask {
 
     public void addSuggestion(ThreadChannel thread) {
         this.cache.put(thread.getId(), new Suggestion(thread));
-        log.info("Added new suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
+        //log.info("Added new suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
     }
 
     public Suggestion getSuggestion(String id) {
@@ -88,7 +88,7 @@ public class SuggestionCache extends TimerTask {
 
     public void removeSuggestion(ThreadChannel thread) {
         this.cache.remove(thread.getId());
-        log.info("Removed suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") from the suggestion cache.");
+        //log.info("Removed suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") from the suggestion cache.");
     }
 
     public static class Suggestion {
