@@ -177,7 +177,7 @@ public class Util {
         }
         Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
         if (sbnMember == null) {
-            return null;
+            return user.getEffectiveName();
         }
         return sbnMember.getNickname();
     }
