@@ -171,13 +171,18 @@ public class Util {
     public static String getIgn(User user) {
         // Stuffy: Gets display name from SBN guild
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        log.info("Guild: " + guild);
         if (guild == null) {
+            log.info("Guild is null, effective name: " + user.getEffectiveName());
             return user.getEffectiveName();
         }
         Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
+        log.info("SBN Member: " + sbnMember);
         if (sbnMember == null) {
+            log.info("SBN Member is null, effective name: " + user.getEffectiveName());
             return user.getEffectiveName();
         }
+        log.info("SBN Member nickname: " + sbnMember.getNickname());
         return sbnMember.getNickname();
     }
 
