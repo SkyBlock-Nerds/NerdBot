@@ -168,12 +168,11 @@ public class Util {
         return tempFile;
     }
 
-    @Nullable
     public static String getIgn(User user) {
         // Stuffy: Gets display name from SBN guild
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
         if (guild == null) {
-            return null;
+            return user.getEffectiveName();
         }
         Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
         if (sbnMember == null) {
