@@ -210,7 +210,7 @@ public class ModMailListener {
         requester.openPrivateChannel()
             .flatMap(channel -> channel.sendMessage(
                 new MessageCreateBuilder()
-                    .setContent("**[Mod Mail] " + Util.getDisplayName(author) + ":**\n" + message.getContentDisplay())
+                    .setContent("**[Mod Mail] " + Util.getDisplayName(author) + ":** " + message.getContentDisplay())
                     .setFiles(buildFiles(message))
                     .build()
             ))
