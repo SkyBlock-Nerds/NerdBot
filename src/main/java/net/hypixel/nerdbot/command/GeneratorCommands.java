@@ -35,10 +35,10 @@ import java.util.stream.Stream;
 import static net.hypixel.nerdbot.generator.GeneratorStrings.*;
 
 @Log4j2
-public class ItemGenCommands extends ApplicationCommand {
+public class GeneratorCommands extends ApplicationCommand {
     private final GeneratorBuilder builder;
 
-    public ItemGenCommands() {
+    public GeneratorCommands() {
         super();
         this.builder = new GeneratorBuilder();
     }
