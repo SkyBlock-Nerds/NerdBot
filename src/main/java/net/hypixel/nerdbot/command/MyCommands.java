@@ -42,7 +42,7 @@ public class MyCommands extends ApplicationCommand {
             if (ChannelManager.getLogChannel() != null) {
                 ChannelManager.getLogChannel().sendMessageEmbeds(
                     new EmbedBuilder()
-                        .setAuthor(event.getMember().getUser().getName() + "(" + event.getMember().getEffectiveName() + ")")
+                        .setAuthor(event.getMember().getEffectiveName() + " (" + event.getMember().getUser().getName() + ")")
                         .setTitle("Mojang Profile Change")
                         .setThumbnail(event.getMember().getAvatarUrl())
                         .setDescription(event.getMember().getAsMention() + " updated their Mojang Profile.")
