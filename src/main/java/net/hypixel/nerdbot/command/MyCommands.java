@@ -7,7 +7,9 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -140,8 +142,28 @@ public class MyCommands extends ApplicationCommand {
             try {
                 member.modifyNickname(username).queue();
             } catch (HierarchyException hex) {
-                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "].");
+                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
             }
+        }
+
+        Guild guild = member.getGuild();
+        String newMemberRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getNewMemberRoleId();
+        java.util.Optional<Role> role = java.util.Optional.empty();
+
+        if (newMemberRoleId != null) {
+            role = java.util.Optional.ofNullable(guild.getRoleById(newMemberRoleId));
+        }
+
+        if (role.isPresent()) {
+            if (!Util.hasHigherRole(member, role.get())) { // Ignore Existing Members
+                try {
+                    guild.addRoleToMember(member, role.get()).queue();
+                } catch (HierarchyException hex) {
+                    log.warn("Unable to assign " + role.get().getName() + " role to " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
+                }
+            }
+        } else {
+            log.warn("Role with ID " + "" + " does not exist.");
         }
 
         return mojangProfile;
