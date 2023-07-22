@@ -54,7 +54,7 @@ public class ModMailListener {
         Message message = event.getMessage();
         // Stuffy: Removed "threadChannel.getName().contains(author.getName())" as usernames can be changed.
         List<ThreadChannel> channels = new ArrayList<>(forumChannel.getThreadChannels());
-        channels.addAll(forumChannel.retrieveArchivedPublicThreadChannels().complete());
+        channels.addAll(forumChannel.retrieveArchivedPublicThreadChannels().stream().toList());
 
         Optional<ThreadChannel> optional = channels.stream().filter(threadChannel -> threadChannel.getName().contains(author.getId())).findFirst();
 
