@@ -144,9 +144,8 @@ public class SuggestionCommands extends ApplicationCommand {
         String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`\n" : "") + (alpha ? "- Filtered by Alpha: `Yes`" : "");
 
         for (SuggestionCache.Suggestion suggestion : pages) {
-            String link = suggestion.getThread().getJumpUrl();
+            String link = "[" + suggestion.getThreadName().replaceAll("`", "") + "](" + suggestion.getThread().getJumpUrl() + ")";
             link += (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "") + "\n";
-            link += "Thread Name: " + suggestion.getThreadName() + "\n";
             link += suggestion.getThread().getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "\n";
 
             if (showNames) {
