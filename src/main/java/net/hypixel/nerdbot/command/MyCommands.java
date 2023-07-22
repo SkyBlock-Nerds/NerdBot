@@ -8,6 +8,7 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
@@ -64,7 +65,11 @@ public class MyCommands extends ApplicationCommand {
         event.getHook().sendMessage("Updated your Mojang Profile to `" + username + "` (`" + mojangProfile.get().getUniqueId() + "`).").queue();
 
         if (!member.getEffectiveName().toLowerCase().contains(username.toLowerCase())) {
-            member.modifyNickname(username).queue();
+            try {
+                member.modifyNickname(username).queue();
+            } catch (HierarchyException hex) {
+                log.warn("Unable to modify the nickname of " + member.getEffectiveName() + " (" + member.getId() + ").");
+            }
         }
 
         return mojangProfile;
