@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 @Log4j2
-public class UserCommands extends ApplicationCommand {
+public class MyCommands extends ApplicationCommand {
 
     private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
 

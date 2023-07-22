@@ -228,7 +228,7 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).queue();
         Database database = NerdBotApp.getBot().getDatabase();
         DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
-        Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = UserCommands.getActivityEmbeds(member);
+        Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = MyCommands.getActivityEmbeds(member);
 
         String profile = discordUser.isProfileAssigned() ?
             discordUser.getMojangProfile().getUsername() + " (" + discordUser.getMojangProfile().getUniqueId().toString() + ")" :
