@@ -42,8 +42,13 @@ public class MyCommands extends ApplicationCommand {
             return;
         }
 
+        username = mojangProfile.get().getUsername(); // Case-correction
         discordUser.setMojangProfile(mojangProfile.get());
-        event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.get().getUsername() + "` (`" + mojangProfile.get().getUniqueId() + "`).").queue();
+        event.getHook().sendMessage("Updated your Mojang Profile to `" + username + "` (`" + mojangProfile.get().getUniqueId() + "`).").queue();
+
+        if (!event.getMember().getEffectiveName().toLowerCase().contains(username.toLowerCase())) {
+            event.getMember().modifyNickname(username).queue();
+        }
 
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(
