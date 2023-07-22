@@ -68,7 +68,7 @@ public class MyCommands extends ApplicationCommand {
             try {
                 member.modifyNickname(username).queue();
             } catch (HierarchyException hex) {
-                log.warn("Unable to modify the nickname of " + member.getEffectiveName() + " (" + member.getId() + ").");
+                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " [" + member.getEffectiveName() + "] (" + member.getId() + ").");
             }
         }
 
