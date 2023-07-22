@@ -23,6 +23,6 @@ public class ChannelManager {
 
     @Nullable
     public static TextChannel getLogChannel() {
-        return getChannel(NerdBotApp.getBot().getConfig().getChannelConfig().getLogChannel());
+        return getChannel(NerdBotApp.getBot().getConfig().getChannelConfig().getLogChannelId());
     }
 }
