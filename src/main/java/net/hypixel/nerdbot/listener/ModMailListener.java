@@ -1,36 +1,43 @@
 package net.hypixel.nerdbot.listener;
 
+import club.minnced.discord.webhook.external.JDAWebhookClient;
+import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
-import net.dv8tion.jda.api.entities.channel.forums.ForumPost;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.util.Util;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @Log4j2
 public class ModMailListener {
 
-    private static final String MOD_MAIL_TITLE_TEMPLATE = "%s @%s (%s)";
-    private final String modMailChannelId = NerdBotApp.getBot().getConfig().getModMailConfig().getReceivingChannelId();
-    private final String modMailRoleMention = "<@&%s>".formatted(NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId());
+    private static final String MOD_MAIL_TITLE_TEMPLATE = "%s (%s)";
+    private final String modMailChannelId = NerdBotApp.getBot().getConfig().getModMailConfig().getChannelId();
+    private final String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
+    private final String modMailRoleMention = "<@&%s>".formatted(modMailRoleId);
 
     @SubscribeEvent
-    public void onModMailReceived(MessageReceivedEvent event) throws ExecutionException, InterruptedException {
+    public void onModMailReceived(MessageReceivedEvent event) {
         if (event.getChannelType() != ChannelType.PRIVATE) {
             return;
         }
@@ -45,55 +52,120 @@ public class ModMailListener {
             return;
         }
 
-        if (modMailRoleMention == null) {
-            return;
+        Message message = event.getMessage();
+        Database database = NerdBotApp.getBot().getDatabase();
+        Optional<ThreadChannel> existingTicket = forumChannel.getThreadChannels()
+            .stream()
+            .filter(threadChannel -> threadChannel.getName().contains(author.getId())) // Find Existing ModMail Thread
+            .findFirst();
+        boolean sendThanks = existingTicket.map(ThreadChannel::isArchived).orElse(existingTicket.isEmpty());
+        String expectedThreadName = MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(event.getAuthor()), author.getId());
+        ThreadChannel threadChannel;
+        DiscordUser discordUser = Util.getOrAddUserToCache(database, event.getAuthor().getId());
+        String expectedFirstPost = "Received new Mod Mail request from " + author.getAsMention() + "!\n\n" +
+            "User ID: " + author.getId() + "\n" +
+            "Minecraft IGN: " + discordUser.getMojangProfile().getUsername() + "\n" +
+            "Minecraft UUID: " + discordUser.getMojangProfile().getUniqueId().toString();
+
+        if (sendThanks) {
+            event.getAuthor()
+                .openPrivateChannel()
+                .flatMap(channel -> channel.sendMessage(
+                    new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.").build()
+                ))
+                .queue();
         }
 
-        Message message = event.getMessage();
-        // Stuffy: Removed "threadChannel.getName().contains(author.getName())" as usernames can be changed.
-        Optional<ThreadChannel> optional = forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getName().contains(author.getId())).findFirst();
-        if (optional.isPresent()) {
-            ThreadChannel threadChannel = optional.get();
+        if (existingTicket.isPresent()) {
+            threadChannel = existingTicket.get();
+            boolean updateFirstPost = false;
 
             if (threadChannel.isArchived()) {
                 threadChannel.getManager().setArchived(false).complete();
-                // WiViW: This means that the user likely has sent a new request to Staff/Grapes (That way it's not always responding with this message.), meaning they should get a response it is being looked at (Visible feedback to the user, rather than nothing it currently is).
-                MessageCreateBuilder builder = new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.");
-                event.getAuthor().openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
+                updateFirstPost = true;
             }
 
-            if (!MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(message.getAuthor()), author.getName(), author.getId()).equals(threadChannel.getName())) {
-                // Stuffy: Add the display name to the thread
-                threadChannel.getManager().setName(MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(message.getAuthor()), author.getName(), author.getId())).complete();
+            if (!threadChannel.getName().equals(expectedThreadName)) {
+                threadChannel.getManager().setName(expectedThreadName).queue();
+                updateFirstPost = true;
             }
 
-            threadChannel.sendMessage(modMailRoleMention).queue();
-            threadChannel.sendMessage(createMessage(message).build()).queue();
-            log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
+            if (updateFirstPost) {
+                MessageHistory messageHistory = threadChannel.getHistoryFromBeginning(1).complete();
+                boolean firstPost = messageHistory.getRetrievedHistory().get(0).getIdLong() == threadChannel.getIdLong();
+
+                if (firstPost) {
+                    messageHistory.getRetrievedHistory()
+                        .get(0)
+                        .editMessage(
+                            new MessageEditBuilder()
+                                .setContent(expectedFirstPost)
+                                .build()
+                        )
+                        .queue();
+                }
+            }
         } else {
-            // WiViW: The same as for above, except this time for any newly made Mod Mail requests, instead of only existing ones.
-            MessageCreateBuilder builder = new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.");
-            event.getAuthor().openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
-            ForumPost post = forumChannel.createForumPost(
-                // Stuffy: Add the display name to the thread
-                MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(message.getAuthor()), author.getName(), author.getId()),
-                MessageCreateData.fromContent("Received new Mod Mail request from " + author.getAsMention() + "!\n\nUser ID: " + author.getId())
-            ).complete();
-
-            ThreadChannel threadChannel = post.getThreadChannel();
+            threadChannel = forumChannel.createForumPost(expectedThreadName, MessageCreateData.fromContent(expectedFirstPost)).complete().getThreadChannel();
             threadChannel.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
-            threadChannel.getGuild().getMembersWithRoles(Util.getRole("Mod Mail")).forEach(member -> threadChannel.addThreadMember(member).complete());
-            try {
-                threadChannel.sendMessage(modMailRoleMention).queue();
-                threadChannel.sendMessage(createMessage(message).build()).queue();
-            } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
+
+            if (modMailRoleId != null) {
+                threadChannel.getGuild().getMembersWithRoles(Util.getRoleById(modMailRoleId)).forEach(member -> threadChannel.addThreadMember(member).complete());
+            }
+        }
+
+        Optional<Webhook> webhook = getWebhook();
+        log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
+
+        if (webhook.isPresent()) {
+            try (JDAWebhookClient client = JDAWebhookClient.from(webhook.get()).onThread(threadChannel.getIdLong())) {
+                List<String> messages = buildContent(message, true);
+
+                for (int i = 0; i < messages.size(); i++) {
+                    WebhookMessageBuilder webhookMessage = new WebhookMessageBuilder();
+                    webhookMessage.setUsername(Util.getDisplayName(event.getAuthor()));
+                    webhookMessage.setAvatarUrl(event.getAuthor().getEffectiveAvatarUrl());
+                    String content = messages.get(i);
+
+                    if (i == 0) { // First message
+                        if (modMailRoleId != null) {
+                            content = modMailRoleMention + " " + content;
+                        }
+                    }
+
+                    if (i == messages.size() - 1) { // Last message
+                        buildFiles(message).forEach(fileUpload -> webhookMessage.addFile(fileUpload.getName(), fileUpload.getData()));
+                    }
+
+                    webhookMessage.setContent(content);
+                    client.send(webhookMessage.build());
+                }
+            }
+        } else {
+            List<String> messages = buildContent(message, false);
+
+            for (int i = 0; i < messages.size(); i++) {
+                MessageCreateBuilder messageBuilder = new MessageCreateBuilder();
+                String content = messages.get(i);
+
+                if (i == 0) { // First message
+                    if (modMailRoleId != null) {
+                        content = modMailRoleMention + " " + content;
+                    }
+                }
+
+                if (i == messages.size() - 1) { // Last message
+                    messageBuilder.setFiles(buildFiles(message));
+                }
+
+                messageBuilder.setContent(content);
+                threadChannel.sendMessage(messageBuilder.build()).complete();
             }
         }
     }
 
     @SubscribeEvent
-    public void onModMailResponse(MessageReceivedEvent event) throws ExecutionException, InterruptedException {
+    public void onModMailResponse(MessageReceivedEvent event) {
         if (event.getChannelType() != ChannelType.GUILD_PUBLIC_THREAD) {
             return;
         }
@@ -135,31 +207,72 @@ public class ModMailListener {
             return;
         }
 
-        MessageCreateBuilder builder = createMessage(message).setContent("**Response from " + Util.getDisplayName(author) + " in SkyBlock Nerds:**\n" + message.getContentDisplay());
-        requester.openPrivateChannel().flatMap(channel -> channel.sendMessage(builder.build())).queue();
+        requester.openPrivateChannel()
+            .flatMap(channel -> channel.sendMessage(
+                new MessageCreateBuilder()
+                    .setContent("**[Mod Mail] " + Util.getDisplayName(author) + ":**\n" + message.getContentDisplay())
+                    .setFiles(buildFiles(message))
+                    .build()
+            ))
+            .queue();
     }
 
-    private MessageCreateBuilder createMessage(Message message) throws ExecutionException, InterruptedException {
-        MessageCreateBuilder data = new MessageCreateBuilder();
-        // Stuffy: Switched to effective name (displayname)
-        data.setContent(String.format("**%s:**%s%s", Util.getDisplayName(message.getAuthor()), "\n", message.getContentDisplay()));
+    private static Optional<Webhook> getWebhook() {
+        return Util.getMainGuild()
+            .retrieveWebhooks()
+            .complete()
+            .stream()
+            .filter(webhook -> webhook.getId().equals(
+                NerdBotApp.getBot()
+                    .getConfig()
+                    .getModMailConfig()
+                    .getWebhookId()
+            ))
+            .findFirst();
+    }
 
-        // TODO split into another message, but I don't anticipate someone sending a giant essay yet
-        if (data.getContent().length() > 2000) {
-            data.setContent(data.getContent().substring(0, 1997) + "...");
+    private static List<String> buildContent(Message message, boolean webhook) {
+        String content = message.getContentDisplay();
+
+        // Remove any mentions of users, roles, or @everyone/@here
+        content = content.replaceAll("@(everyone|here|&\\d+)", "@\u200b$1");
+
+        if (!webhook) {
+            content = String.format("**%s:**%s%s", Util.getDisplayName(message.getAuthor()), "\n", content);
         }
 
-        // Stuffy: Remove any mentions of users, roles, or @everyone/@here
-        data.setContent(data.getContent().replaceAll("@(everyone|here|&\\d+)", "@\u200b$1"));
+        List<String> messages = new ArrayList<>();
 
-        if (!message.getAttachments().isEmpty()) {
-            List<FileUpload> files = new ArrayList<>();
-            for (Message.Attachment attachment : message.getAttachments()) {
-                InputStream stream = attachment.getProxy().download().get();
-                files.add(FileUpload.fromData(stream, attachment.getFileName()));
+        if (content.length() > 2000) {
+            String subContent = content;
+
+            while (subContent.length() > 1950) {
+                subContent = content.substring(0, 1950);
+                messages.add(subContent);
             }
-            data.setFiles(files);
+
+            messages.add(subContent);
+        } else {
+            messages.add(content);
         }
-        return data;
+
+        return messages;
     }
+
+    private static List<FileUpload> buildFiles(Message message) {
+        return message.getAttachments()
+            .stream()
+            .map(attachment -> {
+                try {
+                    return FileUpload.fromData(
+                        attachment.getProxy().download().get(),
+                        attachment.getFileName()
+                    );
+                } catch (InterruptedException | ExecutionException ex) {
+                    throw new RuntimeException(ex);
+                }
+            })
+            .collect(Collectors.toList());
+    }
+
 }
