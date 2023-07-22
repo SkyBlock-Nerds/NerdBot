@@ -54,14 +54,22 @@ public class MyCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "my", subcommand = "activity", description = "View your activity.")
+    @JDASlashCommand(
+        name = "my",
+        subcommand = "activity",
+        description = "View your activity."
+    )
     public void myActivity(GuildSlashEvent event) {
         event.deferReply(true).queue();
         Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = getActivityEmbeds(event.getMember());
         event.getHook().editOriginalEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build()).queue();
     }
 
-    @JDASlashCommand(name = "my", subcommand = "profile", description = "View your profile.")
+    @JDASlashCommand(
+        name = "my",
+        subcommand = "profile",
+        description = "View your profile."
+    )
     public void myInfo(GuildSlashEvent event) {
         event.deferReply(true).queue();
         Database database = NerdBotApp.getBot().getDatabase();
@@ -83,7 +91,11 @@ public class MyCommands extends ApplicationCommand {
         ).queue();
     }
 
-    @JDASlashCommand(name = "my", subcommand = "suggestions", description = "View your suggestions.")
+    @JDASlashCommand(
+        name = "my",
+        subcommand = "suggestions",
+        description = "View your suggestions."
+    )
     public void mySuggestions(
         GuildSlashEvent event,
         @AppOption @Optional Integer page,
