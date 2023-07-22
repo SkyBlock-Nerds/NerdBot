@@ -19,36 +19,40 @@ public class ProfileUpdateFeature extends BotFeature {
 
     @Override
     public void onStart() {
-        this.timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                NerdBotApp.getBot()
-                    .getDatabase()
-                    .getCollection("users", DiscordUser.class)
-                    .find()
-                    .into(new ArrayList<>())
-                    .stream()
-                    .filter(DiscordUser::isProfileAssigned)
-                    .forEach(discordUser -> Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId(), false)
-                        .ifPresent(mojangProfile -> {
-                            discordUser.setMojangProfile(mojangProfile);
-                            Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        this.timer.scheduleAtFixedRate(
+            new TimerTask() {
+                @Override
+                public void run() {
+                    NerdBotApp.getBot()
+                        .getDatabase()
+                        .getCollection("users", DiscordUser.class)
+                        .find()
+                        .into(new ArrayList<>())
+                        .stream()
+                        .filter(DiscordUser::isProfileAssigned)
+                        .forEach(discordUser -> Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId(), false)
+                            .ifPresent(mojangProfile -> {
+                                discordUser.setMojangProfile(mojangProfile);
+                                Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
 
-                            if (guild != null) {
-                                Member member = guild.retrieveMemberById(discordUser.getDiscordId()).complete();
+                                if (guild != null) {
+                                    Member member = guild.retrieveMemberById(discordUser.getDiscordId()).complete();
 
-                                if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
-                                    try {
-                                        member.modifyNickname(mojangProfile.getUsername()).queue();
-                                    } catch (HierarchyException hex) {
-                                        log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "].");
+                                    if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
+                                        try {
+                                            member.modifyNickname(mojangProfile.getUsername()).queue();
+                                        } catch (HierarchyException hex) {
+                                            log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "].");
+                                        }
                                     }
                                 }
-                            }
-                        })
-                    );
-            }
-        }, 0L, Duration.of(NerdBotApp.getBot().getConfig().getMojangUsernameCache(), ChronoUnit.HOURS).toMillis());
+                            })
+                        );
+                }
+            },
+            Duration.of(30, ChronoUnit.MINUTES).toMillis(),
+            Duration.of(NerdBotApp.getBot().getConfig().getMojangUsernameCache(), ChronoUnit.HOURS).toMillis()
+        );
     }
 
     @Override
