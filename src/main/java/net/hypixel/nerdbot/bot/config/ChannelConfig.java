@@ -6,6 +6,7 @@ import lombok.ToString;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.channel.ReactionChannel;
 
+import java.nio.channels.Channel;
 import java.util.List;
 
 @Getter
@@ -16,7 +17,12 @@ public class ChannelConfig {
     /**
      * The {@link TextChannel} ID that the bot will be logging to
      */
-    private String logChannel = "";
+    private String logChannelId = "";
+
+    /**
+     * The ID of the {@link Channel} where new Mod Mail requests will be sent
+     */
+    private String modMailChannelId = "";
 
     /**
      * The {@link TextChannel} IDs for the suggestion forums
@@ -31,7 +37,7 @@ public class ChannelConfig {
     /**
      * The {@link TextChannel} ID for the itemgen channel
      */
-    private String[] itemGenChannel = {};
+    private String[] genChannelIds = {};
 
     /**
      * Configuration for channels that will have reactions automatically added to all new messages
