@@ -6,6 +6,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
+import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.util.Util;
 
@@ -48,7 +49,7 @@ public class UserGrabberFeature extends BotFeature {
 
             DiscordUser discordUser = getUser(users, member.getId());
             if (discordUser == null) {
-                discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new ArrayList<>(), new LastActivity());
+                discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new ArrayList<>(), new LastActivity(), new MojangProfile());
             }
 
             if (discordUser.getLastActivity() == null) {
