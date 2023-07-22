@@ -6,12 +6,10 @@ import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
@@ -42,10 +40,10 @@ public class InfoCommands extends ApplicationCommand {
         long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         long totalMemory = Runtime.getRuntime().totalMemory();
 
-        builder.append(" • Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n")
-            .append("• Environment: ").append(Environment.getEnvironment()).append("\n")
-            .append("• Uptime: ").append(Time.formatMs(NerdBotApp.getBot().getUptime())).append("\n")
-            .append("• Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
+        builder.append("- Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n")
+            .append("- Environment: ").append(Environment.getEnvironment()).append("\n")
+            .append("- Uptime: ").append(Time.formatMs(NerdBotApp.getBot().getUptime())).append("\n")
+            .append("- Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
 
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
@@ -95,43 +93,12 @@ public class InfoCommands extends ApplicationCommand {
             .append("Boosters: ").append(guild.getBoostCount()).append(" (").append(guild.getBoostTier().name()).append(")\n")
             .append("Channels: ").append(guild.getChannels().size()).append("\n")
             .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
-            .append("  • Staff: ").append(staff).append("\n")
-            .append("  • HPC: ").append(guild.getMembersWithRoles(Util.getRole("HPC")).size()).append("\n")
-            .append("  • Grapes: ").append(guild.getMembersWithRoles(Util.getRole("Grape")).size()).append("\n")
-            .append("  • Nerds: ").append(guild.getMembersWithRoles(Util.getRole("Nerd")).size());
+            .append("- Staff: ").append(staff).append("\n")
+            .append("- HPC: ").append(guild.getMembersWithRoles(Util.getRole("HPC")).size()).append("\n")
+            .append("- Grapes: ").append(guild.getMembersWithRoles(Util.getRole("Grape")).size()).append("\n")
+            .append("- Nerds: ").append(guild.getMembersWithRoles(Util.getRole("Nerd")).size());
 
         event.reply(builder.toString()).setEphemeral(true).queue();
-    }
-
-    @JDASlashCommand(name = "info", subcommand = "user", description = "View information about a user", defaultLocked = true)
-    public void userInfo(GuildSlashEvent event, @AppOption(description = "The user to search") Member member) {
-        if (!database.isConnected()) {
-            event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
-            return;
-        }
-
-        DiscordUser discordUser;
-        if (NerdBotApp.USER_CACHE.getIfPresent(member.getId()) != null) {
-            discordUser = NerdBotApp.USER_CACHE.getIfPresent(member.getId());
-        } else {
-            discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", member.getId()).first();
-        }
-
-        if (discordUser == null) {
-            event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
-            return;
-        }
-
-        Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = UserCommands.getActivityEmbeds(event.getMember());
-
-        if (activityEmbeds.getLeft() == null || activityEmbeds.getRight() == null) {
-            event.reply("Couldn't find that user in the database!").setEphemeral(true).queue();
-            return;
-        }
-
-        event.replyEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build())
-            .setEphemeral(true)
-            .queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "activity", description = "View information regarding user activity", defaultLocked = true)
