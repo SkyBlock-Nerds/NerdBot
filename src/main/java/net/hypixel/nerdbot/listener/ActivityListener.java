@@ -122,11 +122,11 @@ public class ActivityListener {
 
         if (isAlphaChannel) {
             discordUser.getLastActivity().setLastAlphaActivity(time);
-            log.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
+            //log.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
         }
 
         discordUser.getLastActivity().setLastGlobalActivity(time);
-        log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
+        //log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
 
         // Ignore channel if blacklisted for activity tracking
         if (Arrays.stream(channelConfig.getBlacklistedChannels()).anyMatch(guildChannel.getId()::equalsIgnoreCase)) {
