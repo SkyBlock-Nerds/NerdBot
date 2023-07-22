@@ -270,20 +270,25 @@ public class Util {
         return UUID.fromString(input.replaceAll(ADD_UUID_HYPHENS_REGEX.pattern(), "$1-$2-$3-$4-$5"));
     }
 
-    public static String getIgn(User user) {
-        // Stuffy: Gets display name from SBN guild
-        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
-        if (guild == null) {
-            log.info("Guild is null, effective name: " + user.getEffectiveName());
-            return user.getEffectiveName();
-        }
+    public static String getDisplayName(User user) {
+        DiscordUser discordUser = getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), user.getId());
 
-        Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
-        if (sbnMember == null || sbnMember.getNickname() == null) {
-            return user.getEffectiveName();
-        }
+        if (discordUser.isProfileAssigned()) {
+            return discordUser.getMojangProfile().getUsername();
+        } else {
+            Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+            if (guild == null) {
+                log.info("Guild is null, effective name: " + user.getEffectiveName());
+                return user.getEffectiveName();
+            }
 
-        return sbnMember.getNickname();
+            Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
+            if (sbnMember == null || sbnMember.getNickname() == null) {
+                return user.getEffectiveName();
+            }
+
+            return sbnMember.getNickname();
+        }
     }
 
     /**
