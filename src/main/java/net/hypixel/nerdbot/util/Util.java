@@ -73,6 +73,11 @@ public class Util {
         return NerdBotApp.getBot().getJDA().getGuildById(guildId);
     }
 
+    @Nullable
+    public static Guild getMainGuild() {
+        return NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+    }
+
     public static boolean hasRole(Member member, String name) {
         List<Role> roles = member.getRoles();
         return roles.stream().anyMatch(role -> role.getName().equalsIgnoreCase(name));
@@ -95,11 +100,20 @@ public class Util {
 
     @Nullable
     public static Role getRole(String name) {
-        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        Guild guild = Util.getMainGuild();
         if (guild == null) {
             return null;
         }
         return guild.getRoles().stream().filter(role -> role.getName().equals(name)).findFirst().orElse(null);
+    }
+
+    @Nullable
+    public static Role getRoleById(String id) {
+        Guild guild = Util.getMainGuild();
+        if (guild == null) {
+            return null;
+        }
+        return guild.getRoles().stream().filter(role -> role.getId().equals(id)).findFirst().orElse(null);
     }
 
     public static File createTempFile(String fileName, String content) throws IOException {
@@ -290,7 +304,7 @@ public class Util {
         if (discordUser.isProfileAssigned()) {
             return discordUser.getMojangProfile().getUsername();
         } else {
-            Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+            Guild guild = Util.getMainGuild();
             if (guild == null) {
                 log.info("Guild is null, effective name: " + user.getEffectiveName());
                 return user.getEffectiveName();

@@ -23,7 +23,7 @@ public class UserGrabberFeature extends BotFeature {
             return;
         }
 
-        Guild guild = Util.getGuild(NerdBotApp.getBot().getConfig().getGuildId());
+        Guild guild = Util.getMainGuild();
         if (guild == null) {
             log.error("Couldn't find the guild specified in the bot config!");
             return;
@@ -63,7 +63,7 @@ public class UserGrabberFeature extends BotFeature {
 
     @Override
     public void onEnd() {
-        log.info("Finished grabbing all users from guild " + Util.getGuild(NerdBotApp.getBot().getConfig().getGuildId()).getName());
+        log.info("Finished grabbing all users from guild " + Util.getMainGuild().getName());
     }
 
     private DiscordUser getUser(List<DiscordUser> users, String id) {

@@ -110,7 +110,7 @@ public class InfoCommands extends ApplicationCommand {
 
         List<DiscordUser> users = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
         users.removeIf(discordUser -> {
-            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+            Member member = Util.getMainGuild().getMemberById(discordUser.getDiscordId());
 
             if (member == null) {
                 return true;
@@ -128,7 +128,7 @@ public class InfoCommands extends ApplicationCommand {
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
         getPage(users, page, 10).forEach(discordUser -> {
-            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+            Member member = Util.getMainGuild().getMemberById(discordUser.getDiscordId());
             if (member == null) {
                 log.error("Couldn't find member " + discordUser.getDiscordId());
                 return;
@@ -147,9 +147,10 @@ public class InfoCommands extends ApplicationCommand {
             return;
         }
 
+        Guild guild = Util.getMainGuild();
         List<DiscordUser> users = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
         users.removeIf(discordUser -> {
-            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+            Member member = guild.getMemberById(discordUser.getDiscordId());
 
             if (member == null) {
                 return true;
@@ -162,7 +163,7 @@ public class InfoCommands extends ApplicationCommand {
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
         getPage(users, page, 10).forEach(discordUser -> {
-            Member member = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()).getMemberById(discordUser.getDiscordId());
+            Member member = guild.getMemberById(discordUser.getDiscordId());
             if (member == null) {
                 log.error("Couldn't find member " + discordUser.getDiscordId());
                 return;

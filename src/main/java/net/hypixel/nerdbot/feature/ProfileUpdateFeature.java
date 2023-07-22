@@ -33,7 +33,7 @@ public class ProfileUpdateFeature extends BotFeature {
                         .forEach(discordUser -> Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId(), false)
                             .ifPresent(mojangProfile -> {
                                 discordUser.setMojangProfile(mojangProfile);
-                                Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+                                Guild guild = Util.getMainGuild();
 
                                 if (guild != null) {
                                     Member member = guild.retrieveMemberById(discordUser.getDiscordId()).complete();
