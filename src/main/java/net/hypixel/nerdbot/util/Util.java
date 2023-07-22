@@ -218,19 +218,35 @@ public class Util {
     }
 
     public static Optional<MojangProfile> getMojangProfile(String name) {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format("https://api.mojang.com/users/profiles/minecraft/%s", name))).GET().build();
-
         try {
-            log.info("Sending request to " + httpRequest.uri());
-            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            return Optional.of(NerdBotApp.GSON.fromJson(response.body(), MojangProfile.class));
+            String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", name);
+            return retrieveMojangProfile(url);
         } catch (Exception ex) {
             log.error(String.format("Encountered error while looking up Minecraft account of %s!", name));
             ex.printStackTrace();
         }
 
         return Optional.empty();
+    }
+
+    public static Optional<MojangProfile> getMojangProfile(UUID uniqueId) {
+        try {
+            String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
+            return retrieveMojangProfile(url);
+        } catch (Exception ex) {
+            log.error(String.format("Encountered error while looking up Minecraft account of %s!", uniqueId));
+            ex.printStackTrace();
+        }
+
+        return Optional.empty();
+    }
+
+    private static Optional<MojangProfile> retrieveMojangProfile(String url) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(url)).GET().build();
+        log.info("Sending request to " + httpRequest.uri());
+        HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        return Optional.of(NerdBotApp.GSON.fromJson(response.body(), MojangProfile.class));
     }
 
     public static boolean isUUID(String input) {
