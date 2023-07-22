@@ -25,12 +25,6 @@ public class RoleConfig {
      */
     private String newMemberRoleId = "";
 
-    /**
-     * The ID of the Mod Mail {@link Role}, used to ping for new requests
-     * and updates to existing requests
-     */
-    private String modMailRoleId = "";
-
     public boolean isEquals(MessageReaction reaction, Function<RoleConfig, String> function) {
         if (reaction.getEmoji().getType() != Emoji.Type.CUSTOM) {
             return false;

@@ -16,6 +16,11 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 public class BotConfig {
 
     /**
+     * Configuration for anything related to the Mod Mail feature
+     */
+    private ModMailConfig modMailConfig = new ModMailConfig();
+
+    /**
      * {@link Emoji Emojis} that the bot will use to react to suggestions
      */
     private EmojiConfig emojiConfig = new EmojiConfig();
