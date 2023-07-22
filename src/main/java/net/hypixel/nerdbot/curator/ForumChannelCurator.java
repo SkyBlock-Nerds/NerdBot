@@ -148,7 +148,17 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
                 List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
                 tags.add(greenlitTag);
+                boolean archived = thread.isArchived();
+
+                if (archived) {
+                    thread.getManager().setArchived(false).complete();
+                }
+
                 thread.getManager().setAppliedTags(tags).complete();
+
+                if (archived) {
+                    thread.getManager().setArchived(true).queue();
+                }
 
                 GreenlitMessage greenlitMessage = GreenlitMessage.builder()
                     .agrees(agree)
