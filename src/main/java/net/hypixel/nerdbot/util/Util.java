@@ -220,7 +220,7 @@ public class Util {
     public static Optional<MojangProfile> getMojangProfile(String name) {
         try {
             String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", name);
-            return retrieveMojangProfile(url);
+            return retrieveMojangProfile(url, true);
         } catch (Exception ex) {
             log.error(String.format("Encountered error while looking up Minecraft account of %s!", name));
             ex.printStackTrace();
@@ -230,9 +230,13 @@ public class Util {
     }
 
     public static Optional<MojangProfile> getMojangProfile(UUID uniqueId) {
+        return getMojangProfile(uniqueId, true);
+    }
+
+    public static Optional<MojangProfile> getMojangProfile(UUID uniqueId, boolean logRequest) {
         try {
             String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
-            return retrieveMojangProfile(url);
+            return retrieveMojangProfile(url, logRequest);
         } catch (Exception ex) {
             log.error(String.format("Encountered error while looking up Minecraft account of %s!", uniqueId));
             ex.printStackTrace();
@@ -241,10 +245,14 @@ public class Util {
         return Optional.empty();
     }
 
-    private static Optional<MojangProfile> retrieveMojangProfile(String url) throws Exception {
+    private static Optional<MojangProfile> retrieveMojangProfile(String url, boolean logRequest) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(url)).GET().build();
-        log.info("Sending request to " + httpRequest.uri());
+
+        if (logRequest) {
+            log.info("Sending request to " + httpRequest.uri());
+        }
+
         HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         return Optional.of(NerdBotApp.GSON.fromJson(response.body(), MojangProfile.class));
     }
