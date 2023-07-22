@@ -13,9 +13,11 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.discord.MessageCache;
 import net.hypixel.nerdbot.util.discord.SuggestionCache;
+import net.hypixel.nerdbot.util.gson.UUIDTypeAdapter;
 
 import javax.security.auth.login.LoginException;
 import java.time.Duration;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -23,7 +25,10 @@ import java.util.concurrent.Executors;
 public class NerdBotApp {
 
     public static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
-    public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    public static final Gson GSON = new GsonBuilder()
+        .setPrettyPrinting()
+        .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
+        .create();
     public static final Cache<String, DiscordUser> USER_CACHE = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofMinutes(10L))
         .scheduler(Scheduler.systemScheduler())
