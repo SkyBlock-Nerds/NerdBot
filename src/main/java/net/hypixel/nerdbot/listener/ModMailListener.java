@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -54,7 +53,11 @@ public class ModMailListener {
 
         Message message = event.getMessage();
         // Stuffy: Removed "threadChannel.getName().contains(author.getName())" as usernames can be changed.
-        Optional<ThreadChannel> optional = forumChannel.getThreadChannels().stream().filter(threadChannel -> threadChannel.getName().contains(author.getId())).findFirst();
+        List<ThreadChannel> channels = new ArrayList<>(forumChannel.getThreadChannels());
+        channels.addAll(forumChannel.retrieveArchivedPublicThreadChannels().complete());
+
+        Optional<ThreadChannel> optional = channels.stream().filter(threadChannel -> threadChannel.getName().contains(author.getId())).findFirst();
+
         if (optional.isPresent()) {
             ThreadChannel threadChannel = optional.get();
 
