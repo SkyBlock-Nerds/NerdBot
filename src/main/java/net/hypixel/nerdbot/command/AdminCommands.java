@@ -191,6 +191,30 @@ public class AdminCommands extends ApplicationCommand {
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
 
+
+    @JDASlashCommand(
+        name = "user",
+        subcommand = "link",
+        description = "Link a Mojang Profile to a members account."
+    )
+    public void linkProfile(GuildSlashEvent event, @AppOption(description = "Member to link to.") Member member, @AppOption(description = "Your Minecraft IGN to link.") String username) {
+        event.deferReply(true).queue();
+        java.util.Optional<MojangProfile> mojangProfile = MyCommands.updateMojangProfile(event, member, username);
+
+        if (mojangProfile.isPresent() && ChannelManager.getLogChannel() != null) {
+            ChannelManager.getLogChannel().sendMessageEmbeds(
+                new EmbedBuilder()
+                    .setAuthor(member.getEffectiveName())
+                    .setTitle("Admin Mojang Profile Change")
+                    .setThumbnail(member.getAvatarUrl())
+                    .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
+                    .addField("Username", mojangProfile.get().getUsername(), false)
+                    .addField("UUID", mojangProfile.get().getUniqueId().toString(), false)
+                    .build()
+            ).queue();
+        }
+    }
+
     @JDASlashCommand(
         name = "user",
         subcommand = "missing",
