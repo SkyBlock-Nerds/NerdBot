@@ -1,22 +1,35 @@
 package net.hypixel.nerdbot.util;
 
-import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.command.GeneratorCommands;
+import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -237,44 +250,40 @@ public class Util {
         return Optional.ofNullable(memberMCUsername);
     }
 
-    public static Optional<MojangProfile> getMojangProfile(String name) {
+    public static MojangProfile getMojangProfile(String username) throws Exception {
         try {
-            String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", name);
-            return retrieveMojangProfile(url, true);
+            String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
+            return NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
         } catch (Exception ex) {
-            log.error(String.format("Encountered error while looking up Minecraft account of %s!", name));
-            ex.printStackTrace();
+            throw new Exception("Unable to locate Minecraft UUID for `" + username + "`.", ex);
         }
-
-        return Optional.empty();
     }
 
-    public static Optional<MojangProfile> getMojangProfile(UUID uniqueId) {
-        return getMojangProfile(uniqueId, true);
-    }
-
-    public static Optional<MojangProfile> getMojangProfile(UUID uniqueId, boolean logRequest) {
+    public static MojangProfile getMojangProfile(UUID uniqueId) throws Exception {
         try {
             String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
-            return retrieveMojangProfile(url, logRequest);
+            return NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
         } catch (Exception ex) {
-            log.error(String.format("Encountered error while looking up Minecraft account of %s!", uniqueId));
-            ex.printStackTrace();
+            throw new Exception("Unable to locate Minecraft Username for `" + uniqueId.toString() + "`.", ex);
         }
-
-        return Optional.empty();
     }
 
-    private static Optional<MojangProfile> retrieveMojangProfile(String url, boolean logRequest) throws Exception {
+    private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
-        HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(url)).GET().build();
+        HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url)).GET();
+        Arrays.asList(headers).forEach(pair -> builder.header(pair.getLeft(), pair.getRight()));
+        HttpRequest request = builder.build();
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
 
-        if (logRequest) {
-            log.info("Sending request to " + httpRequest.uri());
+    public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws Exception {
+        try {
+            String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId.toString());
+            String hypixelApiKey = NerdBotApp.getHypixelApiKey().map(UUID::toString).orElse("");
+            return NerdBotApp.GSON.fromJson(getHttpResponse(url, Pair.of("API-Key", hypixelApiKey)).body(), HypixelPlayerResponse.class);
+        } catch (Exception ex) {
+            throw new Exception("Unable to locate Hypixel Player for `" + uniqueId.toString() + "`.", ex);
         }
-
-        HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-        return Optional.of(NerdBotApp.GSON.fromJson(response.body(), MojangProfile.class));
     }
 
     public static boolean isUUID(String input) {
