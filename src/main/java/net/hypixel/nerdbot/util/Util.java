@@ -105,10 +105,10 @@ public class Util {
             return roles.stream().anyMatch(role -> nameList.stream().anyMatch(name -> role.getName().equalsIgnoreCase(name)));
     }
 
-    public static boolean hasHigherRole(Member member, Role role) {
+    public static boolean hasHigherOrEqualRole(Member member, Role role) {
         return member.getRoles()
             .stream()
-            .anyMatch(memberRole -> memberRole.getPosition() > role.getPosition());
+            .anyMatch(memberRole -> memberRole.getPosition() >= role.getPosition());
     }
 
     @Nullable

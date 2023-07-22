@@ -160,7 +160,7 @@ public class MyCommands extends ApplicationCommand {
         }
 
         if (role.isPresent()) {
-            if (!Util.hasHigherRole(member, role.get())) { // Ignore Existing Members
+            if (!Util.hasHigherOrEqualRole(member, role.get())) { // Ignore Existing Members
                 try {
                     guild.addRoleToMember(member, role.get()).queue();
                 } catch (HierarchyException hex) {
