@@ -23,4 +23,9 @@ public class ModMailConfig {
      */
     private String roleId = "";
 
+    /**
+     * The Webhook ID for the Mod Mail channel, used to represent users
+     */
+    private String webhookId = "";
+
 }
