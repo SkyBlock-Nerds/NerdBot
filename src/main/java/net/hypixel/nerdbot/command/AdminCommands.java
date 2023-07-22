@@ -201,17 +201,21 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).queue();
         java.util.Optional<MojangProfile> mojangProfile = MyCommands.updateMojangProfile(event, member, username);
 
-        if (mojangProfile.isPresent() && ChannelManager.getLogChannel() != null) {
-            ChannelManager.getLogChannel().sendMessageEmbeds(
-                new EmbedBuilder()
-                    .setAuthor(member.getEffectiveName())
-                    .setTitle("Admin Mojang Profile Change")
-                    .setThumbnail(member.getAvatarUrl())
-                    .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
-                    .addField("Username", mojangProfile.get().getUsername(), false)
-                    .addField("UUID", mojangProfile.get().getUniqueId().toString(), false)
-                    .build()
-            ).queue();
+        if (mojangProfile.isPresent()) {
+            event.getHook().sendMessage("Updated " + member.getAsMention() + "'s Mojang Profile to `" + mojangProfile.get().getUsername() + "` (`" + mojangProfile.get().getUniqueId() + "`).").queue();
+
+            if (ChannelManager.getLogChannel() != null) {
+                ChannelManager.getLogChannel().sendMessageEmbeds(
+                    new EmbedBuilder()
+                        .setAuthor(event.getMember().getEffectiveName() + " (" + event.getMember().getUser().getName() + ")")
+                        .setTitle("Admin Mojang Profile Change")
+                        .setThumbnail(member.getAvatarUrl())
+                        .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
+                        .addField("Username", mojangProfile.get().getUsername(), false)
+                        .addField("UUID", mojangProfile.get().getUniqueId().toString(), false)
+                        .build()
+                ).queue();
+            }
         }
     }
 

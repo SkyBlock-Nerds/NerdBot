@@ -36,53 +36,32 @@ public class MyCommands extends ApplicationCommand {
         event.deferReply(true).queue();
         java.util.Optional<MojangProfile> mojangProfile = updateMojangProfile(event, event.getMember(), username);
 
-        if (mojangProfile.isPresent() && ChannelManager.getLogChannel() != null) {
-            ChannelManager.getLogChannel().sendMessageEmbeds(
-                new EmbedBuilder()
-                    .setAuthor(event.getMember().getEffectiveName())
-                    .setTitle("Mojang Profile Change")
-                    .setThumbnail(event.getMember().getAvatarUrl())
-                    .setDescription(event.getMember().getAsMention() + " updated their Mojang Profile.")
-                    .addField("Username", mojangProfile.get().getUsername(), false)
-                    .addField("UUID", mojangProfile.get().getUniqueId().toString(), false)
-                    .build()
-            ).queue();
-        }
-    }
+        if (mojangProfile.isPresent()) {
+            event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.get().getUsername() + "` (`" + mojangProfile.get().getUniqueId() + "`).").queue();
 
-    public static java.util.Optional<MojangProfile> updateMojangProfile(GuildSlashEvent event, Member member, String username) {
-        Database database = NerdBotApp.getBot().getDatabase();
-        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
-        java.util.Optional<MojangProfile> mojangProfile = Util.getMojangProfile(username);
-
-        if (mojangProfile.isEmpty()) {
-            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
-            return java.util.Optional.empty();
-        }
-
-        username = mojangProfile.get().getUsername(); // Case-correction
-        discordUser.setMojangProfile(mojangProfile.get());
-        event.getHook().sendMessage("Updated your Mojang Profile to `" + username + "` (`" + mojangProfile.get().getUniqueId() + "`).").queue();
-
-        if (!member.getEffectiveName().toLowerCase().contains(username.toLowerCase())) {
-            try {
-                member.modifyNickname(username).queue();
-            } catch (HierarchyException hex) {
-                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " [" + member.getEffectiveName() + "] (" + member.getId() + ").");
+            if (ChannelManager.getLogChannel() != null) {
+                ChannelManager.getLogChannel().sendMessageEmbeds(
+                    new EmbedBuilder()
+                        .setAuthor(event.getMember().getUser().getName() + "(" + event.getMember().getEffectiveName() + ")")
+                        .setTitle("Mojang Profile Change")
+                        .setThumbnail(event.getMember().getAvatarUrl())
+                        .setDescription(event.getMember().getAsMention() + " updated their Mojang Profile.")
+                        .addField("Username", mojangProfile.get().getUsername(), false)
+                        .addField("UUID", mojangProfile.get().getUniqueId().toString(), false)
+                        .build()
+                ).queue();
             }
         }
-
-        return mojangProfile;
     }
 
-    @JDASlashCommand(name = "my", subcommand = "activity", description = "View your recent activity.")
+    @JDASlashCommand(name = "my", subcommand = "activity", description = "View your activity.")
     public void myActivity(GuildSlashEvent event) {
         event.deferReply(true).queue();
         Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = getActivityEmbeds(event.getMember());
         event.getHook().editOriginalEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build()).queue();
     }
 
-    @JDASlashCommand(name = "my", subcommand = "info", description = "View information about yourself")
+    @JDASlashCommand(name = "my", subcommand = "profile", description = "View your profile.")
     public void myInfo(GuildSlashEvent event) {
         event.deferReply(true).queue();
         Database database = NerdBotApp.getBot().getDatabase();
@@ -94,8 +73,10 @@ public class MyCommands extends ApplicationCommand {
 
         event.getHook().editOriginalEmbeds(
             new EmbedBuilder()
-                .setAuthor(event.getMember().getEffectiveName())
+                .setAuthor(event.getMember().getEffectiveName() + " (" + event.getMember().getUser().getName() + ")")
+                .setTitle("Your Profile")
                 .setThumbnail(event.getMember().getEffectiveAvatarUrl())
+                .setColor(event.getMember().getColor())
                 .addField("ID", event.getMember().getId(), false)
                 .addField("Mojang Profile", profile, false)
                 .build()
@@ -128,6 +109,30 @@ public class MyCommands extends ApplicationCommand {
                 .setThumbnail(event.getMember().getEffectiveAvatarUrl())
                 .build()
         ).queue();
+    }
+
+    public static java.util.Optional<MojangProfile> updateMojangProfile(GuildSlashEvent event, Member member, String username) {
+        Database database = NerdBotApp.getBot().getDatabase();
+        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+        java.util.Optional<MojangProfile> mojangProfile = Util.getMojangProfile(username);
+
+        if (mojangProfile.isEmpty()) {
+            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
+            return java.util.Optional.empty();
+        }
+
+        username = mojangProfile.get().getUsername(); // Case-correction
+        discordUser.setMojangProfile(mojangProfile.get());
+
+        if (!member.getEffectiveName().toLowerCase().contains(username.toLowerCase())) {
+            try {
+                member.modifyNickname(username).queue();
+            } catch (HierarchyException hex) {
+                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "].");
+            }
+        }
+
+        return mojangProfile;
     }
 
     public static Pair<EmbedBuilder, EmbedBuilder> getActivityEmbeds(Member member) {
