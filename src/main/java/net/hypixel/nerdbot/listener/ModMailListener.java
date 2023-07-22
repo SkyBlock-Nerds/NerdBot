@@ -54,8 +54,9 @@ public class ModMailListener {
 
         Message message = event.getMessage();
         Database database = NerdBotApp.getBot().getDatabase();
-        Optional<ThreadChannel> existingTicket = forumChannel.getThreadChannels()
-            .stream()
+        List<ThreadChannel> channels = new ArrayList<>(forumChannel.getThreadChannels());
+        channels.addAll(forumChannel.retrieveArchivedPublicThreadChannels().stream().toList());
+        Optional<ThreadChannel> existingTicket = channels.stream()
             .filter(threadChannel -> threadChannel.getName().contains(author.getId())) // Find Existing ModMail Thread
             .findFirst();
         boolean sendThanks = existingTicket.map(ThreadChannel::isArchived).orElse(existingTicket.isEmpty());
