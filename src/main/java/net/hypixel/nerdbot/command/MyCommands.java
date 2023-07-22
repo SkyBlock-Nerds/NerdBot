@@ -33,24 +33,9 @@ public class MyCommands extends ApplicationCommand {
     )
     public void linkProfile(GuildSlashEvent event, @AppOption(description = "Your Minecraft IGN to link.") String username) {
         event.deferReply(true).queue();
-        Database database = NerdBotApp.getBot().getDatabase();
-        DiscordUser discordUser = Util.getOrAddUserToCache(database, event.getMember().getId());
-        java.util.Optional<MojangProfile> mojangProfile = Util.getMojangProfile(username);
+        java.util.Optional<MojangProfile> mojangProfile = updateMojangProfile(event, event.getMember(), username);
 
-        if (mojangProfile.isEmpty()) {
-            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
-            return;
-        }
-
-        username = mojangProfile.get().getUsername(); // Case-correction
-        discordUser.setMojangProfile(mojangProfile.get());
-        event.getHook().sendMessage("Updated your Mojang Profile to `" + username + "` (`" + mojangProfile.get().getUniqueId() + "`).").queue();
-
-        if (!event.getMember().getEffectiveName().toLowerCase().contains(username.toLowerCase())) {
-            event.getMember().modifyNickname(username).queue();
-        }
-
-        if (ChannelManager.getLogChannel() != null) {
+        if (mojangProfile.isPresent() && ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(
                 new EmbedBuilder()
                     .setAuthor(event.getMember().getEffectiveName())
@@ -64,6 +49,26 @@ public class MyCommands extends ApplicationCommand {
         }
     }
 
+    public static java.util.Optional<MojangProfile> updateMojangProfile(GuildSlashEvent event, Member member, String username) {
+        Database database = NerdBotApp.getBot().getDatabase();
+        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+        java.util.Optional<MojangProfile> mojangProfile = Util.getMojangProfile(username);
+
+        if (mojangProfile.isEmpty()) {
+            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
+            return java.util.Optional.empty();
+        }
+
+        username = mojangProfile.get().getUsername(); // Case-correction
+        discordUser.setMojangProfile(mojangProfile.get());
+        event.getHook().sendMessage("Updated your Mojang Profile to `" + username + "` (`" + mojangProfile.get().getUniqueId() + "`).").queue();
+
+        if (!member.getEffectiveName().toLowerCase().contains(username.toLowerCase())) {
+            member.modifyNickname(username).queue();
+        }
+
+        return mojangProfile;
+    }
 
     @JDASlashCommand(name = "my", subcommand = "activity", description = "View your recent activity.")
     public void myActivity(GuildSlashEvent event) {
