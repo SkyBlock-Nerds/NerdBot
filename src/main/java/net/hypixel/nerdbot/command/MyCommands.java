@@ -20,6 +20,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.SuggestionCache;
+import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 
 import java.awt.*;
 import java.util.List;
@@ -36,10 +37,10 @@ public class MyCommands extends ApplicationCommand {
     )
     public void linkProfile(GuildSlashEvent event, @AppOption(description = "Your Minecraft IGN to link.") String username) {
         event.deferReply(true).queue();
-        java.util.Optional<MojangProfile> mojangProfile = updateMojangProfile(event, event.getMember(), username);
 
-        if (mojangProfile.isPresent()) {
-            event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.get().getUsername() + "` (`" + mojangProfile.get().getUniqueId() + "`).").queue();
+        try {
+            MojangProfile mojangProfile = updateMojangProfile(event.getMember(), username);
+            event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
             if (ChannelManager.getLogChannel() != null) {
                 ChannelManager.getLogChannel().sendMessageEmbeds(
@@ -48,11 +49,14 @@ public class MyCommands extends ApplicationCommand {
                         .setTitle("Mojang Profile Change")
                         .setThumbnail(event.getMember().getAvatarUrl())
                         .setDescription(event.getMember().getAsMention() + " updated their Mojang Profile.")
-                        .addField("Username", mojangProfile.get().getUsername(), false)
-                        .addField("UUID", mojangProfile.get().getUniqueId().toString(), false)
+                        .addField("Username", mojangProfile.getUsername(), false)
+                        .addField("UUID", mojangProfile.getUniqueId().toString(), false)
                         .build()
                 ).queue();
             }
+        } catch (Exception ex) {
+            event.getHook().sendMessage(ex.getMessage()).queue();
+            ex.printStackTrace();
         }
     }
 
@@ -125,18 +129,19 @@ public class MyCommands extends ApplicationCommand {
         ).queue();
     }
 
-    public static java.util.Optional<MojangProfile> updateMojangProfile(GuildSlashEvent event, Member member, String username) {
+    public static MojangProfile updateMojangProfile(Member member, String username) throws Exception {
         Database database = NerdBotApp.getBot().getDatabase();
         DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
-        java.util.Optional<MojangProfile> mojangProfile = Util.getMojangProfile(username);
+        MojangProfile mojangProfile = Util.getMojangProfile(username);
+        username = mojangProfile.getUsername(); // Case-correction
+        HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
+        String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
 
-        if (mojangProfile.isEmpty()) {
-            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
-            return java.util.Optional.empty();
+        if (!member.getUser().getName().equalsIgnoreCase(discord)) {
+            throw new Exception("The discord name on the Hypixel profile for `" + username + "` does not match " + member.getAsMention() + "!");
         }
 
-        username = mojangProfile.get().getUsername(); // Case-correction
-        discordUser.setMojangProfile(mojangProfile.get());
+        discordUser.setMojangProfile(mojangProfile);
 
         if (!member.getEffectiveName().toLowerCase().contains(username.toLowerCase())) {
             try {

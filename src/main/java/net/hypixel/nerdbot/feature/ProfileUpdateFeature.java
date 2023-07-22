@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.util.Util;
 
@@ -30,8 +31,9 @@ public class ProfileUpdateFeature extends BotFeature {
                         .into(new ArrayList<>())
                         .stream()
                         .filter(DiscordUser::isProfileAssigned)
-                        .forEach(discordUser -> Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId(), false)
-                            .ifPresent(mojangProfile -> {
+                        .forEach(discordUser -> {
+                            try {
+                                MojangProfile mojangProfile = Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId());
                                 discordUser.setMojangProfile(mojangProfile);
                                 Guild guild = Util.getMainGuild();
 
@@ -46,8 +48,8 @@ public class ProfileUpdateFeature extends BotFeature {
                                         }
                                     }
                                 }
-                            })
-                        );
+                            } catch (Exception ignore) { }
+                        });
                 }
             },
             Duration.of(30, ChronoUnit.MINUTES).toMillis(),

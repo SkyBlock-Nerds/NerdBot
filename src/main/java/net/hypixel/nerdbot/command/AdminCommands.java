@@ -200,10 +200,10 @@ public class AdminCommands extends ApplicationCommand {
     )
     public void linkProfile(GuildSlashEvent event, @AppOption(description = "Member to link to.") Member member, @AppOption(description = "Your Minecraft IGN to link.") String username) {
         event.deferReply(true).queue();
-        java.util.Optional<MojangProfile> mojangProfile = MyCommands.updateMojangProfile(event, member, username);
 
-        if (mojangProfile.isPresent()) {
-            event.getHook().sendMessage("Updated " + member.getAsMention() + "'s Mojang Profile to `" + mojangProfile.get().getUsername() + "` (`" + mojangProfile.get().getUniqueId() + "`).").queue();
+        try {
+            MojangProfile mojangProfile = MyCommands.updateMojangProfile(member, username);
+            event.getHook().sendMessage("Updated " + member.getAsMention() + "'s Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
             if (ChannelManager.getLogChannel() != null) {
                 ChannelManager.getLogChannel().sendMessageEmbeds(
@@ -212,11 +212,13 @@ public class AdminCommands extends ApplicationCommand {
                         .setTitle("Admin Mojang Profile Change")
                         .setThumbnail(member.getAvatarUrl())
                         .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
-                        .addField("Username", mojangProfile.get().getUsername(), false)
-                        .addField("UUID", mojangProfile.get().getUniqueId().toString(), false)
+                        .addField("Username", mojangProfile.getUsername(), false)
+                        .addField("UUID", mojangProfile.getUniqueId().toString(), false)
                         .build()
                 ).queue();
             }
+        } catch (Exception ex) {
+            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
         }
     }
 
@@ -300,12 +302,15 @@ public class AdminCommands extends ApplicationCommand {
             .filter(member -> Util.getScuffedMinecraftIGN(member).isPresent())
             .forEach(member -> {
                 String scuffedUsername = Util.getScuffedMinecraftIGN(member).orElseThrow();
-                java.util.Optional<MojangProfile> mojangProfile = Util.getMojangProfile(scuffedUsername);
 
-                if (mojangProfile.isPresent()) {
-                    mojangProfiles.add(mojangProfile.get());
+                try {
+                    MojangProfile mojangProfile = Util.getMojangProfile(scuffedUsername);
+                    mojangProfiles.add(mojangProfile);
                     DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
-                    discordUser.setMojangProfile(mojangProfile.get());
+                    discordUser.setMojangProfile(mojangProfile);
+                } catch (Exception ex) {
+                    log.warn("Unable to migrate " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ")");
+                    ex.printStackTrace();
                 }
             });
 
