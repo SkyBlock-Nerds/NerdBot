@@ -9,7 +9,8 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
-import net.hypixel.nerdbot.command.ItemGenCommands;
+import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.command.GeneratorCommands;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
@@ -25,6 +26,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -35,6 +38,12 @@ public class Util {
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
     public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
+
+    // UUID Pattern Matching
+    public static final Pattern UUID_REGEX = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}");
+    public static final Pattern TRIMMED_UUID_REGEX = Pattern.compile("[a-f0-9]{12}4[a-f0-9]{3}[89aAbB][a-f0-9]{15}");
+    private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
+
 
     private Util() {
     }
@@ -67,6 +76,15 @@ public class Util {
     public static boolean hasRole(Member member, String name) {
         List<Role> roles = member.getRoles();
         return roles.stream().anyMatch(role -> role.getName().equalsIgnoreCase(name));
+    }
+
+    public static boolean hasAnyRole(Member member, String... names) {
+        List<Role> roles = member.getRoles();
+        List<String> nameList = Arrays.asList(names);
+        if (names.length == 0)
+            return false;
+        else
+            return roles.stream().anyMatch(role -> nameList.stream().anyMatch(name -> role.getName().equalsIgnoreCase(name)));
     }
 
     @Nullable
@@ -127,16 +145,15 @@ public class Util {
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
     }
 
-    @Nullable
     public static DiscordUser getOrAddUserToCache(Database database, String userId) {
         if (!database.isConnected()) {
-            log.warn("Could not cache user because there is not a database connected!");
-            return null;
+            throw new RuntimeException("Could not cache user because there is not a database connected!");
         }
 
         DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", userId).first();
+
         if (discordUser == null) {
-            discordUser = new DiscordUser(userId, new ArrayList<>(), new ArrayList<>(), new LastActivity());
+            discordUser = new DiscordUser(userId, new ArrayList<>(), new ArrayList<>(), new LastActivity(), new MojangProfile());
         }
 
         if (NerdBotApp.USER_CACHE.getIfPresent(userId) == null) {
@@ -168,6 +185,75 @@ public class Util {
         return tempFile;
     }
 
+    @Deprecated
+    private static final String REGEX = "^[a-zA-Z0-9_]{2,16}";
+    @Deprecated
+    private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
+
+    @Deprecated
+    public static Optional<String> getScuffedMinecraftIGN(Member member) {
+        // removes non-standard ascii characters from the discord nickname
+        String plainUsername = member.getEffectiveName().trim().replaceAll("[^\u0000-\u007F]", "");
+        String memberMCUsername = null;
+
+        // checks if the member's username has flair
+        if (!Pattern.matches(REGEX, plainUsername)) {
+            // removes start and end characters ([example], {example}, |example| or (example)).
+            // also strips spaces from the username
+            plainUsername = plainUsername.replaceAll(SURROUND_REGEX, "").replace(" ", "");
+            String[] splitUsername = plainUsername.split("[^a-zA-Z0-9_]");
+
+            // gets the first item that matches the name constraints
+            for (String item : splitUsername) {
+                if (Pattern.matches(REGEX, item)) {
+                    memberMCUsername = item;
+                    break;
+                }
+            }
+        } else {
+            memberMCUsername = plainUsername.replace(" ", "");
+        }
+
+        return Optional.ofNullable(memberMCUsername);
+    }
+
+    public static Optional<MojangProfile> getMojangProfile(String name) {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format("https://api.mojang.com/users/profiles/minecraft/%s", name))).GET().build();
+
+        try {
+            log.info("Sending request to " + httpRequest.uri());
+            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            return Optional.of(NerdBotApp.GSON.fromJson(response.body(), MojangProfile.class));
+        } catch (Exception ex) {
+            log.error(String.format("Encountered error while looking up Minecraft account of %s!", name));
+            ex.printStackTrace();
+        }
+
+        return Optional.empty();
+    }
+
+    public static boolean isUUID(String input) {
+        return (input != null && input.length() != 0) && (input.matches(UUID_REGEX.pattern()) || input.matches(TRIMMED_UUID_REGEX.pattern()));
+    }
+
+    /**
+     * Converts a string representation (with or without dashes) of a UUID to the {@link UUID} class.
+     *
+     * @param input unique id to convert.
+     * @return converted unique id.
+     */
+    public static UUID toUUID(String input) {
+        if (!isUUID(input))
+            throw new IllegalArgumentException("Not a valid UUID!");
+
+        if (input.contains("-"))
+            return UUID.fromString(input); // Already has hyphens
+
+
+        return UUID.fromString(input.replaceAll(ADD_UUID_HYPHENS_REGEX.pattern(), "$1-$2-$3-$4-$5"));
+    }
+
     public static String getIgn(User user) {
         // Stuffy: Gets display name from SBN guild
         Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
@@ -194,7 +280,7 @@ public class Util {
     @Nullable
     public static Font initFont(String path, float size) {
         Font font;
-        try (InputStream fontStream = ItemGenCommands.class.getResourceAsStream(path)) {
+        try (InputStream fontStream = GeneratorCommands.class.getResourceAsStream(path)) {
             if (fontStream == null) {
                 log.error("Couldn't initialise font: " + path);
                 return null;
