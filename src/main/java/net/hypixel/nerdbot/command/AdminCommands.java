@@ -195,7 +195,8 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(
         name = "user",
         subcommand = "link",
-        description = "Link a Mojang Profile to a members account."
+        description = "Link a Mojang Profile to a members account.",
+        defaultLocked = true
     )
     public void linkProfile(GuildSlashEvent event, @AppOption(description = "Member to link to.") Member member, @AppOption(description = "Your Minecraft IGN to link.") String username) {
         event.deferReply(true).queue();
@@ -251,7 +252,12 @@ public class AdminCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "user", subcommand = "info", description = "View information about a user", defaultLocked = true)
+    @JDASlashCommand(
+        name = "user",
+        subcommand = "info",
+        description = "View information about a user",
+        defaultLocked = true
+    )
     public void userInfo(GuildSlashEvent event, @AppOption(description = "The user to search") Member member) {
         event.deferReply(true).queue();
         Database database = NerdBotApp.getBot().getDatabase();
