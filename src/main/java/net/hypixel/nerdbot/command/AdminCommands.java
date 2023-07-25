@@ -198,7 +198,6 @@ public class AdminCommands extends ApplicationCommand {
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
 
-
     @JDASlashCommand(
         name = "user",
         subcommand = "link",
