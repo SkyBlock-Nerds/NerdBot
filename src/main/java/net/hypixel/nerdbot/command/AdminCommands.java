@@ -190,7 +190,7 @@ public class AdminCommands extends ApplicationCommand {
             .toList();
 
         if (nerdsOnly) {
-            members = members.stream().filter(member -> Util.hasRole(member, "Nerd") || Util.hasRole(member, "HPC") || Util.hasRole(member, "Grape")).toList();
+            members = members.stream().filter(member -> Util.hasRole(member, "Nerd") || Util.hasRole(member, "Grape")).toList();
         }
 
         log.info("Found " + members.size() + " members meeting requirements");

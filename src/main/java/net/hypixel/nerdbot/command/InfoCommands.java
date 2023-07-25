@@ -31,7 +31,7 @@ import java.util.List;
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
 
-    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master", "HPC"};
+    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
 
     private final Database database = NerdBotApp.getBot().getDatabase();
 
@@ -96,7 +96,6 @@ public class InfoCommands extends ApplicationCommand {
             .append("Channels: ").append(guild.getChannels().size()).append("\n")
             .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
             .append("  • Staff: ").append(staff).append("\n")
-            .append("  • HPC: ").append(guild.getMembersWithRoles(Util.getRole("HPC")).size()).append("\n")
             .append("  • Grapes: ").append(guild.getMembersWithRoles(Util.getRole("Grape")).size()).append("\n")
             .append("  • Nerds: ").append(guild.getMembersWithRoles(Util.getRole("Nerd")).size());
 
