@@ -17,7 +17,6 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
-import net.hypixel.nerdbot.bot.config.TagConfig;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,22 +48,16 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         BotConfig config = NerdBotApp.getBot().getConfig();
         EmojiConfig emojiConfig = config.getEmojiConfig();
-        TagConfig tagConfig = config.getTagConfig();
 
         if (emojiConfig == null) {
             log.error("Couldn't find the emoji config from the bot config!");
             return output;
         }
 
-        if (tagConfig == null) {
-            log.error("Couldn't find the tag config from the bot config!");
-            return output;
-        }
-
-        ForumTag greenlitTag = forumChannel.getAvailableTagById(config.getTagConfig().getGreenlit());
+        ForumTag greenlitTag = forumChannel.getAvailableTagsByName("greenlit", true).get(0);
 
         if (greenlitTag == null) {
-            log.error("Couldn't find the greenlit tag from the bot config!");
+            log.error("Couldn't find the greenlit tag for the forum channel " + forumChannel.getName() + " (ID: " + forumChannel.getId() + ")!");
             return output;
         }
 
