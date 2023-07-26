@@ -53,10 +53,11 @@ public enum Stat {
     CARPENTRY_WISDOM("☯", "Carpentry Wisdom", MCColor.DARK_AQUA),
     RUNECRAFTING_WISDOM("☯", "Runecrafting Wisdom", MCColor.DARK_AQUA),
     SOCIAL_WISDOM("☯", "Social Wisdom", MCColor.DARK_AQUA),
-    RIFT_TIME("ф", "Rift Time", MCColor.GREEN);
+    RIFT_TIME("ф", "Rift Time", MCColor.GREEN),
+    UNDEAD("༕", "This armor piece is undead ༕!", MCColor.DARK_GREEN, StatColorParser::noParsing);
 
     public static final Stat[] VALUES = values();
-    public static final String[] OTHER_ICONS = {"•"};
+    public static final String[] OTHER_ICONS = {"•", "✪", "᠅"};
 
     private final String icon;
     private final String stat;
