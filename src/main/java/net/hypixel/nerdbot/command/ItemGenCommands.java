@@ -99,16 +99,16 @@ public class ItemGenCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Generates a full item stack!")
     public void generateFullItem(GuildSlashEvent event,
-                                 @AppOption(description = DESC_NAME) String name,
-                                 @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
-                                 @AppOption(description = DESC_ITEM_LORE) String itemLore,
                                  @Optional @AppOption(description = DESC_ITEM_NAME) String itemName,
-                                 @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraModifiers,
+                                 @Optional @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
+                                 @Optional @AppOption(description = DESC_ITEM_LORE) String itemLore,
                                  @Optional @AppOption(description = DESC_TYPE) String type,
                                  @Optional @AppOption(description = DESC_DISABLE_RARITY_LINEBREAK) Boolean disableRarityLinebreak,
                                  @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
                                  @Optional @AppOption(description = DESC_PADDING) Integer padding,
                                  @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
+                                 @Optional @AppOption(description = DESC_ITEM_ID, name = "display_item_id") String itemID,
+                                 @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraModifiers,
                                  @Optional @AppOption(description = DESC_RECIPE) String recipe,
                                  @Optional @AppOption(description = DESC_RENDER_INVENTORY) Boolean renderBackground,
                                  @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
@@ -118,8 +118,8 @@ public class ItemGenCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
 
-        // checking that there is a recipe and/or item to be displayed
-        if (itemName == null && recipe == null) {
+        // checking that there is more two or more different items to merge the images
+        if ((itemName == null || rarity == null || itemLore == null) && itemID == null && recipe == null) {
             event.getHook().sendMessage(MISSING_FULL_GEN_ITEM).queue();
             return;
         }
@@ -128,15 +128,18 @@ public class ItemGenCommands extends ApplicationCommand {
         renderBackground = Objects.requireNonNullElse(renderBackground, true);
 
         // building the description for the item
-        BufferedImage generatedDescription = builder.buildItem(event, name, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
-        if (generatedDescription == null) {
-            return;
+        BufferedImage generatedDescription = null;
+        if (itemName != null && rarity != null && itemLore != null) {
+            generatedDescription = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
+            if (generatedDescription == null) {
+                return;
+            }
         }
 
         // building the item for the which is beside the description
         BufferedImage generatedItem = null;
-        if (itemName != null) {
-           generatedItem = builder.buildUnspecifiedItem(event, itemName, extraModifiers);
+        if (itemID != null) {
+           generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers);
             if (generatedItem == null) {
                 return;
             }
