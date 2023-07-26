@@ -356,6 +356,8 @@ public class ItemGenCommands extends ApplicationCommand {
         EmbedBuilder argumentBuilder = new EmbedBuilder();
         EmbedBuilder colorBuilder = new EmbedBuilder();
         EmbedBuilder extraInfoBuilder = new EmbedBuilder();
+        EmbedBuilder fullGenInfoBuilder = new EmbedBuilder();
+
         infoBuilder.setColor(Color.CYAN)
                 .setAuthor("SkyBlock Nerd Bot")
                 .setTitle("Item Generation")
@@ -367,6 +369,9 @@ public class ItemGenCommands extends ApplicationCommand {
         colorBuilder.setColor(Color.YELLOW)
                 .addField("Color Codes", ITEM_COLOR_CODES, false);
 
+        fullGenInfoBuilder.setColor(Color.WHITE)
+            .addField("Full Gen Information", FULL_GEN_INFO, false);
+
         extraInfoBuilder.setColor(Color.GRAY)
                 .addField("Other Information", ITEM_OTHER_INFO, false);
       
@@ -374,6 +379,7 @@ public class ItemGenCommands extends ApplicationCommand {
         embeds.add(infoBuilder.build());
         embeds.add(argumentBuilder.build());
         embeds.add(colorBuilder.build());
+        embeds.add(fullGenInfoBuilder.build());
         embeds.add(extraInfoBuilder.build());
 
         event.replyEmbeds(embeds).setEphemeral(true).queue();
