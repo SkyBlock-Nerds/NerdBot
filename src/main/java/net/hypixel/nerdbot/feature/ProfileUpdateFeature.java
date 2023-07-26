@@ -53,7 +53,7 @@ public class ProfileUpdateFeature extends BotFeature {
                 }
             },
             Duration.of(30, ChronoUnit.MINUTES).toMillis(),
-            Duration.of(NerdBotApp.getBot().getConfig().getMojangUsernameCache(), ChronoUnit.HOURS).toMillis()
+            Duration.of(NerdBotApp.getBot().getConfig().getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis()
         );
     }
 

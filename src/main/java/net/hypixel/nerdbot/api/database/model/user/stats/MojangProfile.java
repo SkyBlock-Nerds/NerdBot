@@ -25,7 +25,7 @@ public class MojangProfile {
 
     public boolean requiresCacheUpdate() {
         return Duration.of(System.currentTimeMillis(), ChronoUnit.MILLIS)
-            .minus(NerdBotApp.getBot().getConfig().getMojangUsernameCache(), ChronoUnit.HOURS)
+            .minus(NerdBotApp.getBot().getConfig().getMojangUsernameCacheTTL(), ChronoUnit.HOURS)
             .toMillis() > this.lastUpdated;
     }
 

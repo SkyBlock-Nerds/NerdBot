@@ -61,7 +61,7 @@ public class BotConfig {
      * The number of hours before re-caching all Minecraft Usernames
      * Default value is 12 hours
      */
-    private int mojangUsernameCache = 12;
+    private int mojangUsernameCacheTTL = 12;
 
     /**
      * How long someone must be in the same voice channel for it to count towards activity, in seconds.
