@@ -297,12 +297,13 @@ public class Util {
      * @return converted unique id.
      */
     public static UUID toUUID(String input) {
-        if (!isUUID(input))
+        if (!isUUID(input)) {
             throw new IllegalArgumentException("Not a valid UUID!");
+        }
 
-        if (input.contains("-"))
+        if (input.contains("-")) {
             return UUID.fromString(input); // Already has hyphens
-
+        }
 
         return UUID.fromString(input.replaceAll(ADD_UUID_HYPHENS_REGEX.pattern(), "$1-$2-$3-$4-$5"));
     }
