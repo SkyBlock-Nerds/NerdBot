@@ -44,10 +44,14 @@ public class NerdBotApp {
             log.info("Upserted cached user '" + discordUser.getDiscordId() + "' to database! (Cause: " + cause + ")");
         }).build();
 
-    @Getter private static Optional<UUID> hypixelApiKey = Optional.ofNullable(System.getProperty("hypixel.key")).map(Util::toUUID);
-    @Getter private static SuggestionCache suggestionCache;
-    @Getter private static MessageCache messageCache;
-    @Getter private static Bot bot;
+    @Getter
+    private static Optional<UUID> hypixelApiKey = Optional.ofNullable(System.getProperty("hypixel.key")).map(Util::toUUID);
+    @Getter
+    private static SuggestionCache suggestionCache;
+    @Getter
+    private static MessageCache messageCache;
+    @Getter
+    private static Bot bot;
 
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();
