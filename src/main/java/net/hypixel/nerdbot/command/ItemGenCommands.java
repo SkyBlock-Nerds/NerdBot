@@ -45,7 +45,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "item", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock")
     public void generateItem(GuildSlashEvent event,
-                             @AppOption(description = DESC_NAME) String name,
+                             @AppOption(description = DESC_ITEM_NAME) String itemName,
                              @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
                              @AppOption(description = DESC_ITEM_LORE) String itemLore,
                              @Optional @AppOption(description = DESC_TYPE) String type,
@@ -60,7 +60,7 @@ public class ItemGenCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
         // building the item's description
-        BufferedImage generatedImage = builder.buildItem(event, name, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
+        BufferedImage generatedImage = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
