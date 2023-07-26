@@ -126,6 +126,7 @@ public class GeneratorStrings {
     public static final String RECIPE_INFO_BASIC = "The command `/%s recipe` will display a rendered 3x3 square of Minecraft Items or Heads (limited to just items and no blocks right now)".formatted(COMMAND_PREFIX);
     public static final String RECIPE_INFO_ARGUMENTS = """
                                `recipe`: A string containing all of the recipe data for slot number, amount and the item name, separated by a `%%` between different slots.
+                               `render_background (true/false)`: If you want to display the Minecraft inventory in the background or leave it transparent
                                
                                Each recipe item should be separated with a comma.
                                `slot_number`: The slot you want the item displayed in (`1-9` starting in the top left).
