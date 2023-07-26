@@ -99,10 +99,11 @@ public class Util {
     public static boolean hasAnyRole(Member member, String... names) {
         List<Role> roles = member.getRoles();
         List<String> nameList = Arrays.asList(names);
-        if (names.length == 0)
+        if (names.length == 0) {
             return false;
-        else
+        } else {
             return roles.stream().anyMatch(role -> nameList.stream().anyMatch(name -> role.getName().equalsIgnoreCase(name)));
+        }
     }
 
     public static boolean hasHigherOrEqualRole(Member member, Role role) {
