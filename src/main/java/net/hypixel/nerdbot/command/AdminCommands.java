@@ -197,7 +197,7 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(
         name = "user",
         subcommand = "link",
-        description = "Link a Mojang Profile to a members account.",
+        description = "Link a Mojang Profile to a member's account.",
         defaultLocked = true
     )
     public void linkProfile(GuildSlashEvent event, @AppOption(description = "Member to link to.") Member member, @AppOption(description = "Your Minecraft IGN to link.") String username) {
