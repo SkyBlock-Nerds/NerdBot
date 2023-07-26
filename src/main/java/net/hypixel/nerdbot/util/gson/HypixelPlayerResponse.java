@@ -92,16 +92,6 @@ public class HypixelPlayerResponse {
         @Getter
         private Map<String, Instant> achievementRewardsNew;
 
-        // Rank
-        private String packageRank;
-        private String newPackageRank;
-        private String monthlyPackageRank;
-        private String rank;
-        private String prefix;
-        private String monthlyRankColor;
-        private String rankPlusColor;
-        private String mostRecentMonthlyPackageRank;
-
         // Stats (Only SkyBlock Currently)
         @Getter
         private Stats stats;
@@ -171,9 +161,6 @@ public class HypixelPlayerResponse {
                 }
 
             }
-
         }
-
     }
-
 }
