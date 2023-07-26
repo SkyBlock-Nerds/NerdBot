@@ -18,6 +18,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
+import net.hypixel.nerdbot.util.gson.HttpException;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
@@ -251,21 +252,21 @@ public class Util {
         return Optional.ofNullable(memberMCUsername);
     }
 
-    public static MojangProfile getMojangProfile(String username) throws Exception {
+    public static MojangProfile getMojangProfile(String username) throws HttpException {
         try {
             String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
             return NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
         } catch (Exception ex) {
-            throw new Exception("Unable to locate Minecraft UUID for `" + username + "`.", ex);
+            throw new HttpException("Unable to locate Minecraft UUID for `" + username + "`.", ex);
         }
     }
 
-    public static MojangProfile getMojangProfile(UUID uniqueId) throws Exception {
+    public static MojangProfile getMojangProfile(UUID uniqueId) throws HttpException {
         try {
             String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
             return NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
         } catch (Exception ex) {
-            throw new Exception("Unable to locate Minecraft Username for `" + uniqueId.toString() + "`.", ex);
+            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId.toString() + "`.", ex);
         }
     }
 
@@ -277,13 +278,13 @@ public class Util {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws Exception {
+    public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws HttpException {
         try {
             String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId.toString());
             String hypixelApiKey = NerdBotApp.getHypixelApiKey().map(UUID::toString).orElse("");
             return NerdBotApp.GSON.fromJson(getHttpResponse(url, Pair.of("API-Key", hypixelApiKey)).body(), HypixelPlayerResponse.class);
         } catch (Exception ex) {
-            throw new Exception("Unable to locate Hypixel Player for `" + uniqueId.toString() + "`.", ex);
+            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId.toString() + "`.", ex);
         }
     }
 

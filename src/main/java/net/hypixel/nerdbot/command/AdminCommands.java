@@ -34,18 +34,14 @@ import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.gson.HttpException;
 
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.*;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -223,7 +219,7 @@ public class AdminCommands extends ApplicationCommand {
                         .build()
                 ).queue();
             }
-        } catch (Exception ex) {
+        } catch (HttpException ex) {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
         }
     }
@@ -314,7 +310,7 @@ public class AdminCommands extends ApplicationCommand {
                     mojangProfiles.add(mojangProfile);
                     DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
                     discordUser.setMojangProfile(mojangProfile);
-                } catch (Exception ex) {
+                } catch (HttpException ex) {
                     log.warn("Unable to migrate " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ")");
                     ex.printStackTrace();
                 }

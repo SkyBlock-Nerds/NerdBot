@@ -21,6 +21,7 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.SuggestionCache;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
+import net.hypixel.nerdbot.util.gson.HttpException;
 
 import java.awt.*;
 import java.util.List;
@@ -54,7 +55,7 @@ public class MyCommands extends ApplicationCommand {
                         .build()
                 ).queue();
             }
-        } catch (Exception ex) {
+        } catch (HttpException ex) {
             event.getHook().sendMessage(ex.getMessage()).queue();
             ex.printStackTrace();
         }
@@ -129,7 +130,7 @@ public class MyCommands extends ApplicationCommand {
         ).queue();
     }
 
-    public static MojangProfile updateMojangProfile(Member member, String username) throws Exception {
+    public static MojangProfile updateMojangProfile(Member member, String username) throws HttpException {
         Database database = NerdBotApp.getBot().getDatabase();
         DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
         MojangProfile mojangProfile = Util.getMojangProfile(username);
@@ -138,7 +139,7 @@ public class MyCommands extends ApplicationCommand {
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
 
         if (!member.getUser().getName().equalsIgnoreCase(discord)) {
-            throw new Exception("The discord name on the Hypixel profile for `" + username + "` does not match " + member.getAsMention() + "!");
+            throw new RuntimeException("The discord name on the Hypixel profile for `" + username + "` does not match " + member.getAsMention() + "!");
         }
 
         discordUser.setMojangProfile(mojangProfile);
