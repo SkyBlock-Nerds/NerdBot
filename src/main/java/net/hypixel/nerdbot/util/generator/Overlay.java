@@ -136,7 +136,7 @@ public enum Overlay {
         for (int y = 0; y < image.getHeight(); y++) {
             for (int x = 0; x < image.getWidth(); x++) {
                 int rgb = image.getRGB(x, y);
-                if (rgb == 0)
+                if (((rgb >> 24) & 0xff) == 0)
                     continue;
 
                 // adding the two colors together
