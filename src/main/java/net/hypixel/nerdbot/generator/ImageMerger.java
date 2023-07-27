@@ -26,22 +26,30 @@ public class ImageMerger {
         this.itemHead = itemHead;
         this.itemRecipe = itemRecipe;
 
-        int height = 0;
-        int width = 0;
+        int width = PADDING;
+        int maxHeight;
         double finalScale;
-        if (itemHead != null && itemRecipe != null) {
-            finalScale = Math.min(1.1f, (4f / ((this.itemDescription.getHeight() / 23f) + 7)) + 0.9) * 0.5;
-            height += PADDING;
+        if (itemDescription == null) {
+            maxHeight = Math.max(itemHead != null ? itemHead.getHeight() : 0, itemRecipe != null ? itemRecipe.getHeight() : 0);
+            finalScale = 1;
         } else {
+            maxHeight = this.itemDescription.getHeight();
             finalScale = Math.min(HEAD_SCALE, (4f / ((this.itemDescription.getHeight() / 23f) + 7)) + 0.6);
+            width += PADDING + this.itemDescription.getWidth();
         }
-        double finalMaxHeadHeight = this.itemDescription.getHeight() * finalScale;
 
+        double finalMaxHeadHeight = maxHeight * finalScale;
         headDimensions = itemHead != null ? performScale(finalMaxHeadHeight, itemHead.getWidth(), itemHead.getHeight()) : new int[] {0, 0};
         recipeDimensions = itemRecipe != null ? performScale(finalMaxHeadHeight, itemRecipe.getWidth(), itemRecipe.getHeight()) : new int[] {0, 0};
 
-        width += itemDescription.getWidth() + Math.max(headDimensions[0], recipeDimensions[0]) + (PADDING * 3);
-        height += Math.max(headDimensions[1] + recipeDimensions[1], itemDescription.getHeight()) + (PADDING * 2);
+        int height = Math.max(maxHeight, headDimensions[1]) + (PADDING * 2);
+        width += headDimensions[0] + recipeDimensions[0];
+        if (itemHead != null) {
+            width += PADDING;
+        }
+        if (itemRecipe != null) {
+            width += PADDING;
+        }
 
         this.finalImage = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR_PRE);
         this.g2d = this.finalImage.createGraphics();
@@ -66,16 +74,21 @@ public class ImageMerger {
      */
     public void drawFinalImage() {
         int centerLine = this.finalImage.getHeight() / 2;
-        int verticalCenterLine = Math.max(this.headDimensions[0], this.recipeDimensions[0]) / 2 + PADDING;
+        int xPosition = PADDING;
 
-        if (this.itemHead != null && this.itemRecipe != null) {
-            this.g2d.drawImage(this.itemHead, verticalCenterLine - this.headDimensions[0] / 2, PADDING, this.headDimensions[0], this.headDimensions[1], null);
-            this.g2d.drawImage(this.itemRecipe, verticalCenterLine - this.recipeDimensions[0] / 2, centerLine + PADDING / 2, this.recipeDimensions[0], this.recipeDimensions[1], null);
-        } else {
-            int[] dimensions = this.itemHead != null ? this.headDimensions : this.recipeDimensions;
-            this.g2d.drawImage(this.itemHead != null ? this.itemHead : this.itemRecipe, PADDING, centerLine - dimensions[0] / 2, dimensions[0], dimensions[1], null);
+        if (this.itemRecipe != null) {
+            this.g2d.drawImage(this.itemRecipe, xPosition, centerLine - this.recipeDimensions[1] / 2, this.recipeDimensions[0], this.recipeDimensions[1], null);
+            xPosition += this.recipeDimensions[0] + PADDING;
         }
-        this.g2d.drawImage(this.itemDescription, 2 * verticalCenterLine, centerLine - this.itemDescription.getHeight() / 2, null);
+
+        if (this.itemHead != null) {
+            this.g2d.drawImage(this.itemHead, xPosition, centerLine - this.headDimensions[1] / 2, this.headDimensions[0], this.headDimensions[1], null);
+            xPosition += this.headDimensions[0] + PADDING;
+        }
+
+        if (this.itemDescription != null) {
+            this.g2d.drawImage(this.itemDescription, xPosition, centerLine - this.itemDescription.getHeight() / 2, null);
+        }
         this.g2d.dispose();
     }
 

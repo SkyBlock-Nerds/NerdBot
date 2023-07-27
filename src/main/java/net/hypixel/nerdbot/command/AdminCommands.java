@@ -34,10 +34,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -74,31 +71,32 @@ public class AdminCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "invites", subcommand = "create", description = "Generate a bunch of invites for a specific channel", defaultLocked = true)
-    public void createInvites(GuildSlashEvent event, @AppOption int amount, @AppOption TextChannel channel) {
+    public void createInvites(GuildSlashEvent event, @AppOption int amount, @AppOption @Optional TextChannel channel) {
         List<Invite> invites = new ArrayList<>(amount);
+        TextChannel selected = Objects.requireNonNullElse(channel, NerdBotApp.getBot().getJDA().getTextChannelsByName("limbo", true).get(0));
 
         event.deferReply(true).queue();
 
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(new EmbedBuilder()
                 .setTitle("Invites generated")
-                .setDescription("Generating " + amount + " invite(s) for " + channel.getAsMention() + " by " + event.getUser().getAsMention())
+                .setDescription("Generating " + amount + " invite(s) for " + selected.getAsMention() + " by " + event.getUser().getAsMention())
                 .build()
             ).queue();
         }
 
         for (int i = 0; i < amount; i++) {
             try {
-                InviteAction action = channel.createInvite()
+                InviteAction action = selected.createInvite()
                     .setUnique(true)
                     .setMaxAge(7L, TimeUnit.DAYS)
                     .setMaxUses(1);
 
                 Invite invite = action.complete();
                 invites.add(invite);
-                log.info("Generated new temporary invite '" + invite.getUrl() + "' for channel " + channel.getName() + " by " + event.getUser().getAsTag());
+                log.info("Generated new temporary invite '" + invite.getUrl() + "' for channel " + selected.getName() + " by " + event.getUser().getAsTag());
             } catch (InsufficientPermissionException exception) {
-                event.getHook().editOriginal("I don't have permission to create invites in " + channel.getAsMention() + "!").queue();
+                event.getHook().editOriginal("I don't have permission to create invites in " + selected.getAsMention() + "!").queue();
                 return;
             }
         }
@@ -192,7 +190,7 @@ public class AdminCommands extends ApplicationCommand {
             .toList();
 
         if (nerdsOnly) {
-            members = members.stream().filter(member -> Util.hasRole(member, "Nerd") || Util.hasRole(member, "HPC") || Util.hasRole(member, "Grape")).toList();
+            members = members.stream().filter(member -> Util.hasRole(member, "Nerd") || Util.hasRole(member, "Grape")).toList();
         }
 
         log.info("Found " + members.size() + " members meeting requirements");
