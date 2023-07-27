@@ -76,7 +76,7 @@ public class Item {
         }
 
         // applies the enchantment glint if "enchant" is present
-        if (Arrays.stream(extraDetails).anyMatch(element -> element.equalsIgnoreCase("enchant"))) {
+        if (Arrays.stream(extraDetails).anyMatch(element -> element.toLowerCase().contains("enchant"))) {
             Overlay.applyEnchantOverlay(image);
         }
     }
