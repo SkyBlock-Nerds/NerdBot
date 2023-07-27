@@ -63,7 +63,7 @@ public class MinecraftImage {
         this.padding = padding;
         this.lines = lines;
         this.isNormalItem = isNormalItem;
-        this.graphics = this.initG2D(defaultWidth + START_XY, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4);
+        this.graphics = this.initG2D(defaultWidth + START_XY, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4 - (this.lines.size() == 1 ? PIXEL_SIZE : 0));
         this.currentColor = defaultColor;
     }
 
