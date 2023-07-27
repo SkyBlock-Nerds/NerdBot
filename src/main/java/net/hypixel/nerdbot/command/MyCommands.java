@@ -161,18 +161,27 @@ public class MyCommands extends ApplicationCommand {
 
         Guild guild = member.getGuild();
         String newMemberRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getNewMemberRoleId();
-        java.util.Optional<Role> role = java.util.Optional.empty();
+        java.util.Optional<Role> newMemberRole = java.util.Optional.empty();
 
         if (newMemberRoleId != null) {
-            role = java.util.Optional.ofNullable(guild.getRoleById(newMemberRoleId));
+            newMemberRole = java.util.Optional.ofNullable(guild.getRoleById(newMemberRoleId));
         }
 
-        if (role.isPresent()) {
-            if (!Util.hasHigherOrEqualRole(member, role.get())) { // Ignore Existing Members
+        if (newMemberRole.isPresent()) {
+            if (!Util.hasHigherOrEqualRole(member, newMemberRole.get())) { // Ignore Existing Members
                 try {
-                    guild.addRoleToMember(member, role.get()).queue();
+                    guild.addRoleToMember(member, newMemberRole.get()).queue();
+                    String limboRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getLimboRoleId();
+
+                    if (limboRoleId != null) {
+                        Role limboRole = guild.getRoleById(limboRoleId);
+
+                        if (limboRole != null) {
+                            guild.removeRoleFromMember(member, limboRole).queue();
+                        }
+                    }
                 } catch (HierarchyException hex) {
-                    log.warn("Unable to assign " + role.get().getName() + " role to " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
+                    log.warn("Unable to assign " + newMemberRole.get().getName() + " role to " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
                 }
             }
         } else {

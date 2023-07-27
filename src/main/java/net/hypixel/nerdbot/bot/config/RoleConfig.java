@@ -25,6 +25,11 @@ public class RoleConfig {
      */
     private String newMemberRoleId = "";
 
+    /**
+     * The {@link Role} ID of the Limbo role
+     */
+    private String limboRoleId = "";
+
     public boolean isEquals(MessageReaction reaction, Function<RoleConfig, String> function) {
         if (reaction.getEmoji().getType() != Emoji.Type.CUSTOM) {
             return false;
