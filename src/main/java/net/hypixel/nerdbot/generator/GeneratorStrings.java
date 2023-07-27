@@ -15,17 +15,17 @@ public class GeneratorStrings {
     public static final String ITEM_RESOURCE_NOT_LOADED = "It seems that the texture stream for recipe images couldn't be loaded correctly. Please contact a Bot Developer to have a look at it!";
 
     // generator argument descriptions
-    public static final String DESC_NAME = "The name of the item";
+    public static final String DESC_ITEM_NAME = "The name of the item";
     public static final String DESC_RARITY = "The rarity of the item";
     public static final String DESC_ITEM_LORE = "The lore of the item";
     public static final String DESC_TEXT = "The text to display";
     public static final String DESC_TYPE = "The type of the item";
-    public static final String DESC_EXTRA_ITEM_MODIFIERS = "Any modifiers which can be applied to the item (color, variants, isPlayerHead)";
+    public static final String DESC_EXTRA_ITEM_MODIFIERS = "Any modifiers which can be applied to the item (color, variants, is_player_name)";
     public static final String DESC_DISABLE_RARITY_LINEBREAK = "If you will deal with the line break before the item's rarity";
     public static final String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
     public static final String DESC_PADDING = "Sets the transparent padding around the image (0 = none, 1 = discord)";
     public static final String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (1 - " + StringColorParser.MAX_FINAL_LINE_LENGTH + ") default " + StringColorParser.MAX_STANDARD_LINE_LENGTH;
-    public static final String DESC_ITEM_NAME = "The name of the item you want to display";
+    public static final String DESC_ITEM_ID = "The name of the Minecraft item you want to display";
     public static final String DESC_HEAD_ID = "The skin ID or player name (set is_player_name to True if it is a player's name)";
     public static final String DESC_IS_PLAYER_NAME = "If the skin ID is a player's username";
     public static final String DESC_HIDDEN = "If you only want the generated image visible to be yourself";
@@ -40,12 +40,20 @@ public class GeneratorStrings {
     public static final String INVALID_MINECRAFT_COLOR_CODE; // generated in static constructor
     public static final String PERCENT_NOT_FOUND = "It seems that you don't have a closing `%%` near `%s`.";
     public static final String PERCENT_OUT_OF_RANGE = "It seems that you are missing a starting/ending `%%` for a color code or stat.";
-    public static final String MISSING_FULL_GEN_ITEM = "I hope you know that the normal item generator works fine if you aren't going to put a recipe and/or Minecraft item.";
+    public static final String MISSING_FULL_GEN_ITEM = """
+                        The parameters you have provided will not be enough to create an item generation.
+                        For each type of generation you want to display, include the following parameters:
+                        ```java
+                        item generation         ->  item_name, rarity, item_lore
+                        item render generation  ->  item_id, extra_modifiers
+                        recipe generation       ->  recipe
+                        ```
+                        """;
 
     // item gen item help messages
     public static final String ITEM_BASIC_INFO = "This is a bot used to create custom items to be used in suggestions. You can use the bot with `/%1$s item`, `/%1$s head`, and `/%1$s full`.".formatted(COMMAND_PREFIX);
     public static final String ITEM_INFO_ARGUMENTS = """
-                        `name`: The name of the item. Defaults to the rarity color, unless the rarity is none.
+                        `item_name`: The name of the item. Defaults to the rarity color, unless the rarity is none.
                         `rarity`: Takes any SkyBlock rarity. Can be left as NONE.
                         `item_lore`: Parses a description, including color codes, bold, italics, and newlines.
                         `type`: The type of the item, such as a Sword or Wand. Can be left blank.
@@ -60,6 +68,17 @@ public class GeneratorStrings {
                         If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/stat_symbols` command.
                         Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `disable_rarity_linebreak` argument to True.
                         """;
+
+    public static final String FULL_GEN_INFO = """
+                        The `/%1$s full` command allows you to combine multiple renders together to create one full image showing all information about it.
+                        
+                        Follow the guides for `/%1$s help`, `/%1$s recipe_help` and `/%1$s head_help` the different parameters you can include.
+                        `display_item_id`: The Minecraft ID of the item you want to display.
+                        `extra_modifiers`: Any extra modifiers for changing how the item displayed will look (i.e. Hex color for changing leather armor color, skull data)
+                        
+                        As mentioned in `/%1$s recipe_help`, to display a skull next to the item, set the `display_item_id` to `SKULL`, and set `extra_modifiers` to `<the skin_id or player_name>,<true/false (if the provided id is a player name)>` similar to using `/%1$s head`.
+                        """.formatted(COMMAND_PREFIX);
+
     public static final String ITEM_OTHER_INFO = """
                         There is another command `/%1$s parse` which can be used to easily convert the NBT Tag from a Minecraft item into a Generated Image. You can directly copy it from in game using one of the Minecraft Mods.
                         You can also check out `/%1$s head_help` for more information about rendering items next to your creations!
@@ -107,6 +126,7 @@ public class GeneratorStrings {
     public static final String RECIPE_INFO_BASIC = "The command `/%s recipe` will display a rendered 3x3 square of Minecraft Items or Heads (limited to just items and no blocks right now)".formatted(COMMAND_PREFIX);
     public static final String RECIPE_INFO_ARGUMENTS = """
                                `recipe`: A string containing all of the recipe data for slot number, amount and the item name, separated by a `%%` between different slots.
+                               `render_background (true/false)`: If you want to display the Minecraft inventory in the background or leave it transparent
                                
                                Each recipe item should be separated with a comma.
                                `slot_number`: The slot you want the item displayed in (`1-9` starting in the top left).
