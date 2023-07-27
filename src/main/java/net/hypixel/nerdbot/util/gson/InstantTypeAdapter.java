@@ -1,24 +1,22 @@
 package net.hypixel.nerdbot.util.gson;
 
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 
-import java.lang.reflect.Type;
+import java.io.IOException;
 import java.time.Instant;
 
 public final class InstantTypeAdapter extends TypeAdapter<Instant> {
 
     @Override
-    public Instant deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
-        return Instant.ofEpochMilli(json.getAsLong());
+    public void write(JsonWriter jsonWriter, Instant instant) throws IOException {
+        jsonWriter.value(instant.toEpochMilli());
     }
 
     @Override
-    public JsonElement serialize(Instant src, Type srcType, JsonSerializationContext context) {
-        return new JsonPrimitive(src.toEpochMilli());
+    public Instant read(JsonReader jsonReader) throws IOException {
+        return Instant.ofEpochMilli(jsonReader.nextLong());
     }
 
 }

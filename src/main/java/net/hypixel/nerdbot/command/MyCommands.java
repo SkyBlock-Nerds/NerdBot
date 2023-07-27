@@ -20,8 +20,8 @@ import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.SuggestionCache;
-import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import net.hypixel.nerdbot.util.gson.HttpException;
+import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 
 import java.awt.*;
 import java.util.List;
