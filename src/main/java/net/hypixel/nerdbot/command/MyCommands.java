@@ -55,7 +55,7 @@ public class MyCommands extends ApplicationCommand {
                         .build()
                 ).queue();
             }
-        } catch (HttpException ex) {
+        } catch (Exception ex) {
             event.getHook().sendMessage(ex.getMessage()).queue();
             ex.printStackTrace();
         }
@@ -136,6 +136,11 @@ public class MyCommands extends ApplicationCommand {
         MojangProfile mojangProfile = Util.getMojangProfile(username);
         username = mojangProfile.getUsername(); // Case-correction
         HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
+
+        if (!hypixelPlayerResponse.isSuccess()) {
+            throw new HttpException("Unable to lookup `" + username + "`: " + hypixelPlayerResponse.getCause());
+        }
+
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
 
         if (!member.getUser().getName().equalsIgnoreCase(discord)) {

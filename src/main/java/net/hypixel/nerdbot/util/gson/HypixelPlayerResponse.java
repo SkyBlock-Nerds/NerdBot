@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public class HypixelPlayerResponse {
 
     private boolean success;
+    private String cause;
     private Player player;
 
     public boolean isSuccess() {
@@ -25,6 +26,10 @@ public class HypixelPlayerResponse {
 
     public Player getPlayer() {
         return player;
+    }
+
+    public String getCause() {
+        return Optional.ofNullable(this.cause).orElse("Unknown cause.");
     }
 
     public static class Player {
