@@ -55,6 +55,8 @@ public class MyCommands extends ApplicationCommand {
                         .build()
                 ).queue();
             }
+        } catch (HttpException httpex) {
+            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
         } catch (Exception ex) {
             event.getHook().sendMessage(ex.getMessage()).queue();
             ex.printStackTrace();
