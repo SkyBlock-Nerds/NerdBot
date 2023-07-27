@@ -22,9 +22,6 @@ jobs:
       with:
         java-version: '17'
         distribution: 'adopt'
-        
-    - name: Run EditorConfig
-      run: zbeekman/EditorConfig-Action
 
     - name: Build with Maven
-      run: mvn clean package
+      run: mvn editorconfig:check clean package
