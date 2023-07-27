@@ -118,7 +118,7 @@ public class ItemGenCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
 
-        // checking that there is more two or more different items to merge the images
+        // checking that there is two or more different items to merge the images
         if ((itemName == null || rarity == null || itemLore == null) && itemID == null && recipe == null) {
             event.getHook().sendMessage(MISSING_FULL_GEN_ITEM).queue();
             return;
