@@ -23,7 +23,7 @@ The bot listens to a number of events and logs them in a channel.
 
 ### Running the bot
 
-Please follow the instructions [here](https://github.com/TheMGRF/NerdBot/blob/master/RUNNING.md)
+Please follow the instructions [here](https://github.com/TheMGRF/NerdBot/blob/master/CONTRIBUTING.md)
 
 ### Commands
 
