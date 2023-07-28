@@ -204,13 +204,13 @@ public class AdminCommands extends ApplicationCommand {
         GuildSlashEvent event,
         @AppOption(description = "Member to link to.") Member member,
         @AppOption(description = "Your Minecraft IGN to link.") String username,
-        @Optional @AppOption(description = "Bypass hypixel social check.") Boolean bypass_social
+        @Optional @AppOption(description = "Bypass hypixel social check.") Boolean bypassSocial
     ) {
         event.deferReply(true).queue();
-        bypass_social = (bypass_social != null && bypass_social);
+        bypassSocial = (bypassSocial == null || !bypassSocial);
 
         try {
-            MojangProfile mojangProfile = MyCommands.updateMojangProfile(member, username, bypass_social);
+            MojangProfile mojangProfile = MyCommands.updateMojangProfile(member, username, bypassSocial);
             event.getHook().sendMessage("Updated " + member.getAsMention() + "'s Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
             if (ChannelManager.getLogChannel() != null) {
