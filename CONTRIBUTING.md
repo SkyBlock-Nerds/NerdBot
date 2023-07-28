@@ -4,7 +4,7 @@
 
 - A [MongoDB database](https://www.mongodb.com/free-cloud-database) instance
 - A valid [Discord bot](https://discord.com/developers/applications/me) token
-- A valid config file, see the below topic for more details.
+- A valid [config file](https://github.com/TheMGRF/NerdBot/blob/master/CONTRIBUTING.md#config)
 
 To start the bot, run the following command:
 
