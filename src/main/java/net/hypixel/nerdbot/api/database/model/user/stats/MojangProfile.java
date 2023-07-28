@@ -7,6 +7,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.UUID;
 
 @Getter
@@ -17,10 +18,15 @@ public class MojangProfile {
     private UUID uniqueId;
     @SerializedName("name")
     private String username;
+    private String errorMessage;
     private long lastUpdated;
 
     public MojangProfile() {
         this.lastUpdated = System.currentTimeMillis();
+    }
+
+    public Optional<String> getErrorMessage() {
+        return Optional.ofNullable(this.errorMessage);
     }
 
     public boolean requiresCacheUpdate() {
