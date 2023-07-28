@@ -16,21 +16,27 @@ public class SuggestionListener {
 
     @SubscribeEvent
     public void onThreadCreateEvent(@NotNull ChannelCreateEvent event) {
-        if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD && isInSuggestionChannel(event)) {
+        if (isInSuggestionChannel(event)) {
             NerdBotApp.getSuggestionCache().addSuggestion(event.getChannel().asThreadChannel());
         }
     }
 
     @SubscribeEvent
     public void onThreadDeleteEvent(@NotNull ChannelDeleteEvent event) {
-        if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD && isInSuggestionChannel(event)) {
+        if (isInSuggestionChannel(event)) {
             NerdBotApp.getSuggestionCache().removeSuggestion(event.getChannel().asThreadChannel());
         }
     }
 
     private boolean isInSuggestionChannel(GenericChannelEvent event) {
-        ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
-        return Util.safeArrayStream(channelConfig.getSuggestionForumIds(), channelConfig.getAlphaSuggestionForumIds())
-            .anyMatch(channelId -> channelId.equals(event.getChannel().getId()));
+        if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD) {
+            ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
+            String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
+
+            return Util.safeArrayStream(channelConfig.getSuggestionForumIds(), channelConfig.getAlphaSuggestionForumIds())
+                .anyMatch(channelId -> channelId.equals(forumChannelId));
+        }
+
+        return false;
     }
 }
