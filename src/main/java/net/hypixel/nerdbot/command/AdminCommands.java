@@ -318,6 +318,7 @@ public class AdminCommands extends ApplicationCommand {
                     mojangProfiles.add(mojangProfile);
                     DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
                     discordUser.setMojangProfile(mojangProfile);
+                    log.info("Migrated " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ") to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId() + ")");
                 } catch (HttpException ex) {
                     log.warn("Unable to migrate " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ")");
                     ex.printStackTrace();
