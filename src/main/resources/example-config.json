@@ -1,7 +1,8 @@
 {
   "modMailConfig": {
-    "receivingChannelId": "",
-    "roleId": ""
+    "channelId": "",
+    "roleId": "",
+    "webhookId": ""
   },
   "emojiConfig": {
     "agreeEmojiId": "",
@@ -13,17 +14,22 @@
     "greenlit": ""
   },
   "channelConfig": {
-    "logChannel": "",
+    "logChannelId": "",
     "suggestionForumIds": [],
     "alphaSuggestionForumIds": [],
-    "itemGenChannel": [],
+    "genChannelIds": [],
     "reactionChannels": [],
     "blacklistedChannels": []
   },
+  "roleConfig": {
+    "botManagerRoleId": "",
+    "newMemberRoleId": "",
+    "limboRoleId": ""
+  },
   "guildId": "",
-  "botManagerRoleId": "",
   "minimumThreshold": 15,
   "messageLimit": 100,
+  "mojangUsernameCacheTTL": 12,
   "voiceThreshold": 60,
   "percentage": 75.0,
   "interval": 43200000,

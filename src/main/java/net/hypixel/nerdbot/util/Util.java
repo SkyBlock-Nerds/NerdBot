@@ -1,21 +1,36 @@
 package net.hypixel.nerdbot.util;
 
-import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
-import net.hypixel.nerdbot.command.ItemGenCommands;
+import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.command.GeneratorCommands;
+import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
+import net.hypixel.nerdbot.util.gson.HttpException;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -25,6 +40,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -35,6 +52,12 @@ public class Util {
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
     public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
+
+    // UUID Pattern Matching
+    public static final Pattern UUID_REGEX = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}");
+    public static final Pattern TRIMMED_UUID_REGEX = Pattern.compile("[a-f0-9]{12}4[a-f0-9]{3}[89aAbB][a-f0-9]{15}");
+    private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
+
 
     private Util() {
     }
@@ -64,18 +87,48 @@ public class Util {
         return NerdBotApp.getBot().getJDA().getGuildById(guildId);
     }
 
+    @Nullable
+    public static Guild getMainGuild() {
+        return NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+    }
+
     public static boolean hasRole(Member member, String name) {
         List<Role> roles = member.getRoles();
         return roles.stream().anyMatch(role -> role.getName().equalsIgnoreCase(name));
     }
 
+    public static boolean hasAnyRole(Member member, String... names) {
+        List<Role> roles = member.getRoles();
+        List<String> nameList = Arrays.asList(names);
+        if (names.length == 0) {
+            return false;
+        } else {
+            return roles.stream().anyMatch(role -> nameList.stream().anyMatch(name -> role.getName().equalsIgnoreCase(name)));
+        }
+    }
+
+    public static boolean hasHigherOrEqualRole(Member member, Role role) {
+        return member.getRoles()
+            .stream()
+            .anyMatch(memberRole -> memberRole.getPosition() >= role.getPosition());
+    }
+
     @Nullable
     public static Role getRole(String name) {
-        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        Guild guild = Util.getMainGuild();
         if (guild == null) {
             return null;
         }
         return guild.getRoles().stream().filter(role -> role.getName().equals(name)).findFirst().orElse(null);
+    }
+
+    @Nullable
+    public static Role getRoleById(String id) {
+        Guild guild = Util.getMainGuild();
+        if (guild == null) {
+            return null;
+        }
+        return guild.getRoles().stream().filter(role -> role.getId().equals(id)).findFirst().orElse(null);
     }
 
     public static File createTempFile(String fileName, String content) throws IOException {
@@ -127,16 +180,15 @@ public class Util {
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
     }
 
-    @Nullable
     public static DiscordUser getOrAddUserToCache(Database database, String userId) {
         if (!database.isConnected()) {
-            log.warn("Could not cache user because there is not a database connected!");
-            return null;
+            throw new RuntimeException("Could not cache user because there is not a database connected!");
         }
 
         DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", userId).first();
+
         if (discordUser == null) {
-            discordUser = new DiscordUser(userId, new ArrayList<>(), new ArrayList<>(), new LastActivity());
+            discordUser = new DiscordUser(userId, new ArrayList<>(), new ArrayList<>(), new LastActivity(), new MojangProfile());
         }
 
         if (NerdBotApp.USER_CACHE.getIfPresent(userId) == null) {
@@ -168,20 +220,115 @@ public class Util {
         return tempFile;
     }
 
-    public static String getIgn(User user) {
-        // Stuffy: Gets display name from SBN guild
-        Guild guild = NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
-        if (guild == null) {
-            log.info("Guild is null, effective name: " + user.getEffectiveName());
-            return user.getEffectiveName();
+    @Deprecated
+    private static final String REGEX = "^[a-zA-Z0-9_]{2,16}";
+    @Deprecated
+    private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
+
+    @Deprecated
+    public static Optional<String> getScuffedMinecraftIGN(Member member) {
+        // removes non-standard ascii characters from the discord nickname
+        String plainUsername = member.getEffectiveName().trim().replaceAll("[^\u0000-\u007F]", "");
+        String memberMCUsername = null;
+
+        // checks if the member's username has flair
+        if (!Pattern.matches(REGEX, plainUsername)) {
+            // removes start and end characters ([example], {example}, |example| or (example)).
+            // also strips spaces from the username
+            plainUsername = plainUsername.replaceAll(SURROUND_REGEX, "").replace(" ", "");
+            String[] splitUsername = plainUsername.split("[^a-zA-Z0-9_]");
+
+            // gets the first item that matches the name constraints
+            for (String item : splitUsername) {
+                if (Pattern.matches(REGEX, item)) {
+                    memberMCUsername = item;
+                    break;
+                }
+            }
+        } else {
+            memberMCUsername = plainUsername.replace(" ", "");
         }
 
-        Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
-        if (sbnMember == null || sbnMember.getNickname() == null) {
-            return user.getEffectiveName();
+        return Optional.ofNullable(memberMCUsername);
+    }
+
+    public static MojangProfile getMojangProfile(String username) throws HttpException {
+        try {
+            String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
+            return NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
+        } catch (Exception ex) {
+            throw new HttpException("Unable to locate Minecraft UUID for `" + username + "`.", ex);
+        }
+    }
+
+    public static MojangProfile getMojangProfile(UUID uniqueId) throws HttpException {
+        try {
+            String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
+            return NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
+        } catch (Exception ex) {
+            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId.toString() + "`.", ex);
+        }
+    }
+
+    private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url)).GET();
+        Arrays.asList(headers).forEach(pair -> builder.header(pair.getLeft(), pair.getRight()));
+        HttpRequest request = builder.build();
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws HttpException {
+        try {
+            String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId.toString());
+            String hypixelApiKey = NerdBotApp.getHypixelApiKey().map(UUID::toString).orElse("");
+            return NerdBotApp.GSON.fromJson(getHttpResponse(url, Pair.of("API-Key", hypixelApiKey)).body(), HypixelPlayerResponse.class);
+        } catch (Exception ex) {
+            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId.toString() + "`.", ex);
+        }
+    }
+
+    public static boolean isUUID(String input) {
+        return (input != null && input.length() != 0) && (input.matches(UUID_REGEX.pattern()) || input.matches(TRIMMED_UUID_REGEX.pattern()));
+    }
+
+    /**
+     * Converts a string representation (with or without dashes) of a UUID to the {@link UUID} class.
+     *
+     * @param input unique id to convert.
+     * @return converted unique id.
+     */
+    public static UUID toUUID(String input) {
+        if (!isUUID(input)) {
+            throw new IllegalArgumentException("Not a valid UUID!");
         }
 
-        return sbnMember.getNickname();
+        if (input.contains("-")) {
+            return UUID.fromString(input); // Already has hyphens
+        }
+
+        return UUID.fromString(input.replaceAll(ADD_UUID_HYPHENS_REGEX.pattern(), "$1-$2-$3-$4-$5"));
+    }
+
+    public static String getDisplayName(User user) {
+        DiscordUser discordUser = getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), user.getId());
+
+        if (discordUser.isProfileAssigned()) {
+            return discordUser.getMojangProfile().getUsername();
+        } else {
+            Guild guild = Util.getMainGuild();
+            if (guild == null) {
+                log.info("Guild is null, effective name: " + user.getEffectiveName());
+                return user.getEffectiveName();
+            }
+
+            Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
+            if (sbnMember == null || sbnMember.getNickname() == null) {
+                return user.getEffectiveName();
+            }
+
+            return sbnMember.getNickname();
+        }
     }
 
     /**
@@ -194,7 +341,7 @@ public class Util {
     @Nullable
     public static Font initFont(String path, float size) {
         Font font;
-        try (InputStream fontStream = ItemGenCommands.class.getResourceAsStream(path)) {
+        try (InputStream fontStream = GeneratorCommands.class.getResourceAsStream(path)) {
             if (fontStream == null) {
                 log.error("Couldn't initialise font: " + path);
                 return null;

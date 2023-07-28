@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.generator;
 
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
-import net.hypixel.nerdbot.command.ItemGenCommands;
+import net.hypixel.nerdbot.command.GeneratorCommands;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -40,7 +40,7 @@ public class MinecraftInventory {
         }
 
         // loading the inventory background into memory
-        try (InputStream backgroundStream = ItemGenCommands.class.getResourceAsStream("/Minecraft/inventory_background.png")) {
+        try (InputStream backgroundStream = GeneratorCommands.class.getResourceAsStream("/Minecraft/inventory_background.png")) {
             if (backgroundStream == null) {
                 throw new FileNotFoundException("Could not find find the file called \"/Minecraft/inventory_background.png\"");
             }

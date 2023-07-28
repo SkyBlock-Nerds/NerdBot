@@ -35,10 +35,10 @@ import java.util.stream.Stream;
 import static net.hypixel.nerdbot.generator.GeneratorStrings.*;
 
 @Log4j2
-public class ItemGenCommands extends ApplicationCommand {
+public class GeneratorCommands extends ApplicationCommand {
     private final GeneratorBuilder builder;
 
-    public ItemGenCommands() {
+    public GeneratorCommands() {
         super();
         this.builder = new GeneratorBuilder();
     }
@@ -99,7 +99,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Generates a full item stack!")
     public void generateFullItem(GuildSlashEvent event,
-                                 @Optional @AppOption(description = DESC_ITEM_NAME) String itemName,
+                                 @AppOption(description = DESC_ITEM_NAME) String itemName,
                                  @Optional @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
                                  @Optional @AppOption(description = DESC_ITEM_LORE) String itemLore,
                                  @Optional @AppOption(description = DESC_TYPE) String type,
@@ -357,7 +357,6 @@ public class ItemGenCommands extends ApplicationCommand {
         EmbedBuilder colorBuilder = new EmbedBuilder();
         EmbedBuilder extraInfoBuilder = new EmbedBuilder();
         EmbedBuilder fullGenInfoBuilder = new EmbedBuilder();
-
         infoBuilder.setColor(Color.CYAN)
                 .setAuthor("SkyBlock Nerd Bot")
                 .setTitle("Item Generation")
@@ -455,7 +454,7 @@ public class ItemGenCommands extends ApplicationCommand {
 
     private boolean isIncorrectChannel(GuildSlashEvent event) {
         String senderChannelId = event.getChannel().getId();
-        String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getChannelConfig().getItemGenChannel();
+        String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getChannelConfig().getGenChannelIds();
 
         if (itemGenChannelIds == null) {
             event.reply("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
