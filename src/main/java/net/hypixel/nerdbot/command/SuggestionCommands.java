@@ -48,7 +48,7 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(
-            buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false, false)
+            buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false, userID == event.getMember().getIdLong())
                 .setAuthor(searchUser != null ? searchUser.getName() : String.valueOf(userID))
                 .setThumbnail(searchUser != null ? searchUser.getEffectiveAvatarUrl() : null)
                 .build()
@@ -77,7 +77,7 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(
-            buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false, false)
+            buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false, member.getIdLong() == event.getMember().getIdLong())
                 .setAuthor(member.getEffectiveName())
                 .setThumbnail(member.getEffectiveAvatarUrl())
                 .build()
