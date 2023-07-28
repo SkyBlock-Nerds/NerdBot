@@ -5,7 +5,6 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -46,11 +45,14 @@ public class SuggestionCache extends TimerTask {
             Util.safeArrayStream(channelConfig.getSuggestionForumIds(), channelConfig.getAlphaSuggestionForumIds())
                 .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
                 .filter(Objects::nonNull)
-                .flatMap(forumChannel -> Stream.concat(forumChannel.getThreadChannels().stream(), forumChannel.retrieveArchivedPublicThreadChannels().stream()))
+                .flatMap(forumChannel -> Stream.concat(
+                    forumChannel.getThreadChannels().stream(), // Unarchived Posts
+                    forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
+                ))
                 .distinct()
                 .forEach(thread -> {
                     this.cache.put(thread.getId(), new Suggestion(thread));
-                    User user = NerdBotApp.getBot().getJDA().getUserById(thread.getOwnerIdLong());
+                    //User user = NerdBotApp.getBot().getJDA().getUserById(thread.getOwnerIdLong());
                     //log.info("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") (User: " + (user != null ? user.getEffectiveName() + "/" : "") + thread.getOwnerId() + ") to the suggestion cache.");
                 });
 
