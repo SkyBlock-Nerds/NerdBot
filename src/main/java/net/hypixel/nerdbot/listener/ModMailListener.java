@@ -128,13 +128,11 @@ public class ModMailListener {
                     webhookMessage.setAvatarUrl(event.getAuthor().getEffectiveAvatarUrl());
                     String content = messages.get(i);
 
-                    if (i == 0) { // First message
-                        if (modMailRoleId != null) {
-                            content = modMailRoleMention + " " + content;
-                        }
-                    }
-
                     if (i == messages.size() - 1) { // Last message
+                        if (modMailRoleId != null) {
+                            content += "\n\n" + modMailRoleMention;
+                        }
+
                         buildFiles(message).forEach(fileUpload -> webhookMessage.addFile(fileUpload.getName(), fileUpload.getData()));
                     }
 
