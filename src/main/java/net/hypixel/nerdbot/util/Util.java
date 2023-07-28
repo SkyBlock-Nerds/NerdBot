@@ -254,12 +254,20 @@ public class Util {
     }
 
     public static MojangProfile getMojangProfile(String username) throws HttpException {
+        String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
+        MojangProfile mojangProfile;
+
         try {
-            String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
-            return NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
+            mojangProfile = NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
         } catch (Exception ex) {
             throw new HttpException("Unable to locate Minecraft UUID for `" + username + "`.", ex);
         }
+
+        if (mojangProfile == null || mojangProfile.getUniqueId() == null) {
+            throw new HttpException("Requests to the Mojang API have been rate limited.");
+        }
+
+        return mojangProfile;
     }
 
     @NotNull
