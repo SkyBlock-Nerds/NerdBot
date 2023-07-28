@@ -4,11 +4,6 @@
     "roleId": "",
     "webhookId": ""
   },
-  "channelConfig": {
-    "genChannelIds": [],
-    "suggestionForumIds": [],
-    "logChannelId": ""
-  },
   "emojiConfig": {
     "agreeEmojiId": "",
     "disagreeEmojiId": "",
@@ -18,16 +13,27 @@
   "tagConfig": {
     "greenlit": ""
   },
-  "roleConfig": {
-    "newMemberRoleId": ""
+  "channelConfig": {
+    "logChannelId": "",
+    "suggestionForumIds": [],
+    "alphaSuggestionForumIds": [],
+    "genChannelIds": [],
+    "reactionChannels": [],
+    "blacklistedChannels": []
   },
+  "roleConfig": {
+    "botManagerRoleId": "",
+    "newMemberRoleId": "",
+    "limboRoleId": ""
+  },
+  "guildId": "",
   "minimumThreshold": 15,
-  "voiceAThreshold": 60,
+  "messageLimit": 100,
   "mojangUsernameCacheTTL": 12,
+  "voiceThreshold": 60,
   "percentage": 75.0,
   "interval": 43200000,
-  "guildId": "",
-  "activityType": "WATCHING",
-  "activity": "for suggestions",
-  "reactionChannels": []
+  "activityType": "PLAYING",
+  "activity": "",
+  "inactivityDays": 7
 }
