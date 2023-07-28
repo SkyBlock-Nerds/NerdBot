@@ -6,7 +6,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.command.ItemGenCommands;
+import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.generator.Item;
 import net.hypixel.nerdbot.util.generator.Overlay;
@@ -34,7 +34,7 @@ public class GeneratorBuilder {
         this.items = new HashMap<>();
 
         // loading all sprites for Minecraft Items
-        try (InputStream itemStackStream = ItemGenCommands.class.getResourceAsStream("/Minecraft/item_stack_sprite_sheet.png")) {
+        try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/Minecraft/item_stack_sprite_sheet.png")) {
             if (itemStackStream == null) {
                 throw new FileNotFoundException("Could not find find the file called \"/Minecraft/item_stack_sprite_sheet.png\"");
             }
@@ -47,7 +47,7 @@ public class GeneratorBuilder {
         }
 
         // loading the overlays for some Minecraft Items
-        try (InputStream overlayStream = ItemGenCommands.class.getResourceAsStream("/Minecraft/overlays.png")) {
+        try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/Minecraft/overlays.png")) {
             if (overlayStream == null) {
                 throw new FileNotFoundException("Could not find find the file called \"/Minecraft/overlays.png\"");
             }
@@ -63,7 +63,7 @@ public class GeneratorBuilder {
         }
 
         // loading the items position in the sprite sheet
-        try (InputStream itemStream = ItemGenCommands.class.getResourceAsStream("/Minecraft/items.json")) {
+        try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/Minecraft/items.json")) {
             if (itemStream == null) {
                 throw new FileNotFoundException("Could not find find the file called \"/Minecraft/items.json\"");
             }

@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
-import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 
@@ -37,14 +36,14 @@ public class BotConfig {
     private ChannelConfig channelConfig = new ChannelConfig();
 
     /**
+     * Configuration for roles that the bot will be using
+     */
+    private RoleConfig roleConfig = new RoleConfig();
+
+    /**
      * The {@link Guild} ID that the bot will be running in
      */
     private String guildId = "";
-
-    /**
-     * The {@link Role} ID of the Bot Manager role
-     */
-    private String botManagerRoleId = "";
 
     /**
      * The minimum threshold of {@link MessageReaction reactions} needed for a suggestion to be considered greenlit
@@ -57,6 +56,12 @@ public class BotConfig {
      * Default value is 100 {@link Message messages}
      */
     private int messageLimit = 100;
+
+    /**
+     * The number of hours before re-caching all Minecraft Usernames
+     * Default value is 12 hours
+     */
+    private int mojangUsernameCacheTTL = 12;
 
     /**
      * How long someone must be in the same voice channel for it to count towards activity, in seconds.

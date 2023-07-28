@@ -62,13 +62,6 @@ public class GeneratorStrings {
                         `padding`: Adds transparency around the entire image. Must be 0 (default) or higher.
                         `max_line_length`: Defines the maximum length that the line can be. Can be between 1 and 54.
                         """;
-    public static final String ITEM_COLOR_CODES = """
-                        The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
-                        You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:+1%%` will become "+1 ✧ Pristine".
-                        If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/stat_symbols` command.
-                        Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `disable_rarity_linebreak` argument to True.
-                        """;
-
     public static final String FULL_GEN_INFO = """
                         The `/%1$s full` command allows you to combine multiple renders together to create one full image showing all information about it.
                         
@@ -78,7 +71,12 @@ public class GeneratorStrings {
                         
                         As mentioned in `/%1$s recipe_help`, to display a skull next to the item, set the `display_item_id` to `SKULL`, and set `extra_modifiers` to `<the skin_id or player_name>,<true/false (if the provided id is a player name)>` similar to using `/%1$s head`.
                         """.formatted(COMMAND_PREFIX);
-
+    public static final String ITEM_COLOR_CODES = """
+                        The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
+                        You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:+1%%` will become "+1 ✧ Pristine".
+                        If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/stat_symbols` command.
+                        Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `disable_rarity_linebreak` argument to True.
+                        """;
     public static final String ITEM_OTHER_INFO = """
                         There is another command `/%1$s parse` which can be used to easily convert the NBT Tag from a Minecraft item into a Generated Image. You can directly copy it from in game using one of the Minecraft Mods.
                         You can also check out `/%1$s head_help` for more information about rendering items next to your creations!
@@ -126,7 +124,7 @@ public class GeneratorStrings {
     public static final String RECIPE_INFO_BASIC = "The command `/%s recipe` will display a rendered 3x3 square of Minecraft Items or Heads (limited to just items and no blocks right now)".formatted(COMMAND_PREFIX);
     public static final String RECIPE_INFO_ARGUMENTS = """
                                `recipe`: A string containing all of the recipe data for slot number, amount and the item name, separated by a `%%` between different slots.
-                               `render_background (true/false)`: If you want to display the Minecraft inventory in the background or leave it transparent
+                               `render_background (true/false)`: If you want to display the Minecraft inventory in the background or leave it transparent.
                                
                                Each recipe item should be separated with a comma.
                                `slot_number`: The slot you want the item displayed in (`1-9` starting in the top left).
