@@ -200,11 +200,17 @@ public class AdminCommands extends ApplicationCommand {
         description = "Link a Mojang Profile to a member's account.",
         defaultLocked = true
     )
-    public void linkProfile(GuildSlashEvent event, @AppOption(description = "Member to link to.") Member member, @AppOption(description = "Your Minecraft IGN to link.") String username) {
+    public void linkProfile(
+        GuildSlashEvent event,
+        @AppOption(description = "Member to link to.") Member member,
+        @AppOption(description = "Your Minecraft IGN to link.") String username,
+        @Optional @AppOption(description = "Bypass hypixel social check.") Boolean bypass_social
+    ) {
         event.deferReply(true).queue();
+        bypass_social = (bypass_social != null && bypass_social);
 
         try {
-            MojangProfile mojangProfile = MyCommands.updateMojangProfile(member, username);
+            MojangProfile mojangProfile = MyCommands.updateMojangProfile(member, username, bypass_social);
             event.getHook().sendMessage("Updated " + member.getAsMention() + "'s Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
             if (ChannelManager.getLogChannel() != null) {

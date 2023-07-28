@@ -40,7 +40,7 @@ public class MyCommands extends ApplicationCommand {
         event.deferReply(true).queue();
 
         try {
-            MojangProfile mojangProfile = updateMojangProfile(event.getMember(), username);
+            MojangProfile mojangProfile = updateMojangProfile(event.getMember(), username, true);
             event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
             if (ChannelManager.getLogChannel() != null) {
@@ -132,7 +132,7 @@ public class MyCommands extends ApplicationCommand {
         ).queue();
     }
 
-    public static MojangProfile updateMojangProfile(Member member, String username) throws HttpException {
+    public static MojangProfile updateMojangProfile(Member member, String username, boolean enforceSocial) throws HttpException {
         Database database = NerdBotApp.getBot().getDatabase();
         DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
         MojangProfile mojangProfile = Util.getMojangProfile(username);
@@ -145,7 +145,7 @@ public class MyCommands extends ApplicationCommand {
 
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
 
-        if (!member.getUser().getName().equalsIgnoreCase(discord)) {
+        if (enforceSocial && !member.getUser().getName().equalsIgnoreCase(discord)) {
             throw new RuntimeException("The discord name on the Hypixel profile for `" + username + "` does not match " + member.getAsMention() + "!");
         }
 
