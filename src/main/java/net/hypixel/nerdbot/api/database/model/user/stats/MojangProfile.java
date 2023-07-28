@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
 import lombok.Setter;
 import net.hypixel.nerdbot.NerdBotApp;
+import org.bson.codecs.pojo.annotations.BsonIgnore;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -25,6 +26,7 @@ public class MojangProfile {
         this.lastUpdated = System.currentTimeMillis();
     }
 
+    @BsonIgnore
     public Optional<String> getErrorMessage() {
         return Optional.ofNullable(this.errorMessage);
     }
@@ -34,5 +36,4 @@ public class MojangProfile {
             .minus(NerdBotApp.getBot().getConfig().getMojangUsernameCacheTTL(), ChronoUnit.HOURS)
             .toMillis() > this.lastUpdated;
     }
-
 }
