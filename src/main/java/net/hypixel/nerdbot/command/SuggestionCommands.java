@@ -48,7 +48,7 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(
-            buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false)
+            buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false, false)
                 .setAuthor(searchUser != null ? searchUser.getName() : String.valueOf(userID))
                 .setThumbnail(searchUser != null ? searchUser.getEffectiveAvatarUrl() : null)
                 .build()
@@ -77,7 +77,7 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(
-            buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false)
+            buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false, false)
                 .setAuthor(member.getEffectiveName())
                 .setThumbnail(member.getEffectiveAvatarUrl())
                 .build()
@@ -104,7 +104,7 @@ public class SuggestionCommands extends ApplicationCommand {
             return;
         }
 
-        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, true).build()).queue();
+        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, true, true).build()).queue();
     }
 
     public static List<SuggestionCache.Suggestion> getSuggestions(Long userID, String tags, String title, boolean alpha) {
@@ -134,7 +134,7 @@ public class SuggestionCommands extends ApplicationCommand {
             .toList();
     }
 
-    public static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum, boolean showNames) {
+    public static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum, boolean showNames, boolean showStats) {
         List<SuggestionCache.Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
         int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
 
@@ -163,19 +163,23 @@ public class SuggestionCommands extends ApplicationCommand {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setColor(Color.GREEN)
             .setTitle("Suggestions")
-            .setDescription(links.toString())
-            .addField(
-                "Total",
-                String.valueOf((int) total),
-                true
-            )
-            .addField(
-                getEmojiFormat(EmojiConfig::getGreenlitEmojiId),
-                (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
-                true
-            )
-            .addBlankField(true)
-            .setFooter("Page: " + pageNum + "/" + totalPages + (NerdBotApp.getSuggestionCache().isLoaded() ? "" : " | Caching is in progress!"));
+            .setDescription(links.toString());
+
+        if (showStats) {
+            embedBuilder.addField(
+                    "Total",
+                    String.valueOf((int) total),
+                    true
+                )
+                .addField(
+                    getEmojiFormat(EmojiConfig::getGreenlitEmojiId),
+                    (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
+                    true
+                )
+                .addBlankField(true);
+        }
+
+        embedBuilder.setFooter("Page: " + pageNum + "/" + totalPages + (NerdBotApp.getSuggestionCache().isLoaded() ? "" : " | Caching is in progress!"));
 
         if (!filters.isEmpty()) {
             embedBuilder.addField("Filters", filters,  false);

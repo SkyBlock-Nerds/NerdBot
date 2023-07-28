@@ -125,7 +125,7 @@ public class MyCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(
-            SuggestionCommands.buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false)
+            SuggestionCommands.buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, false, true)
                 .setAuthor(event.getMember().getEffectiveName())
                 .setThumbnail(event.getMember().getEffectiveAvatarUrl())
                 .build()
