@@ -19,6 +19,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import net.hypixel.nerdbot.util.gson.HttpException;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
@@ -261,13 +262,22 @@ public class Util {
         }
     }
 
+    @NotNull
     public static MojangProfile getMojangProfile(UUID uniqueId) throws HttpException {
+        String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
+        MojangProfile mojangProfile;
+
         try {
-            String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
-            return NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
+            mojangProfile = NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
         } catch (Exception ex) {
             throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId.toString() + "`.", ex);
         }
+
+        if (mojangProfile == null || mojangProfile.getUniqueId() == null) {
+            throw new HttpException("Requests to the Mojang API have been rate limited.");
+        }
+
+        return mojangProfile;
     }
 
     private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws Exception {

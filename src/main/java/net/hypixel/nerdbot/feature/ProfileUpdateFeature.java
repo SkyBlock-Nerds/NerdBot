@@ -36,7 +36,7 @@ public class ProfileUpdateFeature extends BotFeature {
                             try {
                                 MojangProfile mojangProfile = Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId());
 
-                                if (mojangProfile != null) {
+                                if (mojangProfile.getUniqueId() != null) {
                                     discordUser.setMojangProfile(mojangProfile);
                                     Guild guild = Util.getMainGuild();
 
