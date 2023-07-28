@@ -255,7 +255,9 @@ public class Util {
     public static MojangProfile getMojangProfile(String username) throws HttpException {
         try {
             String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
-            return NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
+            HttpResponse<String> response = getHttpResponse(url);
+            log.info("Response (Code " + response.statusCode() + "): " + response.body());
+            return NerdBotApp.GSON.fromJson(response.body(), MojangProfile.class);
         } catch (Exception ex) {
             throw new HttpException("Unable to locate Minecraft UUID for `" + username + "`.", ex);
         }
@@ -264,7 +266,9 @@ public class Util {
     public static MojangProfile getMojangProfile(UUID uniqueId) throws HttpException {
         try {
             String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
-            return NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
+            HttpResponse<String> response = getHttpResponse(url);
+            log.info("Response (Code " + response.statusCode() + "): " + response.body());
+            return NerdBotApp.GSON.fromJson(response.body(), MojangProfile.class);
         } catch (Exception ex) {
             throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId.toString() + "`.", ex);
         }
@@ -275,6 +279,7 @@ public class Util {
         HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url)).GET();
         Arrays.asList(headers).forEach(pair -> builder.header(pair.getLeft(), pair.getRight()));
         HttpRequest request = builder.build();
+        log.info("Sending HTTP request to " + url + " with headers " + Arrays.toString(headers));
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
