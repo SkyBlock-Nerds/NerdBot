@@ -267,7 +267,7 @@ public class Util {
         }
 
         if (statusCode != 200) {
-            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + mojangProfile.getErrorMessage().orElse("Unknown reason"));
+            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + mojangProfile.getErrorMessage());
         }
 
         return mojangProfile;
@@ -288,7 +288,7 @@ public class Util {
         }
 
         if (statusCode != 200) {
-            throw new HttpException("Failed to request Mojang Profile for `" + uniqueId + "`: " + mojangProfile.getErrorMessage().orElse("Unknown reason"));
+            throw new HttpException("Failed to request Mojang Profile for `" + uniqueId + "`: " + mojangProfile.getErrorMessage());
         }
 
         return mojangProfile;
