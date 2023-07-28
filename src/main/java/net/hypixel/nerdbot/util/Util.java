@@ -256,15 +256,18 @@ public class Util {
     public static MojangProfile getMojangProfile(String username) throws HttpException {
         String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
         MojangProfile mojangProfile;
+        int statusCode;
 
         try {
-            mojangProfile = NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
+            HttpResponse<String> httpResponse = getHttpResponse(url);
+            statusCode = httpResponse.statusCode();
+            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
         } catch (Exception ex) {
-            throw new HttpException("Unable to locate Minecraft UUID for `" + username + "`.", ex);
+            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + ex.getMessage(), ex);
         }
 
-        if (mojangProfile == null || mojangProfile.getUniqueId() == null) {
-            throw new HttpException("Requests to the Mojang API have been rate limited.");
+        if (statusCode != 200) {
+            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + mojangProfile.getErrorMessage().orElse("Unknown reason"));
         }
 
         return mojangProfile;
@@ -274,15 +277,18 @@ public class Util {
     public static MojangProfile getMojangProfile(UUID uniqueId) throws HttpException {
         String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
         MojangProfile mojangProfile;
+        int statusCode;
 
         try {
-            mojangProfile = NerdBotApp.GSON.fromJson(getHttpResponse(url).body(), MojangProfile.class);
+            HttpResponse<String> httpResponse = getHttpResponse(url);
+            statusCode = httpResponse.statusCode();
+            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
         } catch (Exception ex) {
-            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId.toString() + "`.", ex);
+            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`.", ex);
         }
 
-        if (mojangProfile == null || mojangProfile.getUniqueId() == null) {
-            throw new HttpException("Requests to the Mojang API have been rate limited.");
+        if (statusCode != 200) {
+            throw new HttpException("Failed to request Mojang Profile for `" + uniqueId + "`: " + mojangProfile.getErrorMessage().orElse("Unknown reason"));
         }
 
         return mojangProfile;
