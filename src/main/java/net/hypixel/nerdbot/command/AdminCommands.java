@@ -225,10 +225,9 @@ public class AdminCommands extends ApplicationCommand {
                         .build()
                 ).queue();
             }
-        } catch (HttpException httpex) {
-            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
-        } catch (Exception ex) {
-            event.getHook().sendMessage(ex.getMessage()).queue();
+        } catch (HttpException exception) {
+            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`: " + exception.getMessage()).queue();
+            exception.printStackTrace();
         }
     }
 
