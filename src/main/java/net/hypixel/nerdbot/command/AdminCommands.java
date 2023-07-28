@@ -5,11 +5,7 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 import com.mongodb.client.FindIterable;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -347,7 +343,11 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
-        users.forEach(ProfileUpdateFeature::updateNickname);
+        users.forEach(discordUser -> {
+            if (discordUser.isProfileAssigned()) {
+                ProfileUpdateFeature.updateNickname(discordUser);
+            }
+        });
         event.getHook().editOriginal("Updated nicknames for " + users.into(new ArrayList<>()).size() + " users.").queue();
     }
 }
