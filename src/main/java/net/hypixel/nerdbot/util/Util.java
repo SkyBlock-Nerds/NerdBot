@@ -19,6 +19,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import net.hypixel.nerdbot.util.gson.HttpException;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
@@ -253,25 +254,44 @@ public class Util {
     }
 
     public static MojangProfile getMojangProfile(String username) throws HttpException {
+        String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
+        MojangProfile mojangProfile;
+        int statusCode;
+
         try {
-            String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
-            HttpResponse<String> response = getHttpResponse(url);
-            log.info("Response (Code " + response.statusCode() + "): " + response.body());
-            return NerdBotApp.GSON.fromJson(response.body(), MojangProfile.class);
+            HttpResponse<String> httpResponse = getHttpResponse(url);
+            statusCode = httpResponse.statusCode();
+            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
         } catch (Exception ex) {
-            throw new HttpException("Unable to locate Minecraft UUID for `" + username + "`.", ex);
+            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + ex.getMessage(), ex);
         }
+
+        if (statusCode != 200) {
+            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + mojangProfile.getErrorMessage().orElse("Unknown reason"));
+        }
+
+        return mojangProfile;
     }
 
+    @NotNull
     public static MojangProfile getMojangProfile(UUID uniqueId) throws HttpException {
+        String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
+        MojangProfile mojangProfile;
+        int statusCode;
+
         try {
-            String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
-            HttpResponse<String> response = getHttpResponse(url);
-            log.info("Response (Code " + response.statusCode() + "): " + response.body());
-            return NerdBotApp.GSON.fromJson(response.body(), MojangProfile.class);
+            HttpResponse<String> httpResponse = getHttpResponse(url);
+            statusCode = httpResponse.statusCode();
+            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
         } catch (Exception ex) {
-            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId.toString() + "`.", ex);
+            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`.", ex);
         }
+
+        if (statusCode != 200) {
+            throw new HttpException("Failed to request Mojang Profile for `" + uniqueId + "`: " + mojangProfile.getErrorMessage().orElse("Unknown reason"));
+        }
+
+        return mojangProfile;
     }
 
     private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws Exception {
