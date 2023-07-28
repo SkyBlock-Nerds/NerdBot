@@ -21,29 +21,10 @@ in the same DM.
 
 The bot listens to a number of events and logs them in a channel.
 
-## Config
+### Running the bot
 
-An example config file can be
-found [here](https://github.com/TheMGRF/NerdBot/blob/master/src/main/resources/example-config.json).
+Please follow the instructions [here](https://github.com/TheMGRF/NerdBot/blob/master/CONTRIBUTING.md)
 
-Depending on the current environment, the configuration file will either be named `production.config.json`
-or `dev.config.json`
-
-Changes to the configuration file require the bot to be restarted.
-
-## Commands
+### Commands
 
 See the [commands](https://github.com/TheMGRF/NerdBot/tree/master/src/main/java/net/hypixel/nerdbot/command) package.
-
-## Running the Bot
-
-Requirements:
-
-- A [MongoDB database](https://www.mongodb.com/free-cloud-database) instance
-- A valid [Discord bot](https://discord.com/developers/applications/me) token
-
-To start the bot, run the following command:
-
-```shell
-$ java -Dbot.token="DISCORD_BOT_TOKEN" -Dmongodb.uri="MONGODB_URI" -Dbot.environment="ENVIRONMENT" -Dbot.config="INSERT_CONFIG_PATH_HERE" -jar NerdBot.jar
-```
