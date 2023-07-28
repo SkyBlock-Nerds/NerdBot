@@ -22,7 +22,11 @@ found [here](https://github.com/TheMGRF/NerdBot/blob/master/src/main/resources/e
 
 ### For the most basic config to be valid it will need:
 
-- Emoji's all set (Agree, disagree, neutral, and greenlit)
+- Emojis:
+  - Agree
+  - Disagree
+  - Neutral
+  - Greenlit
 - Log channel ID set
 - Guild ID set
 - Activity string set
@@ -31,12 +35,10 @@ found [here](https://github.com/TheMGRF/NerdBot/blob/master/src/main/resources/e
 
 - Channel ID of a suggestions channel in order to curate suggestions
 - Channel ID('s) of item generator channel(s) to allow the item generation commands to be used
-- Tag ID set for greenlit to work.
 
 ### Other notes:
 
-Depending on the current environment, the configuration file will either be named `production.config.json`
-or `dev.config.json`
+Depending on the current environment, the configuration file will either be named `production.config.json` or `dev.config.json`
 
-Changes to the configuration file require the bot to be restarted.
+Changes to the configuration file can be reloaded by doing `/config reload`
 
