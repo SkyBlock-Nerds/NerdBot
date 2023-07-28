@@ -188,6 +188,17 @@ public class MyCommands extends ApplicationCommand {
             log.warn("Role with ID " + "" + " does not exist.");
         }
 
+        if (ChannelManager.getLogChannel() != null) {
+            ChannelManager.getLogChannel().sendMessageEmbeds(
+                new EmbedBuilder()
+                    .setTitle("Profile Update")
+                    .setDescription(member.getAsMention() + " has updated their profile to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId().toString() + ")")
+                    .setColor(Color.PINK)
+                    .setThumbnail(member.getEffectiveAvatarUrl())
+                    .build()
+            );
+        }
+
         return mojangProfile;
     }
 
