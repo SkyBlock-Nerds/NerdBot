@@ -299,6 +299,7 @@ public class Util {
         HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url)).GET();
         Arrays.asList(headers).forEach(pair -> builder.header(pair.getLeft(), pair.getRight()));
         HttpRequest request = builder.build();
+        log.info("Sending HTTP request to " + url + " with headers " + Arrays.toString(headers));
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
