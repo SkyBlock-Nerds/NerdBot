@@ -18,6 +18,8 @@ $ java -Dbot.token="DISCORD_BOT_TOKEN" -Dmongodb.uri="MONGODB_URI" -Dbot.environ
 An example config file can be
 found [here](https://github.com/TheMGRF/NerdBot/blob/master/src/main/resources/example-config.json).
 
+ - This file is automatically updated when values are added, removed, or changed.
+
 ### For the most basic config to be valid it will need:
 
 - Emoji's all set (Agree, disagree, neutral, and greenlit)
@@ -27,8 +29,8 @@ found [here](https://github.com/TheMGRF/NerdBot/blob/master/src/main/resources/e
 
 ### Additionally, other things may be required to be set in the config before those features will work.
 
-- Suggestion forum id for suggestion parsing.
-- Item gen channel(s) for allowing itemgen to work in them.
+- Channel ID of a suggestions channel in order to curate suggestions
+- Channel ID('s) of item generator channel(s) to allow the item generation commands to be used
 - Tag ID set for greenlit to work.
 
 ### Other notes:
