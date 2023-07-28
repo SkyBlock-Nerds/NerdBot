@@ -170,14 +170,14 @@ public class MyCommands extends ApplicationCommand {
         if (newMemberRole.isPresent()) {
             if (!Util.hasHigherOrEqualRole(member, newMemberRole.get())) { // Ignore Existing Members
                 try {
-                    guild.addRoleToMember(member, newMemberRole.get()).queue();
+                    guild.addRoleToMember(member, newMemberRole.get()).complete();
                     String limboRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getLimboRoleId();
 
                     if (limboRoleId != null) {
                         Role limboRole = guild.getRoleById(limboRoleId);
 
                         if (limboRole != null) {
-                            guild.removeRoleFromMember(member, limboRole).queue();
+                            guild.removeRoleFromMember(member, limboRole).complete();
                         }
                     }
                 } catch (HierarchyException hex) {
