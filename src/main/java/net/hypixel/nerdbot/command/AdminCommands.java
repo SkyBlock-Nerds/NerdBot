@@ -10,6 +10,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.mongodb.client.FindIterable;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -31,6 +32,7 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
+import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -327,4 +329,25 @@ public class AdminCommands extends ApplicationCommand {
         event.getHook().sendMessage("Migrated " + mojangProfiles.size() + " Mojang Profiles to the database.").queue();
     }
 
+    @JDASlashCommand(name = "user", subcommand = "update-nicks", description = "Update all user nicknames to match their Mojang Profile.", defaultLocked = true)
+    public void updateNicknames(GuildSlashEvent event) {
+        Database database = NerdBotApp.getBot().getDatabase();
+
+        event.deferReply(true).queue();
+
+        if (!database.isConnected()) {
+            event.getHook().sendMessage("Database is not connected.").queue();
+            return;
+        }
+
+        FindIterable<DiscordUser> users = database.findAllDocuments(database.getCollection("users", DiscordUser.class));
+
+        if (users == null) {
+            event.getHook().sendMessage("No users found.").queue();
+            return;
+        }
+
+        users.forEach(ProfileUpdateFeature::updateNickname);
+        event.getHook().editOriginal("Updated nicknames for " + users.into(new ArrayList<>()).size() + " users.").queue();
+    }
 }
