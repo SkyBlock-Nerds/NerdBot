@@ -99,7 +99,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Generates a full item stack!")
     public void generateFullItem(GuildSlashEvent event,
-                                 @AppOption(description = DESC_ITEM_NAME) String itemName,
+                                 @Optional @AppOption(description = DESC_ITEM_NAME) String itemName,
                                  @Optional @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
                                  @Optional @AppOption(description = DESC_ITEM_LORE) String itemLore,
                                  @Optional @AppOption(description = DESC_TYPE) String type,
