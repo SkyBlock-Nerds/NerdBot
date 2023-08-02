@@ -300,7 +300,7 @@ public class GeneratorCommands extends ApplicationCommand {
         StringBuilder itemGenCommand = new StringBuilder("/").append(COMMAND_PREFIX).append(includeItem ? " full" : " item");
         StringBuilder itemText = new StringBuilder();
         itemText.append(itemName).append("\\n");
-        itemGenCommand.append(" name:").append(itemName).append(" rarity:NONE item_lore:");
+        itemGenCommand.append(" item_name:").append(itemName).append(" rarity:NONE item_lore:");
 
         // adding the entire lore to the string builder
         int maxLineLength = 0;
@@ -318,7 +318,7 @@ public class GeneratorCommands extends ApplicationCommand {
         itemText.replace(itemText.length() - 2, itemText.length(), "");
         // checking if there was supposed to be an item stack is displayed with the item
         if (includeItem) {
-            itemGenCommand.append(" item_name:").append(itemID).append(extraModifiers.length() != 0 ? " extra_modifiers:" + extraModifiers : "");
+            itemGenCommand.append(" display_item_id:").append(itemID).append(extraModifiers.length() != 0 ? " extra_modifiers:" + extraModifiers : "");
         }
 
         // creating the generated description
