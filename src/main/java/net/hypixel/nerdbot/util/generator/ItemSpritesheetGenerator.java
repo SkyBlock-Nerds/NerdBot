@@ -1,8 +1,9 @@
-package net.hypixel.nerdbot.util;
+package net.hypixel.nerdbot.util.generator;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.generator.GeneratorBuilder;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -19,14 +20,12 @@ import java.util.List;
 public class ItemSpritesheetGenerator {
 
     private static final int ATLAS_WIDTH = 1_024 * 8;
-    private static final int FRAME_WIDTH = 512;
-    private static final int FRAME_HEIGHT = 512;
 
     private static final List<TextureInfo> textureInfo = new ArrayList<>();
 
     public static void main(String[] args) {
         String path = "./src/main/resources/minecraft_assets/textures/items";
-        String outputDir = "./src/main/resources/atlas";
+        String outputDir = "./src/main/resources/minecraft_assets/spritesheets";
         String atlasName = "minecraft_texture_atlas.png";
         String jsonFileName = "atlas_coordinates.json";
 
@@ -59,14 +58,13 @@ public class ItemSpritesheetGenerator {
             // Sort alphabetically
             Arrays.sort(files, Comparator.comparing(File::getName));
 
-            // Load textures
             for (File file : files) {
                 try {
                     BufferedImage texture = ImageIO.read(file);
                     System.out.println("Loaded texture: " + file.getName());
 
-                    if (texture.getWidth() != FRAME_WIDTH || texture.getHeight() != FRAME_HEIGHT) {
-                        System.out.println("Resizing texture: " + file.getName() + " to " + FRAME_WIDTH + "x" + FRAME_HEIGHT + " px");
+                    if (texture.getWidth() != GeneratorBuilder.IMAGE_WIDTH || texture.getHeight() != GeneratorBuilder.IMAGE_HEIGHT) {
+                        System.out.println("Resizing texture: " + file.getName() + " to " + GeneratorBuilder.IMAGE_WIDTH + "x" + GeneratorBuilder.IMAGE_HEIGHT);
                         texture = resizeImage(texture);
                     }
 
@@ -83,10 +81,10 @@ public class ItemSpritesheetGenerator {
     }
 
     private static BufferedImage resizeImage(BufferedImage originalImage) {
-        BufferedImage resizedImage = new BufferedImage(ItemSpritesheetGenerator.FRAME_WIDTH, ItemSpritesheetGenerator.FRAME_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage resizedImage = new BufferedImage(GeneratorBuilder.IMAGE_WIDTH, GeneratorBuilder.IMAGE_HEIGHT, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics2D = resizedImage.createGraphics();
         graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-        graphics2D.drawImage(originalImage, 0, 0, ItemSpritesheetGenerator.FRAME_WIDTH, ItemSpritesheetGenerator.FRAME_HEIGHT, null);
+        graphics2D.drawImage(originalImage, 0, 0, GeneratorBuilder.IMAGE_WIDTH, GeneratorBuilder.IMAGE_HEIGHT, null);
         graphics2D.dispose();
         return resizedImage;
     }
@@ -97,18 +95,18 @@ public class ItemSpritesheetGenerator {
      * @return The texture atlas image
      */
     private static BufferedImage createTextureAtlas() {
-        int atlasHeight;
+        int atlasHeight = 0;
         int x = 0;
         int y = 0;
 
         BufferedImage atlas = new BufferedImage(ATLAS_WIDTH, 1, BufferedImage.TYPE_INT_ARGB);
 
         int totalTextures = textureInfo.size();
+        double progressStep = 1.0 / totalTextures;
         double progress = 0.0;
 
         for (TextureInfo textureInfo : textureInfo) {
-            int frameWidth = FRAME_WIDTH;
-            atlasHeight = FRAME_HEIGHT;
+            int frameWidth = GeneratorBuilder.IMAGE_WIDTH;
 
             // Move to the next row
             if (x + frameWidth > ATLAS_WIDTH) {
@@ -116,9 +114,11 @@ public class ItemSpritesheetGenerator {
                 y += atlasHeight;
             }
 
+            atlasHeight = GeneratorBuilder.IMAGE_HEIGHT;
 
-            for (int yPos = 0; yPos < textureInfo.getImage().getHeight(); yPos += FRAME_HEIGHT) {
-                BufferedImage frame = textureInfo.getImage().getSubimage(0, yPos, frameWidth, Math.min(FRAME_HEIGHT, textureInfo.getImage().getHeight() - yPos));
+            for (int yPos = 0; yPos < textureInfo.getImage().getHeight(); yPos += GeneratorBuilder.IMAGE_HEIGHT) {
+                BufferedImage frame = textureInfo.getImage().getSubimage(0, yPos, frameWidth, Math.min(GeneratorBuilder.IMAGE_HEIGHT, textureInfo.getImage().getHeight() - yPos));
+
                 atlas = extendTextureAtlas(atlas, x, y, frame);
 
                 textureInfo.setX(x);
@@ -127,8 +127,9 @@ public class ItemSpritesheetGenerator {
                 x += frameWidth;
             }
 
-            progress += 1.0 / totalTextures;
-            System.out.printf("\rTexture atlas creation progress: %.2f%%", progress * 100);
+            progress += progressStep;
+            System.out.print("\r");
+            System.out.printf("Texture atlas creation progress: %.2f%%", progress * 100);
         }
 
         return atlas;
@@ -170,6 +171,7 @@ public class ItemSpritesheetGenerator {
         File outputFile = new File(outputFolder, atlasName);
 
         try {
+            System.out.println();
             System.out.println("Saving texture atlas to: " + outputFile.getAbsolutePath());
             ImageIO.write(atlas, "png", outputFile);
             System.out.println("Texture atlas saved successfully!");
@@ -193,8 +195,8 @@ public class ItemSpritesheetGenerator {
         for (TextureInfo info : textureInfo) {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("name", info.name.split("\\.")[0]);
-            jsonObject.addProperty("x", info.x);
-            jsonObject.addProperty("y", info.y);
+            jsonObject.addProperty("x", info.getX());
+            jsonObject.addProperty("y", info.getY());
             jsonArray.add(jsonObject);
         }
 

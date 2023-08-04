@@ -26,6 +26,10 @@ import static net.hypixel.nerdbot.generator.GeneratorStrings.stripString;
 
 @Log4j2
 public class GeneratorBuilder {
+
+    public static final int IMAGE_HEIGHT = 512;
+    public static final int IMAGE_WIDTH = 512;
+
     private final HashMap<String, Item> items;
     private boolean itemsInitialisedCorrectly = true;
     private BufferedImage itemSpriteSheet;
@@ -54,7 +58,7 @@ public class GeneratorBuilder {
 
             BufferedImage overlayImage = ImageIO.read(overlayStream);
             for (Overlay overlay : Overlay.values()) {
-                overlay.setOverlayImage(overlayImage.getSubimage(overlay.getX(), overlay.getY(), 16, 16));
+                overlay.setOverlayImage(overlayImage.getSubimage(overlay.getX(), overlay.getY(), IMAGE_WIDTH, IMAGE_HEIGHT));
             }
         } catch (IOException e) {
             log.error("Couldn't initialise the overlays for ItemStack Generation");
@@ -314,8 +318,8 @@ public class GeneratorBuilder {
         }
 
         // copying the section of the item sprite sheet to a new image and applying any modifiers (color, enchant glint) to it
-        BufferedImage imagePortion = itemSpriteSheet.getSubimage(itemFound.getX(), itemFound.getY(), 16, 16);
-        BufferedImage itemStack = new BufferedImage(imagePortion.getColorModel(), imagePortion.getRaster().createCompatibleWritableRaster(16, 16), imagePortion.isAlphaPremultiplied(), null);
+        BufferedImage imagePortion = itemSpriteSheet.getSubimage(itemFound.getX(), itemFound.getY(), IMAGE_WIDTH, IMAGE_HEIGHT);
+        BufferedImage itemStack = new BufferedImage(imagePortion.getColorModel(), imagePortion.getRaster().createCompatibleWritableRaster(IMAGE_WIDTH, IMAGE_HEIGHT), imagePortion.isAlphaPremultiplied(), null);
         imagePortion.copyData(itemStack.getRaster());
         itemFound.applyModifiers(itemStack, extraDetails);
         return itemStack;
