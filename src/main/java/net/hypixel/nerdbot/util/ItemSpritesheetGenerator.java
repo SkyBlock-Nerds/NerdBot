@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import net.hypixel.nerdbot.NerdBotApp;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
@@ -17,27 +18,25 @@ import java.util.List;
 
 public class ItemSpritesheetGenerator {
 
-    private static final int ATLAS_WIDTH = 1_024;
+    private static final int ATLAS_WIDTH = 1_024 * 8;
+    private static final int FRAME_WIDTH = 512;
+    private static final int FRAME_HEIGHT = 512;
 
     private static final List<TextureInfo> textureInfo = new ArrayList<>();
 
     public static void main(String[] args) {
-        String itemDir = "./src/main/resources/Minecraft/textures/item";
-        String blockDir = "./src/main/resources/Minecraft/textures/block";
+        String path = "./src/main/resources/minecraft_assets/textures/items";
         String outputDir = "./src/main/resources/atlas";
         String atlasName = "minecraft_texture_atlas.png";
         String jsonFileName = "atlas_coordinates.json";
 
-        List<BufferedImage> textures = new ArrayList<>();
         List<String> textureNames = new ArrayList<>();
+        textureInfo.addAll(loadTextures(path, textureNames));
 
-        textures.addAll(loadTextures(itemDir, textureNames));
-        textures.addAll(loadTextures(blockDir, textureNames));
+        System.out.println("Loaded " + textureInfo.size() + " textures.");
 
-        System.out.println("Loaded " + textures.size() + " textures.");
-
-        BufferedImage atlas = createTextureAtlas(textures);
-        saveTextureAtlas(atlas, outputDir, atlasName, jsonFileName, textureNames);
+        BufferedImage atlas = createTextureAtlas();
+        saveTextureAtlas(atlas, outputDir, atlasName, jsonFileName);
         System.out.println("Texture atlas generation complete!");
     }
 
@@ -49,8 +48,8 @@ public class ItemSpritesheetGenerator {
      *
      * @return The loaded textures as a list
      */
-    private static List<BufferedImage> loadTextures(String inputDir, List<String> textureNames) {
-        List<BufferedImage> textures = new ArrayList<>();
+    private static List<TextureInfo> loadTextures(String inputDir, List<String> textureNames) {
+        List<TextureInfo> textureInfoList = new ArrayList<>();
         File folder = new File(inputDir);
         File[] files = folder.listFiles(new PNGFileFilter());
 
@@ -65,65 +64,71 @@ public class ItemSpritesheetGenerator {
                 try {
                     BufferedImage texture = ImageIO.read(file);
                     System.out.println("Loaded texture: " + file.getName());
-                    textures.add(texture);
+
+                    if (texture.getWidth() != FRAME_WIDTH || texture.getHeight() != FRAME_HEIGHT) {
+                        System.out.println("Resizing texture: " + file.getName() + " to " + FRAME_WIDTH + "x" + FRAME_HEIGHT + " px");
+                        texture = resizeImage(texture);
+                    }
+
+                    TextureInfo textureInfo = new TextureInfo(file.getName(), texture, -1, -1);
+                    textureInfoList.add(textureInfo);
                     textureNames.add(file.getName());
-                    textureInfo.add(new TextureInfo(file.getName(), -1, -1));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
 
-        return textures;
+        return textureInfoList;
+    }
+
+    private static BufferedImage resizeImage(BufferedImage originalImage) {
+        BufferedImage resizedImage = new BufferedImage(ItemSpritesheetGenerator.FRAME_WIDTH, ItemSpritesheetGenerator.FRAME_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics2D = resizedImage.createGraphics();
+        graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        graphics2D.drawImage(originalImage, 0, 0, ItemSpritesheetGenerator.FRAME_WIDTH, ItemSpritesheetGenerator.FRAME_HEIGHT, null);
+        graphics2D.dispose();
+        return resizedImage;
     }
 
     /**
      * Create a texture atlas from the given textures and the s
      *
-     * @param textures The textures to add to the atlas
-     *
      * @return The texture atlas image
      */
-    private static BufferedImage createTextureAtlas(List<BufferedImage> textures) {
-        int atlasHeight = 0;
+    private static BufferedImage createTextureAtlas() {
+        int atlasHeight;
         int x = 0;
         int y = 0;
 
         BufferedImage atlas = new BufferedImage(ATLAS_WIDTH, 1, BufferedImage.TYPE_INT_ARGB);
 
-        for (BufferedImage texture : textures) {
-            int frameWidth = 16;
-            int frameHeight = Math.min(16, texture.getHeight());
+        int totalTextures = textureInfo.size();
+        double progress = 0.0;
 
+        for (TextureInfo textureInfo : textureInfo) {
+            int frameWidth = FRAME_WIDTH;
+            atlasHeight = FRAME_HEIGHT;
+
+            // Move to the next row
             if (x + frameWidth > ATLAS_WIDTH) {
-                // Move to the next row
                 x = 0;
                 y += atlasHeight;
-                atlasHeight = 0;
             }
 
-            atlasHeight = Math.max(atlasHeight, frameHeight);
 
-            for (int yPos = 0; yPos < texture.getHeight(); yPos += 16) {
-                BufferedImage frame = texture.getSubimage(0, yPos, frameWidth, Math.min(16, texture.getHeight() - yPos));
-
+            for (int yPos = 0; yPos < textureInfo.getImage().getHeight(); yPos += FRAME_HEIGHT) {
+                BufferedImage frame = textureInfo.getImage().getSubimage(0, yPos, frameWidth, Math.min(FRAME_HEIGHT, textureInfo.getImage().getHeight() - yPos));
                 atlas = extendTextureAtlas(atlas, x, y, frame);
 
-                TextureInfo info = textureInfo.get(textures.indexOf(texture));
-                info.setX(x);
-                info.setY(y);
-
-                System.out.println("Adding texture at position (x=" + info.getX() + ", y=" + info.getY() + ")");
+                textureInfo.setX(x);
+                textureInfo.setY(y);
 
                 x += frameWidth;
-
-                // Move to the next row
-                if (x + frameWidth > ATLAS_WIDTH) {
-                    x = 0;
-                    y += atlasHeight;
-                    atlasHeight = 0;
-                }
             }
+
+            progress += 1.0 / totalTextures;
+            System.out.printf("\rTexture atlas creation progress: %.2f%%", progress * 100);
         }
 
         return atlas;
@@ -157,21 +162,19 @@ public class ItemSpritesheetGenerator {
      * @param outputDir    The output directory to save the texture atlas to
      * @param atlasName    The name of the texture atlas file
      * @param jsonFileName The name of the JSON file containing the texture coordinates
-     * @param textureNames The names of the textures in the atlas
      */
-    private static void saveTextureAtlas(BufferedImage atlas, String outputDir, String atlasName, String jsonFileName, List<String> textureNames) {
+    private static void saveTextureAtlas(BufferedImage atlas, String outputDir, String atlasName, String jsonFileName) {
         File outputFolder = new File(outputDir);
         outputFolder.mkdirs();
 
         File outputFile = new File(outputFolder, atlasName);
 
-        // Save the texture atlas file
         try {
             System.out.println("Saving texture atlas to: " + outputFile.getAbsolutePath());
             ImageIO.write(atlas, "png", outputFile);
             System.out.println("Texture atlas saved successfully!");
 
-            saveTextureCoordinatesJson(outputFolder, jsonFileName, textureNames);
+            saveTextureCoordinatesJson(outputFolder, jsonFileName);
         } catch (IOException e) {
             System.err.println("Failed to save texture atlas!");
             e.printStackTrace();
@@ -183,12 +186,10 @@ public class ItemSpritesheetGenerator {
      *
      * @param outputFolder The output folder to save the JSON file to
      * @param jsonFileName The name of the JSON file
-     * @param textureNames The names of the textures in the atlas
      */
-    private static void saveTextureCoordinatesJson(File outputFolder, String jsonFileName, List<String> textureNames) {
+    private static void saveTextureCoordinatesJson(File outputFolder, String jsonFileName) {
         JsonArray jsonArray = new JsonArray();
 
-        // Append each TextureInfo object to the JSON file
         for (TextureInfo info : textureInfo) {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("name", info.name.split("\\.")[0]);
@@ -199,7 +200,6 @@ public class ItemSpritesheetGenerator {
 
         File jsonFile = new File(outputFolder, jsonFileName);
 
-        // Save the file
         try (FileWriter fileWriter = new FileWriter(jsonFile)) {
             NerdBotApp.GSON.toJson(jsonArray, fileWriter);
             System.out.println("Texture coordinates JSON file saved successfully!");
@@ -223,17 +223,23 @@ public class ItemSpritesheetGenerator {
      */
     static class TextureInfo {
         private final String name;
+        private final BufferedImage image;
         private int x;
         private int y;
 
-        public TextureInfo(String name, int x, int y) {
+        public TextureInfo(String name, BufferedImage image, int x, int y) {
             this.name = name;
+            this.image = image;
             this.x = x;
             this.y = y;
         }
 
         public String getName() {
             return name;
+        }
+
+        public BufferedImage getImage() {
+            return image;
         }
 
         public int getX() {
