@@ -38,7 +38,7 @@ public class GeneratorBuilder {
         this.items = new HashMap<>();
 
         // loading all sprites for Minecraft Items
-        try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/item_stack_sprite_sheet.png")) {
+        try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/minecraft_texture_atlas.png")) {
             if (itemStackStream == null) {
                 throw new FileNotFoundException("Could not find find the file called \"/Minecraft/item_stack_sprite_sheet.png\"");
             }
@@ -53,7 +53,7 @@ public class GeneratorBuilder {
         // loading the overlays for some Minecraft Items
         try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/textures/overlays.png")) {
             if (overlayStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/overlays.png\"");
+                throw new FileNotFoundException("Could not find find the file called \"overlays.png\"");
             }
 
             BufferedImage overlayImage = ImageIO.read(overlayStream);
