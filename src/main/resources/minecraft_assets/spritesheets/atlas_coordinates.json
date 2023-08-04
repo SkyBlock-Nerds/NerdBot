@@ -2827,7 +2827,8 @@
   {
     "name": "firework_star_overlay",
     "x": 2560,
-    "y": 17920
+    "y": 17920,
+    "overlay": "FIREWORKS_CHARGE_OVERLAY"
   },
   {
     "name": "fishing_rod",
@@ -3632,7 +3633,8 @@
   {
     "name": "leather_boots",
     "x": 3072,
-    "y": 23040
+    "y": 23040,
+    "overlay": "LEATHER_BOOTS_OVERLAY"
   },
   {
     "name": "leather_boots_overlay",
@@ -3642,7 +3644,8 @@
   {
     "name": "leather_chestplate",
     "x": 4096,
-    "y": 23040
+    "y": 23040,
+    "overlay": "LEATHER_CHESTPLATE_OVERLAY"
   },
   {
     "name": "leather_chestplate_overlay",
@@ -3652,7 +3655,8 @@
   {
     "name": "leather_helmet",
     "x": 5120,
-    "y": 23040
+    "y": 23040,
+    "overlay": "LEATHER_HELMET_OVERLAY"
   },
   {
     "name": "leather_helmet_overlay",
@@ -3672,7 +3676,8 @@
   {
     "name": "leather_leggings_overlay",
     "x": 7168,
-    "y": 23040
+    "y": 23040,
+    "overlay": "LEATHER_LEGGINGS_OVERLAY"
   },
   {
     "name": "lectern",
@@ -5057,7 +5062,8 @@
   {
     "name": "potion_overlay",
     "x": 1536,
-    "y": 32256
+    "y": 32256,
+    "overlay": "POTION_OVERLAY"
   },
   {
     "name": "powder_snow_bucket",
@@ -6022,7 +6028,8 @@
   {
     "name": "spawn_egg_overlay",
     "x": 2048,
-    "y": 38400
+    "y": 38400,
+    "overlay": "SPAWN_EGG_OVERLAY"
   },
   {
     "name": "spawner",

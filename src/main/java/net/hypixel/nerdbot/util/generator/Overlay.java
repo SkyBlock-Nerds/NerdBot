@@ -6,14 +6,14 @@ import java.util.HashMap;
 
 public enum Overlay {
     BANNER_OVERLAY(0, 0, new Color(255, 255, 255)),
-    ENCHANT_GLINT_OVERLAY(16, 0, new Color(124, 32, 255)),
-    FIREWORKS_CHARGE_OVERLAY(32, 0, new Color(255, 255, 255)),
-    LEATHER_BOOTS_OVERLAY(0, 16, new Color(160, 101, 63)),
-    LEATHER_CHESTPLATE_OVERLAY(16, 16, new Color(160, 101, 63)),
-    LEATHER_HELMET_OVERLAY(32, 16, new Color(160, 101, 63)),
-    LEATHER_LEGGINGS_OVERLAY(0, 32, new Color(160, 101, 63)),
-    POTION_OVERLAY(16, 32, new Color(55, 93, 198)),
-    SPAWN_EGG_OVERLAY(32, 32, new Color(255, 255, 255), new Color(255, 255, 255));
+    ENCHANT_GLINT_OVERLAY(512, 0, new Color(124, 32, 255)),
+    FIREWORKS_CHARGE_OVERLAY(1024, 0, new Color(255, 255, 255)),
+    LEATHER_BOOTS_OVERLAY(0, 512, new Color(160, 101, 63)),
+    LEATHER_CHESTPLATE_OVERLAY(512, 512, new Color(160, 101, 63)),
+    LEATHER_HELMET_OVERLAY(1024, 512, new Color(160, 101, 63)),
+    LEATHER_LEGGINGS_OVERLAY(0, 1024, new Color(160, 101, 63)),
+    POTION_OVERLAY(512, 1024, new Color(55, 93, 198)),
+    SPAWN_EGG_OVERLAY(1024, 1024, new Color(255, 255, 255), new Color(255, 255, 255));
 
     private final int x;
     private final int y;

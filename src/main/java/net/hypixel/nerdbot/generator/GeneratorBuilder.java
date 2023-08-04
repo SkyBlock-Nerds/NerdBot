@@ -40,7 +40,7 @@ public class GeneratorBuilder {
         // loading all sprites for Minecraft Items
         try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/minecraft_texture_atlas.png")) {
             if (itemStackStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/item_stack_sprite_sheet.png\"");
+                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/spritesheets/minecraft_texture_atlas.png\"");
             }
 
             itemSpriteSheet = ImageIO.read(itemStackStream);
@@ -53,7 +53,7 @@ public class GeneratorBuilder {
         // loading the overlays for some Minecraft Items
         try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/textures/overlays.png")) {
             if (overlayStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"overlays.png\"");
+                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/overlays.png\"");
             }
 
             BufferedImage overlayImage = ImageIO.read(overlayStream);
@@ -67,9 +67,9 @@ public class GeneratorBuilder {
         }
 
         // loading the items position in the sprite sheet
-        try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/items.json")) {
+        try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/atlas_coordinates.json")) {
             if (itemStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/items.json\"");
+                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/spritesheets/atlas_coordinates.json\"");
             }
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(itemStream));
@@ -98,7 +98,7 @@ public class GeneratorBuilder {
             oneParameterItems.delete(oneParameterItems.length() - 2, oneParameterItems.length());
             twoParameterItems.delete(twoParameterItems.length() - 2, twoParameterItems.length());
             GeneratorStrings.RECIPE_INFO_OTHER_INFORMATION = "**Ability to change one layer (One Hex Color Parameter)**\n" +
-                    oneParameterItems + "\n\n**Ability to change both layers (Two Hex Color Parameters)**\n" + twoParameterItems;
+                oneParameterItems + "\n\n**Ability to change both layers (Two Hex Color Parameters)**\n" + twoParameterItems;
         } catch (IOException e) {
             log.error("Couldn't initialise the items for ItemStack Generation");
             log.error(e.getMessage());
@@ -311,7 +311,7 @@ public class GeneratorBuilder {
         }
 
         // finding the item that the user entered
-        Item itemFound = items.get(itemName.toUpperCase());
+        Item itemFound = items.get(itemName.toLowerCase());
         if (itemFound == null) {
             event.getHook().sendMessage(String.format(UNKNOWN_EXTRA_DETAILS, stripString(itemName), stripString(Arrays.toString(extraDetails)))).queue();
             return null;
