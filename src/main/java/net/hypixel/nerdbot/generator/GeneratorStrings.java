@@ -6,6 +6,7 @@ import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class GeneratorStrings {
     public static final String COMMAND_PREFIX = "gen";
@@ -150,20 +151,14 @@ public class GeneratorStrings {
         StringBuilder availableStatCodes = new StringBuilder(200);
         availableStatCodes.append("You used an invalid option: `%s`");
 
-        availableStatCodes.append("\n\n**Valid Colors:**");
-        for (MCColor mcColor : colors) {
-            availableStatCodes.append("\n").append(mcColor).append(": `").append(mcColor.getColorCode()).append("`");
-        }
+        availableStatCodes.append("\n\n**Valid Colors:**\n");
+        availableStatCodes.append(Arrays.stream(colors).map(color -> color + " (`&" + color.getColorCode() + "` or `%%" + color + "%%`)").collect(Collectors.joining(", ")));
 
-        availableStatCodes.append("\n\n**Valid Stats:**");
-        for (Stat value : stats) {
-            availableStatCodes.append("\n").append(value).append(": `").append(value.getParsedStat(true, "")).append("`");
-        }
+        availableStatCodes.append("\n\n**Valid Stats:**\n");
+        availableStatCodes.append(Arrays.stream(stats).map(Stat::toString).collect(Collectors.joining(", ")));
 
-        availableStatCodes.append("\n\n**Valid Gemstones:**");
-        for (Gemstone gemstone : gemstones) {
-            availableStatCodes.append("\n").append(gemstone);
-        }
+        availableStatCodes.append("\n\n**Valid Gemstones:**\n");
+        availableStatCodes.append(Arrays.stream(gemstones).map(gemstone -> gemstone + ": `%%" + gemstone + "%%`").collect(Collectors.joining(", ")));
 
         INVALID_STAT_CODE = availableStatCodes.toString();
 
