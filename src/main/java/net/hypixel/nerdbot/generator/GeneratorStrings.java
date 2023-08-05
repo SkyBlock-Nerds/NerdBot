@@ -150,19 +150,19 @@ public class GeneratorStrings {
         StringBuilder availableStatCodes = new StringBuilder(200);
         availableStatCodes.append("You used an invalid option: `%s`");
 
-        availableStatCodes.append("\n\n**Valid Colors:**\n");
-        for (int i = 0; i < colors.length - 1; i++) {
-            availableStatCodes.append("\n").append(colors[i]).append(": `").append(colors[i].getColorCode());
+        availableStatCodes.append("\n\n**Valid Colors:**");
+        for (MCColor mcColor : colors) {
+            availableStatCodes.append("\n").append(mcColor).append(": `").append(mcColor.getColorCode()).append("`");
         }
 
-        availableStatCodes.append("\n\n**Valid Stats:**\n");
-        for (int i = 0; i < stats.length - 1; i++) {
-            availableStatCodes.append("\n").append(stats[i]).append(": `").append(stats[i].getParsedStat(true, "")).append("`");
+        availableStatCodes.append("\n\n**Valid Stats:**");
+        for (Stat value : stats) {
+            availableStatCodes.append("\n").append(value).append(": `").append(value.getParsedStat(true, "")).append("`");
         }
 
-        availableStatCodes.append("\n\n**Valid Gemstones:**\n");
-        for (int i = 0; i < gemstones.length - 1; i++) {
-            availableStatCodes.append("\n").append(gemstones[i]);
+        availableStatCodes.append("\n\n**Valid Gemstones:**");
+        for (Gemstone gemstone : gemstones) {
+            availableStatCodes.append("\n").append(gemstone);
         }
 
         INVALID_STAT_CODE = availableStatCodes.toString();
