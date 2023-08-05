@@ -148,12 +148,23 @@ public class GeneratorStrings {
         Rarity[] rarities = Rarity.VALUES;
 
         StringBuilder availableStatCodes = new StringBuilder(200);
-        availableStatCodes.append("You used an invalid code `%s`.\nValid codes:\n");
-        Arrays.stream(colors).forEach(color -> availableStatCodes.append(color).append(" "));
-        availableStatCodes.append("\nValid Stats:\n");
-        Arrays.stream(stats).forEach(stat -> availableStatCodes.append(stat).append(" "));
-        availableStatCodes.append("\nValid Gems:\n");
-        Arrays.stream(gemstones).forEach(gemstone -> availableStatCodes.append(gemstone).append(" "));
+        availableStatCodes.append("You used an invalid option: `%s`");
+
+        availableStatCodes.append("\n\n**Valid Colors:**\n");
+        for (int i = 0; i < colors.length - 1; i++) {
+            availableStatCodes.append("\n").append(colors[i]).append(": `").append(colors[i].getColorCode());
+        }
+
+        availableStatCodes.append("\n\n**Valid Stats:**\n");
+        for (int i = 0; i < stats.length - 1; i++) {
+            availableStatCodes.append("\n").append(stats[i]).append(": `").append(stats[i].getParsedStat(true, "")).append("`");
+        }
+
+        availableStatCodes.append("\n\n**Valid Gemstones:**\n");
+        for (int i = 0; i < gemstones.length - 1; i++) {
+            availableStatCodes.append("\n").append(gemstones[i]);
+        }
+
         INVALID_STAT_CODE = availableStatCodes.toString();
 
         StringBuilder availableMinecraftCodes = new StringBuilder(100);
