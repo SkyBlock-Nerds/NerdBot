@@ -152,13 +152,13 @@ public class GeneratorStrings {
         availableStatCodes.append("You used an invalid option: `%s`");
 
         availableStatCodes.append("\n\n**Valid Colors:**\n");
-        availableStatCodes.append(Arrays.stream(colors).map(color -> color + " (`&" + color.getColorCode() + "` or `%%" + color + "%%`)").collect(Collectors.joining(", ")));
+        availableStatCodes.append(Arrays.stream(colors).map(color -> color + " (`&" + color.getColorCode() + "` or `%%%%" + color + "%%%%`)").collect(Collectors.joining(", ")));
 
         availableStatCodes.append("\n\n**Valid Stats:**\n");
         availableStatCodes.append(Arrays.stream(stats).map(Stat::toString).collect(Collectors.joining(", ")));
 
         availableStatCodes.append("\n\n**Valid Gemstones:**\n");
-        availableStatCodes.append(Arrays.stream(gemstones).map(gemstone -> gemstone + ": `%%" + gemstone + "%%`").collect(Collectors.joining(", ")));
+        availableStatCodes.append(Arrays.stream(gemstones).map(gemstone -> gemstone + " (`%%%%" + gemstone + "%%%%`)").collect(Collectors.joining(", ")));
 
         INVALID_STAT_CODE = availableStatCodes.toString();
 
