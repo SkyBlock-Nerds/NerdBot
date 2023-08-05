@@ -54,6 +54,7 @@ public enum Stat {
     RUNECRAFTING_WISDOM("☯", "Runecrafting Wisdom", MCColor.DARK_AQUA),
     SOCIAL_WISDOM("☯", "Social Wisdom", MCColor.DARK_AQUA),
     RIFT_TIME("ф", "Rift Time", MCColor.GREEN),
+    RIFT_TRANSFERABLE("", "X Rift-Transferable X", MCColor.DARK_PURPLE),
     UNDEAD("༕", "This armor piece is undead ༕!", MCColor.DARK_GREEN, StatColorParser::noParsing);
 
     public static final Stat[] VALUES = values();
