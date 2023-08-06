@@ -28,7 +28,7 @@ public class GeneratorStrings {
     public static final String DESC_ITEM_ID = "The name of the Minecraft item you want to display";
     public static final String DESC_HEAD_ID = "The skin ID or player name (set is_player_name to True if it is a player's name)";
     public static final String DESC_IS_PLAYER_NAME = "If the skin ID is a player's username";
-    public static final String DESC_HIDDEN = "If you only want the generated image visible to be yourself";
+    public static final String DESC_HIDDEN = "If you only want the generated image visible to be yourself. These will be deleted if you restart your Discord client!";
     public static final String DESC_PARSE_ITEM = "The items NBT Data from in game";
     public static final String DESC_INCLUDE_ITEM = "Include the item along with the parsed description";
     public static final String DESC_RENDER_INVENTORY = "If the Minecraft Inventory background should be drawn";
