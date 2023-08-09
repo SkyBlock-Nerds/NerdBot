@@ -34,7 +34,7 @@ public class SuggestionCommands extends ApplicationCommand {
         @AppOption(description = "Words to filter title for.") @Optional String title,
         @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
     ) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
         final User searchUser = NerdBotApp.getBot().getJDA().getUserById(userID);
@@ -64,7 +64,7 @@ public class SuggestionCommands extends ApplicationCommand {
         @AppOption(description = "Words to filter title for.") @Optional String title,
         @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
     ) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
         final boolean isAlpha = (alpha != null && alpha);
@@ -92,7 +92,7 @@ public class SuggestionCommands extends ApplicationCommand {
         @AppOption(description = "Words to filter title for.") @Optional String title,
         @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
     ) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
         final boolean isAlpha = (alpha != null && alpha);
@@ -179,7 +179,7 @@ public class SuggestionCommands extends ApplicationCommand {
                 .addBlankField(true);
         }
 
-        embedBuilder.setFooter("Page: " + pageNum + "/" + totalPages + (NerdBotApp.getSuggestionCache().isLoaded() ? "" : " | Caching is in progress!"));
+        embedBuilder.setFooter("Page: " + pageNum + "/" + totalPages);
 
         if (!filters.isEmpty()) {
             embedBuilder.addField("Filters", filters,  false);

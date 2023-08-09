@@ -61,9 +61,9 @@ public class StatColorParser {
     /**
      * Displays the stat with no extra details added on
      *
-     * @param stat the stat selected
+     * @param stat  the stat selected
      *
-     * @return returns the color parsed replacement string
+     * @return      returns the color parsed replacement string
      */
     public static String noParsing(Stat stat, String e) {
         return "%%" + stat.getColor() + "%%" + stat.getStat();
@@ -73,24 +73,12 @@ public class StatColorParser {
     /**
      * Displays the stat with bolded asterisk around it
      *
-     * @param stat the stat selected
+     * @param stat  the stat selected
      *
-     * @return the color parsed replacement string
+     * @return      the color parsed replacement string
      */
     public static String soulboundColorParsing(Stat stat, String e) {
         return "%%" + stat.getColor() + "%%%%BOLD%%* %%" + stat.getColor() + "%%" + stat.getStat() + " %%BOLD%%*";
-    }
-
-    /**
-     * Displays the stat with the X character on each side
-     *
-     * @param stat the stat selected
-     * @param e    the extra arguments provided
-     *
-     * @return the color parsed replacement string
-     */
-    public static String riftTransferableColorParsing(Stat stat, String e) {
-        return "%%" + stat.getColor() + "%%X " + stat.getStat() + " X";
     }
 
     /**
@@ -108,10 +96,10 @@ public class StatColorParser {
     /**
      * Displays the selected stat with the text after it changed color
      *
-     * @param stat         the stat selected
-     * @param extraDetails the extra arguments provided
+     * @param stat          the stat selected
+     * @param extraDetails  the extra arguments provided
      *
-     * @return the color parsed replacement string
+     * @return              the color parsed replacement string
      */
     public static String postDualColorParser(Stat stat, String extraDetails) {
         return "%%" + stat.getColor() + "%%" + stat.getStat() + " %%" + stat.getSecondaryColor() + "%%" + extraDetails;
