@@ -27,9 +27,10 @@ public class SuggestionCache extends TimerTask {
 
     private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
     private Map<String, Suggestion> cache = new HashMap<>();
-    @Getter private boolean loaded;
-    @Getter private long lastUpdated;
-    @Getter private final Timer timer = new Timer();
+    @Getter
+    private long lastUpdated;
+    @Getter
+    private final Timer timer = new Timer();
 
     public SuggestionCache() {
         this.timer.scheduleAtFixedRate(this, 0, Duration.ofMinutes(60).toMillis());
@@ -39,7 +40,6 @@ public class SuggestionCache extends TimerTask {
     public void run() {
         try {
             log.info("Started suggestion cache update.");
-            this.loaded = false;
             this.cache.forEach((key, suggestion) -> suggestion.setExpired());
             ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
             Util.safeArrayStream(channelConfig.getSuggestionForumIds(), channelConfig.getAlphaSuggestionForumIds())
@@ -62,7 +62,6 @@ public class SuggestionCache extends TimerTask {
                 .filter(Suggestion::isExpired)
                 .forEach(suggestion -> this.removeSuggestion(suggestion.getThread()));
 
-            this.loaded = true;
             log.info("Finished caching suggestions.");
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -130,7 +129,8 @@ public class SuggestionCache extends TimerTask {
         }
 
         public static int getReactionCount(Message message, String emojiId) {
-            return message.getReactions().stream()
+            return message.getReactions()
+                .stream()
                 .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
                 .filter(reaction -> reaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiId))
                 .mapToInt(MessageReaction::getCount)

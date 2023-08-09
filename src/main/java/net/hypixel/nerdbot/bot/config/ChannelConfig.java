@@ -19,6 +19,11 @@ public class ChannelConfig {
     private String logChannelId = "";
 
     /**
+     * The {@link TextChannel} ID that the bot will be log mojang profile verification requests to
+     */
+    private String verifyLogChannelId = "";
+
+    /**
      * The {@link TextChannel} IDs for the suggestion forums
      */
     private String[] suggestionForumIds = {};
