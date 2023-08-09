@@ -19,6 +19,11 @@ public class ChannelConfig {
     private String logChannelId = "";
 
     /**
+     * Mojang profile verification requests will be logged to this {@link TextChannel} ID
+     */
+    private String verifyLogChannelId = "";
+
+    /**
      * The {@link TextChannel} IDs for the suggestion forums
      */
     private String[] suggestionForumIds = {};

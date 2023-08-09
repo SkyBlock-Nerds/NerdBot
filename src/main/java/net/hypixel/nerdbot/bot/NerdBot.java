@@ -71,7 +71,8 @@ public class NerdBot implements Bot {
                 new FeatureEventListener(),
                 new ActivityListener(),
                 new ReactionChannelListener(),
-                new SuggestionListener()
+                new SuggestionListener(),
+                new VerificationListener()
             ).setActivity(Activity.of(config.getActivityType(), config.getActivity()));
         configureMemoryUsage(builder);
 

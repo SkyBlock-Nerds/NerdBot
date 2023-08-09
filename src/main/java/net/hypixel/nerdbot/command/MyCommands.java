@@ -5,12 +5,17 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
@@ -24,6 +29,7 @@ import net.hypixel.nerdbot.util.gson.HttpException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 
 import java.awt.*;
+import java.time.Duration;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -31,16 +37,21 @@ import java.util.regex.Pattern;
 public class MyCommands extends ApplicationCommand {
 
     private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
+    public static final Cache<String, MojangProfile> VERIFY_CACHE = Caffeine.newBuilder()
+        .expireAfterAccess(Duration.ofDays(1L))
+        .scheduler(Scheduler.systemScheduler())
+        .build();
 
     @JDASlashCommand(
         name = "link",
         description = "Link your Mojang Profile to your account."
     )
     public void linkProfile(GuildSlashEvent event, @AppOption(description = "Your Minecraft IGN to link.") String username) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
 
         try {
-            MojangProfile mojangProfile = updateMojangProfile(event.getMember(), username, true);
+            MojangProfile mojangProfile = requestMojangProfile(event.getMember(), username, true);
+            updateMojangProfile(event.getMember(), mojangProfile);
             event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
             if (ChannelManager.getLogChannel() != null) {
@@ -51,9 +62,83 @@ public class MyCommands extends ApplicationCommand {
                         .setThumbnail(event.getMember().getAvatarUrl())
                         .setDescription(event.getMember().getAsMention() + " updated their Mojang Profile.")
                         .addField("Username", mojangProfile.getUsername(), false)
-                        .addField("UUID", mojangProfile.getUniqueId().toString(), false)
+                        .addField(
+                            "UUID / SkyCrypt",
+                            String.format(
+                                "[%s](https://sky.shiiyu.moe/stats/%s)",
+                                mojangProfile.getUniqueId(),
+                                mojangProfile.getUniqueId()
+                            ),
+                            false
+                        )
                         .build()
                 ).queue();
+            }
+        } catch (HttpException httpex) {
+            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
+        } catch (Exception ex) {
+            event.getHook().sendMessage(ex.getMessage()).queue();
+            ex.printStackTrace();
+        }
+    }
+
+    @JDASlashCommand(
+        name = "verify",
+        description = "Send a request to link your Mojang Profile to your account."
+    )
+    public void requestLinkProfile(GuildSlashEvent event, @AppOption(description = "Your Minecraft IGN to link. Use the account you applied with.") String username) {
+        event.deferReply(true).complete();
+
+        if (VERIFY_CACHE.getIfPresent(event.getMember().getId()) != null) {
+            event.getHook().sendMessage("Your previous verification request has not been reviewed. You will be contacted via DM if any further information is required.").queue();
+            return;
+        }
+
+        try {
+            MojangProfile mojangProfile = requestMojangProfile(event.getMember(), username, true);
+            VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
+            event.getHook().sendMessage("Your verification request has been sent. You will be contacted via DM if any further information is required.").queue();
+
+            if (ChannelManager.getVerifyLogChannel() != null) {
+                ChannelManager.getVerifyLogChannel()
+                    .sendMessageEmbeds(
+                        new EmbedBuilder()
+                            .setTitle("Mojang Profile Verification")
+                            .setDescription(event.getMember().getAsMention() + " has sent a mojang verification request. This discord account matches the social set for this Mojang Profile.")
+                            .setColor(Color.PINK)
+                            .setThumbnail(event.getMember().getEffectiveAvatarUrl())
+                            .setFooter("This request expires in 1 day.")
+                            .addField("Username", mojangProfile.getUsername(), false)
+                            .addField(
+                                "UUID / SkyCrypt",
+                                String.format(
+                                    "[%s](https://sky.shiiyu.moe/stats/%s)",
+                                    mojangProfile.getUniqueId(),
+                                    mojangProfile.getUniqueId()
+                                ),
+                                false
+                            )
+                            .build()
+                    )
+                    .addActionRow(
+                        Button.of(
+                            ButtonStyle.SUCCESS,
+                            String.format(
+                                "verification-accept-%s",
+                                event.getMember().getId()
+                            ),
+                            "Accept"
+                        ),
+                        Button.of(
+                            ButtonStyle.DANGER,
+                            String.format(
+                                "verification-deny-%s",
+                                event.getMember().getId()
+                            ),
+                            "Deny"
+                        )
+                    )
+                    .queue();
             }
         } catch (HttpException httpex) {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
@@ -69,7 +154,7 @@ public class MyCommands extends ApplicationCommand {
         description = "View your activity."
     )
     public void myActivity(GuildSlashEvent event) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
         Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = getActivityEmbeds(event.getMember());
         event.getHook().editOriginalEmbeds(activityEmbeds.getLeft().build(), activityEmbeds.getRight().build()).queue();
     }
@@ -80,7 +165,7 @@ public class MyCommands extends ApplicationCommand {
         description = "View your profile."
     )
     public void myInfo(GuildSlashEvent event) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
         Database database = NerdBotApp.getBot().getDatabase();
         DiscordUser discordUser = Util.getOrAddUserToCache(database, event.getMember().getId());
 
@@ -112,7 +197,7 @@ public class MyCommands extends ApplicationCommand {
         @AppOption(description = "Words to filter title for.") @Optional String title,
         @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
     ) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
         final boolean isAlpha = (alpha != null && alpha);
@@ -132,28 +217,31 @@ public class MyCommands extends ApplicationCommand {
         ).queue();
     }
 
-    public static MojangProfile updateMojangProfile(Member member, String username, boolean enforceSocial) throws HttpException {
-        Database database = NerdBotApp.getBot().getDatabase();
-        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws HttpException {
         MojangProfile mojangProfile = Util.getMojangProfile(username);
-        username = mojangProfile.getUsername(); // Case-correction
         HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
 
         if (!hypixelPlayerResponse.isSuccess()) {
-            throw new HttpException("Unable to lookup `" + username + "`: " + hypixelPlayerResponse.getCause());
+            throw new HttpException("Unable to lookup `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
         }
 
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
 
         if (enforceSocial && !member.getUser().getName().equalsIgnoreCase(discord)) {
-            throw new RuntimeException("The discord name on the Hypixel profile for `" + username + "` does not match " + member.getAsMention() + "!");
+            throw new RuntimeException("The discord name on the Hypixel profile for `" + mojangProfile.getUsername() + "` does not match " + member.getAsMention() + "!");
         }
 
+        return mojangProfile;
+    }
+
+    public static void updateMojangProfile(Member member, MojangProfile mojangProfile) throws HttpException {
+        Database database = NerdBotApp.getBot().getDatabase();
+        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
         discordUser.setMojangProfile(mojangProfile);
 
-        if (!member.getEffectiveName().toLowerCase().contains(username.toLowerCase())) {
+        if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
             try {
-                member.modifyNickname(username).queue();
+                member.modifyNickname(mojangProfile.getUsername()).queue();
             } catch (HierarchyException hex) {
                 log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
             }
@@ -187,19 +275,6 @@ public class MyCommands extends ApplicationCommand {
         } else {
             log.warn("Role with ID " + "" + " does not exist.");
         }
-
-        if (ChannelManager.getLogChannel() != null) {
-            ChannelManager.getLogChannel().sendMessageEmbeds(
-                new EmbedBuilder()
-                    .setTitle("Profile Update")
-                    .setDescription(member.getAsMention() + " has updated their profile to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId().toString() + ")")
-                    .setColor(Color.PINK)
-                    .setThumbnail(member.getEffectiveAvatarUrl())
-                    .build()
-            );
-        }
-
-        return mojangProfile;
     }
 
     public static Pair<EmbedBuilder, EmbedBuilder> getActivityEmbeds(Member member) {

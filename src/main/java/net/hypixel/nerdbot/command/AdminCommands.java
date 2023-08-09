@@ -60,7 +60,7 @@ public class AdminCommands extends ApplicationCommand {
 
         Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(readOnly);
         NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
-            event.deferReply(true).queue();
+            event.deferReply(true).complete();
             List<GreenlitMessage> output = forumChannelCurator.curate(channel);
             if (output.isEmpty()) {
                 event.getHook().editOriginal("No suggestions were greenlit!").queue();
@@ -74,7 +74,7 @@ public class AdminCommands extends ApplicationCommand {
     public void createInvites(GuildSlashEvent event, @AppOption int amount, @AppOption @Optional TextChannel channel) {
         List<Invite> invites = new ArrayList<>(amount);
         TextChannel selected = Objects.requireNonNullElse(channel, NerdBotApp.getBot().getJDA().getTextChannelsByName("limbo", true).get(0));
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
 
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(
@@ -108,7 +108,7 @@ public class AdminCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "invites", subcommand = "delete", description = "Delete all active invites.", defaultLocked = true)
     public void deleteInvites(GuildSlashEvent event) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
 
         List<Invite> invites = event.getGuild().retrieveInvites().complete();
         invites.forEach(invite -> {
@@ -170,7 +170,7 @@ public class AdminCommands extends ApplicationCommand {
         defaultLocked = true
     )
     public void userList(GuildSlashEvent event, @Optional @AppOption(description = "Comma-separated role names to search for (default Member).") String roles) throws IOException {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
         Database database = NerdBotApp.getBot().getDatabase();
         String[] roleArray = roles != null ? roles.split(", ?") : new String[] { "Member" };
         JsonArray uuidArray = new JsonArray();
@@ -204,24 +204,35 @@ public class AdminCommands extends ApplicationCommand {
         @AppOption(description = "Your Minecraft IGN to link.") String username,
         @Optional @AppOption(description = "Bypass hypixel social check.") Boolean bypassSocial
     ) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
         bypassSocial = (bypassSocial == null || !bypassSocial);
 
         try {
-            MojangProfile mojangProfile = MyCommands.updateMojangProfile(member, username, bypassSocial);
+            MojangProfile mojangProfile = MyCommands.requestMojangProfile(member, username, bypassSocial);
+            MyCommands.updateMojangProfile(member, mojangProfile);
             event.getHook().sendMessage("Updated " + member.getAsMention() + "'s Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
             if (ChannelManager.getLogChannel() != null) {
-                ChannelManager.getLogChannel().sendMessageEmbeds(
-                    new EmbedBuilder()
-                        .setAuthor(event.getMember().getEffectiveName() + " (" + event.getMember().getUser().getName() + ")")
-                        .setTitle("Admin Mojang Profile Change")
-                        .setThumbnail(member.getAvatarUrl())
-                        .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
-                        .addField("Username", mojangProfile.getUsername(), false)
-                        .addField("UUID", mojangProfile.getUniqueId().toString(), false)
-                        .build()
-                ).queue();
+                ChannelManager.getLogChannel()
+                    .sendMessageEmbeds(
+                        new EmbedBuilder()
+                            .setAuthor(event.getMember().getEffectiveName() + " (" + event.getMember().getUser().getName() + ")")
+                            .setTitle("Admin Mojang Profile Change")
+                            .setThumbnail(member.getAvatarUrl())
+                            .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
+                            .addField("Username", mojangProfile.getUsername(), false)
+                            .addField(
+                                "UUID / SkyCrypt",
+                                String.format(
+                                    "[%s](https://sky.shiiyu.moe/stats/%s)",
+                                    mojangProfile.getUniqueId(),
+                                    mojangProfile.getUniqueId()
+                                ),
+                                false
+                            )
+                            .build()
+                    )
+                    .queue();
             }
         } catch (HttpException exception) {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`: " + exception.getMessage()).queue();
@@ -236,7 +247,7 @@ public class AdminCommands extends ApplicationCommand {
         defaultLocked = true
     )
     public void userMissingProfile(GuildSlashEvent event) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
         Database database = NerdBotApp.getBot().getDatabase();
 
         String missing = event.getGuild()
@@ -268,7 +279,7 @@ public class AdminCommands extends ApplicationCommand {
         defaultLocked = true
     )
     public void userInfo(GuildSlashEvent event, @AppOption(description = "The user to search") Member member) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
         Database database = NerdBotApp.getBot().getDatabase();
         DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
         Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = MyCommands.getActivityEmbeds(member);
@@ -296,7 +307,7 @@ public class AdminCommands extends ApplicationCommand {
         defaultLocked = true
     )
     public void migrateUsernames(GuildSlashEvent event) {
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
         Database database = NerdBotApp.getBot().getDatabase();
         List<MojangProfile> mojangProfiles = new ArrayList<>();
 
@@ -329,7 +340,7 @@ public class AdminCommands extends ApplicationCommand {
     public void updateNicknames(GuildSlashEvent event) {
         Database database = NerdBotApp.getBot().getDatabase();
 
-        event.deferReply(true).queue();
+        event.deferReply(true).complete();
 
         if (!database.isConnected()) {
             event.getHook().sendMessage("Database is not connected.").queue();
