@@ -26,6 +26,10 @@ import static net.hypixel.nerdbot.generator.GeneratorStrings.stripString;
 
 @Log4j2
 public class GeneratorBuilder {
+
+    public static final int IMAGE_HEIGHT = 512;
+    public static final int IMAGE_WIDTH = 512;
+
     private final HashMap<String, Item> items;
     private boolean itemsInitialisedCorrectly = true;
     private BufferedImage itemSpriteSheet;
@@ -34,9 +38,9 @@ public class GeneratorBuilder {
         this.items = new HashMap<>();
 
         // loading all sprites for Minecraft Items
-        try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/Minecraft/item_stack_sprite_sheet.png")) {
+        try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/minecraft_texture_atlas.png")) {
             if (itemStackStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/item_stack_sprite_sheet.png\"");
+                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/spritesheets/minecraft_texture_atlas.png\"");
             }
 
             itemSpriteSheet = ImageIO.read(itemStackStream);
@@ -47,14 +51,14 @@ public class GeneratorBuilder {
         }
 
         // loading the overlays for some Minecraft Items
-        try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/Minecraft/overlays.png")) {
+        try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/textures/overlays.png")) {
             if (overlayStream == null) {
                 throw new FileNotFoundException("Could not find find the file called \"/Minecraft/overlays.png\"");
             }
 
             BufferedImage overlayImage = ImageIO.read(overlayStream);
             for (Overlay overlay : Overlay.values()) {
-                overlay.setOverlayImage(overlayImage.getSubimage(overlay.getX(), overlay.getY(), 16, 16));
+                overlay.setOverlayImage(overlayImage.getSubimage(overlay.getX(), overlay.getY(), IMAGE_WIDTH, IMAGE_HEIGHT));
             }
         } catch (IOException e) {
             log.error("Couldn't initialise the overlays for ItemStack Generation");
@@ -63,9 +67,9 @@ public class GeneratorBuilder {
         }
 
         // loading the items position in the sprite sheet
-        try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/Minecraft/items.json")) {
+        try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/atlas_coordinates.json")) {
             if (itemStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/items.json\"");
+                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/spritesheets/atlas_coordinates.json\"");
             }
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(itemStream));
@@ -94,7 +98,7 @@ public class GeneratorBuilder {
             oneParameterItems.delete(oneParameterItems.length() - 2, oneParameterItems.length());
             twoParameterItems.delete(twoParameterItems.length() - 2, twoParameterItems.length());
             GeneratorStrings.RECIPE_INFO_OTHER_INFORMATION = "**Ability to change one layer (One Hex Color Parameter)**\n" +
-                    oneParameterItems + "\n\n**Ability to change both layers (Two Hex Color Parameters)**\n" + twoParameterItems;
+                oneParameterItems + "\n\n**Ability to change both layers (Two Hex Color Parameters)**\n" + twoParameterItems;
         } catch (IOException e) {
             log.error("Couldn't initialise the items for ItemStack Generation");
             log.error(e.getMessage());
@@ -307,15 +311,15 @@ public class GeneratorBuilder {
         }
 
         // finding the item that the user entered
-        Item itemFound = items.get(itemName.toUpperCase());
+        Item itemFound = items.get(itemName.toLowerCase());
         if (itemFound == null) {
             event.getHook().sendMessage(String.format(UNKNOWN_EXTRA_DETAILS, stripString(itemName), stripString(Arrays.toString(extraDetails)))).queue();
             return null;
         }
 
         // copying the section of the item sprite sheet to a new image and applying any modifiers (color, enchant glint) to it
-        BufferedImage imagePortion = itemSpriteSheet.getSubimage(itemFound.getX(), itemFound.getY(), 16, 16);
-        BufferedImage itemStack = new BufferedImage(imagePortion.getColorModel(), imagePortion.getRaster().createCompatibleWritableRaster(16, 16), imagePortion.isAlphaPremultiplied(), null);
+        BufferedImage imagePortion = itemSpriteSheet.getSubimage(itemFound.getX(), itemFound.getY(), IMAGE_WIDTH, IMAGE_HEIGHT);
+        BufferedImage itemStack = new BufferedImage(imagePortion.getColorModel(), imagePortion.getRaster().createCompatibleWritableRaster(IMAGE_WIDTH, IMAGE_HEIGHT), imagePortion.isAlphaPremultiplied(), null);
         imagePortion.copyData(itemStack.getRaster());
         itemFound.applyModifiers(itemStack, extraDetails);
         return itemStack;

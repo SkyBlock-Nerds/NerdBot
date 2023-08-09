@@ -18,7 +18,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
-import net.hypixel.nerdbot.util.gson.HttpException;
+import net.hypixel.nerdbot.util.exception.HttpException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
