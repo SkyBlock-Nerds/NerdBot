@@ -48,10 +48,10 @@ public class MinecraftImage {
     static {
         sansSerif = new Font("SansSerif", Font.PLAIN, 20);
         minecraftFonts = new Font[]{
-            initFont("/Minecraft/minecraft.otf", 15.5f),
-            initFont("/Minecraft/3_Minecraft-Bold.otf", 20.0f),
-            initFont("/Minecraft/2_Minecraft-Italic.otf", 20.5f),
-            initFont("/Minecraft/4_Minecraft-BoldItalic.otf", 20.5f)
+            initFont("/minecraft_assets/fonts/minecraft.otf", 15.5f),
+            initFont("/minecraft_assets/fonts/3_Minecraft-Bold.otf", 20.0f),
+            initFont("/minecraft_assets/fonts/2_Minecraft-Italic.otf", 20.5f),
+            initFont("/minecraft_assets/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
         };
 
         // Register Minecraft Fonts
