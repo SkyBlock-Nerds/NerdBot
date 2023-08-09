@@ -15,6 +15,7 @@
   },
   "channelConfig": {
     "logChannelId": "",
+    "verifyLogChannelId": "",
     "suggestionForumIds": [],
     "alphaSuggestionForumIds": [],
     "genChannelIds": [],
