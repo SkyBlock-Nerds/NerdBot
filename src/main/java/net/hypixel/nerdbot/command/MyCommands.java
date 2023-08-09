@@ -25,7 +25,8 @@ import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.SuggestionCache;
-import net.hypixel.nerdbot.util.gson.HttpException;
+import net.hypixel.nerdbot.util.exception.HttpException;
+import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 
 import java.awt.*;
@@ -76,8 +77,9 @@ public class MyCommands extends ApplicationCommand {
             }
         } catch (HttpException httpex) {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
+        } catch (ProfileMismatchException exception) {
+            event.getHook().sendMessage(exception.getMessage()).queue();
         } catch (Exception ex) {
-            event.getHook().sendMessage(ex.getMessage()).queue();
             ex.printStackTrace();
         }
     }
@@ -142,9 +144,8 @@ public class MyCommands extends ApplicationCommand {
             }
         } catch (HttpException httpex) {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
-        } catch (Exception ex) {
-            event.getHook().sendMessage(ex.getMessage()).queue();
-            ex.printStackTrace();
+        } catch (ProfileMismatchException exception) {
+            event.getHook().sendMessage(exception.getMessage()).queue();
         }
     }
 
@@ -217,7 +218,7 @@ public class MyCommands extends ApplicationCommand {
         ).queue();
     }
 
-    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws HttpException {
+    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws ProfileMismatchException, HttpException {
         MojangProfile mojangProfile = Util.getMojangProfile(username);
         HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
 
@@ -228,7 +229,7 @@ public class MyCommands extends ApplicationCommand {
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
 
         if (enforceSocial && !member.getUser().getName().equalsIgnoreCase(discord)) {
-            throw new RuntimeException("The discord name on the Hypixel profile for `" + mojangProfile.getUsername() + "` does not match " + member.getAsMention() + "!");
+            throw new ProfileMismatchException("The discord name on the Hypixel profile for `" + mojangProfile.getUsername() + "` does not match `" + member.getUser().getName() + "`!");
         }
 
         return mojangProfile;

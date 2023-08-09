@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util.gson;
+package net.hypixel.nerdbot.util.exception;
 
 public class HttpException extends RuntimeException {
 

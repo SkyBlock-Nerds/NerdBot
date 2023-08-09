@@ -32,7 +32,8 @@ import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.gson.HttpException;
+import net.hypixel.nerdbot.util.exception.HttpException;
+import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 
 import java.awt.*;
 import java.io.File;
@@ -237,6 +238,8 @@ public class AdminCommands extends ApplicationCommand {
         } catch (HttpException exception) {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`: " + exception.getMessage()).queue();
             exception.printStackTrace();
+        } catch (ProfileMismatchException exception) {
+            event.getHook().sendMessage(exception.getMessage()).queue();
         }
     }
 
