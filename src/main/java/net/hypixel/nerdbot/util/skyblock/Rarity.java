@@ -10,7 +10,7 @@ public enum Rarity {
     DIVINE("DIVINE", MCColor.AQUA),
     SPECIAL("SPECIAL", MCColor.RED),
     VERY_SPECIAL("VERY SPECIAL", MCColor.RED),
-    UNOBTAINABLE("ADMIN", MCColor.DARK_RED),
+    ADMIN("ADMIN", MCColor.DARK_RED),
     SUPREME("SUPREME", MCColor.DARK_RED),
     NONE("", MCColor.GRAY);
 
