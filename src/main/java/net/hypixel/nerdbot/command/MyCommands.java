@@ -226,10 +226,14 @@ public class MyCommands extends ApplicationCommand {
             throw new HttpException("Unable to lookup `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
         }
 
+        if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
+            throw new ProfileMismatchException("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
+        }
+
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
 
         if (enforceSocial && !member.getUser().getName().equalsIgnoreCase(discord)) {
-            throw new ProfileMismatchException("The discord name on the Hypixel profile for `" + mojangProfile.getUsername() + "` does not match `" + member.getUser().getName() + "`!");
+            throw new ProfileMismatchException("The Discord name on the Hypixel profile for `" + mojangProfile.getUsername() + "` does not match `" + member.getUser().getName() + "`!");
         }
 
         return mojangProfile;
