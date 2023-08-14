@@ -139,7 +139,7 @@ public class GeneratorCommands extends ApplicationCommand {
         // building the item for the which is beside the description
         BufferedImage generatedItem = null;
         if (itemID != null) {
-           generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers);
+            generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers);
             if (generatedItem == null) {
                 return;
             }
@@ -182,14 +182,15 @@ public class GeneratorCommands extends ApplicationCommand {
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
     public void parseItemDescription(GuildSlashEvent event,
                                      @AppOption(description = DESC_PARSE_ITEM, name = "item_nbt") String itemNBT,
-                                     @Optional @AppOption (description = DESC_INCLUDE_ITEM) Boolean includeItem,
-                                     @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+                                     @Optional @AppOption(description = DESC_INCLUDE_ITEM) Boolean includeItem,
+                                     @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden
+    ) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
         }
+
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).queue();
-
         includeItem = Objects.requireNonNullElse(includeItem, false);
 
         // converting the nbt into json
@@ -277,15 +278,15 @@ public class GeneratorCommands extends ApplicationCommand {
                     event.getHook().sendMessage(INVALID_BASE_64_SKIN_URL).queue();
                     return;
                 }
-            }
-            else {
+            } else {
                 // checking if there is a color attribute present and adding it to the extra attributes
                 String color = Util.isJsonString(displayJSON, "color");
                 if (color != null) {
                     try {
                         Integer selectedColor = Integer.decode(color);
                         extraModifiers = String.valueOf(selectedColor);
-                    } catch (NumberFormatException ignored) {}
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
 
                 // checking if the item is enchanted and applying the enchantment glint to the extra modifiers
@@ -317,7 +318,7 @@ public class GeneratorCommands extends ApplicationCommand {
         itemGenCommand.replace(itemGenCommand.length() - 2, itemGenCommand.length(), "").append(" max_line_length:").append(maxLineLength);
         itemText.replace(itemText.length() - 2, itemText.length(), "");
         // checking if there was supposed to be an item stack is displayed with the item
-        if (includeItem) {
+        if (Boolean.TRUE.equals(includeItem)) {
             itemGenCommand.append(" display_item_id:").append(itemID).append(extraModifiers.length() != 0 ? " extra_modifiers:" + extraModifiers : "");
         }
 
@@ -329,7 +330,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         // checking if an item should be displayed alongside the description
-        if (includeItem) {
+        if (Boolean.TRUE.equals(includeItem)) {
             BufferedImage generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers);
             if (generatedItem == null) {
                 return;
@@ -345,65 +346,79 @@ public class GeneratorCommands extends ApplicationCommand {
         event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
     }
 
-
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "help", description = "Get a little bit of help with how to use the Generator bot.")
-    public void askForInfo(GuildSlashEvent event) {
-        if (isIncorrectChannel(event)) {
-            return;
-        }
-
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "args", description = "Show help related to the arguments of the Item Generation command.")
+    public void genArgsHelp(GuildSlashEvent event) {
         EmbedBuilder infoBuilder = new EmbedBuilder();
-        EmbedBuilder argumentBuilder = new EmbedBuilder();
-        EmbedBuilder colorBuilder = new EmbedBuilder();
-        EmbedBuilder extraInfoBuilder = new EmbedBuilder();
-        EmbedBuilder fullGenInfoBuilder = new EmbedBuilder();
+
         infoBuilder.setColor(Color.CYAN)
-                .setAuthor("SkyBlock Nerd Bot")
-                .setTitle("Item Generation")
-                .addField("Basic Info", ITEM_BASIC_INFO, true);
+            .setAuthor("SkyBlock Nerd Bot")
+            .setTitle("Item Generation")
+            .setColor(Color.GREEN)
+            .addField("Basic Info", ITEM_BASIC_INFO, true)
+            .addField("Item Arguments", ITEM_INFO_ARGUMENTS, false)
+            .addField("Head Arguments", HEAD_INFO_ARGUMENTS, false);
 
-        argumentBuilder.setColor(Color.GREEN)
-                .addField("Arguments", ITEM_INFO_ARGUMENTS, false);
-
-        colorBuilder.setColor(Color.YELLOW)
-                .addField("Color Codes", ITEM_COLOR_CODES, false);
-
-        fullGenInfoBuilder.setColor(Color.WHITE)
-            .addField("Full Gen Information", FULL_GEN_INFO, false);
-
-        extraInfoBuilder.setColor(Color.GRAY)
-                .addField("Other Information", ITEM_OTHER_INFO, false);
-      
-        Collection<MessageEmbed> embeds = new ArrayList<>();
-        embeds.add(infoBuilder.build());
-        embeds.add(argumentBuilder.build());
-        embeds.add(colorBuilder.build());
-        embeds.add(fullGenInfoBuilder.build());
-        embeds.add(extraInfoBuilder.build());
-
-        event.replyEmbeds(embeds).setEphemeral(true).queue();
+        event.replyEmbeds(infoBuilder.build()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "head_help", description = "Get a little bit of help with how to use the Head Rendering functions of the Generator bot.")
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "colors", description = "Show help related to the colors of the Item Generation command.")
+    public void genColorHelp(GuildSlashEvent event) {
+        EmbedBuilder infoBuilder = new EmbedBuilder();
+
+        infoBuilder.setColor(Color.CYAN)
+            .setAuthor("SkyBlock Nerd Bot")
+            .setTitle("Item Generation")
+            .setColor(Color.GREEN)
+            .addField("Basic Info", ITEM_BASIC_INFO, true)
+            .addField("Colors", ITEM_COLOR_CODES, false);
+
+        event.replyEmbeds(infoBuilder.build()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "other", description = "Show help related to the other aspects of the Item Generation command.")
+    public void genOtherHelp(GuildSlashEvent event) {
+        EmbedBuilder infoBuilder = new EmbedBuilder();
+
+        infoBuilder.setColor(Color.CYAN)
+            .setAuthor("SkyBlock Nerd Bot")
+            .setTitle("Item Generation")
+            .setColor(Color.GREEN)
+            .addField("Basic Info", ITEM_BASIC_INFO, true)
+            .addField("Item Generation", ITEM_OTHER_INFO, false)
+            .addField("Head Generation", HEAD_INFO_OTHER_INFORMATION, false);
+
+        event.replyEmbeds(infoBuilder.build()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "full", description = "Show a full help page for the Item Generation command.")
+    public void genFullHelp(GuildSlashEvent event) {
+        EmbedBuilder infoBuilder = new EmbedBuilder();
+
+        infoBuilder.setColor(Color.CYAN)
+            .setAuthor("SkyBlock Nerd Bot")
+            .setTitle("Item Generation")
+            .setColor(Color.GREEN)
+            .addField("Full Info", FULL_GEN_INFO, false);
+
+        event.replyEmbeds(infoBuilder.build()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "heads", description = "Show help related to the Head Generation command.")
     public void askForRenderHelp(GuildSlashEvent event) {
-        if (isIncorrectChannel(event)) {
-            return;
-        }
-
         EmbedBuilder infoBuilder = new EmbedBuilder();
         EmbedBuilder argumentBuilder = new EmbedBuilder();
         EmbedBuilder extraInfoBuilder = new EmbedBuilder();
 
         infoBuilder.setColor(Color.CYAN)
-                .setAuthor("SkyBlock Nerd Bot")
-                .setTitle("Head Generation")
-                .addField("Basic Info", HEAD_INFO_BASIC, true);
+            .setAuthor("SkyBlock Nerd Bot")
+            .setTitle("Head Generation")
+            .addField("Basic Info", HEAD_INFO_BASIC, true);
 
         argumentBuilder.setColor(Color.GREEN)
-                .addField("Arguments", HEAD_INFO_ARGUMENTS, false);
+            .addField("Arguments", HEAD_INFO_ARGUMENTS, false);
 
         extraInfoBuilder.setColor(Color.GRAY)
-                .addField("Other Information", HEAD_INFO_OTHER_INFORMATION, false);
+            .addField("Other Information", HEAD_INFO_OTHER_INFORMATION, false);
 
 
         Collection<MessageEmbed> embeds = new ArrayList<>();
@@ -413,26 +428,23 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "recipe_help", description = "Get a little bit of help with how to use the Recipe Rendering functions of the Generator bot.")
+
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "recipes", description = "Show help related to the Recipe Generation command.")
     public void askForRecipeRenderHelp(GuildSlashEvent event) {
-        if (isIncorrectChannel(event)) {
-            return;
-        }
-
         EmbedBuilder infoBuilder = new EmbedBuilder();
         EmbedBuilder argumentBuilder = new EmbedBuilder();
         EmbedBuilder extraInfoBuilder = new EmbedBuilder();
 
         infoBuilder.setColor(Color.CYAN)
-                .setAuthor("Skyblock Nerd Bot")
-                .setTitle("Recipe Generation Help")
-                .addField("Basic Info", RECIPE_INFO_BASIC, true);
+            .setAuthor("Skyblock Nerd Bot")
+            .setTitle("Recipe Generation Help")
+            .addField("Basic Info", RECIPE_INFO_BASIC, true);
 
         argumentBuilder.setColor(Color.GREEN)
-                .addField("Arguments", RECIPE_INFO_ARGUMENTS, false);
+            .addField("Arguments", RECIPE_INFO_ARGUMENTS, false);
 
         extraInfoBuilder.setColor(Color.GRAY)
-                .addField("Other Information", RECIPE_INFO_OTHER_INFORMATION, false);
+            .addField("Other Information", RECIPE_INFO_OTHER_INFORMATION, false);
 
         Collection<MessageEmbed> embeds = new ArrayList<>();
         embeds.add(infoBuilder.build());
@@ -442,7 +454,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "stat_symbols", description = "Show a list of all stats symbols")
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "symbols", subcommand = "stats", description = "Show a list of all stats symbols")
     public void showAllStats(GuildSlashEvent event) {
         event.reply(STAT_SYMBOLS).setEphemeral(true).queue();
     }
