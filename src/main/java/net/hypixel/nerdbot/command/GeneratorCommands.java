@@ -384,7 +384,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "head", subcommand = "help", description = "Get a little bit of help with how to use the Head Rendering functions of the Generator bot.")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "head_help", description = "Get a little bit of help with how to use the Head Rendering functions of the Generator bot.")
     public void askForRenderHelp(GuildSlashEvent event) {
         if (isIncorrectChannel(event)) {
             return;
@@ -413,7 +413,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "recipe", subcommand = "help", description = "Get a little bit of help with how to use the Recipe Rendering functions of the Generator bot.")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "recipe_help", description = "Get a little bit of help with how to use the Recipe Rendering functions of the Generator bot.")
     public void askForRecipeRenderHelp(GuildSlashEvent event) {
         if (isIncorrectChannel(event)) {
             return;

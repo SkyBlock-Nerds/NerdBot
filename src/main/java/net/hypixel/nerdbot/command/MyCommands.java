@@ -32,10 +32,12 @@ import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import java.awt.*;
 import java.time.Duration;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Log4j2
 public class MyCommands extends ApplicationCommand {
 
+    private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
     public static final Cache<String, MojangProfile> VERIFY_CACHE = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofDays(1L))
         .scheduler(Scheduler.systemScheduler())
