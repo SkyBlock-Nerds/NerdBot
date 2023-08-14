@@ -339,7 +339,7 @@ public class AdminCommands extends ApplicationCommand {
         event.getHook().sendMessage("Migrated " + mojangProfiles.size() + " Mojang Profiles to the database.").queue();
     }
 
-    @JDASlashCommand(name = "user", subcommand = "update-nicks", description = "Update all user nicknames to match their Mojang Profile.", defaultLocked = true)
+    @JDASlashCommand(name = "user", group = "update", subcommand = "nicks", description = "Update all user nicknames to match their Mojang Profile.", defaultLocked = true)
     public void updateNicknames(GuildSlashEvent event) {
         Database database = NerdBotApp.getBot().getDatabase();
 
