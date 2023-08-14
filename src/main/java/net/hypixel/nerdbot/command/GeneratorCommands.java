@@ -318,7 +318,7 @@ public class GeneratorCommands extends ApplicationCommand {
         itemGenCommand.replace(itemGenCommand.length() - 2, itemGenCommand.length(), "").append(" max_line_length:").append(maxLineLength);
         itemText.replace(itemText.length() - 2, itemText.length(), "");
         // checking if there was supposed to be an item stack is displayed with the item
-        if (Boolean.TRUE.equals(includeItem)) {
+        if (includeItem) {
             itemGenCommand.append(" display_item_id:").append(itemID).append(extraModifiers.length() != 0 ? " extra_modifiers:" + extraModifiers : "");
         }
 
@@ -330,7 +330,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         // checking if an item should be displayed alongside the description
-        if (Boolean.TRUE.equals(includeItem)) {
+        if (includeItem) {
             BufferedImage generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers);
             if (generatedItem == null) {
                 return;
@@ -454,7 +454,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "symbols", subcommand = "stats", description = "Show a list of all stats symbols")
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "symbols", description = "Show a list of all stats symbols")
     public void showAllStats(GuildSlashEvent event) {
         event.reply(STAT_SYMBOLS).setEphemeral(true).queue();
     }
