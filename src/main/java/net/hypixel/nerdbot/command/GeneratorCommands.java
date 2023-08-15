@@ -24,10 +24,12 @@ import net.hypixel.nerdbot.generator.ImageMerger;
 import net.hypixel.nerdbot.generator.StringColorParser;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
+import net.hypixel.nerdbot.util.skyblock.Stat;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.Queue;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -456,7 +458,22 @@ public class GeneratorCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "symbols", description = "Show a list of all stats symbols")
     public void showAllStats(GuildSlashEvent event) {
-        event.reply(STAT_SYMBOLS).setEphemeral(true).queue();
+        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Symbols").setColor(Color.GREEN);
+        StringBuilder idBuilder = new StringBuilder();
+        StringBuilder symbolBuilder = new StringBuilder();
+        StringBuilder displayBuilder = new StringBuilder();
+
+        for (Stat stat : Stat.VALUES) {
+            idBuilder.append("%%").append(stat.name()).append("%%").append("\n");
+            symbolBuilder.append(stat.getIcon()).append("\n");
+            displayBuilder.append(stat.getDisplay()).append("\n");
+        }
+
+        embedBuilder.addField("ID", idBuilder.toString(), true);
+        embedBuilder.addField("Symbol", symbolBuilder.toString(), true);
+        embedBuilder.addField("Display", displayBuilder.toString(), true);
+
+        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
 
     @AutocompletionHandler(name = "rarities", mode = AutocompletionMode.CONTINUITY, showUserInput = false)
