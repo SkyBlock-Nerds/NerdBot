@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.bot.config.generator;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import net.hypixel.nerdbot.bot.config.BotConfig;
@@ -11,7 +12,7 @@ import java.io.IOException;
 public class ConfigGenerator {
 
     public static void main(String[] args) {
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
         BotConfig botConfig = new BotConfig();
         String json = gson.toJson(botConfig);
 
