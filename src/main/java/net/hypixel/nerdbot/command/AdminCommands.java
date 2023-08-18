@@ -380,7 +380,7 @@ public class AdminCommands extends ApplicationCommand {
         List<ForumTag> forumTags = forumChannel.getAvailableTagsByName("flared", true);
 
         if (forumTags.isEmpty()) {
-            event.reply("This forum channel has no tags!").setEphemeral(true).queue();
+            event.reply("This forum channel does not have the Flared tag!").setEphemeral(true).queue();
             return;
         }
 
