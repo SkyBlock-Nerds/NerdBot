@@ -35,15 +35,22 @@ public class ModMailConfig {
 
     /**
      * How to display the role ping when receiving a new mod mail message from a user
-     * <br><br>
-     * Valid formats are ABOVE, INLINE and BELOW
      */
     private RoleFormat roleFormat = RoleFormat.BELOW;
 
     public enum RoleFormat {
 
+        /**
+         * Above the first (or only) message
+         */
         ABOVE,
+        /**
+         * Inline with the first (or only) message
+         */
         INLINE,
+        /**
+         * After the last (or only) message
+         */
         BELOW
 
     }
