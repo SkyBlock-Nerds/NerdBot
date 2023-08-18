@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.bot.config.ModMailConfig;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
@@ -173,13 +174,13 @@ public class ModMailListener {
     private static String appendModMailRoleMention(List<String> messages, String content, int index) {
         String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
         String modMailRoleMention = "<@&%s>".formatted(modMailRoleId);
-        String roleFormat = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleFormat();
+        ModMailConfig.RoleFormat roleFormat = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleFormat();
 
         if (index == 0) { // First message
             if (modMailRoleId != null) {
-                if (roleFormat.equalsIgnoreCase("ABOVE")) {
+                if (roleFormat == ModMailConfig.RoleFormat.ABOVE) {
                     content = modMailRoleMention + "\n\n" + content;
-                } else if (roleFormat.equalsIgnoreCase("INLINE")) {
+                } else if (roleFormat == ModMailConfig.RoleFormat.INLINE) {
                     content = modMailRoleMention + " " + content;
                 }
             }
@@ -187,7 +188,7 @@ public class ModMailListener {
 
         if (index == messages.size() - 1) { // Last message
             if (modMailRoleId != null) {
-                if (roleFormat.equalsIgnoreCase("BELOW")) {
+                if (roleFormat == ModMailConfig.RoleFormat.BELOW) {
                     content += "\n\n" + modMailRoleMention;
                 }
             }

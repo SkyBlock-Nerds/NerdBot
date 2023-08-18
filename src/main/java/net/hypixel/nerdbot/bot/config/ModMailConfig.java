@@ -38,6 +38,14 @@ public class ModMailConfig {
      * <br><br>
      * Valid formats are ABOVE, INLINE and BELOW
      */
-    private String roleFormat = "BELOW";
+    private RoleFormat roleFormat = RoleFormat.BELOW;
+
+    public enum RoleFormat {
+
+        ABOVE,
+        INLINE,
+        BELOW
+
+    }
 
 }
