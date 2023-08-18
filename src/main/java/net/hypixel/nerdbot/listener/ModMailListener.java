@@ -127,10 +127,15 @@ public class ModMailListener {
                     webhookMessage.setUsername(Util.getDisplayName(event.getAuthor()));
                     webhookMessage.setAvatarUrl(event.getAuthor().getEffectiveAvatarUrl());
                     String content = messages.get(i);
+                    long msgTimestamp = messages.getTimestamp();
+                    long unixTime = Instant.now().getEpochSecond();
 
                     if (i == messages.size() - 1) { // Last message
                         if (modMailRoleId != null) {
+                            // Theoretically if there's been less than 2.5 minutes since the last message it won't ping
+                            if (unixTime - msgTimestamp >= 150) {
                             content += "\n\n" + modMailRoleMention;
+                            }
                         }
 
                         buildFiles(message).forEach(fileUpload -> webhookMessage.addFile(fileUpload.getName(), fileUpload.getData()));
