@@ -386,11 +386,6 @@ public class AdminCommands extends ApplicationCommand {
 
         ForumTag forumTag = forumTags.get(0);
 
-        if (forumTag == null) {
-            event.reply("Couldn't find a Flared tag in this forum channel!").setEphemeral(true).queue();
-            return;
-        }
-
         if (threadChannel.getAppliedTags().contains(forumTag)) {
             event.reply("This suggestion is already flared!").setEphemeral(true).queue();
             return;
