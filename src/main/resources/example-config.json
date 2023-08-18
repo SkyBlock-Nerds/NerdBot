@@ -2,7 +2,9 @@
   "modMailConfig": {
     "channelId": "",
     "roleId": "",
-    "webhookId": ""
+    "webhookId": "",
+    "timeBetweenPings": 60,
+    "roleFormat": "BELOW"
   },
   "emojiConfig": {
     "agreeEmojiId": "",
