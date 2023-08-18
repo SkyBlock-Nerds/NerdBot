@@ -13,8 +13,11 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -173,7 +176,7 @@ public class AdminCommands extends ApplicationCommand {
     public void userList(GuildSlashEvent event, @Optional @AppOption(description = "Comma-separated role names to search for (default Member).") String roles) throws IOException {
         event.deferReply(true).complete();
         Database database = NerdBotApp.getBot().getDatabase();
-        String[] roleArray = roles != null ? roles.split(", ?") : new String[] { "Member" };
+        String[] roleArray = roles != null ? roles.split(", ?") : new String[]{"Member"};
         JsonArray uuidArray = new JsonArray();
 
         List<MojangProfile> profiles = event.getGuild()
@@ -363,5 +366,39 @@ public class AdminCommands extends ApplicationCommand {
             }
         });
         event.getHook().editOriginal("Updated nicknames for " + users.into(new ArrayList<>()).size() + " users.").queue();
+    }
+
+    @JDASlashCommand(name = "flared", description = "Add the Flared tag to a suggestion and lock it", defaultLocked = true)
+    public void flareSuggestion(GuildSlashEvent event) {
+        Channel channel = event.getChannel();
+
+        if (!(channel instanceof ThreadChannel threadChannel) || !(threadChannel.getParentChannel() instanceof ForumChannel forumChannel)) {
+            event.reply("This command can only be used inside a thread that is part of a forum!").setEphemeral(true).queue();
+            return;
+        }
+
+        List<ForumTag> forumTags = forumChannel.getAvailableTagsByName("flared", true);
+
+        if (forumTags.isEmpty()) {
+            event.reply("This forum channel does not have the Flared tag!").setEphemeral(true).queue();
+            return;
+        }
+
+        ForumTag forumTag = forumTags.get(0);
+
+        if (threadChannel.getAppliedTags().contains(forumTag)) {
+            event.reply("This suggestion is already flared!").setEphemeral(true).queue();
+            return;
+        }
+
+        List<ForumTag> appliedTags = new ArrayList<>(threadChannel.getAppliedTags());
+        appliedTags.add(forumTag);
+
+        threadChannel.getManager()
+            .setLocked(true)
+            .setAppliedTags(appliedTags)
+            .queue();
+
+        event.reply(event.getUser().getAsMention() + " applied the " + forumTag.getName() + " tag and locked this suggestion!").queue();
     }
 }
