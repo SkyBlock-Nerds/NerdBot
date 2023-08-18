@@ -20,6 +20,8 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static net.hypixel.nerdbot.generator.GeneratorStrings.*;
 import static net.hypixel.nerdbot.generator.GeneratorStrings.stripString;
@@ -29,6 +31,7 @@ public class GeneratorBuilder {
 
     public static final int IMAGE_HEIGHT = 512;
     public static final int IMAGE_WIDTH = 512;
+    private static final Pattern TEXTURE_URL = Pattern.compile("(?:https?://textures.minecraft.net/texture/)?([a-zA-Z0-9]+)");
 
     private final HashMap<String, Item> items;
     private boolean itemsInitialisedCorrectly = true;
@@ -218,9 +221,9 @@ public class GeneratorBuilder {
         }
 
         // checking if there is the has added the full url to the texture ID
-        if (textureID.contains("http://textures.minecraft.net/texture/")) {
-            textureID = textureID.replace("http://textures.minecraft.net/texture/", "");
-            event.getHook().sendMessage(HEAD_URL_REMINDER).setEphemeral(true).queue();
+        Matcher textureMatcher = TEXTURE_URL.matcher(textureID);
+        if (textureMatcher.matches()) {
+            textureID = textureMatcher.group(1);
         }
 
         // converting the skin retrieved into a 3d head
