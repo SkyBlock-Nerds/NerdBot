@@ -28,4 +28,31 @@ public class ModMailConfig {
      */
     private String webhookId = "";
 
+    /**
+     * The uninterruptible time (in seconds) before pinging {@link #getRoleId()}
+     */
+    private int timeBetweenPings = 60;
+
+    /**
+     * How to display the role ping when receiving a new mod mail message from a user
+     */
+    private RoleFormat roleFormat = RoleFormat.BELOW;
+
+    public enum RoleFormat {
+
+        /**
+         * Above the first (or only) message
+         */
+        ABOVE,
+        /**
+         * Inline with the first (or only) message
+         */
+        INLINE,
+        /**
+         * After the last (or only) message
+         */
+        BELOW
+
+    }
+
 }

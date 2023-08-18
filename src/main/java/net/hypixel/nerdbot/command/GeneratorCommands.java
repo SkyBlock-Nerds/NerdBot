@@ -18,6 +18,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.generator.GeneratorBuilder;
 import net.hypixel.nerdbot.generator.ImageMerger;
@@ -60,12 +61,18 @@ public class GeneratorCommands extends ApplicationCommand {
             return;
         }
         hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
+        event.deferReply(hidden).complete();
         // building the item's description
         BufferedImage generatedImage = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
+
+        // Log item gen activity
+        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        long currentTime = System.currentTimeMillis();
+        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
+        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
@@ -74,12 +81,18 @@ public class GeneratorCommands extends ApplicationCommand {
             return;
         }
         hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
+        event.deferReply(hidden).complete();
         // building the chat message
         BufferedImage generatedImage = builder.buildItem(event, "NONE", "NONE", message, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
+
+        // Log item gen activity
+        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        long currentTime = System.currentTimeMillis();
+        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
+        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "head", description = "Draws a minecraft head into a file")
@@ -91,12 +104,18 @@ public class GeneratorCommands extends ApplicationCommand {
             return;
         }
         hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
+        event.deferReply(hidden).complete();
 
         BufferedImage head = builder.buildHead(event, skinId, isPlayerName);
         if (head != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(head))).setEphemeral(hidden).queue();
         }
+
+        // Log item gen activity
+        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        long currentTime = System.currentTimeMillis();
+        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
+        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Generates a full item stack!")
@@ -118,7 +137,7 @@ public class GeneratorCommands extends ApplicationCommand {
             return;
         }
         hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
+        event.deferReply(hidden).complete();
 
         // checking that there are two or more different items to merge the images
         if ((itemName == null || rarity == null || itemLore == null) && itemID == null && recipe == null) {
@@ -159,6 +178,12 @@ public class GeneratorCommands extends ApplicationCommand {
         ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, generatedRecipe);
         merger.drawFinalImage();
         event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
+
+        // Log item gen activity
+        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        long currentTime = System.currentTimeMillis();
+        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
+        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "recipe", description = "Generates a Minecraft Recipe Image")
@@ -170,7 +195,7 @@ public class GeneratorCommands extends ApplicationCommand {
             return;
         }
         hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
+        event.deferReply(hidden).complete();
 
         renderBackground = (renderBackground == null || renderBackground);
 
@@ -179,6 +204,12 @@ public class GeneratorCommands extends ApplicationCommand {
         if (generatedRecipe != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedRecipe))).queue();
         }
+
+        // Log item gen activity
+        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        long currentTime = System.currentTimeMillis();
+        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
+        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
@@ -192,7 +223,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         hidden = (hidden != null && hidden);
-        event.deferReply(hidden).queue();
+        event.deferReply(hidden).complete();
         includeItem = Objects.requireNonNullElse(includeItem, false);
 
         // converting the nbt into json
@@ -346,6 +377,12 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
+
+        // Log item gen activity
+        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        long currentTime = System.currentTimeMillis();
+        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
+        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "args", description = "Show help related to the arguments of the Item Generation command.")

@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.bot.config.ModMailConfig;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
@@ -32,30 +33,27 @@ import java.util.stream.Collectors;
 public class ModMailListener {
 
     private static final String MOD_MAIL_TITLE_TEMPLATE = "%s (%s)";
-    private final String modMailChannelId = NerdBotApp.getBot().getConfig().getModMailConfig().getChannelId();
-    private final String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
-    private final String modMailRoleMention = "<@&%s>".formatted(modMailRoleId);
 
     @SubscribeEvent
     public void onModMailReceived(MessageReceivedEvent event) {
-        if (event.getChannelType() != ChannelType.PRIVATE) {
-            return;
-        }
-
         User author = event.getAuthor();
         if (author.isBot() || author.isSystem()) {
             return;
         }
 
-        ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(modMailChannelId);
-        if (forumChannel == null) {
+        if (event.getChannelType() != ChannelType.PRIVATE) {
+            return;
+        }
+
+        ForumChannel modMailChannel = getModMailChannel();
+        if (modMailChannel == null) {
             return;
         }
 
         Message message = event.getMessage();
         Database database = NerdBotApp.getBot().getDatabase();
-        List<ThreadChannel> channels = new ArrayList<>(forumChannel.getThreadChannels());
-        channels.addAll(forumChannel.retrieveArchivedPublicThreadChannels().stream().toList());
+        List<ThreadChannel> channels = new ArrayList<>(modMailChannel.getThreadChannels());
+        channels.addAll(modMailChannel.retrieveArchivedPublicThreadChannels().stream().toList());
         Optional<ThreadChannel> existingTicket = channels.stream()
             .filter(threadChannel -> threadChannel.getName().contains(author.getId())) // Find Existing ModMail Thread
             .findFirst();
@@ -107,8 +105,9 @@ public class ModMailListener {
                 }
             }
         } else {
-            threadChannel = forumChannel.createForumPost(expectedThreadName, MessageCreateData.fromContent(expectedFirstPost)).complete().getThreadChannel();
+            threadChannel = modMailChannel.createForumPost(expectedThreadName, MessageCreateData.fromContent(expectedFirstPost)).complete().getThreadChannel();
             threadChannel.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
+            String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
 
             if (modMailRoleId != null) {
                 threadChannel.getGuild().getMembersWithRoles(Util.getRoleById(modMailRoleId)).forEach(member -> threadChannel.addThreadMember(member).complete());
@@ -117,6 +116,7 @@ public class ModMailListener {
 
         Optional<Webhook> webhook = getWebhook();
         log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
+        boolean shouldSendMention = shouldAppendRoleMention(discordUser);
 
         if (webhook.isPresent()) {
             try (JDAWebhookClient client = JDAWebhookClient.from(webhook.get()).onThread(threadChannel.getIdLong())) {
@@ -128,11 +128,11 @@ public class ModMailListener {
                     webhookMessage.setAvatarUrl(event.getAuthor().getEffectiveAvatarUrl());
                     String content = messages.get(i);
 
-                    if (i == messages.size() - 1) { // Last message
-                        if (modMailRoleId != null) {
-                            content += "\n\n" + modMailRoleMention;
-                        }
+                    if (shouldSendMention) {
+                        content = appendModMailRoleMention(messages, content, i);
+                    }
 
+                    if (i == messages.size() - 1) { // Last message
                         buildFiles(message).forEach(fileUpload -> webhookMessage.addFile(fileUpload.getName(), fileUpload.getData()));
                     }
 
@@ -147,10 +147,8 @@ public class ModMailListener {
                 MessageCreateBuilder messageBuilder = new MessageCreateBuilder();
                 String content = messages.get(i);
 
-                if (i == 0) { // First message
-                    if (modMailRoleId != null) {
-                        content = modMailRoleMention + " " + content;
-                    }
+                if (shouldSendMention) {
+                    content = appendModMailRoleMention(messages, content, i);
                 }
 
                 if (i == messages.size() - 1) { // Last message
@@ -161,10 +159,51 @@ public class ModMailListener {
                 threadChannel.sendMessage(messageBuilder.build()).complete();
             }
         }
+
+        // Update last use
+        discordUser.getLastActivity().setLastModMailUsage(System.currentTimeMillis());
+    }
+
+    private static boolean shouldAppendRoleMention(DiscordUser discordUser) {
+        long lastUsage = discordUser.getLastActivity().getLastModMailUsage();
+        long currentTime = System.currentTimeMillis();
+        int timeBetweenPings = NerdBotApp.getBot().getConfig().getModMailConfig().getTimeBetweenPings();
+        return (currentTime - lastUsage) / 1000 > timeBetweenPings;
+    }
+
+    private static String appendModMailRoleMention(List<String> messages, String content, int index) {
+        String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
+        String modMailRoleMention = "<@&%s>".formatted(modMailRoleId);
+        ModMailConfig.RoleFormat roleFormat = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleFormat();
+
+        if (index == 0) { // First message
+            if (modMailRoleId != null) {
+                if (roleFormat == ModMailConfig.RoleFormat.ABOVE) {
+                    content = modMailRoleMention + "\n\n" + content;
+                } else if (roleFormat == ModMailConfig.RoleFormat.INLINE) {
+                    content = modMailRoleMention + " " + content;
+                }
+            }
+        }
+
+        if (index == messages.size() - 1) { // Last message
+            if (modMailRoleId != null) {
+                if (roleFormat == ModMailConfig.RoleFormat.BELOW) {
+                    content += "\n\n" + modMailRoleMention;
+                }
+            }
+        }
+
+        return content;
     }
 
     @SubscribeEvent
     public void onModMailResponse(MessageReceivedEvent event) {
+        User author = event.getAuthor();
+        if (author.isBot() || author.isSystem()) {
+            return;
+        }
+
         if (event.getChannelType() != ChannelType.GUILD_PUBLIC_THREAD) {
             return;
         }
@@ -174,18 +213,8 @@ public class ModMailListener {
             return;
         }
 
-        ForumChannel parent = threadChannel.getParentChannel().asForumChannel();
-        if (!parent.getId().equals(modMailChannelId)) {
-            return;
-        }
-
-        ForumChannel forumChannel = NerdBotApp.getBot().getJDA().getForumChannelById(modMailChannelId);
-        if (forumChannel == null) {
-            return;
-        }
-
-        User author = event.getAuthor();
-        if (author.isBot() || author.isSystem()) {
+        ForumChannel modMailChannel = getModMailChannel();
+        if (modMailChannel == null || !modMailChannel.getId().equals(threadChannel.getParentChannel().getId())) {
             return;
         }
 
@@ -228,6 +257,17 @@ public class ModMailListener {
                     .getWebhookId()
             ))
             .findFirst();
+    }
+
+    private static ForumChannel getModMailChannel() {
+        return NerdBotApp.getBot()
+            .getJDA()
+            .getForumChannelById(
+                NerdBotApp.getBot()
+                    .getConfig()
+                    .getModMailConfig()
+                    .getChannelId()
+            );
     }
 
     private static List<String> buildContent(Message message, boolean webhook) {
