@@ -373,23 +373,31 @@ public class AdminCommands extends ApplicationCommand {
         Channel channel = event.getChannel();
 
         if (!(channel instanceof ThreadChannel threadChannel) || !(threadChannel.getParentChannel() instanceof ForumChannel forumChannel)) {
-            event.getHook().sendMessage("This command can only be used inside a thread that is part of a forum!").queue();
+            event.reply("This command can only be used inside a thread that is part of a forum!").queue();
             return;
         }
 
         ForumTag forumTag = forumChannel.getAvailableTagsByName("flared", true).get(0);
 
         if (forumTag == null) {
-            event.getHook().sendMessage("Couldn't find a Flared tag in this forum channel!").queue();
+            event.reply("Couldn't find a Flared tag in this forum channel!").queue();
             return;
         }
 
         List<ForumTag> appliedTags = new ArrayList<>(threadChannel.getAppliedTags());
+
+        if (appliedTags.contains(forumTag)) {
+            event.reply("This suggestion is already flared!").queue();
+            return;
+        }
+
         appliedTags.add(forumTag);
 
         threadChannel.getManager()
             .setLocked(true)
             .setAppliedTags(appliedTags)
             .queue();
+
+        event.reply("Applied the tag and locked this suggestion!").queue();
     }
 }
