@@ -3,9 +3,7 @@ package net.hypixel.nerdbot.generator;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.Member;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.generator.Item;
@@ -16,19 +14,28 @@ import net.hypixel.nerdbot.util.skyblock.Rarity;
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static net.hypixel.nerdbot.generator.GeneratorStrings.*;
-import static net.hypixel.nerdbot.generator.GeneratorStrings.stripString;
 
 @Log4j2
 public class GeneratorBuilder {
 
     public static final int IMAGE_HEIGHT = 512;
     public static final int IMAGE_WIDTH = 512;
+    private static final Pattern TEXTURE_URL = Pattern.compile("(?:https?://textures.minecraft.net/texture/)?([a-zA-Z0-9]+)");
 
     private final HashMap<String, Item> items;
     private boolean itemsInitialisedCorrectly = true;
@@ -184,18 +191,16 @@ public class GeneratorBuilder {
         padding = Objects.requireNonNullElse(padding, 0);
         padding = Math.max(0, padding);
 
-        MinecraftImage minecraftImage = new MinecraftImage(colorParser.getParsedDescription(), MCColor.GRAY, maxLineLength * 25, alpha, padding, isNormalItem).render();
-
-        Member member = event.getMember();
-        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), member.getId());
-        if (discordUser == null) {
-            log.info("Not updating last item generator activity date for " + member.getEffectiveName() + " (ID: " + member.getId() + ") since we cannot find a user!");
-        } else {
-            discordUser.getLastActivity().setLastItemGenUsage(System.currentTimeMillis());
-            log.info("Updating last item generator activity date for " + member.getEffectiveName() + " to " + System.currentTimeMillis());
-        }
-
-        return minecraftImage.getImage();
+        return new MinecraftImage(
+            colorParser.getParsedDescription(),
+            MCColor.GRAY,
+            maxLineLength * 25,
+            alpha,
+            padding,
+            isNormalItem
+        )
+            .render()
+            .getImage();
     }
 
     /**
@@ -218,9 +223,9 @@ public class GeneratorBuilder {
         }
 
         // checking if there is the has added the full url to the texture ID
-        if (textureID.contains("http://textures.minecraft.net/texture/")) {
-            textureID = textureID.replace("http://textures.minecraft.net/texture/", "");
-            event.getHook().sendMessage(HEAD_URL_REMINDER).setEphemeral(true).queue();
+        Matcher textureMatcher = TEXTURE_URL.matcher(textureID);
+        if (textureMatcher.matches()) {
+            textureID = textureMatcher.group(1);
         }
 
         // converting the skin retrieved into a 3d head

@@ -16,6 +16,7 @@ public class LastActivity {
     private long lastGlobalActivity = -1L;
     private long lastVoiceChannelJoinDate = -1L;
     private long lastItemGenUsage = -1L;
+    private long lastModMailUsage = -1L;
 
     // Suggestion Activity
     private long lastSuggestionDate = -1L;
