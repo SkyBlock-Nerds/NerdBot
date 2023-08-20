@@ -51,75 +51,82 @@ public class ModMailListener {
         }
 
         Message message = event.getMessage();
-        Database database = NerdBotApp.getBot().getDatabase();
         List<ThreadChannel> channels = new ArrayList<>(modMailChannel.getThreadChannels());
         channels.addAll(modMailChannel.retrieveArchivedPublicThreadChannels().stream().toList());
         Optional<ThreadChannel> existingTicket = channels.stream()
             .filter(threadChannel -> threadChannel.getName().contains(author.getId())) // Find Existing ModMail Thread
             .findFirst();
-        boolean sendThanks = existingTicket.map(ThreadChannel::isArchived).orElse(existingTicket.isEmpty());
-        String expectedThreadName = MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(event.getAuthor()), author.getId());
-        ThreadChannel threadChannel;
-        DiscordUser discordUser = Util.getOrAddUserToCache(database, event.getAuthor().getId());
+        boolean updateFirstPost = false;
+        String expectedThreadName = MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(author), author.getId());
+        ThreadChannel modMailThread;
+        Database database = NerdBotApp.getBot().getDatabase();
+        DiscordUser discordUser = Util.getOrAddUserToCache(database, author.getId());
+        boolean unlinked = discordUser.noProfileAssigned();
+        String username = unlinked ? "**Unlinked**" : discordUser.getMojangProfile().getUsername();
+        String uniqueId = unlinked ? "**Unlinked**" : discordUser.getMojangProfile().getUniqueId().toString();
         String expectedFirstPost = "Received new Mod Mail request from " + author.getAsMention() + "!\n\n" +
             "User ID: " + author.getId() + "\n" +
-            "Minecraft IGN: " + discordUser.getMojangProfile().getUsername() + "\n" +
-            "Minecraft UUID: " + discordUser.getMojangProfile().getUniqueId().toString();
+            "Minecraft IGN: " + username + "\n" +
+            "Minecraft UUID: " + uniqueId;
 
-        if (sendThanks) {
-            event.getAuthor()
-                .openPrivateChannel()
+        if (existingTicket.isPresent()) {
+            modMailThread = existingTicket.get();
+
+            if (modMailThread.isArchived()) {
+                modMailThread.getManager().setArchived(false).complete();
+                updateFirstPost = true;
+            }
+
+            if (!modMailThread.getName().equals(expectedThreadName)) {
+                modMailThread.getManager().setName(expectedThreadName).queue();
+                updateFirstPost = true;
+            }
+        } else {
+            modMailThread = modMailChannel.createForumPost(expectedThreadName, MessageCreateData.fromContent(expectedFirstPost)).complete().getThreadChannel();
+            modMailThread.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
+            String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
+
+            if (modMailRoleId != null) {
+                modMailThread.getGuild().getMembersWithRoles(Util.getRoleById(modMailRoleId)).forEach(member -> modMailThread.addThreadMember(member).complete());
+            }
+        }
+
+        if (updateFirstPost) {
+            MessageHistory messageHistory = modMailThread.getHistoryFromBeginning(1).complete();
+            boolean firstPost = messageHistory.getRetrievedHistory().get(0).getIdLong() == modMailThread.getIdLong();
+
+            if (firstPost) {
+                messageHistory.getRetrievedHistory()
+                    .get(0)
+                    .editMessage(
+                        new MessageEditBuilder()
+                            .setContent(expectedFirstPost)
+                            .build()
+                    )
+                    .queue();
+            }
+
+            author.openPrivateChannel()
                 .flatMap(channel -> channel.sendMessage(
                     new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.").build()
                 ))
                 .queue();
-        }
 
-        if (existingTicket.isPresent()) {
-            threadChannel = existingTicket.get();
-            boolean updateFirstPost = false;
-
-            if (threadChannel.isArchived()) {
-                threadChannel.getManager().setArchived(false).complete();
-                updateFirstPost = true;
-            }
-
-            if (!threadChannel.getName().equals(expectedThreadName)) {
-                threadChannel.getManager().setName(expectedThreadName).queue();
-                updateFirstPost = true;
-            }
-
-            if (updateFirstPost) {
-                MessageHistory messageHistory = threadChannel.getHistoryFromBeginning(1).complete();
-                boolean firstPost = messageHistory.getRetrievedHistory().get(0).getIdLong() == threadChannel.getIdLong();
-
-                if (firstPost) {
-                    messageHistory.getRetrievedHistory()
-                        .get(0)
-                        .editMessage(
-                            new MessageEditBuilder()
-                                .setContent(expectedFirstPost)
-                                .build()
-                        )
-                        .queue();
-                }
-            }
-        } else {
-            threadChannel = modMailChannel.createForumPost(expectedThreadName, MessageCreateData.fromContent(expectedFirstPost)).complete().getThreadChannel();
-            threadChannel.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
-            String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
-
-            if (modMailRoleId != null) {
-                threadChannel.getGuild().getMembersWithRoles(Util.getRoleById(modMailRoleId)).forEach(member -> threadChannel.addThreadMember(member).complete());
+            if (unlinked) {
+                author.openPrivateChannel()
+                    .flatMap(channel -> channel.sendMessage(
+                        new MessageCreateBuilder().setContent("You are not linked to Hypixel in SkyBlock Nerds. Please do so using `/link` in a SkyBlock Nerds channel.").build()
+                    ))
+                    .queue();
             }
         }
 
         Optional<Webhook> webhook = getWebhook();
-        log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + threadChannel.getId() + ")");
+        log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + modMailThread.getId() + ")");
         boolean shouldSendMention = shouldAppendRoleMention(discordUser);
 
         if (webhook.isPresent()) {
-            try (JDAWebhookClient client = JDAWebhookClient.from(webhook.get()).onThread(threadChannel.getIdLong())) {
+            try (JDAWebhookClient client = JDAWebhookClient.from(webhook.get()).onThread(modMailThread.getIdLong())) {
                 List<String> messages = buildContent(message, true);
 
                 for (int i = 0; i < messages.size(); i++) {
@@ -156,7 +163,7 @@ public class ModMailListener {
                 }
 
                 messageBuilder.setContent(content);
-                threadChannel.sendMessage(messageBuilder.build()).complete();
+                modMailThread.sendMessage(messageBuilder.build()).complete();
             }
         }
 
