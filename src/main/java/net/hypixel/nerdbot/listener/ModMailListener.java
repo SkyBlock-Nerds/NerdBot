@@ -115,7 +115,7 @@ public class ModMailListener {
             if (unlinked) {
                 author.openPrivateChannel()
                     .flatMap(channel -> channel.sendMessage(
-                        new MessageCreateBuilder().setContent("You are not linked to Hypixel in SkyBlock Nerds. Please do so using `/link` in a SkyBlock Nerds channel.").build()
+                        new MessageCreateBuilder().setContent("You are not linked to Hypixel in SkyBlock Nerds. Please do so using </link:01010101>.").build()
                     ))
                     .queue();
             }
