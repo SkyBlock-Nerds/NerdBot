@@ -2,7 +2,9 @@ package net.hypixel.nerdbot.command;
 
 import com.freya02.botcommands.api.annotations.Optional;
 import com.freya02.botcommands.api.application.ApplicationCommand;
+import com.freya02.botcommands.api.application.CommandScope;
 import com.freya02.botcommands.api.application.annotations.AppOption;
+import com.freya02.botcommands.api.application.slash.GlobalSlashEvent;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -45,23 +47,30 @@ public class MyCommands extends ApplicationCommand {
 
     @JDASlashCommand(
         name = "link",
-        description = "Link your Mojang Profile to your account."
+        description = "Link your Mojang Profile to your account.",
+        scope = CommandScope.GLOBAL
     )
-    public void linkProfile(GuildSlashEvent event, @AppOption(description = "Your Minecraft IGN to link.") String username) {
+    public void linkProfile(GlobalSlashEvent event, @AppOption(description = "Your Minecraft IGN to link.") String username) {
         event.deferReply(true).complete();
+        Member member = Util.getMainGuild().retrieveMemberById(event.getUser().getId()).complete();
+
+        if (member == null) {
+            event.getHook().editOriginal("You must be in SkyBlock Nerds to use this command!").queue();
+            return;
+        }
 
         try {
-            MojangProfile mojangProfile = requestMojangProfile(event.getMember(), username, true);
-            updateMojangProfile(event.getMember(), mojangProfile);
+            MojangProfile mojangProfile = requestMojangProfile(member, username, true);
+            updateMojangProfile(member, mojangProfile);
             event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
             if (ChannelManager.getLogChannel() != null) {
                 ChannelManager.getLogChannel().sendMessageEmbeds(
                     new EmbedBuilder()
-                        .setAuthor(event.getMember().getEffectiveName() + " (" + event.getMember().getUser().getName() + ")")
+                        .setAuthor(member.getEffectiveName() + " (" + member.getUser().getName() + ")")
                         .setTitle("Mojang Profile Change")
-                        .setThumbnail(event.getMember().getAvatarUrl())
-                        .setDescription(event.getMember().getAsMention() + " updated their Mojang Profile.")
+                        .setThumbnail(member.getAvatarUrl())
+                        .setDescription(member.getAsMention() + " updated their Mojang Profile.")
                         .addField("Username", mojangProfile.getUsername(), false)
                         .addField(
                             "UUID / SkyCrypt",
