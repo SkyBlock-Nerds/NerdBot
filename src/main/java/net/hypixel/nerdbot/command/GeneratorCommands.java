@@ -118,11 +118,11 @@ public class GeneratorCommands extends ApplicationCommand {
         log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Generates a full item stack!")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Creates an image that looks like an item from Minecraft, complete with lore and a display item.")
     public void generateFullItem(GuildSlashEvent event,
-                                 @Optional @AppOption(description = DESC_ITEM_NAME) String itemName,
-                                 @Optional @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
-                                 @Optional @AppOption(description = DESC_ITEM_LORE) String itemLore,
+                                 @AppOption(description = DESC_ITEM_NAME) String itemName,
+                                 @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
+                                 @AppOption(description = DESC_ITEM_LORE) String itemLore,
                                  @Optional @AppOption(description = DESC_TYPE) String type,
                                  @Optional @AppOption(description = DESC_DISABLE_RARITY_LINEBREAK) Boolean disableRarityLinebreak,
                                  @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
