@@ -338,7 +338,7 @@ public class GeneratorBuilder {
      * @return              a rendered minecraft image
      */
     @Nullable
-    public BufferedImage buildItemStack(GuildSlashEvent event, String itemName, String[] extraDetails) {
+    public BufferedImage buildItemStack(GuildSlashEvent event, String itemName, String extraDetails) {
         // checks that all the textures required to render the items were loaded correctly
         if (!itemsInitialisedCorrectly) {
             event.getHook().sendMessage(ITEM_RESOURCE_NOT_LOADED).queue();
@@ -348,7 +348,7 @@ public class GeneratorBuilder {
         // finding the item that the user entered
         Item itemFound = items.get(itemName.toLowerCase());
         if (itemFound == null) {
-            event.getHook().sendMessage(String.format(UNKNOWN_EXTRA_DETAILS, stripString(itemName), stripString(Arrays.toString(extraDetails)))).queue();
+            event.getHook().sendMessage(String.format(UNKNOWN_EXTRA_DETAILS, stripString(itemName), stripString(extraDetails))).queue();
             return null;
         }
 
@@ -421,7 +421,7 @@ public class GeneratorBuilder {
         // iterates through each of the items and fetches the associated sprite/Minecraft head with its given attributes
         for (RecipeParser.RecipeItem item : parser.getRecipeData().values()) {
             // checking if the image was correctly found
-            BufferedImage itemImage = buildUnspecifiedItem(event, item.getItemName(), item.getExtraDetails());
+            BufferedImage itemImage = buildUnspecifiedItem(event, item.getItemName(), item.getExtraDetails(), false);
             if (itemImage == null) {
                 return null;
             }
