@@ -239,14 +239,13 @@ public class GeneratorBuilder {
      *
      * @param event           the GuildSlashEvent which the command is triggered from
      * @param textureID       the skin id/player name of the target skin
-     * @param isPlayerName    if the provided textureID is a player name
      *
      * @return                a rendered Minecraft head
      */
     @Nullable
-    public BufferedImage buildHead(GuildSlashEvent event, String textureID, Boolean isPlayerName) {
+    public BufferedImage buildHead(GuildSlashEvent event, String textureID) {
         // checking if the skin is supposed to be for a player
-        if (isPlayerName != null && isPlayerName) {
+        if (textureID.length() <= 16) {
             textureID = getPlayerHeadURL(event, textureID);
             if (textureID == null) {
                 return null;
