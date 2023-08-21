@@ -456,6 +456,8 @@ public class GeneratorCommands extends ApplicationCommand {
         Collection<MessageEmbed> embeds = new ArrayList<>();
         embeds.add(infoBuilder.build());
         embeds.add(argumentBuilder.build());
+        embeds.add(attributeBuilder.build());
+        embeds.add(headInfoBuilder.build());
         embeds.add(extraInfoBuilder.build());
 
         event.replyEmbeds(embeds).setEphemeral(true).queue();
