@@ -147,7 +147,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                     });
                 });
             }
-        }, 0L, TimeUnit.HOURS.toMillis(1L));
+        }, 0L, TimeUnit.DAYS.toMillis(1L));
     }
 
     @Override
