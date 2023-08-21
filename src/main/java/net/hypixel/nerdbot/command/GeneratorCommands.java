@@ -95,10 +95,10 @@ public class GeneratorCommands extends ApplicationCommand {
         log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "head", description = "Draws a minecraft head into a file")
-    public void generateHead(GuildSlashEvent event,
-                             @AppOption(description = DESC_HEAD_ID) String skinId,
-                             @Optional @AppOption(description = DESC_IS_PLAYER_NAME) Boolean isPlayerName,
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "display_image", description = "Draws a Minecraft item into a file")
+    public void generateItemImage(GuildSlashEvent event,
+                             @AppOption(description = DESC_ITEM_ID, name = "item_id") String itemID,
+                             @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraDetails,
                              @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
@@ -215,7 +215,7 @@ public class GeneratorCommands extends ApplicationCommand {
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
     public void parseItemDescription(GuildSlashEvent event,
                                      @AppOption(description = DESC_PARSE_ITEM, name = "item_nbt") String itemNBT,
-                                     @Optional @AppOption(description = DESC_INCLUDE_ITEM) Boolean includeItem,
+                                     @Optional @AppOption (description = DESC_INCLUDE_ITEM) Boolean includeItem,
                                      @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden
     ) throws IOException {
         if (isIncorrectChannel(event)) {
