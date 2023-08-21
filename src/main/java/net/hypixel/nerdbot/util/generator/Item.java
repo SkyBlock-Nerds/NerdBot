@@ -1,14 +1,21 @@
 package net.hypixel.nerdbot.util.generator;
 
-import java.awt.*;
+import net.hypixel.nerdbot.util.generator.overlay.Overlay;
+
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class Item {
+    private static HashMap<String, Overlay> AVAILABLE_OVERLAYS;
+    private static Overlay SMALL_ENCHANT_GLINT;
+    private static Overlay LARGE_ENCHANT_GLINT;
+
     private String name;
     private int x;
     private int y;
-    private Overlay overlay;
+    private int size;
+    private String[] overlays;
 
     /**
      * Gets the name of the sprite
@@ -38,46 +45,49 @@ public class Item {
     }
 
     /**
-     * Gets the overlay that should be applied to this item
+     * Gets the size of the image in the sprite sheet
      *
-     * @return the overlay for modifiers
+     * @return the size of the image in the sprite sheet
      */
-    public Overlay getOverlay() {
-        return this.overlay;
+    public int getSize() {
+        return this.size;
     }
 
     /**
      * Applies image modifiers (overlay and enchantment glint) to the sprite
      *
-     * @param image         the image to apply the modifiers to
-     * @param extraDetails  any extra details required for the modifiers
+     * @param image        the image to apply the modifiers to
+     * @param extraDetails any extra details required for the modifiers
      */
-    public void applyModifiers(BufferedImage image, String[] extraDetails) {
+    public void applyModifiers(BufferedImage image, String extraDetails) {
         if (extraDetails == null) {
-            extraDetails = new String[] {};
+            extraDetails = "";
         }
 
-        if (overlay != null) {
-            Color overlayColor = null;
-            Color baseColor = null;
-            if (extraDetails.length >= 1) {
-                try {
-                    overlayColor = Color.decode(extraDetails[0]);
-                } catch (NumberFormatException ignored) {}
+        String[] availableModifiers = extraDetails.split(",");
+        if (overlays != null) {
+            for (int i = 0; i < overlays.length; i++) {
+                String color = availableModifiers.length > i ? availableModifiers[i] : "";
+                System.out.println(overlays[i] + " " + color);
+                AVAILABLE_OVERLAYS.get(overlays[i]).applyColor(image, color);
             }
-            if (extraDetails.length >= 2) {
-                try {
-                    baseColor = Color.decode(extraDetails[1]);
-                } catch (NumberFormatException ignored) {}
-            }
-
-            overlay.applyBaseColor(image, baseColor);
-            overlay.applyOverlayColor(image, overlayColor);
         }
 
-        // applies the enchantment glint if "enchant" is present
-        if (Arrays.stream(extraDetails).anyMatch(element -> element.toLowerCase().contains("enchant"))) {
-            Overlay.applyEnchantOverlay(image);
+        //applies the enchantment glint if "enchant" is present
+        if (Arrays.stream(availableModifiers).anyMatch(element -> element.toLowerCase().contains("enchant"))) {
+            (image.getWidth() == 16 ? SMALL_ENCHANT_GLINT : LARGE_ENCHANT_GLINT).applyColor(image, "#7c20ff");
         }
+    }
+
+    public static void setAvailableOverlays(HashMap<String, Overlay> createdOverlays) {
+        AVAILABLE_OVERLAYS = createdOverlays;
+    }
+
+    public static void setSmallEnchantGlint(Overlay enchantGlint) {
+        SMALL_ENCHANT_GLINT = enchantGlint;
+    }
+
+    public static void setLargeEnchantGlint(Overlay enchantGlint) {
+        LARGE_ENCHANT_GLINT = enchantGlint;
     }
 }

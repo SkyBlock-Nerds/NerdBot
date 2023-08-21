@@ -7,12 +7,13 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.generator.Item;
-import net.hypixel.nerdbot.util.generator.Overlay;
+import net.hypixel.nerdbot.util.generator.overlay.*;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -57,22 +58,6 @@ public class GeneratorBuilder {
             itemsInitialisedCorrectly = false;
         }
 
-        // loading the overlays for some Minecraft Items
-        try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/textures/overlays.png")) {
-            if (overlayStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/overlays.png\"");
-            }
-
-            BufferedImage overlayImage = ImageIO.read(overlayStream);
-            for (Overlay overlay : Overlay.values()) {
-                overlay.setOverlayImage(overlayImage.getSubimage(overlay.getX(), overlay.getY(), IMAGE_WIDTH, IMAGE_HEIGHT));
-            }
-        } catch (IOException e) {
-            log.error("Couldn't initialise the overlays for ItemStack Generation");
-            log.error(e.getMessage());
-            itemsInitialisedCorrectly = false;
-        }
-
         // loading the items position in the sprite sheet
         try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/atlas_coordinates.json")) {
             if (itemStream == null) {
@@ -89,25 +74,71 @@ public class GeneratorBuilder {
             }
 
             Item[] itemsFound = NerdBotApp.GSON.fromJson(results.toString(), Item[].class);
-            StringBuilder oneParameterItems = new StringBuilder();
-            StringBuilder twoParameterItems = new StringBuilder();
             for (Item item : itemsFound) {
                 if (items.containsKey(item.getName())) {
                     log.error(item.getName() + " seems to be duplicated in the items list. It will be replaced for now, but you should probably look into why this happened.");
                 }
 
                 items.put(item.getName(), item);
-                if (item.getOverlay() != null) {
-                    (item.getOverlay().acceptedParameters() == 1 ? oneParameterItems : twoParameterItems).append(item.getName()).append(", ");
-                }
             }
-
-            oneParameterItems.delete(oneParameterItems.length() - 2, oneParameterItems.length());
-            twoParameterItems.delete(twoParameterItems.length() - 2, twoParameterItems.length());
-            GeneratorStrings.RECIPE_INFO_OTHER_INFORMATION = "**Ability to change one layer (One Hex Color Parameter)**\n" +
-                oneParameterItems + "\n\n**Ability to change both layers (Two Hex Color Parameters)**\n" + twoParameterItems;
         } catch (IOException e) {
             log.error("Couldn't initialise the items for ItemStack Generation");
+            log.error(e.getMessage());
+            itemsInitialisedCorrectly = false;
+        }
+
+        // loading the overlays for some Minecraft Items
+        try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/textures/overlays.png")) {
+            if (overlayStream == null) {
+                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/overlays.png\"");
+            }
+
+            HashMap<String, Overlay> overlaysHashMap = new HashMap<>();
+            BufferedImage overlayImage = ImageIO.read(overlayStream);
+
+            // leather armor
+            Color leatherArmorColor = new Color(160, 101, 63);
+            Overlay leatherHelmet = new NormalOverlay("LEATHER_HELMET", overlayImage.getSubimage(48, 16, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
+            overlaysHashMap.put(leatherHelmet.getName(), leatherHelmet);
+            Overlay leatherChestplate = new NormalOverlay("LEATHER_CHESTPLATE", overlayImage.getSubimage(32, 16, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
+            overlaysHashMap.put(leatherChestplate.getName(), leatherChestplate);
+            Overlay leatherLeggings = new NormalOverlay("LEATHER_LEGGINGS", overlayImage.getSubimage(0, 32, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
+            overlaysHashMap.put(leatherLeggings.getName(), leatherLeggings);
+            Overlay leatherBoots = new NormalOverlay("LEATHER_BOOTS", overlayImage.getSubimage(16, 16, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
+            overlaysHashMap.put(leatherBoots.getName(), leatherBoots);
+
+
+            // armor trims
+            int[] defaultTrimColors = new int[] {-2039584, -4144960, -6250336, -8355712, -10461088, -12566464, -14671840, -16777216};
+            Overlay helmetTrim = new MappedOverlay("HELMET_TRIM", overlayImage.getSubimage(0, 16, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
+            overlaysHashMap.put(helmetTrim.getName(), helmetTrim);
+            Overlay chestplateTrim = new MappedOverlay("CHESTPLATE_TRIM", overlayImage.getSubimage(16, 0, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
+            overlaysHashMap.put(chestplateTrim.getName(), chestplateTrim);
+            Overlay leggingsTrim = new MappedOverlay("LEGGINGS_TRIM", overlayImage.getSubimage(16, 32, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
+            overlaysHashMap.put(leggingsTrim.getName(), leggingsTrim);
+            Overlay bootsTrim = new MappedOverlay("BOOTS_TRIM", overlayImage.getSubimage(16, 32, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
+            overlaysHashMap.put(bootsTrim.getName(), bootsTrim);
+
+            // other items
+            Overlay fireworkCharge = new NormalOverlay("FIREWORK_STAR_OVERLAY", overlayImage.getSubimage(48, 0, 16, 16), true, new Color(255, 255, 255), MCColor.FIREWORK_COLORS);
+            overlaysHashMap.put(fireworkCharge.getName(), fireworkCharge);
+            Overlay potionOverlay = new NormalOverlay("POTION_OVERLAY", overlayImage.getSubimage(32, 32, 16, 16), true, new Color(55, 93, 198), MCColor.POTION_COLORS);
+            overlaysHashMap.put(potionOverlay.getName(), potionOverlay);
+            Overlay spawnEgg = new DualLayerOverlay("SPAWN_EGG", overlayImage.getSubimage(48, 32, 16, 16), true, new Color(255, 255, 255), new Color(255, 255, 255), MCColor.SPAWN_EGG_COLORS);
+            overlaysHashMap.put(spawnEgg.getName(), spawnEgg);
+            Overlay tippedArrow = new NormalOverlay("TIPPED_ARROW_HEAD", overlayImage.getSubimage(0, 48, 16, 16), true, new Color(255, 255, 255), MCColor.POTION_COLORS);
+            overlaysHashMap.put(tippedArrow.getName(), tippedArrow);
+
+            // enchant glint
+            Overlay smallEnchantGlint = new EnchantGlintOverlay("ENCHANT_GLINT_SMALL", overlayImage.getSubimage(32, 0, 16, 16), false);
+            Overlay largeEnchantGlint = new EnchantGlintOverlay("ENCHANT_GLINT_LARGE", overlayImage.getSubimage(32, 0, 16, 16).getScaledInstance(512, 512, Image.SCALE_FAST), false);
+
+            Item.setAvailableOverlays(overlaysHashMap);
+            Item.setSmallEnchantGlint(smallEnchantGlint);
+            Item.setLargeEnchantGlint(largeEnchantGlint);
+        } catch (IOException e) {
+            System.out.println("couldnt load overlays");
+            log.error("Couldn't initialise the overlays for ItemStack Generation");
             log.error(e.getMessage());
             itemsInitialisedCorrectly = false;
         }
