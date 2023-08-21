@@ -323,8 +323,9 @@ public class GeneratorBuilder {
         }
 
         // copying the section of the item sprite sheet to a new image and applying any modifiers (color, enchant glint) to it
-        BufferedImage imagePortion = itemSpriteSheet.getSubimage(itemFound.getX(), itemFound.getY(), IMAGE_WIDTH, IMAGE_HEIGHT);
-        BufferedImage itemStack = new BufferedImage(imagePortion.getColorModel(), imagePortion.getRaster().createCompatibleWritableRaster(IMAGE_WIDTH, IMAGE_HEIGHT), imagePortion.isAlphaPremultiplied(), null);
+        int imageSize = itemFound.getSize();
+        BufferedImage imagePortion = itemSpriteSheet.getSubimage(itemFound.getX(), itemFound.getY(), imageSize, imageSize);
+        BufferedImage itemStack = new BufferedImage(imagePortion.getColorModel(), imagePortion.getRaster().createCompatibleWritableRaster(imageSize, imageSize), imagePortion.isAlphaPremultiplied(), null);
         imagePortion.copyData(itemStack.getRaster());
         itemFound.applyModifiers(itemStack, extraDetails);
         return itemStack;
