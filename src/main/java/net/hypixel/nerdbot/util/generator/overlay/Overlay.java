@@ -6,11 +6,16 @@ import java.util.HashMap;
 
 public abstract class Overlay {
     private final String name;
-    private int x;
-    private int y;
     protected final BufferedImage overlay;
     private final boolean applyIfNoColor;
 
+    /***
+     * Creates an Overlay object which applies color transformations onto an image
+     *
+     * @param name the name of the overlay
+     * @param overlay the image of the overlay
+     * @param applyIfNoColor if the overlay should be applied when no valid color is present
+     */
     public Overlay(String name, BufferedImage overlay, boolean applyIfNoColor) {
         this.name = name;
         this.overlay = overlay;
@@ -25,8 +30,21 @@ public abstract class Overlay {
         return this.applyIfNoColor;
     }
 
-    public abstract void applyColor(BufferedImage image, String color);
+    /***
+     * Applies the overlay to the base image with the color provided
+     *
+     * @param image The image to apply the overlay onto
+     * @param color The color to apply to the image
+     */
+    public abstract void applyOverlay(BufferedImage image, String color);
 
+    /**
+     * Attempts to parse the hex color, returning the default color if it couldn't be parsed
+     *
+     * @param color The color to parse
+     * @param defaultColor The color to display if it couldn't be parsed
+     * @return The resultant color
+     */
     protected Color tryParseColor(String color, Color defaultColor) {
         Color finalColor;
         try {
@@ -71,16 +89,5 @@ public abstract class Overlay {
                 image.setRGB(x, y, newColor);
             }
         }
-    }
-
-    @Override
-    public String toString() {
-        return "Overlay{" +
-            "name='" + name + '\'' +
-            ", x=" + x +
-            ", y=" + y +
-            ", overlay=" + overlay +
-            ", applyIfNoColor=" + applyIfNoColor +
-            '}';
     }
 }

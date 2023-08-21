@@ -4,12 +4,19 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class EnchantGlintOverlay extends Overlay {
+    /***
+     * Creates an Overlay object which applies an enchant glint onto an image
+     *
+     * @param name the name of the overlay
+     * @param overlay the image of the overlay
+     * @param applyIfNoColor if the overlay should be applied when no valid color is present
+     */
     public EnchantGlintOverlay(String name, Image overlay, boolean applyIfNoColor) {
         super(name, convertToBufferedImage(overlay), applyIfNoColor);
     }
 
     @Override
-    public void applyColor(BufferedImage image, String color) {
+    public void applyOverlay(BufferedImage image, String color) {
         for (int y = 0; y < image.getHeight(); y++) {
             for (int x = 0; x < image.getWidth(); x++) {
                 int rgb = image.getRGB(x, y);

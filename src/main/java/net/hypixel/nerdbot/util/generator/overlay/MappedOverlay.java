@@ -8,6 +8,16 @@ public class MappedOverlay extends Overlay {
     private final HashMap<Integer, Integer> colorBinding;
     private final HashMap<String, int[]> colorChoices;
 
+    /***
+     * Creates an Overlay object which applies color transformations onto an image using a pre-defined color map
+     *
+     * @param name the name of the overlay
+     * @param overlay the image of the overlay
+     * @param applyIfNoColor if the overlay should be applied when no valid color is present
+     * @param defaultOverlayColor the default color map of the overlay
+     * @param colorChoices the color map choices
+     * @param colorBinding how the RGB value maps to an index
+     */
     public MappedOverlay(String name, BufferedImage overlay, boolean applyIfNoColor, int[] defaultOverlayColor, HashMap<String, int[]> colorChoices, HashMap<Integer, Integer> colorBinding) {
         super(name, overlay, applyIfNoColor);
 
@@ -17,7 +27,7 @@ public class MappedOverlay extends Overlay {
     }
 
     @Override
-    public void applyColor(BufferedImage image, String color) {
+    public void applyOverlay(BufferedImage image, String color) {
         // do not apply the overlay if there is no default color or color supplied
         if (color.length() == 0 && !this.applyIfNoColor()) {
             return;
@@ -32,7 +42,7 @@ public class MappedOverlay extends Overlay {
      *
      * @param image       the image the modifier is being applied to
      * @param sourceImage the overlay source image
-     * @param color       the color the image should be shifted by
+     * @param color       the color map
      */
     protected void applyModifierOnImage(BufferedImage image, BufferedImage sourceImage, int[] color) {
         for (int y = 0; y < image.getHeight(); y++) {
