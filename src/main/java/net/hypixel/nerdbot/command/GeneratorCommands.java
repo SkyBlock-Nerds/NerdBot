@@ -95,7 +95,7 @@ public class GeneratorCommands extends ApplicationCommand {
         log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "display_image", description = "Draws a Minecraft item into a file")
+    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "display", description = "Draws a Minecraft item into a file")
     public void generateItemImage(GuildSlashEvent event,
                              @AppOption(description = DESC_ITEM_ID, name = "item_id") String itemID,
                              @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraDetails,
