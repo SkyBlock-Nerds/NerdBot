@@ -52,7 +52,7 @@ public class GeneratorStrings {
                         """;
 
     // item gen item help messages
-    public static final String ITEM_BASIC_INFO = "This is a bot used to create custom items to be used in suggestions. You can use the bot with `/%1$s item`, `/%1$s head`, and `/%1$s full`.".formatted(COMMAND_PREFIX);
+    public static final String ITEM_BASIC_INFO = "This is a bot used to create custom items to be used in suggestions. You can use the bot with `/%1$s item` and `/%1$s full`.".formatted(COMMAND_PREFIX);
     public static final String ITEM_INFO_ARGUMENTS = """
                         `item_name`: The name of the item. Defaults to the rarity color, unless the rarity is none.
                         `rarity`: Takes any SkyBlock rarity. Can be left as NONE.
@@ -66,11 +66,13 @@ public class GeneratorStrings {
     public static final String FULL_GEN_INFO = """
                         The `/%1$s full` command allows you to combine multiple renders together to create one full image showing all information about it.
                         
-                        Follow the guides for `/%1$s help`, `/%1$s recipe_help` and `/%1$s head_help` the different parameters you can include.
+                        Follow the guides for `/%1$s display_item_help` for more information about putting a item next to the item lore.
                         `display_item_id`: The Minecraft ID of the item you want to display.
                         `extra_modifiers`: Any extra modifiers for changing how the item displayed will look (i.e. Hex color for changing leather armor color, skull data)
                         
-                        As mentioned in `/%1$s recipe_help`, to display a skull next to the item, set the `display_item_id` to `SKULL`, and set `extra_modifiers` to `<the skin_id or player_name>,<true/false (if the provided id is a player name)>` similar to using `/%1$s head`.
+                        Follow the guide for `/%1s recipe_help` for more information about putting a recipe next to the item lore
+                        `recipe`: A string containing all of the recipe data for slot number, amount and the item name, separated by a `%%%%` between different slots.
+                        `render_background (true/false)`: If you want to display the Minecraft inventory in the background or leave it transparent.
                         """.formatted(COMMAND_PREFIX);
     public static final String ITEM_COLOR_CODES = """
                         The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
@@ -80,7 +82,7 @@ public class GeneratorStrings {
                         """;
     public static final String ITEM_OTHER_INFO = """
                         There is another command `/%1$s parse` which can be used to easily convert the NBT Tag from a Minecraft item into a Generated Image. You can directly copy it from in game using one of the Minecraft Mods.
-                        You can also check out `/%1$s head_help` for more information about rendering items next to your creations!
+                        You can also check out `/%1$s item_image_help` for more information about rendering items next to your creations!
                         Have fun making items! You can click the blue `/%1$s` command above anyone's image to see what command they're using to create their image. Thanks!
                         The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
                         """.formatted(COMMAND_PREFIX);
@@ -92,13 +94,47 @@ public class GeneratorStrings {
     public static final String PLAYER_NOT_FOUND = "It seems that there is no one with the name `%s`";
     public static final String MALFORMED_PLAYER_PROFILE = "There was a weird issue when trying to get the profile data for `%s`";
 
-    // item gen head help messages
-    public static final String HEAD_INFO_BASIC = "The command `/%s head` will display a rendered Minecraft Head from a skin or player of your choice!".formatted(COMMAND_PREFIX);
-    public static final String HEAD_INFO_ARGUMENTS = """
-                        `skin_id:` The skin ID or the player name of the person you wish to grab the skin from. (This is the string written after `http://textures.minecraft.net/texture/...`
-                        `is_player_head:` set to True if the skin ID is a player's name
+    // item gen display item help messages
+    public static final String DISPLAY_ITEM_INFO_BASIC = "The command `/%s display_item` will display a rendered Minecraft Item or Player Head!".formatted(COMMAND_PREFIX);
+    public static final String DISPLAY_ITEM_INFO_ARGUMENTS = """
+                        `item_id`: The ID of the Minecraft item that you want to display.
+                        `extra_modifiers`: Any extra modifiers for changing how the item displayed will look (i.e. Hex color for changing leather armor color, skull data)
                         """;
-    public static final String HEAD_INFO_OTHER_INFORMATION = """
+
+    public static final String DISPLAY_ITEM_EXTRA_ATTRIBUTES_INFO = "The `extra_modifiers` is where you put any attributes which will change the displayed item's appearance. Each of the extra modifiers should be separated by a comma.\n" +
+        "Below are some of the modifiers you can apply to items.\n" +
+        "- Hex Code: A hex color code of the color (#000000)\n" +
+        "- MC Color: Minecraft Dye Colors (cyan, magenta, lime)\n" +
+        "- Armor Trim: Name of armor trim color (iron, gold, lapis)\n" +
+        "- Potion Name: Color used by a MC potion (speed, instant_health)\n" +
+        "- Mob Name: Name of a MC Mob (allay, zombie, ghast)\n\n" +
+        "**Items with Modifiers**\n" +
+        "*Leather Armor*:\n" +
+        "- Armor Color: Hex Code or MC Color\n" +
+        "- Armor Trim: Armor Trim\n" +
+        "*Armor*:\n" +
+        "- Armor Trim: Armor Trim\n" +
+        "*Firework Star*:\n" +
+        "- Accent Color: Hex Code or MC Color\n" +
+        "*Potion*:\n" +
+        "- Liquid Color: Hex Code or Potion Name\n" +
+        "*Tipped Arrow*:\n" +
+        "- Arrow Color: Hex Color or Potion Name\n" +
+        "*Spawn Egg*: (one group)\n" +
+        "- Overall Egg Color: Mob Name\n\n" +
+        "**Enchant Glint**\n" +
+        "Simply put `enchanted` as the last attribute and the item will have it's enchant glint applied.";
+    public static final String DISPLAY_ITEM_INFO_PLAYER_HEAD = "As mentioned previously the `display_item` command can render Player Heads as well!\n" +
+        "Firstly set the `item_id` to `player_skull` so that the command knows you want to display a player head.\n" +
+        "Inside the `extra_modifiers` parameters, you would need to supply how you want the skin to be retrieved, which are as follows.\n\n" +
+        "**By Player Name**\n" +
+        "Simply type the Minecraft name of the player that you want the skin of.\n" +
+        "Example: `%s` as the extra modifier will render your Minecraft skin as a head!\n\n" +
+        "**By Skin ID**\n" +
+        "This is used if you find a Minecraft Skin online somewhere. Simply copy the Minecraft Skin ID for the skin you want to render. If they give you a Skin Texture value, you can convert it from a Base64 string and grab that ID.\n" +
+        "Example: `82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c` as the extra modifier will render a Manaflux Power Orb head!\n" +
+        "*Note*: You do not need to include the `http://textures.minecraft.net/texture/` at the start.";
+    public static final String DISPLAY_ITEM_OTHER_INFO = """
                         If you are feeling extra spicy, you can combine these two elements by using the `/%s full` command with arguments mentioned previously.
                         The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
                         """.formatted(COMMAND_PREFIX);
@@ -133,10 +169,7 @@ public class GeneratorStrings {
                                `extra_details` (optional): Any extra attributes that the item may have.
            
                                This item can be displayed as enchanted by using `ENCHANT` inside the extra details parameter. Example: `5,26,DEAD_BUSH,ENCHANT` will display an Enchanted Dead Bush in the middle slot (5) with 26 of them.
-                               
-                               If you want to use a skull for one of the items, use `SKULL` as the name of the item, then put `<the skin id or player name>,<true/false if this is a player name>`in the extra details.
                                """;
-    public static String RECIPE_INFO_OTHER_INFORMATION = "No items with overlays? They probably didn't get initialised correctly. Feel free to contact a Bot Developer about it"; // generated after the GeneratorBuilder has been constructed
 
     // stat symbols text
     public static final String STAT_SYMBOLS;
@@ -147,19 +180,13 @@ public class GeneratorStrings {
         Gemstone[] gemstones = Gemstone.VALUES;
         Rarity[] rarities = Rarity.VALUES;
 
-        StringBuilder availableStatCodes = new StringBuilder(200);
-        availableStatCodes.append("You used an invalid option: `%s`");
-
-        availableStatCodes.append("\n\n**Valid Colors:**\n");
-        availableStatCodes.append(Arrays.stream(colors).map(color -> color + " (`&" + color.getColorCode() + "` or `%%%%" + color + "%%%%`)").collect(Collectors.joining(", ")));
-
-        availableStatCodes.append("\n\n**Valid Stats:**\n");
-        availableStatCodes.append(Arrays.stream(stats).map(Stat::toString).collect(Collectors.joining(", ")));
-
-        availableStatCodes.append("\n\n**Valid Gemstones:**\n");
-        availableStatCodes.append(Arrays.stream(gemstones).map(gemstone -> gemstone + " (`%%%%" + gemstone + "%%%%`)").collect(Collectors.joining(", ")));
-
-        INVALID_STAT_CODE = availableStatCodes.toString();
+        INVALID_STAT_CODE = "You used an invalid option: `%s`" +
+            "\n\n**Valid Colors:**\n" +
+            Arrays.stream(colors).map(color1 -> color1 + " (`&" + color1.getColorCode() + "` or `%%%%" + color1 + "%%%%`)").collect(Collectors.joining(", ")) +
+            "\n\n**Valid Stats:**\n" +
+            Arrays.stream(stats).map(Stat::toString).collect(Collectors.joining(", ")) +
+            "\n\n**Valid Gemstones:**\n" +
+            Arrays.stream(gemstones).map(gemstone -> gemstone + " (`%%%%" + gemstone + "%%%%`)").collect(Collectors.joining(", "));
 
         StringBuilder availableMinecraftCodes = new StringBuilder(100);
         availableMinecraftCodes.append("You used an invalid character code `%c`.\nValid color codes include...\n");
