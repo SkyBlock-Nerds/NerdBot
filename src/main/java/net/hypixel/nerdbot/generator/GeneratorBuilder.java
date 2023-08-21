@@ -371,25 +371,24 @@ public class GeneratorBuilder {
      * @return              a rendered minecraft image
      */
     @Nullable
-    public BufferedImage buildUnspecifiedItem(GuildSlashEvent event, String itemName, String extraDetails) {
+    public BufferedImage buildUnspecifiedItem(GuildSlashEvent event, String itemName, String extraDetails, boolean scaleImage) {
         BufferedImage itemImage;
+        if (extraDetails == null) {
+            extraDetails = "";
+        }
         // checking if the user wanted to build something that isn't a skull
         if (!itemName.equalsIgnoreCase("skull")) {
             itemImage = buildItemStack(event, itemName, extraDetails.split(","));
         } else {
             int splitIndex = extraDetails.indexOf(",");
 
-            // getting the skin id/player name and if it is a player name to build the head
-            String textureID;
-            boolean isPlayerHead;
-            if (splitIndex == -1) {
-                textureID = extraDetails;
-                isPlayerHead = false;
-            } else {
-                textureID = extraDetails.substring(0, splitIndex);
-                isPlayerHead = Boolean.parseBoolean(extraDetails.substring(splitIndex + 1));
+            if (scaleImage && itemImage != null && itemImage.getWidth() <= 16) {
+                Image copiedSection = itemImage.getScaledInstance(itemImage.getWidth() * 20, itemImage.getHeight() * 20, Image.SCALE_FAST);
+                itemImage = new BufferedImage(itemImage.getWidth() * 20, itemImage.getHeight() * 20, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = itemImage.createGraphics();
+                g2d.drawImage(copiedSection, 0, 0, null);
+                g2d.dispose();
             }
-            itemImage = buildHead(event, textureID, isPlayerHead);
         }
 
         return itemImage;

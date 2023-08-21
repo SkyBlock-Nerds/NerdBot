@@ -106,9 +106,9 @@ public class GeneratorCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).complete();
 
-        BufferedImage head = builder.buildHead(event, skinId, isPlayerName);
-        if (head != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(head))).setEphemeral(hidden).queue();
+        BufferedImage item = builder.buildUnspecifiedItem(event, itemID, extraDetails, true);
+        if (item != null) {
+            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(item))).setEphemeral(hidden).queue();
         }
 
         // Log item gen activity
@@ -160,7 +160,7 @@ public class GeneratorCommands extends ApplicationCommand {
         // building the item for the which is beside the description
         BufferedImage generatedItem = null;
         if (itemID != null) {
-            generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers);
+           generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, false);
             if (generatedItem == null) {
                 return;
             }
@@ -364,7 +364,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
         // checking if an item should be displayed alongside the description
         if (includeItem) {
-            BufferedImage generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers);
+            BufferedImage generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, false);
             if (generatedItem == null) {
                 return;
             }
