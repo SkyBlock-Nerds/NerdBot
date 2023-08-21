@@ -69,13 +69,13 @@ public class Item {
             for (int i = 0; i < overlays.length; i++) {
                 String color = availableModifiers.length > i ? availableModifiers[i] : "";
                 System.out.println(overlays[i] + " " + color);
-                AVAILABLE_OVERLAYS.get(overlays[i]).applyColor(image, color);
+                AVAILABLE_OVERLAYS.get(overlays[i]).applyOverlay(image, color);
             }
         }
 
         //applies the enchantment glint if "enchant" is present
         if (Arrays.stream(availableModifiers).anyMatch(element -> element.toLowerCase().contains("enchant"))) {
-            (image.getWidth() == 16 ? SMALL_ENCHANT_GLINT : LARGE_ENCHANT_GLINT).applyColor(image, "#7c20ff");
+            (image.getWidth() == 16 ? SMALL_ENCHANT_GLINT : LARGE_ENCHANT_GLINT).applyOverlay(image, "#7c20ff");
         }
     }
 

@@ -215,7 +215,7 @@ public class GeneratorCommands extends ApplicationCommand {
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
     public void parseItemDescription(GuildSlashEvent event,
                                      @AppOption(description = DESC_PARSE_ITEM, name = "item_nbt") String itemNBT,
-                                     @Optional @AppOption (description = DESC_INCLUDE_ITEM) Boolean includeItem,
+                                     @Optional @AppOption(description = DESC_INCLUDE_ITEM) Boolean includeItem,
                                      @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden
     ) throws IOException {
         if (isIncorrectChannel(event)) {
