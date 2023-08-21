@@ -623,7 +623,7 @@
     {"name": "sweet_berries", "x": 1744, "y": 16, "size": 16},
     {"name": "tadpole_bucket", "x": 1760, "y": 16, "size": 16},
     {"name": "tall_grass", "x": 1776, "y": 16, "size": 16},
-    {"name": "template_spawn_egg", "x": 1792, "y": 16, "size": 16, "overlays": ["SPAWN_EGG"]},
+    {"name": "spawn_egg", "x": 1792, "y": 16, "size": 16, "overlays": ["SPAWN_EGG"]},
     {"name": "tide_armor_trim_smithing_template", "x": 1808, "y": 16, "size": 16},
     {"name": "tipped_arrow", "x": 1824, "y": 16, "size": 16, "overlays": ["TIPPED_ARROW_HEAD"]},
     {"name": "tnt_minecart", "x": 1840, "y": 16, "size": 16},
