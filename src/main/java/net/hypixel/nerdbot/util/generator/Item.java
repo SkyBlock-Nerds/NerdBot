@@ -68,7 +68,6 @@ public class Item {
         if (overlays != null) {
             for (int i = 0; i < overlays.length; i++) {
                 String color = availableModifiers.length > i ? availableModifiers[i] : "";
-                System.out.println(overlays[i] + " " + color);
                 AVAILABLE_OVERLAYS.get(overlays[i]).applyOverlay(image, color);
             }
         }

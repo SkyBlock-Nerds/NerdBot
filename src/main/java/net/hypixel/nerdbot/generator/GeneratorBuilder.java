@@ -137,7 +137,6 @@ public class GeneratorBuilder {
             Item.setSmallEnchantGlint(smallEnchantGlint);
             Item.setLargeEnchantGlint(largeEnchantGlint);
         } catch (IOException e) {
-            System.out.println("couldnt load overlays");
             log.error("Couldn't initialise the overlays for ItemStack Generation");
             log.error(e.getMessage());
             itemsInitialisedCorrectly = false;
