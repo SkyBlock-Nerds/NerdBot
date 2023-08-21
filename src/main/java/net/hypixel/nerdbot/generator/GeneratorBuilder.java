@@ -98,40 +98,40 @@ public class GeneratorBuilder {
 
             // leather armor
             Color leatherArmorColor = new Color(160, 101, 63);
-            Overlay leatherHelmet = new NormalOverlay("LEATHER_HELMET", overlayImage.getSubimage(48, 16, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
+            Overlay leatherHelmet = new NormalOverlay("LEATHER_HELMET", overlayImage.getSubimage(112, 0, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
             overlaysHashMap.put(leatherHelmet.getName(), leatherHelmet);
-            Overlay leatherChestplate = new NormalOverlay("LEATHER_CHESTPLATE", overlayImage.getSubimage(32, 16, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
+            Overlay leatherChestplate = new NormalOverlay("LEATHER_CHESTPLATE", overlayImage.getSubimage(96, 0, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
             overlaysHashMap.put(leatherChestplate.getName(), leatherChestplate);
-            Overlay leatherLeggings = new NormalOverlay("LEATHER_LEGGINGS", overlayImage.getSubimage(0, 32, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
+            Overlay leatherLeggings = new NormalOverlay("LEATHER_LEGGINGS", overlayImage.getSubimage(128, 0, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
             overlaysHashMap.put(leatherLeggings.getName(), leatherLeggings);
-            Overlay leatherBoots = new NormalOverlay("LEATHER_BOOTS", overlayImage.getSubimage(16, 16, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
+            Overlay leatherBoots = new NormalOverlay("LEATHER_BOOTS", overlayImage.getSubimage(80, 0, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
             overlaysHashMap.put(leatherBoots.getName(), leatherBoots);
 
 
             // armor trims
             int[] defaultTrimColors = new int[] {-2039584, -4144960, -6250336, -8355712, -10461088, -12566464, -14671840, -16777216};
-            Overlay helmetTrim = new MappedOverlay("HELMET_TRIM", overlayImage.getSubimage(0, 16, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
+            Overlay helmetTrim = new MappedOverlay("HELMET_TRIM", overlayImage.getSubimage(64, 0, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
             overlaysHashMap.put(helmetTrim.getName(), helmetTrim);
             Overlay chestplateTrim = new MappedOverlay("CHESTPLATE_TRIM", overlayImage.getSubimage(16, 0, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
             overlaysHashMap.put(chestplateTrim.getName(), chestplateTrim);
-            Overlay leggingsTrim = new MappedOverlay("LEGGINGS_TRIM", overlayImage.getSubimage(16, 32, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
+            Overlay leggingsTrim = new MappedOverlay("LEGGINGS_TRIM", overlayImage.getSubimage(144, 0, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
             overlaysHashMap.put(leggingsTrim.getName(), leggingsTrim);
-            Overlay bootsTrim = new MappedOverlay("BOOTS_TRIM", overlayImage.getSubimage(16, 32, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
+            Overlay bootsTrim = new MappedOverlay("BOOTS_TRIM", overlayImage.getSubimage(0, 0, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
             overlaysHashMap.put(bootsTrim.getName(), bootsTrim);
 
             // other items
             Overlay fireworkCharge = new NormalOverlay("FIREWORK_STAR_OVERLAY", overlayImage.getSubimage(48, 0, 16, 16), true, new Color(255, 255, 255), MCColor.FIREWORK_COLORS);
             overlaysHashMap.put(fireworkCharge.getName(), fireworkCharge);
-            Overlay potionOverlay = new NormalOverlay("POTION_OVERLAY", overlayImage.getSubimage(32, 32, 16, 16), true, new Color(55, 93, 198), MCColor.POTION_COLORS);
+            Overlay potionOverlay = new NormalOverlay("POTION_OVERLAY", overlayImage.getSubimage(160, 0, 16, 16), true, new Color(55, 93, 198), MCColor.POTION_COLORS);
             overlaysHashMap.put(potionOverlay.getName(), potionOverlay);
-            Overlay spawnEgg = new DualLayerOverlay("SPAWN_EGG", overlayImage.getSubimage(48, 32, 16, 16), true, new Color(255, 255, 255), new Color(255, 255, 255), MCColor.SPAWN_EGG_COLORS);
+            Overlay spawnEgg = new DualLayerOverlay("SPAWN_EGG", overlayImage.getSubimage(176, 0, 16, 16), true, new Color(255, 255, 255), new Color(255, 255, 255), MCColor.SPAWN_EGG_COLORS);
             overlaysHashMap.put(spawnEgg.getName(), spawnEgg);
-            Overlay tippedArrow = new NormalOverlay("TIPPED_ARROW_HEAD", overlayImage.getSubimage(0, 48, 16, 16), true, new Color(255, 255, 255), MCColor.POTION_COLORS);
+            Overlay tippedArrow = new NormalOverlay("TIPPED_ARROW_HEAD", overlayImage.getSubimage(192, 0, 16, 16), true, new Color(255, 255, 255), MCColor.POTION_COLORS);
             overlaysHashMap.put(tippedArrow.getName(), tippedArrow);
 
             // enchant glint
             Overlay smallEnchantGlint = new EnchantGlintOverlay("ENCHANT_GLINT_SMALL", overlayImage.getSubimage(32, 0, 16, 16), false);
-            Overlay largeEnchantGlint = new EnchantGlintOverlay("ENCHANT_GLINT_LARGE", overlayImage.getSubimage(32, 0, 16, 16).getScaledInstance(512, 512, Image.SCALE_FAST), false);
+            Overlay largeEnchantGlint = new EnchantGlintOverlay("ENCHANT_GLINT_LARGE", overlayImage.getSubimage(0, 16, 512, 512), false);
 
             Item.setAvailableOverlays(overlaysHashMap);
             Item.setSmallEnchantGlint(smallEnchantGlint);

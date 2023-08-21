@@ -11,8 +11,8 @@ public class EnchantGlintOverlay extends Overlay {
      * @param overlay the image of the overlay
      * @param applyIfNoColor if the overlay should be applied when no valid color is present
      */
-    public EnchantGlintOverlay(String name, Image overlay, boolean applyIfNoColor) {
-        super(name, convertToBufferedImage(overlay), applyIfNoColor);
+    public EnchantGlintOverlay(String name, BufferedImage overlay, boolean applyIfNoColor) {
+        super(name, overlay, applyIfNoColor);
     }
 
     @Override
@@ -33,13 +33,5 @@ public class EnchantGlintOverlay extends Overlay {
                 image.setRGB(x, y, finalColor.getRGB());
             }
         }
-    }
-
-    private static BufferedImage convertToBufferedImage(Image image) {
-        BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = bufferedImage.createGraphics();
-        g2d.drawImage(image, 0, 0, null);
-        g2d.dispose();
-        return bufferedImage;
     }
 }
