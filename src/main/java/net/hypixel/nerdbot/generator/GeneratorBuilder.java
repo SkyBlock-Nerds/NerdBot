@@ -286,7 +286,7 @@ public class GeneratorBuilder {
      */
     @Nullable
     private String getPlayerHeadURL(GuildSlashEvent event, String playerName) {
-        playerName = stripString(playerName);
+        playerName = playerName.replaceAll("[^a-zA-Z0-9_]", "");
 
         JsonObject userUUID;
         try {
@@ -297,7 +297,7 @@ public class GeneratorBuilder {
         }
 
         if (userUUID == null || userUUID.get("id") == null) {
-            event.getHook().sendMessage(PLAYER_NOT_FOUND).queue();
+            event.getHook().sendMessage(String.format(PLAYER_NOT_FOUND, playerName)).queue();
             return null;
         }
 
