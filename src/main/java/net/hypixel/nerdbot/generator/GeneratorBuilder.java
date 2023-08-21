@@ -377,10 +377,15 @@ public class GeneratorBuilder {
             extraDetails = "";
         }
         // checking if the user wanted to build something that isn't a skull
-        if (!itemName.equalsIgnoreCase("skull")) {
-            itemImage = buildItemStack(event, itemName, extraDetails.split(","));
-        } else {
-            int splitIndex = extraDetails.indexOf(",");
+        if (itemName.equalsIgnoreCase("player_head") || itemName.equalsIgnoreCase("skull")) {
+            if (extraDetails.length() > 0) {
+                itemImage = buildHead(event, extraDetails);
+            } else {
+                itemImage = buildItemStack(event, "player_head", extraDetails);
+            }
+        }
+        else {
+            itemImage = buildItemStack(event, itemName, extraDetails);
 
             if (scaleImage && itemImage != null && itemImage.getWidth() <= 16) {
                 Image copiedSection = itemImage.getScaledInstance(itemImage.getWidth() * 20, itemImage.getHeight() * 20, Image.SCALE_FAST);
