@@ -157,7 +157,7 @@ public class StringColorParser {
                 }
                 // checking if the user is using normal mc character codes
                 else if (description.charAt(charIndex) == '&' && description.charAt(charIndex + 1) != ' ') {
-                    char selectedCode = description.charAt(charIndex + 1);
+                    char selectedCode = Character.toLowerCase(description.charAt(charIndex + 1));
                     // checking that the color code is real color
                     boolean foundMatchingColor = false;
                     for (MCColor mcColor : colors) {
@@ -183,7 +183,7 @@ public class StringColorParser {
                     }
 
                     // creating error message for valid codes
-                    this.errorString = GeneratorStrings.INVALID_MINECRAFT_COLOR_CODE;
+                    this.errorString = GeneratorStrings.INVALID_MINECRAFT_COLOR_CODE.formatted(selectedCode);
                     return;
                 }
                 // checking if the current character is a new line
