@@ -141,7 +141,7 @@ public class GeneratorStrings {
 
                        **By Skin ID**
                        This is used if you find a Minecraft Skin online somewhere. Simply copy the Minecraft Skin ID for the skin you want to render. If they give you a Skin Texture value, you can convert it from a Base64 string and grab that ID.
-                       Example: `82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c` as the extra modifier will render a Manaflux Power Orb head!
+                       Example: `82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c` as the extra modifier will render a Mana Flux Power Orb head!
 
                        *Note*: You do not need to include the `http://textures.minecraft.net/texture/` at the start.
                        """;
