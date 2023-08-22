@@ -42,7 +42,8 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final Color[] EMBED_COLORS = new Color[] {
         new Color(167, 65, 92),
         new Color(26, 107, 124),
-        new Color(151, 150, 164),
+        new Color(137, 222, 74),
+        new Color(151, 150, 164)
     };
     private final GeneratorBuilder builder;
 
@@ -413,6 +414,7 @@ public class GeneratorCommands extends ApplicationCommand {
         EmbedBuilder infoBuilder = new EmbedBuilder();
         EmbedBuilder colorsBuilder = new EmbedBuilder();
         EmbedBuilder otherInfoBuilder = new EmbedBuilder();
+        EmbedBuilder examplesBuilder = new EmbedBuilder();
 
         infoBuilder.setColor(EMBED_COLORS[0])
             .setTitle("Item Generation")
@@ -426,10 +428,14 @@ public class GeneratorCommands extends ApplicationCommand {
         otherInfoBuilder.setColor(EMBED_COLORS[2])
             .addField("Other Information", ITEM_OTHER_INFO, true);
 
+        examplesBuilder.setColor(EMBED_COLORS[3])
+            .addField("Item Gen Examples", ITEM_EXAMPLES, true);
+
         Collection<MessageEmbed> embeds = new ArrayList<>();
         embeds.add(infoBuilder.build());
         embeds.add(colorsBuilder.build());
         embeds.add(otherInfoBuilder.build());
+        embeds.add(examplesBuilder.build());
 
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
@@ -458,7 +464,9 @@ public class GeneratorCommands extends ApplicationCommand {
             .addField("Optional Arguments", DISPLAY_INFO_OPTIONAL_ARGUMENTS, false);
 
         itemModifiersBuilder.setColor(EMBED_COLORS[1])
-            .addField("Extra Modifiers - Item Modifiers", DISPLAY_EXTRA_ATTRIBUTES_INFO, false);
+            .addField("Extra Modifiers", DISPLAY_INFO_EXTRA_MODIFIERS, false)
+            .addField("Items with Modifiers", DISPLAY_INFO_MODIFIERS, false)
+            .addField("Enchant Glint", DISPLAY_INFO_ENCHANT_GLINT, false);
 
         headModifiersBuilder.setColor(EMBED_COLORS[2])
             .addField("Head Generation", DISPLAY_ITEM_INFO_PLAYER_HEAD.formatted(stripString(event.getMember().getEffectiveName())), false);

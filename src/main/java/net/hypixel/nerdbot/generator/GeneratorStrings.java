@@ -27,8 +27,6 @@ public class GeneratorStrings {
     public static final String DESC_PADDING = "Sets the transparent padding around the image (0 = none, 1 = discord)";
     public static final String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (1 - " + StringColorParser.MAX_FINAL_LINE_LENGTH + ") default " + StringColorParser.MAX_STANDARD_LINE_LENGTH;
     public static final String DESC_ITEM_ID = "The name of the Minecraft item you want to display";
-    public static final String DESC_HEAD_ID = "The skin ID or player name (set is_player_name to True if it is a player's name)";
-    public static final String DESC_IS_PLAYER_NAME = "If the skin ID is a player's username";
     public static final String DESC_HIDDEN = "If you only want the generated image visible to be yourself. (Deleted on client restart!)";
     public static final String DESC_PARSE_ITEM = "The items NBT Data from in game";
     public static final String DESC_INCLUDE_ITEM = "Include the item along with the parsed description";
@@ -41,9 +39,10 @@ public class GeneratorStrings {
                        Here you can use different commands to generate Minecraft related images which can help with designing content within Minecraft.
                        
                        You can click the blue `/%1$s` command above anyone's image to see what command they're using to create their image.
-                       
+                       All of the item generator commands also have a `hidden` parameter. This can be set to `True` which will only send the image to you so that you can get some practice at making items, or design items in secret! If you do run commands as `hidden`, the image will disappear from chat whenever you restart your Discord client.
                        The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues, or ideas for improvements
-                       Bust most importantly, have fun making items!
+                       
+                       But most importantly, have fun making items!
                        """.formatted(COMMAND_PREFIX);
     public static final String GENERAL_HELP = """
                        Item Description Generation   ->   `/%1$s help item`
@@ -52,7 +51,6 @@ public class GeneratorStrings {
                        Combined Item Generation      ->   `/%1$s help full`
                        Parse NBT to Command          ->   `/%1$s help parse`
                        """.formatted(COMMAND_PREFIX);
-
 
     // item gen item messages
     public static final String INVALID_RARITY; // generated in static constructor
@@ -79,12 +77,21 @@ public class GeneratorStrings {
                         The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
                         You can use this same format for stats, such as `%%%%PRISTINE%%%%`. This format can also have numbers, where `%%%%PRISTINE:+1%%%%` will become "+1 ✧ Pristine".
                         If you just want to get the icon for a specific stat, you can use `%%%%&PRISTINE%%%%` to automatically format it to the correct color, or retrieve it manually from the `/%s help symbols` command.
+                        Another coloring shortcut you can use, such as `%%%%GEM_TOPAZ%%%%`, adding the `[✧]` gemstone slot into the item.
                         """.formatted(COMMAND_PREFIX);
 
     public static final String ITEM_OTHER_INFO = """
                         The command will automatically soft-wrap text on your image so that you don't have to. You can change where this begins wrapping by using the `max_line_length` parameter. However, you can move your text to a newline by typing `\\n`.
                         There is also a line break placed at the before the rarity text. You can remove this line by setting the `disable_rarity_linebreak` argument to True.
                         """;
+
+    public static final String ITEM_EXAMPLES = """
+                       **Creating a Pancake Maker**
+                       `/%1$s item item_name: Pancake Maker rarity: legendary item_lore: Creates pancakes! \\n\\n %%%%gold%%%%Item Ability: Batter Up! %%%%yellow%%%%%%%%bold%%%%RIGHT CLICK\\n%%%%gray%%%%Generates %%%%red%%%% 2 %%%%gray%%%%pancakes. When consumed, heal for %%%%health:+150%%%%%%%%gray%%%% and gain %%%%strength:20%%%% for 3 seconds.\\n%%%%dark_gray%%%%Mana Cost: %%%%dark_aqua%%%%75 hidden: true`
+                       
+                       **Creating a Aspect of the Pancake**
+                       `/%1$s item item_name: Aspect of the Waffle rarity: EPIC item_lore: %%%%GEM_COMBAT%%%% %%%%GEM_COMBAT%%%%\\n&7Damage: &c+100\\n&7Strength: &c+100\\n &7Magic Find: &a+5\\n\\n%%%%ABILITY:Electro Waffle:RIGHT CLICK%%%%\\n&7Launch a &aWaffle &7at your enemies dealing &c50,000 &7damage and electrifiying them dealing &c1,000 &7damage per second.\\n%%%%MANA_COST:30%%%%\\n%%%%COOLDOWN:10s%%%%\\n\\n&8&oWait 'till the music begins.\\n\\n%%%%REFORGABLE%%%% type: SWORD disable_rarity_linebreak: true max_line_length: 37 hidden: true`
+                       """.formatted(COMMAND_PREFIX);
 
     // item gen head messages
     public static final String MALFORMED_HEAD_URL = "It seems that there is something wrong with the URL that was entered on the developer side of it. Please contact one of the Bot Developers!";
@@ -97,44 +104,47 @@ public class GeneratorStrings {
     public static final String DISPLAY_INFO_BASIC = "The command `/%s display` will display a rendered Minecraft Item or Player Head!".formatted(COMMAND_PREFIX);
     public static final String DISPLAY_INFO_ARGUMENTS = "`item_id`: The ID of the Minecraft item that you want to display.";
     public static final String DISPLAY_INFO_OPTIONAL_ARGUMENTS = "`extra_modifiers`: Any extra modifiers for changing how the item displayed will look (i.e. Hex color for changing leather armor color, skull data)";
+    public static final String DISPLAY_INFO_EXTRA_MODIFIERS = """
+                       The `extra_modifiers` is where you put any attributes which will change the displayed item's appearance, each separated by a comma.
+                       Below are some of the modifiers you can apply to items.
+                       - Hex Code: A hex color code of the color (#000000)
+                       - MC Color: Minecraft Dye Colors (cyan, magenta, lime)
+                       - Armor Trim: Name of armor trim color (iron, gold, lapis)
+                       - Potion Name: Color used by a MC potion (speed, instant_health)
+                       - Mob Name: Name of a MC Mob (allay, zombie, ghast)""";
+    public static final String DISPLAY_INFO_MODIFIERS = """
+                       *Leather Armor*:
+                       - Armor Color: Hex Code or MC Color
+                       - Armor Trim: Armor Trim
+                       *Armor*:
+                       - Armor Trim: Armor Trim
+                       *Firework Star*:
+                       - Accent Color: Hex Code or MC Color
+                       *Potion*:
+                       - Liquid Color: Hex Code or Potion Name
+                       *Tipped Arrow*:
+                       - Arrow Color: Hex Color or Potion Name
+                       *Spawn Egg*: (one group)
+                       - Overall Egg Color: Mob Name
+                       *Player Skull*
+                       - Minecraft Skin ID or Player Name
+                       """;
+    public static final String DISPLAY_INFO_ENCHANT_GLINT = """
+                       Items can be displayed as enchanted by using `enchanted` as the last modifier.
+                       """;
+    public static final String DISPLAY_ITEM_INFO_PLAYER_HEAD = """
+                       As mentioned previously the `display_item` command can render Player Heads as well! Firstly set the `item_id` to `player_skull` so that the command knows you want to display a player head. Inside the `extra_modifiers` parameters, you would need to supply how you want the skin to be retrieved, which are as follows.
 
-    public static final String DISPLAY_EXTRA_ATTRIBUTES_INFO = "The `extra_modifiers` is where you put any attributes which will change the displayed item's appearance. Each of the extra modifiers should be separated by a comma.\n" +
-        "Below are some of the modifiers you can apply to items.\n" +
-        "- Hex Code: A hex color code of the color (#000000)\n" +
-        "- MC Color: Minecraft Dye Colors (cyan, magenta, lime)\n" +
-        "- Armor Trim: Name of armor trim color (iron, gold, lapis)\n" +
-        "- Potion Name: Color used by a MC potion (speed, instant_health)\n" +
-        "- Mob Name: Name of a MC Mob (allay, zombie, ghast)\n\n" +
-        "**Items with Modifiers**\n" +
-        "*Leather Armor*:\n" +
-        "- Armor Color: Hex Code or MC Color\n" +
-        "- Armor Trim: Armor Trim\n" +
-        "*Armor*:\n" +
-        "- Armor Trim: Armor Trim\n" +
-        "*Firework Star*:\n" +
-        "- Accent Color: Hex Code or MC Color\n" +
-        "*Potion*:\n" +
-        "- Liquid Color: Hex Code or Potion Name\n" +
-        "*Tipped Arrow*:\n" +
-        "- Arrow Color: Hex Color or Potion Name\n" +
-        "*Spawn Egg*: (one group)\n" +
-        "- Overall Egg Color: Mob Name\n\n" +
-        "**Enchant Glint**\n" +
-        "Simply put `enchanted` as the last attribute and the item will have it's enchant glint applied.";
-    public static final String DISPLAY_ITEM_INFO_PLAYER_HEAD = "As mentioned previously the `display_item` command can render Player Heads as well!\n" +
-        "Firstly set the `item_id` to `player_skull` so that the command knows you want to display a player head.\n" +
-        "Inside the `extra_modifiers` parameters, you would need to supply how you want the skin to be retrieved, which are as follows.\n\n" +
-        "**By Player Name**\n" +
-        "Simply type the Minecraft name of the player that you want the skin of.\n" +
-        "Example: `%s` as the extra modifier will render your Minecraft skin as a head!\n\n" +
-        "**By Skin ID**\n" +
-        "This is used if you find a Minecraft Skin online somewhere. Simply copy the Minecraft Skin ID for the skin you want to render. If they give you a Skin Texture value, you can convert it from a Base64 string and grab that ID.\n" +
-        "Example: `82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c` as the extra modifier will render a Manaflux Power Orb head!\n\n" +
-        "*Note*: You do not need to include the `http://textures.minecraft.net/texture/` at the start.";
-    public static final String DISPLAY_ITEM_OTHER_INFO = """
-                        If you are feeling extra spicy, you can combine these two elements by using the `/%s full` command with arguments mentioned previously.
-                        The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
-                        """.formatted(COMMAND_PREFIX);
+                       **By Player Name**
+                       Simply type the Minecraft name of the player that you want the skin of.
+                       Example: `%s` as the extra modifier will render your Minecraft skin as a head!
+
+                       **By Skin ID**
+                       This is used if you find a Minecraft Skin online somewhere. Simply copy the Minecraft Skin ID for the skin you want to render. If they give you a Skin Texture value, you can convert it from a Base64 string and grab that ID.
+                       Example: `82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c` as the extra modifier will render a Manaflux Power Orb head!
+
+                       *Note*: You do not need to include the `http://textures.minecraft.net/texture/` at the start.
+                       """;
 
     // item gen parse messages
     public static final String MISSING_ITEM_NBT = "It seems that you haven't copied the item's NBT from in game, or is in another format. (Missing NBT Element: `%s`)";
@@ -148,6 +158,7 @@ public class GeneratorStrings {
     public static final String ITEM_PARSE_INFO = "The /%1$s command is extremely useful for being able to copy the NBT of items from in game and convert them into an Item Gen command so that you can modify them.\nUsing this can be extremely helpful for newer users as they will have a base to work from, or easily allows you to modify an existing item for rewording or upgrades.".formatted(COMMAND_PREFIX);
     public static final String ITEM_PARSE_ARGUMENTS = "`item_nbt`: The Minecraft NBT of the item (must be copied how you have it in your inventory)";
     public static final String ITEM_PARSE_OPTIONAL_ARGUMENTS = "`include_item (true/false)`: If you want to display the item along side the parsed image.";
+
     // item gen recipe messages
     public static final String UNKNOWN_EXTRA_DETAILS = "Not exactly sure what `%s` (extra_details: `\"%s\"`). Maybe you didn't write its name correctly or forgot to add %%%% separators.";
     public static final String MISSING_PARSED_RECIPE = "Did you even try to make a parsed recipe? Because I don't see the separator anywhere.";
@@ -174,14 +185,12 @@ public class GeneratorStrings {
     public static final String RECIPE_INFO_EXAMPLES = """
                                Overflux Power Orb Recipe Command
                                (Showcases enchanted items and player head fetched from a skin id)
-                               `/gen recipe recipe: 1,32,gold_nugget,enchant %% 3,32,gold_nugget,enchant%% 7,32,gold_nugget,enchant%% 9,32,gold_nugget,enchant %% 2,1,quartz %% 4,8,redstone_block,enchant %% 6,8,redstone_block,enchant %% 8,8,redstone_block,enchant %% 5,1,PLAYER_HEAD,82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c`
+                               `/%1$s recipe recipe: 1,32,gold_nugget,enchant %%%% 3,32,gold_nugget,enchant%%%% 7,32,gold_nugget,enchant%%%% 9,32,gold_nugget,enchant %%%% 2,1,quartz %%%% 4,8,redstone_block,enchant %%%% 6,8,redstone_block,enchant %%%% 8,8,redstone_block,enchant %%%% 5,1,PLAYER_HEAD,82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c hidden: true`
                                
                                Goldor Chestplate Recipe Command
                                (Showcases items with overlays and how to customise them)
-                               `/gen recipe recipe: 1,1,firework_star,pink %% 2,1,firework_star,pink %% 3,1,firework_star,pink %% 4,1,firework_star,pink %% 6,1,firework_star,pink %% 7,1,firework_star,pink %% 8,1,firework_star,pink %% 9,1,firework_star,pink %% 5,1,leather_chestplate,#e7413c`
-                               """;
-
-
+                               `/%1$s recipe recipe: 1,1,firework_star,pink %%%% 2,1,firework_star,pink %%%% 3,1,firework_star,pink %%%% 4,1,firework_star,pink %%%% 6,1,firework_star,pink %%%% 7,1,firework_star,pink %%%% 8,1,firework_star,pink %%%% 9,1,firework_star,pink %%%% 5,1,leather_chestplate,#e7413c hidden: true`
+                               """.formatted(COMMAND_PREFIX);
 
     // item gen full error messages
     public static final String MISSING_FULL_GEN_ITEM = """
