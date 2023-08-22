@@ -7,9 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
 
@@ -20,8 +18,10 @@ public class MinecraftImage {
     private static final int Y_INCREMENT = PIXEL_SIZE * 10;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
+
     private static final Font[] minecraftFonts;
     private static final Font sansSerif;
+    private static boolean fontsRegisteredCorrectly = true;
 
     // Current Settings
     @Getter
@@ -55,7 +55,13 @@ public class MinecraftImage {
         };
 
         // Register Minecraft Fonts
-        Arrays.stream(minecraftFonts).forEach(GraphicsEnvironment.getLocalGraphicsEnvironment()::registerFont);
+        for (Font font : minecraftFonts) {
+            if (font == null) {
+                fontsRegisteredCorrectly = false;
+                break;
+            }
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+        }
     }
 
     public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem) {
@@ -253,7 +259,7 @@ public class MinecraftImage {
     }
 
     public static boolean isFontsRegistered() {
-        return Arrays.stream(minecraftFonts).noneMatch(Objects::isNull);
+        return fontsRegisteredCorrectly;
     }
 
     /**

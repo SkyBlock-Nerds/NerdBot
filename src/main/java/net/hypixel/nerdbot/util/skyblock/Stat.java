@@ -41,6 +41,7 @@ public enum Stat {
     ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser, null),
     ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser, null),
     ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, StatColorParser::itemStatColorParser, null),
+    MANA_COST("", "Mana Cost:", MCColor.DARK_GRAY, MCColor.DARK_AQUA, StatColorParser::postDualColorParser, null),
     COOLDOWN("", "Cooldown:", MCColor.DARK_GRAY, MCColor.GREEN, StatColorParser::postDualColorParser, null),
     ABILITY("", "Ability", MCColor.GOLD, MCColor.YELLOW, StatColorParser::abilityColorParser, null),
     COMBAT_WISDOM("☯", "Combat Wisdom", MCColor.DARK_AQUA),
