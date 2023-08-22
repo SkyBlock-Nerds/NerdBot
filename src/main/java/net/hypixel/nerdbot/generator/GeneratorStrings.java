@@ -33,7 +33,26 @@ public class GeneratorStrings {
     public static final String DESC_PARSE_ITEM = "The items NBT Data from in game";
     public static final String DESC_INCLUDE_ITEM = "Include the item along with the parsed description";
     public static final String DESC_RENDER_INVENTORY = "If the Minecraft Inventory background should be drawn";
-    public static final String DESC_RECIPE = "The recipe for crafting the item (see recipe_help for more info)";
+    public static final String DESC_RECIPE = "The recipe for crafting the item (see help recipe for more info)";
+
+    // item gen general help messages
+    public static final String GENERAL_INFO = """
+                       Welcome to the Item Generation Bot!
+                       Here you can use different commands to generate Minecraft related images which can help with designing content within Minecraft.
+                       
+                       You can click the blue `/%1$s` command above anyone's image to see what command they're using to create their image.
+                       
+                       The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues, or ideas for improvements
+                       Bust most importantly, have fun making items!
+                       """.formatted(COMMAND_PREFIX);
+    public static final String GENERAL_HELP = """
+                       Item Description Generation   ->   `/%1$s help item`
+                       Item Render Generation        ->   `/%1$s help display`
+                       Recipe Generation             ->   `/%1$s help recipe`
+                       Combined Item Generation      ->   `/%1$s help full`
+                       Parse NBT to Command          ->   `/%1$s help parse`
+                       """.formatted(COMMAND_PREFIX);
+
 
     // item gen item messages
     public static final String INVALID_RARITY; // generated in static constructor
@@ -41,15 +60,6 @@ public class GeneratorStrings {
     public static final String INVALID_MINECRAFT_COLOR_CODE; // generated in static constructor
     public static final String PERCENT_NOT_FOUND = "It seems that you don't have a closing `%%` near `%s`.";
     public static final String PERCENT_OUT_OF_RANGE = "It seems that you are missing a starting/ending `%%` for a color code or stat.";
-    public static final String MISSING_FULL_GEN_ITEM = """
-                        The parameters you have provided will not be enough to create an item generation.
-                        For each type of generation you want to display, include the following parameters:
-                        ```java
-                        item generation         ->  item_name, rarity, item_lore
-                        item render generation  ->  item_id, extra_modifiers
-                        recipe generation       ->  recipe
-                        ```
-                        """;
 
     // item gen item help messages
     public static final String ITEM_BASIC_INFO = "This is a bot used to create custom items to be used in suggestions. You can use the bot with `/%1$s item` and `/%1$s full`.".formatted(COMMAND_PREFIX);
@@ -57,35 +67,24 @@ public class GeneratorStrings {
                         `item_name`: The name of the item. Defaults to the rarity color, unless the rarity is none.
                         `rarity`: Takes any SkyBlock rarity. Can be left as NONE.
                         `item_lore`: Parses a description, including color codes, bold, italics, and newlines.
+                        """;
+    public static final String ITEM_INFO_OPTIONAL_ARGUMENTS = """
                         `type`: The type of the item, such as a Sword or Wand. Can be left blank.
                         `disable_rarity_linebreak (true/false)`: To be used if you want to disable automatically adding the empty line between the item lore and rarity.
                         `alpha`: Sets the transparency of the background layer. 0 for transparent, 255 for opaque (default). 245 for overlay.
                         `padding`: Adds transparency around the entire image. Must be 0 (default) or higher.
                         `max_line_length`: Defines the maximum length that the line can be. Can be between 1 and 54.
                         """;
-    public static final String FULL_GEN_INFO = """
-                        The `/%1$s full` command allows you to combine multiple renders together to create one full image showing all information about it.
-                        
-                        Follow the guides for `/%1$s display_item_help` for more information about putting a item next to the item lore.
-                        `display_item_id`: The Minecraft ID of the item you want to display.
-                        `extra_modifiers`: Any extra modifiers for changing how the item displayed will look (i.e. Hex color for changing leather armor color, skull data)
-                        
-                        Follow the guide for `/%1s recipe_help` for more information about putting a recipe next to the item lore
-                        `recipe`: A string containing all of the recipe data for slot number, amount and the item name, separated by a `%%%%` between different slots.
-                        `render_background (true/false)`: If you want to display the Minecraft inventory in the background or leave it transparent.
-                        """.formatted(COMMAND_PREFIX);
-    public static final String ITEM_COLOR_CODES = """
+    public static final String ITEM_COLOR_CODES = """ 
                         The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
-                        You can use this same format for stats, such as `%%PRISTINE%%`. This format can also have numbers, where `%%PRISTINE:+1%%` will become "+1 ✧ Pristine".
-                        If you just want to get the icon for a specific stat, you can use `%%&PRISTINE%%` to automatically format it to the correct color, or retrieve it manually from the `/stat_symbols` command.
-                        Finally, you can move your text to a newline by typing `\\n`. If you don't want the extra line break at the end, set the `disable_rarity_linebreak` argument to True.
-                        """;
-    public static final String ITEM_OTHER_INFO = """
-                        There is another command `/%1$s parse` which can be used to easily convert the NBT Tag from a Minecraft item into a Generated Image. You can directly copy it from in game using one of the Minecraft Mods.
-                        You can also check out `/%1$s item_image_help` for more information about rendering items next to your creations!
-                        Have fun making items! You can click the blue `/%1$s` command above anyone's image to see what command they're using to create their image. Thanks!
-                        The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues.
+                        You can use this same format for stats, such as `%%%%PRISTINE%%%%`. This format can also have numbers, where `%%%%PRISTINE:+1%%%%` will become "+1 ✧ Pristine".
+                        If you just want to get the icon for a specific stat, you can use `%%%%&PRISTINE%%%%` to automatically format it to the correct color, or retrieve it manually from the `/%s help symbols` command.
                         """.formatted(COMMAND_PREFIX);
+
+    public static final String ITEM_OTHER_INFO = """
+                        The command will automatically soft-wrap text on your image so that you don't have to. You can change where this begins wrapping by using the `max_line_length` parameter. However, you can move your text to a newline by typing `\\n`.
+                        There is also a line break placed at the before the rarity text. You can remove this line by setting the `disable_rarity_linebreak` argument to True.
+                        """;
 
     // item gen head messages
     public static final String MALFORMED_HEAD_URL = "It seems that there is something wrong with the URL that was entered on the developer side of it. Please contact one of the Bot Developers!";
@@ -95,13 +94,11 @@ public class GeneratorStrings {
     public static final String MALFORMED_PLAYER_PROFILE = "There was a weird issue when trying to get the profile data for `%s`";
 
     // item gen display item help messages
-    public static final String DISPLAY_ITEM_INFO_BASIC = "The command `/%s display_item` will display a rendered Minecraft Item or Player Head!".formatted(COMMAND_PREFIX);
-    public static final String DISPLAY_ITEM_INFO_ARGUMENTS = """
-                        `item_id`: The ID of the Minecraft item that you want to display.
-                        `extra_modifiers`: Any extra modifiers for changing how the item displayed will look (i.e. Hex color for changing leather armor color, skull data)
-                        """;
+    public static final String DISPLAY_INFO_BASIC = "The command `/%s display` will display a rendered Minecraft Item or Player Head!".formatted(COMMAND_PREFIX);
+    public static final String DISPLAY_INFO_ARGUMENTS = "`item_id`: The ID of the Minecraft item that you want to display.";
+    public static final String DISPLAY_INFO_OPTIONAL_ARGUMENTS = "`extra_modifiers`: Any extra modifiers for changing how the item displayed will look (i.e. Hex color for changing leather armor color, skull data)";
 
-    public static final String DISPLAY_ITEM_EXTRA_ATTRIBUTES_INFO = "The `extra_modifiers` is where you put any attributes which will change the displayed item's appearance. Each of the extra modifiers should be separated by a comma.\n" +
+    public static final String DISPLAY_EXTRA_ATTRIBUTES_INFO = "The `extra_modifiers` is where you put any attributes which will change the displayed item's appearance. Each of the extra modifiers should be separated by a comma.\n" +
         "Below are some of the modifiers you can apply to items.\n" +
         "- Hex Code: A hex color code of the color (#000000)\n" +
         "- MC Color: Minecraft Dye Colors (cyan, magenta, lime)\n" +
@@ -132,7 +129,7 @@ public class GeneratorStrings {
         "Example: `%s` as the extra modifier will render your Minecraft skin as a head!\n\n" +
         "**By Skin ID**\n" +
         "This is used if you find a Minecraft Skin online somewhere. Simply copy the Minecraft Skin ID for the skin you want to render. If they give you a Skin Texture value, you can convert it from a Base64 string and grab that ID.\n" +
-        "Example: `82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c` as the extra modifier will render a Manaflux Power Orb head!\n" +
+        "Example: `82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c` as the extra modifier will render a Manaflux Power Orb head!\n\n" +
         "*Note*: You do not need to include the `http://textures.minecraft.net/texture/` at the start.";
     public static final String DISPLAY_ITEM_OTHER_INFO = """
                         If you are feeling extra spicy, you can combine these two elements by using the `/%s full` command with arguments mentioned previously.
@@ -147,6 +144,10 @@ public class GeneratorStrings {
     public static final String ITEM_PARSE_JSON_FORMAT = "This JSON object seems to not be valid.\nYou should either copy it from in game, or follow a similar format to:```json\n{\n\tid: \"minecraft:stick\",\n\ttag: {\n\t\tdisplay: {\n\t\t\tLore: [\"§fJust your ordinary stick.\", \"\", \"§f§lCOMMON STICK\"],\n\t\t\tName: \"§fSticky\"\n\t\t}\n\t}\n}```";
     public static final String ITEM_PARSE_COMMAND = "Here is a Nerd Bot generation command if you want it!\n```%s```";
 
+    // item gen parse help messages
+    public static final String ITEM_PARSE_INFO = "The /%1$s command is extremely useful for being able to copy the NBT of items from in game and convert them into an Item Gen command so that you can modify them.\nUsing this can be extremely helpful for newer users as they will have a base to work from, or easily allows you to modify an existing item for rewording or upgrades.".formatted(COMMAND_PREFIX);
+    public static final String ITEM_PARSE_ARGUMENTS = "`item_nbt`: The Minecraft NBT of the item (must be copied how you have it in your inventory)";
+    public static final String ITEM_PARSE_OPTIONAL_ARGUMENTS = "`include_item (true/false)`: If you want to display the item along side the parsed image.";
     // item gen recipe messages
     public static final String UNKNOWN_EXTRA_DETAILS = "Not exactly sure what `%s` (extra_details: `\"%s\"`). Maybe you didn't write its name correctly or forgot to add %%%% separators.";
     public static final String MISSING_PARSED_RECIPE = "Did you even try to make a parsed recipe? Because I don't see the separator anywhere.";
@@ -157,19 +158,50 @@ public class GeneratorStrings {
     public static final String RECIPE_AMOUNT_NOT_IN_RANGE = "You have entered an item amount (`%s`) for the recipe item `%s` that is not in the range of 1-64. It would be funny if there were negative items required for a recipe though.";
 
     // item gen recipe help messages
-    public static final String RECIPE_INFO_BASIC = "The command `/%s recipe` will display a rendered 3x3 square of Minecraft Items or Heads (limited to just items and no blocks right now)".formatted(COMMAND_PREFIX);
+    public static final String RECIPE_INFO_BASIC = "The command `/%s recipe` will display a rendered 3x3 square of Minecraft Items or Heads".formatted(COMMAND_PREFIX);
     public static final String RECIPE_INFO_ARGUMENTS = """
-                               `recipe`: A string containing all of the recipe data for slot number, amount and the item name, separated by a `%%` between different slots.
+                               `recipe`: A string containing all of the recipe data for slot number, amount and the item name, separated by a `%%%%` between different slots.
                                `render_background (true/false)`: If you want to display the Minecraft inventory in the background or leave it transparent.
                                
-                               Each recipe item should be separated with a comma.
+                               Each recipe item should be separated with `%%%%`.
                                `slot_number`: The slot you want the item displayed in (`1-9` starting in the top left).
                                `amount`: The number of that item you want displayed.
-                               `name_of_item`: The id of the item with spaces replaced with underscores.
-                               `extra_details` (optional): Any extra attributes that the item may have.
-           
-                               This item can be displayed as enchanted by using `ENCHANT` inside the extra details parameter. Example: `5,26,DEAD_BUSH,ENCHANT` will display an Enchanted Dead Bush in the middle slot (5) with 26 of them.
+                               `item_id`: The id of the item with spaces replaced with underscores.
+                               `extra_modifiers` (optional): Any extra modifiers that the item may have.
+                               
+                               The `item_id` and `extra_modifiers` work the same as displaying an item through the `/%1$s display` command. Run the `/%1$s help display` to get more information about it!
+                               """.formatted(COMMAND_PREFIX);
+    public static final String RECIPE_INFO_EXAMPLES = """
+                               Overflux Power Orb Recipe Command
+                               (Showcases enchanted items and player head fetched from a skin id)
+                               `/gen recipe recipe: 1,32,gold_nugget,enchant %% 3,32,gold_nugget,enchant%% 7,32,gold_nugget,enchant%% 9,32,gold_nugget,enchant %% 2,1,quartz %% 4,8,redstone_block,enchant %% 6,8,redstone_block,enchant %% 8,8,redstone_block,enchant %% 5,1,PLAYER_HEAD,82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c`
+                               
+                               Goldor Chestplate Recipe Command
+                               (Showcases items with overlays and how to customise them)
+                               `/gen recipe recipe: 1,1,firework_star,pink %% 2,1,firework_star,pink %% 3,1,firework_star,pink %% 4,1,firework_star,pink %% 6,1,firework_star,pink %% 7,1,firework_star,pink %% 8,1,firework_star,pink %% 9,1,firework_star,pink %% 5,1,leather_chestplate,#e7413c`
                                """;
+
+
+
+    // item gen full error messages
+    public static final String MISSING_FULL_GEN_ITEM = """
+                        The parameters you have provided will not be enough to create an item generation.
+                        For each type of generation you want to display, include the following parameters:
+                        ```java
+                        item generation         ->  item_name, rarity, item_lore
+                        item render generation  ->  item_id, extra_modifiers
+                        recipe generation       ->  recipe
+                        ```
+                        """;
+
+    // item gen full help messages
+    public static final String FULL_GEN_INFO = """
+                        The `/%1$s full` command allows you to combine multiple renders together to create one full image showing all information about it.
+                        
+                        Follow the guide for `/%1$s help item` for more information about creating an item.
+                        Follow the guide for `/%1$s help display` for more information about putting a item next to the item lore.
+                        Follow the guide for `/%1Ss help recipe` for more information about putting a recipe next to the item lore.
+                        """.formatted(COMMAND_PREFIX);
 
     // stat symbols text
     public static final String STAT_SYMBOLS;
