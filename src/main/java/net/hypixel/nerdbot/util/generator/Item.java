@@ -7,9 +7,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 public class Item {
-    private static HashMap<String, Overlay> AVAILABLE_OVERLAYS;
-    private static Overlay SMALL_ENCHANT_GLINT;
-    private static Overlay LARGE_ENCHANT_GLINT;
+    private static HashMap<String, Overlay> availableOverlays;
+    private static Overlay smallEnchantGlint;
+    private static Overlay largeEnchantGlint;
 
     private String name;
     private int x;
@@ -68,25 +68,25 @@ public class Item {
         if (overlays != null) {
             for (int i = 0; i < overlays.length; i++) {
                 String color = availableModifiers.length > i ? availableModifiers[i] : "";
-                AVAILABLE_OVERLAYS.get(overlays[i]).applyOverlay(image, color);
+                availableOverlays.get(overlays[i]).applyOverlay(image, color);
             }
         }
 
         //applies the enchantment glint if "enchant" is present
         if (Arrays.stream(availableModifiers).anyMatch(element -> element.toLowerCase().contains("enchant"))) {
-            (image.getWidth() == 16 ? SMALL_ENCHANT_GLINT : LARGE_ENCHANT_GLINT).applyOverlay(image, "#7c20ff");
+            (image.getWidth() == 16 ? smallEnchantGlint : largeEnchantGlint).applyOverlay(image, "#7c20ff");
         }
     }
 
     public static void setAvailableOverlays(HashMap<String, Overlay> createdOverlays) {
-        AVAILABLE_OVERLAYS = createdOverlays;
+        availableOverlays = createdOverlays;
     }
 
     public static void setSmallEnchantGlint(Overlay enchantGlint) {
-        SMALL_ENCHANT_GLINT = enchantGlint;
+        smallEnchantGlint = enchantGlint;
     }
 
     public static void setLargeEnchantGlint(Overlay enchantGlint) {
-        LARGE_ENCHANT_GLINT = enchantGlint;
+        largeEnchantGlint = enchantGlint;
     }
 }

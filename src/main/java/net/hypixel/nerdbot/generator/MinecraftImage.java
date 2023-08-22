@@ -18,9 +18,10 @@ public class MinecraftImage {
     private static final int Y_INCREMENT = PIXEL_SIZE * 10;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
+
     private static final Font[] minecraftFonts;
     private static final Font sansSerif;
-    private static boolean FONTS_REGISTERED_CORRECTLY = true;
+    private static boolean fontsRegisteredCorrectly = true;
 
     // Current Settings
     @Getter
@@ -56,7 +57,7 @@ public class MinecraftImage {
         // Register Minecraft Fonts
         for (Font font : minecraftFonts) {
             if (font == null) {
-                FONTS_REGISTERED_CORRECTLY = false;
+                fontsRegisteredCorrectly = false;
                 break;
             }
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
@@ -258,7 +259,7 @@ public class MinecraftImage {
     }
 
     public static boolean isFontsRegistered() {
-        return FONTS_REGISTERED_CORRECTLY;
+        return fontsRegisteredCorrectly;
     }
 
     /**

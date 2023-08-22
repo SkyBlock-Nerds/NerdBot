@@ -107,7 +107,6 @@ public class GeneratorBuilder {
             Overlay leatherBoots = new NormalOverlay("LEATHER_BOOTS", overlayImage.getSubimage(80, 0, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
             overlaysHashMap.put(leatherBoots.getName(), leatherBoots);
 
-
             // armor trims
             int[] defaultTrimColors = new int[] {-2039584, -4144960, -6250336, -8355712, -10461088, -12566464, -14671840, -16777216};
             Overlay helmetTrim = new MappedOverlay("HELMET_TRIM", overlayImage.getSubimage(64, 0, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
@@ -382,8 +381,7 @@ public class GeneratorBuilder {
             } else {
                 itemImage = buildItemStack(event, "player_head", extraDetails);
             }
-        }
-        else {
+        } else {
             itemImage = buildItemStack(event, itemName, extraDetails);
 
             if (scaleImage && itemImage != null && itemImage.getWidth() <= 16) {
