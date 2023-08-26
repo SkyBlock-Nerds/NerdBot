@@ -8,7 +8,10 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -92,7 +95,11 @@ public class NerdBot implements Bot {
         try {
             CommandsBuilder commandsBuilder = CommandsBuilder
                 .newBuilder(Long.parseLong(Users.AERH.getUserId()))
-                .extensionsBuilder(extensionsBuilder -> extensionsBuilder.registerParameterResolver(new ForumChannelResolver()));
+                .extensionsBuilder(extensionsBuilder -> extensionsBuilder
+                    .registerParameterResolver(new ForumChannelResolver())
+                    .registerAutocompletionTransformer(ForumChannel.class, forumChannel -> new Command.Choice(forumChannel.getName(), forumChannel.getId()))
+                    .registerAutocompletionTransformer(ForumTag.class, forumTag -> new Command.Choice(forumTag.getName(), forumTag.getId()))
+                );
             commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
         } catch (IOException exception) {
             log.error("Couldn't create the command builder! Reason: " + exception.getMessage());
