@@ -20,16 +20,11 @@ import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.feature.CurateFeature;
-import net.hypixel.nerdbot.feature.GreenlitUpdateFeature;
-import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
-import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
-import net.hypixel.nerdbot.feature.UserGrabberFeature;
+import net.hypixel.nerdbot.feature.*;
 import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
-import net.hypixel.nerdbot.util.discord.Users;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
@@ -91,7 +86,8 @@ public class NerdBot implements Bot {
 
         try {
             CommandsBuilder commandsBuilder = CommandsBuilder
-                .newBuilder(Long.parseLong(Users.AERH.getUserId()))
+                .newBuilder()
+                .addOwners(config.getOwnerIds())
                 .extensionsBuilder(extensionsBuilder -> extensionsBuilder.registerParameterResolver(new ForumChannelResolver()));
             commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
         } catch (IOException exception) {
