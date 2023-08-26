@@ -5,7 +5,13 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.google.gson.*;
+import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
+import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import com.mongodb.client.FindIterable;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -18,7 +24,9 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
@@ -46,6 +54,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 public class AdminCommands extends ApplicationCommand {
@@ -400,5 +409,105 @@ public class AdminCommands extends ApplicationCommand {
             .queue();
 
         event.reply(event.getUser().getAsMention() + " applied the " + forumTag.getName() + " tag and locked this suggestion!").queue();
+    }
+
+    @JDASlashCommand(name = "transfer-tag", description = "Transfer forum tag to another.", defaultLocked = true)
+    public void transferForumTag(
+        GuildSlashEvent event,
+        @AppOption(name = "channel", description = "Forum channel to transfer tags in.") ForumChannel channel,
+        @AppOption(name = "from", description = "Transfer from this tag.", autocomplete = "forumtags") String from,
+        @AppOption(name = "to", description = "Transfer to this tag.", autocomplete = "forumtags") String to
+    ) {
+        event.deferReply(false).complete();
+        ForumTag fromTag;
+        ForumTag toTag;
+
+        try {
+            // Autocomplete Support
+            fromTag = Objects.requireNonNull(channel.getAvailableTagById(from));
+            toTag = Objects.requireNonNull(channel.getAvailableTagById(to));
+        } catch (NumberFormatException nfex) {
+            try {
+                // "I can type it myself" Support
+                fromTag = channel.getAvailableTagsByName(from, true).get(0);
+                toTag = channel.getAvailableTagsByName(to, true).get(0);
+            } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
+                event.getHook().editOriginal("You have entered invalid from/to tags, please try again.").complete();
+                return;
+            }
+        }
+
+        // Load Threads
+        ForumTag searchTag = fromTag;
+        List<ThreadChannel> threadChannels = Stream.concat(
+                channel.getThreadChannels().stream(),
+                channel.retrieveArchivedPublicThreadChannels().stream()
+            )
+            .filter(threadChannel -> threadChannel.getAppliedTags().contains(searchTag))
+            .distinct() // Prevent Duplicates
+            .toList();
+
+        int total = threadChannels.size();
+        if (total == 0) {
+            event.getHook().editOriginal("No threads containing the `" + fromTag.getName() + "` tag were found!").complete();
+            return;
+        }
+
+        int processed = 0;
+        int modulo = Math.min(total, 10);
+        event.getHook().editOriginal("Updated " + 0 + "/" + total + " threads...").complete();
+
+        // Process Threads
+        for (ThreadChannel threadChannel : threadChannels) {
+            List<ForumTag> threadTags = new ArrayList<>(threadChannel.getAppliedTags());
+            threadTags.remove(fromTag);
+
+            // Prevent Duplicates
+            if (!threadTags.contains(toTag)) {
+                threadTags.add(toTag);
+            }
+
+            boolean archived = threadChannel.isArchived();
+
+            if (archived) {
+                threadChannel.getManager().setArchived(false).complete();
+            }
+
+            try {
+                threadChannel.getManager().setAppliedTags(threadTags).complete();
+            } catch (Exception ex) {
+                log.warn("Unable to set applied tags for [" + threadChannel.getId() + "] " + threadChannel.getName(), ex);
+            }
+
+            if (archived) {
+                threadChannel.getManager().setArchived(true).complete();
+            }
+
+            if (++processed % modulo == 0 && processed != total) {
+                event.getHook().editOriginal("Updated " + processed + "/" + total + " threads...").complete();
+            }
+        }
+
+        event.getHook().editOriginal("Finished transferring `" + fromTag.getName() + "` to `" + toTag.getName() + "` in " + total + " threads!").complete();
+    }
+
+    @AutocompletionHandler(name = "forumchannels", mode = AutocompletionMode.FUZZY, showUserInput = false)
+    public List<ForumChannel> listForumChannels(CommandAutoCompleteInteractionEvent event) {
+        return Util.getMainGuild().getForumChannels();
+    }
+
+    @AutocompletionHandler(name = "forumtags", mode = AutocompletionMode.FUZZY, showUserInput = false)
+    public List<ForumTag> listForumTags(CommandAutoCompleteInteractionEvent event) {
+        OptionMapping forumChannelId = event.getOption("channel");
+
+        if (forumChannelId != null) {
+            ForumChannel forumChannel = Util.getMainGuild().getForumChannelById(forumChannelId.getAsString());
+
+            if (forumChannel != null) {
+                return forumChannel.getAvailableTags();
+            }
+        }
+
+        return List.of();
     }
 }
