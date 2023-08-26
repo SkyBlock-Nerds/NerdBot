@@ -41,6 +41,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -88,9 +89,9 @@ public class Util {
         return NerdBotApp.getBot().getJDA().getGuildById(guildId);
     }
 
-    @Nullable
+    @NotNull
     public static Guild getMainGuild() {
-        return NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
+        return Objects.requireNonNull(NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()));
     }
 
     public static boolean hasRole(Member member, String name) {
