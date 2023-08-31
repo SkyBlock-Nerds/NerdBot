@@ -312,7 +312,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 }
                 // converting the Base64 string into the Skin URL
                 try {
-                    extraModifiers = builder.base64ToSkinURL(base64String) + ",false";
+                    extraModifiers = builder.base64ToSkinURL(base64String);
                 } catch (NullPointerException | IllegalArgumentException e) {
                     event.getHook().sendMessage(INVALID_BASE_64_SKIN_URL).queue();
                     return;
