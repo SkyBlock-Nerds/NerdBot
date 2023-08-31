@@ -93,7 +93,7 @@ public class ReminderCommands extends ApplicationCommand {
         }
 
         // Create a new reminder and save it to the database
-        Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId(), silent);
+        Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId(), !silent);
         InsertOneResult result = reminder.save();
 
         // Check if the reminder was saved successfully, schedule it and send a confirmation message
