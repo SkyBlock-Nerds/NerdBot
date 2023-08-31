@@ -48,7 +48,7 @@ public class BotConfig {
     /**
      * A list of owner IDs for the bot
      */
-    private long[] ownerIds;
+    private long[] ownerIds = {};
 
     /**
      * The minimum threshold of {@link MessageReaction reactions} needed for a suggestion to be considered greenlit
