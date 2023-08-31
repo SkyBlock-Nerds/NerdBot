@@ -30,6 +30,7 @@
     "limboRoleId": ""
   },
   "guildId": "",
+  "ownerIds": [],
   "minimumThreshold": 15,
   "messageLimit": 100,
   "mojangUsernameCacheTTL": 12,
