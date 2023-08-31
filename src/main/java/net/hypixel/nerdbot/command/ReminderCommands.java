@@ -34,7 +34,7 @@ public class ReminderCommands extends ApplicationCommand {
     private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
 
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
-    public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description, @AppOption(description = "Send the reminder through DMs") @Optional Boolean silent) {
+    public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description, @AppOption(name = "public", description = "Send the reminder publicly in this channel") @Optional Boolean silent) {
         // Check if the bot has permission to send messages in the channel
         if (!event.getGuild().getSelfMember().hasPermission(event.getGuildChannel(), Permission.MESSAGE_SEND)) {
             event.reply("I don't have permission to send messages in this channel!").setEphemeral(true).queue();
@@ -89,7 +89,7 @@ public class ReminderCommands extends ApplicationCommand {
         }
 
         if (silent == null) {
-            silent = false;
+            silent = true;
         }
 
         // Create a new reminder and save it to the database
