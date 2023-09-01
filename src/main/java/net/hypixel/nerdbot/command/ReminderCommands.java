@@ -34,7 +34,7 @@ public class ReminderCommands extends ApplicationCommand {
     private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
 
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
-    public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description, @AppOption(name = "public", description = "Send the reminder publicly in this channel") @Optional Boolean silent) {
+    public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description, @AppOption(description = "Send the reminder publicly in this channel") @Optional Boolean sendPublicly) {
         // Check if the bot has permission to send messages in the channel
         if (!event.getGuild().getSelfMember().hasPermission(event.getGuildChannel(), Permission.MESSAGE_SEND)) {
             event.reply("I don't have permission to send messages in this channel!").setEphemeral(true).queue();
@@ -88,12 +88,12 @@ public class ReminderCommands extends ApplicationCommand {
             return;
         }
 
-        if (silent == null) {
-            silent = true;
+        if (sendPublicly == null) {
+            sendPublicly = false;
         }
 
         // Create a new reminder and save it to the database
-        Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId(), !silent);
+        Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId(), sendPublicly);
         InsertOneResult result = reminder.save();
 
         // Check if the reminder was saved successfully, schedule it and send a confirmation message
