@@ -35,18 +35,18 @@ public class Reminder {
     private String channelId;
     private String userId;
     private Date time;
-    private boolean silent;
+    private boolean sendPublicly;
 
     public Reminder() {
     }
 
-    public Reminder(String description, Date time, String channelId, String userId, boolean silent) {
+    public Reminder(String description, Date time, String channelId, String userId, boolean sendPublicly) {
         this.uuid = UUID.randomUUID();
         this.description = description;
         this.channelId = channelId;
         this.userId = userId;
         this.time = time;
-        this.silent = silent;
+        this.sendPublicly = sendPublicly;
     }
 
     class ReminderTask extends TimerTask {
@@ -71,7 +71,7 @@ public class Reminder {
         String message;
         String timestamp = new DiscordTimestamp(time.getTime()).toLongDateTime();
 
-        if (user != null && silent) {
+        if (user != null && !sendPublicly) {
             if (late) {
                 message = user.getAsMention() + ", while I was offline, you asked me to remind you at " + timestamp + " about: ";
             } else {
