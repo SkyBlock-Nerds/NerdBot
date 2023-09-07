@@ -122,7 +122,6 @@ public class ReminderCommands extends ApplicationCommand {
             if (reminder.getTimer() != null) {
                 reminder.getTimer().cancel();
             }
-            reminder.schedule();
         }
 
         reminder.setDescription(description);
@@ -131,6 +130,7 @@ public class ReminderCommands extends ApplicationCommand {
         if (result != null && result.wasAcknowledged() && result.getModifiedCount() > 0) {
             event.reply("Updated reminder `" + reminder.getUuid() + "`!").setEphemeral(true).queue();
             log.info("Updated reminder: " + reminder + " for user: " + event.getUser().getId() + " (" + result + ")");
+            reminder.schedule();
         } else {
             event.reply("Could not update reminder, please try again later!").setEphemeral(true).queue();
             log.error("Could not update reminder: " + reminder + " for user: " + event.getUser().getId() + " (" + result + ")");
