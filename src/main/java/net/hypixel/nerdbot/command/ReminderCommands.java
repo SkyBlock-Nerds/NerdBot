@@ -35,6 +35,7 @@ public class ReminderCommands extends ApplicationCommand {
 
     private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
     private static final String TIME_DESCRIPTION = "Use a format such as \"in 1 hour\" or \"1w3d7h\"";
+    private static final String TIME_PARSE_ERROR = "Could not parse the time you provided!";
 
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
     public void createReminder(GuildSlashEvent event, @AppOption(description = TIME_DESCRIPTION) String time, @AppOption String description, @AppOption(description = "Send the reminder publicly in this channel") @Optional Boolean sendPublicly) {
@@ -68,12 +69,12 @@ public class ReminderCommands extends ApplicationCommand {
         try {
             date = parseTime(time);
         } catch (DateTimeParseException exception) {
-            event.reply("Could not parse the time you provided!").setEphemeral(true).queue();
+            event.reply(TIME_PARSE_ERROR).setEphemeral(true).queue();
             return;
         }
 
         if (date == null) {
-            event.reply("Could not parse the time you provided!").setEphemeral(true).queue();
+            event.reply(TIME_PARSE_ERROR).setEphemeral(true).queue();
             return;
         }
 
@@ -108,10 +109,12 @@ public class ReminderCommands extends ApplicationCommand {
             return;
         }
 
-        Date date = null;
+        Date date;
         try {
             date = parseTime(time);
-        } catch (DateTimeParseException ignored) {
+        } catch (DateTimeParseException exception) {
+            event.reply(TIME_PARSE_ERROR).setEphemeral(true).queue();
+            return;
         }
 
         if (date != null) {
