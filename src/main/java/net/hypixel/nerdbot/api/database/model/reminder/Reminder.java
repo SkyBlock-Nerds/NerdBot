@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.api.database.model.reminder;
 
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
+import com.mongodb.client.result.UpdateResult;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -131,5 +132,15 @@ public class Reminder {
         }
 
         return NerdBotApp.getBot().getDatabase().deleteDocument(NerdBotApp.getBot().getDatabase().getCollection(COLLECTION_NAME, Reminder.class), "uuid", uuid);
+    }
+
+    @Nullable
+    public UpdateResult update() {
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            log.error("Database is not connected!");
+            return null;
+        }
+
+        return NerdBotApp.getBot().getDatabase().updateDocument(NerdBotApp.getBot().getDatabase().getCollection(COLLECTION_NAME, Reminder.class), "uuid", uuid, this);
     }
 }

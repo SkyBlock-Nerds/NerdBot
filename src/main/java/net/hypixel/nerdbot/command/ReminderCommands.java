@@ -10,6 +10,7 @@ import com.joestelmach.natty.Parser;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
+import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -17,6 +18,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,9 +34,10 @@ import java.util.regex.Pattern;
 public class ReminderCommands extends ApplicationCommand {
 
     private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
+    private static final String TIME_DESCRIPTION = "Use a format such as \"in 1 hour\" or \"1w3d7h\"";
 
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
-    public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description, @AppOption(description = "Send the reminder publicly in this channel") @Optional Boolean sendPublicly) {
+    public void createReminder(GuildSlashEvent event, @AppOption(description = TIME_DESCRIPTION) String time, @AppOption String description, @AppOption(description = "Send the reminder publicly in this channel") @Optional Boolean sendPublicly) {
         // Check if the bot has permission to send messages in the channel
         if (!event.getGuild().getSelfMember().hasPermission(event.getGuildChannel(), Permission.MESSAGE_SEND)) {
             event.reply("I don't have permission to send messages in this channel!").setEphemeral(true).queue();
@@ -56,43 +59,24 @@ public class ReminderCommands extends ApplicationCommand {
             return;
         }
 
-        Date date = null;
-        boolean parsed = false;
-
-        // Try parse the time using the Natty dependency
-        try {
-            Parser parser = new Parser();
-            List<DateGroup> groups = parser.parse(time);
-            DateGroup group = groups.get(0);
-
-            List<Date> dates = group.getDates();
-            date = dates.get(0);
-            parsed = true;
-        } catch (IndexOutOfBoundsException ignored) {
-            // Ignore this exception, it means that the provided time was not parsed
-        }
-
-        // Try parse the time using the regex if the above failed
-        if (!parsed) {
-            try {
-                date = parseCustomFormat(time);
-            } catch (DateTimeParseException exception) {
-                event.reply("Could not parse the provided time!").setEphemeral(true).queue();
-                return;
-            }
-        }
-
-        // Check if the provided time is in the past
-        if (date.before(new Date())) {
-            event.reply("You can't set a reminder in the past!").setEphemeral(true).queue();
-            return;
-        }
-
         if (sendPublicly == null) {
             sendPublicly = false;
         }
 
         // Create a new reminder and save it to the database
+        Date date;
+        try {
+            date = parseTime(time);
+        } catch (DateTimeParseException exception) {
+            event.reply("Could not parse the time you provided!").setEphemeral(true).queue();
+            return;
+        }
+
+        if (date == null) {
+            event.reply("Could not parse the time you provided!").setEphemeral(true).queue();
+            return;
+        }
+
         Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId(), sendPublicly);
         InsertOneResult result = reminder.save();
 
@@ -107,6 +91,46 @@ public class ReminderCommands extends ApplicationCommand {
             // If the reminder could not be saved, send an error message and log the error too
             event.reply("Could not save your reminder, please try again later!").queue();
             log.error("Could not save reminder: " + reminder + " for user: " + event.getUser().getId() + " (" + result + ")");
+        }
+    }
+
+    @JDASlashCommand(name = "remind", subcommand = "edit", description = "Edit an existing reminder")
+    public void editReminder(GuildSlashEvent event, @AppOption(description = "Can be obtained from /remind list") UUID uuid, @AppOption(description = "The new content of your reminder") String description, @Optional @AppOption(description = TIME_DESCRIPTION) String time) {
+        Reminder reminder = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.eq("uuid", uuid)).first();
+
+        if (reminder == null) {
+            event.reply("Could not find a reminder with that ID!").setEphemeral(true).queue();
+            return;
+        }
+
+        if (!reminder.getUserId().equals(event.getUser().getId())) {
+            event.reply("You can only edit your own reminders!").setEphemeral(true).queue();
+            return;
+        }
+
+        Date date = null;
+        try {
+            date = parseTime(time);
+        } catch (DateTimeParseException ignored) {
+        }
+
+        if (date != null) {
+            reminder.setTime(date);
+            if (reminder.getTimer() != null) {
+                reminder.getTimer().cancel();
+            }
+            reminder.schedule();
+        }
+
+        reminder.setDescription(description);
+        UpdateResult result = reminder.update();
+
+        if (result != null && result.wasAcknowledged() && result.getModifiedCount() > 0) {
+            event.reply("Updated reminder `" + reminder.getUuid() + "`!").setEphemeral(true).queue();
+            log.info("Updated reminder: " + reminder + " for user: " + event.getUser().getId() + " (" + result + ")");
+        } else {
+            event.reply("Could not update reminder, please try again later!").setEphemeral(true).queue();
+            log.error("Could not update reminder: " + reminder + " for user: " + event.getUser().getId() + " (" + result + ")");
         }
     }
 
@@ -172,6 +196,47 @@ public class ReminderCommands extends ApplicationCommand {
     }
 
     /**
+     * Parse a time using a custom format
+     *
+     * @param input The input to parse
+     * @return A parsed {@link Date} object or null if the input could not be parsed
+     */
+    @Nullable
+    private Date parseTime(String input) {
+        Date date = null;
+        boolean parsed = false;
+
+        // Try parse the time using the Natty dependency
+        try {
+            Parser parser = new Parser();
+            List<DateGroup> groups = parser.parse(input);
+            DateGroup group = groups.get(0);
+
+            List<Date> dates = group.getDates();
+            date = dates.get(0);
+            parsed = true;
+        } catch (IndexOutOfBoundsException ignored) {
+            // Ignore this exception, it means that the provided time was not parsed
+        }
+
+        // Try parse the time using the regex if the above failed
+        if (!parsed) {
+            try {
+                date = parseCustomFormat(input);
+            } catch (DateTimeParseException exception) {
+                throw new DateTimeParseException("Could not parse date: " + input, input, 0);
+            }
+        }
+
+        // Check if the provided time is in the past
+        if (date != null && date.before(new Date())) {
+            throw new DateTimeParseException("The provided time is in the past!", input, 0);
+        }
+
+        return date;
+    }
+
+    /**
      * Parse a time string in the format of {@code 1w2d3h4m5s} into a Date
      *
      * @param time The time string to parse
@@ -211,5 +276,4 @@ public class ReminderCommands extends ApplicationCommand {
         Instant date = Instant.now().plus(duration);
         return Date.from(date);
     }
-
 }
