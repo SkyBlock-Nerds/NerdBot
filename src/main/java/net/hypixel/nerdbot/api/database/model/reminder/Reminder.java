@@ -62,6 +62,10 @@ public class Reminder {
     }
 
     public void schedule() {
+        if (timer != null) {
+            timer.cancel();
+        }
+
         timer = new Timer();
         timer.schedule(new ReminderTask(), time);
     }

@@ -122,10 +122,7 @@ public class ReminderCommands extends ApplicationCommand {
             try {
                 date = parseTime(time);
                 reminder.setTime(date);
-
-                if (reminder.getTimer() != null) {
-                    reminder.getTimer().cancel();
-                }
+                reminder.schedule();
             } catch (DateTimeParseException exception) {
                 event.reply(exception.getMessage()).setEphemeral(true).queue();
                 return;
@@ -141,10 +138,6 @@ public class ReminderCommands extends ApplicationCommand {
         if (result != null && result.wasAcknowledged() && result.getModifiedCount() > 0) {
             event.reply("Updated reminder `" + reminder.getUuid() + "`!").setEphemeral(true).queue();
             log.info("Updated reminder: " + reminder + " for user: " + event.getUser().getId() + " (" + result + ")");
-
-            if (date != null) {
-                reminder.schedule();
-            }
         } else {
             event.reply("Could not update reminder, please try again later!").setEphemeral(true).queue();
             log.error("Could not update reminder: " + reminder + " for user: " + event.getUser().getId() + " (" + result + ")");
