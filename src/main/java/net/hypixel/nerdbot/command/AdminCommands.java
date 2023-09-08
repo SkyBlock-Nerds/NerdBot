@@ -432,6 +432,8 @@ public class AdminCommands extends ApplicationCommand {
         EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
 
         threads.stream().filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("greenlit")).forEach(threadChannel -> {
+            log.info("Importing greenlit thread " + threadChannel.getName() + " (" + threadChannel.getId() + ")");
+
             Message parentMessage = threadChannel.retrieveParentMessage().complete();
             List<MessageReaction> reactions = parentMessage.getReactions()
                 .stream()
