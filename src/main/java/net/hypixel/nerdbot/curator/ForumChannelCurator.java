@@ -124,8 +124,17 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 int agree = votes.get(emojiConfig.getAgreeEmojiId());
                 int neutral = votes.get(emojiConfig.getNeutralEmojiId());
                 int disagree = votes.get(emojiConfig.getDisagreeEmojiId());
-                double ratio = getRatio(agree, disagree);
+                List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
 
+                // Upsert into database if already greenlit
+                if (tags.contains(greenlitTag)) {
+                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is already greenlit!");
+                    GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
+                    database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", message.getId(), greenlitMessage);
+                    continue;
+                }
+
+                double ratio = getRatio(agree, disagree);
                 log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has " + agree + " agree reactions, " + neutral + " neutral reactions, and " + disagree + " disagree reactions with a ratio of " + ratio + "%");
 
                 if ((agree < config.getMinimumThreshold()) || (ratio < config.getPercentage())) {
@@ -141,8 +150,6 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 }
 
                 log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has tags: " + thread.getAppliedTags().stream().map(BaseForumTag::getName).toList());
-
-                List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
 
                 if (!tags.contains(greenlitTag)) {
                     tags.add(greenlitTag);
@@ -160,29 +167,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     thread.getManager().setArchived(true).queue();
                 }
 
-                GreenlitMessage greenlitMessage = GreenlitMessage.builder()
-                    .agrees(agree)
-                    .neutrals(neutral)
-                    .disagrees(disagree)
-                    .messageId(message.getId())
-                    .userId(message.getAuthor().getId())
-                    .alpha(forumChannel.getName().toLowerCase().contains("alpha"))
-                    .suggestionUrl(message.getJumpUrl())
-                    .suggestionTitle(thread.getName())
-                    .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
-                    .suggestionContent(message.getContentRaw())
-                    .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
-                    .positiveVoterIds(
-                        reactions.stream()
-                            .filter(reaction -> emojiConfig.isEquals(reaction, EmojiConfig::getAgreeEmojiId))
-                            .flatMap(reaction -> reaction.retrieveUsers()
-                                .complete()
-                                .stream()
-                            )
-                            .map(User::getId)
-                            .toList()
-                    )
-                    .build();
+                GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
                 output.add(greenlitMessage);
             } catch (Exception exception) {
                 exception.printStackTrace();
@@ -193,5 +178,33 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         log.info("Curated forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ") in " + (getEndTime() - getStartTime()) + "ms");
 
         return output;
+    }
+
+    private GreenlitMessage createGreenlitMessage(ForumChannel forumChannel, Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
+        EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+
+        return GreenlitMessage.builder()
+            .agrees(agree)
+            .neutrals(neutral)
+            .disagrees(disagree)
+            .messageId(message.getId())
+            .userId(message.getAuthor().getId())
+            .alpha(forumChannel.getName().toLowerCase().contains("alpha"))
+            .suggestionUrl(message.getJumpUrl())
+            .suggestionTitle(thread.getName())
+            .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
+            .suggestionContent(message.getContentRaw())
+            .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
+            .positiveVoterIds(
+                message.getReactions().stream()
+                    .filter(reaction -> emojiConfig.isEquals(reaction, EmojiConfig::getAgreeEmojiId))
+                    .flatMap(reaction -> reaction.retrieveUsers()
+                        .complete()
+                        .stream()
+                    )
+                    .map(User::getId)
+                    .toList()
+            )
+            .build();
     }
 }
