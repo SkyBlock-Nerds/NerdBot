@@ -53,19 +53,13 @@ public class GreenlitUpdateFeature extends BotFeature {
 
                     log.info("Processing" + (alpha ? " alpha" : "") + " suggestion forum channel '" + channel.getName() + "' (ID: " + channel.getId() + ")");
 
-                    List<ThreadChannel> threads = new ArrayList<>(channel.getThreadChannels()
-                        .stream()
+                    List<ThreadChannel> threads = Stream.concat(
+                            channel.getThreadChannels().stream(), // Unarchived Posts
+                            channel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
+                        )
                         .filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).anyMatch(tag -> Arrays.asList(INCLUDED_TAGS).contains(tag)))
-                        .toList());
-                    List<ThreadChannel> archived = channel.retrieveArchivedPublicThreadChannels().complete();
-
-                    threads.addAll(
-                        archived.stream()
-                            .filter(threadChannel -> !threads.contains(threadChannel))
-                            .filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).anyMatch(tag -> Arrays.asList(INCLUDED_TAGS).contains(tag)))
-                            .toList()
-                    );
-
+                        .distinct()
+                        .toList();
 
                     if (threads.isEmpty()) {
                         log.info("No greenlit threads found in the suggestion forum channel!");
@@ -85,8 +79,7 @@ public class GreenlitUpdateFeature extends BotFeature {
                     }
 
                     log.info("Found " + channel.getThreadChannels().size() + " threads in the suggestion forum channel!");
-                    log.info("Found " + threads.size() + " unarchived greenlit threads in the suggestion forum channel!");
-                    log.info("Found " + archived.size() + " archived threads in the suggestion forum channel!");
+                    log.info("Found " + threads.size() + " greenlit threads in the suggestion forum channel!");
 
                     greenlits.forEach(greenlitMessage -> {
                         log.info("Processing greenlit message '" + greenlitMessage.getSuggestionTitle() + "' (ID: " + greenlitMessage.getMessageId() + ")");
