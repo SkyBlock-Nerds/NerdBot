@@ -74,10 +74,10 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
             )
             .distinct()
-            .filter(threadChannel -> threadChannel.getAppliedTags()
+            /*.filter(threadChannel -> threadChannel.getAppliedTags()
                 .stream()
                 .noneMatch(tag -> GREENLIT_TAGS.contains(tag.getName().toLowerCase()))
-            )
+            )*/
             .toList();
 
         log.info("Found " + threads.size() + " non-greenlit/docced forum post(s)!");
