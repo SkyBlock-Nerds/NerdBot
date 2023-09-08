@@ -430,7 +430,6 @@ public class AdminCommands extends ApplicationCommand {
         List<ThreadChannel> threads = new ArrayList<>(forumChannel.getThreadChannels());
         threads.addAll(forumChannel.retrieveArchivedPublicThreadChannels().complete());
         EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
-        List<GreenlitMessage> greenlitMessages = new ArrayList<>();
 
         threads.stream().filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("greenlit")).forEach(threadChannel -> {
             Message parentMessage = threadChannel.retrieveParentMessage().complete();
@@ -484,11 +483,10 @@ public class AdminCommands extends ApplicationCommand {
                 )
                 .build();
 
-            greenlitMessages.add(greenlitMessage);
             log.info("Importing greenlit message: " + greenlitMessage.toString());
+            NerdBotApp.getBot().getDatabase().upsertDocument(NerdBotApp.getBot().getDatabase().getCollection("greenlit", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage);
         });
 
-        NerdBotApp.getBot().getDatabase().insertDocuments(NerdBotApp.getBot().getDatabase().getCollection("greenlit", GreenlitMessage.class), greenlitMessages);
-        event.getHook().editOriginal("Imported " + greenlitMessages.size() + " greenlit messages!").queue();
+        event.getHook().editOriginal("Importing greenlit messages...").queue();
     }
 }
