@@ -9,15 +9,14 @@ import com.google.gson.*;
 import com.mongodb.client.FindIterable;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.IMentionable;
-import net.dv8tion.jda.api.entities.Invite;
-import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -29,6 +28,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
@@ -43,9 +43,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 public class AdminCommands extends ApplicationCommand {
@@ -414,5 +416,79 @@ public class AdminCommands extends ApplicationCommand {
 
         Util.saveCache(database);
         event.getHook().editOriginal("Forcefully saved cached users to database!").queue();
+    }
+
+    @JDASlashCommand(name = "import", subcommand = "greenlit", description = "Import all greenlit messages into the database")
+    public void importGreenlit(GuildSlashEvent event, @AppOption ForumChannel forumChannel) {
+        if (forumChannel.getAvailableTagsByName("greenlit", true).isEmpty()) {
+            event.reply("This forum channel does not have the Greenlit tag!").setEphemeral(true).queue();
+            return;
+        }
+
+        event.deferReply(true).complete();
+
+        List<ThreadChannel> threads = new ArrayList<>(forumChannel.getThreadChannels());
+        threads.addAll(forumChannel.retrieveArchivedPublicThreadChannels().complete());
+        EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+        List<GreenlitMessage> greenlitMessages = new ArrayList<>();
+
+        threads.stream().filter(threadChannel -> threadChannel.getAppliedTags().stream().map(ForumTag::getName).toList().contains("greenlit")).forEach(threadChannel -> {
+            Message parentMessage = threadChannel.retrieveParentMessage().complete();
+            List<MessageReaction> reactions = parentMessage.getReactions()
+                .stream()
+                .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+                .toList();
+            Map<String, Integer> votes = Stream.of(
+                    emojiConfig.getAgreeEmojiId(),
+                    emojiConfig.getNeutralEmojiId(),
+                    emojiConfig.getDisagreeEmojiId()
+                )
+                .map(emojiId -> Pair.of(
+                    emojiId,
+                    reactions.stream()
+                        .filter(reaction -> reaction.getEmoji()
+                            .asCustom()
+                            .getId()
+                            .equalsIgnoreCase(emojiId)
+                        )
+                        .mapToInt(MessageReaction::getCount)
+                        .findFirst()
+                        .orElse(0)
+                ))
+                .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+
+            int agree = votes.get(emojiConfig.getAgreeEmojiId());
+            int neutral = votes.get(emojiConfig.getNeutralEmojiId());
+            int disagree = votes.get(emojiConfig.getDisagreeEmojiId());
+            GreenlitMessage greenlitMessage = GreenlitMessage.builder()
+                .agrees(agree)
+                .neutrals(neutral)
+                .disagrees(disagree)
+                .messageId(parentMessage.getId())
+                .userId(parentMessage.getAuthor().getId())
+                .alpha(forumChannel.getName().toLowerCase().contains("alpha"))
+                .suggestionUrl(parentMessage.getJumpUrl())
+                .suggestionTitle(threadChannel.getName())
+                .suggestionTimestamp(threadChannel.getTimeCreated().toInstant().toEpochMilli())
+                .suggestionContent(parentMessage.getContentRaw())
+                .tags(threadChannel.getAppliedTags().stream().map(BaseForumTag::getName).toList())
+                .positiveVoterIds(
+                    reactions.stream()
+                        .filter(reaction -> NerdBotApp.getBot().getConfig().getEmojiConfig().isEquals(reaction, EmojiConfig::getAgreeEmojiId))
+                        .flatMap(reaction -> reaction.retrieveUsers()
+                            .complete()
+                            .stream()
+                        )
+                        .map(User::getId)
+                        .toList()
+                )
+                .build();
+
+            greenlitMessages.add(greenlitMessage);
+            log.info("Importing greenlit message: " + greenlitMessage.toString());
+        });
+
+        NerdBotApp.getBot().getDatabase().insertDocuments(NerdBotApp.getBot().getDatabase().getCollection("greenlit", GreenlitMessage.class), greenlitMessages);
+        event.getHook().editOriginal("Imported " + greenlitMessages.size() + " greenlit messages!").queue();
     }
 }
