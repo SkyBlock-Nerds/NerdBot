@@ -109,16 +109,17 @@ public class ReminderCommands extends ApplicationCommand {
             return;
         }
 
-        Date date;
-        try {
-            date = parseTime(time);
-        } catch (DateTimeParseException exception) {
-            event.reply(TIME_PARSE_ERROR).setEphemeral(true).queue();
-            return;
-        }
+        if (time != null) {
+            Date date;
+            try {
+                date = parseTime(time);
+            } catch (DateTimeParseException exception) {
+                event.reply(TIME_PARSE_ERROR).setEphemeral(true).queue();
+                return;
+            }
 
-        if (date != null) {
             reminder.setTime(date);
+
             if (reminder.getTimer() != null) {
                 reminder.getTimer().cancel();
             }
