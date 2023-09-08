@@ -20,7 +20,10 @@ import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.feature.*;
+import net.hypixel.nerdbot.feature.CurateFeature;
+import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
+import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
+import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Util;
@@ -43,7 +46,6 @@ public class NerdBot implements Bot {
         new HelloGoodbyeFeature(),
         new CurateFeature(),
         new UserGrabberFeature(),
-        new GreenlitUpdateFeature(),
         new ProfileUpdateFeature()
     );
 
