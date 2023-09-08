@@ -96,7 +96,7 @@ public class ReminderCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "remind", subcommand = "edit", description = "Edit an existing reminder")
-    public void editReminder(GuildSlashEvent event, @AppOption(description = "Can be obtained from /remind list") String reminderId, @AppOption(description = "The new content of your reminder") String description, @Optional @AppOption(description = TIME_DESCRIPTION) String time) {
+    public void editReminder(GuildSlashEvent event, @AppOption(description = "Can be obtained from /remind list") String reminderId, @Optional @AppOption(description = "The new content of your reminder") String description, @Optional @AppOption(description = TIME_DESCRIPTION) String time) {
         Reminder reminder;
         try {
             UUID uuid = UUID.fromString(reminderId);
@@ -131,7 +131,10 @@ public class ReminderCommands extends ApplicationCommand {
             }
         }
 
-        reminder.setDescription(description);
+        if (description != null) {
+            reminder.setDescription(description);
+        }
+
         UpdateResult result = reminder.update();
 
         if (result != null && result.wasAcknowledged() && result.getModifiedCount() > 0) {
