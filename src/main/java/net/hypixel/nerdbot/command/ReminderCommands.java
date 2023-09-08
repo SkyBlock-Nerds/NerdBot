@@ -96,8 +96,15 @@ public class ReminderCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "remind", subcommand = "edit", description = "Edit an existing reminder")
-    public void editReminder(GuildSlashEvent event, @AppOption(description = "Can be obtained from /remind list") UUID uuid, @AppOption(description = "The new content of your reminder") String description, @Optional @AppOption(description = TIME_DESCRIPTION) String time) {
-        Reminder reminder = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.eq("uuid", uuid)).first();
+    public void editReminder(GuildSlashEvent event, @AppOption(description = "Can be obtained from /remind list") String reminderId, @AppOption(description = "The new content of your reminder") String description, @Optional @AppOption(description = TIME_DESCRIPTION) String time) {
+        Reminder reminder;
+        try {
+            UUID uuid = UUID.fromString(reminderId);
+            reminder = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.eq("uuid", uuid)).first();
+        } catch (IllegalArgumentException exception) {
+            event.reply("Could not parse the reminder ID you provided!").setEphemeral(true).queue();
+            return;
+        }
 
         if (reminder == null) {
             event.reply("Could not find a reminder with that ID!").setEphemeral(true).queue();
