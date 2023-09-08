@@ -69,7 +69,7 @@ public class ReminderCommands extends ApplicationCommand {
         try {
             date = parseTime(time);
         } catch (DateTimeParseException exception) {
-            event.reply(TIME_PARSE_ERROR).setEphemeral(true).queue();
+            event.reply(exception.getMessage()).setEphemeral(true).queue();
             return;
         }
 
@@ -119,7 +119,7 @@ public class ReminderCommands extends ApplicationCommand {
                     reminder.getTimer().cancel();
                 }
             } catch (DateTimeParseException exception) {
-                event.reply(TIME_PARSE_ERROR).setEphemeral(true).queue();
+                event.reply(exception.getMessage()).setEphemeral(true).queue();
                 return;
             }
         }
