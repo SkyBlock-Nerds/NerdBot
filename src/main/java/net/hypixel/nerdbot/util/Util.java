@@ -30,8 +30,8 @@ import java.text.DecimalFormat;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -187,13 +187,11 @@ public class Util {
     }
 
     public static String listCachedUsers() {
-        AtomicReference<String> string = new AtomicReference<>();
-        NerdBotApp.USER_CACHE.asMap().keySet()
-            .stream()
-            .map(s -> "<@" + s + ">")
-            .forEach(s -> string.set(string + s + ", "));
+        if (NerdBotApp.USER_CACHE.asMap().isEmpty()) {
+            return "No users cached!";
+        }
 
-        return string.get().substring(0, string.get().length() - 2);
+        return NerdBotApp.USER_CACHE.asMap().keySet().stream().map(id -> String.format("<@%s>", id)).collect(Collectors.joining(", "));
     }
 
     public static void saveCache(Database database) {
