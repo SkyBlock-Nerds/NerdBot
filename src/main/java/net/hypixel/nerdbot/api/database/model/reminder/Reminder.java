@@ -72,19 +72,25 @@ public class Reminder {
         String message;
         String timestamp = new DiscordTimestamp(time.getTime()).toLongDateTime();
 
-        if (user != null && !sendPublicly) {
-            if (late) {
-                message = user.getAsMention() + ", while I was offline, you asked me to remind you at " + timestamp + " about: ";
-            } else {
-                message = user.getAsMention() + ", you asked me to remind you at " + timestamp + " about: ";
-            }
+        if (user == null) {
+            log.error("Couldn't find user with ID '" + userId + "' to send reminder " + uuid + "!");
+            delete();
+            return;
+        }
 
+        if (late) {
+            message = user.getAsMention() + ", while I was offline, you asked me to remind you at " + timestamp + " about: ";
+        } else {
+            message = user.getAsMention() + ", you asked me to remind you at " + timestamp + " about: ";
+        }
+
+        if (!sendPublicly) {
             String finalMessage = message;
             user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(finalMessage).addEmbeds(new EmbedBuilder().setDescription(description).build()).queue());
             return;
         }
 
-        if (channel != null && user != null) {
+        if (channel != null) {
             if (late) {
                 message = user.getAsMention() + ", while I was offline, you asked me to remind you at " + timestamp + " about: ";
             } else {
@@ -94,15 +100,20 @@ public class Reminder {
             channel.sendMessage(message)
                 .addEmbeds(new EmbedBuilder().setDescription(description).build())
                 .queue();
-        } else if (channel == null && user != null) {
+        } else if (sendPublicly) {
             user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Reminder: " + description).queue());
-        } else {
-            log.error("Couldn't send reminder to user '" + userId + "' in channel '" + channelId + "'!");
         }
 
         DeleteResult result = delete();
-        if (result != null && result.wasAcknowledged() && result.getDeletedCount() > 0) {
+        if (result == null) {
+            log.error("Couldn't delete reminder from database: " + uuid + " (result: null)");
+            return;
+        }
+
+        if (result.wasAcknowledged() && result.getDeletedCount() > 0) {
             log.info("Reminder deleted from database: " + uuid);
+        } else {
+            log.error("Couldn't delete reminder from database: " + uuid + " (result: " + result + ")");
         }
     }
 
