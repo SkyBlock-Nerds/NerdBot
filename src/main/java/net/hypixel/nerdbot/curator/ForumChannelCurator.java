@@ -69,8 +69,11 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
         log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
-        List<ThreadChannel> threads = forumChannel.getThreadChannels()
-            .stream()
+        List<ThreadChannel> threads = Stream.concat(
+                forumChannel.getThreadChannels().stream(), // Unarchived Posts
+                forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
+            )
+            .distinct()
             .filter(threadChannel -> threadChannel.getAppliedTags()
                 .stream()
                 .noneMatch(tag -> GREENLIT_TAGS.contains(tag.getName().toLowerCase()))
