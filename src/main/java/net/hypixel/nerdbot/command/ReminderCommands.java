@@ -5,6 +5,8 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
+import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import com.joestelmach.natty.DateGroup;
 import com.joestelmach.natty.Parser;
 import com.mongodb.client.model.Filters;
@@ -15,6 +17,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
@@ -23,12 +26,10 @@ import org.jetbrains.annotations.Nullable;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Log4j2
 public class ReminderCommands extends ApplicationCommand {
@@ -96,7 +97,7 @@ public class ReminderCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "remind", subcommand = "edit", description = "Edit an existing reminder")
-    public void editReminder(GuildSlashEvent event, @AppOption(description = "Can be obtained from /remind list") String reminderId, @Optional @AppOption(description = "The new content of your reminder") String description, @Optional @AppOption(description = TIME_DESCRIPTION) String time) {
+    public void editReminder(GuildSlashEvent event, @AppOption(description = "Can be obtained from /remind list", autocomplete = "reminderIds") String reminderId, @Optional @AppOption(description = "The new content of your reminder") String description, @Optional @AppOption(description = TIME_DESCRIPTION) String time) {
         Reminder reminder;
         try {
             UUID uuid = UUID.fromString(reminderId);
@@ -180,7 +181,7 @@ public class ReminderCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "remind", subcommand = "delete", description = "Delete a reminder")
-    public void deleteReminder(GuildSlashEvent event, @AppOption String uuid) {
+    public void deleteReminder(GuildSlashEvent event, @AppOption(autocomplete = "reminderIds") String uuid) {
         try {
             UUID parsed = UUID.fromString(uuid);
             Reminder reminder = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.and(Filters.eq("userId", event.getUser().getId()), Filters.eq("uuid", parsed))).first();
@@ -209,6 +210,18 @@ public class ReminderCommands extends ApplicationCommand {
         } catch (IllegalArgumentException exception) {
             event.reply("Please enter a valid UUID!").setEphemeral(true).queue();
         }
+    }
+
+    @AutocompletionHandler(name = "reminderIds", mode = AutocompletionMode.FUZZY, showUserInput = false)
+    public Queue<String> getReminderIds(CommandAutoCompleteInteractionEvent event) {
+        return NerdBotApp.getBot().getDatabase().findDocument(
+            NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class),
+            Filters.eq("userId", event.getUser().getId())
+        ).into(new ArrayList<>())
+            .stream()
+            .map(Reminder::getUuid)
+            .map(UUID::toString)
+            .collect(Collectors.toCollection(ArrayDeque::new));
     }
 
     /**
