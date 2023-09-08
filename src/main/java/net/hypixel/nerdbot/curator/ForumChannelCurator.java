@@ -143,7 +143,11 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has tags: " + thread.getAppliedTags().stream().map(BaseForumTag::getName).toList());
 
                 List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
-                tags.add(greenlitTag);
+
+                if (!tags.contains(greenlitTag)) {
+                    tags.add(greenlitTag);
+                }
+
                 boolean archived = thread.isArchived();
 
                 if (archived) {
