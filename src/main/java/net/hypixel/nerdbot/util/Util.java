@@ -201,7 +201,10 @@ public class Util {
 
         for (DiscordUser discordUser : NerdBotApp.USER_CACHE.asMap().values()) {
             database.upsertDocument(database.getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
+            log.info("Saved cached user " + discordUser.getDiscordId() + " to database");
         }
+
+        NerdBotApp.USER_CACHE.invalidateAll();
     }
 
     public static JsonObject makeHttpRequest(String url) throws IOException, InterruptedException {

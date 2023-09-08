@@ -406,7 +406,7 @@ public class AdminCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "cache", subcommand = "list", description = "List all cached users", defaultLocked = true)
     public void listCachedUsers(GuildSlashEvent event) {
-        event.reply("Cached users:\n" + Util.listCachedUsers()).setEphemeral(true).queue();
+        event.reply("Cached users:\n" + Util.listCachedUsers().substring(0, 2_000)).setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "cache", subcommand = "force-save", description = "Forcefully save cached users to the database", defaultLocked = true)
