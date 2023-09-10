@@ -2,7 +2,6 @@ package net.hypixel.nerdbot.curator;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
@@ -78,8 +77,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         for (ThreadChannel thread : threads) {
             log.info("[" + (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
-            MessageHistory history = thread.getHistoryFromBeginning(1).complete();
-            Message message = history.getRetrievedHistory().get(0);
+            Message message = thread.retrieveParentMessage().complete();
 
             if (message == null) {
                 log.error("Message for thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is null!");
@@ -147,18 +145,13 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     tags.add(greenlitTag);
                 }
 
-                boolean archived = thread.isArchived();
-
-                if (archived) {
-                    thread.getManager().setArchived(false).complete();
+                if (thread.isArchived()) {
+                    thread.getManager().setArchived(false).setAppliedTags(tags).setArchived(true).queue();
+                } else {
+                    thread.getManager().setAppliedTags(tags).queue();
                 }
 
-                thread.getManager().setAppliedTags(tags).complete();
                 log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has been greenlit!");
-
-                if (archived) {
-                    thread.getManager().setArchived(true).complete();
-                }
 
                 GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
                 output.add(greenlitMessage);
