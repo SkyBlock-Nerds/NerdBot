@@ -42,6 +42,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         Database database = NerdBotApp.getBot().getDatabase();
 
         if (!database.isConnected()) {
+            setEndTime(System.currentTimeMillis());
             log.error("Couldn't curate messages as the database is not connected!");
             return output;
         }
@@ -61,22 +62,17 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
             return output;
         }
 
-        if (!database.isConnected()) {
-            setEndTime(System.currentTimeMillis());
-            log.error("Couldn't curate messages as the database is not connected!");
-            return output;
-        }
-
         log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
         List<ThreadChannel> threads = Stream.concat(
                 forumChannel.getThreadChannels().stream(), // Unarchived Posts
                 forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
             )
+            .filter(thread -> !thread.isLocked() && !thread.isArchived())
             .distinct()
             .toList();
 
-        log.info("Found " + threads.size() + " non-greenlit/docced forum post(s)!");
+        log.info("Found " + threads.size() + " forum post(s)!");
 
         int index = 0;
         for (ThreadChannel thread : threads) {
@@ -158,9 +154,10 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 }
 
                 thread.getManager().setAppliedTags(tags).complete();
+                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has been greenlit!");
 
                 if (archived) {
-                    thread.getManager().setArchived(true).queue();
+                    thread.getManager().setArchived(true).complete();
                 }
 
                 GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
