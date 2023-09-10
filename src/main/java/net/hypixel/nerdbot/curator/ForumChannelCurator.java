@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 @Log4j2
 public class ForumChannelCurator extends Curator<ForumChannel> {
 
-    private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
+    private static final List<String> GREENLIT_TAGS = Arrays.asList("Greenlit", "Docced");
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
