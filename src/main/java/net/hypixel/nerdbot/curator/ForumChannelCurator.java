@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.curator;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
@@ -77,7 +78,8 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         for (ThreadChannel thread : threads) {
             log.info("[" + (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
-            Message message = thread.retrieveParentMessage().complete();
+            MessageHistory history = thread.getHistoryFromBeginning(1).complete();
+            Message message = history.isEmpty() ? null : history.getRetrievedHistory().get(0);
 
             if (message == null) {
                 log.error("Message for thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is null!");
