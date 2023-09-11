@@ -33,6 +33,10 @@ public enum Stat {
     FORAGING_FORTUNE("☘", "Foraging Fortune", MCColor.GOLD),
     SOULFLOW("⸎", "Soulflow", MCColor.DARK_AQUA),
     OVERFLOW_MANA("ʬ", "Overflow Mana", MCColor.DARK_AQUA),
+    SWING_RANGE("Ⓢ", "Swing Range", MCColor.YELLOW),
+    FUEL("♢", "Fuel", MCColor.DARK_GREEN),
+    MITHRIL_POWDER("᠅", "Mithril Powder", MCColor.DARK_GREEN),
+    GEMSTONE_POWDER("᠅", "Gemstone Powder", MCColor.LIGHT_PURPLE),
     REQUIRE("❣", "Requires", MCColor.RED, StatColorParser::postStatColorParser),
     RECIPE("", "Right-click to view recipes!", MCColor.YELLOW, StatColorParser::noParsing),
     COOP_SOULBOUND("", "Co-op Soulbound", MCColor.DARK_GRAY, StatColorParser::soulboundColorParsing),
@@ -59,7 +63,6 @@ public enum Stat {
     UNDEAD("༕", "This armor piece is undead ༕!", MCColor.DARK_GREEN, StatColorParser::noParsing);
 
     public static final Stat[] VALUES = values();
-    public static final String[] OTHER_ICONS = {"•", "✪", "᠅"};
 
     private final String icon;
     private final String stat;
