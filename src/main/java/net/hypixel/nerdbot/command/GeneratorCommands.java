@@ -24,6 +24,7 @@ import net.hypixel.nerdbot.generator.GeneratorBuilder;
 import net.hypixel.nerdbot.generator.ImageMerger;
 import net.hypixel.nerdbot.generator.StringColorParser;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
@@ -531,6 +532,23 @@ public class GeneratorCommands extends ApplicationCommand {
         embedBuilder.addField("ID", idBuilder.toString(), true);
         embedBuilder.addField("Symbol", symbolBuilder.toString(), true);
         embedBuilder.addField("Display", displayBuilder.toString(), true);
+
+        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "icons", description = "Show a list of all other icons")
+    public void showAllIcons(GuildSlashEvent event) {
+        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Icons").setColor(EMBED_COLORS[0]);
+        StringBuilder idBuilder = new StringBuilder();
+        StringBuilder symbolBuilder = new StringBuilder();
+
+        for(Icon icon : Icon.VALUES) {
+            idBuilder.append("%%").append(icon.name()).append("%%").append("\n");
+            symbolBuilder.append(icon.getIcon()).append("\n");
+        }
+
+        embedBuilder.addField("ID", idBuilder.toString(), true);
+        embedBuilder.addField("Symbol", symbolBuilder.toString(), true);
 
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
