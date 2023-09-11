@@ -231,7 +231,7 @@ public class GeneratorStrings {
             "\n\n**Valid Icons:**\n" +
             Arrays.stream(icons).map(Icon::toString).collect(Collectors.joining(", ")) +
             "\n\n**Valid Gemstones:**\n" +
-            Arrays.stream(gemstones).map(gemstone -> gemstone + " (`%%%%" + gemstone + "%%%%`)").collect(Collectors.joining(", "));
+            Arrays.stream(gemstones).map(Gemstone::toString).collect(Collectors.joining(", "));
 
         StringBuilder availableMinecraftCodes = new StringBuilder(100);
         availableMinecraftCodes.append("You used an invalid character code `%c`.\nValid color codes include...\n");
