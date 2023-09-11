@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.generator;
 
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
+import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
@@ -220,12 +221,15 @@ public class GeneratorStrings {
         Stat[] stats = Stat.VALUES;
         Gemstone[] gemstones = Gemstone.VALUES;
         Rarity[] rarities = Rarity.VALUES;
+        Icon[] icons = Icon.VALUES;
 
         INVALID_STAT_CODE = "You used an invalid option: `%s`" +
             "\n\n**Valid Colors:**\n" +
             Arrays.stream(colors).map(color1 -> color1 + " (`&" + color1.getColorCode() + "` or `%%%%" + color1 + "%%%%`)").collect(Collectors.joining(", ")) +
             "\n\n**Valid Stats:**\n" +
             Arrays.stream(stats).map(Stat::toString).collect(Collectors.joining(", ")) +
+            "\n\n**Valid Icons:**\n" +
+            Arrays.stream(icons).map(Icon::toString).collect(Collectors.joining(", ")) +
             "\n\n**Valid Gemstones:**\n" +
             Arrays.stream(gemstones).map(gemstone -> gemstone + " (`%%%%" + gemstone + "%%%%`)").collect(Collectors.joining(", "));
 
@@ -251,8 +255,9 @@ public class GeneratorStrings {
         }
 
         statSymbolBuilder.append("\nOther Useful Icons\n");
-        for (String icon : Stat.OTHER_ICONS) {
-            statSymbolBuilder.append(icon).append(" ");
+        for (Icon icon : Icon.VALUES) {
+            int length = 25 - icon.toString().length();
+            statSymbolBuilder.append(icon).append(": ").append(" ".repeat(length)).append(icon.getIcon()).append("\n");
         }
         statSymbolBuilder.append("\n```");
         STAT_SYMBOLS = statSymbolBuilder.toString();
