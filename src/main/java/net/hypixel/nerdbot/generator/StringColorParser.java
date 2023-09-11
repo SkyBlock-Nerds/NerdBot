@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.generator;
 
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
+import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
@@ -17,6 +18,7 @@ public class StringColorParser {
     private static final MCColor[] colors = MCColor.VALUES;
     private static final Stat[] stats = Stat.VALUES;
     private static final Gemstone[] gemstones = Gemstone.VALUES;
+    private static final Icon[] icons = Icon.VALUES;
 
     // variables used to store the description
     private final List<List<ColoredString>> parsedDescription;
@@ -138,6 +140,14 @@ public class StringColorParser {
                     if (stat != null) {
                         // replacing the selected space with the stat's text
                         String replacementText = stat.getParsedStat(isIcon, extraData) + currentColor;
+                        description.replace(charIndex, closingIndex + 2, replacementText);
+                        continue;
+                    }
+
+                    // checking if the command is an icon
+                    Icon icon = (Icon) Util.findValue(icons, selectedCommand);
+                    if(icon != null) {
+                        String replacementText = icon.getIcon() + currentColor;
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
