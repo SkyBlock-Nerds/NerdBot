@@ -200,8 +200,6 @@ public class GeneratorBuilder {
             itemLore.append("\\n");
         }
 
-        maxLineLength = Objects.requireNonNullElse(maxLineLength, StringColorParser.MAX_STANDARD_LINE_LENGTH);
-        maxLineLength = Math.min(StringColorParser.MAX_FINAL_LINE_LENGTH, Math.max(1, maxLineLength));
         // creating a string parser to convert the string into color flagged text
         StringColorParser colorParser = new StringColorParser(maxLineLength);
         colorParser.parseString(itemLore);
@@ -223,7 +221,7 @@ public class GeneratorBuilder {
         return new MinecraftImage(
             colorParser.getParsedDescription(),
             MCColor.GRAY,
-            maxLineLength * 25,
+            colorParser.getEstimatedImageWidth() * 15,
             alpha,
             padding,
             isNormalItem
