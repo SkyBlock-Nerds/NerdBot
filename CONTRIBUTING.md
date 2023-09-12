@@ -30,6 +30,8 @@ found [here](https://github.com/TheMGRF/NerdBot/blob/master/src/main/resources/e
 - Log channel ID set
 - Guild ID set
 - Activity string set
+- botToken
+- mongodbURI
 
 ### Additionally, other things may be required to be set in the config before those features will work.
 
