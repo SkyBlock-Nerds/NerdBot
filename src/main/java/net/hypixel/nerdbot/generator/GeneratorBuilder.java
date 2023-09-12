@@ -160,7 +160,7 @@ public class GeneratorBuilder {
      */
     @Nullable
     public BufferedImage buildItem(GuildSlashEvent event, String name, String rarity, String itemLoreString, String type,
-                                     Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem) {
+                                     Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered) {
         // Checking that the fonts have been loaded correctly
         if (!MinecraftImage.isFontsRegistered()) {
             event.getHook().sendMessage(FONTS_NOT_REGISTERED).setEphemeral(true).queue();
@@ -224,7 +224,8 @@ public class GeneratorBuilder {
             colorParser.getEstimatedImageWidth() * 15,
             alpha,
             padding,
-            isNormalItem
+            isNormalItem,
+            isCentered
         )
             .render()
             .getImage();
