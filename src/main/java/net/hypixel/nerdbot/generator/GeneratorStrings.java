@@ -48,6 +48,7 @@ public class GeneratorStrings {
                        """.formatted(COMMAND_PREFIX);
     public static final String GENERAL_HELP = """
                        Item Description Generation   ->   `/%1$s help item`
+                       Item Text Generation          ->   `/%1$s help text`
                        Item Render Generation        ->   `/%1$s help display`
                        Recipe Generation             ->   `/%1$s help recipe`
                        Combined Item Generation      ->   `/%1$s help full`
