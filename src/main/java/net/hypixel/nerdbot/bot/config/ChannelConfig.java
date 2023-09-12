@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.bot.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.channel.ReactionChannel;
 
@@ -22,6 +23,21 @@ public class ChannelConfig {
      * Mojang profile verification requests will be logged to this {@link TextChannel} ID
      */
     private String verifyLogChannelId = "";
+
+    /**
+     * Public archive {@link Category} ID
+     */
+    private String publicArchiveCategoryId = "";
+
+    /**
+     * Nerd archive {@link Category} ID
+     */
+    private String nerdArchiveCategoryId = "";
+
+    /**
+     * Alpha archive {@link Category} ID
+     */
+    private String alphaArchiveCategoryId = "";
 
     /**
      * The {@link TextChannel} IDs for the suggestion forums

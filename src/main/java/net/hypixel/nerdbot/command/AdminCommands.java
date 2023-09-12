@@ -30,6 +30,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
@@ -144,9 +145,9 @@ public class AdminCommands extends ApplicationCommand {
         if (alpha == null) {
             alpha = false;
         }
+        ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
         if (nerd) {
-            Category nerdArchive = event.getGuild().getCategoryById("CONFIG");
-            // TODO Replace with config for every Category.
+            Category nerdArchive = event.getGuild().getCategoryById(channelConfig.getNerdArchiveCategoryId());
             // Moves Channel to Nerd Archive category here.
             channel.getManager().setParent(nerdArchive).queue();
             channel.getManager().sync(nerdArchive.getPermissionContainer()).queue();
@@ -154,16 +155,14 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
         if (alpha) {
-            Category alphaArchive = event.getGuild().getCategoryById("CONFIG");
-            // TODO Replace with config for every Category.
+            Category alphaArchive = event.getGuild().getCategoryById(channelConfig.getAlphaArchiveCategoryId());
             // Moves Channel to Alpha Archive category here.
             channel.getManager().setParent(alphaArchive).queue();
             channel.getManager().sync(alphaArchive.getPermissionContainer()).queue();
             event.getHook().editOriginal("Moved and Synced " + channel.getAsMention() + " to: `" + alphaArchive.getName() + "`").queue();
             return;
         }
-        Category publicArchive = event.getGuild().getCategoryById("CONFIG");
-        // TODO Replace with config for every Category.
+        Category publicArchive = event.getGuild().getCategoryById(channelConfig.getPublicArchiveCategoryId());
         // Moves Channel to Public Archive category here.
         channel.getManager().setParent(publicArchive).queue();
         channel.getManager().sync(publicArchive.getPermissionContainer()).queue();
