@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -129,6 +130,44 @@ public class AdminCommands extends ApplicationCommand {
             ).queue();
         }
         event.getHook().editOriginal("Deleted " + invites.size() + " invites.").queue();
+    }
+
+
+    @JDASlashCommand(name = "archive", subcommand = "channel", description = "Archives a specific channel.", defaultLocked = true)
+    public void archive(GuildSlashEvent event, @AppOption TextChannel channel, @AppOption @Optional Boolean nerd, @AppOption @Optional Boolean alpha) {
+        event.deferReply(true).complete();
+        // By default nerd is true to prevent leaks.
+        if (nerd == null) {
+            nerd = true;
+        }
+        // By default, alpha is false.
+        if (alpha == null) {
+            alpha = false;
+        }
+        if (nerd) {
+            Category nerdArchive = event.getGuild().getCategoryById("CONFIG");
+            // TODO Replace with config for every Category.
+            // Moves Channel to Nerd Archive category here.
+            channel.getManager().setParent(nerdArchive).queue();
+            channel.getManager().sync(nerdArchive.getPermissionContainer()).queue();
+            event.getHook().editOriginal("Moved and Synced " + channel.getAsMention() + " to: `" + nerdArchive.getName() + "`").queue();
+            return;
+        }
+        if (alpha) {
+            Category alphaArchive = event.getGuild().getCategoryById("CONFIG");
+            // TODO Replace with config for every Category.
+            // Moves Channel to Alpha Archive category here.
+            channel.getManager().setParent(alphaArchive).queue();
+            channel.getManager().sync(alphaArchive.getPermissionContainer()).queue();
+            event.getHook().editOriginal("Moved and Synced " + channel.getAsMention() + " to: `" + alphaArchive.getName() + "`").queue();
+            return;
+        }
+        Category publicArchive = event.getGuild().getCategoryById("CONFIG");
+        // TODO Replace with config for every Category.
+        // Moves Channel to Public Archive category here.
+        channel.getManager().setParent(publicArchive).queue();
+        channel.getManager().sync(publicArchive.getPermissionContainer()).queue();
+        event.getHook().editOriginal("Moved and Synced " + channel.getAsMention() + " to: `" + publicArchive.getName() + "`").queue();
     }
 
     @JDASlashCommand(name = "config", subcommand = "show", description = "View the currently loaded config", defaultLocked = true)
