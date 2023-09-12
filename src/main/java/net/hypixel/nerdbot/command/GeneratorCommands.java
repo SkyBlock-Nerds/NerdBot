@@ -25,6 +25,7 @@ import net.hypixel.nerdbot.generator.ImageMerger;
 import net.hypixel.nerdbot.generator.StringColorParser;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Icon;
+import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
@@ -549,6 +550,23 @@ public class GeneratorCommands extends ApplicationCommand {
 
         embedBuilder.addField("ID", idBuilder.toString(), true);
         embedBuilder.addField("Symbol", symbolBuilder.toString(), true);
+
+        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "colors", description = "Show a list of all other icons")
+    public void showAllColors(GuildSlashEvent event) {
+        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Colors").setColor(EMBED_COLORS[0]);
+        StringBuilder idBuilder = new StringBuilder();
+        StringBuilder colorBuilder = new StringBuilder();
+
+        for(MCColor color : MCColor.VALUES) {
+            idBuilder.append("&").append(color.getColorCode()).append(" or %%").append(color.name()).append("%%").append("\n");
+            colorBuilder.append(color.name()).append("\n");
+        }
+
+        embedBuilder.addField("IDs", idBuilder.toString(), true);
+        embedBuilder.addField("Color", colorBuilder.toString(), true);
 
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }

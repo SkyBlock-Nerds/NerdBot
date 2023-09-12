@@ -75,11 +75,11 @@ public class GeneratorStrings {
                         `max_line_length`: Defines the maximum length that the line can be. Can be between 1 and 54.
                         """;
     public static final String ITEM_COLOR_CODES = """ 
-                        The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
+                        The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`. You can use `/%s help colors` to view all available colors.
                         You can use this same format for stats, such as `%%%%PRISTINE%%%%`. This format can also have numbers, where `%%%%PRISTINE:+1%%%%` will become "+1 ✧ Pristine".
                         If you just want to get the icon for a specific stat, you can use `%%%%&PRISTINE%%%%` to automatically format it to the correct color, or retrieve it manually from the `/%s help symbols` command.
                         Another coloring shortcut you can use, such as `%%%%GEM_TOPAZ%%%%`, adding the `[✧]` gemstone slot into the item.
-                        """.formatted(COMMAND_PREFIX);
+                        """.formatted(COMMAND_PREFIX, COMMAND_PREFIX);
 
     public static final String ITEM_OTHER_INFO = """
                         The command will automatically soft-wrap text on your image so that you don't have to. You can change where this begins wrapping by using the `max_line_length` parameter. However, you can move your text to a newline by typing `\\n`.
