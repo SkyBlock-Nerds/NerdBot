@@ -2,11 +2,13 @@ package net.hypixel.nerdbot.generator;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.List;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
@@ -26,14 +28,18 @@ public class MinecraftImage {
     // Current Settings
     @Getter
     private final List<List<ColoredString>> lines;
+    @Getter (AccessLevel.PRIVATE)
+    private final ArrayList<Integer> lineWidths = new ArrayList<>();
     @Getter
     private final int alpha;
     @Getter
     private final int padding;
     @Getter
     private final boolean isNormalItem;
-    @Getter(AccessLevel.PRIVATE)
-    private final Graphics2D graphics;
+    @Getter
+    private final boolean isCentered;
+    @Getter(AccessLevel.PRIVATE) @Setter(AccessLevel.PRIVATE)
+    private Graphics2D graphics;
     @Getter
     private BufferedImage image;
     @Getter
@@ -64,12 +70,13 @@ public class MinecraftImage {
         }
     }
 
-    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem) {
+    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem, boolean isCentered) {
         this.alpha = alpha;
         this.padding = padding;
         this.lines = lines;
         this.isNormalItem = isNormalItem;
-        this.graphics = this.initG2D(defaultWidth + START_XY, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4 - (this.lines.size() == 1 ? PIXEL_SIZE : 0));
+        this.isCentered = isCentered;
+        this.graphics = this.initG2D(defaultWidth + 2 * START_XY, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4 - (this.lines.size() == 1 ? PIXEL_SIZE : 0));
         this.currentColor = defaultColor;
     }
 
@@ -129,6 +136,10 @@ public class MinecraftImage {
      * Creates the inner and outer purple borders around the image.
      */
     public void drawBorders() {
+        if (this.getAlpha() == 0) {
+            return;
+        }
+
         final int width = this.getImage().getWidth();
         final int height = this.getImage().getHeight();
 
@@ -180,6 +191,41 @@ public class MinecraftImage {
             // increase size of first line if there are more than one lines present
             this.updatePositionAndSize(this.isNormalItem() && this.getLines().indexOf(line) == 0);
         }
+    }
+
+    /***
+     * Centers the lines into the middle of the width of the screen
+     */
+    private void centerLines() {
+        if (this.isNormalItem() || !this.isCentered()) {
+            return;
+        }
+
+        BufferedImage centeredImage = new BufferedImage(this.image.getWidth(), this.image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = centeredImage.createGraphics();
+        if (this.isNormalItem()) {
+            g2d.setColor(new Color(18, 3, 18, this.getAlpha()));
+            g2d.fillRect(
+                PIXEL_SIZE * 2,
+                PIXEL_SIZE * 2,
+                this.image.getWidth() - PIXEL_SIZE * 4,
+                this.image.getHeight() - PIXEL_SIZE * 4
+            );
+        }
+
+        int currentY = START_XY;
+        int imageMidpoint = this.image.getWidth() / 2 - START_XY / 2;
+
+        for (int length : this.getLineWidths()) {
+            int displacement = imageMidpoint - (length / 2);
+            BufferedImage textTaken = this.image.getSubimage(START_XY, currentY, length, Y_INCREMENT);
+            g2d.drawImage(textTaken, START_XY + displacement, currentY, length, Y_INCREMENT, null);
+
+            currentY += Y_INCREMENT;
+        }
+
+        this.image = centeredImage;
+        this.graphics = g2d;
     }
 
     /**
@@ -268,6 +314,7 @@ public class MinecraftImage {
     public MinecraftImage render() {
         this.drawLines();
         this.cropImage();
+        this.centerLines();
         this.drawBorders();
         this.addPadding();
         return this;
@@ -281,6 +328,7 @@ public class MinecraftImage {
     private void updatePositionAndSize(boolean increaseGap) {
         this.locationY += Y_INCREMENT + (increaseGap ? PIXEL_SIZE * 2 : 0);
         this.largestWidth = Math.max(this.locationX, this.largestWidth);
+        this.getLineWidths().add(this.locationX);
         this.locationX = START_XY;
     }
 

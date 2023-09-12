@@ -71,7 +71,7 @@ public class GeneratorCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).complete();
         // building the item's description
-        BufferedImage generatedImage = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
+        BufferedImage generatedImage = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
@@ -84,14 +84,18 @@ public class GeneratorCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
-    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT) String message, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+    public void generateText(GuildSlashEvent event,
+                             @AppOption(description = DESC_TEXT) String message,
+                             @Optional @AppOption(description = DESC_CENTERED) Boolean centered,
+                             @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
         }
         hidden = (hidden != null && hidden);
+        centered = (centered != null && centered);
         event.deferReply(hidden).complete();
         // building the chat message
-        BufferedImage generatedImage = builder.buildItem(event, "NONE", "NONE", message, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false);
+        BufferedImage generatedImage = builder.buildItem(event, "NONE", "NONE", message, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
@@ -159,7 +163,7 @@ public class GeneratorCommands extends ApplicationCommand {
         // building the description for the item
         BufferedImage generatedDescription = null;
         if (itemName != null && rarity != null && itemLore != null) {
-            generatedDescription = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
+            generatedDescription = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false);
             if (generatedDescription == null) {
                 return;
             }
@@ -364,7 +368,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         // creating the generated description
-        BufferedImage generatedDescription = builder.buildItem(event, "NONE", "NONE", itemText.toString(), "NONE", false, 255, 0, maxLineLength, true);
+        BufferedImage generatedDescription = builder.buildItem(event, "NONE", "NONE", itemText.toString(), "NONE", false, 255, 0, maxLineLength, true, false);
         if (generatedDescription == null) {
             event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
             return;
@@ -440,6 +444,18 @@ public class GeneratorCommands extends ApplicationCommand {
         embeds.add(examplesBuilder.build());
 
         event.replyEmbeds(embeds).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "text", description = "Show help related to the Item Generation Text command.")
+    public void askForTextRenderHelp(GuildSlashEvent event) {
+        EmbedBuilder infoBuilder = new EmbedBuilder()
+            .setColor(EMBED_COLORS[0])
+            .setTitle("Text Generation")
+            .setDescription(ITEM_TEXT_BASIC_INFO)
+            .addField("Item Arguments", ITEM_TEXT_INFO_ARGUMENTS, false)
+            .addField("Optional Arguments", ITEM_TEXT_INFO_OPTIONAL_ARGUMENTS, false);
+
+        event.replyEmbeds(infoBuilder.build()).setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "full", description = "Show a full help page for the Item Generation command.")
