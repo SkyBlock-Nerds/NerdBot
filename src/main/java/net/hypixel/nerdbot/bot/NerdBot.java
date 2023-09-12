@@ -49,7 +49,7 @@ public class NerdBot implements Bot {
         new ProfileUpdateFeature()
     );
 
-    private final Database database = new Database(System.getProperty("mongodb.uri"), "skyblock_nerds");
+    private Database database;
     private JDA jda;
     private BotConfig config;
     private long startTime;
@@ -60,8 +60,20 @@ public class NerdBot implements Bot {
     @Override
     public void create(String[] args) throws LoginException {
         loadConfig();
-
-        JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
+        String mongodbURI;
+        if (System.getProperty("mongodb.uri") == null){
+            mongodbURI = config.getMongodbURI();
+        } else {
+            mongodbURI = System.getProperty("mongodb.uri");
+        }
+        database = new Database(mongodbURI, "skyblock_nerds");
+        String botToken;
+        if (System.getProperty("bot.token") == null){
+            botToken = config.getBotToken();
+        } else {
+            botToken = System.getProperty("bot.token");
+        }
+        JDABuilder builder = JDABuilder.createDefault(botToken)
             .setEventManager(new AnnotatedEventManager())
             .addEventListeners(
                 new ModLogListener(),

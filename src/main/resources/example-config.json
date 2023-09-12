@@ -31,6 +31,8 @@
   },
   "guildId": "",
   "ownerIds": [],
+  "botToken": "",
+  "mongodbURI": "",
   "minimumThreshold": 15,
   "messageLimit": 100,
   "mojangUsernameCacheTTL": 12,

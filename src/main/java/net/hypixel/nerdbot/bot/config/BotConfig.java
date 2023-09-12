@@ -51,6 +51,16 @@ public class BotConfig {
     private long[] ownerIds = {};
 
     /**
+     * String that the bot token will run from
+     */
+    private String botToken = "";
+
+    /**
+     * The MongoDB Database URI.
+     */
+    private String mongodbURI = "";
+
+    /**
      * The minimum threshold of {@link MessageReaction reactions} needed for a suggestion to be considered greenlit
      * Default value is 15 {@link MessageReaction reactions}
      */
