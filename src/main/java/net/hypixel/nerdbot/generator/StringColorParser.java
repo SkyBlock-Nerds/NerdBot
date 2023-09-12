@@ -28,7 +28,8 @@ public class StringColorParser {
     // variables for keeping track of line length and position
     private int charIndex;
     private int lineLength;
-    private final int maxLineLength;
+    private final int wrappedLineLength;
+    private int imageMaxLineLength = 0;
 
     private String errorString;
     private boolean successfullyParsed;
@@ -42,7 +43,7 @@ public class StringColorParser {
         successfullyParsed = false;
 
         maxLength = Objects.requireNonNullElse(maxLength, StringColorParser.MAX_STANDARD_LINE_LENGTH);
-        maxLineLength = Math.min(StringColorParser.MAX_FINAL_LINE_LENGTH, Math.max(1, maxLength));
+        wrappedLineLength = Math.min(StringColorParser.MAX_FINAL_LINE_LENGTH, Math.max(1, maxLength));
     }
 
     public List<List<ColoredString>> getParsedDescription() {
@@ -55,6 +56,10 @@ public class StringColorParser {
 
     public String getErrorString() {
         return errorString;
+    }
+
+    public int getEstimatedImageWidth() {
+        return this.imageMaxLineLength;
     }
 
     /**
@@ -226,10 +231,10 @@ public class StringColorParser {
             }
 
             String currentSubstring = description.substring(charIndex, nearestSplit);
-            if (lineLength + currentSubstring.length() >= maxLineLength) {
+            if (lineLength + currentSubstring.length() >= wrappedLineLength) {
                 // splitting the current string if it cannot fit onto a single line
-                if (currentSubstring.length() >= maxLineLength) {
-                    currentSubstring = currentSubstring.substring(0, maxLineLength);
+                if (currentSubstring.length() >= wrappedLineLength) {
+                    currentSubstring = currentSubstring.substring(0, wrappedLineLength);
                 }
 
                 createNewLine();
@@ -264,6 +269,10 @@ public class StringColorParser {
         // creating a new line and segment
         currentLine = new ArrayList<>();
         currentString = new ColoredString(currentString);
+
+        if (lineLength > imageMaxLineLength) {
+            imageMaxLineLength = lineLength;
+        }
         lineLength = 0;
     }
 
