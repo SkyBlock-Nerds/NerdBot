@@ -137,14 +137,17 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "archive", subcommand = "channel", description = "Archives a specific channel.", defaultLocked = true)
     public void archive(GuildSlashEvent event, @AppOption TextChannel channel, @AppOption @Optional Boolean nerd, @AppOption @Optional Boolean alpha) {
         event.deferReply(true).complete();
+
         // By default nerd is true to prevent leaks.
         if (nerd == null) {
             nerd = true;
         }
+
         // By default, alpha is false.
         if (alpha == null) {
             alpha = false;
         }
+
         ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
         if (nerd) {
             Category nerdArchive = event.getGuild().getCategoryById(channelConfig.getNerdArchiveCategoryId());
@@ -154,6 +157,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginal("Moved and Synced " + channel.getAsMention() + " to: `" + nerdArchive.getName() + "`").queue();
             return;
         }
+
         if (alpha) {
             Category alphaArchive = event.getGuild().getCategoryById(channelConfig.getAlphaArchiveCategoryId());
             // Moves Channel to Alpha Archive category here.
@@ -162,6 +166,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginal("Moved and Synced " + channel.getAsMention() + " to: `" + alphaArchive.getName() + "`").queue();
             return;
         }
+
         Category publicArchive = event.getGuild().getCategoryById(channelConfig.getPublicArchiveCategoryId());
         // Moves Channel to Public Archive category here.
         channel.getManager().setParent(publicArchive).queue();
