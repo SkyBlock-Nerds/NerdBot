@@ -18,6 +18,9 @@
   "channelConfig": {
     "logChannelId": "",
     "verifyLogChannelId": "",
+    "publicArchiveCategoryId": "",
+    "nerdArchiveCategoryId": "",
+    "alphaArchiveCategoryId": "",
     "suggestionForumIds": [],
     "alphaSuggestionForumIds": [],
     "genChannelIds": [],
