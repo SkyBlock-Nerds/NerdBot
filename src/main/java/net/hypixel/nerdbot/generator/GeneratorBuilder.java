@@ -160,7 +160,7 @@ public class GeneratorBuilder {
      */
     @Nullable
     public BufferedImage buildItem(GuildSlashEvent event, String name, String rarity, String itemLoreString, String type,
-                                     Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem) {
+                                     Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered) {
         // Checking that the fonts have been loaded correctly
         if (!MinecraftImage.isFontsRegistered()) {
             event.getHook().sendMessage(FONTS_NOT_REGISTERED).setEphemeral(true).queue();
@@ -200,8 +200,6 @@ public class GeneratorBuilder {
             itemLore.append("\\n");
         }
 
-        maxLineLength = Objects.requireNonNullElse(maxLineLength, StringColorParser.MAX_STANDARD_LINE_LENGTH);
-        maxLineLength = Math.min(StringColorParser.MAX_FINAL_LINE_LENGTH, Math.max(1, maxLineLength));
         // creating a string parser to convert the string into color flagged text
         StringColorParser colorParser = new StringColorParser(maxLineLength);
         colorParser.parseString(itemLore);
@@ -223,10 +221,11 @@ public class GeneratorBuilder {
         return new MinecraftImage(
             colorParser.getParsedDescription(),
             MCColor.GRAY,
-            maxLineLength * 25,
+            colorParser.getEstimatedImageWidth() * 15,
             alpha,
             padding,
-            isNormalItem
+            isNormalItem,
+            isCentered
         )
             .render()
             .getImage();
