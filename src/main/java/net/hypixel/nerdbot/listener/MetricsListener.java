@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.channel.forum.ForumTagAddEvent;
 import net.dv8tion.jda.api.events.channel.forum.ForumTagRemoveEvent;
@@ -27,9 +28,11 @@ public class MetricsListener {
             PrometheusMetrics.TOTAL_MESSAGES_AMOUNT.labels(event.getAuthor().getName(), Util.getHighestRole(event.getMember()).getName(), event.getChannel().getName()).inc();
         }
 
-        String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
-        if (Util.safeArrayStream(NerdBotApp.getBot().getConfig().getChannelConfig().getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
-            PrometheusMetrics.TOTAL_SUGGESTIONS_AMOUNT.inc();
+        if (event.getChannel() instanceof ThreadChannel) {
+            String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
+            if (Util.safeArrayStream(NerdBotApp.getBot().getConfig().getChannelConfig().getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+                PrometheusMetrics.TOTAL_SUGGESTIONS_AMOUNT.inc();
+            }
         }
     }
 
