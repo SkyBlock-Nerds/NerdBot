@@ -31,6 +31,7 @@ import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
@@ -212,6 +213,15 @@ public class AdminCommands extends ApplicationCommand {
         JsonUtil.writeJsonFile(fileName, JsonUtil.setJsonValue(obj, key, element));
         log.info(event.getUser().getName() + " edited the config file!");
         event.reply("Successfully updated the JSON file!").setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "metrics", subcommand = "toggle", description = "Toggle metrics collection", defaultLocked = true)
+    public void toggleMetrics(GuildSlashEvent event) {
+        Bot bot = NerdBotApp.getBot();
+        MetricsConfig metricsConfig = bot.getConfig().getMetricsConfig();
+        metricsConfig.setEnabled(!metricsConfig.isEnabled());
+        PrometheusMetrics.setMetricsEnabled(metricsConfig.isEnabled());
+        event.reply("Metrics collection is now " + (metricsConfig.isEnabled() ? "enabled" : "disabled") + "!").setEphemeral(true).queue();
     }
 
     @JDASlashCommand(
