@@ -25,6 +25,7 @@ import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
+import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
@@ -69,7 +70,8 @@ public class NerdBot implements Bot {
                 new ActivityListener(),
                 new ReactionChannelListener(),
                 new SuggestionListener(),
-                new VerificationListener()
+                new VerificationListener(),
+                new MetricsListener()
             ).setActivity(Activity.of(config.getActivityType(), config.getActivity()));
         configureMemoryUsage(builder);
 
@@ -169,7 +171,17 @@ public class NerdBot implements Bot {
             feature.onStart();
             log.info("Started feature " + feature.getClass().getSimpleName());
         }
+
         startTime = System.currentTimeMillis();
+
+        if (Util.getMainGuild() != null) {
+            Util.getMainGuild().loadMembers().onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size())).onError(Throwable::printStackTrace);
+        }
+
+        if (config.getMetricsConfig().isEnabled()) {
+            PrometheusMetrics.setMetricsEnabled(true);
+        }
+
         log.info("Bot started in environment " + Environment.getEnvironment());
     }
 

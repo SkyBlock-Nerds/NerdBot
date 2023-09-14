@@ -34,6 +34,7 @@ import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
+import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -182,8 +183,11 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "config", subcommand = "reload", description = "Reload the config file", defaultLocked = true)
     public void reloadConfig(GuildSlashEvent event) {
         Bot bot = NerdBotApp.getBot();
+
         bot.loadConfig();
         bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
+        PrometheusMetrics.setMetricsEnabled(bot.getConfig().getMetricsConfig().isEnabled());
+
         event.reply("Reloaded the config file!").setEphemeral(true).queue();
     }
 
