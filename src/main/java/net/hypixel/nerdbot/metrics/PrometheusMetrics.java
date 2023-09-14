@@ -54,7 +54,7 @@ public class PrometheusMetrics {
     public static final Counter SLASH_COMMANDS_AMOUNT = Counter.build()
         .name("slash_commands_total")
         .help("Total number of slash commands executed")
-        .labelNames("command_name")
+        .labelNames("user_name", "command_name")
         .register();
 
     public static final Counter INVITES_CREATED_AMOUNT = Counter.build()
