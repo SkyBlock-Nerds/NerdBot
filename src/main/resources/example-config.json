@@ -32,6 +32,9 @@
     "newMemberRoleId": "",
     "limboRoleId": ""
   },
+  "metricsConfig": {
+    "enabled": false
+  },
   "guildId": "",
   "ownerIds": [],
   "minimumThreshold": 15,
