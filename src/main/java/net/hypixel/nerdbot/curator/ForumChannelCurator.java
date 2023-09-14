@@ -46,6 +46,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
             if (!database.isConnected()) {
                 setEndTime(System.currentTimeMillis());
+                timer.observeDuration();
                 log.error("Couldn't curate messages as the database is not connected!");
                 return output;
             }
@@ -55,6 +56,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
             if (emojiConfig == null) {
                 log.error("Couldn't find the emoji config from the bot config!");
+                timer.observeDuration();
                 return output;
             }
 
@@ -62,6 +64,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
             if (greenlitTag == null) {
                 log.error("Couldn't find the greenlit tag for the forum channel " + forumChannel.getName() + " (ID: " + forumChannel.getId() + ")!");
+                timer.observeDuration();
                 return output;
             }
 
