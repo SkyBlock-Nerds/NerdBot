@@ -29,6 +29,18 @@ public class PrometheusMetrics {
         .labelNames("message_id", "message_length")
         .register();
 
+    public static final Summary CURATOR_LENGTH_SECONDS = Summary.build()
+        .name("curator_length_seconds")
+        .help("Time taken to curate a suggestions channel in seconds")
+        .labelNames("channel_name")
+        .register();
+
+    public static final Counter CURATOR_MESSAGES_AMOUNT = Counter.build()
+        .name("curator_messages_total")
+        .help("Amount of messages curated in a suggestions channel")
+        .labelNames("channel_name")
+        .register();
+
     public static final Gauge TOTAL_USERS_AMOUNT = Gauge.build()
         .name("guild_users_total")
         .help("Total number of users in the guild")
