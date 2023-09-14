@@ -14,8 +14,6 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.Util;
 
-import java.util.Arrays;
-
 public class MetricsListener {
 
     @SubscribeEvent
@@ -29,7 +27,8 @@ public class MetricsListener {
             PrometheusMetrics.TOTAL_MESSAGES_AMOUNT.labels(event.getAuthor().getName(), Util.getHighestRole(event.getMember()).getName(), event.getChannel().getName()).inc();
         }
 
-        if (Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getSuggestionForumIds()).contains(event.getChannel().getId())) {
+        String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
+        if (Util.safeArrayStream(NerdBotApp.getBot().getConfig().getChannelConfig().getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
             PrometheusMetrics.TOTAL_SUGGESTIONS_AMOUNT.inc();
         }
     }
