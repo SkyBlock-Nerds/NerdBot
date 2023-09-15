@@ -152,7 +152,7 @@ public class StringColorParser {
                     // checking if the command is an icon
                     Icon icon = (Icon) Util.findValue(icons, selectedCommand);
                     if(icon != null) {
-                        String replacementText = icon.getIcon() + currentColor;
+                        String replacementText = icon.getParsedIcon(extraData) + currentColor;
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
                     }
