@@ -5,7 +5,7 @@ import net.hypixel.nerdbot.generator.IconParser;
 import java.util.function.BiFunction;
 
 public enum Icon {
-    DOT("•", "Dot", IconParser::repeatingIconParser),
+    DOT("•", "Dot"),
     TICKER("Ⓞ", "Ticker", IconParser::repeatingIconParser),
     ZOMBIE_CHARGE("ⓩ", "Available Charge", IconParser::repeatingIconParser),
     STAR("✪", "Star", IconParser::repeatingIconParser),
