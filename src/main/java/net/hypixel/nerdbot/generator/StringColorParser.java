@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.generator;
 
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
+import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
@@ -17,6 +18,7 @@ public class StringColorParser {
     private static final MCColor[] colors = MCColor.VALUES;
     private static final Stat[] stats = Stat.VALUES;
     private static final Gemstone[] gemstones = Gemstone.VALUES;
+    private static final Icon[] icons = Icon.VALUES;
 
     // variables used to store the description
     private final List<List<ColoredString>> parsedDescription;
@@ -26,7 +28,8 @@ public class StringColorParser {
     // variables for keeping track of line length and position
     private int charIndex;
     private int lineLength;
-    private final int maxLineLength;
+    private final int wrappedLineLength;
+    private int imageMaxLineLength = 0;
 
     private String errorString;
     private boolean successfullyParsed;
@@ -40,7 +43,7 @@ public class StringColorParser {
         successfullyParsed = false;
 
         maxLength = Objects.requireNonNullElse(maxLength, StringColorParser.MAX_STANDARD_LINE_LENGTH);
-        maxLineLength = Math.min(StringColorParser.MAX_FINAL_LINE_LENGTH, Math.max(1, maxLength));
+        wrappedLineLength = Math.min(StringColorParser.MAX_FINAL_LINE_LENGTH, Math.max(1, maxLength));
     }
 
     public List<List<ColoredString>> getParsedDescription() {
@@ -53,6 +56,10 @@ public class StringColorParser {
 
     public String getErrorString() {
         return errorString;
+    }
+
+    public int getEstimatedImageWidth() {
+        return this.imageMaxLineLength;
     }
 
     /**
@@ -142,6 +149,14 @@ public class StringColorParser {
                         continue;
                     }
 
+                    // checking if the command is an icon
+                    Icon icon = (Icon) Util.findValue(icons, selectedCommand);
+                    if(icon != null) {
+                        String replacementText = icon.getParsedIcon(extraData) + currentColor;
+                        description.replace(charIndex, closingIndex + 2, replacementText);
+                        continue;
+                    }
+
                     // checking if the command is supposed to only trigger for the text inside it
                     MCColor tempStatColor = (MCColor) Util.findValue(colors, selectedCommand);
                     if (tempStatColor != null) {
@@ -216,10 +231,10 @@ public class StringColorParser {
             }
 
             String currentSubstring = description.substring(charIndex, nearestSplit);
-            if (lineLength + currentSubstring.length() >= maxLineLength) {
+            if (lineLength + currentSubstring.length() >= wrappedLineLength) {
                 // splitting the current string if it cannot fit onto a single line
-                if (currentSubstring.length() >= maxLineLength) {
-                    currentSubstring = currentSubstring.substring(0, maxLineLength);
+                if (currentSubstring.length() >= wrappedLineLength) {
+                    currentSubstring = currentSubstring.substring(0, wrappedLineLength);
                 }
 
                 createNewLine();
@@ -254,6 +269,10 @@ public class StringColorParser {
         // creating a new line and segment
         currentLine = new ArrayList<>();
         currentString = new ColoredString(currentString);
+
+        if (lineLength > imageMaxLineLength) {
+            imageMaxLineLength = lineLength;
+        }
         lineLength = 0;
     }
 

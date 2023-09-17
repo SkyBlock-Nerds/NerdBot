@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.generator;
 
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
+import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
@@ -26,6 +27,7 @@ public class GeneratorStrings {
     public static final String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
     public static final String DESC_PADDING = "Sets the transparent padding around the image (0 = none, 1 = discord)";
     public static final String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (1 - " + StringColorParser.MAX_FINAL_LINE_LENGTH + ") default " + StringColorParser.MAX_STANDARD_LINE_LENGTH;
+    public static final String DESC_CENTERED = "Centers text to the middle of the image";
     public static final String DESC_ITEM_ID = "The name of the Minecraft item you want to display";
     public static final String DESC_HIDDEN = "If you only want the generated image visible to be yourself. (Deleted on client restart!)";
     public static final String DESC_PARSE_ITEM = "The items NBT Data from in game";
@@ -46,6 +48,7 @@ public class GeneratorStrings {
                        """.formatted(COMMAND_PREFIX);
     public static final String GENERAL_HELP = """
                        Item Description Generation   ->   `/%1$s help item`
+                       Item Text Generation          ->   `/%1$s help text`
                        Item Render Generation        ->   `/%1$s help display`
                        Recipe Generation             ->   `/%1$s help recipe`
                        Combined Item Generation      ->   `/%1$s help full`
@@ -74,11 +77,11 @@ public class GeneratorStrings {
                         `max_line_length`: Defines the maximum length that the line can be. Can be between 1 and 54.
                         """;
     public static final String ITEM_COLOR_CODES = """ 
-                        The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`.
+                        The Item Generator bot also accepts color codes. You can use these with either manual Minecraft codes, such as `&1`, or Hypixel style color codes, such as `%%DARK_BLUE%%`. You can use `/%s help colors` to view all available colors.
                         You can use this same format for stats, such as `%%%%PRISTINE%%%%`. This format can also have numbers, where `%%%%PRISTINE:+1%%%%` will become "+1 ✧ Pristine".
                         If you just want to get the icon for a specific stat, you can use `%%%%&PRISTINE%%%%` to automatically format it to the correct color, or retrieve it manually from the `/%s help symbols` command.
                         Another coloring shortcut you can use, such as `%%%%GEM_TOPAZ%%%%`, adding the `[✧]` gemstone slot into the item.
-                        """.formatted(COMMAND_PREFIX);
+                        """.formatted(COMMAND_PREFIX, COMMAND_PREFIX);
 
     public static final String ITEM_OTHER_INFO = """
                         The command will automatically soft-wrap text on your image so that you don't have to. You can change where this begins wrapping by using the `max_line_length` parameter. However, you can move your text to a newline by typing `\\n`.
@@ -92,6 +95,11 @@ public class GeneratorStrings {
                        **Creating a Aspect of the Pancake**
                        `/%1$s item item_name: Aspect of the Waffle rarity: EPIC item_lore: %%%%GEM_COMBAT%%%% %%%%GEM_COMBAT%%%%\\n&7Damage: &c+100\\n&7Strength: &c+100\\n &7Magic Find: &a+5\\n\\n%%%%ABILITY:Electro Waffle:RIGHT CLICK%%%%\\n&7Launch a &aWaffle &7at your enemies dealing &c50,000 &7damage and electrifiying them dealing &c1,000 &7damage per second.\\n%%%%MANA_COST:30%%%%\\n%%%%COOLDOWN:10s%%%%\\n\\n&8&oWait 'till the music begins.\\n\\n%%%%REFORGABLE%%%% type: SWORD disable_rarity_linebreak: true max_line_length: 37 hidden: true`
                        """.formatted(COMMAND_PREFIX);
+
+    // item gen text help messages
+    public static final String ITEM_TEXT_BASIC_INFO = "This is a command which can be used to generate Minecraft text similar to how it would appear in game! This command supports all the fancy tricks for changing colors, stats and icons!";
+    public static final String ITEM_TEXT_INFO_ARGUMENTS = "`message`: The chat message you wish to display";
+    public static final String ITEM_TEXT_INFO_OPTIONAL_ARGUMENTS = "`centered (true/false)`: If you want the text to be displayed in the center of the image";
 
     // item gen head messages
     public static final String MALFORMED_HEAD_URL = "It seems that there is something wrong with the URL that was entered on the developer side of it. Please contact one of the Bot Developers!";
@@ -220,14 +228,17 @@ public class GeneratorStrings {
         Stat[] stats = Stat.VALUES;
         Gemstone[] gemstones = Gemstone.VALUES;
         Rarity[] rarities = Rarity.VALUES;
+        Icon[] icons = Icon.VALUES;
 
         INVALID_STAT_CODE = "You used an invalid option: `%s`" +
             "\n\n**Valid Colors:**\n" +
             Arrays.stream(colors).map(color1 -> color1 + " (`&" + color1.getColorCode() + "` or `%%%%" + color1 + "%%%%`)").collect(Collectors.joining(", ")) +
             "\n\n**Valid Stats:**\n" +
             Arrays.stream(stats).map(Stat::toString).collect(Collectors.joining(", ")) +
+            "\n\n**Valid Icons:**\n" +
+            Arrays.stream(icons).map(Icon::toString).collect(Collectors.joining(", ")) +
             "\n\n**Valid Gemstones:**\n" +
-            Arrays.stream(gemstones).map(gemstone -> gemstone + " (`%%%%" + gemstone + "%%%%`)").collect(Collectors.joining(", "));
+            Arrays.stream(gemstones).map(Gemstone::toString).collect(Collectors.joining(", "));
 
         StringBuilder availableMinecraftCodes = new StringBuilder(100);
         availableMinecraftCodes.append("You used an invalid character code `%c`.\nValid color codes include...\n");
@@ -251,8 +262,9 @@ public class GeneratorStrings {
         }
 
         statSymbolBuilder.append("\nOther Useful Icons\n");
-        for (String icon : Stat.OTHER_ICONS) {
-            statSymbolBuilder.append(icon).append(" ");
+        for (Icon icon : Icon.VALUES) {
+            int length = 25 - icon.toString().length();
+            statSymbolBuilder.append(icon).append(": ").append(" ".repeat(length)).append(icon.getIcon()).append("\n");
         }
         statSymbolBuilder.append("\n```");
         STAT_SYMBOLS = statSymbolBuilder.toString();

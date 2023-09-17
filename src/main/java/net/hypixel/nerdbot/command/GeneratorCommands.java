@@ -24,6 +24,8 @@ import net.hypixel.nerdbot.generator.GeneratorBuilder;
 import net.hypixel.nerdbot.generator.ImageMerger;
 import net.hypixel.nerdbot.generator.StringColorParser;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.skyblock.Icon;
+import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
@@ -69,7 +71,7 @@ public class GeneratorCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).complete();
         // building the item's description
-        BufferedImage generatedImage = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
+        BufferedImage generatedImage = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
@@ -82,14 +84,18 @@ public class GeneratorCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
-    public void generateText(GuildSlashEvent event, @AppOption(description = DESC_TEXT) String message, @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+    public void generateText(GuildSlashEvent event,
+                             @AppOption(description = DESC_TEXT) String message,
+                             @Optional @AppOption(description = DESC_CENTERED) Boolean centered,
+                             @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
         }
         hidden = (hidden != null && hidden);
+        centered = (centered != null && centered);
         event.deferReply(hidden).complete();
         // building the chat message
-        BufferedImage generatedImage = builder.buildItem(event, "NONE", "NONE", message, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false);
+        BufferedImage generatedImage = builder.buildItem(event, "NONE", "NONE", message, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
@@ -157,7 +163,7 @@ public class GeneratorCommands extends ApplicationCommand {
         // building the description for the item
         BufferedImage generatedDescription = null;
         if (itemName != null && rarity != null && itemLore != null) {
-            generatedDescription = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true);
+            generatedDescription = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false);
             if (generatedDescription == null) {
                 return;
             }
@@ -362,7 +368,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         // creating the generated description
-        BufferedImage generatedDescription = builder.buildItem(event, "NONE", "NONE", itemText.toString(), "NONE", false, 255, 0, maxLineLength, true);
+        BufferedImage generatedDescription = builder.buildItem(event, "NONE", "NONE", itemText.toString(), "NONE", false, 255, 0, maxLineLength, true, false);
         if (generatedDescription == null) {
             event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
             return;
@@ -438,6 +444,18 @@ public class GeneratorCommands extends ApplicationCommand {
         embeds.add(examplesBuilder.build());
 
         event.replyEmbeds(embeds).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "text", description = "Show help related to the Item Generation Text command.")
+    public void askForTextRenderHelp(GuildSlashEvent event) {
+        EmbedBuilder infoBuilder = new EmbedBuilder()
+            .setColor(EMBED_COLORS[0])
+            .setTitle("Text Generation")
+            .setDescription(ITEM_TEXT_BASIC_INFO)
+            .addField("Item Arguments", ITEM_TEXT_INFO_ARGUMENTS, false)
+            .addField("Optional Arguments", ITEM_TEXT_INFO_OPTIONAL_ARGUMENTS, false);
+
+        event.replyEmbeds(infoBuilder.build()).setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "full", description = "Show a full help page for the Item Generation command.")
@@ -531,6 +549,40 @@ public class GeneratorCommands extends ApplicationCommand {
         embedBuilder.addField("ID", idBuilder.toString(), true);
         embedBuilder.addField("Symbol", symbolBuilder.toString(), true);
         embedBuilder.addField("Display", displayBuilder.toString(), true);
+
+        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "icons", description = "Show a list of all other icons")
+    public void showAllIcons(GuildSlashEvent event) {
+        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Icons").setColor(EMBED_COLORS[0]);
+        StringBuilder idBuilder = new StringBuilder();
+        StringBuilder symbolBuilder = new StringBuilder();
+
+        for(Icon icon : Icon.VALUES) {
+            idBuilder.append("%%").append(icon.name()).append("%%").append("\n");
+            symbolBuilder.append(icon.getIcon()).append("\n");
+        }
+
+        embedBuilder.addField("ID", idBuilder.toString(), true);
+        embedBuilder.addField("Symbol", symbolBuilder.toString(), true);
+
+        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "colors", description = "Show a list of all other icons")
+    public void showAllColors(GuildSlashEvent event) {
+        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Colors").setColor(EMBED_COLORS[0]);
+        StringBuilder idBuilder = new StringBuilder();
+        StringBuilder colorBuilder = new StringBuilder();
+
+        for(MCColor color : MCColor.VALUES) {
+            idBuilder.append("&").append(color.getColorCode()).append(" or %%").append(color.name()).append("%%").append("\n");
+            colorBuilder.append(color.name()).append("\n");
+        }
+
+        embedBuilder.addField("IDs", idBuilder.toString(), true);
+        embedBuilder.addField("Color", colorBuilder.toString(), true);
 
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }

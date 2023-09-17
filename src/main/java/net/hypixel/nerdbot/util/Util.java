@@ -4,12 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageReaction;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
@@ -17,35 +12,25 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.command.GeneratorCommands;
-import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import net.hypixel.nerdbot.util.exception.HttpException;
+import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -198,6 +183,27 @@ public class Util {
         }
 
         return NerdBotApp.USER_CACHE.getIfPresent(userId);
+    }
+
+    public static String listCachedUsers() {
+        if (NerdBotApp.USER_CACHE.asMap().isEmpty()) {
+            return "No users cached!";
+        }
+
+        return NerdBotApp.USER_CACHE.asMap().keySet().stream().map(id -> String.format("<@%s>", id)).collect(Collectors.joining(", "));
+    }
+
+    public static void saveCache(Database database) {
+        if (!database.isConnected()) {
+            throw new RuntimeException("Could not save cache because there is not a database connected!");
+        }
+
+        for (DiscordUser discordUser : NerdBotApp.USER_CACHE.asMap().values()) {
+            database.upsertDocument(database.getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
+            log.info("Saved cached user " + discordUser.getDiscordId() + " to database");
+        }
+
+        NerdBotApp.USER_CACHE.invalidateAll();
     }
 
     public static JsonObject makeHttpRequest(String url) throws IOException, InterruptedException {
