@@ -132,7 +132,7 @@ public class ReminderCommands extends ApplicationCommand {
 
         StringBuilder builder = new StringBuilder("**Your reminders:**\n");
         for (Reminder reminder : reminders) {
-            builder.append("(").append(reminder.getUuid()).append(") ").append(new DiscordTimestamp(reminder.getTime().getTime()).toLongDateTime()).append(" - `").append(reminder.getDescription()).append("`\n");
+            builder.append("(").append(reminder.getUuid()).append(") Public: `").append(reminder.isSendPublicly()).append("` ").append(new DiscordTimestamp(reminder.getTime().getTime()).toLongDateTime()).append(" - `").append(reminder.getDescription()).append("`\n");
         }
 
         builder.append("\n**You can delete reminders with `/remind delete <uuid>`**");
