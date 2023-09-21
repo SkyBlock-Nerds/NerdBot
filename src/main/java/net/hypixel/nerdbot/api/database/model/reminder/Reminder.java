@@ -104,7 +104,7 @@ public class Reminder {
             channel.sendMessage(message)
                 .addEmbeds(new EmbedBuilder().setDescription(description).build())
                 .queue();
-        } else if (sendPublicly) {
+        } else {
             user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Reminder: " + description).queue());
         }
 
