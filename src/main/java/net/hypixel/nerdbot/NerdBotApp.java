@@ -83,6 +83,7 @@ public class NerdBotApp {
             });
             NerdBotApp.getBot().onEnd();
         });
+
         Runtime.getRuntime().addShutdownHook(userSavingTask);
     }
 }

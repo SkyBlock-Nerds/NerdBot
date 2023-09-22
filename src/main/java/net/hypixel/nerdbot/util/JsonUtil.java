@@ -1,17 +1,12 @@
 package net.hypixel.nerdbot.util;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import net.hypixel.nerdbot.NerdBotApp;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class JsonUtil {
 
@@ -63,5 +58,58 @@ public class JsonUtil {
         }
 
         return jsonObject;
+    }
+
+    public static List<Tuple<String, Object, Object>> findChangedValues(String oldContent, String newContent) {
+        Map<String, Object> oldJson = parseJsonString(oldContent);
+        Map<String, Object> newJson = parseJsonString(newContent);
+        List<Tuple<String, Object, Object>> differences = new ArrayList<>();
+        findDifferences(oldJson, newJson, "", differences);
+        return differences;
+    }
+
+    public static Map<String, Object> parseJsonString(String json) {
+        try {
+            return convertObjectToMap(JsonParser.parseString(json).getAsJsonObject());
+        } catch (JsonParseException e) {
+            e.printStackTrace();
+            return Collections.emptyMap();
+        }
+    }
+
+    public static Map<String, Object> convertObjectToMap(JsonObject jsonObject) {
+        return jsonObject.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> {
+                    JsonElement value = entry.getValue();
+
+                    if (value.isJsonObject()) {
+                        return convertObjectToMap(value.getAsJsonObject());
+                    } else {
+                        return value;
+                    }
+                }
+            ));
+    }
+
+    public static void findDifferences(Map<String, Object> oldJson, Map<String, Object> newJson, String path, List<Tuple<String, Object, Object>> differences) {
+        oldJson.forEach((key, oldValue) -> {
+            if (!newJson.containsKey(key)) {
+                differences.add(new Tuple<>(path + key, oldValue, null));
+            } else if (oldValue instanceof Map && newJson.get(key) instanceof Map) {
+                Map<String, Object> oldMap = (Map<String, Object>) oldValue;
+                Map<String, Object> newMap = (Map<String, Object>) newJson.get(key);
+                findDifferences(oldMap, newMap, path + key + ".", differences);
+            } else if (!Objects.equals(oldValue, newJson.get(key))) {
+                differences.add(new Tuple<>(path + key, oldValue, newJson.get(key)));
+            }
+        });
+
+        newJson.forEach((key, newValue) -> {
+            if (!oldJson.containsKey(key)) {
+                differences.add(new Tuple<>(path + key, null, newValue));
+            }
+        });
     }
 }
