@@ -19,7 +19,7 @@ public class URLWatcher {
     private final Map<String, String> headers;
 
     public URLWatcher(String url) {
-        this(url, new HashMap<>());
+        this(url, null);
     }
 
     public URLWatcher(String url, Map<String, String> headers) {
