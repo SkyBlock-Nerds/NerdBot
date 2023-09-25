@@ -45,6 +45,15 @@ public class URLWatcher {
         log.info("Started watching " + url);
     }
 
+    public void watchOnce(DataHandler handler) {
+        String newContent = fetchContent();
+
+        if (newContent != null && !newContent.equals(lastContent)) {
+            handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseJsonString(lastContent), JsonUtil.parseJsonString(newContent), ""));
+            lastContent = newContent;
+        }
+    }
+
     public void stopWatching() {
         timer.cancel();
         log.info("Stopped watching " + url);
