@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.util;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -12,9 +14,14 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 public class URLWatcher {
 
+    @Getter
     private final String url;
+    @Getter
+    @Setter
     private String lastContent;
     private final Timer timer;
+    @Getter
+    private boolean active;
     private final OkHttpClient client;
     private final Map<String, String> headers;
 
@@ -43,20 +50,25 @@ public class URLWatcher {
         }, 0, unit.toMillis(interval));
 
         log.info("Started watching " + url);
+        active = true;
     }
 
     public void watchOnce(DataHandler handler) {
         String newContent = fetchContent();
+        active = true;
 
         if (newContent != null && !newContent.equals(lastContent)) {
             handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseJsonString(lastContent), JsonUtil.parseJsonString(newContent), ""));
             lastContent = newContent;
         }
+
+        active = false;
     }
 
     public void stopWatching() {
         timer.cancel();
         log.info("Stopped watching " + url);
+        active = false;
     }
 
     private String fetchContent() {
