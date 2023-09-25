@@ -60,13 +60,41 @@ public class JsonUtil {
         return jsonObject;
     }
 
-    public static List<Tuple<String, Object, Object>> findChangedValues(String oldContent, String newContent) {
-        Map<String, Object> oldJson = parseJsonString(oldContent);
-        Map<String, Object> newJson = parseJsonString(newContent);
+    public static List<Tuple<String, Object, Object>> findChangedValues(Map<String, Object> oldJson, Map<String, Object> newJson, String path) {
         List<Tuple<String, Object, Object>> differences = new ArrayList<>();
-        findDifferences(oldJson, newJson, "", differences);
+
+        for (Map.Entry<String, Object> entry : oldJson.entrySet()) {
+            String key = entry.getKey();
+            Object oldValue = entry.getValue();
+
+            if (!newJson.containsKey(key)) {
+                differences.add(new Tuple<>(path + key, oldValue, null));
+            } else {
+                Object newValue = newJson.get(key);
+
+                if (oldValue instanceof Map && newValue instanceof Map) {
+                    @SuppressWarnings("unchecked") // Suppress unchecked warning
+                    Map<String, Object> oldMap = (Map<String, Object>) oldValue;
+                    Map<String, Object> newMap = (Map<String, Object>) newValue;
+                    differences.addAll(findChangedValues(oldMap, newMap, path + key + "."));
+                } else if (!Objects.equals(oldValue, newValue)) {
+                    differences.add(new Tuple<>(path + key, oldValue, newValue));
+                }
+            }
+        }
+
+        for (Map.Entry<String, Object> entry : newJson.entrySet()) {
+            String key = entry.getKey();
+            Object newValue = entry.getValue();
+
+            if (!oldJson.containsKey(key)) {
+                differences.add(new Tuple<>(path + key, null, newValue));
+            }
+        }
+
         return differences;
     }
+
 
     public static Map<String, Object> parseJsonString(String json) {
         try {
@@ -91,25 +119,5 @@ public class JsonUtil {
                     }
                 }
             ));
-    }
-
-    public static void findDifferences(Map<String, Object> oldJson, Map<String, Object> newJson, String path, List<Tuple<String, Object, Object>> differences) {
-        oldJson.forEach((key, oldValue) -> {
-            if (!newJson.containsKey(key)) {
-                differences.add(new Tuple<>(path + key, oldValue, null));
-            } else if (oldValue instanceof Map && newJson.get(key) instanceof Map) {
-                Map<String, Object> oldMap = (Map<String, Object>) oldValue;
-                Map<String, Object> newMap = (Map<String, Object>) newJson.get(key);
-                findDifferences(oldMap, newMap, path + key + ".", differences);
-            } else if (!Objects.equals(oldValue, newJson.get(key))) {
-                differences.add(new Tuple<>(path + key, oldValue, newJson.get(key)));
-            }
-        });
-
-        newJson.forEach((key, newValue) -> {
-            if (!oldJson.containsKey(key)) {
-                differences.add(new Tuple<>(path + key, null, newValue));
-            }
-        });
     }
 }
