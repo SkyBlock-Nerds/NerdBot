@@ -11,7 +11,6 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.events.user.update.UserUpdateDiscriminatorEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
@@ -23,11 +22,6 @@ public class MetricsListener {
     @SubscribeEvent
     public void onEvent(GenericEvent event) {
         PrometheusMetrics.EVENTS_AMOUNT.labels(event.getClass().getSimpleName()).inc();
-    }
-
-    @SubscribeEvent
-    public void onDiscriminatorChange(UserUpdateDiscriminatorEvent event) {
-        log.info("Discriminator of {} changed from {} to {}", event.getUser().getName(), event.getOldDiscriminator(), event.getNewDiscriminator());
     }
 
     @SubscribeEvent
