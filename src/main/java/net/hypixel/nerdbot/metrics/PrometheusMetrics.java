@@ -107,6 +107,7 @@ public class PrometheusMetrics {
 
     public static void setMetricsEnabled(boolean enableMetrics) {
         NerdBotApp.getBot().getConfig().getMetricsConfig().setEnabled(enableMetrics);
+        collectorRegistry.clear();
 
         if (NerdBotApp.getBot().getConfig().getMetricsConfig().isEnabled()) {
             collectorRegistry.register(TOTAL_GREENLIT_MESSAGES_AMOUNT);
