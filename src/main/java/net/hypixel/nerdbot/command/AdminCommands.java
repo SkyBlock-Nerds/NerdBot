@@ -39,9 +39,11 @@ import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
+import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -191,8 +193,11 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "config", subcommand = "reload", description = "Reload the config file", defaultLocked = true)
     public void reloadConfig(GuildSlashEvent event) {
         Bot bot = NerdBotApp.getBot();
+
         bot.loadConfig();
         bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
+        PrometheusMetrics.setMetricsEnabled(bot.getConfig().getMetricsConfig().isEnabled());
+
         event.reply("Reloaded the config file!").setEphemeral(true).queue();
     }
 
@@ -217,6 +222,15 @@ public class AdminCommands extends ApplicationCommand {
         JsonUtil.writeJsonFile(fileName, JsonUtil.setJsonValue(obj, key, element));
         log.info(event.getUser().getName() + " edited the config file!");
         event.reply("Successfully updated the JSON file!").setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "metrics", subcommand = "toggle", description = "Toggle metrics collection", defaultLocked = true)
+    public void toggleMetrics(GuildSlashEvent event) {
+        Bot bot = NerdBotApp.getBot();
+        MetricsConfig metricsConfig = bot.getConfig().getMetricsConfig();
+        metricsConfig.setEnabled(!metricsConfig.isEnabled());
+        PrometheusMetrics.setMetricsEnabled(metricsConfig.isEnabled());
+        event.reply("Metrics collection is now " + (metricsConfig.isEnabled() ? "enabled" : "disabled") + "!").setEphemeral(true).queue();
     }
 
     @JDASlashCommand(

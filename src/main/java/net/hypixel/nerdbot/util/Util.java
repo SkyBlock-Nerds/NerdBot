@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.util;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import io.prometheus.client.Summary;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -17,6 +18,7 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.command.GeneratorCommands;
+import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import org.jetbrains.annotations.NotNull;
@@ -60,7 +62,6 @@ public class Util {
     public static final Pattern UUID_REGEX = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}");
     public static final Pattern TRIMMED_UUID_REGEX = Pattern.compile("[a-f0-9]{12}4[a-f0-9]{3}[89aAbB][a-f0-9]{15}");
     private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
-
 
     private Util() {
     }
@@ -123,6 +124,10 @@ public class Util {
             return null;
         }
         return guild.getRoles().stream().filter(role -> role.getName().equals(name)).findFirst().orElse(null);
+    }
+
+    public static Role getHighestRole(Member member) {
+        return member.getRoles().get(0);
     }
 
     @Nullable
@@ -281,12 +286,15 @@ public class Util {
         MojangProfile mojangProfile;
         int statusCode;
 
+        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
         try {
             HttpResponse<String> httpResponse = getHttpResponse(url);
             statusCode = httpResponse.statusCode();
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
         } catch (Exception ex) {
             throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + ex.getMessage(), ex);
+        } finally {
+            requestTimer.observeDuration();
         }
 
         if (statusCode != 200) {
@@ -302,12 +310,15 @@ public class Util {
         MojangProfile mojangProfile;
         int statusCode;
 
+        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
         try {
             HttpResponse<String> httpResponse = getHttpResponse(url);
             statusCode = httpResponse.statusCode();
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
         } catch (Exception ex) {
             throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`.", ex);
+        } finally {
+            requestTimer.observeDuration();
         }
 
         if (statusCode != 200) {
@@ -323,16 +334,21 @@ public class Util {
         Arrays.asList(headers).forEach(pair -> builder.header(pair.getLeft(), pair.getRight()));
         HttpRequest request = builder.build();
         log.info("Sending HTTP request to " + url + " with headers " + Arrays.toString(headers));
+        PrometheusMetrics.HTTP_REQUESTS_AMOUNT.labels(request.method(), url).inc();
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws HttpException {
+        String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId.toString());
+        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
+
         try {
-            String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId.toString());
             String hypixelApiKey = NerdBotApp.getHypixelApiKey().map(UUID::toString).orElse("");
             return NerdBotApp.GSON.fromJson(getHttpResponse(url, Pair.of("API-Key", hypixelApiKey)).body(), HypixelPlayerResponse.class);
         } catch (Exception ex) {
             throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId.toString() + "`.", ex);
+        } finally {
+            requestTimer.observeDuration();
         }
     }
 

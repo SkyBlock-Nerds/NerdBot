@@ -22,12 +22,14 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
+import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Log4j2
 public class ActivityListener {
@@ -122,11 +124,11 @@ public class ActivityListener {
 
         if (isAlphaChannel) {
             discordUser.getLastActivity().setLastAlphaActivity(time);
-            //log.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
+            log.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
         }
 
         discordUser.getLastActivity().setLastGlobalActivity(time);
-        //log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
+        log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
 
         // Ignore channel if blacklisted for activity tracking
         if (Arrays.stream(channelConfig.getBlacklistedChannels()).anyMatch(guildChannel.getId()::equalsIgnoreCase)) {
@@ -157,6 +159,8 @@ public class ActivityListener {
             if (channelLeft != null) {
                 long timeSpent = time - this.voiceActivity.get(member.getIdLong());
 
+                PrometheusMetrics.TOTAL_VOICE_TIME_SPENT_BY_USER.labels(member.getEffectiveName(), channelLeft.getName()).inc((TimeUnit.MILLISECONDS.toSeconds(timeSpent)));
+
                 if ((timeSpent / 1_000L) > config.getVoiceThreshold()) {
                     if (channelLeft.getName().toLowerCase().contains("alpha")) {
                         discordUser.getLastActivity().setAlphaVoiceJoinDate(time);
@@ -173,6 +177,7 @@ public class ActivityListener {
 
         if (event.getChannelJoined() != null) {
             this.voiceActivity.put(member.getIdLong(), time);
+            PrometheusMetrics.TOTAL_VOICE_CONNECTIONS_BY_USER.labels(member.getEffectiveName(), event.getChannelJoined().getName()).inc();
         }
     }
 

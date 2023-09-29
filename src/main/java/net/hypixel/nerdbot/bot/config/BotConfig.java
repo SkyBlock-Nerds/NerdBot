@@ -41,6 +41,11 @@ public class BotConfig {
     private RoleConfig roleConfig = new RoleConfig();
 
     /**
+     * Configuration for metrics that the bot will be grabbing
+     */
+    private MetricsConfig metricsConfig = new MetricsConfig();
+
+    /**
      * The {@link Guild} ID that the bot will be running in
      */
     private String guildId = "";
