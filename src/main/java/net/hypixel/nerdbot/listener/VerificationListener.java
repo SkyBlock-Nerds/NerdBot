@@ -26,7 +26,7 @@ public class VerificationListener {
     @SubscribeEvent
     public void onButtonClickEvent(@NotNull ButtonInteractionEvent event) {
         if (event.getButton().getId() == null) {
-            return; // Lol
+            return;
         }
 
         if (event.getButton().getId().startsWith("verification")) {

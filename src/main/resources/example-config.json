@@ -33,6 +33,10 @@
     "newMemberRoleId": "",
     "limboRoleId": ""
   },
+  "metricsConfig": {
+    "enabled": false,
+    "port": 1234
+  },
   "guildId": "",
   "ownerIds": [],
   "minimumThreshold": 15,
