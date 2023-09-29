@@ -40,6 +40,11 @@ public class ChannelConfig {
     private String alphaArchiveCategoryId = "";
 
     /**
+     * The {@link TextChannel} ID for an announcement channel, primarily used for things like fire sales or status updates
+     */
+    private String announcementChannelId = "";
+
+    /**
      * The {@link TextChannel} IDs for the suggestion forums
      */
     private String[] suggestionForumIds = {};
