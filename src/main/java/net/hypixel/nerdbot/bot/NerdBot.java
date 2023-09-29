@@ -1,13 +1,14 @@
 package net.hypixel.nerdbot.bot;
 
 import com.freya02.botcommands.api.CommandsBuilder;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
 import com.mongodb.client.MongoCollection;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
@@ -23,17 +24,21 @@ import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.bot.config.BotConfig;
+import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.util.Environment;
+import net.hypixel.nerdbot.util.URLWatcher;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
+import java.awt.Color;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -41,6 +46,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Log4j2
 public class NerdBot implements Bot {
@@ -58,6 +64,29 @@ public class NerdBot implements Bot {
     private long startTime;
 
     public NerdBot() {
+    }
+
+    @Override
+    public void onStart() {
+        for (BotFeature feature : FEATURES) {
+            feature.onStart();
+            log.info("Started feature " + feature.getClass().getSimpleName());
+        }
+
+        loadRemindersFromDatabase();
+        startUrlWatchers();
+
+        startTime = System.currentTimeMillis();
+        log.info("Bot started in environment " + Environment.getEnvironment());
+    }
+
+    @Override
+    public void onEnd() {
+        log.info("Shutting down Nerd Bot...");
+        for (BotFeature feature : FEATURES) {
+            feature.onEnd();
+        }
+        database.disconnect();
     }
 
     @Override
@@ -109,7 +138,6 @@ public class NerdBot implements Bot {
         }
 
         NerdBotApp.getBot().onStart();
-        loadRemindersFromDatabase();
 
         log.info("Bot is ready!");
     }
@@ -144,6 +172,48 @@ public class NerdBot implements Bot {
         log.info("Loaded " + collection.countDocuments() + " reminders from the database!");
     }
 
+    private void startUrlWatchers() {
+        TextChannel announcementChannel = ChannelManager.getChannel(config.getChannelConfig().getAnnouncementChannelId());
+
+        if (announcementChannel == null) {
+            log.error("Couldn't find announcement channel!");
+            return;
+        }
+
+        URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
+
+        fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, (oldContent, newContent, changedValues) -> {
+            changedValues.forEach(tuple -> {
+                if (tuple.value1().equals("sales")) {
+                    JsonArray array = JsonParser.parseString(String.valueOf(tuple.value3())).getAsJsonArray();
+                    EmbedBuilder embedBuilder = new EmbedBuilder()
+                        .setTitle("New Fire Sale!")
+                        .setTimestamp(new Date().toInstant())
+                        .setColor(Color.GREEN);
+
+                    array.forEach(jsonElement -> {
+                        JsonObject jsonObject = jsonElement.getAsJsonObject();
+                        String itemId = jsonObject.get("item_id").getAsString().replace("PET_SKIN_", "");
+                        DiscordTimestamp start = new DiscordTimestamp(jsonObject.get("start").getAsLong());
+                        DiscordTimestamp end = new DiscordTimestamp(jsonObject.get("end").getAsLong());
+                        int amount = jsonObject.get("amount").getAsInt();
+                        int price = jsonObject.get("price").getAsInt();
+                        StringBuilder stringBuilder = new StringBuilder();
+
+                        stringBuilder.append("Starts: ").append(start.toLongDateTime()).append("\n")
+                            .append("Ends: ").append(end.toLongDateTime()).append("\n")
+                            .append("Amount: ").append(Util.COMMA_SEPARATED_FORMAT.format(amount)).append("\n")
+                            .append("Price: ").append(Util.COMMA_SEPARATED_FORMAT.format(price));
+
+                        embedBuilder.addField(itemId, stringBuilder.toString(), false);
+                    });
+
+                    announcementChannel.sendMessageEmbeds(embedBuilder.build()).queue();
+                }
+            });
+        });
+    }
+
     @Override
     public void configureMemoryUsage(JDABuilder builder) {
         builder.setMemberCachePolicy(MemberCachePolicy.ALL);
@@ -171,27 +241,8 @@ public class NerdBot implements Bot {
     }
 
     @Override
-    public void onStart() {
-        for (BotFeature feature : FEATURES) {
-            feature.onStart();
-            log.info("Started feature " + feature.getClass().getSimpleName());
-        }
-        startTime = System.currentTimeMillis();
-        log.info("Bot started in environment " + Environment.getEnvironment());
-    }
-
-    @Override
     public List<BotFeature> getFeatures() {
         return FEATURES;
-    }
-
-    @Override
-    public void onEnd() {
-        log.info("Shutting down Nerd Bot...");
-        for (BotFeature feature : FEATURES) {
-            feature.onEnd();
-        }
-        database.disconnect();
     }
 
     @Override
