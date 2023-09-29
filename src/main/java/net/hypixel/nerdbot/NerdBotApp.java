@@ -45,7 +45,7 @@ public class NerdBotApp {
         }).build();
 
     @Getter
-    private static Optional<UUID> hypixelApiKey = Optional.ofNullable(System.getProperty("hypixel.key")).map(Util::toUUID);
+    private static final Optional<UUID> hypixelApiKey = Optional.ofNullable(System.getProperty("hypixel.key")).map(Util::toUUID);
     @Getter
     private static SuggestionCache suggestionCache;
     @Getter
@@ -83,6 +83,7 @@ public class NerdBotApp {
             });
             NerdBotApp.getBot().onEnd();
         });
+
         Runtime.getRuntime().addShutdownHook(userSavingTask);
     }
 }
