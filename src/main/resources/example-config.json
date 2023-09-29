@@ -34,7 +34,8 @@
     "limboRoleId": ""
   },
   "metricsConfig": {
-    "enabled": false
+    "enabled": false,
+    "port": 1234
   },
   "guildId": "",
   "ownerIds": [],
