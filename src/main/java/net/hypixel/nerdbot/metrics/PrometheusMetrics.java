@@ -4,6 +4,8 @@ import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Summary;
+import io.prometheus.client.exporter.HTTPServer;
+import io.prometheus.client.hotspot.DefaultExports;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.NerdBotApp;
 
@@ -105,11 +107,30 @@ public class PrometheusMetrics {
         .labelNames("url")
         .register();
 
+    private static HTTPServer server;
+
     public static void setMetricsEnabled(boolean enableMetrics) {
         NerdBotApp.getBot().getConfig().getMetricsConfig().setEnabled(enableMetrics);
+
         collectorRegistry.clear();
 
         if (NerdBotApp.getBot().getConfig().getMetricsConfig().isEnabled()) {
+            log.info("Starting Prometheus metrics server...");
+
+            try {
+                if (server != null) {
+                    server.stop();
+                }
+
+                server = new HTTPServer.Builder()
+                    .withPort(NerdBotApp.getBot().getConfig().getMetricsConfig().getPort())
+                    .build();
+
+                DefaultExports.initialize();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
             collectorRegistry.register(TOTAL_GREENLIT_MESSAGES_AMOUNT);
             collectorRegistry.register(GREENLIT_SUGGESTION_LENGTH);
             collectorRegistry.register(TOTAL_USERS_AMOUNT);

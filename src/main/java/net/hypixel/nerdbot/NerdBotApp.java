@@ -6,7 +6,6 @@ import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.prometheus.client.exporter.HTTPServer;
-import io.prometheus.client.hotspot.DefaultExports;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.bot.Bot;
@@ -47,17 +46,7 @@ public class NerdBotApp {
             log.info("Upserted cached user '" + discordUser.getDiscordId() + "' to database! (Cause: " + cause + ")");
         }).build();
 
-    public static HTTPServer server;
-
-    static {
-        try {
-            server = new HTTPServer.Builder()
-                .withPort(1234)
-                .build();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    private static HTTPServer server;
 
     @Getter
     private static Optional<UUID> hypixelApiKey = Optional.ofNullable(System.getProperty("hypixel.key")).map(Util::toUUID);
@@ -75,8 +64,6 @@ public class NerdBotApp {
         NerdBot nerdBot = new NerdBot();
         bot = nerdBot;
 
-
-        DefaultExports.initialize();
         log.info("Starting bot...");
 
         try {
