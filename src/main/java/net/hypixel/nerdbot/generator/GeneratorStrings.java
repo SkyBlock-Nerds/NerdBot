@@ -217,7 +217,7 @@ public class GeneratorStrings {
                         
                         Follow the guide for `/%1$s help item` for more information about creating an item.
                         Follow the guide for `/%1$s help display` for more information about putting a item next to the item lore.
-                        Follow the guide for `/%1Ss help recipe` for more information about putting a recipe next to the item lore.
+                        Follow the guide for `/%1$s help recipe` for more information about putting a recipe next to the item lore.
                         """.formatted(COMMAND_PREFIX);
 
     // stat symbols text
