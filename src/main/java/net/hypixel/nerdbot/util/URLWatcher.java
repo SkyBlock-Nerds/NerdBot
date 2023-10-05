@@ -45,6 +45,7 @@ public class URLWatcher {
                 if (newContent != null && !newContent.equals(lastContent)) {
                     handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseJsonString(lastContent), JsonUtil.parseJsonString(newContent), ""));
                     lastContent = newContent;
+                    log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
                 }
             }
         }, 0, unit.toMillis(interval));
@@ -60,6 +61,7 @@ public class URLWatcher {
         if (newContent != null && !newContent.equals(lastContent)) {
             handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseJsonString(lastContent), JsonUtil.parseJsonString(newContent), ""));
             lastContent = newContent;
+            log.debug("Watched " + url + " once, found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
         }
 
         active = false;
