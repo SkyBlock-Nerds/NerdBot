@@ -86,7 +86,9 @@ public class URLWatcher {
 
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
-                return response.body().string();
+                String content = response.body().string();
+                log.debug("Successfully fetched content from " + url + "!" + " (Content: " + content + ")");
+                return content;
             } else {
                 log.error("Failed to fetch content from " + url + "! (Response: " + response + ")");
             }
