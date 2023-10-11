@@ -1,8 +1,10 @@
-package net.hypixel.nerdbot.util;
+package net.hypixel.nerdbot.util.watcher;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
+import net.hypixel.nerdbot.util.JsonUtil;
+import net.hypixel.nerdbot.util.Tuple;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
