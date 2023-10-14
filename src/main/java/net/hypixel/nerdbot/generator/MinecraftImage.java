@@ -101,7 +101,7 @@ public class MinecraftImage {
             );
         }
         else {
-            g2d.setColor(new Color(0, 0, 0, 128));
+            g2d.setColor(new Color(0, 0, 0, this.getAlpha()));
             g2d.fillRect(0, 0, width, height);
         }
 
@@ -143,7 +143,7 @@ public class MinecraftImage {
      * Creates the inner and outer purple borders around the image.
      */
     public void drawBorders() {
-        if (this.getAlpha() == 0) {
+        if (!this.isNormalItem) {
             return;
         }
 

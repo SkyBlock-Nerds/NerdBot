@@ -86,6 +86,7 @@ public class GeneratorCommands extends ApplicationCommand {
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
     public void generateText(GuildSlashEvent event,
                              @AppOption(description = DESC_TEXT) String message,
+                             @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
                              @Optional @AppOption(description = DESC_CENTERED) Boolean centered,
                              @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
@@ -93,9 +94,10 @@ public class GeneratorCommands extends ApplicationCommand {
         }
         hidden = (hidden != null && hidden);
         centered = (centered != null && centered);
+        alpha = alpha == null ? 128 : Math.max(0, Math.min(alpha, 255));
         event.deferReply(hidden).complete();
         // building the chat message
-        BufferedImage generatedImage = builder.buildItem(event, "NONE", "NONE", message, "", true, 0, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered);
+        BufferedImage generatedImage = builder.buildItem(event, "NONE", "NONE", message, "", true, alpha, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered);
         if (generatedImage != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
