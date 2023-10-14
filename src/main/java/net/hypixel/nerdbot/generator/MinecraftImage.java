@@ -91,13 +91,20 @@ public class MinecraftImage {
 
         // Draw Primary Background
         Graphics2D g2d = this.getImage().createGraphics();
-        g2d.setColor(new Color(18, 3, 18, this.getAlpha()));
-        g2d.fillRect(
-            PIXEL_SIZE * 2,
-            PIXEL_SIZE * 2,
-            width - PIXEL_SIZE * 4,
-            height - PIXEL_SIZE * 4
-        );
+        if (isNormalItem) {
+            g2d.setColor(new Color(18, 3, 18, this.getAlpha()));
+            g2d.fillRect(
+                PIXEL_SIZE * 2,
+                PIXEL_SIZE * 2,
+                width - PIXEL_SIZE * 4,
+                height - PIXEL_SIZE * 4
+            );
+        }
+        else {
+            g2d.setColor(new Color(0, 0, 0, this.getAlpha()));
+            g2d.fillRect(0, 0, width, height);
+        }
+
 
         return g2d;
     }
@@ -136,7 +143,7 @@ public class MinecraftImage {
      * Creates the inner and outer purple borders around the image.
      */
     public void drawBorders() {
-        if (this.getAlpha() == 0) {
+        if (!this.isNormalItem) {
             return;
         }
 

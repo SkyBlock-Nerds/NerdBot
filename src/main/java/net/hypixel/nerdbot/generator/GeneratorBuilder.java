@@ -221,7 +221,7 @@ public class GeneratorBuilder {
         return new MinecraftImage(
             colorParser.getParsedDescription(),
             MCColor.GRAY,
-            colorParser.getEstimatedImageWidth() * 20,
+            colorParser.getEstimatedImageWidth() * 30,
             alpha,
             padding,
             isNormalItem,
