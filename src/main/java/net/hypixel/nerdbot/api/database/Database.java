@@ -2,11 +2,7 @@ package net.hypixel.nerdbot.api.database;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.*;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.result.DeleteResult;
@@ -17,6 +13,8 @@ import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
 import lombok.extern.log4j.Log4j2;
+import net.hypixel.nerdbot.api.repository.RepositoryManager;
+import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.bson.Document;
 import org.bson.UuidRepresentation;
 import org.bson.codecs.configuration.CodecRegistries;
@@ -36,16 +34,18 @@ public class Database implements ServerMonitorListener {
     private final MongoDatabase mongoDatabase;
     private final ConnectionString connectionString;
     private boolean connected;
+    private final RepositoryManager repositoryManager = new RepositoryManager();
 
     public Database(String uri, String databaseName) {
         if (uri == null || uri.isBlank() || databaseName == null || databaseName.isBlank()) {
-            log.warn("Couldn't connect to the Database due to an invalid URI or Database Name!");
+            log.warn("Database URI or database name is null or blank, so not initiating database connection!");
             mongoClient = null;
             mongoDatabase = null;
             connectionString = null;
             connected = false;
             return;
         }
+
         connectionString = new ConnectionString(uri);
 
         CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build());
@@ -60,6 +60,12 @@ public class Database implements ServerMonitorListener {
         mongoClient = MongoClients.create(clientSettings);
         mongoDatabase = mongoClient.getDatabase(databaseName);
         connected = true;
+
+        try {
+            repositoryManager.registerRepositoriesFromPackage("net.hypixel.nerdbot.repository", mongoClient, databaseName);
+        } catch (RepositoryException exception) {
+            exception.printStackTrace();
+        }
     }
 
     @Override
@@ -208,5 +214,9 @@ public class Database implements ServerMonitorListener {
             return null;
         }
         return collection.deleteMany(Filters.eq(key, value));
+    }
+
+    public RepositoryManager getRepositoryManager() {
+        return repositoryManager;
     }
 }
