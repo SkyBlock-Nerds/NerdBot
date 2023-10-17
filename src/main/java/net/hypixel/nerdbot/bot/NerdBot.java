@@ -32,6 +32,7 @@ import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.Environment;
+import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
 import net.hypixel.nerdbot.util.watcher.URLWatcher;
@@ -257,7 +258,7 @@ public class NerdBot implements Bot {
         try {
             log.info("Loading config file from '" + fileName + "'");
             File file = new File(fileName);
-            config = (BotConfig) Util.jsonToObject(file, BotConfig.class);
+            config = (BotConfig) JsonUtil.jsonToObject(file, BotConfig.class);
 
             log.info("Loaded config from " + file.getAbsolutePath());
         } catch (FileNotFoundException exception) {
