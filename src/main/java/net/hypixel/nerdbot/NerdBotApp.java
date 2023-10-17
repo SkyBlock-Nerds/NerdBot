@@ -16,7 +16,6 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.MessageCache;
 import net.hypixel.nerdbot.util.discord.SuggestionCache;
 import net.hypixel.nerdbot.util.gson.InstantTypeAdapter;
-import net.hypixel.nerdbot.util.gson.UUIDTypeAdapter;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
@@ -33,7 +32,6 @@ public class NerdBotApp {
     public static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
     public static final Gson GSON = new GsonBuilder()
         .setPrettyPrinting()
-        .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
         .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
         .create();
     public static final Cache<String, DiscordUser> USER_CACHE = Caffeine.newBuilder()
