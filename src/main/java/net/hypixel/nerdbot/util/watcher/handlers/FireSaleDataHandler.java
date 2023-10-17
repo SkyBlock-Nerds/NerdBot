@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Tuple;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
@@ -17,6 +18,7 @@ import net.hypixel.nerdbot.util.watcher.URLWatcher;
 import java.awt.Color;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 @Log4j2
 public class FireSaleDataHandler implements URLWatcher.DataHandler {
@@ -53,15 +55,16 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
                     int price = jsonObject.get("price").getAsInt();
                     StringBuilder stringBuilder = new StringBuilder();
 
-                    stringBuilder.append("Starts: ").append(start.toLongDateTime()).append("\n")
-                        .append("Ends: ").append(end.toLongDateTime()).append("\n")
+                    stringBuilder.append("Starts: ").append(start.toLongDateTime()).append(" (").append(start.toRelativeTimestamp()).append(")\n")
+                        .append("Ends: ").append(end.toLongDateTime()).append(" (").append(end.toRelativeTimestamp()).append(")\n")
                         .append("Amount: ").append(Util.COMMA_SEPARATED_FORMAT.format(amount)).append("\n")
                         .append("Price: ").append(Util.COMMA_SEPARATED_FORMAT.format(price));
 
                     embedBuilder.addField(itemId, stringBuilder.toString(), false);
                 });
 
-                announcementChannel.sendMessageEmbeds(embedBuilder.build()).queue();
+                String message = RoleManager.formatPingableRoleAsMention(Objects.requireNonNull(RoleManager.getPingableRoleByName("Fire Sale Alerts")));
+                announcementChannel.sendMessage(message).queue(msg -> msg.editMessage(message).setEmbeds(embedBuilder.build()).queue());
             }
         });
     }
