@@ -120,4 +120,9 @@ public class JsonUtil {
                 }
             ));
     }
+
+    public static Object jsonToObject(File file, Class<?> clazz) throws FileNotFoundException {
+        BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
+        return NerdBotApp.GSON.fromJson(br, clazz);
+    }
 }

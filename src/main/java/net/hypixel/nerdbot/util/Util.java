@@ -104,11 +104,6 @@ public class Util {
             .count();
     }
 
-    public static Object jsonToObject(File file, Class<?> clazz) throws FileNotFoundException {
-        BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
-        return NerdBotApp.GSON.fromJson(br, clazz);
-    }
-
     public static String formatSize(long size) {
         if (size <= 0) return "0";
         final String[] units = new String[]{"B", "kB", "MB", "GB", "TB"};
