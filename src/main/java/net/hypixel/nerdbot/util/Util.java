@@ -5,12 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.prometheus.client.Summary;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageReaction;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
@@ -25,27 +20,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -94,49 +79,6 @@ public class Util {
     @NotNull
     public static Guild getMainGuild() {
         return Objects.requireNonNull(NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()));
-    }
-
-    public static boolean hasRole(Member member, String name) {
-        List<Role> roles = member.getRoles();
-        return roles.stream().anyMatch(role -> role.getName().equalsIgnoreCase(name));
-    }
-
-    public static boolean hasAnyRole(Member member, String... names) {
-        List<Role> roles = member.getRoles();
-        List<String> nameList = Arrays.asList(names);
-        if (names.length == 0) {
-            return false;
-        } else {
-            return roles.stream().anyMatch(role -> nameList.stream().anyMatch(name -> role.getName().equalsIgnoreCase(name)));
-        }
-    }
-
-    public static boolean hasHigherOrEqualRole(Member member, Role role) {
-        return member.getRoles()
-            .stream()
-            .anyMatch(memberRole -> memberRole.getPosition() >= role.getPosition());
-    }
-
-    @Nullable
-    public static Role getRole(String name) {
-        Guild guild = Util.getMainGuild();
-        if (guild == null) {
-            return null;
-        }
-        return guild.getRoles().stream().filter(role -> role.getName().equals(name)).findFirst().orElse(null);
-    }
-
-    public static Role getHighestRole(Member member) {
-        return member.getRoles().get(0);
-    }
-
-    @Nullable
-    public static Role getRoleById(String id) {
-        Guild guild = Util.getMainGuild();
-        if (guild == null) {
-            return null;
-        }
-        return guild.getRoles().stream().filter(role -> role.getId().equals(id)).findFirst().orElse(null);
     }
 
     public static File createTempFile(String fileName, String content) throws IOException {

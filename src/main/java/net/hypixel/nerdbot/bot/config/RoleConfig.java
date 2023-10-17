@@ -3,12 +3,8 @@ package net.hypixel.nerdbot.bot.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
-
-import java.util.Objects;
-import java.util.function.Function;
+import net.hypixel.nerdbot.role.PingableRole;
 
 @Getter
 @Setter
@@ -30,11 +26,8 @@ public class RoleConfig {
      */
     private String limboRoleId = "";
 
-    public boolean isEquals(MessageReaction reaction, Function<RoleConfig, String> function) {
-        if (reaction.getEmoji().getType() != Emoji.Type.CUSTOM) {
-            return false;
-        }
-
-        return Objects.equals(reaction.getEmoji().asCustom().getId(), function.apply(this));
-    }
+    /**
+     * A list of {@link PingableRole}s used for announcements etc.
+     */
+    private PingableRole[] pingableRoles = {};
 }
