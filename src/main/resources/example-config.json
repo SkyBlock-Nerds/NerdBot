@@ -31,7 +31,8 @@
   "roleConfig": {
     "botManagerRoleId": "",
     "newMemberRoleId": "",
-    "limboRoleId": ""
+    "limboRoleId": "",
+    "pingableRoles": []
   },
   "metricsConfig": {
     "enabled": false,

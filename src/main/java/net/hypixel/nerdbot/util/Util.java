@@ -79,49 +79,6 @@ public class Util {
         return Objects.requireNonNull(NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()));
     }
 
-    public static boolean hasRole(Member member, String name) {
-        List<Role> roles = member.getRoles();
-        return roles.stream().anyMatch(role -> role.getName().equalsIgnoreCase(name));
-    }
-
-    public static boolean hasAnyRole(Member member, String... names) {
-        List<Role> roles = member.getRoles();
-        List<String> nameList = Arrays.asList(names);
-        if (names.length == 0) {
-            return false;
-        } else {
-            return roles.stream().anyMatch(role -> nameList.stream().anyMatch(name -> role.getName().equalsIgnoreCase(name)));
-        }
-    }
-
-    public static boolean hasHigherOrEqualRole(Member member, Role role) {
-        return member.getRoles()
-            .stream()
-            .anyMatch(memberRole -> memberRole.getPosition() >= role.getPosition());
-    }
-
-    @Nullable
-    public static Role getRole(String name) {
-        Guild guild = Util.getMainGuild();
-        if (guild == null) {
-            return null;
-        }
-        return guild.getRoles().stream().filter(role -> role.getName().equals(name)).findFirst().orElse(null);
-    }
-
-    public static Role getHighestRole(Member member) {
-        return member.getRoles().get(0);
-    }
-
-    @Nullable
-    public static Role getRoleById(String id) {
-        Guild guild = Util.getMainGuild();
-        if (guild == null) {
-            return null;
-        }
-        return guild.getRoles().stream().filter(role -> role.getId().equals(id)).findFirst().orElse(null);
-    }
-
     public static File createTempFile(String fileName, String content) throws IOException {
         String dir = System.getProperty("java.io.tmpdir");
         File file = new File(dir + File.separator + fileName);

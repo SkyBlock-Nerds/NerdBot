@@ -25,6 +25,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.SuggestionCache;
 import net.hypixel.nerdbot.util.exception.HttpException;
@@ -270,7 +271,7 @@ public class MyCommands extends ApplicationCommand {
         }
 
         if (newMemberRole.isPresent()) {
-            if (!Util.hasHigherOrEqualRole(member, newMemberRole.get())) { // Ignore Existing Members
+            if (!RoleManager.hasHigherOrEqualRole(member, newMemberRole.get())) { // Ignore Existing Members
                 try {
                     guild.addRoleToMember(member, newMemberRole.get()).complete();
                     String limboRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getLimboRoleId();

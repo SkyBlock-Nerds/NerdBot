@@ -15,10 +15,7 @@ import com.google.gson.JsonSyntaxException;
 import com.mongodb.client.FindIterable;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.IMentionable;
-import net.dv8tion.jda.api.entities.Invite;
-import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
@@ -44,6 +41,8 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.role.PingableRole;
+import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
@@ -251,6 +250,8 @@ public class AdminCommands extends ApplicationCommand {
             .get()
             .stream()
             .filter(member -> !member.getUser().isBot())
+            .filter(member -> RoleManager.hasAnyRole(member, roleArray))
+            .map(member -> Util.getOrAddUserToCache(database, member.getId()))
             .filter(member -> Util.hasAnyRole(member, roleArray))
             .map(member -> discordUserRepository.findById(member.getId()))
             .filter(DiscordUser::isProfileAssigned)
