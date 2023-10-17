@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
 
 @Log4j2
@@ -27,7 +28,7 @@ public class MetricsListener {
     @SubscribeEvent
     public void onMessageSent(MessageReceivedEvent event) {
         if (event.getMember() != null) {
-            PrometheusMetrics.TOTAL_MESSAGES_AMOUNT.labels(event.getAuthor().getName(), Util.getHighestRole(event.getMember()).getName(), event.getChannel().getName()).inc();
+            PrometheusMetrics.TOTAL_MESSAGES_AMOUNT.labels(event.getAuthor().getName(), RoleManager.getHighestRole(event.getMember()).getName(), event.getChannel().getName()).inc();
         }
 
         if (event.getChannel() instanceof ThreadChannel) {

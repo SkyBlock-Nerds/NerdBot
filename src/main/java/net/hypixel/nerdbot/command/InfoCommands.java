@@ -14,6 +14,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
@@ -81,11 +82,11 @@ public class InfoCommands extends ApplicationCommand {
 
         int staff = 0;
         for (String roleName : SPECIAL_ROLES) {
-            if (Util.getRole(roleName) == null) {
+            if (RoleManager.getRole(roleName) == null) {
                 log.warn("Role {} not found", roleName);
                 continue;
             }
-            staff += guild.getMembersWithRoles(Util.getRole(roleName)).size();
+            staff += guild.getMembersWithRoles(RoleManager.getRole(roleName)).size();
         }
 
         builder.append("Server name: ").append(guild.getName()).append(" (Server ID: ").append(guild.getId()).append(")\n")
@@ -94,8 +95,8 @@ public class InfoCommands extends ApplicationCommand {
             .append("Channels: ").append(guild.getChannels().size()).append("\n")
             .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
             .append("- Staff: ").append(staff).append("\n")
-            .append("- Grapes: ").append(guild.getMembersWithRoles(Util.getRole("Grape")).size()).append("\n")
-            .append("- Nerds: ").append(guild.getMembersWithRoles(Util.getRole("Nerd")).size());
+            .append("- Grapes: ").append(guild.getMembersWithRoles(RoleManager.getRole("Grape")).size()).append("\n")
+            .append("- Nerds: ").append(guild.getMembersWithRoles(RoleManager.getRole("Nerd")).size());
 
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
