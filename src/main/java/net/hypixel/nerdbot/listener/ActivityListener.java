@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
@@ -219,19 +220,22 @@ public class ActivityListener {
                 String forumChannelId = threadChannel.getParentChannel().getId();
                 long time = System.currentTimeMillis();
 
+                discordUser.getLastActivity().getSuggestionReactionHistory().removeIf(reactionHistory -> reactionHistory.channelId().equals(threadChannel.getId()) && reactionHistory.reactionName().equals(event.getReaction().getEmoji().asCustom().getName()));
+
                 // New Suggestion Voting
                 if (Util.safeArrayStream(channelConfig.getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setSuggestionVoteDate(time);
+                    discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName()));
                     log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
 
                 // New Alpha Suggestion Voting
                 if (Util.safeArrayStream(channelConfig.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setAlphaSuggestionVoteDate(time);
+                    discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName()));
                     log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
             }
         }
-
     }
 }
