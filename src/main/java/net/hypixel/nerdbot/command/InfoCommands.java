@@ -6,14 +6,17 @@ import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
+import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
@@ -170,6 +173,41 @@ public class InfoCommands extends ApplicationCommand {
             }
 
             stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getTotalMessageCount())).append(")").append("\n");
+        });
+
+        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = "reactions", description = "View a list of recent reactions on suggestions")
+    public void showRecentReactions(GuildSlashEvent event, @Optional @AppOption Member member, @Optional @AppOption int page) {
+        if (member == null || !member.hasPermission(Permission.BAN_MEMBERS)) {
+            member = event.getMember();
+        }
+
+        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), member.getId());
+
+        if (discordUser == null) {
+            event.reply("Couldn't find that user!").setEphemeral(true).queue();
+            return;
+        }
+
+        List<ReactionHistory> reactionHistory = discordUser.getLastActivity().getSuggestionReactionHistory();
+        reactionHistory.sort(Comparator.comparingLong(ReactionHistory::timestamp));
+
+        page = Math.max(1, page);
+        StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
+        List<RichCustomEmoji> emojis = Util.getMainGuild().retrieveEmojis().complete();
+
+        getPage(reactionHistory, page, 10).forEach(history -> {
+            RichCustomEmoji emoji = emojis.stream().filter(e -> e.getName().equals(history.reactionName())).findFirst().orElse(null);
+            String emojiName = emoji.getAsMention();
+
+            if (emoji == null) {
+                log.error("Couldn't find emoji " + history.reactionName() + " in guild " + Util.getMainGuild().getId());
+                emojiName = ":question:";
+            }
+
+            stringBuilder.append(" • ").append(emojiName).append(" <#").append(history.channelId()).append(">\n");
         });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
