@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 public class SuggestionCache extends TimerTask {
 
     private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
-    private Map<String, Suggestion> cache = new HashMap<>();
+    private final Map<String, Suggestion> cache = new HashMap<>();
     @Getter
     private long lastUpdated;
     @Getter
@@ -47,25 +47,31 @@ public class SuggestionCache extends TimerTask {
                 ))
                 .distinct()
                 .forEach(thread -> {
-                    this.cache.put(thread.getId(), new Suggestion(thread));
+                    Suggestion suggestion = new Suggestion(thread);
+                    this.cache.put(thread.getId(), suggestion);
                     log.debug("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
 
+                    if (suggestion.isDeleted()) {
+                        return;
+                    }
+
                     EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
-                    Message startMessage = thread.retrieveStartMessage().complete();
+                    Message startMessage = suggestion.getThread().retrieveStartMessage().complete();
+
                     startMessage.getReactions().stream()
                         .filter(messageReaction -> messageReaction.getEmoji().getType() == Emoji.Type.CUSTOM)
                         .filter(messageReaction -> messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId())
                             || messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
                         .forEach(messageReaction -> {
-                        messageReaction.retrieveUsers().complete().forEach(user -> {
-                            DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), user.getId());
-                            List<ReactionHistory> reactionHistory = discordUser.getLastActivity().getSuggestionReactionHistory();
+                            messageReaction.retrieveUsers().complete().forEach(user -> {
+                                DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), user.getId());
+                                List<ReactionHistory> reactionHistory = discordUser.getLastActivity().getSuggestionReactionHistory();
+                                reactionHistory.removeIf(history -> history.reactionName().equals(messageReaction.getEmoji().getName()) && history.channelId().equals(thread.getId()));
 
-                            reactionHistory.removeIf(history -> history.reactionName().equals(messageReaction.getEmoji().getName()) && history.channelId().equals(thread.getId()));
-                            discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(thread.getId(), messageReaction.getEmoji().getName(), thread.getTimeCreated().toEpochSecond()));
-                            log.debug("Added reaction history for user '" + user.getId() + "' on suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+                                discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(thread.getId(), messageReaction.getEmoji().getName(), thread.getTimeCreated().toEpochSecond()));
+                                log.debug("Added reaction history for user '" + user.getId() + "' on suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+                            });
                         });
-                    });
                 });
 
             log.info("Removing expired suggestions.");
@@ -82,7 +88,7 @@ public class SuggestionCache extends TimerTask {
 
     public void addSuggestion(ThreadChannel thread) {
         this.cache.put(thread.getId(), new Suggestion(thread));
-        //log.info("Added new suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
+        // log.info("Added new suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
     }
 
     public Suggestion getSuggestion(String id) {
@@ -101,21 +107,31 @@ public class SuggestionCache extends TimerTask {
 
     public void removeSuggestion(ThreadChannel thread) {
         this.cache.remove(thread.getId());
-        //log.info("Removed suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") from the suggestion cache.");
+        // log.info("Removed suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") from the suggestion cache.");
     }
 
     public static class Suggestion {
 
-        @Getter private final ThreadChannel thread;
-        @Getter private final String parentId;
-        @Getter private final String threadName;
-        @Getter private final boolean alpha;
-        @Getter private final int agrees;
-        @Getter private final int disagrees;
-        @Getter private final boolean greenlit;
-        @Getter private final boolean deleted;
-        @Getter private final long lastUpdated = System.currentTimeMillis();
-        @Getter private boolean expired;
+        @Getter
+        private final ThreadChannel thread;
+        @Getter
+        private final String parentId;
+        @Getter
+        private final String threadName;
+        @Getter
+        private final boolean alpha;
+        @Getter
+        private final int agrees;
+        @Getter
+        private final int disagrees;
+        @Getter
+        private final boolean greenlit;
+        @Getter
+        private final boolean deleted;
+        @Getter
+        private final long lastUpdated = System.currentTimeMillis();
+        @Getter
+        private boolean expired;
 
         public Suggestion(ThreadChannel thread) {
             this.thread = thread;
