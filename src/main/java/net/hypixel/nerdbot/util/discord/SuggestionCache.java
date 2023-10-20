@@ -11,6 +11,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.Duration;
@@ -49,9 +50,12 @@ public class SuggestionCache extends TimerTask {
                     this.cache.put(thread.getId(), new Suggestion(thread));
                     log.debug("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
 
+                    EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
                     Message startMessage = thread.retrieveStartMessage().complete();
                     startMessage.getReactions().stream()
-                        .filter(messageReaction -> messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId()))
+                        .filter(messageReaction -> messageReaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+                        .filter(messageReaction -> messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId())
+                            || messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
                         .forEach(messageReaction -> {
                         messageReaction.retrieveUsers().complete().forEach(user -> {
                             DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), user.getId());
