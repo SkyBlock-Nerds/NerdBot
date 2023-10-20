@@ -58,6 +58,11 @@ public class SuggestionCache extends TimerTask {
                     EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
                     Message startMessage = suggestion.getThread().retrieveStartMessage().complete();
 
+                    if (startMessage.getReactions().isEmpty()) {
+                        log.debug("Suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") has no reactions.");
+                        return;
+                    }
+
                     startMessage.getReactions().stream()
                         .filter(messageReaction -> messageReaction.getEmoji().getType() == Emoji.Type.CUSTOM)
                         .filter(messageReaction -> messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId())
