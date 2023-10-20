@@ -25,10 +25,8 @@ import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
@@ -192,32 +190,39 @@ public class InfoCommands extends ApplicationCommand {
         }
 
         List<ReactionHistory> reactionHistory = discordUser.getLastActivity().getSuggestionReactionHistory();
+        reactionHistory.sort(Comparator.comparingLong(ReactionHistory::suggestionTimestamp).reversed());
 
         if (reactionHistory.isEmpty()) {
             event.reply("Cannot find any history of your suggestion votes!").setEphemeral(true).queue();
             return;
         }
 
-        reactionHistory.sort(Comparator.comparingLong(ReactionHistory::timestamp));
+        Map<String, List<ReactionHistory>> reactionHistoryMap = reactionHistory.stream().collect(Collectors.groupingBy(ReactionHistory::channelId));
+        // Show most recent reaction first for each suggestion
+        reactionHistoryMap.forEach((s, reactionHistories) -> {
+            reactionHistories.sort(Comparator.comparingLong(ReactionHistory::reactionTimestamp).reversed());
+        });
 
         page = Math.max(1, page);
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
         List<RichCustomEmoji> emojis = Util.getMainGuild().retrieveEmojis().complete();
 
-        getPage(reactionHistory, page, 10).forEach(history -> {
-            String emoji = emojis.stream()
-                .filter(e -> e.getName().equals(history.reactionName()))
-                .findFirst()
-                .map(RichCustomEmoji::getAsMention)
-                .orElse(":question:");
+        getPage(reactionHistoryMap, page, 10).forEach(stringListEntry -> {
+            stringBuilder.append("<#").append(stringListEntry.getKey()).append(">\n");
+            stringListEntry.getValue().forEach(history -> {
+                String emoji = emojis.stream()
+                    .filter(e -> e.getName().equals(history.reactionName()))
+                    .findFirst()
+                    .map(RichCustomEmoji::getAsMention)
+                    .orElse(":question:");
 
-            stringBuilder.append(new DiscordTimestamp(history.timestamp()).toShortDateTime())
-                .append(" ")
-                .append(emoji)
-                .append("\n")
-                .append("<#")
-                .append(history.channelId())
-                .append(">\n\n");
+                stringBuilder.append(new DiscordTimestamp(history.reactionTimestamp()).toShortDateTime())
+                    .append(" ")
+                    .append(emoji)
+                    .append("\n");
+            });
+
+            stringBuilder.append("\n");
         });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
@@ -250,5 +255,41 @@ public class InfoCommands extends ApplicationCommand {
         }
 
         return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
+    }
+
+    /**
+     * Returns a view (not a new list) of the source Map for the range based on page and pageSize.
+     *
+     * @param sourceMap the source map
+     * @param page      page number should start from 1
+     * @param pageSize  page size
+     * @param <K>       the type of keys in the map
+     * @param <V>       the type of values in the map
+     * @return a list view of map entries for the specified page
+     * @throws IllegalArgumentException if the sourceMap is null, page is invalid, or pageSize is non-positive
+     */
+    public static <K, V> List<Map.Entry<K, V>> getPage(Map<K, V> sourceMap, int page, int pageSize) {
+        if (sourceMap == null) {
+            throw new IllegalArgumentException("Invalid source map");
+        }
+
+        if (page < 1) {
+            throw new IllegalArgumentException("Invalid page number: " + page);
+        }
+
+        if (pageSize <= 0) {
+            throw new IllegalArgumentException("Invalid page size: " + pageSize);
+        }
+
+        int fromIndex = (page - 1) * pageSize;
+        int toIndex = fromIndex + pageSize;
+        List<Map.Entry<K, V>> entries = new ArrayList<>(sourceMap.entrySet());
+
+        if (fromIndex >= entries.size()) {
+            return new ArrayList<>();
+        }
+
+        toIndex = Math.min(toIndex, entries.size());
+        return entries.subList(fromIndex, toIndex);
     }
 }

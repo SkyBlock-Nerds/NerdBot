@@ -213,6 +213,7 @@ public class ActivityListener {
                 }
 
                 String forumChannelId = threadChannel.getParentChannel().getId();
+                Message startMessage = threadChannel.retrieveStartMessage().complete();
                 long time = System.currentTimeMillis();
 
                 discordUser.getLastActivity().getSuggestionReactionHistory().removeIf(reactionHistory -> reactionHistory.channelId().equals(threadChannel.getId()) && reactionHistory.reactionName().equals(event.getReaction().getEmoji().asCustom().getName()));
@@ -220,14 +221,14 @@ public class ActivityListener {
                 // New Suggestion Voting
                 if (Util.safeArrayStream(channelConfig.getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setSuggestionVoteDate(time);
-                    discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName()));
+                    discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName(), startMessage.getTimeCreated().toEpochSecond()));
                     log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
 
                 // New Alpha Suggestion Voting
                 if (Util.safeArrayStream(channelConfig.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setAlphaSuggestionVoteDate(time);
-                    discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName()));
+                    discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName(), startMessage.getTimeCreated().toEpochSecond()));
                     log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
             }
