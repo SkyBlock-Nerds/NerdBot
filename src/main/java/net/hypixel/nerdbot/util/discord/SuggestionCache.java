@@ -68,7 +68,7 @@ public class SuggestionCache extends TimerTask {
                                 List<ReactionHistory> reactionHistory = discordUser.getLastActivity().getSuggestionReactionHistory();
                                 reactionHistory.removeIf(history -> history.reactionName().equals(messageReaction.getEmoji().getName()) && history.channelId().equals(thread.getId()));
 
-                                discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(thread.getId(), messageReaction.getEmoji().getName(), thread.getTimeCreated().toEpochSecond()));
+                                discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(thread.getId(), messageReaction.getEmoji().getName(), thread.getTimeCreated().toEpochSecond(), -1));
                                 log.debug("Added reaction history for user '" + user.getId() + "' on suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ")");
                             });
                         });
