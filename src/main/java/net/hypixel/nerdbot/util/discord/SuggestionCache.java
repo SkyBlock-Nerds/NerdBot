@@ -66,7 +66,10 @@ public class SuggestionCache extends TimerTask {
                             messageReaction.retrieveUsers().complete().forEach(user -> {
                                 DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), user.getId());
                                 List<ReactionHistory> reactionHistory = discordUser.getLastActivity().getSuggestionReactionHistory();
-                                reactionHistory.removeIf(history -> history.reactionName().equals(messageReaction.getEmoji().getName()) && history.channelId().equals(thread.getId()));
+
+                                if (reactionHistory.stream().anyMatch(history -> history.channelId().equals(suggestion.getParentId()) && history.reactionName().equals(messageReaction.getEmoji().getName()))) {
+                                    return;
+                                }
 
                                 discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(thread.getId(), messageReaction.getEmoji().getName(), thread.getTimeCreated().toEpochSecond(), -1));
                                 log.debug("Added reaction history for user '" + user.getId() + "' on suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ")");

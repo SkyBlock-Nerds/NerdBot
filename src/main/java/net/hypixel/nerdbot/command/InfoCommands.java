@@ -216,10 +216,8 @@ public class InfoCommands extends ApplicationCommand {
                     .map(RichCustomEmoji::getAsMention)
                     .orElse(":question:");
 
-                stringBuilder.append(new DiscordTimestamp(history.reactionTimestamp()).toShortDateTime())
-                    .append(" ")
-                    .append(emoji)
-                    .append("\n");
+                String timestamp = history.reactionTimestamp() != -1 ? new DiscordTimestamp(history.reactionTimestamp()).toShortDateTime() : "(Unknown date/time)";
+                stringBuilder.append(timestamp).append(" ").append(emoji).append("\n");
             });
 
             stringBuilder.append("\n");
