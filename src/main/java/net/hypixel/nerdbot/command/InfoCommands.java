@@ -205,7 +205,13 @@ public class InfoCommands extends ApplicationCommand {
                 .map(RichCustomEmoji::getAsMention)
                 .orElse(":question:");
 
-            stringBuilder.append(" • ").append(emoji).append(" <#").append(history.channelId()).append(">\n");
+            stringBuilder.append(new DiscordTimestamp(history.timestamp()).toShortDateTime())
+                .append(" ")
+                .append(emoji)
+                .append("\n")
+                .append("<#")
+                .append(history.channelId())
+                .append(">\n\n");
         });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
