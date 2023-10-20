@@ -52,10 +52,15 @@ public class UserGrabberFeature extends BotFeature {
                 discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new ArrayList<>(), new LastActivity(), new MojangProfile());
             }
 
+            log.debug("Grabbed user " + member.getEffectiveName() + " from guild " + guild.getName());
+
             if (discordUser.getLastActivity() == null) {
                 log.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
                 discordUser.setLastActivity(new LastActivity());
             }
+
+            // TODO yeet
+            discordUser.getLastActivity().getSuggestionReactionHistory().clear();
 
             database.upsertDocument(database.getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
         }).onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName())).onError(Throwable::printStackTrace);
