@@ -184,8 +184,8 @@ public class ActivityListener {
 
     @SubscribeEvent
     public void onReactionReceived(MessageReactionAddEvent event) {
-        if (!event.isFromGuild()) {
-            return; // Ignore Non Guild
+        if (!event.isFromGuild() || event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
+            return; // Ignore non-guild and native emojis
         }
 
         Member member = event.getMember();
@@ -194,13 +194,8 @@ public class ActivityListener {
         }
 
         DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
-
         if (discordUser == null) {
             return; // Ignore Empty User
-        }
-
-        if (event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
-            return; // Ignore Native Emojis
         }
 
         if (event.getGuildChannel() instanceof ThreadChannel) {
