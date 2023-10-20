@@ -199,15 +199,13 @@ public class InfoCommands extends ApplicationCommand {
         List<RichCustomEmoji> emojis = Util.getMainGuild().retrieveEmojis().complete();
 
         getPage(reactionHistory, page, 10).forEach(history -> {
-            RichCustomEmoji emoji = emojis.stream().filter(e -> e.getName().equals(history.reactionName())).findFirst().orElse(null);
-            String emojiName = emoji.getAsMention();
+            String emoji = emojis.stream()
+                .filter(e -> e.getName().equals(history.reactionName()))
+                .findFirst()
+                .map(RichCustomEmoji::getAsMention)
+                .orElse(":question:");
 
-            if (emoji == null) {
-                log.error("Couldn't find emoji " + history.reactionName() + " in guild " + Util.getMainGuild().getId());
-                emojiName = ":question:";
-            }
-
-            stringBuilder.append(" • ").append(emojiName).append(" <#").append(history.channelId()).append(">\n");
+            stringBuilder.append(" • ").append(emoji).append(" <#").append(history.channelId()).append(">\n");
         });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
