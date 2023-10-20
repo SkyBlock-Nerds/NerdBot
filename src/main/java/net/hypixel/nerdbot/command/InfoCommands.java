@@ -192,6 +192,12 @@ public class InfoCommands extends ApplicationCommand {
         }
 
         List<ReactionHistory> reactionHistory = discordUser.getLastActivity().getSuggestionReactionHistory();
+
+        if (reactionHistory.isEmpty()) {
+            event.reply("Cannot find any history of your suggestion votes!").setEphemeral(true).queue();
+            return;
+        }
+
         reactionHistory.sort(Comparator.comparingLong(ReactionHistory::timestamp));
 
         page = Math.max(1, page);
