@@ -178,7 +178,7 @@ public class InfoCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "reactions", description = "View a list of recent reactions on suggestions")
     public void showRecentReactions(GuildSlashEvent event, @Optional @AppOption Member member, @Optional @AppOption int page) {
-        if (member == null || !member.hasPermission(Permission.BAN_MEMBERS)) {
+        if (member == null || !event.getMember().hasPermission(Permission.BAN_MEMBERS)) {
             member = event.getMember();
         }
 
