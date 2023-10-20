@@ -7,15 +7,14 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 import com.mongodb.client.FindIterable;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.IMentionable;
+import net.dv8tion.jda.api.entities.Invite;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
@@ -41,15 +40,13 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.role.PingableRole;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Environment;
-import net.hypixel.nerdbot.util.JsonUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.*;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
+import org.apache.logging.log4j.Level;
 
-import java.awt.*;
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -582,41 +579,31 @@ public class AdminCommands extends ApplicationCommand {
         event.getHook().editOriginal("Forcefully saved cached users to database!").queue();
     }
 
-    @JDASlashCommand(name = "role", description = "Toggle a role")
-    public void toggleRole(GuildSlashEvent event, @AppOption(autocomplete = "pingable-roles") String role) {
-        event.deferReply().setEphemeral(true).complete();
-
-        PingableRole pingableRole = RoleManager.getPingableRoleByName(role);
-        if (pingableRole == null) {
-            event.getHook().editOriginal("Invalid role specified!").queue();
-            return;
-        }
-
-        Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
-        if (discordRole == null) {
-            event.getHook().editOriginal("Invalid role specified!").queue();
-            return;
-        }
-
-        Member member = event.getMember();
-        if (RoleManager.hasRole(member, role)) {
-            event.getGuild().removeRoleFromMember(member, discordRole).queue();
-            event.getHook().editOriginal("Removed role " + discordRole.getAsMention() + " from you!\nUse the same command to re-add it!").queue();
-        } else {
-            event.getGuild().addRoleToMember(member, discordRole).queue();
-            event.getHook().editOriginal("Added role " + discordRole.getAsMention() + " to you!\nUse the same command to remove it!").queue();
-        }
-    }
-
-    @AutocompletionHandler(name = "pingable-roles", showUserInput = false)
-    public List<String> listPingableRoles(CommandAutoCompleteInteractionEvent event) {
-        return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles()).map(PingableRole::name).toList();
-    }
-
-    @JDASlashCommand(name = "roles", description = "List all roles that can be assigned")
-    public void listRoles(GuildSlashEvent event) {
+    @JDASlashCommand(name = "loglevel", description = "Set the log level", defaultLocked = true)
+    public void setLogLevel(GuildSlashEvent event, @AppOption(name = "level", description = "Log level to set", autocomplete = "loglevels") String level) {
         event.deferReply(true).complete();
-        String roles = Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles()).map(PingableRole::name).collect(Collectors.joining("\n"));
-        event.getHook().editOriginal("**Assignable Roles:**\n" + roles + "\n\n**Use /role <name> to toggle the role!**").queue();
+        Level logLevel = Level.toLevel(level);
+
+        if (logLevel == null) {
+            event.getHook().editOriginal("Invalid log level!").queue();
+            return;
+        }
+
+        try {
+            ClassUtil.getClassesInPackage("net.hypixel.nerdbot").forEach(clazz -> {
+                LoggingUtil.setLogLevelForConsole(clazz, logLevel);
+                log.debug("Set log level for " + clazz.getName() + " to " + logLevel);
+            });
+        } catch (IOException | ClassNotFoundException e) {
+            event.getHook().editOriginal("Failed to set log level!").queue();
+            e.printStackTrace();
+        }
+
+        event.getHook().editOriginal("Set log level to " + logLevel + "!").queue();
+    }
+
+    @AutocompletionHandler(name = "loglevels", mode = AutocompletionMode.FUZZY, showUserInput = false)
+    public List<String> listLogLevels(CommandAutoCompleteInteractionEvent event) {
+        return Arrays.stream(Level.values()).map(Level::toString).toList();
     }
 }
