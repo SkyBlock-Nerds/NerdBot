@@ -30,7 +30,7 @@ public class Reminder {
 
     private UUID uuid;
     @BsonIgnore
-    private Timer timer;
+    private transient Timer timer;
     private String description;
     private String channelId;
     private String userId;

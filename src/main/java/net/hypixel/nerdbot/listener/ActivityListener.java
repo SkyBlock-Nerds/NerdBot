@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.listener;
 
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -23,7 +25,9 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -40,14 +44,24 @@ public class ActivityListener {
     private final Map<Long, Long> voiceActivity = new HashMap<>();
 
     @SubscribeEvent
-    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-        Util.getOrAddUserToCache(this.database, event.getUser().getId());
-        log.info("User " + event.getUser().getAsTag() + " joined guild " + event.getGuild().getName());
+    public void onGuildMemberJoin(GuildMemberJoinEvent event) throws RepositoryException {
+        UpdateResult result = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).saveToDatabase(new DiscordUser(event.getMember()));
+
+        if (!result.wasAcknowledged() || result.getModifiedCount() == 0) {
+            throw new RepositoryException("Failed to save new user '" + event.getUser().getName() + "' to database!");
+        }
+
+        log.info("User " + event.getUser().getName() + " joined guild " + event.getGuild().getName());
     }
 
     @SubscribeEvent
-    public void onGuildMemberLeave(GuildMemberRemoveEvent event) {
-        this.database.deleteDocument(this.database.getCollection("users"), "discordId", event.getUser().getId());
+    public void onGuildMemberLeave(GuildMemberRemoveEvent event) throws RepositoryException {
+        DeleteResult result = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).deleteFromDatabase(event.getUser().getId());
+
+        if (!result.wasAcknowledged() || result.getDeletedCount() == 0) {
+            throw new RepositoryException("Failed to delete user '" + event.getUser().getName() + "' from database!");
+        }
+
         log.info("User " + event.getUser().getAsTag() + " left guild " + event.getGuild().getName());
     }
 
@@ -62,7 +76,7 @@ public class ActivityListener {
                 return; // Ignore Empty Member
             }
 
-            DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
+            DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(member.getId());
             if (discordUser == null) {
                 return; // Ignore Empty User
             }
@@ -95,7 +109,7 @@ public class ActivityListener {
             return; // Ignore Empty Member
         }
 
-        DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
+        DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(member.getId());
         if (discordUser == null) {
             return; // Ignore Empty User
         }
@@ -146,7 +160,7 @@ public class ActivityListener {
             return; // Ignore Bots
         }
 
-        DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
+        DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(member.getId());
         if (discordUser == null) {
             return; // Ignore Empty User
         }
@@ -192,8 +206,7 @@ public class ActivityListener {
             return; // Ignore Empty Member
         }
 
-        DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
-
+        DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(member.getId());
         if (discordUser == null) {
             return; // Ignore Empty User
         }

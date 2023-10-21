@@ -23,6 +23,7 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.generator.GeneratorBuilder;
 import net.hypixel.nerdbot.generator.ImageMerger;
 import net.hypixel.nerdbot.generator.StringColorParser;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
@@ -77,7 +78,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         // Log item gen activity
-        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
         log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
@@ -103,7 +104,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         // Log item gen activity
-        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
         log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
@@ -126,7 +127,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         // Log item gen activity
-        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
         log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
@@ -194,7 +195,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
 
         // Log item gen activity
-        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
         log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
@@ -220,7 +221,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         // Log item gen activity
-        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
         log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
@@ -393,7 +394,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
 
         // Log item gen activity
-        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), event.getMember().getId());
+        DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
         log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);

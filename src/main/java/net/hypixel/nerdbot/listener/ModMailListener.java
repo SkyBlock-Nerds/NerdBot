@@ -18,9 +18,9 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.ModMailConfig;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
@@ -59,8 +59,8 @@ public class ModMailListener {
         boolean updateFirstPost = false;
         String expectedThreadName = MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(author), author.getId());
         ThreadChannel modMailThread;
-        Database database = NerdBotApp.getBot().getDatabase();
-        DiscordUser discordUser = Util.getOrAddUserToCache(database, author.getId());
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(author.getId());
         boolean unlinked = discordUser.noProfileAssigned();
         String username = unlinked ? "**Unlinked**" : discordUser.getMojangProfile().getUsername();
         String uniqueId = unlinked ? "**Unlinked**" : discordUser.getMojangProfile().getUniqueId().toString();

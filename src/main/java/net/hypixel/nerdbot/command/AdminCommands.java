@@ -44,6 +44,7 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -241,7 +242,7 @@ public class AdminCommands extends ApplicationCommand {
     )
     public void userList(GuildSlashEvent event, @Optional @AppOption(description = "Comma-separated role names to search for (default Member).") String roles) throws IOException {
         event.deferReply(true).complete();
-        Database database = NerdBotApp.getBot().getDatabase();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         String[] roleArray = roles != null ? roles.split(", ?") : new String[]{"Member"};
         JsonArray uuidArray = new JsonArray();
 
@@ -251,7 +252,7 @@ public class AdminCommands extends ApplicationCommand {
             .stream()
             .filter(member -> !member.getUser().isBot())
             .filter(member -> Util.hasAnyRole(member, roleArray))
-            .map(member -> Util.getOrAddUserToCache(database, member.getId()))
+            .map(member -> discordUserRepository.findById(member.getId()))
             .filter(DiscordUser::isProfileAssigned)
             .map(DiscordUser::getMojangProfile)
             .toList();
@@ -320,14 +321,14 @@ public class AdminCommands extends ApplicationCommand {
     )
     public void userMissingProfile(GuildSlashEvent event) {
         event.deferReply(true).queue();
-        Database database = NerdBotApp.getBot().getDatabase();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
         String missing = event.getGuild()
             .loadMembers()
             .get()
             .stream()
             .filter(member -> !member.getUser().isBot())
-            .filter(member -> Util.getOrAddUserToCache(database, member.getId()).noProfileAssigned())
+            .filter(member -> discordUserRepository.findById(member.getId()).noProfileAssigned())
             .map(IMentionable::getAsMention)
             .collect(Collectors.joining(", "));
 
@@ -352,8 +353,8 @@ public class AdminCommands extends ApplicationCommand {
     )
     public void userInfo(GuildSlashEvent event, @AppOption(description = "The user to search") Member member) {
         event.deferReply(true).queue();
-        Database database = NerdBotApp.getBot().getDatabase();
-        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
         Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = MyCommands.getActivityEmbeds(member);
 
         String profile = discordUser.isProfileAssigned() ?
@@ -380,7 +381,7 @@ public class AdminCommands extends ApplicationCommand {
     )
     public void migrateUsernames(GuildSlashEvent event) {
         event.deferReply(true).complete();
-        Database database = NerdBotApp.getBot().getDatabase();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         List<MojangProfile> mojangProfiles = new ArrayList<>();
 
         event.getGuild()
@@ -388,7 +389,7 @@ public class AdminCommands extends ApplicationCommand {
             .get()
             .stream()
             .filter(member -> !member.getUser().isBot())
-            .filter(member -> Util.getOrAddUserToCache(database, member.getId()).noProfileAssigned())
+            .filter(member -> discordUserRepository.findById(member.getId()).noProfileAssigned())
             .filter(member -> Util.getScuffedMinecraftIGN(member).isPresent())
             .forEach(member -> {
                 String scuffedUsername = Util.getScuffedMinecraftIGN(member).orElseThrow();
@@ -396,7 +397,7 @@ public class AdminCommands extends ApplicationCommand {
                 try {
                     MojangProfile mojangProfile = Util.getMojangProfile(scuffedUsername);
                     mojangProfiles.add(mojangProfile);
-                    DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+                    DiscordUser discordUser = discordUserRepository.findById(member.getId());
                     discordUser.setMojangProfile(mojangProfile);
                     log.info("Migrated " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ") to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId() + ")");
                 } catch (HttpException ex) {
@@ -566,19 +567,5 @@ public class AdminCommands extends ApplicationCommand {
         }
 
         return List.of();
-    }
-  
-    @JDASlashCommand(name = "cache", subcommand = "list", description = "List all cached users", defaultLocked = true)
-    public void listCachedUsers(GuildSlashEvent event) {
-        event.replyEmbeds(new EmbedBuilder().setDescription(Util.listCachedUsers()).build()).queue();
-    }
-
-    @JDASlashCommand(name = "cache", subcommand = "force-save", description = "Forcefully save cached users to the database", defaultLocked = true)
-    public void saveCachedUsers(GuildSlashEvent event) {
-        event.deferReply(true).complete();
-        Database database = NerdBotApp.getBot().getDatabase();
-
-        Util.saveCache(database);
-        event.getHook().editOriginal("Forcefully saved cached users to database!").queue();
     }
 }

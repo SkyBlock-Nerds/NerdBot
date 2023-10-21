@@ -119,7 +119,7 @@ public class PrometheusMetrics {
 
             try {
                 if (server != null) {
-                    server.stop();
+                    server.close();
                 }
 
                 server = new HTTPServer.Builder()

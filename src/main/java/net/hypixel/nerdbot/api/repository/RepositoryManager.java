@@ -51,7 +51,7 @@ public class RepositoryManager {
             constructor.setAccessible(true);
             return constructor.newInstance(mongoClient, databaseName);
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RepositoryException("Failed to create repository instance: " + repositoryClass.getName() + " - No constructor found with parameters: MongoClient, String", e);
+            throw new RepositoryException("Failed to create repository instance: " + repositoryClass.getName(), e);
         }
     }
 }
