@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 @Log4j2
 public abstract class CachedMongoRepository<T> {
@@ -136,7 +135,7 @@ public abstract class CachedMongoRepository<T> {
         return cache.asMap().values()
             .stream()
             .filter(filter)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public void forEach(Consumer<T> consumer) {
