@@ -28,11 +28,11 @@ public abstract class CachedMongoRepository<T> {
     private final MongoCollection<Document> mongoCollection;
     private final Class<T> entityClass;
 
-    public CachedMongoRepository(MongoClient mongoClient, String databaseName, String collectionName) {
+    protected CachedMongoRepository(MongoClient mongoClient, String databaseName, String collectionName) {
         this(mongoClient, databaseName, collectionName, 15, TimeUnit.MINUTES);
     }
 
-    public CachedMongoRepository(MongoClient mongoClient, String databaseName, String collectionName, long expireAfterAccess, TimeUnit timeUnit) {
+    protected CachedMongoRepository(MongoClient mongoClient, String databaseName, String collectionName, long expireAfterAccess, TimeUnit timeUnit) {
         ParameterizedType parameterizedType = (ParameterizedType) getClass().getGenericSuperclass();
         this.entityClass = (Class<T>) parameterizedType.getActualTypeArguments()[0];
 
