@@ -115,7 +115,7 @@ public abstract class CachedMongoRepository<T> {
     }
 
     protected T documentToEntity(Document document) {
-        log.debug("Converting document to entity " + entityClass + ": " + document.toJson());
+        debug("Converting document to entity " + entityClass + ": " + document.toJson());
         return NerdBotApp.GSON.fromJson(document.toJson(), entityClass);
     }
 
