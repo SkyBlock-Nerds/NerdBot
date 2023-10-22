@@ -199,14 +199,13 @@ public class ActivityListener {
             return; // Ignore Empty User
         }
 
-        if (event.getGuildChannel() instanceof ThreadChannel) {
+        if (event.getGuildChannel() instanceof ThreadChannel threadChannel) {
 
             // Here is logic for handling pinning of messages within Threads by the owner. This is done by only the :pushpin: Emoji.
             Emoji pushpin = Emoji.fromUnicode("\uD83D\uDCCC");
 
             if (event.getReaction().getEmoji().equals(pushpin)) {
-
-                if (!event.getGuildChannel().asThreadChannel().getOwnerId().equals(discordUser.getDiscordId())) {
+                if (!threadChannel.getOwnerId().equals(discordUser.getDiscordId())) {
                     return; // Ignoring IDs that are not from the owner of the thread.
                 }
 
@@ -226,7 +225,6 @@ public class ActivityListener {
                 return;
             }
 
-
             if (event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
                 return; // Ignore Native Emojis
             }
@@ -235,7 +233,6 @@ public class ActivityListener {
             EmojiConfig emojiConfig = config.getEmojiConfig();
 
             if (emojiConfig.isEquals(event.getReaction(), EmojiConfig::getAgreeEmojiId) || emojiConfig.isEquals(event.getReaction(), EmojiConfig::getDisagreeEmojiId)) {
-                ThreadChannel threadChannel = event.getGuildChannel().asThreadChannel();
                 MessageHistory history = threadChannel.getHistoryFromBeginning(1).complete();
                 boolean deleted = history.isEmpty() || history.getRetrievedHistory().get(0).getIdLong() != threadChannel.getIdLong();
 
