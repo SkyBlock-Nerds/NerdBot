@@ -4,6 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
@@ -196,6 +197,33 @@ public class ActivityListener {
 
         if (discordUser == null) {
             return; // Ignore Empty User
+        }
+
+        // Here is logic for handling pinning of messages within Threads by the owner. This is done by only the :pushpin: Emoji.
+        if (event.getReaction().getEmoji().getName().equals("\uD83D\uDCCC")) {
+            Emoji pushpin = Emoji.fromUnicode("\uD83D\uDCCC");
+
+            if (!(event.getGuildChannel() instanceof ThreadChannel)){
+                return; // Ignoring any channels not within a Thread channel.
+            }
+
+            if (!(event.getGuildChannel().asThreadChannel().getOwnerId().equals(discordUser.getDiscordId()))){
+                return; // Ignoring IDs that are not from the owner of the thread.
+            }
+
+            // We get the message we are checking to pin or unpin it.
+            Message message = event.retrieveMessage().complete();
+            if (message.isPinned()){
+                // Since it is pinned, we unpin it here and remove all :pushpin: emojis.
+                message.unpin().queue();
+                message.clearReactions(pushpin).queue();
+            } else {
+                // It has not been pinned yet, we pin it and remove the users reaction while adding our own.
+                message.pin().queue();
+                message.addReaction(pushpin).queue();
+                message.removeReaction(pushpin, member.getUser()).queue();
+            }
+            return;
         }
 
         if (event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
