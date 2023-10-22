@@ -8,7 +8,11 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -20,14 +24,19 @@ import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.bot.config.BotConfig;
+import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
+import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.Environment;
+import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
+import net.hypixel.nerdbot.util.watcher.URLWatcher;
+import net.hypixel.nerdbot.util.watcher.handlers.FireSaleDataHandler;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
@@ -38,6 +47,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Log4j2
 public class NerdBot implements Bot {
@@ -58,6 +68,37 @@ public class NerdBot implements Bot {
     }
 
     @Override
+    public void onStart() {
+        for (BotFeature feature : FEATURES) {
+            feature.onStart();
+            log.info("Started feature " + feature.getClass().getSimpleName());
+        }
+
+        loadRemindersFromDatabase();
+        startUrlWatchers();
+
+        if (Util.getMainGuild() != null) {
+            Util.getMainGuild().loadMembers().onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size())).onError(Throwable::printStackTrace);
+        }
+
+        if (config.getMetricsConfig().isEnabled()) {
+            PrometheusMetrics.setMetricsEnabled(true);
+        }
+      
+        startTime = System.currentTimeMillis();
+        log.info("Bot started in environment " + Environment.getEnvironment());
+    }
+
+    @Override
+    public void onEnd() {
+        log.info("Shutting down Nerd Bot...");
+        for (BotFeature feature : FEATURES) {
+            feature.onEnd();
+        }
+        database.disconnect();
+    }
+
+    @Override
     public void create(String[] args) throws LoginException {
         loadConfig();
 
@@ -69,7 +110,8 @@ public class NerdBot implements Bot {
                 new ActivityListener(),
                 new ReactionChannelListener(),
                 new SuggestionListener(),
-                new VerificationListener()
+                new VerificationListener(),
+                new MetricsListener()
             ).setActivity(Activity.of(config.getActivityType(), config.getActivity()));
         configureMemoryUsage(builder);
 
@@ -90,7 +132,11 @@ public class NerdBot implements Bot {
             CommandsBuilder commandsBuilder = CommandsBuilder
                 .newBuilder()
                 .addOwners(config.getOwnerIds())
-                .extensionsBuilder(extensionsBuilder -> extensionsBuilder.registerParameterResolver(new ForumChannelResolver()));
+                .extensionsBuilder(extensionsBuilder -> extensionsBuilder
+                    .registerParameterResolver(new ForumChannelResolver())
+                    .registerAutocompletionTransformer(ForumChannel.class, forumChannel -> new Command.Choice(forumChannel.getName(), forumChannel.getId()))
+                    .registerAutocompletionTransformer(ForumTag.class, forumTag -> new Command.Choice(forumTag.getName(), forumTag.getId()))
+                );
             commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
         } catch (IOException exception) {
             log.error("Couldn't create the command builder! Reason: " + exception.getMessage());
@@ -102,7 +148,6 @@ public class NerdBot implements Bot {
         }
 
         NerdBotApp.getBot().onStart();
-        loadRemindersFromDatabase();
 
         log.info("Bot is ready!");
     }
@@ -137,6 +182,18 @@ public class NerdBot implements Bot {
         log.info("Loaded " + collection.countDocuments() + " reminders from the database!");
     }
 
+    private void startUrlWatchers() {
+        TextChannel announcementChannel = ChannelManager.getChannel(config.getChannelConfig().getAnnouncementChannelId());
+
+        if (announcementChannel == null) {
+            log.error("Couldn't find announcement channel!");
+            return;
+        }
+
+        URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
+        fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
+    }
+
     @Override
     public void configureMemoryUsage(JDABuilder builder) {
         builder.setMemberCachePolicy(MemberCachePolicy.ALL);
@@ -163,28 +220,8 @@ public class NerdBot implements Bot {
         return jda;
     }
 
-    @Override
-    public void onStart() {
-        for (BotFeature feature : FEATURES) {
-            feature.onStart();
-            log.info("Started feature " + feature.getClass().getSimpleName());
-        }
-        startTime = System.currentTimeMillis();
-        log.info("Bot started in environment " + Environment.getEnvironment());
-    }
-
-    @Override
     public List<BotFeature> getFeatures() {
         return FEATURES;
-    }
-
-    @Override
-    public void onEnd() {
-        log.info("Shutting down Nerd Bot...");
-        for (BotFeature feature : FEATURES) {
-            feature.onEnd();
-        }
-        database.disconnect();
     }
 
     @Override
@@ -221,7 +258,7 @@ public class NerdBot implements Bot {
         try {
             log.info("Loading config file from '" + fileName + "'");
             File file = new File(fileName);
-            config = (BotConfig) Util.jsonToObject(file, BotConfig.class);
+            config = (BotConfig) JsonUtil.jsonToObject(file, BotConfig.class);
 
             log.info("Loaded config from " + file.getAbsolutePath());
         } catch (FileNotFoundException exception) {

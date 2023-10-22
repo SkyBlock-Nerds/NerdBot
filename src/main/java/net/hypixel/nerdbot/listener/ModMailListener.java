@@ -21,6 +21,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.ModMailConfig;
+import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
@@ -87,7 +88,7 @@ public class ModMailListener {
             String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
 
             if (modMailRoleId != null) {
-                modMailThread.getGuild().getMembersWithRoles(Util.getRoleById(modMailRoleId)).forEach(member -> modMailThread.addThreadMember(member).complete());
+                modMailThread.getGuild().getMembersWithRoles(RoleManager.getRoleById(modMailRoleId)).forEach(member -> modMailThread.addThreadMember(member).complete());
             }
         }
 

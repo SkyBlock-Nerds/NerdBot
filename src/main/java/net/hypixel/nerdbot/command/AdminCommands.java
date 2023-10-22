@@ -5,6 +5,8 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
+import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import com.google.gson.*;
 import com.mongodb.client.FindIterable;
 import lombok.extern.log4j.Log4j2;
@@ -19,7 +21,9 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
@@ -31,23 +35,27 @@ import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
-import net.hypixel.nerdbot.util.Environment;
-import net.hypixel.nerdbot.util.JsonUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.role.RoleManager;
+import net.hypixel.nerdbot.util.*;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
+import org.apache.logging.log4j.Level;
 
-import java.awt.*;
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 public class AdminCommands extends ApplicationCommand {
@@ -182,8 +190,11 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "config", subcommand = "reload", description = "Reload the config file", defaultLocked = true)
     public void reloadConfig(GuildSlashEvent event) {
         Bot bot = NerdBotApp.getBot();
+
         bot.loadConfig();
         bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
+        PrometheusMetrics.setMetricsEnabled(bot.getConfig().getMetricsConfig().isEnabled());
+
         event.reply("Reloaded the config file!").setEphemeral(true).queue();
     }
 
@@ -210,6 +221,15 @@ public class AdminCommands extends ApplicationCommand {
         event.reply("Successfully updated the JSON file!").setEphemeral(true).queue();
     }
 
+    @JDASlashCommand(name = "metrics", subcommand = "toggle", description = "Toggle metrics collection", defaultLocked = true)
+    public void toggleMetrics(GuildSlashEvent event) {
+        Bot bot = NerdBotApp.getBot();
+        MetricsConfig metricsConfig = bot.getConfig().getMetricsConfig();
+        metricsConfig.setEnabled(!metricsConfig.isEnabled());
+        PrometheusMetrics.setMetricsEnabled(metricsConfig.isEnabled());
+        event.reply("Metrics collection is now " + (metricsConfig.isEnabled() ? "enabled" : "disabled") + "!").setEphemeral(true).queue();
+    }
+
     @JDASlashCommand(
         name = "user",
         subcommand = "list",
@@ -227,7 +247,7 @@ public class AdminCommands extends ApplicationCommand {
             .get()
             .stream()
             .filter(member -> !member.getUser().isBot())
-            .filter(member -> Util.hasAnyRole(member, roleArray))
+            .filter(member -> RoleManager.hasAnyRole(member, roleArray))
             .map(member -> Util.getOrAddUserToCache(database, member.getId()))
             .filter(DiscordUser::isProfileAssigned)
             .map(DiscordUser::getMojangProfile)
@@ -445,6 +465,106 @@ public class AdminCommands extends ApplicationCommand {
         event.reply(event.getUser().getAsMention() + " applied the " + forumTag.getName() + " tag and locked this suggestion!").queue();
     }
 
+    @JDASlashCommand(name = "transfer-tag", description = "Transfer forum tag to another.", defaultLocked = true)
+    public void transferForumTag(
+        GuildSlashEvent event,
+        @AppOption(name = "channel", description = "Forum channel to transfer tags in.") ForumChannel channel,
+        @AppOption(name = "from", description = "Transfer from this tag.", autocomplete = "forumtags") String from,
+        @AppOption(name = "to", description = "Transfer to this tag.", autocomplete = "forumtags") String to
+    ) {
+        event.deferReply(false).complete();
+        ForumTag fromTag;
+        ForumTag toTag;
+
+        try {
+            // Autocomplete Support
+            fromTag = Objects.requireNonNull(channel.getAvailableTagById(from));
+            toTag = Objects.requireNonNull(channel.getAvailableTagById(to));
+        } catch (NumberFormatException nfex) {
+            try {
+                // "I can type it myself" Support
+                fromTag = channel.getAvailableTagsByName(from, true).get(0);
+                toTag = channel.getAvailableTagsByName(to, true).get(0);
+            } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
+                event.getHook().editOriginal("You have entered invalid from/to tags, please try again.").complete();
+                return;
+            }
+        }
+
+        // Load Threads
+        ForumTag searchTag = fromTag;
+        List<ThreadChannel> threadChannels = Stream.concat(
+                channel.getThreadChannels().stream(),
+                channel.retrieveArchivedPublicThreadChannels().stream()
+            )
+            .filter(threadChannel -> threadChannel.getAppliedTags().contains(searchTag))
+            .distinct() // Prevent Duplicates
+            .toList();
+
+        int total = threadChannels.size();
+        if (total == 0) {
+            event.getHook().editOriginal("No threads containing the `" + fromTag.getName() + "` tag were found!").complete();
+            return;
+        }
+
+        int processed = 0;
+        int modulo = Math.min(total, 10);
+        event.getHook().editOriginal("Updated " + 0 + "/" + total + " threads...").complete();
+
+        // Process Threads
+        for (ThreadChannel threadChannel : threadChannels) {
+            List<ForumTag> threadTags = new ArrayList<>(threadChannel.getAppliedTags());
+            threadTags.remove(fromTag);
+
+            // Prevent Duplicates
+            if (!threadTags.contains(toTag)) {
+                threadTags.add(toTag);
+            }
+
+            boolean archived = threadChannel.isArchived();
+
+            if (archived) {
+                threadChannel.getManager().setArchived(false).complete();
+            }
+
+            try {
+                threadChannel.getManager().setAppliedTags(threadTags).complete();
+            } catch (Exception ex) {
+                log.warn("Unable to set applied tags for [" + threadChannel.getId() + "] " + threadChannel.getName(), ex);
+            }
+
+            if (archived) {
+                threadChannel.getManager().setArchived(true).complete();
+            }
+
+            if (++processed % modulo == 0 && processed != total) {
+                event.getHook().editOriginal("Updated " + processed + "/" + total + " threads...").complete();
+            }
+        }
+
+        event.getHook().editOriginal("Finished transferring `" + fromTag.getName() + "` to `" + toTag.getName() + "` in " + total + " threads!").complete();
+    }
+
+    @AutocompletionHandler(name = "forumchannels", mode = AutocompletionMode.FUZZY, showUserInput = false)
+    public List<ForumChannel> listForumChannels(CommandAutoCompleteInteractionEvent event) {
+        return Util.getMainGuild().getForumChannels();
+    }
+
+    @AutocompletionHandler(name = "forumtags", mode = AutocompletionMode.FUZZY, showUserInput = false)
+    public List<ForumTag> listForumTags(CommandAutoCompleteInteractionEvent event) {
+        OptionMapping forumChannelId = event.getOption("channel");
+
+        if (forumChannelId != null) {
+            ForumChannel forumChannel = Util.getMainGuild().getForumChannelById(forumChannelId.getAsString());
+
+            if (forumChannel != null) {
+                return forumChannel.getAvailableTags();
+            }
+        }
+
+        return List.of();
+    }
+
     @JDASlashCommand(name = "cache", subcommand = "list", description = "List all cached users", defaultLocked = true)
     public void listCachedUsers(GuildSlashEvent event) {
         event.replyEmbeds(new EmbedBuilder().setDescription(Util.listCachedUsers()).build()).queue();
@@ -457,5 +577,33 @@ public class AdminCommands extends ApplicationCommand {
 
         Util.saveCache(database);
         event.getHook().editOriginal("Forcefully saved cached users to database!").queue();
+    }
+
+    @JDASlashCommand(name = "loglevel", description = "Set the log level", defaultLocked = true)
+    public void setLogLevel(GuildSlashEvent event, @AppOption(name = "level", description = "Log level to set", autocomplete = "loglevels") String level) {
+        event.deferReply(true).complete();
+        Level logLevel = Level.toLevel(level);
+
+        if (logLevel == null) {
+            event.getHook().editOriginal("Invalid log level!").queue();
+            return;
+        }
+
+        try {
+            ClassUtil.getClassesInPackage("net.hypixel.nerdbot").forEach(clazz -> {
+                LoggingUtil.setLogLevelForConsole(clazz, logLevel);
+                log.debug("Set log level for " + clazz.getName() + " to " + logLevel);
+            });
+        } catch (IOException | ClassNotFoundException e) {
+            event.getHook().editOriginal("Failed to set log level!").queue();
+            e.printStackTrace();
+        }
+
+        event.getHook().editOriginal("Set log level to " + logLevel + "!").queue();
+    }
+
+    @AutocompletionHandler(name = "loglevels", mode = AutocompletionMode.FUZZY, showUserInput = false)
+    public List<String> listLogLevels(CommandAutoCompleteInteractionEvent event) {
+        return Arrays.stream(Level.values()).map(Level::toString).toList();
     }
 }

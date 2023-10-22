@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.prometheus.client.exporter.HTTPServer;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.bot.Bot;
@@ -18,6 +19,7 @@ import net.hypixel.nerdbot.util.gson.InstantTypeAdapter;
 import net.hypixel.nerdbot.util.gson.UUIDTypeAdapter;
 
 import javax.security.auth.login.LoginException;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -44,14 +46,19 @@ public class NerdBotApp {
             log.info("Upserted cached user '" + discordUser.getDiscordId() + "' to database! (Cause: " + cause + ")");
         }).build();
 
+    private static HTTPServer server;
+
     @Getter
-    private static Optional<UUID> hypixelApiKey = Optional.ofNullable(System.getProperty("hypixel.key")).map(Util::toUUID);
+    private static final Optional<UUID> hypixelApiKey = Optional.ofNullable(System.getProperty("hypixel.key")).map(Util::toUUID);
     @Getter
     private static SuggestionCache suggestionCache;
     @Getter
     private static MessageCache messageCache;
     @Getter
     private static Bot bot;
+
+    public NerdBotApp() throws IOException {
+    }
 
     public static void main(String[] args) {
         NerdBot nerdBot = new NerdBot();
@@ -78,11 +85,16 @@ public class NerdBotApp {
 
         Thread userSavingTask = new Thread(() -> {
             log.info("Attempting to save " + USER_CACHE.estimatedSize() + " cached users");
+
             USER_CACHE.asMap().forEach((s, discordUser) -> {
                 bot.getDatabase().upsertDocument(bot.getDatabase().getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
             });
+
             NerdBotApp.getBot().onEnd();
+
+            server.close();
         });
+
         Runtime.getRuntime().addShutdownHook(userSavingTask);
     }
 }

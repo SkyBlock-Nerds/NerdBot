@@ -9,6 +9,7 @@ import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
+import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.Arrays;
@@ -58,8 +59,12 @@ public class CurateFeature extends BotFeature {
                         }
 
                         // Update Database
-                        result.forEach(greenlitMessage -> database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage));
+                        result.forEach(greenlitMessage -> {
+                            database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage);
+                            PrometheusMetrics.GREENLIT_SUGGESTION_LENGTH.labels(greenlitMessage.getMessageId(), String.valueOf(greenlitMessage.getSuggestionContent().length())).inc();
+                        });
                         log.info("Inserted " + result.size() + " new greenlit messages into the database!");
+                        PrometheusMetrics.TOTAL_GREENLIT_MESSAGES_AMOUNT.inc(result.size());
                     });
                 });
             }

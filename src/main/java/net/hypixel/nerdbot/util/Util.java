@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.util;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import io.prometheus.client.Summary;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
@@ -12,13 +13,15 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.command.GeneratorCommands;
+import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URI;
@@ -27,7 +30,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
-import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -45,7 +47,6 @@ public class Util {
     public static final Pattern UUID_REGEX = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}");
     public static final Pattern TRIMMED_UUID_REGEX = Pattern.compile("[a-f0-9]{12}4[a-f0-9]{3}[89aAbB][a-f0-9]{15}");
     private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
-
 
     private Util() {
     }
@@ -75,48 +76,9 @@ public class Util {
         return NerdBotApp.getBot().getJDA().getGuildById(guildId);
     }
 
-    @Nullable
+    @NotNull
     public static Guild getMainGuild() {
-        return NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId());
-    }
-
-    public static boolean hasRole(Member member, String name) {
-        List<Role> roles = member.getRoles();
-        return roles.stream().anyMatch(role -> role.getName().equalsIgnoreCase(name));
-    }
-
-    public static boolean hasAnyRole(Member member, String... names) {
-        List<Role> roles = member.getRoles();
-        List<String> nameList = Arrays.asList(names);
-        if (names.length == 0) {
-            return false;
-        } else {
-            return roles.stream().anyMatch(role -> nameList.stream().anyMatch(name -> role.getName().equalsIgnoreCase(name)));
-        }
-    }
-
-    public static boolean hasHigherOrEqualRole(Member member, Role role) {
-        return member.getRoles()
-            .stream()
-            .anyMatch(memberRole -> memberRole.getPosition() >= role.getPosition());
-    }
-
-    @Nullable
-    public static Role getRole(String name) {
-        Guild guild = Util.getMainGuild();
-        if (guild == null) {
-            return null;
-        }
-        return guild.getRoles().stream().filter(role -> role.getName().equals(name)).findFirst().orElse(null);
-    }
-
-    @Nullable
-    public static Role getRoleById(String id) {
-        Guild guild = Util.getMainGuild();
-        if (guild == null) {
-            return null;
-        }
-        return guild.getRoles().stream().filter(role -> role.getId().equals(id)).findFirst().orElse(null);
+        return Objects.requireNonNull(NerdBotApp.getBot().getJDA().getGuildById(NerdBotApp.getBot().getConfig().getGuildId()));
     }
 
     public static File createTempFile(String fileName, String content) throws IOException {
@@ -140,11 +102,6 @@ public class Util {
             .stream()
             .filter(user -> !users.contains(user))
             .count();
-    }
-
-    public static Object jsonToObject(File file, Class<?> clazz) throws FileNotFoundException {
-        BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
-        return NerdBotApp.GSON.fromJson(br, clazz);
     }
 
     public static String formatSize(long size) {
@@ -266,12 +223,15 @@ public class Util {
         MojangProfile mojangProfile;
         int statusCode;
 
+        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
         try {
             HttpResponse<String> httpResponse = getHttpResponse(url);
             statusCode = httpResponse.statusCode();
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
         } catch (Exception ex) {
             throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + ex.getMessage(), ex);
+        } finally {
+            requestTimer.observeDuration();
         }
 
         if (statusCode != 200) {
@@ -287,12 +247,15 @@ public class Util {
         MojangProfile mojangProfile;
         int statusCode;
 
+        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
         try {
             HttpResponse<String> httpResponse = getHttpResponse(url);
             statusCode = httpResponse.statusCode();
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
         } catch (Exception ex) {
             throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`.", ex);
+        } finally {
+            requestTimer.observeDuration();
         }
 
         if (statusCode != 200) {
@@ -308,16 +271,21 @@ public class Util {
         Arrays.asList(headers).forEach(pair -> builder.header(pair.getLeft(), pair.getRight()));
         HttpRequest request = builder.build();
         log.info("Sending HTTP request to " + url + " with headers " + Arrays.toString(headers));
+        PrometheusMetrics.HTTP_REQUESTS_AMOUNT.labels(request.method(), url).inc();
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws HttpException {
+        String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId.toString());
+        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
+
         try {
-            String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId.toString());
             String hypixelApiKey = NerdBotApp.getHypixelApiKey().map(UUID::toString).orElse("");
             return NerdBotApp.GSON.fromJson(getHttpResponse(url, Pair.of("API-Key", hypixelApiKey)).body(), HypixelPlayerResponse.class);
         } catch (Exception ex) {
             throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId.toString() + "`.", ex);
+        } finally {
+            requestTimer.observeDuration();
         }
     }
 

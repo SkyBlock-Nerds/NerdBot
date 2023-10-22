@@ -21,6 +21,7 @@
     "publicArchiveCategoryId": "",
     "nerdArchiveCategoryId": "",
     "alphaArchiveCategoryId": "",
+    "announcementChannelId": "",
     "suggestionForumIds": [],
     "alphaSuggestionForumIds": [],
     "genChannelIds": [],
@@ -30,7 +31,12 @@
   "roleConfig": {
     "botManagerRoleId": "",
     "newMemberRoleId": "",
-    "limboRoleId": ""
+    "limboRoleId": "",
+    "pingableRoles": []
+  },
+  "metricsConfig": {
+    "enabled": false,
+    "port": 1234
   },
   "guildId": "",
   "ownerIds": [],
