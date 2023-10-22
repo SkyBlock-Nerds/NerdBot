@@ -199,38 +199,38 @@ public class ActivityListener {
             return; // Ignore Empty User
         }
 
-        // Here is logic for handling pinning of messages within Threads by the owner. This is done by only the :pushpin: Emoji.
-        if (event.getReaction().getEmoji().getName().equals("\uD83D\uDCCC")) {
+        if (event.getGuildChannel() instanceof ThreadChannel) {
+
+            // Here is logic for handling pinning of messages within Threads by the owner. This is done by only the :pushpin: Emoji.
             Emoji pushpin = Emoji.fromUnicode("\uD83D\uDCCC");
 
-            if (!(event.getGuildChannel() instanceof ThreadChannel)){
-                return; // Ignoring any channels not within a Thread channel.
+            if (event.getReaction().getEmoji().equals(pushpin)) {
+
+                if (!event.getGuildChannel().asThreadChannel().getOwnerId().equals(discordUser.getDiscordId())) {
+                    return; // Ignoring IDs that are not from the owner of the thread.
+                }
+
+                // We get the message we are checking to pin or unpin it.
+                Message message = event.retrieveMessage().complete();
+
+                if (message.isPinned()) {
+                    // Since it is pinned, we unpin it here and remove all :pushpin: emojis.
+                    message.unpin().complete();
+                    message.clearReactions(pushpin).complete();
+                } else {
+                    // It has not been pinned yet, we pin it and remove the users reaction while adding our own.
+                    message.pin().complete();
+                    message.addReaction(pushpin).complete();
+                    message.removeReaction(pushpin, member.getUser()).complete();
+                }
+                return;
             }
 
-            if (!(event.getGuildChannel().asThreadChannel().getOwnerId().equals(discordUser.getDiscordId()))){
-                return; // Ignoring IDs that are not from the owner of the thread.
+
+            if (event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
+                return; // Ignore Native Emojis
             }
 
-            // We get the message we are checking to pin or unpin it.
-            Message message = event.retrieveMessage().complete();
-            if (message.isPinned()){
-                // Since it is pinned, we unpin it here and remove all :pushpin: emojis.
-                message.unpin().queue();
-                message.clearReactions(pushpin).queue();
-            } else {
-                // It has not been pinned yet, we pin it and remove the users reaction while adding our own.
-                message.pin().queue();
-                message.addReaction(pushpin).queue();
-                message.removeReaction(pushpin, member.getUser()).queue();
-            }
-            return;
-        }
-
-        if (event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
-            return; // Ignore Native Emojis
-        }
-
-        if (event.getGuildChannel() instanceof ThreadChannel) {
             BotConfig config = NerdBotApp.getBot().getConfig();
             EmojiConfig emojiConfig = config.getEmojiConfig();
 
