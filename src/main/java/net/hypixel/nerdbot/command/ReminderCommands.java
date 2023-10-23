@@ -7,21 +7,20 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.joestelmach.natty.DateGroup;
 import com.joestelmach.natty.Parser;
-import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertOneResult;
+import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
+import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -93,11 +92,12 @@ public class ReminderCommands extends ApplicationCommand {
         }
 
         // Create a new reminder and save it to the database
+        ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
         Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId(), sendPublicly);
-        InsertOneResult result = reminder.save();
+        UpdateResult result = reminderRepository.saveToDatabase(reminder);
 
         // Check if the reminder was saved successfully, schedule it and send a confirmation message
-        if (result != null && result.wasAcknowledged() && result.getInsertedId() != null) {
+        if (result != null && result.wasAcknowledged() && result.getUpsertedId() != null) {
             event.reply("I will remind you at " + new DiscordTimestamp(date.getTime()).toLongDateTime() + " about:")
                 .addEmbeds(new EmbedBuilder().setDescription(description).build())
                 .setEphemeral(true)
@@ -112,7 +112,11 @@ public class ReminderCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "remind", subcommand = "list", description = "View your reminders")
     public void listReminders(GuildSlashEvent event) {
-        List<Reminder> reminders = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.eq("userId", event.getUser().getId())).into(new ArrayList<>());
+        ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
+        List<Reminder> reminders = reminderRepository
+            .filter(reminder -> reminder.getUserId().equalsIgnoreCase(event.getUser().getId()))
+            .stream()
+            .toList();
 
         if (reminders.isEmpty()) {
             event.reply("You have no reminders!").setEphemeral(true).queue();
@@ -143,15 +147,16 @@ public class ReminderCommands extends ApplicationCommand {
     public void deleteReminder(GuildSlashEvent event, @AppOption String uuid) {
         try {
             UUID parsed = UUID.fromString(uuid);
-            Reminder reminder = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection("reminders", Reminder.class), Filters.and(Filters.eq("userId", event.getUser().getId()), Filters.eq("uuid", parsed))).first();
+            ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
+            Reminder reminder = reminderRepository.findById(parsed.toString());
 
             // Check if the reminder exists first
-            if (reminder == null) {
+            if (reminder == null || !reminder.getUserId().equalsIgnoreCase(event.getUser().getId())) {
                 event.reply("Could not find reminder: " + uuid).setEphemeral(true).queue();
                 return;
             }
 
-            DeleteResult result = reminder.delete();
+            DeleteResult result = reminderRepository.deleteFromDatabase(reminder.getUuid().toString());
 
             // Check if the reminder was deleted successfully, cancel the timer and send a confirmation message
             if (result != null && result.wasAcknowledged()) {

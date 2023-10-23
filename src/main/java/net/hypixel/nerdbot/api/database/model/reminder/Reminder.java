@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.api.database.model.reminder;
 
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertOneResult;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -11,6 +10,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.jetbrains.annotations.Nullable;
@@ -51,7 +51,8 @@ public class Reminder {
 
     class ReminderTask extends TimerTask {
         public void run() {
-            DeleteResult result = delete();
+            ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
+            DeleteResult result = reminderRepository.deleteFromDatabase(uuid.toString());
 
             if (result != null && result.wasAcknowledged() && result.getDeletedCount() > 0) {
                 timer.cancel();
@@ -66,6 +67,7 @@ public class Reminder {
     }
 
     public void sendReminder(boolean late) {
+        ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
         TextChannel channel = ChannelManager.getChannel(channelId);
         User user = NerdBotApp.getBot().getJDA().getUserById(userId);
         String message;
@@ -73,7 +75,7 @@ public class Reminder {
 
         if (user == null) {
             log.error("Couldn't find user with ID '" + userId + "' to send reminder " + uuid + "!");
-            delete();
+            reminderRepository.deleteFromDatabase(uuid.toString());
             return;
         }
 
@@ -114,33 +116,5 @@ public class Reminder {
         } else {
             log.error("Couldn't delete reminder from database: " + uuid + " (result: " + result + ")");
         }
-    }
-
-    @Nullable
-    public InsertOneResult save() {
-        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            log.error("Database is not connected!");
-            return null;
-        }
-
-        return NerdBotApp.getBot().getDatabase().insertDocument(NerdBotApp.getBot().getDatabase().getCollection(COLLECTION_NAME, Reminder.class), this);
-    }
-
-    @Nullable
-    public DeleteResult delete() {
-        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            log.error("Database is not connected!");
-            return null;
-        }
-
-        Reminder reminder = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection(COLLECTION_NAME, Reminder.class), "uuid", uuid)
-            .limit(1)
-            .first();
-
-        if (reminder == null) {
-            return null;
-        }
-
-        return NerdBotApp.getBot().getDatabase().deleteDocument(NerdBotApp.getBot().getDatabase().getCollection(COLLECTION_NAME, Reminder.class), "uuid", uuid);
     }
 }
