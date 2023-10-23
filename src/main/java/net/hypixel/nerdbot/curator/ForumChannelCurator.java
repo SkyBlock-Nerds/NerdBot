@@ -19,6 +19,7 @@ import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -129,7 +130,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     if (tags.stream().anyMatch(tag -> GREENLIT_TAGS.contains(tag.getName()))) {
                         log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is already greenlit/docced!");
                         GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
-                        database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", message.getId(), greenlitMessage);
+                        database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
                         continue;
                     }
 
