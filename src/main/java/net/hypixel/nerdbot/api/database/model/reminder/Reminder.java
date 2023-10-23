@@ -13,7 +13,6 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
 import java.util.Timer;
@@ -105,7 +104,7 @@ public class Reminder {
             user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Reminder: " + description).queue());
         }
 
-        DeleteResult result = delete();
+        DeleteResult result = reminderRepository.deleteFromDatabase(uuid.toString());
         if (result == null) {
             log.error("Couldn't delete reminder from database: " + uuid + " (result: null)");
             return;
