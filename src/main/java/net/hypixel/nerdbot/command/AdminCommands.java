@@ -40,12 +40,9 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.*;
-import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.Environment;
-import net.hypixel.nerdbot.util.JsonUtil;
-import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import org.apache.logging.log4j.Level;
@@ -54,6 +51,7 @@ import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -579,7 +577,7 @@ public class AdminCommands extends ApplicationCommand {
         }
 
         try {
-            ClassUtil.getClassesInPackage("net.hypixel.nerdbot").forEach(clazz -> {
+            Arrays.stream(ClassUtil.getClasses("net.hypixel.nerdbot", Thread.currentThread().getContextClassLoader())).forEach(clazz -> {
                 LoggingUtil.setLogLevelForConsole(clazz, logLevel);
                 log.debug("Set log level for " + clazz.getName() + " to " + logLevel);
             });
