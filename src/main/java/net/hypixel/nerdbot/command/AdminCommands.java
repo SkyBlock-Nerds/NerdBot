@@ -251,8 +251,6 @@ public class AdminCommands extends ApplicationCommand {
             .stream()
             .filter(member -> !member.getUser().isBot())
             .filter(member -> RoleManager.hasAnyRole(member, roleArray))
-            .map(member -> Util.getOrAddUserToCache(database, member.getId()))
-            .filter(member -> Util.hasAnyRole(member, roleArray))
             .map(member -> discordUserRepository.findById(member.getId()))
             .filter(DiscordUser::isProfileAssigned)
             .map(DiscordUser::getMojangProfile)
@@ -568,5 +566,33 @@ public class AdminCommands extends ApplicationCommand {
         }
 
         return List.of();
+    }
+
+    @JDASlashCommand(name = "loglevel", description = "Set the log level", defaultLocked = true)
+    public void setLogLevel(GuildSlashEvent event, @AppOption(name = "level", description = "Log level to set", autocomplete = "loglevels") String level) {
+        event.deferReply(true).complete();
+        Level logLevel = Level.toLevel(level);
+
+        if (logLevel == null) {
+            event.getHook().editOriginal("Invalid log level!").queue();
+            return;
+        }
+
+        try {
+            ClassUtil.getClassesInPackage("net.hypixel.nerdbot").forEach(clazz -> {
+                LoggingUtil.setLogLevelForConsole(clazz, logLevel);
+                log.debug("Set log level for " + clazz.getName() + " to " + logLevel);
+            });
+        } catch (IOException | ClassNotFoundException e) {
+            event.getHook().editOriginal("Failed to set log level!").queue();
+            e.printStackTrace();
+        }
+
+        event.getHook().editOriginal("Set log level to " + logLevel + "!").queue();
+    }
+
+    @AutocompletionHandler(name = "loglevels", mode = AutocompletionMode.FUZZY, showUserInput = false)
+    public List<String> listLogLevels(CommandAutoCompleteInteractionEvent event) {
+        return Arrays.stream(Level.values()).map(Level::toString).toList();
     }
 }
