@@ -22,7 +22,10 @@ import javax.imageio.ImageIO;
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -272,22 +275,15 @@ public class Util {
     }
 
     public static String getDisplayName(User user) {
-        DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(user.getId());
-
-        if (discordUser == null) {
-            return user.getName();
-        }
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(user.getId());
 
         if (discordUser.isProfileAssigned()) {
             return discordUser.getMojangProfile().getUsername();
         } else {
             Guild guild = Util.getMainGuild();
-            if (guild == null) {
-                log.info("Guild is null, effective name: " + user.getEffectiveName());
-                return user.getEffectiveName();
-            }
-
             Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
+
             if (sbnMember == null || sbnMember.getNickname() == null) {
                 return user.getEffectiveName();
             }
@@ -318,7 +314,7 @@ public class Util {
         }
         return font;
     }
-
+  
     /**
      * Finds a matching value within a given set based on its name
      *
