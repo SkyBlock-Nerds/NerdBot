@@ -48,7 +48,7 @@ public class MinecraftItemGenerator implements Generator {
 
         @Override
         public MinecraftItemGenerator build() {
-            return new MinecraftItemGenerator(itemId);
+            return new MinecraftItemGenerator(itemId, extraDetails);
         }
     }
 }

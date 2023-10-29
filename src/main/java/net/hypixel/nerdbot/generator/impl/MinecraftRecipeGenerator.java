@@ -62,6 +62,18 @@ public class MinecraftRecipeGenerator implements Generator {
         for (RecipeParser.RecipeItem item : parser.getRecipeData().values()) {
             // checking if the image was correctly found
 
+            if (item.getItemName().equalsIgnoreCase("player_head")) {
+                MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder().withSkin(item.getExtraDetails()).build();
+                BufferedImage playerHeadImage = playerHeadGenerator.generate().getImage();
+
+                if (playerHeadImage == null) {
+                    return null;
+                }
+
+                item.setImage(playerHeadImage);
+                continue;
+            }
+
             MinecraftItemGenerator itemGenerator = new MinecraftItemGenerator.Builder().withItem(item.getItemName()).withExtraDetails(item.getExtraDetails()).build();
             BufferedImage itemImage = itemGenerator.generate().getImage();
 
