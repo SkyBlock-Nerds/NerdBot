@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.util.skyblock;
 
-import net.hypixel.nerdbot.generator.IconParser;
+import net.hypixel.nerdbot.generator.parser.IconParser;
 
 import java.util.function.BiFunction;
 

@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator;
+package net.hypixel.nerdbot.generator.parser;
 
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
@@ -51,7 +51,7 @@ public class StatColorParser {
      * @return returns the color parsed replacement string
      */
     public static String dualStatColorParser(Stat stat, String extraDetails) {
-        if (extraDetails.length() == 0) {
+        if (extraDetails.isEmpty()) {
             return normalStatColorParser(stat, extraDetails);
         }
 
@@ -61,9 +61,9 @@ public class StatColorParser {
     /**
      * Displays the stat with no extra details added on
      *
-     * @param stat  the stat selected
+     * @param stat the stat selected
      *
-     * @return      returns the color parsed replacement string
+     * @return returns the color parsed replacement string
      */
     public static String noParsing(Stat stat, String e) {
         return "%%" + stat.getColor() + "%%" + stat.getStat();
@@ -73,9 +73,9 @@ public class StatColorParser {
     /**
      * Displays the stat with bolded asterisk around it
      *
-     * @param stat  the stat selected
+     * @param stat the stat selected
      *
-     * @return      the color parsed replacement string
+     * @return the color parsed replacement string
      */
     public static String soulboundColorParsing(Stat stat, String e) {
         return "%%" + stat.getColor() + "%%%%BOLD%%* %%" + stat.getColor() + "%%" + stat.getStat() + " %%BOLD%%*";
@@ -96,10 +96,10 @@ public class StatColorParser {
     /**
      * Displays the selected stat with the text after it changed color
      *
-     * @param stat          the stat selected
-     * @param extraDetails  the extra arguments provided
+     * @param stat         the stat selected
+     * @param extraDetails the extra arguments provided
      *
-     * @return              the color parsed replacement string
+     * @return the color parsed replacement string
      */
     public static String postDualColorParser(Stat stat, String extraDetails) {
         return "%%" + stat.getColor() + "%%" + stat.getStat() + " %%" + stat.getSecondaryColor() + "%%" + extraDetails;
@@ -114,7 +114,7 @@ public class StatColorParser {
      * @return returns the color parsed replacements string
      */
     public static String itemStatColorParser(Stat stat, String extraDetails) {
-        if (extraDetails.length() == 0) {
+        if (extraDetails.isEmpty()) {
             return "ITEM_STAT_MISSING_DETAILS";
         }
 
@@ -138,7 +138,7 @@ public class StatColorParser {
      * @return the color parsed replacements string
      */
     public static String abilityColorParser(Stat stat, String extraDetails) {
-        if (extraDetails.length() == 0) {
+        if (extraDetails.isEmpty()) {
             return "ABILITY_MISSING_DETAILS";
         }
 

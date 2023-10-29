@@ -19,11 +19,12 @@ import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.imageio.ImageIO;
 import java.awt.Font;
 import java.awt.FontFormatException;
-import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -173,17 +174,6 @@ public class Util {
         requestResponse = response.body();
 
         return NerdBotApp.GSON.fromJson(requestResponse, JsonObject.class);
-    }
-
-    /***
-     * Saves the image to a file
-     * @return a file which can be shared
-     * @throws IOException If the file cannot be saved
-     */
-    public static File toFile(BufferedImage imageToSave) throws IOException {
-        File tempFile = File.createTempFile("image", ".png");
-        ImageIO.write(imageToSave, "PNG", tempFile);
-        return tempFile;
     }
 
     @Deprecated

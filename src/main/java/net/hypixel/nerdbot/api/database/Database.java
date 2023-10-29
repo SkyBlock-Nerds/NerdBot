@@ -89,7 +89,10 @@ public class Database implements ServerMonitorListener {
     }
 
     public void disconnect() {
-        mongoClient.close();
+        if (connected) {
+            mongoClient.close();
+        }
+
         connected = false;
     }
 

@@ -1,12 +1,12 @@
-package net.hypixel.nerdbot.util.generator;
+package net.hypixel.nerdbot.util.spritesheet;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.generator.GeneratorBuilder;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
@@ -20,6 +20,8 @@ import java.util.List;
 public class ItemSpritesheetGenerator {
 
     private static final int ATLAS_WIDTH = 1_024 * 8;
+    public static final int IMAGE_HEIGHT = 512;
+    public static final int IMAGE_WIDTH = 512;
 
     private static final List<TextureInfo> textureInfo = new ArrayList<>();
 
@@ -63,8 +65,8 @@ public class ItemSpritesheetGenerator {
                     BufferedImage texture = ImageIO.read(file);
                     System.out.println("Loaded texture: " + file.getName());
 
-                    if (texture.getWidth() != GeneratorBuilder.IMAGE_WIDTH || texture.getHeight() != GeneratorBuilder.IMAGE_HEIGHT) {
-                        System.out.println("Resizing texture: " + file.getName() + " to " + GeneratorBuilder.IMAGE_WIDTH + "x" + GeneratorBuilder.IMAGE_HEIGHT);
+                    if (texture.getWidth() != IMAGE_WIDTH || texture.getHeight() != IMAGE_HEIGHT) {
+                        System.out.println("Resizing texture: " + file.getName() + " to " + IMAGE_WIDTH + "x" + IMAGE_HEIGHT);
                         texture = resizeImage(texture);
                     }
 
@@ -81,10 +83,10 @@ public class ItemSpritesheetGenerator {
     }
 
     private static BufferedImage resizeImage(BufferedImage originalImage) {
-        BufferedImage resizedImage = new BufferedImage(GeneratorBuilder.IMAGE_WIDTH, GeneratorBuilder.IMAGE_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage resizedImage = new BufferedImage(IMAGE_WIDTH, IMAGE_HEIGHT, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics2D = resizedImage.createGraphics();
         graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-        graphics2D.drawImage(originalImage, 0, 0, GeneratorBuilder.IMAGE_WIDTH, GeneratorBuilder.IMAGE_HEIGHT, null);
+        graphics2D.drawImage(originalImage, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT, null);
         graphics2D.dispose();
         return resizedImage;
     }
@@ -106,7 +108,7 @@ public class ItemSpritesheetGenerator {
         double progress = 0.0;
 
         for (TextureInfo textureInfo : textureInfo) {
-            int frameWidth = GeneratorBuilder.IMAGE_WIDTH;
+            int frameWidth = IMAGE_WIDTH;
 
             // Move to the next row
             if (x + frameWidth > ATLAS_WIDTH) {
@@ -114,10 +116,10 @@ public class ItemSpritesheetGenerator {
                 y += atlasHeight;
             }
 
-            atlasHeight = GeneratorBuilder.IMAGE_HEIGHT;
+            atlasHeight = IMAGE_HEIGHT;
 
-            for (int yPos = 0; yPos < textureInfo.getImage().getHeight(); yPos += GeneratorBuilder.IMAGE_HEIGHT) {
-                BufferedImage frame = textureInfo.getImage().getSubimage(0, yPos, frameWidth, Math.min(GeneratorBuilder.IMAGE_HEIGHT, textureInfo.getImage().getHeight() - yPos));
+            for (int yPos = 0; yPos < textureInfo.getImage().getHeight(); yPos += IMAGE_HEIGHT) {
+                BufferedImage frame = textureInfo.getImage().getSubimage(0, yPos, frameWidth, Math.min(IMAGE_HEIGHT, textureInfo.getImage().getHeight() - yPos));
 
                 atlas = extendTextureAtlas(atlas, x, y, frame);
 

@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator;
+package net.hypixel.nerdbot.generator.util;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -6,14 +6,17 @@ import lombok.Setter;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
 
-public class MinecraftImage {
+public class MinecraftTooltip {
 
     private static final int PIXEL_SIZE = 2;
     private static final int START_XY = PIXEL_SIZE * 5;
@@ -70,7 +73,7 @@ public class MinecraftImage {
         }
     }
 
-    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem, boolean isCentered) {
+    public MinecraftTooltip(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem, boolean isCentered) {
         this.alpha = alpha;
         this.padding = padding;
         this.lines = lines;
@@ -318,7 +321,7 @@ public class MinecraftImage {
     /**
      * Draws the Lines, Resizes the Image and Draws the Borders.
      */
-    public MinecraftImage render() {
+    public MinecraftTooltip render() {
         this.drawLines();
         this.cropImage();
         this.centerLines();

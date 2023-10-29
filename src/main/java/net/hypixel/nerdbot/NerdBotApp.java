@@ -5,7 +5,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.prometheus.client.exporter.HTTPServer;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.bot.Bot;
@@ -45,8 +44,6 @@ public class NerdBotApp {
             database.upsertDocument(database.getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
             log.info("Upserted cached user '" + discordUser.getDiscordId() + "' to database! (Cause: " + cause + ")");
         }).build();
-
-    private static HTTPServer server;
 
     @Getter
     private static final Optional<UUID> hypixelApiKey = Optional.ofNullable(System.getProperty("hypixel.key")).map(Util::toUUID);
@@ -91,8 +88,6 @@ public class NerdBotApp {
             });
 
             NerdBotApp.getBot().onEnd();
-
-            server.close();
         });
 
         Runtime.getRuntime().addShutdownHook(userSavingTask);

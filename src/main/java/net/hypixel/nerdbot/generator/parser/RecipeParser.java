@@ -1,8 +1,9 @@
-package net.hypixel.nerdbot.generator;
+package net.hypixel.nerdbot.generator.parser;
 
 import lombok.Getter;
+import net.hypixel.nerdbot.generator.util.GeneratorMessages;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
@@ -23,14 +24,14 @@ public class RecipeParser {
             // checking that the string has a first item separator
             int firstSeparator = item.indexOf(FIELD_SEPARATOR);
             if (firstSeparator == -1 || firstSeparator + 1 >= item.length()) {
-                errorString = String.format(GeneratorStrings.MISSING_FIELD_SEPARATOR, stripRecipeItem(item));
+                errorString = String.format(GeneratorMessages.MISSING_FIELD_SEPARATOR, stripRecipeItem(item));
                 return;
             }
 
             // checking that there is a second separator
             int secondSeparator = item.indexOf(FIELD_SEPARATOR, firstSeparator + 1);
             if (secondSeparator == -1 || secondSeparator + 1 >= item.length()) {
-                errorString = String.format(GeneratorStrings.MISSING_FIELD_SEPARATOR, stripRecipeItem(item));
+                errorString = String.format(GeneratorMessages.MISSING_FIELD_SEPARATOR, stripRecipeItem(item));
                 return;
             }
 
@@ -49,10 +50,10 @@ public class RecipeParser {
             String slotString = item.substring(0, firstSeparator);
             Integer slot = tryParseInteger(slotString.strip());
             if (slot == null) {
-                errorString = String.format(GeneratorStrings.RECIPE_SLOT_NOT_INTEGER, stripRecipeItem(slotString), stripRecipeItem(item));
+                errorString = String.format(GeneratorMessages.RECIPE_SLOT_NOT_INTEGER, stripRecipeItem(slotString), stripRecipeItem(item));
                 return;
             } else if (recipeData.containsKey(slot)) {
-                errorString = String.format(GeneratorStrings.RECIPE_SLOT_DUPLICATED, slot, stripRecipeItem(item));
+                errorString = String.format(GeneratorMessages.RECIPE_SLOT_DUPLICATED, slot, stripRecipeItem(item));
                 return;
             }
 
@@ -60,10 +61,10 @@ public class RecipeParser {
             String amountString = item.substring(firstSeparator + 1, secondSeparator);
             Integer amount = tryParseInteger(amountString.strip());
             if (amount == null) {
-                errorString = String.format(GeneratorStrings.RECIPE_AMOUNT_NOT_INTEGER, stripRecipeItem(amountString), stripRecipeItem(item));
+                errorString = String.format(GeneratorMessages.RECIPE_AMOUNT_NOT_INTEGER, stripRecipeItem(amountString), stripRecipeItem(item));
                 return;
             } else if (amount > 64 || amount < 1) {
-                errorString = String.format(GeneratorStrings.RECIPE_AMOUNT_NOT_IN_RANGE, stripRecipeItem(amountString), stripRecipeItem(item));
+                errorString = String.format(GeneratorMessages.RECIPE_AMOUNT_NOT_IN_RANGE, stripRecipeItem(amountString), stripRecipeItem(item));
                 return;
             }
 
@@ -74,7 +75,7 @@ public class RecipeParser {
 
         // checking that the user has a recipe entered in
         if (recipeData.isEmpty()) {
-            errorString = GeneratorStrings.MISSING_PARSED_RECIPE;
+            errorString = GeneratorMessages.MISSING_PARSED_RECIPE;
             return;
         }
 

@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator;
+package net.hypixel.nerdbot.generator.util;
 
 import lombok.AccessLevel;
 import lombok.Getter;

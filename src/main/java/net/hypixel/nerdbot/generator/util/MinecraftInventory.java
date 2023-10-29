@@ -1,16 +1,20 @@
-package net.hypixel.nerdbot.generator;
+package net.hypixel.nerdbot.generator.util;
 
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.command.GeneratorCommands;
+import net.hypixel.nerdbot.generator.parser.RecipeParser;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
+import java.util.Map;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
 
@@ -30,7 +34,7 @@ public class MinecraftInventory {
     private final int horizontalSlots;
     private final int verticalSlots;
     private final boolean renderBackground;
-    private final HashMap<Integer, RecipeParser.RecipeItem> recipe;
+    private final Map<Integer, RecipeParser.RecipeItem> recipe;
 
     static {
         // Register Minecraft Font
@@ -53,7 +57,7 @@ public class MinecraftInventory {
         RESOURCES_INITIALISED = MINECRAFT_FONT != null && INVENTORY_IMAGE != null;
     }
 
-    public MinecraftInventory(HashMap<Integer, RecipeParser.RecipeItem> recipe, boolean renderBackground) {
+    public MinecraftInventory(Map<Integer, RecipeParser.RecipeItem> recipe, boolean renderBackground) {
         this.horizontalSlots = 3;
         this.verticalSlots = 3;
         this.recipe = recipe;
@@ -101,8 +105,8 @@ public class MinecraftInventory {
             BufferedImage itemToDraw = item.getImage();
             int offset = Math.abs(itemToDraw.getWidth() - itemToDraw.getHeight()) / 2;
             this.g2d.drawImage(itemToDraw, x + PIXELS_PER_PIXEL, y + PIXELS_PER_PIXEL,
-                    x + SLOT_DIMENSION - PIXELS_PER_PIXEL, y + SLOT_DIMENSION - PIXELS_PER_PIXEL,
-                    -offset, 0, itemToDraw.getWidth() + offset, itemToDraw.getHeight(), null);
+                x + SLOT_DIMENSION - PIXELS_PER_PIXEL, y + SLOT_DIMENSION - PIXELS_PER_PIXEL,
+                -offset, 0, itemToDraw.getWidth() + offset, itemToDraw.getHeight(), null);
 
             // checking if numbers should be written
             if (item.getAmount() == 1)

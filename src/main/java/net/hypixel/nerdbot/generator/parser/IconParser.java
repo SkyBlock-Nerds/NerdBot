@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator;
+package net.hypixel.nerdbot.generator.parser;
 
 import net.hypixel.nerdbot.util.skyblock.Icon;
 

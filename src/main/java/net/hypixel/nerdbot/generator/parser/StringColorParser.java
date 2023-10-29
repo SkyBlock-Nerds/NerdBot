@@ -1,11 +1,12 @@
-package net.hypixel.nerdbot.generator;
+package net.hypixel.nerdbot.generator.parser;
 
+import net.hypixel.nerdbot.generator.util.ColoredString;
+import net.hypixel.nerdbot.generator.util.GeneratorMessages;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
 import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Stat;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,11 +90,11 @@ public class StringColorParser {
                     // check that there is a closing tag
                     if (closingIndex == -1) {
                         String surroundingError = description.substring(Math.max(charIndex - 10, 0), Math.min(charIndex + 10, description.length()));
-                        this.errorString = String.format(GeneratorStrings.PERCENT_NOT_FOUND, GeneratorStrings.stripString(surroundingError));
+                        this.errorString = String.format(GeneratorMessages.PERCENT_NOT_FOUND, GeneratorMessages.stripString(surroundingError));
                         return;
                     }
                     if (closingIndex <= charIndex + 2) {
-                        this.errorString = GeneratorStrings.PERCENT_OUT_OF_RANGE;
+                        this.errorString = GeneratorMessages.PERCENT_OUT_OF_RANGE;
                         return;
                     }
 
@@ -115,8 +116,8 @@ public class StringColorParser {
                     }
 
                     String currentColor = "&" + currentString.getCurrentColor().getColorCode() + (currentString.hasSpecialFormatting() ?
-                                    (currentString.isBold() ? "&l" : "") + (currentString.isItalic() ? "&o" : "") + (currentString.isStrikethrough() ? "&m" : "") +
-                                    (currentString.isUnderlined() ? "&n" : "") : "");
+                        (currentString.isBold() ? "&l" : "") + (currentString.isItalic() ? "&o" : "") + (currentString.isStrikethrough() ? "&m" : "") +
+                            (currentString.isUnderlined() ? "&n" : "") : "");
 
                     // checking if the command is a gemstone type
                     Gemstone gemstone = (Gemstone) Util.findValue(gemstones, selectedCommand);
@@ -167,7 +168,7 @@ public class StringColorParser {
                     }
 
                     // creating an error message showing the available stats, gemstones and color codes available
-                    this.errorString = String.format(GeneratorStrings.INVALID_STAT_CODE, GeneratorStrings.stripString(selectedCommand));
+                    this.errorString = String.format(GeneratorMessages.INVALID_STAT_CODE, GeneratorMessages.stripString(selectedCommand));
                     return;
                 }
                 // checking if the user is using normal mc character codes
@@ -198,7 +199,7 @@ public class StringColorParser {
                     }
 
                     // creating error message for valid codes
-                    this.errorString = GeneratorStrings.INVALID_MINECRAFT_COLOR_CODE.formatted(selectedCode);
+                    this.errorString = GeneratorMessages.INVALID_MINECRAFT_COLOR_CODE.formatted(selectedCode);
                     return;
                 }
                 // checking if the current character is a new line
