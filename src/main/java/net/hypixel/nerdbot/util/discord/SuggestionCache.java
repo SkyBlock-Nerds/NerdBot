@@ -9,23 +9,16 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
+import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Log4j2
 public class SuggestionCache extends TimerTask {
 
-    private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
     private Map<String, Suggestion> cache = new HashMap<>();
     @Getter
     private long lastUpdated;
@@ -109,7 +102,7 @@ public class SuggestionCache extends TimerTask {
             this.thread = thread;
             this.parentId = thread.getParentChannel().asForumChannel().getId();
             this.threadName = thread.getName();
-            this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> GREENLIT_TAGS.contains(forumTag.getName().toLowerCase()));
+            this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> ForumChannelCurator.GREENLIT_TAGS.contains(forumTag.getName()));
             this.expired = false;
             this.alpha = thread.getName().toLowerCase().contains("alpha") || Util.safeArrayStream(NerdBotApp.getBot().getConfig().getChannelConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
 
