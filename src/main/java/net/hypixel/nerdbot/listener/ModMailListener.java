@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @Log4j2
 public class ModMailListener {
 
-    private static final String MOD_MAIL_TITLE_TEMPLATE = "%s (%s)";
+    public static final String MOD_MAIL_TITLE_TEMPLATE = "%s (%s)";
 
     @SubscribeEvent
     public void onModMailReceived(MessageReceivedEvent event) {
