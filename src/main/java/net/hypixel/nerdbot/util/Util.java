@@ -23,7 +23,10 @@ import javax.imageio.ImageIO;
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -56,6 +59,18 @@ public class Util {
 
         if (arrays != null) {
             for (String[] array : arrays) {
+                stream = Stream.concat(stream, (array == null) ? Stream.empty() : Arrays.stream(array));
+            }
+        }
+
+        return stream;
+    }
+
+    public static Stream<Object> safeArrayStream(Object[]... arrays) {
+        Stream<Object> stream = Stream.empty();
+
+        if (arrays != null) {
+            for (Object[] array : arrays) {
                 stream = Stream.concat(stream, (array == null) ? Stream.empty() : Arrays.stream(array));
             }
         }
