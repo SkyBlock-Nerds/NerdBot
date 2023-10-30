@@ -24,7 +24,7 @@ public class ItemSpritesheet {
     static {
         try {
             // Load the texture atlas image
-            textureAtlas = ImageIO.read(new File("src/main/resources/minecraft_assets/spritesheets/minecraft_texture_atlas.png"));
+            textureAtlas = ImageIO.read(new File("src/main/resources/minecraft/spritesheets/minecraft_texture_atlas.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -32,7 +32,7 @@ public class ItemSpritesheet {
         try {
             // Load the texture atlas coordinates
             Gson gson = new Gson();
-            JsonArray jsonCoordinates = gson.fromJson(new FileReader("src/main/resources/minecraft_assets/spritesheets/atlas_coordinates.json"), JsonArray.class);
+            JsonArray jsonCoordinates = gson.fromJson(new FileReader("src/main/resources/minecraft/spritesheets/atlas_coordinates.json"), JsonArray.class);
 
             for (JsonElement jsonElement : jsonCoordinates) {
                 JsonObject itemData = jsonElement.getAsJsonObject();

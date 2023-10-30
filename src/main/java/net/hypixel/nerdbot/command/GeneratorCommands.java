@@ -27,13 +27,18 @@ import java.util.List;
 public class GeneratorCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "generate", group = "display", subcommand = "item", description = "Display an item")
-    public void generateItem(GuildSlashEvent event, @AppOption String minecraftItemId) {
+    public void generateItem(GuildSlashEvent event, @AppOption String minecraftItemId, @AppOption Boolean enchanted) {
         event.deferReply().complete();
+
+        enchanted = enchanted != null && enchanted;
 
         try {
             Item item = new ItemBuilder()
-                .addGenerator(new MinecraftItemGenerator.Builder().withItem(minecraftItemId).build())
-                .build();
+                .addGenerator(new MinecraftItemGenerator.Builder()
+                    .withItem(minecraftItemId)
+                    .isEnchanted(enchanted)
+                    .build()
+                ).build();
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "item.png")).queue();
         } catch (GeneratorException exception) {
