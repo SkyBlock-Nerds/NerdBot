@@ -255,6 +255,10 @@ public class StringColorParser {
         if (!currentString.isEmpty()) {
             currentLine.add(currentString);
             parsedDescription.add(currentLine);
+
+            if (lineLength > imageMaxLineLength) {
+                imageMaxLineLength = lineLength;
+            }
         }
 
         successfullyParsed = true;
