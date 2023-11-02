@@ -3,7 +3,6 @@ package net.hypixel.nerdbot.bot;
 import com.freya02.botcommands.api.CommandsBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mongodb.client.MongoCollection;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -20,7 +19,6 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.bot.config.BotConfig;
@@ -31,6 +29,7 @@ import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -163,26 +162,28 @@ public class NerdBot implements Bot {
 
         log.info("Loading all reminders from database...");
 
-        MongoCollection<Reminder> collection = database.getCollection("reminders", Reminder.class);
-        if (collection == null) {
-            log.error("Failed to load reminders from database, collection is null!");
+        ReminderRepository reminderRepository = database.getRepositoryManager().getRepository(ReminderRepository.class);
+        if (reminderRepository == null) {
+            log.error("Failed to load reminders from database, repository is null!");
             return;
         }
 
-        collection.find().forEach(t -> {
+        reminderRepository.loadAllDocumentsIntoCache();
+
+        reminderRepository.forEach(reminder -> {
             Date now = new Date();
 
-            if (now.after(t.getTime())) {
-                t.sendReminder(true);
-                log.info("Sent reminder " + t + " because it was not sent yet!");
+            if (now.after(reminder.getTime())) {
+                reminder.sendReminder(true);
+                log.info("Sent reminder " + reminder + " because it was not sent yet!");
                 return;
             }
 
-            t.schedule();
-            log.info("Loaded reminder from database: " + t);
+            reminder.schedule();
+            log.info("Loaded reminder: " + reminder);
         });
 
-        log.info("Loaded " + collection.countDocuments() + " reminders from the database!");
+        log.info("Loaded " + reminderRepository.getCache().estimatedSize() + " reminders!");
     }
 
     private void startUrlWatchers() {

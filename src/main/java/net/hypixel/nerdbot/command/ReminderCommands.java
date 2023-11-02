@@ -94,6 +94,8 @@ public class ReminderCommands extends ApplicationCommand {
         // Create a new reminder and save it to the database
         ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
         Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId(), sendPublicly);
+
+        reminderRepository.cacheObject(reminder);
         UpdateResult result = reminderRepository.saveToDatabase(reminder);
 
         // Check if the reminder was saved successfully, schedule it and send a confirmation message
