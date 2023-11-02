@@ -9,8 +9,8 @@ import net.hypixel.nerdbot.util.exception.RepositoryException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Log4j2
 public class RepositoryManager {
@@ -30,7 +30,7 @@ public class RepositoryManager {
         log.info("Registering repositories from package: " + packageName);
 
         try {
-            List<Class<?>> classes = ClassUtil.getClassesInPackage(packageName);
+            Set<Class<?>> classes = ClassUtil.findClasses(packageName, CachedMongoRepository.class);
 
             for (Class<?> clazz : classes) {
                 log.debug("Found class: " + clazz.getName());
