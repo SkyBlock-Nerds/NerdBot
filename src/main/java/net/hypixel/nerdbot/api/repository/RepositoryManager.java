@@ -50,7 +50,8 @@ public class RepositoryManager {
             Constructor<T> constructor = repositoryClass.getDeclaredConstructor(MongoClient.class, String.class);
             constructor.setAccessible(true);
             return constructor.newInstance(mongoClient, databaseName);
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException e) {
             throw new RepositoryException("Failed to create repository instance: " + repositoryClass.getName(), e);
         }
     }

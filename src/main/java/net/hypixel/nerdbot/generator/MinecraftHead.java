@@ -1,6 +1,8 @@
 package net.hypixel.nerdbot.generator;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 
 public class MinecraftHead {
@@ -13,7 +15,7 @@ public class MinecraftHead {
     /**
      * Creates a MinecraftHead renderer
      *
-     * @param targetSkin    the skin which is meant to be created
+     * @param targetSkin the skin which is meant to be created
      */
     public MinecraftHead(BufferedImage targetSkin) {
         int width = (int) Math.round(17 * HeadTransforms.X_DISTANCE_HAT);
@@ -40,9 +42,9 @@ public class MinecraftHead {
     /**
      * Paints a single square on the image given the lower left point
      *
-     * @param x     starting x location to draw
-     * @param y     starting y location to draw
-     * @param side  the direction the square is facing
+     * @param x    starting x location to draw
+     * @param y    starting y location to draw
+     * @param side the direction the square is facing
      */
     private void paintSquare(double x, double y, Side side) {
         int[] pointsX = new int[4];
@@ -60,10 +62,10 @@ public class MinecraftHead {
     /**
      * Draws an entire face of the skin onto the image
      *
-     * @param startingX     starting x location to draw (the center vertex of the cube)
-     * @param startingY     starting y location to draw (the center vertex of the cube)
-     * @param side          the direction the square is facing
-     * @param face          which part of the head (top, bottom, left, right, etc)
+     * @param startingX starting x location to draw (the center vertex of the cube)
+     * @param startingY starting y location to draw (the center vertex of the cube)
+     * @param side      the direction the square is facing
+     * @param face      which part of the head (top, bottom, left, right, etc)
      */
     private void drawFace(double startingX, double startingY, boolean isFlipped, Side side, Face face) {
         int newLineDisplacement = 0;

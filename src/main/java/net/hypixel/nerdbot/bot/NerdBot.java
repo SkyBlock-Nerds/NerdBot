@@ -54,7 +54,7 @@ public class NerdBot implements Bot {
     private static final List<BotFeature> FEATURES = Arrays.asList(
         new HelloGoodbyeFeature(),
         new CurateFeature(),
-        //new UserGrabberFeature(),
+        // new UserGrabberFeature(),
         new ProfileUpdateFeature()
     );
 
@@ -83,7 +83,7 @@ public class NerdBot implements Bot {
         if (config.getMetricsConfig().isEnabled()) {
             PrometheusMetrics.setMetricsEnabled(true);
         }
-      
+
         startTime = System.currentTimeMillis();
         log.info("Bot started in environment " + Environment.getEnvironment());
     }

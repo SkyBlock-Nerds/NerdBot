@@ -64,6 +64,18 @@ public class Util {
         return stream;
     }
 
+    public static Stream<Object> safeArrayStream(Object[]... arrays) {
+        Stream<Object> stream = Stream.empty();
+
+        if (arrays != null) {
+            for (Object[] array : arrays) {
+                stream = Stream.concat(stream, (array == null) ? Stream.empty() : Arrays.stream(array));
+            }
+        }
+
+        return stream;
+    }
+
     public static void sleep(TimeUnit unit, long time) {
         try {
             Thread.sleep(unit.toMillis(time));
@@ -314,7 +326,7 @@ public class Util {
         }
         return font;
     }
-  
+
     /**
      * Finds a matching value within a given set based on its name
      *

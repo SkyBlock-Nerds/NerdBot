@@ -30,19 +30,68 @@ import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.Queue;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static net.hypixel.nerdbot.generator.GeneratorStrings.*;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.COMMAND_PREFIX;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_ALPHA;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_CENTERED;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_DISABLE_RARITY_LINEBREAK;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_EXTRA_ITEM_MODIFIERS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_HIDDEN;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_INCLUDE_ITEM;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_ITEM_ID;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_ITEM_LORE;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_ITEM_NAME;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_MAX_LINE_LENGTH;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_PADDING;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_PARSE_ITEM;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_RARITY;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_RECIPE;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_RENDER_INVENTORY;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_TEXT;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DESC_TYPE;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DISPLAY_INFO_ARGUMENTS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DISPLAY_INFO_BASIC;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DISPLAY_INFO_ENCHANT_GLINT;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DISPLAY_INFO_EXTRA_MODIFIERS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DISPLAY_INFO_MODIFIERS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DISPLAY_INFO_OPTIONAL_ARGUMENTS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.DISPLAY_ITEM_INFO_PLAYER_HEAD;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.FULL_GEN_INFO;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.GENERAL_HELP;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.GENERAL_INFO;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.INVALID_BASE_64_SKIN_URL;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.INVALID_ITEM_SKULL_DATA;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_BASIC_INFO;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_COLOR_CODES;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_EXAMPLES;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_INFO_ARGUMENTS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_INFO_OPTIONAL_ARGUMENTS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_OTHER_INFO;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_PARSE_ARGUMENTS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_PARSE_COMMAND;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_PARSE_INFO;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_PARSE_JSON_FORMAT;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_PARSE_OPTIONAL_ARGUMENTS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_TEXT_BASIC_INFO;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_TEXT_INFO_ARGUMENTS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_TEXT_INFO_OPTIONAL_ARGUMENTS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.MISSING_FULL_GEN_ITEM;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.MISSING_ITEM_NBT;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.MULTIPLE_ITEM_SKULL_DATA;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.RECIPE_INFO_ARGUMENTS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.RECIPE_INFO_BASIC;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.RECIPE_INFO_EXAMPLES;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.stripString;
 
 @Log4j2
 public class GeneratorCommands extends ApplicationCommand {
-    private static final Color[] EMBED_COLORS = new Color[] {
+    private static final Color[] EMBED_COLORS = new Color[]{
         new Color(167, 65, 92),
         new Color(26, 107, 124),
         new Color(137, 222, 74),
@@ -78,7 +127,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         // Log item gen activity
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class) ;
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
@@ -114,9 +163,9 @@ public class GeneratorCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "display", description = "Draws a Minecraft item into a file")
     public void generateItemImage(GuildSlashEvent event,
-                             @AppOption(description = DESC_ITEM_ID, name = "item_id") String itemID,
-                             @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraDetails,
-                             @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+                                  @AppOption(description = DESC_ITEM_ID, name = "item_id") String itemID,
+                                  @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraDetails,
+                                  @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
         }
@@ -178,7 +227,7 @@ public class GeneratorCommands extends ApplicationCommand {
         // building the item for the which is beside the description
         BufferedImage generatedItem = null;
         if (itemID != null) {
-           generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, false);
+            generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, false);
             if (generatedItem == null) {
                 return;
             }
@@ -568,7 +617,7 @@ public class GeneratorCommands extends ApplicationCommand {
         StringBuilder idBuilder = new StringBuilder();
         StringBuilder symbolBuilder = new StringBuilder();
 
-        for(Icon icon : Icon.VALUES) {
+        for (Icon icon : Icon.VALUES) {
             idBuilder.append("%%").append(icon.name()).append("%%").append("\n");
             symbolBuilder.append(icon.getIcon()).append("\n");
         }
@@ -585,7 +634,7 @@ public class GeneratorCommands extends ApplicationCommand {
         StringBuilder idBuilder = new StringBuilder();
         StringBuilder colorBuilder = new StringBuilder();
 
-        for(MCColor color : MCColor.VALUES) {
+        for (MCColor color : MCColor.VALUES) {
             idBuilder.append("&").append(color.getColorCode()).append(" or %%").append(color.name()).append("%%").append("\n");
             colorBuilder.append(color.name()).append("\n");
         }

@@ -49,13 +49,13 @@ public class InfoCommands extends ApplicationCommand {
         event.reply(builder.toString()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "info", subcommand = "greenlit", description = "Get a list of all non-docced greenlit messages. May not be 100% accurate!", defaultLocked = true)
+    @JDASlashCommand(name = "info", subcommand = "greenlit", description = "Get a list of all unreviewed greenlit messages. May not be 100% accurate!", defaultLocked = true)
     public void greenlitInfo(GuildSlashEvent event, @AppOption int page, @AppOption @Optional String tag) {
         List<GreenlitMessage> greenlit = database.getCollection("greenlit_messages", GreenlitMessage.class)
             .find()
             .into(new ArrayList<>())
             .stream()
-            .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.getTags().contains("Docced"))
+            .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.isReviewed())
             .toList();
 
         if (tag != null) {

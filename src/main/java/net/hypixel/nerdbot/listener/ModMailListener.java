@@ -22,7 +22,6 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.ModMailConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
@@ -34,7 +33,7 @@ import java.util.stream.Collectors;
 @Log4j2
 public class ModMailListener {
 
-    private static final String MOD_MAIL_TITLE_TEMPLATE = "%s (%s)";
+    public static final String MOD_MAIL_TITLE_TEMPLATE = "%s (%s)";
 
     @SubscribeEvent
     public void onModMailReceived(MessageReceivedEvent event) {

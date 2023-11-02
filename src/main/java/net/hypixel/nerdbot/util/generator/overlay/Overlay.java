@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.util.generator.overlay;
 
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
@@ -41,8 +41,9 @@ public abstract class Overlay {
     /**
      * Attempts to parse the hex color, returning the default color if it couldn't be parsed
      *
-     * @param color The color to parse
+     * @param color        The color to parse
      * @param defaultColor The color to display if it couldn't be parsed
+     *
      * @return The resultant color
      */
     protected Color tryParseColor(String color, Color defaultColor) {

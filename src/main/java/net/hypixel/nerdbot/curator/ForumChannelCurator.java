@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 @Log4j2
 public class ForumChannelCurator extends Curator<ForumChannel> {
 
-    private static final List<String> GREENLIT_TAGS = Arrays.asList("Greenlit", "Docced");
+    public static final List<String> GREENLIT_TAGS = Arrays.asList("Greenlit", "Reviewed");
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
@@ -128,7 +128,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
                     // Upsert into database if already greenlit
                     if (tags.stream().anyMatch(tag -> GREENLIT_TAGS.contains(tag.getName()))) {
-                        log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is already greenlit/docced!");
+                        log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is already greenlit/reviewed!");
                         GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
                         database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
                         continue;

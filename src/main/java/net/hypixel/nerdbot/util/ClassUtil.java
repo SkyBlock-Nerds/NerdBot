@@ -9,22 +9,23 @@ import java.util.List;
 
 public class ClassUtil {
 
-    public static Class<?>[] getClasses(String packageName, ClassLoader classLoader) throws ClassNotFoundException, IOException {
+    public static List<Class<?>> getClassesInPackage(String packageName) throws IOException, ClassNotFoundException {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         String path = packageName.replace('.', '/');
         Enumeration<URL> resources = classLoader.getResources(path);
-        List<File> directories = new ArrayList<>();
+        List<File> dirs = new ArrayList<>();
+        List<Class<?>> classes = new ArrayList<>();
 
         while (resources.hasMoreElements()) {
             URL resource = resources.nextElement();
-            directories.add(new File(resource.getFile()));
+            dirs.add(new File(resource.getFile()));
         }
 
-        List<Class<?>> classes = new ArrayList<>();
-        for (File directory : directories) {
+        for (File directory : dirs) {
             classes.addAll(findClasses(directory, packageName));
         }
 
-        return classes.toArray(new Class[0]);
+        return classes;
     }
 
     private static List<Class<?>> findClasses(File directory, String packageName) throws ClassNotFoundException {
@@ -32,22 +33,17 @@ public class ClassUtil {
         if (!directory.exists()) {
             return classes;
         }
-
         File[] files = directory.listFiles();
-        if (files == null) {
-            return classes;
-        }
 
         for (File file : files) {
             if (file.isDirectory()) {
-                assert !file.getName().contains(".");
-                classes.addAll(findClasses(file, packageName + "." + file.getName()));
+                if (!file.getName().contains(".")) {
+                    classes.addAll(findClasses(file, packageName + "." + file.getName()));
+                }
             } else if (file.getName().endsWith(".class")) {
                 classes.add(Class.forName(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
             }
         }
-
         return classes;
     }
 }
-

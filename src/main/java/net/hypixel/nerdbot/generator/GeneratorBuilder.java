@@ -13,13 +13,11 @@ import net.hypixel.nerdbot.util.skyblock.Rarity;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -29,7 +27,16 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.hypixel.nerdbot.generator.GeneratorStrings.*;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.FONTS_NOT_REGISTERED;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.INVALID_HEAD_URL;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.INVALID_RARITY;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_RESOURCE_NOT_LOADED;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.MALFORMED_HEAD_URL;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.MALFORMED_PLAYER_PROFILE;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.PLAYER_NOT_FOUND;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.REQUEST_PLAYER_UUID_ERROR;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.UNKNOWN_EXTRA_DETAILS;
+import static net.hypixel.nerdbot.generator.GeneratorStrings.stripString;
 
 @Log4j2
 public class GeneratorBuilder {
@@ -108,14 +115,14 @@ public class GeneratorBuilder {
             overlaysHashMap.put(leatherBoots.getName(), leatherBoots);
 
             // armor trims
-            int[] defaultTrimColors = new int[] {-2039584, -4144960, -6250336, -8355712, -10461088, -12566464, -14671840, -16777216};
-            Overlay helmetTrim = new MappedOverlay("HELMET_TRIM", overlayImage.getSubimage(64, 0, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
+            int[] defaultTrimColors = new int[]{-2039584, -4144960, -6250336, -8355712, -10461088, -12566464, -14671840, -16777216};
+            Overlay helmetTrim = new MappedOverlay("HELMET_TRIM", overlayImage.getSubimage(64, 0, 16, 16), false, defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
             overlaysHashMap.put(helmetTrim.getName(), helmetTrim);
-            Overlay chestplateTrim = new MappedOverlay("CHESTPLATE_TRIM", overlayImage.getSubimage(16, 0, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
+            Overlay chestplateTrim = new MappedOverlay("CHESTPLATE_TRIM", overlayImage.getSubimage(16, 0, 16, 16), false, defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
             overlaysHashMap.put(chestplateTrim.getName(), chestplateTrim);
-            Overlay leggingsTrim = new MappedOverlay("LEGGINGS_TRIM", overlayImage.getSubimage(144, 0, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
+            Overlay leggingsTrim = new MappedOverlay("LEGGINGS_TRIM", overlayImage.getSubimage(144, 0, 16, 16), false, defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
             overlaysHashMap.put(leggingsTrim.getName(), leggingsTrim);
-            Overlay bootsTrim = new MappedOverlay("BOOTS_TRIM", overlayImage.getSubimage(0, 0, 16, 16), false,defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
+            Overlay bootsTrim = new MappedOverlay("BOOTS_TRIM", overlayImage.getSubimage(0, 0, 16, 16), false, defaultTrimColors, MCColor.ARMOR_TRIM_COLOR, MCColor.ARMOR_TRIM_BINDING);
             overlaysHashMap.put(bootsTrim.getName(), bootsTrim);
 
             // other items
@@ -145,22 +152,22 @@ public class GeneratorBuilder {
     /**
      * Converts text into a Minecraft Item tooltip into a rendered image
      *
-     * @param event             the GuildSlashEvent which the command is triggered from
-     * @param name              the name of the item
-     * @param rarity            the rarity of the item
-     * @param itemLoreString    the lore of the item
-     * @param type              the type of the item
-     * @param addEmptyLine      if there should be an extra line added between the lore and the final type line
-     * @param alpha             the transparency of the generated image
-     * @param padding           if there is any extra padding around the edges to prevent Discord from rounding the corners
-     * @param maxLineLength     the maximum length before content overflows onto the next
-     * @param isNormalItem      if the item should add an extra line between the title and first line
+     * @param event          the GuildSlashEvent which the command is triggered from
+     * @param name           the name of the item
+     * @param rarity         the rarity of the item
+     * @param itemLoreString the lore of the item
+     * @param type           the type of the item
+     * @param addEmptyLine   if there should be an extra line added between the lore and the final type line
+     * @param alpha          the transparency of the generated image
+     * @param padding        if there is any extra padding around the edges to prevent Discord from rounding the corners
+     * @param maxLineLength  the maximum length before content overflows onto the next
+     * @param isNormalItem   if the item should add an extra line between the title and first line
      *
-     * @return                  a Minecraft item description
+     * @return a Minecraft item description
      */
     @Nullable
     public BufferedImage buildItem(GuildSlashEvent event, String name, String rarity, String itemLoreString, String type,
-                                     Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered) {
+                                   Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered) {
         // Checking that the fonts have been loaded correctly
         if (!MinecraftImage.isFontsRegistered()) {
             event.getHook().sendMessage(FONTS_NOT_REGISTERED).setEphemeral(true).queue();
@@ -234,10 +241,10 @@ public class GeneratorBuilder {
     /**
      * Renders a Minecraft Head into an image
      *
-     * @param event           the GuildSlashEvent which the command is triggered from
-     * @param textureID       the skin id/player name of the target skin
+     * @param event     the GuildSlashEvent which the command is triggered from
+     * @param textureID the skin id/player name of the target skin
      *
-     * @return                a rendered Minecraft head
+     * @return a rendered Minecraft head
      */
     @Nullable
     public BufferedImage buildHead(GuildSlashEvent event, String textureID) {
@@ -275,10 +282,10 @@ public class GeneratorBuilder {
     /**
      * Converts a player name into a skin id
      *
-     * @param event         the GuildSlashEvent which the command is triggered from
-     * @param playerName    the name of the player
+     * @param event      the GuildSlashEvent which the command is triggered from
+     * @param playerName the name of the player
      *
-     * @return              the skin id for the player's skin
+     * @return the skin id for the player's skin
      */
     @Nullable
     private String getPlayerHeadURL(GuildSlashEvent event, String playerName) {
@@ -317,8 +324,9 @@ public class GeneratorBuilder {
     /**
      * Gets the Skin ID from a Base64 String
      *
-     * @param base64SkinData    Base64 Skin Data
-     * @return                  the skin id
+     * @param base64SkinData Base64 Skin Data
+     *
+     * @return the skin id
      */
     public String base64ToSkinURL(String base64SkinData) {
         JsonObject skinData = NerdBotApp.GSON.fromJson(new String(Base64.getDecoder().decode(base64SkinData)), JsonObject.class);
@@ -328,11 +336,11 @@ public class GeneratorBuilder {
     /**
      * Creates a rendered Minecraft Item image
      *
-     * @param event         the event associated to the command
-     * @param itemName      the name of the item
-     * @param extraDetails  any extra details about modifiers of the image
+     * @param event        the event associated to the command
+     * @param itemName     the name of the item
+     * @param extraDetails any extra details about modifiers of the image
      *
-     * @return              a rendered minecraft image
+     * @return a rendered minecraft image
      */
     @Nullable
     public BufferedImage buildItemStack(GuildSlashEvent event, String itemName, String extraDetails) {
@@ -361,11 +369,11 @@ public class GeneratorBuilder {
     /**
      * Creates a rendered generic Minecraft item image of a Skull or Item Stack
      *
-     * @param event         the event associated to the command
-     * @param itemName      the name of the item
-     * @param extraDetails  any extra details about modifiers of the image
+     * @param event        the event associated to the command
+     * @param itemName     the name of the item
+     * @param extraDetails any extra details about modifiers of the image
      *
-     * @return              a rendered minecraft image
+     * @return a rendered minecraft image
      */
     @Nullable
     public BufferedImage buildUnspecifiedItem(GuildSlashEvent event, String itemName, String extraDetails, boolean scaleImage) {
@@ -398,10 +406,10 @@ public class GeneratorBuilder {
     /**
      * Creates a rendered Minecraft Inventory with up to 9 different slots in a 3x3 grid
      *
-     * @param event             the event associated to the command
-     * @param recipeString      the string which contains the recipe items
+     * @param event        the event associated to the command
+     * @param recipeString the string which contains the recipe items
      *
-     * @return                  a rendered minecraft crafting recipe
+     * @return a rendered minecraft crafting recipe
      */
     @Nullable
     public BufferedImage buildRecipe(GuildSlashEvent event, String recipeString, boolean renderBackground) {

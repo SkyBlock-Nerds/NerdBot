@@ -42,7 +42,10 @@ import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.*;
+import net.hypixel.nerdbot.util.Environment;
+import net.hypixel.nerdbot.util.JsonUtil;
+import net.hypixel.nerdbot.util.LoggingUtil;
+import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import org.apache.logging.log4j.Level;
@@ -569,23 +572,14 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "loglevel", description = "Set the log level", defaultLocked = true)
     public void setLogLevel(GuildSlashEvent event, @AppOption(name = "level", description = "Log level to set", autocomplete = "loglevels") String level) {
         event.deferReply(true).complete();
-        Level logLevel = Level.toLevel(level);
+        Level logLevel = Level.toLevel(level.toUpperCase());
 
         if (logLevel == null) {
             event.getHook().editOriginal("Invalid log level!").queue();
             return;
         }
 
-        try {
-            Arrays.stream(ClassUtil.getClasses("net.hypixel.nerdbot", Thread.currentThread().getContextClassLoader())).forEach(clazz -> {
-                LoggingUtil.setLogLevelForConsole(clazz, logLevel);
-                log.debug("Set log level for " + clazz.getName() + " to " + logLevel);
-            });
-        } catch (IOException | ClassNotFoundException e) {
-            event.getHook().editOriginal("Failed to set log level!").queue();
-            e.printStackTrace();
-        }
-
+        LoggingUtil.setGlobalLogLevel(logLevel);
         event.getHook().editOriginal("Set log level to " + logLevel + "!").queue();
     }
 

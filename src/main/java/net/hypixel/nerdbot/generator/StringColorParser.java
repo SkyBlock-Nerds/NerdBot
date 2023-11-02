@@ -6,7 +6,6 @@ import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -115,8 +114,8 @@ public class StringColorParser {
                     }
 
                     String currentColor = "&" + currentString.getCurrentColor().getColorCode() + (currentString.hasSpecialFormatting() ?
-                                    (currentString.isBold() ? "&l" : "") + (currentString.isItalic() ? "&o" : "") + (currentString.isStrikethrough() ? "&m" : "") +
-                                    (currentString.isUnderlined() ? "&n" : "") : "");
+                        (currentString.isBold() ? "&l" : "") + (currentString.isItalic() ? "&o" : "") + (currentString.isStrikethrough() ? "&m" : "") +
+                            (currentString.isUnderlined() ? "&n" : "") : "");
 
                     // checking if the command is a gemstone type
                     Gemstone gemstone = (Gemstone) Util.findValue(gemstones, selectedCommand);
@@ -151,7 +150,7 @@ public class StringColorParser {
 
                     // checking if the command is an icon
                     Icon icon = (Icon) Util.findValue(icons, selectedCommand);
-                    if(icon != null) {
+                    if (icon != null) {
                         String replacementText = icon.getParsedIcon(extraData) + currentColor;
                         description.replace(charIndex, closingIndex + 2, replacementText);
                         continue;
@@ -255,6 +254,10 @@ public class StringColorParser {
         if (!currentString.isEmpty()) {
             currentLine.add(currentString);
             parsedDescription.add(currentLine);
+
+            if (lineLength > imageMaxLineLength) {
+                imageMaxLineLength = lineLength;
+            }
         }
 
         successfullyParsed = true;

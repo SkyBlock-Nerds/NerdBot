@@ -32,21 +32,21 @@ public class UserGrabberFeature extends BotFeature {
         log.info("Grabbing users from guild " + guild.getName());
 
         guild.loadMembers(member -> {
-            if (member.getUser().isBot()) {
-                return;
-            }
+                if (member.getUser().isBot()) {
+                    return;
+                }
 
-            DiscordUser discordUser = discordUserRepository.findById(member.getId());
-            if (discordUser == null) {
-                discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new ArrayList<>(), new LastActivity(), new MojangProfile());
-                log.info("Creating new DiscordUser for user " + member.getId());
-            }
+                DiscordUser discordUser = discordUserRepository.findById(member.getId());
+                if (discordUser == null) {
+                    discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new ArrayList<>(), new LastActivity(), new MojangProfile());
+                    log.info("Creating new DiscordUser for user " + member.getId());
+                }
 
-            if (discordUser.getLastActivity() == null) {
-                log.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
-                discordUser.setLastActivity(new LastActivity());
-            }
-        }).onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName()))
+                if (discordUser.getLastActivity() == null) {
+                    log.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
+                    discordUser.setLastActivity(new LastActivity());
+                }
+            }).onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName()))
             .onError(Throwable::printStackTrace);
     }
 

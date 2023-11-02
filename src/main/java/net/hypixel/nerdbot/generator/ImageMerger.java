@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator;
 
-import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public class ImageMerger {
@@ -17,9 +17,9 @@ public class ImageMerger {
     /**
      * Merges two existing images (Minecraft Item Description and a Head)
      *
-     * @param itemDescription   the item's description from {@link MinecraftImage}
-     * @param itemHead          the item's visual appearance
-     * @param itemRecipe        the item's recipe from {@link MinecraftInventory}
+     * @param itemDescription the item's description from {@link MinecraftImage}
+     * @param itemHead        the item's visual appearance
+     * @param itemRecipe      the item's recipe from {@link MinecraftInventory}
      */
     public ImageMerger(BufferedImage itemDescription, BufferedImage itemHead, BufferedImage itemRecipe) {
         this.itemDescription = itemDescription;
@@ -39,8 +39,8 @@ public class ImageMerger {
         }
 
         double finalMaxHeadHeight = maxHeight * finalScale;
-        headDimensions = itemHead != null ? performScale(finalMaxHeadHeight, itemHead.getWidth(), itemHead.getHeight()) : new int[] {0, 0};
-        recipeDimensions = itemRecipe != null ? performScale(finalMaxHeadHeight, itemRecipe.getWidth(), itemRecipe.getHeight()) : new int[] {0, 0};
+        headDimensions = itemHead != null ? performScale(finalMaxHeadHeight, itemHead.getWidth(), itemHead.getHeight()) : new int[]{0, 0};
+        recipeDimensions = itemRecipe != null ? performScale(finalMaxHeadHeight, itemRecipe.getWidth(), itemRecipe.getHeight()) : new int[]{0, 0};
 
         int height = Math.max(maxHeight, headDimensions[1]) + (PADDING * 2);
         width += headDimensions[0] + recipeDimensions[0];
@@ -66,7 +66,7 @@ public class ImageMerger {
             height = (int) targetMaxHeight;
         }
 
-        return new int[] {width, height};
+        return new int[]{width, height};
     }
 
     /**
