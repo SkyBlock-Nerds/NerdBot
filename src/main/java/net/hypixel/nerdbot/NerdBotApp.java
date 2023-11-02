@@ -62,5 +62,9 @@ public class NerdBotApp {
             exception.printStackTrace();
             System.exit(-1);
         }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            NerdBotApp.getBot().onEnd();
+        }));
     }
 }

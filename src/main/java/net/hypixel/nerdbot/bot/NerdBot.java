@@ -92,10 +92,13 @@ public class NerdBot implements Bot {
     @Override
     public void onEnd() {
         log.info("Shutting down Nerd Bot...");
+
         for (BotFeature feature : FEATURES) {
             feature.onEnd();
         }
+
         database.disconnect();
+        System.exit(0);
     }
 
     @Override
