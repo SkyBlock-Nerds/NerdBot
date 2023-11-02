@@ -28,6 +28,7 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
+import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.Environment;
@@ -54,7 +55,7 @@ public class NerdBot implements Bot {
     private static final List<BotFeature> FEATURES = Arrays.asList(
         new HelloGoodbyeFeature(),
         new CurateFeature(),
-        // new UserGrabberFeature(),
+        new UserGrabberFeature(),
         new ProfileUpdateFeature()
     );
 
@@ -76,9 +77,9 @@ public class NerdBot implements Bot {
         loadRemindersFromDatabase();
         startUrlWatchers();
 
-        if (Util.getMainGuild() != null) {
-            Util.getMainGuild().loadMembers().onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size())).onError(Throwable::printStackTrace);
-        }
+        Util.getMainGuild().loadMembers()
+            .onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size()))
+            .onError(Throwable::printStackTrace);
 
         if (config.getMetricsConfig().isEnabled()) {
             PrometheusMetrics.setMetricsEnabled(true);

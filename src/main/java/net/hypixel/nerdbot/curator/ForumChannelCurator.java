@@ -75,7 +75,6 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     forumChannel.getThreadChannels().stream(), // Unarchived Posts
                     forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
                 )
-                .filter(thread -> !thread.isLocked() && !thread.isArchived())
                 .distinct()
                 .toList();
 
