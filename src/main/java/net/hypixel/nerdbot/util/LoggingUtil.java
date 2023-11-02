@@ -1,18 +1,16 @@
 package net.hypixel.nerdbot.util;
 
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 
 public class LoggingUtil {
 
-    public static void setLogLevelForConsole(Class<?> targetClass, Level level) {
-        LoggerContext context = LoggerContext.getContext(false);
-        Configuration config = context.getConfiguration();
+    public static void setGlobalLogLevel(Level level) {
+        Configurator.setAllLevels(LogManager.getRootLogger().getName(), level);
+    }
 
-        LoggerConfig loggerConfig = config.getLoggerConfig(targetClass.getName());
-        loggerConfig.setLevel(level);
-        context.updateLoggers();
+    public static void setLogLevelForClass(Class<?> clazz, Level level) {
+        Configurator.setLevel(LogManager.getLogger(clazz).getName(), level);
     }
 }

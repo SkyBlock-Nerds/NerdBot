@@ -582,23 +582,14 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "loglevel", description = "Set the log level", defaultLocked = true)
     public void setLogLevel(GuildSlashEvent event, @AppOption(name = "level", description = "Log level to set", autocomplete = "loglevels") String level) {
         event.deferReply(true).complete();
-        Level logLevel = Level.toLevel(level);
+        Level logLevel = Level.toLevel(level.toUpperCase());
 
         if (logLevel == null) {
             event.getHook().editOriginal("Invalid log level!").queue();
             return;
         }
 
-        try {
-            ClassUtil.getClassesInPackage("net.hypixel.nerdbot").forEach(clazz -> {
-                LoggingUtil.setLogLevelForConsole(clazz, logLevel);
-                log.debug("Set log level for " + clazz.getName() + " to " + logLevel);
-            });
-        } catch (IOException | ClassNotFoundException e) {
-            event.getHook().editOriginal("Failed to set log level!").queue();
-            e.printStackTrace();
-        }
-
+        LoggingUtil.setGlobalLogLevel(logLevel);
         event.getHook().editOriginal("Set log level to " + logLevel + "!").queue();
     }
 
