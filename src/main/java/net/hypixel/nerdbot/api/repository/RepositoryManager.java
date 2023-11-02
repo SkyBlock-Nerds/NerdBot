@@ -8,6 +8,7 @@ import net.hypixel.nerdbot.util.exception.RepositoryException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RepositoryManager {
@@ -25,15 +26,12 @@ public class RepositoryManager {
 
     public void registerRepositoriesFromPackage(String packageName, MongoClient mongoClient, String databaseName) throws RepositoryException {
         try {
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            Class<?>[] classes = ClassUtil.getClasses(packageName, classLoader);
+            List<Class<?>> classes = ClassUtil.getClassesInPackage(packageName);
 
             for (Class<?> clazz : classes) {
-                if (isRepository(clazz)) {
-                    if (!repositories.containsKey(clazz)) {
-                        Object repositoryInstance = createRepositoryInstance(clazz, mongoClient, databaseName);
-                        repositories.put(clazz, repositoryInstance);
-                    }
+                if (isRepository(clazz) && !repositories.containsKey(clazz)) {
+                    Object repositoryInstance = createRepositoryInstance(clazz, mongoClient, databaseName);
+                    repositories.put(clazz, repositoryInstance);
                 }
             }
         } catch (Exception e) {

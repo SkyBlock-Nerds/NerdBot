@@ -10,7 +10,7 @@ public class LoggingUtil {
         Configurator.setAllLevels(LogManager.getRootLogger().getName(), level);
     }
 
-    public static void setLogLevel(Class<?> clazz, Level level) {
+    public static void setLogLevelForClass(Class<?> clazz, Level level) {
         Configurator.setLevel(LogManager.getLogger(clazz).getName(), level);
     }
 }

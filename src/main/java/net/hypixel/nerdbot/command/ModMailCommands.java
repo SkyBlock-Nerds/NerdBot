@@ -14,6 +14,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.listener.ModMailListener;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
 
@@ -65,7 +66,14 @@ public class ModMailCommands extends ApplicationCommand {
         }
 
         String expectedThreadName = ModMailListener.MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(member.getUser()), member.getId());
-        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), member.getId());
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
+
+        if (discordUser == null) {
+            discordUser = new DiscordUser(member);
+            discordUserRepository.cacheObject(discordUser);
+        }
+
         String username = discordUser.noProfileAssigned() ? "**Unlinked**" : discordUser.getMojangProfile().getUsername();
         String uniqueId = discordUser.noProfileAssigned() ? "**Unlinked**" : discordUser.getMojangProfile().getUniqueId().toString();
         String initialPost = "Forcefully created a Mod Mail request from " + member.getAsMention() + "!\n\n" +
