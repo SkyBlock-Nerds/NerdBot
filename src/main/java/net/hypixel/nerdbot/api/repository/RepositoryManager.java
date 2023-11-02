@@ -33,6 +33,8 @@ public class RepositoryManager {
             List<Class<?>> classes = ClassUtil.getClassesInPackage(packageName);
 
             for (Class<?> clazz : classes) {
+                log.debug("Found class: " + clazz.getName());
+
                 if (isRepository(clazz) && !repositories.containsKey(clazz)) {
                     Object repositoryInstance = createRepositoryInstance(clazz, mongoClient, databaseName);
                     repositories.put(clazz, repositoryInstance);
