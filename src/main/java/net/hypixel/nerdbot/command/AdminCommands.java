@@ -471,7 +471,7 @@ public class AdminCommands extends ApplicationCommand {
         event.reply(event.getUser().getAsMention() + " applied the " + forumTag.getName() + " tag and locked this suggestion!").queue();
     }
 
-    @JDASlashCommand(name = "force-save", description = "Force save the database", defaultLocked = true)
+    @JDASlashCommand(name = "cache", subcommand = "force-save", description = "Force save the specified cache to the database", defaultLocked = true)
     public void forceSaveRepository(GuildSlashEvent event, @AppOption String repository) {
         event.deferReply(true).complete();
 
@@ -485,6 +485,25 @@ public class AdminCommands extends ApplicationCommand {
 
             cachedMongoRepository.saveAllToDatabase();
             event.getHook().editOriginal("Saved " + cachedMongoRepository.getCache().estimatedSize() + " documents to the database!").queue();
+        } catch (RepositoryException exception) {
+            event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
+            exception.printStackTrace();
+        }
+    }
+
+    @JDASlashCommand(name = "cache", subcommand = "stats", description = "View cache statistics", defaultLocked = true)
+    public void cacheStats(GuildSlashEvent event, @AppOption String repository) {
+        event.deferReply(true).complete();
+
+        try {
+            CachedMongoRepository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
+
+            if (cachedMongoRepository == null) {
+                event.getHook().editOriginal("Repository not found!").queue();
+                return;
+            }
+
+            event.getHook().editOriginal(cachedMongoRepository.getCache().stats().toString()).queue();
         } catch (RepositoryException exception) {
             event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
             exception.printStackTrace();
