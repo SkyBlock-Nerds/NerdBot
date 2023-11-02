@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.api.repository;
 
 import com.mongodb.client.MongoClient;
 import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.util.ClassUtil;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Log4j2
 public class RepositoryManager {
 
     private final Map<Class<?>, Object> repositories = new HashMap<>();
@@ -25,6 +27,8 @@ public class RepositoryManager {
     }
 
     public void registerRepositoriesFromPackage(String packageName, MongoClient mongoClient, String databaseName) throws RepositoryException {
+        log.info("Registering repositories from package: " + packageName);
+
         try {
             List<Class<?>> classes = ClassUtil.getClassesInPackage(packageName);
 
@@ -32,6 +36,7 @@ public class RepositoryManager {
                 if (isRepository(clazz) && !repositories.containsKey(clazz)) {
                     Object repositoryInstance = createRepositoryInstance(clazz, mongoClient, databaseName);
                     repositories.put(clazz, repositoryInstance);
+                    log.info("Registered repository: " + clazz.getName());
                 }
             }
         } catch (Exception e) {
