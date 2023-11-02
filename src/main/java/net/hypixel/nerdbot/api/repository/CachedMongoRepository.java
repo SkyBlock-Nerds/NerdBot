@@ -48,7 +48,6 @@ public abstract class CachedMongoRepository<T> {
             })
             .build();
 
-        loadAllDocumentsIntoCache();
         Runtime.getRuntime().addShutdownHook(new Thread(this::saveAllToDatabase));
     }
 
@@ -57,8 +56,8 @@ public abstract class CachedMongoRepository<T> {
             T object = documentToEntity(document);
             String id = getId(object);
 
-            cache.put(id, object);
-            debug("Loaded document with ID " + id + " into cache");
+            cacheObject(object);
+            debug("Loaded document with ID " + id + " into cache (1)");
         }
     }
 
@@ -72,8 +71,7 @@ public abstract class CachedMongoRepository<T> {
         Document document = mongoCollection.find(new Document("_id", id)).first();
         if (document != null) {
             T object = documentToEntity(document);
-            cache.put(id, object);
-            debug("Loaded document with ID " + id + " into cache");
+            cacheObject(id, object);
             return object;
         }
 
@@ -81,9 +79,13 @@ public abstract class CachedMongoRepository<T> {
         return null;
     }
 
+    public void cacheObject(String id, T object) {
+        cache.put(id, object);
+        debug("Cached document with ID " + id);
+    }
+
     public void cacheObject(T object) {
-        cache.put(getId(object), object);
-        debug("Loaded document with ID " + getId(object) + " into cache");
+        cacheObject(getId(object), object);
     }
 
     public UpdateResult saveToDatabase(T object) {

@@ -46,8 +46,6 @@ public class UserGrabberFeature extends BotFeature {
                 log.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
                 discordUser.setLastActivity(new LastActivity());
             }
-
-            discordUserRepository.cacheObject(discordUser);
         }).onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName()))
             .onError(Throwable::printStackTrace);
     }
