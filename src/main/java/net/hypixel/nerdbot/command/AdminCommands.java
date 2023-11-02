@@ -34,6 +34,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.api.repository.CachedMongoRepository;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
@@ -48,6 +49,7 @@ import net.hypixel.nerdbot.util.LoggingUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
+import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.logging.log4j.Level;
 
 import java.awt.Color;
@@ -467,6 +469,26 @@ public class AdminCommands extends ApplicationCommand {
             .queue();
 
         event.reply(event.getUser().getAsMention() + " applied the " + forumTag.getName() + " tag and locked this suggestion!").queue();
+    }
+
+    @JDASlashCommand(name = "force-save", description = "Force save the database", defaultLocked = true)
+    public void forceSaveRepository(GuildSlashEvent event, @AppOption String repository) {
+        event.deferReply(true).complete();
+
+        try {
+            CachedMongoRepository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
+
+            if (cachedMongoRepository == null) {
+                event.getHook().editOriginal("Repository not found!").queue();
+                return;
+            }
+
+            cachedMongoRepository.saveAllToDatabase();
+            event.getHook().editOriginal("Saved " + cachedMongoRepository.getCache().estimatedSize() + " documents to the database!").queue();
+        } catch (RepositoryException exception) {
+            event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
+            exception.printStackTrace();
+        }
     }
 
     @JDASlashCommand(name = "transfer-tag", description = "Transfer forum tag to another.", defaultLocked = true)

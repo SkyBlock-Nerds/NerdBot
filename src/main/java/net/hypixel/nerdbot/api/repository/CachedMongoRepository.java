@@ -56,8 +56,6 @@ public abstract class CachedMongoRepository<T> {
     private void loadAllDocumentsIntoCache() {
         for (Document document : mongoCollection.find()) {
             T object = documentToEntity(document);
-            String id = getId(object);
-
             cacheObject(object);
         }
     }

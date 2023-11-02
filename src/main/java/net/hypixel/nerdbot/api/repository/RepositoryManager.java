@@ -26,6 +26,16 @@ public class RepositoryManager {
         return repositoryClass.cast(repositories.get(repositoryClass));
     }
 
+    public <T> T getRepository(String repositoryName) throws RepositoryException {
+        Map.Entry<Class<?>, Object> entry = repositories.entrySet().stream()
+            .filter(e -> e.getKey().getSimpleName().equalsIgnoreCase(repositoryName))
+            .findFirst()
+            .orElseThrow(() -> new RepositoryException("Repository not registered: " + repositoryName));
+
+        CachedMongoRepository<?> repository = (CachedMongoRepository<?>) entry.getValue();
+        return (T) repository;
+    }
+
     public void registerRepositoriesFromPackage(String packageName, MongoClient mongoClient, String databaseName) throws RepositoryException {
         log.info("Registering repositories from package: " + packageName);
 
