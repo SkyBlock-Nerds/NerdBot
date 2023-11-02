@@ -10,6 +10,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.NerdBotApp;
 import org.bson.Document;
@@ -24,6 +25,7 @@ import java.util.function.Predicate;
 @Log4j2
 public abstract class CachedMongoRepository<T> {
 
+    @Getter
     private final Cache<String, T> cache;
     private final MongoCollection<Document> mongoCollection;
     private final Class<T> entityClass;
@@ -57,7 +59,6 @@ public abstract class CachedMongoRepository<T> {
             String id = getId(object);
 
             cacheObject(object);
-            debug("Loaded document with ID " + id + " into cache (1)");
         }
     }
 
@@ -85,7 +86,9 @@ public abstract class CachedMongoRepository<T> {
     }
 
     public void cacheObject(T object) {
-        cacheObject(getId(object), object);
+        String id = getId(object);
+        cacheObject(id, object);
+        debug("Cached document with ID " + id);
     }
 
     public UpdateResult saveToDatabase(T object) {
@@ -123,10 +126,6 @@ public abstract class CachedMongoRepository<T> {
 
     public boolean isEmpty() {
         return cache.asMap().isEmpty();
-    }
-
-    public Cache<String, T> getCache() {
-        return cache;
     }
 
     public List<T> getAll() {
