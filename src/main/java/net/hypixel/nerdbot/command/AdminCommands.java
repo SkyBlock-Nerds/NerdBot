@@ -491,6 +491,26 @@ public class AdminCommands extends ApplicationCommand {
         }
     }
 
+    @JDASlashCommand(name = "cache", subcommand = "force-load", description = "Forcefully load documents from the database into the cache", defaultLocked = true)
+    public void forceLoadDocuments(GuildSlashEvent event, @AppOption String repository) {
+        event.deferReply(true).complete();
+
+        try {
+            CachedMongoRepository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
+
+            if (cachedMongoRepository == null) {
+                event.getHook().editOriginal("Repository not found!").queue();
+                return;
+            }
+
+            cachedMongoRepository.loadAllDocumentsIntoCache();
+            event.getHook().editOriginal("Loaded " + cachedMongoRepository.getCache().estimatedSize() + " documents into the cache!").queue();
+        } catch (RepositoryException exception) {
+            event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
+            exception.printStackTrace();
+        }
+    }
+
     @JDASlashCommand(name = "cache", subcommand = "stats", description = "View cache statistics", defaultLocked = true)
     public void cacheStats(GuildSlashEvent event, @AppOption String repository) {
         event.deferReply(true).complete();

@@ -53,7 +53,7 @@ public abstract class CachedMongoRepository<T> {
         Runtime.getRuntime().addShutdownHook(new Thread(this::saveAllToDatabase));
     }
 
-    private void loadAllDocumentsIntoCache() {
+    public void loadAllDocumentsIntoCache() {
         for (Document document : mongoCollection.find()) {
             T object = documentToEntity(document);
             cacheObject(object);
