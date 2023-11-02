@@ -29,7 +29,7 @@ public abstract class CachedMongoRepository<T> {
     private final Class<T> entityClass;
 
     protected CachedMongoRepository(MongoClient mongoClient, String databaseName, String collectionName) {
-        this(mongoClient, databaseName, collectionName, 15, TimeUnit.MINUTES);
+        this(mongoClient, databaseName, collectionName, 1, TimeUnit.DAYS);
     }
 
     protected CachedMongoRepository(MongoClient mongoClient, String databaseName, String collectionName, long expireAfterAccess, TimeUnit timeUnit) {
