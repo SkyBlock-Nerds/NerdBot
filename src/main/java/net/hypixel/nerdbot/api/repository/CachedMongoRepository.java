@@ -86,7 +86,6 @@ public abstract class CachedMongoRepository<T> {
     public void cacheObject(T object) {
         String id = getId(object);
         cacheObject(id, object);
-        debug("Cached document with ID " + id);
     }
 
     public UpdateResult saveToDatabase(T object) {
