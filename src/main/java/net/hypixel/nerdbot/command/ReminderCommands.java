@@ -21,6 +21,7 @@ import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -115,10 +116,10 @@ public class ReminderCommands extends ApplicationCommand {
     @JDASlashCommand(name = "remind", subcommand = "list", description = "View your reminders")
     public void listReminders(GuildSlashEvent event) {
         ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-        List<Reminder> reminders = reminderRepository
+        List<Reminder> reminders = new ArrayList<>(reminderRepository
             .filter(reminder -> reminder.getUserId().equalsIgnoreCase(event.getUser().getId()))
             .stream()
-            .toList();
+            .toList());
 
         if (reminders.isEmpty()) {
             event.reply("You have no reminders!").setEphemeral(true).queue();
