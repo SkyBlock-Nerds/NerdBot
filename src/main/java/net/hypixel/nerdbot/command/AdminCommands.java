@@ -34,7 +34,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.api.repository.CachedMongoRepository;
+import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
@@ -476,7 +476,7 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         try {
-            CachedMongoRepository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
+            Repository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
 
             if (cachedMongoRepository == null) {
                 event.getHook().editOriginal("Repository not found!").queue();
@@ -496,7 +496,7 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         try {
-            CachedMongoRepository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
+            Repository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
 
             if (cachedMongoRepository == null) {
                 event.getHook().editOriginal("Repository not found!").queue();
@@ -516,7 +516,7 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         try {
-            CachedMongoRepository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
+            Repository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
 
             if (cachedMongoRepository == null) {
                 event.getHook().editOriginal("Repository not found!").queue();

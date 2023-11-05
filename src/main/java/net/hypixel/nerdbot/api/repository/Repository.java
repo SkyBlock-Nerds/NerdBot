@@ -23,18 +23,18 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 @Log4j2
-public abstract class CachedMongoRepository<T> {
+public abstract class Repository<T> {
 
     @Getter
     private final Cache<String, T> cache;
     private final MongoCollection<Document> mongoCollection;
     private final Class<T> entityClass;
 
-    protected CachedMongoRepository(MongoClient mongoClient, String databaseName, String collectionName) {
+    protected Repository(MongoClient mongoClient, String databaseName, String collectionName) {
         this(mongoClient, databaseName, collectionName, 1, TimeUnit.DAYS);
     }
 
-    protected CachedMongoRepository(MongoClient mongoClient, String databaseName, String collectionName, long expireAfterAccess, TimeUnit timeUnit) {
+    protected Repository(MongoClient mongoClient, String databaseName, String collectionName, long expireAfterAccess, TimeUnit timeUnit) {
         ParameterizedType parameterizedType = (ParameterizedType) getClass().getGenericSuperclass();
         this.entityClass = (Class<T>) parameterizedType.getActualTypeArguments()[0];
 

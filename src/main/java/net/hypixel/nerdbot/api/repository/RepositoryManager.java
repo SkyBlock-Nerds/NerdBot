@@ -32,7 +32,7 @@ public class RepositoryManager {
             .findFirst()
             .orElseThrow(() -> new RepositoryException("Repository not registered: " + repositoryName));
 
-        CachedMongoRepository<?> repository = (CachedMongoRepository<?>) entry.getValue();
+        Repository<?> repository = (Repository<?>) entry.getValue();
         return (T) repository;
     }
 
@@ -40,7 +40,7 @@ public class RepositoryManager {
         log.info("Registering repositories from package: " + packageName);
 
         try {
-            Set<Class<?>> classes = ClassUtil.findClasses(packageName, CachedMongoRepository.class);
+            Set<Class<?>> classes = ClassUtil.findClasses(packageName, Repository.class);
 
             for (Class<?> clazz : classes) {
                 log.debug("Found class: " + clazz.getName());
@@ -57,7 +57,7 @@ public class RepositoryManager {
     }
 
     private boolean isRepository(Class<?> clazz) {
-        return CachedMongoRepository.class.isAssignableFrom(clazz);
+        return Repository.class.isAssignableFrom(clazz);
     }
 
     private <T> T createRepositoryInstance(Class<T> repositoryClass, MongoClient mongoClient, String databaseName) throws RepositoryException {
