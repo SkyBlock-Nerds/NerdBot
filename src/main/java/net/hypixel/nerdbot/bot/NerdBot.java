@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.bot;
 import com.freya02.botcommands.api.CommandsBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mongodb.client.result.InsertManyResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -21,6 +22,7 @@ import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
+import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.CurateFeature;
@@ -46,6 +48,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Log4j2
@@ -91,9 +94,30 @@ public class NerdBot implements Bot {
     @Override
     public void onEnd() {
         log.info("Shutting down Nerd Bot...");
-        FEATURES.forEach(BotFeature::onEnd);
-        database.disconnect();
-        System.exit(0);
+
+        FEATURES.forEach(BotFeature::onFeatureEnd);
+
+        try {
+            Map<Class<?>, Object> repositories = database.getRepositoryManager().getRepositories();
+            log.info("Saving data from " + database.getRepositoryManager().getRepositories().size() + " repositories...");
+
+            repositories.forEach((aClass, o) -> {
+                Repository<?> repository = (Repository<?>) o;
+                InsertManyResult result = repository.saveAllToDatabase();
+
+                if (result != null && result.wasAcknowledged()) {
+                    log.info("Saved " + result.getInsertedIds().size() + " documents to database for repository " + repository.getClass().getSimpleName());
+                } else {
+                    log.info("Saved 0 documents to database for repository " + repository.getClass().getSimpleName());
+                }
+            });
+        } catch (Exception e) {
+            log.error("Error while saving data: " + e.getMessage(), e);
+        } finally {
+            database.getMongoClient().close();
+        }
+
+        log.info("Bot shutdown complete!");
     }
 
     @Override
