@@ -472,19 +472,18 @@ public class AdminCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "cache", subcommand = "force-save", description = "Force save the specified cache to the database", defaultLocked = true)
-    public void forceSaveRepository(GuildSlashEvent event, @AppOption String repository) {
+    public void forceSaveRepository(GuildSlashEvent event, @AppOption String repositoryName) {
         event.deferReply(true).complete();
 
         try {
-            Repository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
-
-            if (cachedMongoRepository == null) {
+            Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
+            if (repository == null) {
                 event.getHook().editOriginal("Repository not found!").queue();
                 return;
             }
 
-            cachedMongoRepository.saveAllToDatabase();
-            event.getHook().editOriginal("Saved " + cachedMongoRepository.getCache().estimatedSize() + " documents to the database!").queue();
+            repository.saveAllToDatabase();
+            event.getHook().editOriginal("Saved " + repository.getCache().estimatedSize() + " documents to the database!").queue();
         } catch (RepositoryException exception) {
             event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
             exception.printStackTrace();
@@ -492,19 +491,19 @@ public class AdminCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "cache", subcommand = "force-load", description = "Forcefully load documents from the database into the cache", defaultLocked = true)
-    public void forceLoadDocuments(GuildSlashEvent event, @AppOption String repository) {
+    public void forceLoadDocuments(GuildSlashEvent event, @AppOption String repositoryName) {
         event.deferReply(true).complete();
 
         try {
-            Repository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
+            Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
 
-            if (cachedMongoRepository == null) {
+            if (repository == null) {
                 event.getHook().editOriginal("Repository not found!").queue();
                 return;
             }
 
-            cachedMongoRepository.loadAllDocumentsIntoCache();
-            event.getHook().editOriginal("Loaded " + cachedMongoRepository.getCache().estimatedSize() + " documents into the cache!").queue();
+            repository.loadAllDocumentsIntoCache();
+            event.getHook().editOriginal("Loaded " + repository.getCache().estimatedSize() + " documents into the cache!").queue();
         } catch (RepositoryException exception) {
             event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
             exception.printStackTrace();
@@ -512,18 +511,18 @@ public class AdminCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "cache", subcommand = "stats", description = "View cache statistics", defaultLocked = true)
-    public void cacheStats(GuildSlashEvent event, @AppOption String repository) {
+    public void cacheStats(GuildSlashEvent event, @AppOption String repositoryName) {
         event.deferReply(true).complete();
 
         try {
-            Repository<?> cachedMongoRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repository);
+            Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
 
-            if (cachedMongoRepository == null) {
+            if (repository == null) {
                 event.getHook().editOriginal("Repository not found!").queue();
                 return;
             }
 
-            event.getHook().editOriginal(cachedMongoRepository.getCache().stats().toString()).queue();
+            event.getHook().editOriginal(repository.getCache().stats().toString()).queue();
         } catch (RepositoryException exception) {
             event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
             exception.printStackTrace();

@@ -87,27 +87,29 @@ public class Reminder {
         if (!sendPublicly) {
             String finalMessage = message;
             user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(finalMessage).addEmbeds(new EmbedBuilder().setDescription(description).build()).queue());
-            return;
-        }
-
-        if (channel != null) {
+        } else {
             if (late) {
                 message = user.getAsMention() + ", while I was offline, you asked me to remind you at " + timestamp + " about: ";
             } else {
                 message = user.getAsMention() + ", you asked me to remind you at " + timestamp + " about: ";
             }
 
-            channel.sendMessage(message)
-                .addEmbeds(new EmbedBuilder().setDescription(description).build())
-                .queue();
-        } else if (sendPublicly) {
-            user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Reminder: " + description).queue());
+            if (channel != null) {
+                channel.sendMessage(message)
+                    .addEmbeds(new EmbedBuilder().setDescription(description).build())
+                    .queue();
+            } else {
+                String finalMessage1 = message;
+                user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(finalMessage1).addEmbeds(new EmbedBuilder().setDescription(description).build()).queue());
+            }
         }
 
         DeleteResult result = reminderRepository.deleteFromDatabase(uuid.toString());
         if (result == null) {
             log.error("Couldn't delete reminder from database: " + uuid + " (result: null)");
             return;
+        } else {
+            log.info("Reminder deleted from database: " + uuid);
         }
 
         if (result.wasAcknowledged() && result.getDeletedCount() > 0) {
