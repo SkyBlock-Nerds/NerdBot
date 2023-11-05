@@ -107,15 +107,8 @@ public class Reminder {
         DeleteResult result = reminderRepository.deleteFromDatabase(uuid.toString());
         if (result == null) {
             log.error("Couldn't delete reminder from database: " + uuid + " (result: null)");
-            return;
         } else {
             log.info("Reminder deleted from database: " + uuid);
-        }
-
-        if (result.wasAcknowledged() && result.getDeletedCount() > 0) {
-            log.info("Reminder deleted from database: " + uuid);
-        } else {
-            log.error("Couldn't delete reminder from database: " + uuid + " (result: " + result + ")");
         }
     }
 }

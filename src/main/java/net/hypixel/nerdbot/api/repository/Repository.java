@@ -46,7 +46,10 @@ public abstract class Repository<T> {
             .scheduler(Scheduler.systemScheduler())
             .removalListener((String key, T value, RemovalCause cause) -> {
                 debug("Removing document with ID " + key + " from cache for reason " + cause.toString());
-                saveToDatabase(value);
+
+                if (cause != RemovalCause.EXPLICIT) {
+                    saveToDatabase(value);
+                }
             })
             .build();
 
@@ -97,6 +100,8 @@ public abstract class Repository<T> {
     }
 
     public void saveAllToDatabase() {
+        debug("Saving all documents in cache to database");
+
         for (T object : cache.asMap().values()) {
             saveToDatabase(object);
         }
