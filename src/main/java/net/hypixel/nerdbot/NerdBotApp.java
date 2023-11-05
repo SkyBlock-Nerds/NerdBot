@@ -44,10 +44,12 @@ public class NerdBotApp {
     }
 
     public static void main(String[] args) {
-        Signal.handle(new Signal("INT"), signal -> {
-            bot.onEnd();
-            System.exit(0);
-        });
+        for (String signal : new String[]{"INT", "TERM"}) {
+            Signal.handle(new Signal(signal), sig -> {
+                bot.onEnd();
+                System.exit(0);
+            });
+        }
 
         NerdBot nerdBot = new NerdBot();
         bot = nerdBot;
