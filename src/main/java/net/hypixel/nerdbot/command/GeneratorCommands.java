@@ -24,6 +24,7 @@ import net.hypixel.nerdbot.generator.GeneratorBuilder;
 import net.hypixel.nerdbot.generator.ImageMerger;
 import net.hypixel.nerdbot.generator.StringColorParser;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
@@ -305,21 +306,21 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         // checking if the user has copied the text directly from in game
-        JsonObject tagJSON = Util.isJsonObject(itemJSON, "tag");
+        JsonObject tagJSON = JsonUtil.isJsonObject(itemJSON, "tag");
         if (tagJSON == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag")).queue();
             return;
         }
 
         // checking if there is a display tag
-        JsonObject displayJSON = Util.isJsonObject(tagJSON, "display");
+        JsonObject displayJSON = JsonUtil.isJsonObject(tagJSON, "display");
         if (displayJSON == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("display")).queue();
             return;
         }
         // checking that there is a name and lore parameters in the JsonObject
-        String itemName = Util.isJsonString(displayJSON, "Name");
-        JsonArray itemLoreArray = Util.isJsonArray(displayJSON, "Lore");
+        String itemName = JsonUtil.isJsonString(displayJSON, "Name");
+        JsonArray itemLoreArray = JsonUtil.isJsonArray(displayJSON, "Lore");
         if (itemName == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Name")).queue();
             return;
@@ -333,7 +334,7 @@ public class GeneratorCommands extends ApplicationCommand {
         String extraModifiers = "";
         // checking if the user wants to create full gen
         if (includeItem) {
-            itemID = Util.isJsonString(itemJSON, "id");
+            itemID = JsonUtil.isJsonString(itemJSON, "id");
             if (itemID == null) {
                 event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("id")).queue();
                 return;
@@ -342,19 +343,19 @@ public class GeneratorCommands extends ApplicationCommand {
 
             if (itemID.equals("skull")) {
                 // checking if there is a SkullOwner json object within the main tag json
-                JsonObject skullOwnerJSON = Util.isJsonObject(tagJSON, "SkullOwner");
+                JsonObject skullOwnerJSON = JsonUtil.isJsonObject(tagJSON, "SkullOwner");
                 if (skullOwnerJSON == null) {
                     event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("SkullOwner")).queue();
                     return;
                 }
                 // checking if there is a Properties json object within SkullOwner
-                JsonObject propertiesJSON = Util.isJsonObject(skullOwnerJSON, "Properties");
+                JsonObject propertiesJSON = JsonUtil.isJsonObject(skullOwnerJSON, "Properties");
                 if (propertiesJSON == null) {
                     event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Properties")).queue();
                     return;
                 }
                 // checking if there is a textures json object within properties
-                JsonArray texturesJSON = Util.isJsonArray(propertiesJSON, "textures");
+                JsonArray texturesJSON = JsonUtil.isJsonArray(propertiesJSON, "textures");
                 if (texturesJSON == null) {
                     event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("textures")).queue();
                     return;
@@ -368,7 +369,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     return;
                 }
                 // checking that there is a Base64 skin url string
-                String base64String = Util.isJsonString(texturesJSON.get(0).getAsJsonObject(), "Value");
+                String base64String = JsonUtil.isJsonString(texturesJSON.get(0).getAsJsonObject(), "Value");
                 if (base64String == null) {
                     event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
                     return;
@@ -382,7 +383,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 }
             } else {
                 // checking if there is a color attribute present and adding it to the extra attributes
-                String color = Util.isJsonString(displayJSON, "color");
+                String color = JsonUtil.isJsonString(displayJSON, "color");
                 if (color != null) {
                     try {
                         Integer selectedColor = Integer.decode(color);
@@ -392,7 +393,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 }
 
                 // checking if the item is enchanted and applying the enchantment glint to the extra modifiers
-                JsonArray enchantJson = Util.isJsonArray(tagJSON, "ench");
+                JsonArray enchantJson = JsonUtil.isJsonArray(tagJSON, "ench");
                 if (enchantJson != null) {
                     extraModifiers = extraModifiers.length() == 0 ? "enchant" : extraModifiers + ",enchant";
                 }

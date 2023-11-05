@@ -14,15 +14,17 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -51,12 +53,14 @@ public class InfoCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "info", subcommand = "greenlit", description = "Get a list of all unreviewed greenlit messages. May not be 100% accurate!", defaultLocked = true)
     public void greenlitInfo(GuildSlashEvent event, @AppOption int page, @AppOption @Optional String tag) {
-        List<GreenlitMessage> greenlit = database.getCollection("greenlit_messages", GreenlitMessage.class)
-            .find()
-            .into(new ArrayList<>())
-            .stream()
-            .filter(greenlitMessage -> greenlitMessage.getTags() != null && !greenlitMessage.isReviewed())
-            .toList();
+        GreenlitMessageRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class);
+
+        if (!database.isConnected()) {
+            event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
+            return;
+        }
+
+        List<GreenlitMessage> greenlit = repository.getAll();
 
         if (tag != null) {
             greenlit = greenlit.stream().filter(greenlitMessage -> greenlitMessage.getTags().contains(tag)).toList();
@@ -108,23 +112,10 @@ public class InfoCommands extends ApplicationCommand {
             return;
         }
 
-        List<DiscordUser> users = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
-        users.removeIf(discordUser -> {
-            Member member = Util.getMainGuild().getMemberById(discordUser.getDiscordId());
-
-            if (member == null) {
-                return true;
-            }
-
-            if (Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
-                return true;
-            }
-
-            return !Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getInactivityDays())));
-        });
-
-        log.info("Found " + users.size() + " inactive user" + (users.size() == 1 ? "" : "s") + "!");
+        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        List<DiscordUser> users = getDiscordUsers(repository);
         users.sort(Comparator.comparingLong(discordUser -> discordUser.getLastActivity().getLastGlobalActivity()));
+
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
         getPage(users, page, 10).forEach(discordUser -> {
@@ -140,6 +131,26 @@ public class InfoCommands extends ApplicationCommand {
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
     }
 
+    @NotNull
+    private static List<DiscordUser> getDiscordUsers(DiscordUserRepository repository) {
+        List<DiscordUser> users = repository.getAll();
+
+        users.removeIf(discordUser -> {
+            Member member = Util.getMainGuild().getMemberById(discordUser.getDiscordId());
+
+            if (member == null) {
+                return true;
+            }
+
+            if (Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
+                return true;
+            }
+
+            return !Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getInactivityDays())));
+        });
+        return users;
+    }
+
     @JDASlashCommand(name = "info", subcommand = "messages", description = "View an ordered list of users with the most messages", defaultLocked = true)
     public void userMessageInfo(GuildSlashEvent event, @AppOption int page) {
         if (!database.isConnected()) {
@@ -147,23 +158,13 @@ public class InfoCommands extends ApplicationCommand {
             return;
         }
 
-        Guild guild = Util.getMainGuild();
-        List<DiscordUser> users = database.getCollection("users", DiscordUser.class).find().into(new ArrayList<>());
-        users.removeIf(discordUser -> {
-            Member member = guild.getMemberById(discordUser.getDiscordId());
-
-            if (member == null) {
-                return true;
-            }
-
-            return Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s));
-        });
-
+        List<DiscordUser> users = getDiscordUsers(NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class));
         users.sort(Comparator.comparingInt(DiscordUser::getTotalMessageCount));
+
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
         getPage(users, page, 10).forEach(discordUser -> {
-            Member member = guild.getMemberById(discordUser.getDiscordId());
+            Member member = Util.getMainGuild().getMemberById(discordUser.getDiscordId());
             if (member == null) {
                 log.error("Couldn't find member " + discordUser.getDiscordId());
                 return;

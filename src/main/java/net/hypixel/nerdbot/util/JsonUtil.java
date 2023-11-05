@@ -1,9 +1,6 @@
 package net.hypixel.nerdbot.util;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import net.hypixel.nerdbot.NerdBotApp;
 
 import java.io.*;
@@ -127,5 +124,44 @@ public class JsonUtil {
     public static Object jsonToObject(File file, Class<?> clazz) throws FileNotFoundException {
         BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
         return NerdBotApp.GSON.fromJson(br, clazz);
+    }
+
+    public static JsonObject isJsonObject(JsonObject obj, String element) {
+        // checking if the json object has the key
+        if (!obj.has(element)) {
+            return null;
+        }
+        // checking if the found element is actually a json object
+        JsonElement foundItem = obj.get(element);
+        if (!foundItem.isJsonObject()) {
+            return null;
+        }
+        return foundItem.getAsJsonObject();
+    }
+
+    public static String isJsonString(JsonObject obj, String element) {
+        // checking if the json object has the key
+        if (!obj.has(element)) {
+            return null;
+        }
+        // checking if the found element is a primitive type
+        JsonElement foundItem = obj.get(element);
+        if (!foundItem.isJsonPrimitive()) {
+            return null;
+        }
+        return foundItem.getAsJsonPrimitive().getAsString();
+    }
+
+    public static JsonArray isJsonArray(JsonObject obj, String element) {
+        // checking if the json object has the key
+        if (!obj.has(element)) {
+            return null;
+        }
+        // checking if the found element is an array
+        JsonElement foundItem = obj.get(element);
+        if (!foundItem.isJsonArray()) {
+            return null;
+        }
+        return foundItem.getAsJsonArray();
     }
 }

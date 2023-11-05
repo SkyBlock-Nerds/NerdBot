@@ -69,7 +69,7 @@ public class NerdBot implements Bot {
     @Override
     public void onStart() {
         for (BotFeature feature : FEATURES) {
-            feature.onStart();
+            feature.onFeatureStart();
             log.info("Started feature " + feature.getClass().getSimpleName());
         }
 

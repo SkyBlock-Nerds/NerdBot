@@ -9,11 +9,13 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.UpdateResult;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.NerdBotApp;
 import org.bson.Document;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
@@ -27,6 +29,7 @@ public abstract class Repository<T> {
 
     @Getter
     private final Cache<String, T> cache;
+    @Getter
     private final MongoCollection<Document> mongoCollection;
     private final Class<T> entityClass;
 
@@ -52,8 +55,6 @@ public abstract class Repository<T> {
                 }
             })
             .build();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(this::saveAllToDatabase));
     }
 
     public void loadAllDocumentsIntoCache() {
@@ -95,18 +96,25 @@ public abstract class Repository<T> {
         String id = getId(object);
         Document document = entityToDocument(object);
 
-        debug("Saving document with ID " + id + " to database from cache");
         return mongoCollection.replaceOne(new Document("_id", id), document, new ReplaceOptions().upsert(true));
     }
 
-    public void saveAllToDatabase() {
-        debug("Saving all documents in cache to database");
+    @Nullable
+    public InsertManyResult saveAllToDatabase() {
+        debug("Saving all documents in cache to database (found " + cache.asMap().size() + ")");
 
-        for (T object : cache.asMap().values()) {
-            saveToDatabase(object);
+        List<Document> documents = cache.asMap().values()
+            .stream()
+            .map(this::entityToDocument)
+            .toList();
+
+        debug("Converted " + documents.size() + " documents to JSON");
+
+        if (!documents.isEmpty()) {
+            return mongoCollection.insertMany(documents);
+        } else {
+            return null;
         }
-
-        debug("Saved all documents in cache to database");
     }
 
     public DeleteResult deleteFromDatabase(String id) {
@@ -117,7 +125,7 @@ public abstract class Repository<T> {
 
     protected abstract String getId(T entity);
 
-    protected Document entityToDocument(T entity) {
+    public Document entityToDocument(Object entity) {
         return Document.parse(NerdBotApp.GSON.toJson(entity));
     }
 

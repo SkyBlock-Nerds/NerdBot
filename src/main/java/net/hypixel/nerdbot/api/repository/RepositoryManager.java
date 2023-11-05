@@ -68,4 +68,8 @@ public class RepositoryManager {
             throw new RepositoryException("Failed to create repository instance: " + repositoryClass.getName(), e);
         }
     }
+
+    public Map<Class<?>, Object> getRepositories() {
+        return repositories;
+    }
 }

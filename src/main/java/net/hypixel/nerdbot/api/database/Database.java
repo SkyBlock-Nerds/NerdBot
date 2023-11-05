@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.api.database;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoException;
 import com.mongodb.client.*;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
@@ -21,6 +22,7 @@ import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -30,8 +32,7 @@ public class Database implements ServerMonitorListener {
 
     private static final FindOneAndReplaceOptions REPLACE_OPTIONS = new FindOneAndReplaceOptions().upsert(true);
 
-    private final MongoClient mongoClient;
-    private final MongoDatabase mongoDatabase;
+    private MongoClient mongoClient = null;
     private final ConnectionString connectionString;
     private boolean connected;
     private final RepositoryManager repositoryManager = new RepositoryManager();
@@ -40,7 +41,6 @@ public class Database implements ServerMonitorListener {
         if (uri == null || uri.isBlank() || databaseName == null || databaseName.isBlank()) {
             log.warn("Database URI or database name is null or blank, so not initiating database connection!");
             mongoClient = null;
-            mongoDatabase = null;
             connectionString = null;
             connected = false;
             return;
@@ -57,9 +57,13 @@ public class Database implements ServerMonitorListener {
             .applyToServerSettings(builder -> builder.addServerMonitorListener(this))
             .build();
 
-        mongoClient = MongoClients.create(clientSettings);
-        mongoDatabase = mongoClient.getDatabase(databaseName);
-        connected = true;
+        try {
+            mongoClient = MongoClients.create(clientSettings);
+            connected = true;
+        } catch (MongoException exception) {
+            log.error("Failed to create MongoDB client!", exception);
+            connected = false;
+        }
 
         try {
             repositoryManager.registerRepositoriesFromPackage("net.hypixel.nerdbot.repository", mongoClient, databaseName);
@@ -69,12 +73,12 @@ public class Database implements ServerMonitorListener {
     }
 
     @Override
-    public void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event) {
+    public void serverHeartbeatSucceeded(@NotNull ServerHeartbeatSucceededEvent event) {
         connected = true;
     }
 
     @Override
-    public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
+    public void serverHeartbeatFailed(@NotNull ServerHeartbeatFailedEvent event) {
         connected = false;
     }
 
@@ -86,10 +90,6 @@ public class Database implements ServerMonitorListener {
         return connectionString;
     }
 
-    public MongoDatabase getMongoDatabase() {
-        return mongoDatabase;
-    }
-
     public boolean isConnected() {
         return connected;
     }
@@ -97,29 +97,6 @@ public class Database implements ServerMonitorListener {
     public void disconnect() {
         mongoClient.close();
         connected = false;
-    }
-
-    @Nullable
-    public <T> MongoCollection<T> getCollection(String collectionName, Class<T> clazz) {
-        if (mongoDatabase == null) {
-            return null;
-        }
-        return mongoDatabase.getCollection(collectionName, clazz);
-    }
-
-    @Nullable
-    public MongoCollection<Document> getCollection(String collectionName) {
-        if (mongoDatabase == null) {
-            return null;
-        }
-        return mongoDatabase.getCollection(collectionName);
-    }
-
-    public void createCollection(String collectionName) {
-        if (mongoDatabase == null) {
-            return;
-        }
-        mongoDatabase.createCollection(collectionName);
     }
 
     @Nullable

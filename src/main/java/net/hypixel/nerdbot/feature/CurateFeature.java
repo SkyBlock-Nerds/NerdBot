@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 public class CurateFeature extends BotFeature {
 
     @Override
-    public void onStart() {
+    public void onFeatureStart() {
         ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
 
         if (channelConfig.getSuggestionForumIds() == null) {
@@ -74,7 +74,7 @@ public class CurateFeature extends BotFeature {
     }
 
     @Override
-    public void onEnd() {
+    public void onFeatureEnd() {
         this.timer.cancel();
     }
 }

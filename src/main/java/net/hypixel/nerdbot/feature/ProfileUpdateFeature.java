@@ -19,11 +19,16 @@ import java.util.TimerTask;
 public class ProfileUpdateFeature extends BotFeature {
 
     @Override
-    public void onStart() {
+    public void onFeatureStart() {
         this.timer.scheduleAtFixedRate(
             new TimerTask() {
                 @Override
                 public void run() {
+                    if (NerdBotApp.getBot().isReadOnly()) {
+                        log.error("Bot is in read-only mode, skipping profile update task!");
+                        return;
+                    }
+
                     DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
                     discordUserRepository.forEach(discordUser -> {
                         if (discordUser.isProfileAssigned() && discordUser.getMojangProfile().requiresCacheUpdate()) {
@@ -35,7 +40,7 @@ public class ProfileUpdateFeature extends BotFeature {
     }
 
     @Override
-    public void onEnd() {
+    public void onFeatureEnd() {
         this.timer.cancel();
     }
 

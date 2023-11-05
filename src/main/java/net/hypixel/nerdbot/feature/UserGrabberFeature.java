@@ -16,7 +16,7 @@ import java.util.ArrayList;
 public class UserGrabberFeature extends BotFeature {
 
     @Override
-    public void onStart() {
+    public void onFeatureStart() {
         if (NerdBotApp.getBot().isReadOnly()) {
             log.error("Bot is in read-only mode, skipping user grabber task!");
             return;
@@ -54,7 +54,6 @@ public class UserGrabberFeature extends BotFeature {
     }
 
     @Override
-    public void onEnd() {
-        log.info("Finished grabbing all users from guild " + Util.getMainGuild().getName());
+    public void onFeatureEnd() {
     }
 }

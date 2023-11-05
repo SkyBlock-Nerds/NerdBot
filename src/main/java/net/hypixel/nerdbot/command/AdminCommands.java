@@ -8,7 +8,6 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import com.google.gson.*;
-import com.mongodb.client.FindIterable;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -60,6 +59,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -422,19 +422,23 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
-        FindIterable<DiscordUser> users = database.findAllDocuments(database.getCollection("users", DiscordUser.class));
+        DiscordUserRepository discordUserRepository = database.getRepositoryManager().getRepository(DiscordUserRepository.class);
 
-        if (users == null) {
+        if (discordUserRepository == null) {
             event.getHook().sendMessage("No users found.").queue();
             return;
         }
 
-        users.forEach(discordUser -> {
+        AtomicInteger updated = new AtomicInteger();
+
+        discordUserRepository.forEach(discordUser -> {
             if (discordUser.isProfileAssigned()) {
                 ProfileUpdateFeature.updateNickname(discordUser);
+                updated.getAndIncrement();
             }
         });
-        event.getHook().editOriginal("Updated nicknames for " + users.into(new ArrayList<>()).size() + " users.").queue();
+
+        event.getHook().editOriginal("Updated nicknames for " + updated.get() + " users.").queue();
     }
 
     @JDASlashCommand(name = "flared", description = "Add the Flared tag to a suggestion and lock it", defaultLocked = true)

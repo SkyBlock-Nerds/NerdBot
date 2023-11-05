@@ -11,6 +11,7 @@ import net.hypixel.nerdbot.util.discord.MessageCache;
 import net.hypixel.nerdbot.util.discord.SuggestionCache;
 import net.hypixel.nerdbot.util.gson.InstantTypeAdapter;
 import net.hypixel.nerdbot.util.gson.UUIDTypeAdapter;
+import sun.misc.Signal;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
@@ -43,6 +44,11 @@ public class NerdBotApp {
     }
 
     public static void main(String[] args) {
+        Signal.handle(new Signal("INT"), signal -> {
+            bot.onEnd();
+            System.exit(0);
+        });
+
         NerdBot nerdBot = new NerdBot();
         bot = nerdBot;
 
@@ -62,9 +68,5 @@ public class NerdBotApp {
             exception.printStackTrace();
             System.exit(-1);
         }
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            NerdBotApp.getBot().onEnd();
-        }));
     }
 }

@@ -19,14 +19,14 @@ public class HelloGoodbyeFeature extends BotFeature {
         .build();
 
     @Override
-    public void onStart() {
+    public void onFeatureStart() {
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(HELLO_THERE).queue();
         }
     }
 
     @Override
-    public void onEnd() {
+    public void onFeatureEnd() {
         // Goodbye message does not work because the bot is offline by the time this is called
     }
 }
