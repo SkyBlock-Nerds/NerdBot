@@ -1,7 +1,5 @@
 package net.hypixel.nerdbot.util;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.prometheus.client.Summary;
 import lombok.extern.log4j.Log4j2;
@@ -343,44 +341,5 @@ public class Util {
         }
 
         return null;
-    }
-
-    public static JsonObject isJsonObject(JsonObject obj, String element) {
-        // checking if the json object has the key
-        if (!obj.has(element)) {
-            return null;
-        }
-        // checking if the found element is actually a json object
-        JsonElement foundItem = obj.get(element);
-        if (!foundItem.isJsonObject()) {
-            return null;
-        }
-        return foundItem.getAsJsonObject();
-    }
-
-    public static String isJsonString(JsonObject obj, String element) {
-        // checking if the json object has the key
-        if (!obj.has(element)) {
-            return null;
-        }
-        // checking if the found element is a primitive type
-        JsonElement foundItem = obj.get(element);
-        if (!foundItem.isJsonPrimitive()) {
-            return null;
-        }
-        return foundItem.getAsJsonPrimitive().getAsString();
-    }
-
-    public static JsonArray isJsonArray(JsonObject obj, String element) {
-        // checking if the json object has the key
-        if (!obj.has(element)) {
-            return null;
-        }
-        // checking if the found element is an array
-        JsonElement foundItem = obj.get(element);
-        if (!foundItem.isJsonArray()) {
-            return null;
-        }
-        return foundItem.getAsJsonArray();
     }
 }

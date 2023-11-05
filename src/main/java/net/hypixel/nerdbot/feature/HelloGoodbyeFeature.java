@@ -17,6 +17,13 @@ public class HelloGoodbyeFeature extends BotFeature {
         .setColor(Color.GREEN)
         .setTimestamp(OffsetDateTime.now())
         .build();
+    public static final MessageEmbed GOODBYE = new EmbedBuilder()
+        .setTitle("Goodbye cruel world!")
+        .setDescription("It seems as though I'm needed elsewhere!")
+        .setImage("https://i.pinimg.com/564x/7c/5a/19/7c5a193b0f832bb13a2b1dd802a023ab.jpg")
+        .setColor(Color.GREEN)
+        .setTimestamp(OffsetDateTime.now())
+        .build();
 
     @Override
     public void onFeatureStart() {
@@ -27,6 +34,8 @@ public class HelloGoodbyeFeature extends BotFeature {
 
     @Override
     public void onFeatureEnd() {
-        // Goodbye message does not work because the bot is offline by the time this is called
+        if (ChannelManager.getLogChannel() != null) {
+            ChannelManager.getLogChannel().sendMessageEmbeds(GOODBYE).queue();
+        }
     }
 }
