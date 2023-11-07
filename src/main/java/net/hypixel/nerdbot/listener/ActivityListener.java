@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static net.hypixel.nerdbot.util.Util.sleep;
+
 @Log4j2
 public class ActivityListener {
 
@@ -62,19 +64,6 @@ public class ActivityListener {
                 return; // Ignore Empty User
             }
 
-            // Pin the first message on every thread created after proper checks are complete.
-            MessageHistory messageHistory = event.getChannel().asThreadChannel().getHistoryFromBeginning(1).complete();
-            if (!messageHistory.isEmpty()) {
-                Message message = messageHistory.getRetrievedHistory().get(0);
-
-                // This is to remove any threads that ARE NOT created in forum channels. These caused numerous issues in implementation. (mostly race conditions)
-                if (message.getType() != MessageType.THREAD_STARTER_MESSAGE) {
-                    if (channelConfig.isAutomaticallyPinnedThread()) {
-                        message.pin().complete();
-                    }
-                }
-            }
-
             String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
             long time = System.currentTimeMillis();
 
@@ -88,6 +77,21 @@ public class ActivityListener {
             if (Util.safeArrayStream(channelConfig.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().setLastAlphaSuggestionDate(time);
                 log.info("Updating new alpha suggestion activity date for " + member.getEffectiveName() + " to " + time);
+            }
+
+            // For automatically pinning the first message of user Threads.
+            sleep(TimeUnit.MILLISECONDS, 500);
+            // We must wait here, or else we have annoying race conditions.
+            MessageHistory messageHistory = event.getChannel().asThreadChannel().getHistoryFromBeginning(2).complete();
+
+            if (!messageHistory.isEmpty()) {
+                Message message = messageHistory.getRetrievedHistory().get(0);
+
+                if (message.getType() == MessageType.DEFAULT) {
+                    if (channelConfig.isAutomaticallyPinnedThread()) {
+                        message.pin().complete();
+                    }
+                }
             }
         }
     }
