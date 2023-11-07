@@ -26,7 +26,8 @@
     "alphaSuggestionForumIds": [],
     "genChannelIds": [],
     "reactionChannels": [],
-    "blacklistedChannels": []
+    "blacklistedChannels": [],
+    "automaticallyPinnedThread": false
   },
   "roleConfig": {
     "botManagerRoleId": "",

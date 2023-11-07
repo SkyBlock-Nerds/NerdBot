@@ -1,10 +1,7 @@
 package net.hypixel.nerdbot.listener;
 
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageHistory;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
@@ -55,10 +52,7 @@ public class ActivityListener {
     @SubscribeEvent
     public void onThreadCreateEvent(@NotNull ChannelCreateEvent event) {
         if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD) {
-            MessageHistory messageHistory = event.getChannel().asThreadChannel().getHistoryFromBeginning(1).complete();
-            Message message = messageHistory.getRetrievedHistory().get(0);
-
-            Member member = message.getMember();
+            Member member = event.getChannel().asThreadChannel().getOwner();
             if (member == null || member.getUser().isBot()) {
                 return; // Ignore Empty Member
             }
@@ -66,6 +60,19 @@ public class ActivityListener {
             DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
             if (discordUser == null) {
                 return; // Ignore Empty User
+            }
+
+            // Pin the first message on every thread created after proper checks are complete.
+            MessageHistory messageHistory = event.getChannel().asThreadChannel().getHistoryFromBeginning(1).complete();
+            if (!messageHistory.isEmpty()) {
+                Message message = messageHistory.getRetrievedHistory().get(0);
+
+                // This is to remove any threads that ARE NOT created in forum channels. These caused numerous issues in implementation. (mostly race conditions)
+                if (message.getType() != MessageType.THREAD_STARTER_MESSAGE) {
+                    if (channelConfig.isAutomaticallyPinnedThread()) {
+                        message.pin().complete();
+                    }
+                }
             }
 
             String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
