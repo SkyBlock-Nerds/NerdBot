@@ -34,6 +34,7 @@ public class PinListener {
         if (!event.isFromGuild()) {
             return; // Ignore Non Guild
         }
+
         Member member = event.getMember();
         if (member == null || member.getUser().isBot()) {
             return; // Ignore Empty Member
@@ -65,14 +66,12 @@ public class PinListener {
             if (!threadChannel.getOwnerId().equals(member.getId())) {
                 return; // Ignoring IDs that are not from the owner of the thread.
             }
-
             // Here is logic for handling pinning of messages within Threads by the owner. This is done by either emoji.
             Emoji reactionEmoji = event.getReaction().getEmoji();
 
             if (!(reactionEmoji.equals(pushpin) || reactionEmoji.equals(roundPushpin))) {
                 return; // Ignoring any emojis that are NOT in this list.
             }
-
             // We get the message we are checking to pin it.
             Message message = event.retrieveMessage().complete();
 
@@ -98,14 +97,12 @@ public class PinListener {
             if (!threadChannel.getOwnerId().equals(member.getId())) {
                 return; // Ignoring IDs that are not from the owner of the thread.
             }
-
             // Here is logic for handling pinning of messages within Threads by the owner. This is done by either emoji.
             Emoji reactionEmoji = event.getReaction().getEmoji();
 
             if (!(reactionEmoji.equals(pushpin) || reactionEmoji.equals(roundPushpin))) {
                 return; // Ignoring any emojis that are NOT in this list.
             }
-
             // We get the message we are checking to unpin it.
             Message message = event.retrieveMessage().complete();
 
