@@ -1,7 +1,8 @@
 package net.hypixel.nerdbot.listener;
 
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
@@ -28,8 +29,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import static net.hypixel.nerdbot.util.Util.sleep;
 
 @Log4j2
 public class ActivityListener {
@@ -77,21 +76,6 @@ public class ActivityListener {
             if (Util.safeArrayStream(channelConfig.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().setLastAlphaSuggestionDate(time);
                 log.info("Updating new alpha suggestion activity date for " + member.getEffectiveName() + " to " + time);
-            }
-
-            // For automatically pinning the first message of user Threads.
-            sleep(TimeUnit.MILLISECONDS, 500);
-            // We must wait here, or else we have annoying race conditions.
-            MessageHistory messageHistory = event.getChannel().asThreadChannel().getHistoryFromBeginning(2).complete();
-
-            if (!messageHistory.isEmpty()) {
-                Message message = messageHistory.getRetrievedHistory().get(0);
-
-                if (message.getType() == MessageType.DEFAULT) {
-                    if (channelConfig.isAutomaticallyPinnedThread()) {
-                        message.pin().complete();
-                    }
-                }
             }
         }
     }
@@ -211,30 +195,6 @@ public class ActivityListener {
         }
 
         if (event.getGuildChannel() instanceof ThreadChannel threadChannel) {
-
-            // Here is logic for handling pinning of messages within Threads by the owner. This is done by only the :pushpin: Emoji.
-            Emoji pushpin = Emoji.fromUnicode("\uD83D\uDCCC");
-
-            if (event.getReaction().getEmoji().equals(pushpin)) {
-                if (!threadChannel.getOwnerId().equals(discordUser.getDiscordId())) {
-                    return; // Ignoring IDs that are not from the owner of the thread.
-                }
-
-                // We get the message we are checking to pin or unpin it.
-                Message message = event.retrieveMessage().complete();
-
-                if (message.isPinned()) {
-                    // Since it is pinned, we unpin it here and remove all :pushpin: emojis.
-                    message.unpin().complete();
-                    message.clearReactions(pushpin).complete();
-                } else {
-                    // It has not been pinned yet, we pin it and remove the users reaction while adding our own.
-                    message.pin().complete();
-                    message.addReaction(pushpin).complete();
-                    message.removeReaction(pushpin, member.getUser()).complete();
-                }
-                return;
-            }
 
             if (event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
                 return; // Ignore Native Emojis
