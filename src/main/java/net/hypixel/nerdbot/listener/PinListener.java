@@ -27,7 +27,7 @@ public class PinListener {
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (!channelConfig.isAutomaticallyPinnedThread()) {
+        if (!channelConfig.isPinFirstMessageInThreads()) {
             return; // Ignore if feature is globally turned off.
         }
 

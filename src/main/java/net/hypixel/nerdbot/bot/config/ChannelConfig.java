@@ -72,5 +72,5 @@ public class ChannelConfig {
     /**
      * Whether automatic pinning of first messages in threads should be enabled. This is disabled by default.
      */
-    private boolean automaticallyPinnedThread = false;
+    private boolean pinFirstMessageInThreads = false;
 }

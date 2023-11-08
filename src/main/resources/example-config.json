@@ -27,7 +27,7 @@
     "genChannelIds": [],
     "reactionChannels": [],
     "blacklistedChannels": [],
-    "automaticallyPinnedThread": false
+    "pinFirstMessageInThreads": false
   },
   "roleConfig": {
     "botManagerRoleId": "",
