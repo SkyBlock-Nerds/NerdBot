@@ -68,4 +68,9 @@ public class ChannelConfig {
      * The {@link TextChannel} IDs for the channels that the bot will ignore for activity tracking
      */
     private String[] blacklistedChannels = {};
+
+    /**
+     * Whether automatic pinning of first messages in threads should be enabled. This is disabled by default.
+     */
+    private boolean pinFirstMessageInThreads = false;
 }
