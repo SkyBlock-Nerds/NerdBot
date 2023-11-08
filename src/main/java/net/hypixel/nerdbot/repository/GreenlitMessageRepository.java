@@ -7,7 +7,7 @@ import net.hypixel.nerdbot.api.repository.Repository;
 public class GreenlitMessageRepository extends Repository<GreenlitMessage> {
 
     public GreenlitMessageRepository(MongoClient mongoClient, String databaseName) {
-        super(mongoClient, databaseName, "greenlit_messages");
+        super(mongoClient, databaseName, "greenlit_messages", "messageId");
     }
 
     @Override

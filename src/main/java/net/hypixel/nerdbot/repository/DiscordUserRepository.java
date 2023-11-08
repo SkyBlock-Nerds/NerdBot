@@ -9,7 +9,7 @@ import net.hypixel.nerdbot.api.repository.Repository;
 public class DiscordUserRepository extends Repository<DiscordUser> {
 
     public DiscordUserRepository(MongoClient mongoClient, String databaseName) {
-        super(mongoClient, databaseName, "users");
+        super(mongoClient, databaseName, "users", "discordId");
     }
 
     @Override

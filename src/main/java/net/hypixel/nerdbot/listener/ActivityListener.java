@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
@@ -37,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 public class ActivityListener {
 
-    private final Database database = NerdBotApp.getBot().getDatabase();
     private final BotConfig config = NerdBotApp.getBot().getConfig();
     private final ChannelConfig channelConfig = config.getChannelConfig();
     private final Map<Long, Long> voiceActivity = new HashMap<>();

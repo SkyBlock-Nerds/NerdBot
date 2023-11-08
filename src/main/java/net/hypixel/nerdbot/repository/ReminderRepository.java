@@ -7,7 +7,7 @@ import net.hypixel.nerdbot.api.repository.Repository;
 public class ReminderRepository extends Repository<Reminder> {
 
     public ReminderRepository(MongoClient mongoClient, String databaseName) {
-        super(mongoClient, databaseName, "reminders");
+        super(mongoClient, databaseName, "reminders", "uuid");
     }
 
     @Override

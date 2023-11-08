@@ -17,6 +17,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import org.bson.Document;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.List;
@@ -32,12 +33,13 @@ public abstract class Repository<T> {
     @Getter
     private final MongoCollection<Document> mongoCollection;
     private final Class<T> entityClass;
+    private final String identifierFieldName;
 
-    protected Repository(MongoClient mongoClient, String databaseName, String collectionName) {
-        this(mongoClient, databaseName, collectionName, 1, TimeUnit.DAYS);
+    protected Repository(MongoClient mongoClient, String databaseName, String collectionName, String identifierFieldName) {
+        this(mongoClient, databaseName, collectionName, identifierFieldName, 1, TimeUnit.DAYS);
     }
 
-    protected Repository(MongoClient mongoClient, String databaseName, String collectionName, long expireAfterAccess, TimeUnit timeUnit) {
+    protected Repository(MongoClient mongoClient, String databaseName, String collectionName, String identifierFieldName, long expireAfterAccess, TimeUnit timeUnit) {
         ParameterizedType parameterizedType = (ParameterizedType) getClass().getGenericSuperclass();
         this.entityClass = (Class<T>) parameterizedType.getActualTypeArguments()[0];
 
@@ -55,6 +57,8 @@ public abstract class Repository<T> {
                 }
             })
             .build();
+
+        this.identifierFieldName = identifierFieldName;
     }
 
     public void loadAllDocumentsIntoCache() {
@@ -71,7 +75,7 @@ public abstract class Repository<T> {
             return cachedObject;
         }
 
-        Document document = mongoCollection.find(new Document("_id", id)).first();
+        Document document = mongoCollection.find(new Document(identifierFieldName, id)).first();
         if (document != null) {
             T object = documentToEntity(document);
             cacheObject(id, object);
@@ -96,7 +100,7 @@ public abstract class Repository<T> {
         String id = getId(object);
         Document document = entityToDocument(object);
 
-        return mongoCollection.replaceOne(new Document("_id", id), document, new ReplaceOptions().upsert(true));
+        return mongoCollection.replaceOne(new Document(identifierFieldName, id), document, new ReplaceOptions().upsert(true));
     }
 
     @Nullable
@@ -120,10 +124,19 @@ public abstract class Repository<T> {
     public DeleteResult deleteFromDatabase(String id) {
         cache.invalidate(id);
         debug("Deleting document with ID " + id + " from database");
-        return mongoCollection.deleteOne(new Document("_id", id));
+        return mongoCollection.deleteOne(new Document(identifierFieldName, id));
     }
 
-    protected abstract String getId(T entity);
+    protected String getId(T entity) {
+        try {
+            Field field = entity.getClass().getDeclaredField(identifierFieldName);
+            Object value = field.get(entity);
+
+            return value != null ? value.toString() : null;
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("Error accessing identifier field: " + identifierFieldName, e);
+        }
+    }
 
     public Document entityToDocument(Object entity) {
         return Document.parse(NerdBotApp.GSON.toJson(entity));
