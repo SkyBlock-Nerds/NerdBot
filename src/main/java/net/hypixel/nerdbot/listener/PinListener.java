@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.listener;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageType;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -26,17 +27,25 @@ public class PinListener {
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (!channelConfig.isPinFirstMessageInThreads()) {
-            return; // Ignore if feature is globally turned off.
-        }
-
         if (!event.isFromGuild()) {
             return; // Ignore Non Guild
         }
 
         Member member = event.getMember();
-        if (member == null || member.getUser().isBot()) {
+        if (member == null) {
             return; // Ignore Empty Member
+        }
+
+        if (member.getUser().isBot()){
+            // This deletes automated pinned messages sent by the bot.
+            if (event.getMessage().getType() == MessageType.CHANNEL_PINNED_ADD) {
+                event.getMessage().delete().complete();
+            }
+            return; // Ignore any other bot messages
+        }
+
+        if (!channelConfig.isPinFirstMessageInThreads()) {
+            return; // Ignore if feature is globally turned off.
         }
 
         if (event.getChannelType() != ChannelType.GUILD_PUBLIC_THREAD) {
