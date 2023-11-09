@@ -34,6 +34,7 @@ public abstract class Repository<T> {
     private final MongoCollection<Document> mongoCollection;
     private final Class<T> entityClass;
     private final String identifierFieldName;
+    private Field field;
 
     protected Repository(MongoClient mongoClient, String databaseName, String collectionName, String identifierFieldName) {
         this(mongoClient, databaseName, collectionName, identifierFieldName, 1, TimeUnit.DAYS);
@@ -129,9 +130,11 @@ public abstract class Repository<T> {
 
     protected String getId(T entity) {
         try {
-            Field field = entity.getClass().getDeclaredField(identifierFieldName);
-            Object value = field.get(entity);
+            if (field == null) {
+                field = entity.getClass().getDeclaredField(identifierFieldName);
+            }
 
+            Object value = field.get(entity);
             return value != null ? value.toString() : null;
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException("Error accessing identifier field: " + identifierFieldName, e);
