@@ -48,7 +48,9 @@ public class MinecraftItemGenerator implements Generator {
         private boolean enchanted;
 
         public MinecraftItemGenerator.Builder withItem(String itemId) {
-            this.itemId = itemId;
+            this.itemId = itemId
+                .replace("minecraft:", "")
+                .replace("skull", "player_head");
             return this;
         }
 
