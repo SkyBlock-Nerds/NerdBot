@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.generator.impl;
 
+import com.google.gson.JsonObject;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.ClassBuilder;
@@ -95,6 +96,26 @@ public class MinecraftTooltipGenerator implements Generator {
 
         public MinecraftTooltipGenerator.Builder isCentered(boolean centered) {
             this.centered = centered;
+            return this;
+        }
+
+        public MinecraftTooltipGenerator.Builder parseNbtJson(JsonObject nbtJson) {
+            this.emptyLine = true;
+            this.alpha = 255;
+            this.padding = 0;
+            this.maxLineLength = 30;
+            this.normalItem = true;
+            this.centered = false;
+            this.rarity = Rarity.NONE;
+
+            JsonObject tagObject = nbtJson.get("tag").getAsJsonObject();
+            JsonObject displayObject = tagObject.get("display").getAsJsonObject();
+            this.name = displayObject.getAsJsonObject().get("Name").getAsString();
+
+            displayObject.getAsJsonObject().get("Lore").getAsJsonArray().forEach(jsonElement -> {
+                this.itemLore += jsonElement.getAsString() + "\\n";
+            });
+
             return this;
         }
 

@@ -52,6 +52,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
         } catch (MalformedURLException e) {
             throw new GeneratorException("Malformed URL: " + textureId);
         } catch (IOException e) {
+            e.printStackTrace();
             throw new GeneratorException("Could not find skin with ID: " + textureId);
         }
 
@@ -96,7 +97,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
      *
      * @return the skin id
      */
-    private String base64ToSkinURL(String base64SkinData) {
+    private static String base64ToSkinURL(String base64SkinData) {
         JsonObject skinData = NerdBotApp.GSON.fromJson(new String(Base64.getDecoder().decode(base64SkinData)), JsonObject.class);
         return skinData.get("textures").getAsJsonObject().get("SKIN").getAsJsonObject().get("url").getAsString().replace("http://textures.minecraft.net/texture/", "");
     }
@@ -106,6 +107,11 @@ public class MinecraftPlayerHeadGenerator implements Generator {
 
         public Builder withSkin(String texture) {
             this.texture = texture;
+            return this;
+        }
+
+        public Builder parseBase64String(String base64) {
+            this.texture = base64ToSkinURL(base64);
             return this;
         }
 
