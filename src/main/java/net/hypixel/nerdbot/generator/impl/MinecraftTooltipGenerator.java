@@ -100,11 +100,9 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         public MinecraftTooltipGenerator.Builder parseNbtJson(JsonObject nbtJson) {
-            this.emptyLine = true;
-            this.alpha = 255;
-            this.padding = 0;
-            this.maxLineLength = 30;
-            this.normalItem = true;
+            this.emptyLine = false;
+            this.maxLineLength = Integer.MAX_VALUE;
+            this.normalItem = false;
             this.centered = false;
             this.rarity = Rarity.NONE;
 
@@ -190,13 +188,20 @@ public class MinecraftTooltipGenerator implements Generator {
 
         // alpha value validation
         alpha = Objects.requireNonNullElse(alpha, 255); // checks if the image transparency was set
-        alpha = Math.min(255, Math.max(alpha, 0)); // ensure range between 0-254
+        alpha = Math.min(255, Math.max(0, alpha));
 
         // padding value validation
-        padding = Objects.requireNonNullElse(padding, 0);
         padding = Math.max(0, padding);
 
-        return new MinecraftTooltip(colorParser.getParsedDescription(), MCColor.GRAY, colorParser.getEstimatedImageWidth() * 30, alpha, padding, isNormalItem, isCentered)
+        return new MinecraftTooltip(
+            colorParser.getParsedDescription(),
+            MCColor.GRAY,
+            colorParser.getEstimatedImageWidth() * 30,
+            alpha,
+            padding,
+            isNormalItem,
+            isCentered
+        )
             .render()
             .getImage();
     }
