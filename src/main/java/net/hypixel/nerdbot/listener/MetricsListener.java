@@ -31,8 +31,8 @@ public class MetricsListener {
             PrometheusMetrics.TOTAL_MESSAGES_AMOUNT.labels(event.getAuthor().getName(), RoleManager.getHighestRole(event.getMember()).getName(), event.getChannel().getName()).inc();
         }
 
-        if (event.getChannel() instanceof ThreadChannel) {
-            String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
+        if (event.getChannel() instanceof ThreadChannel threadChannel) {
+            String forumChannelId = threadChannel.getParentChannel().getId();
             if (Util.safeArrayStream(NerdBotApp.getBot().getConfig().getChannelConfig().getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 PrometheusMetrics.TOTAL_SUGGESTIONS_AMOUNT.inc();
             }
