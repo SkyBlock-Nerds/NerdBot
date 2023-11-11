@@ -23,6 +23,7 @@ public class SuggestionCache extends TimerTask {
 
     private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
     private final Map<String, Suggestion> cache = new HashMap<>();
+
     @Getter
     private long lastUpdated;
     @Getter
@@ -145,7 +146,7 @@ public class SuggestionCache extends TimerTask {
             this.thread = thread;
             this.parentId = thread.getParentChannel().asForumChannel().getId();
             this.threadName = thread.getName();
-            this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> GREENLIT_TAGS.contains(forumTag.getName().toLowerCase()));
+            this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> ForumChannelCurator.GREENLIT_TAGS.contains(forumTag.getName()));
             this.expired = false;
             this.alpha = thread.getName().toLowerCase().contains("alpha") || Util.safeArrayStream(NerdBotApp.getBot().getConfig().getChannelConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
 

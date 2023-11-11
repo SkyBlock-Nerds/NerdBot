@@ -2,7 +2,6 @@ package net.hypixel.nerdbot.listener;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -55,10 +54,7 @@ public class ActivityListener {
     @SubscribeEvent
     public void onThreadCreateEvent(@NotNull ChannelCreateEvent event) {
         if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD) {
-            MessageHistory messageHistory = event.getChannel().asThreadChannel().getHistoryFromBeginning(1).complete();
-            Message message = messageHistory.getRetrievedHistory().get(0);
-
-            Member member = message.getMember();
+            Member member = event.getChannel().asThreadChannel().getOwner();
             if (member == null || member.getUser().isBot()) {
                 return; // Ignore Empty Member
             }

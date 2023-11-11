@@ -59,7 +59,7 @@ public class GreenlitMessage {
         return getTags().contains("Greenlit");
     }
 
-    public boolean isDocced() {
-        return getTags().contains("Docced");
+    public boolean isReviewed() {
+        return getTags().contains("Reviewed");
     }
 }
