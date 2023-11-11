@@ -195,13 +195,12 @@ public class ActivityListener {
             return; // Ignore Empty User
         }
 
-        if (event.getGuildChannel() instanceof ThreadChannel) {
+        if (event.getGuildChannel() instanceof ThreadChannel threadChannel) {
             BotConfig config = NerdBotApp.getBot().getConfig();
             EmojiConfig emojiConfig = config.getEmojiConfig();
 
             if (emojiConfig.isEquals(event.getReaction(), EmojiConfig::getAgreeEmojiId) || emojiConfig.isEquals(event.getReaction(), EmojiConfig::getDisagreeEmojiId)
                 || emojiConfig.isEquals(event.getReaction(), EmojiConfig::getNeutralEmojiId)) {
-                ThreadChannel threadChannel = event.getGuildChannel().asThreadChannel();
                 MessageHistory history = threadChannel.getHistoryFromBeginning(1).complete();
                 boolean deleted = history.isEmpty() || history.getRetrievedHistory().get(0).getIdLong() != threadChannel.getIdLong();
 
