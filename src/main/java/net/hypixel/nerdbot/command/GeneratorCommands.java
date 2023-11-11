@@ -7,6 +7,10 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.generator.ItemBuilder;
@@ -15,6 +19,7 @@ import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftRecipeGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftTooltipGenerator;
+import net.hypixel.nerdbot.generator.util.GeneratorMessages;
 import net.hypixel.nerdbot.generator.util.Item;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
@@ -87,6 +92,70 @@ public class GeneratorCommands extends ApplicationCommand {
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating that recipe!").queue();
             exception.printStackTrace();
+        }
+    }
+
+    @JDASlashCommand(name = "generate", group = "parse", subcommand = "nbt", description = "Parse an NBT string")
+    public void parseNbtString(GuildSlashEvent event, @AppOption String nbt, @AppOption @Optional Integer alpha, @AppOption @Optional Integer padding) {
+        event.deferReply().complete();
+
+        alpha = alpha == null ? 245 : alpha;
+        padding = padding == null ? 0 : padding;
+
+        try {
+            JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
+            JsonObject tagObject = jsonObject.get("tag").getAsJsonObject();
+            ItemBuilder itemBuilder = new ItemBuilder();
+
+            if (jsonObject.get("id").getAsString().contains("skull")) {
+                String value = jsonObject.get("id").getAsString();
+                value = value.replace("minecraft:", "")
+                    .replace("skull", "player_head");
+                jsonObject.addProperty("id", value);
+            }
+
+            if (jsonObject.get("id").getAsString().equalsIgnoreCase("player_head")
+                && tagObject.get("SkullOwner") != null) {
+                JsonArray textures = tagObject.get("SkullOwner").getAsJsonObject()
+                    .get("Properties").getAsJsonObject()
+                    .get("textures").getAsJsonArray();
+
+                if (textures.size() > 1) {
+                    event.getHook().editOriginal(GeneratorMessages.MULTIPLE_ITEM_SKULL_DATA).queue();
+                    return;
+                }
+
+                String base64 = textures.get(0).getAsJsonObject().get("Value").getAsString();
+
+                itemBuilder.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
+                    .parseBase64String(base64)
+                    .build()
+                );
+            } else {
+                itemBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                    .withItem(jsonObject.get("id").getAsString())
+                    .build()
+                );
+            }
+
+            Item item = itemBuilder
+                .addGenerator(
+                    new MinecraftTooltipGenerator.Builder()
+                        .parseNbtJson(jsonObject)
+                        .withAlpha(alpha)
+                        .withPadding(padding)
+                        .build()
+                ).build();
+
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "recipe.png")).queue();
+        } catch (JsonParseException exception) {
+            event.getHook().editOriginal(GeneratorMessages.MISSING_ITEM_NBT).queue();
+            return;
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+        } catch (IOException e) {
+            event.getHook().editOriginal("An error occurred while parsing the NBT!").queue();
+            throw new RuntimeException(e);
         }
     }
 
