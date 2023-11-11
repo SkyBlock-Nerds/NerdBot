@@ -235,10 +235,11 @@ public class ActivityListener {
                         && reactionHistory.reactionName().equals(event.getReaction().getEmoji().asCustom().getName())
                 );
 
+                ReactionHistory reactionHistory = new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName(), startMessage.getTimeCreated().toEpochSecond());
+
                 // New Suggestion Voting
                 if (Util.safeArrayStream(channelConfig.getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setSuggestionVoteDate(time);
-                    ReactionHistory reactionHistory = new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName(), startMessage.getTimeCreated().toEpochSecond());
                     discordUser.getLastActivity().getSuggestionReactionHistory().add(reactionHistory);
                     log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
@@ -246,7 +247,6 @@ public class ActivityListener {
                 // New Alpha Suggestion Voting
                 if (Util.safeArrayStream(channelConfig.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setAlphaSuggestionVoteDate(time);
-                    ReactionHistory reactionHistory = new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName(), startMessage.getTimeCreated().toEpochSecond());
                     discordUser.getLastActivity().getSuggestionReactionHistory().add(reactionHistory);
                     log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }

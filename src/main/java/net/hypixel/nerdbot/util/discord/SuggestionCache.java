@@ -100,7 +100,7 @@ public class SuggestionCache extends TimerTask {
 
     public void addSuggestion(ThreadChannel thread) {
         this.cache.put(thread.getId(), new Suggestion(thread));
-        // log.info("Added new suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
+        log.debug("Added new suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
     }
 
     public Suggestion getSuggestion(String id) {
@@ -119,7 +119,7 @@ public class SuggestionCache extends TimerTask {
 
     public void removeSuggestion(ThreadChannel thread) {
         this.cache.remove(thread.getId());
-        // log.info("Removed suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") from the suggestion cache.");
+        log.debug("Removed suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") from the suggestion cache.");
     }
 
     public static class Suggestion {

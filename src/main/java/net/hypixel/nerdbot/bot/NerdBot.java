@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.bot;
 
 import com.freya02.botcommands.api.CommandsBuilder;
+import com.freya02.botcommands.api.components.DefaultComponentManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.client.result.InsertManyResult;
@@ -35,6 +36,7 @@ import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
 import net.hypixel.nerdbot.util.watcher.URLWatcher;
 import net.hypixel.nerdbot.util.watcher.handlers.FireSaleDataHandler;
@@ -45,6 +47,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -61,7 +64,7 @@ public class NerdBot implements Bot {
         new ProfileUpdateFeature()
     );
 
-    private final Database database = new Database(System.getProperty("mongodb.uri"), "skyblock_nerds");
+    private final Database database = new Database(System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/"), "skyblock_nerds");
     private JDA jda;
     private BotConfig config;
     private long startTime;
@@ -151,28 +154,33 @@ public class NerdBot implements Bot {
             System.exit(-1);
         }
 
+        CommandsBuilder commandsBuilder = CommandsBuilder
+            .newBuilder()
+            .addOwners(config.getOwnerIds())
+            .extensionsBuilder(extensionsBuilder -> extensionsBuilder
+                .registerParameterResolver(new ForumChannelResolver())
+                .registerAutocompletionTransformer(ForumChannel.class, forumChannel -> new Command.Choice(forumChannel.getName(), forumChannel.getId()))
+                .registerAutocompletionTransformer(ForumTag.class, forumTag -> new Command.Choice(forumTag.getName(), forumTag.getId()))
+            );
+
         try {
-            CommandsBuilder commandsBuilder = CommandsBuilder
-                .newBuilder()
-                .addOwners(config.getOwnerIds())
-                .extensionsBuilder(extensionsBuilder -> extensionsBuilder
-                    .registerParameterResolver(new ForumChannelResolver())
-                    .registerAutocompletionTransformer(ForumChannel.class, forumChannel -> new Command.Choice(forumChannel.getName(), forumChannel.getId()))
-                    .registerAutocompletionTransformer(ForumTag.class, forumTag -> new Command.Choice(forumTag.getName(), forumTag.getId()))
-                );
-            commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
-        } catch (IOException exception) {
-            log.error("Couldn't create the command builder! Reason: " + exception.getMessage());
-            System.exit(-1);
+            commandsBuilder.setComponentManager(new DefaultComponentManager(new ComponentDatabaseConnection()::getConnection));
+        } catch (SQLException exception) {
+            log.error("Failed to connect to the SQL database! Components will not work correctly!");
         }
 
-        if (NerdBotApp.getBot().isReadOnly()) {
-            log.info("Bot is loaded in read-only mode!");
+        try {
+            commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
+        } catch (IOException exception) {
+            log.error("Failed to build the command builder!");
         }
 
         NerdBotApp.getBot().onStart();
-
         log.info("Bot is ready!");
+
+        if (NerdBotApp.getBot().isReadOnly()) {
+            log.info("\n!!! BOT IS LOADED IN READ-ONLY MODE !!!\n");
+        }
     }
 
     private void loadRemindersFromDatabase() {
