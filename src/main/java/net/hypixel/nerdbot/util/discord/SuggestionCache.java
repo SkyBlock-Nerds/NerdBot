@@ -8,7 +8,10 @@ import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.util.Util;
 
@@ -19,7 +22,9 @@ import java.util.stream.Stream;
 @Log4j2
 public class SuggestionCache extends TimerTask {
 
-    private Map<String, Suggestion> cache = new HashMap<>();
+    private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
+    private final Map<String, Suggestion> cache = new HashMap<>();
+
     @Getter
     private long lastUpdated;
     @Getter
@@ -44,9 +49,39 @@ public class SuggestionCache extends TimerTask {
                 ))
                 .distinct()
                 .forEach(thread -> {
-                    this.cache.put(thread.getId(), new Suggestion(thread));
-                    // User user = NerdBotApp.getBot().getJDA().getUserById(thread.getOwnerIdLong());
-                    // log.info("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") (User: " + (user != null ? user.getEffectiveName() + "/" : "") + thread.getOwnerId() + ") to the suggestion cache.");
+                    Suggestion suggestion = new Suggestion(thread);
+                    this.cache.put(thread.getId(), suggestion);
+                    log.debug("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
+
+                    if (suggestion.isDeleted()) {
+                        return;
+                    }
+
+                    EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+                    Message startMessage = suggestion.getThread().retrieveStartMessage().complete();
+
+                    if (startMessage.getReactions().isEmpty()) {
+                        log.debug("Suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") has no reactions.");
+                        return;
+                    }
+
+                    startMessage.getReactions().stream()
+                        .filter(messageReaction -> messageReaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+                        .filter(messageReaction -> messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId())
+                            || messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
+                        .forEach(messageReaction -> {
+                            messageReaction.retrieveUsers().complete().forEach(user -> {
+                                DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), user.getId());
+                                List<ReactionHistory> reactionHistory = discordUser.getLastActivity().getSuggestionReactionHistory();
+
+                                if (reactionHistory.stream().anyMatch(history -> history.channelId().equals(suggestion.getParentId()) && history.reactionName().equals(messageReaction.getEmoji().getName()))) {
+                                    return;
+                                }
+
+                                discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(thread.getId(), messageReaction.getEmoji().getName(), thread.getTimeCreated().toEpochSecond(), -1));
+                                log.debug("Added reaction history for user '" + user.getId() + "' on suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+                            });
+                        });
                 });
 
             log.info("Removing expired suggestions.");

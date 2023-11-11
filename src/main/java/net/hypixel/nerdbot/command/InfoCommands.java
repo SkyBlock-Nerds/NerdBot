@@ -6,16 +6,19 @@ import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
+import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
+import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
@@ -28,6 +31,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
@@ -176,6 +180,62 @@ public class InfoCommands extends ApplicationCommand {
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
     }
 
+    @JDASlashCommand(name = "reactions", description = "View a list of recent reactions on suggestions")
+    public void showRecentReactions(GuildSlashEvent event, @Optional @AppOption Member member, @Optional @AppOption int page) {
+        if (member == null || !event.getMember().hasPermission(Permission.BAN_MEMBERS)) {
+            member = event.getMember();
+        }
+
+        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), member.getId());
+
+        if (discordUser == null) {
+            event.reply("Couldn't find that user!").setEphemeral(true).queue();
+            return;
+        }
+
+        List<ReactionHistory> reactionHistory = discordUser.getLastActivity().getSuggestionReactionHistory();
+        reactionHistory.sort(Comparator.comparingLong(ReactionHistory::suggestionTimestamp).reversed());
+
+        if (reactionHistory.isEmpty()) {
+            event.reply("Cannot find any history of your suggestion votes!").setEphemeral(true).queue();
+            return;
+        }
+
+        Map<String, List<ReactionHistory>> reactionHistoryMap = reactionHistory.stream().collect(Collectors.groupingBy(ReactionHistory::channelId));
+        // Show most recent reaction first for each suggestion
+        reactionHistoryMap.forEach((s, reactionHistories) -> reactionHistories.sort(Comparator.comparingLong(ReactionHistory::reactionTimestamp).reversed()));
+
+        page = Math.max(1, page);
+        StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
+        List<RichCustomEmoji> emojis = Util.getMainGuild().retrieveEmojis().complete();
+
+        getPage(reactionHistoryMap, page, 10).forEach(stringListEntry -> {
+            stringBuilder.append("<#").append(stringListEntry.getKey()).append(">\n");
+            stringListEntry.getValue().forEach(history -> {
+                String emoji = emojis.stream()
+                    .filter(e -> e.getName().equals(history.reactionName()))
+                    .findFirst()
+                    .map(RichCustomEmoji::getAsMention)
+                    .orElse(":question:");
+
+                stringBuilder.append(emoji);
+
+                if (history.reactionTimestamp() != -1) {
+                    DiscordTimestamp discordTimestamp = new DiscordTimestamp(history.reactionTimestamp());
+                    stringBuilder.append(" ").append(discordTimestamp.toShortDateTime()).append(" (").append(discordTimestamp.toRelativeTimestamp()).append(")");
+                } else {
+                    stringBuilder.append(" (Unknown date/time)");
+                }
+
+                stringBuilder.append("\n");
+            });
+
+            stringBuilder.append("\n");
+        });
+
+        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
+    }
+
     /**
      * returns a view (not a new list) of the sourceList for the
      * range based on page and pageSize
@@ -203,5 +263,41 @@ public class InfoCommands extends ApplicationCommand {
         }
 
         return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
+    }
+
+    /**
+     * Returns a view (not a new list) of the source Map for the range based on page and pageSize.
+     *
+     * @param sourceMap the source map
+     * @param page      page number should start from 1
+     * @param pageSize  page size
+     * @param <K>       the type of keys in the map
+     * @param <V>       the type of values in the map
+     * @return a list view of map entries for the specified page
+     * @throws IllegalArgumentException if the sourceMap is null, page is invalid, or pageSize is non-positive
+     */
+    public static <K, V> List<Map.Entry<K, V>> getPage(Map<K, V> sourceMap, int page, int pageSize) {
+        if (sourceMap == null) {
+            throw new IllegalArgumentException("Invalid source map");
+        }
+
+        if (page < 1) {
+            throw new IllegalArgumentException("Invalid page number: " + page);
+        }
+
+        if (pageSize <= 0) {
+            throw new IllegalArgumentException("Invalid page size: " + pageSize);
+        }
+
+        int fromIndex = (page - 1) * pageSize;
+        int toIndex = fromIndex + pageSize;
+        List<Map.Entry<K, V>> entries = new ArrayList<>(sourceMap.entrySet());
+
+        if (fromIndex >= entries.size()) {
+            return new ArrayList<>();
+        }
+
+        toIndex = Math.min(toIndex, entries.size());
+        return entries.subList(fromIndex, toIndex);
     }
 }
