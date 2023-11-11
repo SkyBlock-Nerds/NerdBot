@@ -12,6 +12,11 @@ public class UUIDTypeAdapter extends TypeAdapter<UUID> {
 
     @Override
     public void write(JsonWriter jsonWriter, UUID uuid) throws IOException {
+        if (uuid == null) {
+            jsonWriter.nullValue();
+            return;
+        }
+
         jsonWriter.value(uuid.toString());
     }
 

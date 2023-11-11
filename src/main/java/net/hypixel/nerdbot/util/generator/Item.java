@@ -72,7 +72,7 @@ public class Item {
             }
         }
 
-        //applies the enchantment glint if "enchant" is present
+        // applies the enchantment glint if "enchant" is present
         if (Arrays.stream(availableModifiers).anyMatch(element -> element.toLowerCase().contains("enchant"))) {
             (image.getWidth() == 16 ? smallEnchantGlint : largeEnchantGlint).applyOverlay(image, "#7c20ff");
         }

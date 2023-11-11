@@ -6,7 +6,10 @@ import lombok.Setter;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +31,7 @@ public class MinecraftImage {
     // Current Settings
     @Getter
     private final List<List<ColoredString>> lines;
-    @Getter (AccessLevel.PRIVATE)
+    @Getter(AccessLevel.PRIVATE)
     private final ArrayList<Integer> lineWidths = new ArrayList<>();
     @Getter
     private final int alpha;
@@ -38,7 +41,8 @@ public class MinecraftImage {
     private final boolean isNormalItem;
     @Getter
     private final boolean isCentered;
-    @Getter(AccessLevel.PRIVATE) @Setter(AccessLevel.PRIVATE)
+    @Getter(AccessLevel.PRIVATE)
+    @Setter(AccessLevel.PRIVATE)
     private Graphics2D graphics;
     @Getter
     private BufferedImage image;
@@ -99,8 +103,7 @@ public class MinecraftImage {
                 width - PIXEL_SIZE * 4,
                 height - PIXEL_SIZE * 4
             );
-        }
-        else {
+        } else {
             g2d.setColor(new Color(0, 0, 0, this.getAlpha()));
             g2d.fillRect(0, 0, width, height);
         }

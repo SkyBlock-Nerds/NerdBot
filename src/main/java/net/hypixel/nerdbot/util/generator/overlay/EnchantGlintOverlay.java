@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.util.generator.overlay;
 
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 
 public class EnchantGlintOverlay extends Overlay {

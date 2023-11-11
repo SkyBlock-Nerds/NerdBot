@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.channel.ChannelManager;
 
-import java.awt.*;
+import java.awt.Color;
 import java.time.OffsetDateTime;
 
 public class HelloGoodbyeFeature extends BotFeature {
@@ -17,16 +17,25 @@ public class HelloGoodbyeFeature extends BotFeature {
         .setColor(Color.GREEN)
         .setTimestamp(OffsetDateTime.now())
         .build();
+    public static final MessageEmbed GOODBYE = new EmbedBuilder()
+        .setTitle("Goodbye cruel world!")
+        .setDescription("It seems as though I'm needed elsewhere!")
+        .setImage("https://i.pinimg.com/564x/7c/5a/19/7c5a193b0f832bb13a2b1dd802a023ab.jpg")
+        .setColor(Color.GREEN)
+        .setTimestamp(OffsetDateTime.now())
+        .build();
 
     @Override
-    public void onStart() {
+    public void onFeatureStart() {
         if (ChannelManager.getLogChannel() != null) {
             ChannelManager.getLogChannel().sendMessageEmbeds(HELLO_THERE).queue();
         }
     }
 
     @Override
-    public void onEnd() {
-        // Goodbye message does not work because the bot is offline by the time this is called
+    public void onFeatureEnd() {
+        if (ChannelManager.getLogChannel() != null) {
+            ChannelManager.getLogChannel().sendMessageEmbeds(GOODBYE).queue();
+        }
     }
 }

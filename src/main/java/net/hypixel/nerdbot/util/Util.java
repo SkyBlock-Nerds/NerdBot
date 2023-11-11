@@ -1,19 +1,16 @@
 package net.hypixel.nerdbot.util;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.prometheus.client.Summary;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +33,6 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -138,45 +134,6 @@ public class Util {
         }
 
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
-    }
-
-    public static DiscordUser getOrAddUserToCache(Database database, String userId) {
-        if (!database.isConnected()) {
-            throw new RuntimeException("Could not cache user because there is not a database connected!");
-        }
-
-        DiscordUser discordUser = database.findDocument(database.getCollection("users", DiscordUser.class), "discordId", userId).first();
-
-        if (discordUser == null) {
-            discordUser = new DiscordUser(userId, new ArrayList<>(), new ArrayList<>(), new LastActivity(), new MojangProfile());
-        }
-
-        if (NerdBotApp.USER_CACHE.getIfPresent(userId) == null) {
-            NerdBotApp.USER_CACHE.put(userId, discordUser);
-        }
-
-        return NerdBotApp.USER_CACHE.getIfPresent(userId);
-    }
-
-    public static String listCachedUsers() {
-        if (NerdBotApp.USER_CACHE.asMap().isEmpty()) {
-            return "No users cached!";
-        }
-
-        return NerdBotApp.USER_CACHE.asMap().keySet().stream().map(id -> String.format("<@%s>", id)).collect(Collectors.joining(", "));
-    }
-
-    public static void saveCache(Database database) {
-        if (!database.isConnected()) {
-            throw new RuntimeException("Could not save cache because there is not a database connected!");
-        }
-
-        for (DiscordUser discordUser : NerdBotApp.USER_CACHE.asMap().values()) {
-            database.upsertDocument(database.getCollection("users", DiscordUser.class), "discordId", discordUser.getDiscordId(), discordUser);
-            log.info("Saved cached user " + discordUser.getDiscordId() + " to database");
-        }
-
-        NerdBotApp.USER_CACHE.invalidateAll();
     }
 
     public static JsonObject makeHttpRequest(String url) throws IOException, InterruptedException {
@@ -312,6 +269,7 @@ public class Util {
      * Converts a string representation (with or without dashes) of a UUID to the {@link UUID} class.
      *
      * @param input unique id to convert.
+     *
      * @return converted unique id.
      */
     public static UUID toUUID(String input) {
@@ -327,18 +285,15 @@ public class Util {
     }
 
     public static String getDisplayName(User user) {
-        DiscordUser discordUser = getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), user.getId());
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(user.getId());
 
         if (discordUser.isProfileAssigned()) {
             return discordUser.getMojangProfile().getUsername();
         } else {
             Guild guild = Util.getMainGuild();
-            if (guild == null) {
-                log.info("Guild is null, effective name: " + user.getEffectiveName());
-                return user.getEffectiveName();
-            }
-
             Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
+
             if (sbnMember == null || sbnMember.getNickname() == null) {
                 return user.getEffectiveName();
             }
@@ -369,7 +324,7 @@ public class Util {
         }
         return font;
     }
-  
+
     /**
      * Finds a matching value within a given set based on its name
      *
@@ -386,44 +341,5 @@ public class Util {
         }
 
         return null;
-    }
-
-    public static JsonObject isJsonObject(JsonObject obj, String element) {
-        // checking if the json object has the key
-        if (!obj.has(element)) {
-            return null;
-        }
-        // checking if the found element is actually a json object
-        JsonElement foundItem = obj.get(element);
-        if (!foundItem.isJsonObject()) {
-            return null;
-        }
-        return foundItem.getAsJsonObject();
-    }
-
-    public static String isJsonString(JsonObject obj, String element) {
-        // checking if the json object has the key
-        if (!obj.has(element)) {
-            return null;
-        }
-        // checking if the found element is a primitive type
-        JsonElement foundItem = obj.get(element);
-        if (!foundItem.isJsonPrimitive()) {
-            return null;
-        }
-        return foundItem.getAsJsonPrimitive().getAsString();
-    }
-
-    public static JsonArray isJsonArray(JsonObject obj, String element) {
-        // checking if the json object has the key
-        if (!obj.has(element)) {
-            return null;
-        }
-        // checking if the found element is an array
-        JsonElement foundItem = obj.get(element);
-        if (!foundItem.isJsonArray()) {
-            return null;
-        }
-        return foundItem.getAsJsonArray();
     }
 }

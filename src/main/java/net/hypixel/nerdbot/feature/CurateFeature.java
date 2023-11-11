@@ -10,6 +10,7 @@ import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.Arrays;
@@ -22,7 +23,7 @@ import java.util.stream.Stream;
 public class CurateFeature extends BotFeature {
 
     @Override
-    public void onStart() {
+    public void onFeatureStart() {
         ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
 
         if (channelConfig.getSuggestionForumIds() == null) {
@@ -60,7 +61,8 @@ public class CurateFeature extends BotFeature {
 
                         // Update Database
                         result.forEach(greenlitMessage -> {
-                            database.upsertDocument(database.getCollection("greenlit_messages", GreenlitMessage.class), "messageId", greenlitMessage.getMessageId(), greenlitMessage);
+                            GreenlitMessageRepository greenlitMessageRepository = database.getRepositoryManager().getRepository(GreenlitMessageRepository.class);
+                            greenlitMessageRepository.cacheObject(greenlitMessage);
                             PrometheusMetrics.GREENLIT_SUGGESTION_LENGTH.labels(greenlitMessage.getMessageId(), String.valueOf(greenlitMessage.getSuggestionContent().length())).inc();
                         });
                         log.info("Inserted " + result.size() + " new greenlit messages into the database!");
@@ -72,7 +74,7 @@ public class CurateFeature extends BotFeature {
     }
 
     @Override
-    public void onEnd() {
+    public void onFeatureEnd() {
         this.timer.cancel();
     }
 }

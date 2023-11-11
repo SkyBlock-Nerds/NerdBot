@@ -8,7 +8,6 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import com.google.gson.*;
-import com.mongodb.client.FindIterable;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -34,16 +33,22 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.*;
+import net.hypixel.nerdbot.util.Environment;
+import net.hypixel.nerdbot.util.JsonUtil;
+import net.hypixel.nerdbot.util.LoggingUtil;
+import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
+import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.logging.log4j.Level;
 
 import java.awt.Color;
@@ -54,6 +59,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -238,7 +244,7 @@ public class AdminCommands extends ApplicationCommand {
     )
     public void userList(GuildSlashEvent event, @Optional @AppOption(description = "Comma-separated role names to search for (default Member).") String roles) throws IOException {
         event.deferReply(true).complete();
-        Database database = NerdBotApp.getBot().getDatabase();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         String[] roleArray = roles != null ? roles.split(", ?") : new String[]{"Member"};
         JsonArray uuidArray = new JsonArray();
 
@@ -248,7 +254,7 @@ public class AdminCommands extends ApplicationCommand {
             .stream()
             .filter(member -> !member.getUser().isBot())
             .filter(member -> RoleManager.hasAnyRole(member, roleArray))
-            .map(member -> Util.getOrAddUserToCache(database, member.getId()))
+            .map(member -> discordUserRepository.findById(member.getId()))
             .filter(DiscordUser::isProfileAssigned)
             .map(DiscordUser::getMojangProfile)
             .toList();
@@ -317,14 +323,14 @@ public class AdminCommands extends ApplicationCommand {
     )
     public void userMissingProfile(GuildSlashEvent event) {
         event.deferReply(true).queue();
-        Database database = NerdBotApp.getBot().getDatabase();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
         String missing = event.getGuild()
             .loadMembers()
             .get()
             .stream()
             .filter(member -> !member.getUser().isBot())
-            .filter(member -> Util.getOrAddUserToCache(database, member.getId()).noProfileAssigned())
+            .filter(member -> discordUserRepository.findById(member.getId()).noProfileAssigned())
             .map(IMentionable::getAsMention)
             .collect(Collectors.joining(", "));
 
@@ -349,8 +355,8 @@ public class AdminCommands extends ApplicationCommand {
     )
     public void userInfo(GuildSlashEvent event, @AppOption(description = "The user to search") Member member) {
         event.deferReply(true).queue();
-        Database database = NerdBotApp.getBot().getDatabase();
-        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
         Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = MyCommands.getActivityEmbeds(member);
 
         String profile = discordUser.isProfileAssigned() ?
@@ -377,7 +383,7 @@ public class AdminCommands extends ApplicationCommand {
     )
     public void migrateUsernames(GuildSlashEvent event) {
         event.deferReply(true).complete();
-        Database database = NerdBotApp.getBot().getDatabase();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         List<MojangProfile> mojangProfiles = new ArrayList<>();
 
         event.getGuild()
@@ -385,7 +391,7 @@ public class AdminCommands extends ApplicationCommand {
             .get()
             .stream()
             .filter(member -> !member.getUser().isBot())
-            .filter(member -> Util.getOrAddUserToCache(database, member.getId()).noProfileAssigned())
+            .filter(member -> discordUserRepository.findById(member.getId()).noProfileAssigned())
             .filter(member -> Util.getScuffedMinecraftIGN(member).isPresent())
             .forEach(member -> {
                 String scuffedUsername = Util.getScuffedMinecraftIGN(member).orElseThrow();
@@ -393,7 +399,7 @@ public class AdminCommands extends ApplicationCommand {
                 try {
                     MojangProfile mojangProfile = Util.getMojangProfile(scuffedUsername);
                     mojangProfiles.add(mojangProfile);
-                    DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+                    DiscordUser discordUser = discordUserRepository.findById(member.getId());
                     discordUser.setMojangProfile(mojangProfile);
                     log.info("Migrated " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ") to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId() + ")");
                 } catch (HttpException ex) {
@@ -416,19 +422,23 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
-        FindIterable<DiscordUser> users = database.findAllDocuments(database.getCollection("users", DiscordUser.class));
+        DiscordUserRepository discordUserRepository = database.getRepositoryManager().getRepository(DiscordUserRepository.class);
 
-        if (users == null) {
+        if (discordUserRepository == null) {
             event.getHook().sendMessage("No users found.").queue();
             return;
         }
 
-        users.forEach(discordUser -> {
+        AtomicInteger updated = new AtomicInteger();
+
+        discordUserRepository.forEach(discordUser -> {
             if (discordUser.isProfileAssigned()) {
                 ProfileUpdateFeature.updateNickname(discordUser);
+                updated.getAndIncrement();
             }
         });
-        event.getHook().editOriginal("Updated nicknames for " + users.into(new ArrayList<>()).size() + " users.").queue();
+
+        event.getHook().editOriginal("Updated nicknames for " + updated.get() + " users.").queue();
     }
 
     @JDASlashCommand(name = "flared", description = "Add the Flared tag to a suggestion and lock it", defaultLocked = true)
@@ -463,6 +473,64 @@ public class AdminCommands extends ApplicationCommand {
             .queue();
 
         event.reply(event.getUser().getAsMention() + " applied the " + forumTag.getName() + " tag and locked this suggestion!").queue();
+    }
+
+    @JDASlashCommand(name = "cache", subcommand = "force-save", description = "Force save the specified cache to the database", defaultLocked = true)
+    public void forceSaveRepository(GuildSlashEvent event, @AppOption String repositoryName) {
+        event.deferReply(true).complete();
+
+        try {
+            Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
+            if (repository == null) {
+                event.getHook().editOriginal("Repository not found!").queue();
+                return;
+            }
+
+            repository.saveAllToDatabase();
+            event.getHook().editOriginal("Saved " + repository.getCache().estimatedSize() + " documents to the database!").queue();
+        } catch (RepositoryException exception) {
+            event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
+            exception.printStackTrace();
+        }
+    }
+
+    @JDASlashCommand(name = "cache", subcommand = "force-load", description = "Forcefully load documents from the database into the cache", defaultLocked = true)
+    public void forceLoadDocuments(GuildSlashEvent event, @AppOption String repositoryName) {
+        event.deferReply(true).complete();
+
+        try {
+            Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
+
+            if (repository == null) {
+                event.getHook().editOriginal("Repository not found!").queue();
+                return;
+            }
+
+            repository.loadAllDocumentsIntoCache();
+            event.getHook().editOriginal("Loaded " + repository.getCache().estimatedSize() + " documents into the cache!").queue();
+        } catch (RepositoryException exception) {
+            event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
+            exception.printStackTrace();
+        }
+    }
+
+    @JDASlashCommand(name = "cache", subcommand = "stats", description = "View cache statistics", defaultLocked = true)
+    public void cacheStats(GuildSlashEvent event, @AppOption String repositoryName) {
+        event.deferReply(true).complete();
+
+        try {
+            Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
+
+            if (repository == null) {
+                event.getHook().editOriginal("Repository not found!").queue();
+                return;
+            }
+
+            event.getHook().editOriginal(repository.getCache().stats().toString()).queue();
+        } catch (RepositoryException exception) {
+            event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
+            exception.printStackTrace();
+        }
     }
 
     @JDASlashCommand(name = "transfer-tag", description = "Transfer forum tag to another.", defaultLocked = true)
@@ -563,20 +631,6 @@ public class AdminCommands extends ApplicationCommand {
         }
 
         return List.of();
-    }
-
-    @JDASlashCommand(name = "cache", subcommand = "list", description = "List all cached users", defaultLocked = true)
-    public void listCachedUsers(GuildSlashEvent event) {
-        event.replyEmbeds(new EmbedBuilder().setDescription(Util.listCachedUsers()).build()).queue();
-    }
-
-    @JDASlashCommand(name = "cache", subcommand = "force-save", description = "Forcefully save cached users to the database", defaultLocked = true)
-    public void saveCachedUsers(GuildSlashEvent event) {
-        event.deferReply(true).complete();
-        Database database = NerdBotApp.getBot().getDatabase();
-
-        Util.saveCache(database);
-        event.getHook().editOriginal("Forcefully saved cached users to database!").queue();
     }
 
     @JDASlashCommand(name = "loglevel", description = "Set the log level", defaultLocked = true)

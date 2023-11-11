@@ -20,11 +20,11 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.SuggestionCache;
@@ -32,7 +32,7 @@ import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 
-import java.awt.*;
+import java.awt.Color;
 import java.time.Duration;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -177,8 +177,8 @@ public class MyCommands extends ApplicationCommand {
     )
     public void myInfo(GuildSlashEvent event) {
         event.deferReply(true).complete();
-        Database database = NerdBotApp.getBot().getDatabase();
-        DiscordUser discordUser = Util.getOrAddUserToCache(database, event.getMember().getId());
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         String profile = discordUser.isProfileAssigned() ?
             discordUser.getMojangProfile().getUsername() + " (" + discordUser.getMojangProfile().getUniqueId().toString() + ")" :
@@ -250,8 +250,8 @@ public class MyCommands extends ApplicationCommand {
     }
 
     public static void updateMojangProfile(Member member, MojangProfile mojangProfile) throws HttpException {
-        Database database = NerdBotApp.getBot().getDatabase();
-        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
         discordUser.setMojangProfile(mojangProfile);
 
         if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
@@ -293,8 +293,8 @@ public class MyCommands extends ApplicationCommand {
     }
 
     public static Pair<EmbedBuilder, EmbedBuilder> getActivityEmbeds(Member member) {
-        Database database = NerdBotApp.getBot().getDatabase();
-        DiscordUser discordUser = Util.getOrAddUserToCache(database, member.getId());
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
 
         LastActivity lastActivity = discordUser.getLastActivity();
         EmbedBuilder globalEmbedBuilder = new EmbedBuilder();

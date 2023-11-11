@@ -6,7 +6,8 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.GeneratorBuilder;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;

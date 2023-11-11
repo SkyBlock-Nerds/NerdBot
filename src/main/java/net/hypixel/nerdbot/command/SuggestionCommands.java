@@ -15,7 +15,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.util.discord.SuggestionCache;
 
-import java.awt.*;
+import java.awt.Color;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -182,7 +182,7 @@ public class SuggestionCommands extends ApplicationCommand {
         embedBuilder.setFooter("Page: " + pageNum + "/" + totalPages);
 
         if (!filters.isEmpty()) {
-            embedBuilder.addField("Filters", filters,  false);
+            embedBuilder.addField("Filters", filters, false);
         }
 
         return embedBuilder;

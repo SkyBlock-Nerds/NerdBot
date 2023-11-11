@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.bot;
 import com.freya02.botcommands.api.CommandsBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mongodb.client.MongoCollection;
+import com.mongodb.client.result.InsertManyResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -20,9 +20,9 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
+import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.CurateFeature;
@@ -31,6 +31,7 @@ import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -47,6 +48,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Log4j2
@@ -70,21 +72,21 @@ public class NerdBot implements Bot {
     @Override
     public void onStart() {
         for (BotFeature feature : FEATURES) {
-            feature.onStart();
+            feature.onFeatureStart();
             log.info("Started feature " + feature.getClass().getSimpleName());
         }
 
         loadRemindersFromDatabase();
         startUrlWatchers();
 
-        if (Util.getMainGuild() != null) {
-            Util.getMainGuild().loadMembers().onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size())).onError(Throwable::printStackTrace);
-        }
+        Util.getMainGuild().loadMembers()
+            .onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size()))
+            .onError(Throwable::printStackTrace);
 
         if (config.getMetricsConfig().isEnabled()) {
             PrometheusMetrics.setMetricsEnabled(true);
         }
-      
+
         startTime = System.currentTimeMillis();
         log.info("Bot started in environment " + Environment.getEnvironment());
     }
@@ -92,10 +94,30 @@ public class NerdBot implements Bot {
     @Override
     public void onEnd() {
         log.info("Shutting down Nerd Bot...");
-        for (BotFeature feature : FEATURES) {
-            feature.onEnd();
+
+        FEATURES.forEach(BotFeature::onFeatureEnd);
+
+        try {
+            Map<Class<?>, Object> repositories = database.getRepositoryManager().getRepositories();
+            log.info("Saving data from " + database.getRepositoryManager().getRepositories().size() + " repositories...");
+
+            repositories.forEach((aClass, o) -> {
+                Repository<?> repository = (Repository<?>) o;
+                InsertManyResult result = repository.saveAllToDatabase();
+
+                if (result != null && result.wasAcknowledged()) {
+                    log.info("Saved " + result.getInsertedIds().size() + " documents to database for repository " + repository.getClass().getSimpleName());
+                } else {
+                    log.info("Saved 0 documents to database for repository " + repository.getClass().getSimpleName());
+                }
+            });
+        } catch (Exception e) {
+            log.error("Error while saving data: " + e.getMessage(), e);
+        } finally {
+            database.getMongoClient().close();
         }
-        database.disconnect();
+
+        log.info("Bot shutdown complete!");
     }
 
     @Override
@@ -161,26 +183,28 @@ public class NerdBot implements Bot {
 
         log.info("Loading all reminders from database...");
 
-        MongoCollection<Reminder> collection = database.getCollection("reminders", Reminder.class);
-        if (collection == null) {
-            log.error("Failed to load reminders from database, collection is null!");
+        ReminderRepository reminderRepository = database.getRepositoryManager().getRepository(ReminderRepository.class);
+        if (reminderRepository == null) {
+            log.error("Failed to load reminders from database, repository is null!");
             return;
         }
 
-        collection.find().forEach(t -> {
+        reminderRepository.loadAllDocumentsIntoCache();
+
+        reminderRepository.forEach(reminder -> {
             Date now = new Date();
 
-            if (now.after(t.getTime())) {
-                t.sendReminder(true);
-                log.info("Sent reminder " + t + " because it was not sent yet!");
+            if (now.after(reminder.getTime())) {
+                reminder.sendReminder(true);
+                log.info("Sent reminder " + reminder + " because it was not sent yet!");
                 return;
             }
 
-            t.schedule();
-            log.info("Loaded reminder from database: " + t);
+            reminder.schedule();
+            log.info("Loaded reminder: " + reminder);
         });
 
-        log.info("Loaded " + collection.countDocuments() + " reminders from the database!");
+        log.info("Loaded " + reminderRepository.getCache().estimatedSize() + " reminders!");
     }
 
     private void startUrlWatchers() {

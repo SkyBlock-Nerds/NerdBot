@@ -19,7 +19,6 @@ import net.hypixel.nerdbot.bot.config.ChannelConfig;
 public class PinListener {
 
     private final BotConfig config = NerdBotApp.getBot().getConfig();
-
     private final ChannelConfig channelConfig = config.getChannelConfig();
 
     private final Emoji pushpin = Emoji.fromUnicode("\uD83D\uDCCC");

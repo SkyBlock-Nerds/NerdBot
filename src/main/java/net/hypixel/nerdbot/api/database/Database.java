@@ -2,11 +2,8 @@ package net.hypixel.nerdbot.api.database;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.MongoException;
+import com.mongodb.client.*;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.result.DeleteResult;
@@ -17,12 +14,15 @@ import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
 import lombok.extern.log4j.Log4j2;
+import net.hypixel.nerdbot.api.repository.RepositoryManager;
+import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.bson.Document;
 import org.bson.UuidRepresentation;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -32,20 +32,20 @@ public class Database implements ServerMonitorListener {
 
     private static final FindOneAndReplaceOptions REPLACE_OPTIONS = new FindOneAndReplaceOptions().upsert(true);
 
-    private final MongoClient mongoClient;
-    private final MongoDatabase mongoDatabase;
+    private MongoClient mongoClient = null;
     private final ConnectionString connectionString;
     private boolean connected;
+    private final RepositoryManager repositoryManager = new RepositoryManager();
 
     public Database(String uri, String databaseName) {
         if (uri == null || uri.isBlank() || databaseName == null || databaseName.isBlank()) {
-            log.warn("Couldn't connect to the Database due to an invalid URI or Database Name!");
+            log.warn("Database URI or database name is null or blank, so not initiating database connection!");
             mongoClient = null;
-            mongoDatabase = null;
             connectionString = null;
             connected = false;
             return;
         }
+
         connectionString = new ConnectionString(uri);
 
         CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build());
@@ -57,18 +57,28 @@ public class Database implements ServerMonitorListener {
             .applyToServerSettings(builder -> builder.addServerMonitorListener(this))
             .build();
 
-        mongoClient = MongoClients.create(clientSettings);
-        mongoDatabase = mongoClient.getDatabase(databaseName);
+        try {
+            mongoClient = MongoClients.create(clientSettings);
+            connected = true;
+        } catch (MongoException exception) {
+            log.error("Failed to create MongoDB client!", exception);
+            connected = false;
+        }
+
+        try {
+            repositoryManager.registerRepositoriesFromPackage("net.hypixel.nerdbot.repository", mongoClient, databaseName);
+        } catch (RepositoryException exception) {
+            exception.printStackTrace();
+        }
+    }
+
+    @Override
+    public void serverHeartbeatSucceeded(@NotNull ServerHeartbeatSucceededEvent event) {
         connected = true;
     }
 
     @Override
-    public void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event) {
-        connected = true;
-    }
-
-    @Override
-    public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
+    public void serverHeartbeatFailed(@NotNull ServerHeartbeatFailedEvent event) {
         connected = false;
     }
 
@@ -80,10 +90,6 @@ public class Database implements ServerMonitorListener {
         return connectionString;
     }
 
-    public MongoDatabase getMongoDatabase() {
-        return mongoDatabase;
-    }
-
     public boolean isConnected() {
         return connected;
     }
@@ -91,29 +97,6 @@ public class Database implements ServerMonitorListener {
     public void disconnect() {
         mongoClient.close();
         connected = false;
-    }
-
-    @Nullable
-    public <T> MongoCollection<T> getCollection(String collectionName, Class<T> clazz) {
-        if (mongoDatabase == null) {
-            return null;
-        }
-        return mongoDatabase.getCollection(collectionName, clazz);
-    }
-
-    @Nullable
-    public MongoCollection<Document> getCollection(String collectionName) {
-        if (mongoDatabase == null) {
-            return null;
-        }
-        return mongoDatabase.getCollection(collectionName);
-    }
-
-    public void createCollection(String collectionName) {
-        if (mongoDatabase == null) {
-            return;
-        }
-        mongoDatabase.createCollection(collectionName);
     }
 
     @Nullable
@@ -208,5 +191,9 @@ public class Database implements ServerMonitorListener {
             return null;
         }
         return collection.deleteMany(Filters.eq(key, value));
+    }
+
+    public RepositoryManager getRepositoryManager() {
+        return repositoryManager;
     }
 }

@@ -6,8 +6,8 @@ public abstract class BotFeature {
 
     protected final Timer timer = new Timer();
 
-    public abstract void onStart();
+    public abstract void onFeatureStart();
 
-    public abstract void onEnd();
+    public abstract void onFeatureEnd();
 
 }

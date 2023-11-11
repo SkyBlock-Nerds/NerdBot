@@ -5,7 +5,10 @@ import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -101,8 +104,8 @@ public class MinecraftInventory {
             BufferedImage itemToDraw = item.getImage();
             int offset = Math.abs(itemToDraw.getWidth() - itemToDraw.getHeight()) / 2;
             this.g2d.drawImage(itemToDraw, x + PIXELS_PER_PIXEL, y + PIXELS_PER_PIXEL,
-                    x + SLOT_DIMENSION - PIXELS_PER_PIXEL, y + SLOT_DIMENSION - PIXELS_PER_PIXEL,
-                    -offset, 0, itemToDraw.getWidth() + offset, itemToDraw.getHeight(), null);
+                x + SLOT_DIMENSION - PIXELS_PER_PIXEL, y + SLOT_DIMENSION - PIXELS_PER_PIXEL,
+                -offset, 0, itemToDraw.getWidth() + offset, itemToDraw.getHeight(), null);
 
             // checking if numbers should be written
             if (item.getAmount() == 1)
