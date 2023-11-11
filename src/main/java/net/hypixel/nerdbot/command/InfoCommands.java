@@ -199,9 +199,7 @@ public class InfoCommands extends ApplicationCommand {
 
         Map<String, List<ReactionHistory>> reactionHistoryMap = reactionHistory.stream().collect(Collectors.groupingBy(ReactionHistory::channelId));
         // Show most recent reaction first for each suggestion
-        reactionHistoryMap.forEach((s, reactionHistories) -> {
-            reactionHistories.sort(Comparator.comparingLong(ReactionHistory::reactionTimestamp).reversed());
-        });
+        reactionHistoryMap.forEach((s, reactionHistories) -> reactionHistories.sort(Comparator.comparingLong(ReactionHistory::reactionTimestamp).reversed()));
 
         page = Math.max(1, page);
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
@@ -217,7 +215,7 @@ public class InfoCommands extends ApplicationCommand {
                     .orElse(":question:");
 
                 String timestamp = history.reactionTimestamp() != -1 ? new DiscordTimestamp(history.reactionTimestamp()).toShortDateTime() : "(Unknown date/time)";
-                stringBuilder.append(timestamp).append(" ").append(emoji).append("\n");
+                stringBuilder.append(emoji).append(" ").append(timestamp).append("\n");
             });
 
             stringBuilder.append("\n");
