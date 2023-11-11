@@ -202,7 +202,8 @@ public class ActivityListener {
             BotConfig config = NerdBotApp.getBot().getConfig();
             EmojiConfig emojiConfig = config.getEmojiConfig();
 
-            if (emojiConfig.isEquals(event.getReaction(), EmojiConfig::getAgreeEmojiId) || emojiConfig.isEquals(event.getReaction(), EmojiConfig::getDisagreeEmojiId)) {
+            if (emojiConfig.isEquals(event.getReaction(), EmojiConfig::getAgreeEmojiId) || emojiConfig.isEquals(event.getReaction(), EmojiConfig::getDisagreeEmojiId)
+                || emojiConfig.isEquals(event.getReaction(), EmojiConfig::getNeutralEmojiId)) {
                 ThreadChannel threadChannel = event.getGuildChannel().asThreadChannel();
                 MessageHistory history = threadChannel.getHistoryFromBeginning(1).complete();
                 boolean deleted = history.isEmpty() || history.getRetrievedHistory().get(0).getIdLong() != threadChannel.getIdLong();
@@ -216,19 +217,24 @@ public class ActivityListener {
                 Message startMessage = threadChannel.retrieveStartMessage().complete();
                 long time = System.currentTimeMillis();
 
-                discordUser.getLastActivity().getSuggestionReactionHistory().removeIf(reactionHistory -> reactionHistory.channelId().equals(threadChannel.getId()) && reactionHistory.reactionName().equals(event.getReaction().getEmoji().asCustom().getName()));
+                discordUser.getLastActivity().getSuggestionReactionHistory().removeIf(reactionHistory ->
+                    reactionHistory.channelId().equals(threadChannel.getId())
+                        && reactionHistory.reactionName().equals(event.getReaction().getEmoji().asCustom().getName())
+                );
 
                 // New Suggestion Voting
                 if (Util.safeArrayStream(channelConfig.getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setSuggestionVoteDate(time);
-                    discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName(), startMessage.getTimeCreated().toEpochSecond()));
+                    ReactionHistory reactionHistory = new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName(), startMessage.getTimeCreated().toEpochSecond());
+                    discordUser.getLastActivity().getSuggestionReactionHistory().add(reactionHistory);
                     log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
 
                 // New Alpha Suggestion Voting
                 if (Util.safeArrayStream(channelConfig.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setAlphaSuggestionVoteDate(time);
-                    discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName(), startMessage.getTimeCreated().toEpochSecond()));
+                    ReactionHistory reactionHistory = new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName(), startMessage.getTimeCreated().toEpochSecond());
+                    discordUser.getLastActivity().getSuggestionReactionHistory().add(reactionHistory);
                     log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
             }
