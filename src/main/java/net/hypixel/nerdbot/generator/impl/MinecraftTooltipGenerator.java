@@ -177,6 +177,9 @@ public class MinecraftTooltipGenerator implements Generator {
             itemLore.append("\\n");
         }
 
+        // Replace all section symbols to & symbols
+        itemLore = new StringBuilder(itemLore.toString().replace("§", "&"));
+
         // creating a string parser to convert the string into color flagged text
         StringColorParser colorParser = new StringColorParser(maxLineLength);
         colorParser.parseString(itemLore);
