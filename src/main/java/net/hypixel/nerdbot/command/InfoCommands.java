@@ -16,9 +16,9 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
-import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.Time;
@@ -28,9 +28,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -186,7 +184,8 @@ public class InfoCommands extends ApplicationCommand {
             member = event.getMember();
         }
 
-        DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), member.getId());
+        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = repository.findById(member.getId());
 
         if (discordUser == null) {
             event.reply("Couldn't find that user!").setEphemeral(true).queue();

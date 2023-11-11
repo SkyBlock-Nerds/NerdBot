@@ -13,6 +13,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.Duration;
@@ -71,7 +72,14 @@ public class SuggestionCache extends TimerTask {
                             || messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
                         .forEach(messageReaction -> {
                             messageReaction.retrieveUsers().complete().forEach(user -> {
-                                DiscordUser discordUser = Util.getOrAddUserToCache(NerdBotApp.getBot().getDatabase(), user.getId());
+                                DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+                                DiscordUser discordUser = userRepository.findById(user.getId());
+
+                                if (discordUser == null || discordUser.getLastActivity().getSuggestionReactionHistory().stream().anyMatch(history -> history.channelId().equals(suggestion.getParentId())
+                                    && history.reactionName().equals(messageReaction.getEmoji().getName()))) {
+                                    return;
+                                }
+
                                 List<ReactionHistory> reactionHistory = discordUser.getLastActivity().getSuggestionReactionHistory();
 
                                 if (reactionHistory.stream().anyMatch(history -> history.channelId().equals(suggestion.getParentId()) && history.reactionName().equals(messageReaction.getEmoji().getName()))) {
