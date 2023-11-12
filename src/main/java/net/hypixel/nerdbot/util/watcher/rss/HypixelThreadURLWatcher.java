@@ -54,8 +54,4 @@ public class HypixelThreadURLWatcher extends URLWatcher {
 
         active = false;
     }
-
-    public interface DataHandler {
-        void handleData(String oldContent, String newContent, List<Tuple<String, Object, Object>> changedValues);
-    }
 }
