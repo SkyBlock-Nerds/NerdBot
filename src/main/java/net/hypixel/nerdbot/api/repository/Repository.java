@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +54,7 @@ public abstract class Repository<T> {
             .removalListener((String key, T value, RemovalCause cause) -> {
                 debug("Removing document with ID " + key + " from cache for reason " + cause.toString());
 
-                if (cause != RemovalCause.EXPLICIT) {
+                if (cause != RemovalCause.EXPLICIT || cause != RemovalCause.REPLACED) {
                     saveToDatabase(value);
                 }
             })
@@ -63,8 +64,16 @@ public abstract class Repository<T> {
     }
 
     public void loadAllDocumentsIntoCache() {
+        debug("Loading ALL documents from database into cache");
+
         for (Document document : mongoCollection.find()) {
             T object = documentToEntity(document);
+
+            if (cache.getIfPresent(getId(object)) != null) {
+                debug("Document with ID " + getId(object) + " already exists in cache");
+                continue;
+            }
+
             cacheObject(object);
         }
     }
@@ -80,6 +89,7 @@ public abstract class Repository<T> {
         if (document != null) {
             T object = documentToEntity(document);
             cacheObject(id, object);
+
             return object;
         }
 
@@ -155,7 +165,7 @@ public abstract class Repository<T> {
     }
 
     public List<T> getAll() {
-        return (List<T>) cache.asMap().values();
+        return new ArrayList<>(cache.asMap().values());
     }
 
     public Collection<T> filter(Predicate<T> filter) {
