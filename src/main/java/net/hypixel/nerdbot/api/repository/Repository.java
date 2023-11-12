@@ -114,9 +114,11 @@ public abstract class Repository<T> {
     public UpdateResult saveToDatabase(T object) {
         String id = getId(object);
         Document document = entityToDocument(object);
+        Bson updateOperation = new Document("$set", document);
 
-        return mongoCollection.updateOne(new Document(identifierFieldName, id), document, new UpdateOptions().upsert(true));
+        return mongoCollection.updateOne(new Document(identifierFieldName, id), updateOperation, new UpdateOptions().upsert(true));
     }
+
 
     @Nullable
     public BulkWriteResult saveAllToDatabase() {
