@@ -83,6 +83,8 @@ public class NerdBot implements Bot {
         loadRemindersFromDatabase();
         startUrlWatchers();
 
+        database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).loadAllDocumentsIntoCache();
+
         Util.getMainGuild().loadMembers()
             .onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size()))
             .onError(Throwable::printStackTrace);

@@ -4,9 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.hypixel.nerdbot.util.Util;
 import org.bson.types.ObjectId;
 
+import java.awt.Color;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,5 +64,31 @@ public class GreenlitMessage {
 
     public boolean isReviewed() {
         return getTags().contains("Reviewed");
+    }
+
+    public EmbedBuilder createEmbed() {
+        Color color;
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+            .setTitle(suggestionTitle)
+            .setDescription(suggestionContent)
+            .setFooter("Suggestion ID: " + messageId)
+            .setTimestamp(Instant.ofEpochMilli(suggestionTimestamp))
+            .addField("Agrees", String.valueOf(agrees), true)
+            .addField("Disagrees", String.valueOf(disagrees), true)
+            .addField("Neutrals", String.valueOf(neutrals), true)
+            .addField("Tags", String.join(", ", tags), false)
+            .addField("Suggestion URL", suggestionUrl, true);
+
+        if (isReviewed()) {
+            color = new Color(51, 153, 255);
+        } else if (isAlpha()) {
+            color = new Color(255, 255, 153);
+        } else {
+            color = new Color(255, 255, 102);
+        }
+
+        embedBuilder.setColor(color);
+
+        return embedBuilder;
     }
 }
