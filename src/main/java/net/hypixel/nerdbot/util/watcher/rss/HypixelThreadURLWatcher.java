@@ -1,16 +1,14 @@
 package net.hypixel.nerdbot.util.watcher.rss;
 
 import lombok.extern.log4j.Log4j2;
-import net.hypixel.nerdbot.util.Tuple;
 import net.hypixel.nerdbot.util.watcher.URLWatcher;
 
-import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-import static net.hypixel.nerdbot.util.watcher.rss.SkyblockUpdateDataHandler.handleThread;
-import static net.hypixel.nerdbot.util.watcher.rss.xmlparsers.SkyblockThreadParser.getLastPostedSkyblockThread;
+import static net.hypixel.nerdbot.util.watcher.rss.SkyBlockUpdateDataHandler.handleThread;
+import static net.hypixel.nerdbot.util.watcher.rss.xmlparsers.SkyBlockThreadParser.getLastPostedSkyBlockThread;
 
 @Log4j2
 public class HypixelThreadURLWatcher extends URLWatcher {
@@ -30,7 +28,7 @@ public class HypixelThreadURLWatcher extends URLWatcher {
             public void run() {
                 String newContent = fetchContent();
                 if (newContent != null && !newContent.equals(lastContent)) {
-                    handleThread(getLastPostedSkyblockThread(newContent));
+                    handleThread(getLastPostedSkyBlockThread(newContent));
                     lastContent = newContent;
                     log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
                 }
@@ -47,7 +45,7 @@ public class HypixelThreadURLWatcher extends URLWatcher {
         active = true;
 
         if (newContent != null && !newContent.equals(getLastContent())) {
-            handleThread(getLastPostedSkyblockThread(newContent));
+            handleThread(getLastPostedSkyBlockThread(newContent));
             lastContent = newContent;
             log.debug("Watched " + url + " once, found changes!\nOld content: " + getLastContent() + "\nNew content: " + newContent);
         }

@@ -9,12 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Log4j2
-public class SkyblockThreadHandler extends DefaultHandler {
+public class SkyBlockThreadHandler extends DefaultHandler {
 
     private static boolean finishedReadingPrelude = false;
     @Getter
-    private SkyblockThreadParser.SkyblockForum skyblockForum;
+    private SkyBlockThreadParser.SkyBlockForum skyBlockForum;
     private StringBuilder elementValue;
+    private static String forum = null;
     private static final String DESCRIPTION = "description";
     private static final String ATOMLINK = "atom:link";
     private static final String CHANNEL = "channel";
@@ -31,7 +32,7 @@ public class SkyblockThreadHandler extends DefaultHandler {
         if (!finishedReadingPrelude) {
             switch (qName) {
                 case CHANNEL:
-                    skyblockForum.setThreadlist(new ArrayList<>());
+                    skyBlockForum.setThreadList(new ArrayList<>());
                     break;
                 case TITLE, DESCRIPTION:
                     elementValue = new StringBuilder();
@@ -47,7 +48,7 @@ public class SkyblockThreadHandler extends DefaultHandler {
         // Now that we've completed every starter tag, we can move onto the actual threads.
         switch (qName) {
             case ITEM:
-                skyblockForum.getThreadlist().add(new SkyblockThreadParser.HypixelThread());
+                skyBlockForum.getThreadList().add(new SkyBlockThreadParser.HypixelThread());
                 break;
             case TITLE, PUBDATE, LINK, GUID, CREATOR:
                 elementValue = new StringBuilder();
@@ -61,10 +62,10 @@ public class SkyblockThreadHandler extends DefaultHandler {
         if (!finishedReadingPrelude) {
             switch (qName) {
                 case TITLE:
-                    log.info("Reading RSS Feed: " + elementValue);
+                    forum = elementValue.toString();
                     break;
                 case DESCRIPTION:
-                    log.info("Description: " + elementValue);
+                    // For future use if someone wants to know the description of this forum.
                     break;
             }
             return;
@@ -73,6 +74,7 @@ public class SkyblockThreadHandler extends DefaultHandler {
         switch (qName) {
             case TITLE:
                 latestThread().setTitle(elementValue.toString());
+                latestThread().setForum(forum);
                 break;
             case PUBDATE:
                 latestThread().setPublicationDate(elementValue.toString());
@@ -89,10 +91,10 @@ public class SkyblockThreadHandler extends DefaultHandler {
         }
     }
 
-    private SkyblockThreadParser.HypixelThread latestThread() {
-        List<SkyblockThreadParser.HypixelThread> articleList = skyblockForum.getThreadlist();
-        int latestArticleIndex = articleList.size() - 1;
-        return articleList.get(latestArticleIndex);
+    private SkyBlockThreadParser.HypixelThread latestThread() {
+        List<SkyBlockThreadParser.HypixelThread> threadList = skyBlockForum.getThreadList();
+        int latestArticleIndex = threadList.size() - 1;
+        return threadList.get(latestArticleIndex);
     }
 
 
@@ -108,7 +110,7 @@ public class SkyblockThreadHandler extends DefaultHandler {
 
     @Override
     public void startDocument() {
-        skyblockForum = new SkyblockThreadParser.SkyblockForum();
+        skyBlockForum = new SkyBlockThreadParser.SkyBlockForum();
     }
 }
 

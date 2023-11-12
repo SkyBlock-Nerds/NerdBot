@@ -14,31 +14,30 @@ import java.io.InputStream;
 import java.util.List;
 
 @Log4j2
-public class SkyblockThreadParser {
+public class SkyBlockThreadParser {
 
-    public static HypixelThread getLastPostedSkyblockThread(String XML) {
+    public static HypixelThread getLastPostedSkyBlockThread(String xml) {
         try {
-            return parseSkyblockThreads(XML).get(0);
+            return parseSkyBlockThreads(xml).get(0);
         } catch (ParserConfigurationException | SAXException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static List<HypixelThread> parseSkyblockThreads(String XML) throws ParserConfigurationException, SAXException, IOException {
+    public static List<HypixelThread> parseSkyBlockThreads(String xml) throws ParserConfigurationException, SAXException, IOException {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         SAXParser saxParser = factory.newSAXParser();
 
-        SkyblockThreadHandler skyblockThreadHandler = new SkyblockThreadHandler();
-        InputStream targetStream = new ByteArrayInputStream(XML.getBytes());
+        SkyBlockThreadHandler skyblockThreadHandler = new SkyBlockThreadHandler();
+        InputStream targetStream = new ByteArrayInputStream(xml.getBytes());
         saxParser.parse(targetStream, skyblockThreadHandler);
-        return skyblockThreadHandler.getSkyblockForum().getThreadlist();
+        return skyblockThreadHandler.getSkyBlockForum().getThreadList();
     }
-
 
     @Getter
     @Setter
-    public static class SkyblockForum {
-        private List<HypixelThread> threadlist;
+    public static class SkyBlockForum {
+        private List<HypixelThread> threadList;
     }
 
     @Getter
@@ -49,5 +48,6 @@ public class SkyblockThreadParser {
         private String link;
         private String guid;
         private String creator;
+        private String forum;
     }
 }

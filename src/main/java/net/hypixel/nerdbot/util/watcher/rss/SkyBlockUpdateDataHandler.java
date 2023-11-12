@@ -8,18 +8,23 @@ import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.role.PingableRole;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.watcher.rss.xmlparsers.SkyblockThreadParser.HypixelThread;
+import net.hypixel.nerdbot.util.watcher.rss.xmlparsers.SkyBlockThreadParser.HypixelThread;
 
 @Log4j2
-public class SkyblockUpdateDataHandler {
+public class SkyBlockUpdateDataHandler {
 
     public static void handleThread(HypixelThread hypixelThread) {
         ChannelConfig config = NerdBotApp.getBot().getConfig().getChannelConfig();
         TextChannel announcementChannel = ChannelManager.getChannel(config.getAnnouncementChannelId());
-
         if (announcementChannel == null) {
             log.error("Couldn't find announcement channel!");
             return;
+        }
+        // Simple Check to make sure only SkyBlock threads are sent.
+        if (!hypixelThread.getForum().equals("SkyBlock Patch Notes")){
+            if (!hypixelThread.getTitle().contains("SkyBlock")){
+                return;
+            }
         }
 
         MessageCreateBuilder messageCreateBuilder = new MessageCreateBuilder();
