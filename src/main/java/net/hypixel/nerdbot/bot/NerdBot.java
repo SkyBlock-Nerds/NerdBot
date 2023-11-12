@@ -4,7 +4,7 @@ import com.freya02.botcommands.api.CommandsBuilder;
 import com.freya02.botcommands.api.components.DefaultComponentManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mongodb.client.result.InsertManyResult;
+import com.mongodb.bulk.BulkWriteResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -109,10 +109,11 @@ public class NerdBot implements Bot {
 
             repositories.forEach((aClass, o) -> {
                 Repository<?> repository = (Repository<?>) o;
-                InsertManyResult result = repository.saveAllToDatabase();
+                BulkWriteResult result = repository.saveAllToDatabase();
 
                 if (result != null && result.wasAcknowledged()) {
-                    log.info("Saved " + result.getInsertedIds().size() + " documents to database for repository " + repository.getClass().getSimpleName());
+                    int total = result.getInsertedCount() + result.getModifiedCount();
+                    log.info("Saved " + total + " documents to database for repository " + repository.getClass().getSimpleName() + " (" + result.getInsertedCount() + " inserted, " + result.getModifiedCount() + " modified, " + result.getDeletedCount() + " deleted)");
                 } else {
                     log.info("Saved 0 documents to database for repository " + repository.getClass().getSimpleName());
                 }

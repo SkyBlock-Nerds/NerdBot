@@ -4,17 +4,21 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.Scheduler;
+import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateOneModel;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.UpdateResult;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.NerdBotApp;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -111,25 +115,28 @@ public abstract class Repository<T> {
         String id = getId(object);
         Document document = entityToDocument(object);
 
-        return mongoCollection.replaceOne(new Document(identifierFieldName, id), document, new ReplaceOptions().upsert(true));
+        return mongoCollection.updateOne(new Document(identifierFieldName, id), document, new UpdateOptions().upsert(true));
     }
 
     @Nullable
-    public InsertManyResult saveAllToDatabase() {
+    public BulkWriteResult saveAllToDatabase() {
         debug("Saving all documents in cache to database (found " + cache.asMap().size() + ")");
 
-        List<Document> documents = cache.asMap().values()
-            .stream()
-            .map(this::entityToDocument)
-            .toList();
+        List<WriteModel<Document>> updates = new ArrayList<>();
 
-        debug("Converted " + documents.size() + " documents to JSON");
+        getAll().stream().map(this::entityToDocument).forEach(doc -> {
+            Bson filter = Filters.eq(identifierFieldName, doc.get(identifierFieldName));
+            Bson update = new Document("$set", doc);
+            updates.add(new UpdateOneModel<>(filter, update, new UpdateOptions().upsert(true)));
+        });
 
-        if (!documents.isEmpty()) {
-            return mongoCollection.insertMany(documents);
-        } else {
-            return null;
+        debug("Prepared " + updates.size() + " update operations");
+
+        if (!updates.isEmpty()) {
+            return mongoCollection.bulkWrite(updates);
         }
+
+        return null;
     }
 
     public DeleteResult deleteFromDatabase(String id) {
