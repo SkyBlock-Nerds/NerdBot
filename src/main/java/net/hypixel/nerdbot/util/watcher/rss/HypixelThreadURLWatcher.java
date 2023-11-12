@@ -1,15 +1,11 @@
 package net.hypixel.nerdbot.util.watcher.rss;
 
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import net.hypixel.nerdbot.util.Tuple;
+import net.hypixel.nerdbot.util.watcher.URLWatcher;
 
-import java.io.IOException;
+import java.util.List;
 import java.util.Map;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
@@ -17,32 +13,18 @@ import static net.hypixel.nerdbot.util.watcher.rss.SkyblockUpdateDataHandler.han
 import static net.hypixel.nerdbot.util.watcher.rss.xmlparsers.SkyblockThreadParser.getLastPostedSkyblockThread;
 
 @Log4j2
-public class HypixelThreadURLWatcher {
-
-    @Getter
-    private final String url;
-    @Getter
-    @Setter
-    private String lastContent;
-    private final Timer timer;
-    @Getter
-    private boolean active;
-    private final OkHttpClient client;
-    private final Map<String, String> headers;
+public class HypixelThreadURLWatcher extends URLWatcher {
 
     public HypixelThreadURLWatcher(String url) {
-        this(url, null);
+        super(url);
     }
 
     public HypixelThreadURLWatcher(String url, Map<String, String> headers) {
-        this.client = new OkHttpClient();
-        this.url = url;
-        this.headers = headers;
-        this.timer = new Timer();
-        this.lastContent = fetchContent();
+        super(url, headers);
     }
 
-    public void startWatching(long interval, TimeUnit unit) {
+    @Override
+    public void startWatching(long interval, TimeUnit unit, URLWatcher.DataHandler handler) {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
@@ -59,51 +41,21 @@ public class HypixelThreadURLWatcher {
         active = true;
     }
 
-    public void watchOnce() {
+    @Override
+    public void watchOnce(URLWatcher.DataHandler handler) {
         String newContent = fetchContent();
         active = true;
 
-        if (newContent != null && !newContent.equals(lastContent)) {
+        if (newContent != null && !newContent.equals(getLastContent())) {
             handleThread(getLastPostedSkyblockThread(newContent));
             lastContent = newContent;
-            log.debug("Watched " + url + " once, found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
+            log.debug("Watched " + url + " once, found changes!\nOld content: " + getLastContent() + "\nNew content: " + newContent);
         }
 
         active = false;
     }
 
-    public void stopWatching() {
-        timer.cancel();
-        log.info("Stopped watching " + url);
-        active = false;
-    }
-
-    private String fetchContent() {
-        log.debug("Fetching content from " + url);
-
-        Request.Builder requestBuilder = new Request.Builder().url(url);
-
-        if (headers != null) {
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
-                requestBuilder.header(entry.getKey(), entry.getValue());
-            }
-        }
-
-        Request request = requestBuilder.build();
-
-        try (Response response = client.newCall(request).execute()) {
-            if (response.isSuccessful() && response.body() != null) {
-                String content = response.body().string();
-                log.debug("Successfully fetched content from " + url + "!" + " (Content: " + content + ")");
-                return content;
-            } else {
-                log.error("Failed to fetch content from " + url + "! (Response: " + response + ")");
-            }
-        } catch (IOException e) {
-            log.error("Failed to fetch content from " + url + "!" + " (Exception: " + e.getMessage() + ")");
-            e.printStackTrace();
-        }
-
-        return null;
+    public interface DataHandler {
+        void handleData(String oldContent, String newContent, List<Tuple<String, Object, Object>> changedValues);
     }
 }

@@ -22,17 +22,13 @@ public class SkyblockUpdateDataHandler {
             return;
         }
 
-
         MessageCreateBuilder messageCreateBuilder = new MessageCreateBuilder();
-
         PingableRole role = RoleManager.getPingableRoleByName("SkyBlock Update Alerts");
-
         if (role != null) {
             messageCreateBuilder.addContent(RoleManager.formatPingableRoleAsMention(role) + "\n\n");
         }
 
         messageCreateBuilder.addContent(hypixelThread.getLink());
-
         announcementChannel.sendMessage(messageCreateBuilder.build()).queue();
     }
 }

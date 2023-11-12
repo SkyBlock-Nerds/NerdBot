@@ -219,7 +219,7 @@ public class NerdBot implements Bot {
         URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
         fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
         HypixelThreadURLWatcher hypixelThreadWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
-        hypixelThreadWatcher.startWatching(1, TimeUnit.MINUTES);
+        hypixelThreadWatcher.startWatching(1, TimeUnit.MINUTES, null);
     }
 
     @Override
