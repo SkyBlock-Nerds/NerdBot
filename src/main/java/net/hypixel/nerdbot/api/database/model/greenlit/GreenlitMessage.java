@@ -84,7 +84,7 @@ public class GreenlitMessage {
         } else if (isAlpha()) {
             color = new Color(255, 255, 153);
         } else {
-            color = new Color(255, 255, 102);
+            color = Color.GREEN;
         }
 
         embedBuilder.setColor(color);
