@@ -207,6 +207,8 @@ public class GeneratorBuilder {
             itemLore.append("\\n");
         }
 
+        itemLore = new StringBuilder(itemLore.toString().replace("§", "&"));
+
         // creating a string parser to convert the string into color flagged text
         StringColorParser colorParser = new StringColorParser(maxLineLength);
         colorParser.parseString(itemLore);
