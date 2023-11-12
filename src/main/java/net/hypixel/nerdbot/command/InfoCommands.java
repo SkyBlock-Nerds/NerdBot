@@ -5,7 +5,15 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import com.freya02.botcommands.api.components.Components;
+import com.freya02.botcommands.api.components.InteractionConstraints;
+import com.freya02.botcommands.api.components.annotations.JDASelectionMenuListener;
+import com.freya02.botcommands.api.components.builder.selects.PersistentStringSelectionMenuBuilder;
+import com.freya02.botcommands.api.components.event.StringSelectionEvent;
+import com.freya02.botcommands.api.pagination.paginator.Paginator;
+import com.freya02.botcommands.api.pagination.paginator.PaginatorBuilder;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -34,6 +42,8 @@ import java.util.stream.Collectors;
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
 
+    private static final String GREENLIT_SELECTION_MENU_HANDLER_NAME = "greenlit";
+    private static final int MAX_ENTRIES_PER_PAGE = 25;
     private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
 
     private final Database database = NerdBotApp.getBot().getDatabase();
@@ -54,31 +64,56 @@ public class InfoCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "info", subcommand = "greenlit", description = "Get a list of all unreviewed greenlit messages. May not be 100% accurate!", defaultLocked = true)
-    public void greenlitInfo(GuildSlashEvent event, @AppOption int page, @AppOption @Optional String tag) {
-        GreenlitMessageRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class);
+    public void greenlitInfo(GuildSlashEvent event) {
+        event.deferReply(true).complete();
 
         if (!database.isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
             return;
         }
 
-        List<GreenlitMessage> greenlit = repository.getAll();
+        GreenlitMessageRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class);
+        List<EmbedBuilder> embeds = new ArrayList<>();
 
-        if (tag != null) {
-            greenlit = greenlit.stream().filter(greenlitMessage -> greenlitMessage.getTags().contains(tag)).toList();
+        if (repository.isEmpty()) {
+            event.reply("There are no greenlit messages!").setEphemeral(true).queue();
+            return;
         }
 
-        List<GreenlitMessage> pages = getPage(greenlit, page, 10);
-        StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
-        if (pages.isEmpty()) {
-            stringBuilder.append("No results found");
-        } else {
-            for (GreenlitMessage greenlitMessage : pages) {
-                stringBuilder.append(" • [").append(greenlitMessage.getSuggestionTitle()).append("](").append(greenlitMessage.getSuggestionUrl()).append(")\n");
-            }
-        }
+        repository.getAll().forEach(greenlitMessage -> embeds.add(greenlitMessage.createEmbed()));
 
-        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
+        Paginator paginator = new PaginatorBuilder()
+            .setConstraints(InteractionConstraints.ofUsers(event.getUser()))
+            .setPaginatorSupplier((instance, editBuilder, components, page) -> {
+                PersistentStringSelectionMenuBuilder builder = Components.stringSelectionMenu(GREENLIT_SELECTION_MENU_HANDLER_NAME);
+                int lowerBound = page == 0 ? 0 : MAX_ENTRIES_PER_PAGE * page;
+                int upperBound = MAX_ENTRIES_PER_PAGE + (page * MAX_ENTRIES_PER_PAGE);
+
+                for (int i = lowerBound; i < upperBound; i++) {
+                    if (i >= embeds.size()) {
+                        break;
+                    }
+
+                    GreenlitMessage greenlitMessage = repository.getByIndex(i);
+                    String description = greenlitMessage.getSuggestionContent().length() > 100 ? greenlitMessage.getSuggestionContent().substring(0, 96) + "..." : greenlitMessage.getSuggestionContent();
+                    builder.addOption(greenlitMessage.getSuggestionTitle(), greenlitMessage.getMessageId(), description);
+                }
+
+                components.addComponents(builder.build());
+                return embeds.get(lowerBound).build();
+            })
+            .setMaxPages(embeds.size() / MAX_ENTRIES_PER_PAGE)
+            .build();
+
+        event.getHook().editOriginal(paginator.get()).queue();
+    }
+
+    @JDASelectionMenuListener(name = GREENLIT_SELECTION_MENU_HANDLER_NAME)
+    public void run(StringSelectionEvent event) {
+        GreenlitMessageRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class);
+        GreenlitMessage greenlitMessage = repository.findById(event.getValues().get(0));
+
+        event.editMessageEmbeds(greenlitMessage.createEmbed().build()).queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "server", description = "View some information about the server", defaultLocked = true)
@@ -272,7 +307,9 @@ public class InfoCommands extends ApplicationCommand {
      * @param pageSize  page size
      * @param <K>       the type of keys in the map
      * @param <V>       the type of values in the map
+     *
      * @return a list view of map entries for the specified page
+     *
      * @throws IllegalArgumentException if the sourceMap is null, page is invalid, or pageSize is non-positive
      */
     public static <K, V> List<Map.Entry<K, V>> getPage(Map<K, V> sourceMap, int page, int pageSize) {
