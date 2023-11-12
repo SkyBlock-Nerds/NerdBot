@@ -32,6 +32,7 @@ import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
@@ -167,6 +168,7 @@ public class NerdBot implements Bot {
             commandsBuilder.setComponentManager(new DefaultComponentManager(new ComponentDatabaseConnection()::getConnection));
         } catch (SQLException exception) {
             log.error("Failed to connect to the SQL database! Components will not work correctly!");
+            exception.printStackTrace();
         }
 
         try {
