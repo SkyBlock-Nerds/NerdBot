@@ -1,10 +1,11 @@
 package net.hypixel.nerdbot.listener;
 
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
@@ -18,13 +19,15 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -35,35 +38,42 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 public class ActivityListener {
 
-    private final Database database = NerdBotApp.getBot().getDatabase();
     private final BotConfig config = NerdBotApp.getBot().getConfig();
     private final ChannelConfig channelConfig = config.getChannelConfig();
     private final Map<Long, Long> voiceActivity = new HashMap<>();
 
     @SubscribeEvent
-    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-        Util.getOrAddUserToCache(this.database, event.getUser().getId());
-        log.info("User " + event.getUser().getAsTag() + " joined guild " + event.getGuild().getName());
+    public void onGuildMemberJoin(GuildMemberJoinEvent event) throws RepositoryException {
+        UpdateResult result = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).saveToDatabase(new DiscordUser(event.getMember()));
+
+        if (!result.wasAcknowledged() || result.getModifiedCount() == 0) {
+            throw new RepositoryException("Failed to save new user '" + event.getUser().getName() + "' to database!");
+        }
+
+        log.info("User " + event.getUser().getName() + " joined guild " + event.getGuild().getName());
     }
 
     @SubscribeEvent
-    public void onGuildMemberLeave(GuildMemberRemoveEvent event) {
-        this.database.deleteDocument(this.database.getCollection("users"), "discordId", event.getUser().getId());
+    public void onGuildMemberLeave(GuildMemberRemoveEvent event) throws RepositoryException {
+        DeleteResult result = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).deleteFromDatabase(event.getUser().getId());
+
+        if (!result.wasAcknowledged() || result.getDeletedCount() == 0) {
+            throw new RepositoryException("Failed to delete user '" + event.getUser().getName() + "' from database!");
+        }
+
         log.info("User " + event.getUser().getAsTag() + " left guild " + event.getGuild().getName());
     }
 
     @SubscribeEvent
     public void onThreadCreateEvent(@NotNull ChannelCreateEvent event) {
         if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD) {
-            MessageHistory messageHistory = event.getChannel().asThreadChannel().getHistoryFromBeginning(1).complete();
-            Message message = messageHistory.getRetrievedHistory().get(0);
-
-            Member member = message.getMember();
+            Member member = event.getChannel().asThreadChannel().getOwner();
             if (member == null || member.getUser().isBot()) {
                 return; // Ignore Empty Member
             }
 
-            DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
+            DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+            DiscordUser discordUser = discordUserRepository.findById(member.getId());
             if (discordUser == null) {
                 return; // Ignore Empty User
             }
@@ -96,7 +106,8 @@ public class ActivityListener {
             return; // Ignore Empty Member
         }
 
-        DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
         if (discordUser == null) {
             return; // Ignore Empty User
         }
@@ -147,7 +158,8 @@ public class ActivityListener {
             return; // Ignore Bots
         }
 
-        DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
         if (discordUser == null) {
             return; // Ignore Empty User
         }
@@ -184,8 +196,8 @@ public class ActivityListener {
 
     @SubscribeEvent
     public void onReactionReceived(MessageReactionAddEvent event) {
-        if (!event.isFromGuild()) {
-            return; // Ignore Non Guild
+        if (!event.isFromGuild() || event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
+            return; // Ignore non-guild and native emojis
         }
 
         Member member = event.getMember();
@@ -193,46 +205,19 @@ public class ActivityListener {
             return; // Ignore Empty Member
         }
 
-        DiscordUser discordUser = Util.getOrAddUserToCache(this.database, member.getId());
-
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
+      
         if (discordUser == null) {
             return; // Ignore Empty User
         }
 
         if (event.getGuildChannel() instanceof ThreadChannel threadChannel) {
-
-            // Here is logic for handling pinning of messages within Threads by the owner. This is done by only the :pushpin: Emoji.
-            Emoji pushpin = Emoji.fromUnicode("\uD83D\uDCCC");
-
-            if (event.getReaction().getEmoji().equals(pushpin)) {
-                if (!threadChannel.getOwnerId().equals(discordUser.getDiscordId())) {
-                    return; // Ignoring IDs that are not from the owner of the thread.
-                }
-
-                // We get the message we are checking to pin or unpin it.
-                Message message = event.retrieveMessage().complete();
-
-                if (message.isPinned()) {
-                    // Since it is pinned, we unpin it here and remove all :pushpin: emojis.
-                    message.unpin().complete();
-                    message.clearReactions(pushpin).complete();
-                } else {
-                    // It has not been pinned yet, we pin it and remove the users reaction while adding our own.
-                    message.pin().complete();
-                    message.addReaction(pushpin).complete();
-                    message.removeReaction(pushpin, member.getUser()).complete();
-                }
-                return;
-            }
-
-            if (event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
-                return; // Ignore Native Emojis
-            }
-
             BotConfig config = NerdBotApp.getBot().getConfig();
             EmojiConfig emojiConfig = config.getEmojiConfig();
 
-            if (emojiConfig.isEquals(event.getReaction(), EmojiConfig::getAgreeEmojiId) || emojiConfig.isEquals(event.getReaction(), EmojiConfig::getDisagreeEmojiId)) {
+            if (emojiConfig.isEquals(event.getReaction(), EmojiConfig::getAgreeEmojiId) || emojiConfig.isEquals(event.getReaction(), EmojiConfig::getDisagreeEmojiId)
+                || emojiConfig.isEquals(event.getReaction(), EmojiConfig::getNeutralEmojiId)) {
                 MessageHistory history = threadChannel.getHistoryFromBeginning(1).complete();
                 boolean deleted = history.isEmpty() || history.getRetrievedHistory().get(0).getIdLong() != threadChannel.getIdLong();
 
@@ -242,21 +227,30 @@ public class ActivityListener {
                 }
 
                 String forumChannelId = threadChannel.getParentChannel().getId();
+                Message startMessage = threadChannel.retrieveStartMessage().complete();
                 long time = System.currentTimeMillis();
+
+                discordUser.getLastActivity().getSuggestionReactionHistory().removeIf(reactionHistory ->
+                    reactionHistory.channelId().equals(threadChannel.getId())
+                        && reactionHistory.reactionName().equals(event.getReaction().getEmoji().asCustom().getName())
+                );
+
+                ReactionHistory reactionHistory = new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName(), startMessage.getTimeCreated().toEpochSecond());
 
                 // New Suggestion Voting
                 if (Util.safeArrayStream(channelConfig.getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setSuggestionVoteDate(time);
+                    discordUser.getLastActivity().getSuggestionReactionHistory().add(reactionHistory);
                     log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
 
                 // New Alpha Suggestion Voting
                 if (Util.safeArrayStream(channelConfig.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setAlphaSuggestionVoteDate(time);
+                    discordUser.getLastActivity().getSuggestionReactionHistory().add(reactionHistory);
                     log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
             }
         }
-
     }
 }

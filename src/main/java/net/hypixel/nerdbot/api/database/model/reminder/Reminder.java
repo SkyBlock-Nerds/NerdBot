@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.api.database.model.reminder;
 
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertOneResult;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -11,9 +10,9 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
 import java.util.Timer;
@@ -30,7 +29,7 @@ public class Reminder {
 
     private UUID uuid;
     @BsonIgnore
-    private Timer timer;
+    private transient Timer timer;
     private String description;
     private String channelId;
     private String userId;
@@ -51,7 +50,8 @@ public class Reminder {
 
     class ReminderTask extends TimerTask {
         public void run() {
-            DeleteResult result = delete();
+            ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
+            DeleteResult result = reminderRepository.deleteFromDatabase(uuid.toString());
 
             if (result != null && result.wasAcknowledged() && result.getDeletedCount() > 0) {
                 timer.cancel();
@@ -66,6 +66,7 @@ public class Reminder {
     }
 
     public void sendReminder(boolean late) {
+        ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
         TextChannel channel = ChannelManager.getChannel(channelId);
         User user = NerdBotApp.getBot().getJDA().getUserById(userId);
         String message;
@@ -73,7 +74,7 @@ public class Reminder {
 
         if (user == null) {
             log.error("Couldn't find user with ID '" + userId + "' to send reminder " + uuid + "!");
-            delete();
+            reminderRepository.deleteFromDatabase(uuid.toString());
             return;
         }
 
@@ -86,61 +87,28 @@ public class Reminder {
         if (!sendPublicly) {
             String finalMessage = message;
             user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(finalMessage).addEmbeds(new EmbedBuilder().setDescription(description).build()).queue());
-            return;
-        }
-
-        if (channel != null) {
+        } else {
             if (late) {
                 message = user.getAsMention() + ", while I was offline, you asked me to remind you at " + timestamp + " about: ";
             } else {
                 message = user.getAsMention() + ", you asked me to remind you at " + timestamp + " about: ";
             }
 
-            channel.sendMessage(message)
-                .addEmbeds(new EmbedBuilder().setDescription(description).build())
-                .queue();
-        } else if (sendPublicly) {
-            user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Reminder: " + description).queue());
+            if (channel != null) {
+                channel.sendMessage(message)
+                    .addEmbeds(new EmbedBuilder().setDescription(description).build())
+                    .queue();
+            } else {
+                String finalMessage1 = message;
+                user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(finalMessage1).addEmbeds(new EmbedBuilder().setDescription(description).build()).queue());
+            }
         }
 
-        DeleteResult result = delete();
+        DeleteResult result = reminderRepository.deleteFromDatabase(uuid.toString());
         if (result == null) {
             log.error("Couldn't delete reminder from database: " + uuid + " (result: null)");
-            return;
-        }
-
-        if (result.wasAcknowledged() && result.getDeletedCount() > 0) {
-            log.info("Reminder deleted from database: " + uuid);
         } else {
-            log.error("Couldn't delete reminder from database: " + uuid + " (result: " + result + ")");
+            log.info("Reminder deleted from database: " + uuid);
         }
-    }
-
-    @Nullable
-    public InsertOneResult save() {
-        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            log.error("Database is not connected!");
-            return null;
-        }
-
-        return NerdBotApp.getBot().getDatabase().insertDocument(NerdBotApp.getBot().getDatabase().getCollection(COLLECTION_NAME, Reminder.class), this);
-    }
-
-    @Nullable
-    public DeleteResult delete() {
-        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            log.error("Database is not connected!");
-            return null;
-        }
-
-        Reminder reminder = NerdBotApp.getBot().getDatabase().findDocument(NerdBotApp.getBot().getDatabase().getCollection(COLLECTION_NAME, Reminder.class), "uuid", uuid)
-            .limit(1)
-            .first();
-
-        if (reminder == null) {
-            return null;
-        }
-
-        return NerdBotApp.getBot().getDatabase().deleteDocument(NerdBotApp.getBot().getDatabase().getCollection(COLLECTION_NAME, Reminder.class), "uuid", uuid);
     }
 }

@@ -5,13 +5,7 @@ import lombok.Getter;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class HypixelPlayerResponse {

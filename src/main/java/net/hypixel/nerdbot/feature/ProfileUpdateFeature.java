@@ -8,60 +8,54 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.feature.BotFeature;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.TimerTask;
 
 @Log4j2
 public class ProfileUpdateFeature extends BotFeature {
 
     @Override
-    public void onStart() {
+    public void onFeatureStart() {
         this.timer.scheduleAtFixedRate(
             new TimerTask() {
                 @Override
                 public void run() {
-                    NerdBotApp.getBot()
-                        .getDatabase()
-                        .getCollection("users", DiscordUser.class)
-                        .find()
-                        .into(new ArrayList<>())
-                        .stream()
-                        .filter(DiscordUser::isProfileAssigned)
-                        .filter(discordUser -> discordUser.getMojangProfile().requiresCacheUpdate())
-                        .forEach(ProfileUpdateFeature::updateNickname);
+                    if (NerdBotApp.getBot().isReadOnly()) {
+                        log.error("Bot is in read-only mode, skipping profile update task!");
+                        return;
+                    }
+
+                    DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+                    discordUserRepository.forEach(discordUser -> {
+                        if (discordUser.isProfileAssigned() && discordUser.getMojangProfile().requiresCacheUpdate()) {
+                            updateNickname(discordUser);
+                        }
+                    });
                 }
-            },
-            Duration.of(30, ChronoUnit.MINUTES).toMillis(),
-            Duration.of(NerdBotApp.getBot().getConfig().getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis()
-        );
+            }, 0L, Duration.of(NerdBotApp.getBot().getConfig().getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis());
     }
 
     @Override
-    public void onEnd() {
+    public void onFeatureEnd() {
         this.timer.cancel();
     }
 
     public static void updateNickname(DiscordUser discordUser) {
-        try {
-            MojangProfile mojangProfile = Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId());
-            discordUser.setMojangProfile(mojangProfile);
-            Guild guild = Util.getMainGuild();
+        MojangProfile mojangProfile = Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId());
+        discordUser.setMojangProfile(mojangProfile);
+        Guild guild = Util.getMainGuild();
+        Member member = guild.retrieveMemberById(discordUser.getDiscordId()).complete();
 
-            if (guild != null) {
-                Member member = guild.retrieveMemberById(discordUser.getDiscordId()).complete();
-
-                if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
-                    try {
-                        member.modifyNickname(mojangProfile.getUsername()).queue();
-                    } catch (HierarchyException hex) {
-                        log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "].");
-                    }
-                }
+        if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
+            try {
+                member.modifyNickname(mojangProfile.getUsername()).queue();
+            } catch (HierarchyException exception) {
+                log.error("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "]", exception);
             }
-        } catch (Exception ignore) { }
+        }
     }
 }

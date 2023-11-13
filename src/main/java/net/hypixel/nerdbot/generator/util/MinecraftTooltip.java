@@ -31,7 +31,7 @@ public class MinecraftTooltip {
     // Current Settings
     @Getter
     private final List<List<ColoredString>> lines;
-    @Getter (AccessLevel.PRIVATE)
+    @Getter(AccessLevel.PRIVATE)
     private final ArrayList<Integer> lineWidths = new ArrayList<>();
     @Getter
     private final int alpha;
@@ -41,7 +41,8 @@ public class MinecraftTooltip {
     private final boolean isNormalItem;
     @Getter
     private final boolean isCentered;
-    @Getter(AccessLevel.PRIVATE) @Setter(AccessLevel.PRIVATE)
+    @Getter(AccessLevel.PRIVATE)
+    @Setter(AccessLevel.PRIVATE)
     private Graphics2D graphics;
     @Getter
     private BufferedImage image;
@@ -102,8 +103,7 @@ public class MinecraftTooltip {
                 width - PIXEL_SIZE * 4,
                 height - PIXEL_SIZE * 4
             );
-        }
-        else {
+        } else {
             g2d.setColor(new Color(0, 0, 0, this.getAlpha()));
             g2d.fillRect(0, 0, width, height);
         }

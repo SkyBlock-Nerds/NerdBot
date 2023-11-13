@@ -85,9 +85,9 @@ public class RecipeParser {
     /**
      * Strips the string of any links or malicious data
      *
-     * @param item  the recipe item to clean
+     * @param item the recipe item to clean
      *
-     * @return      a sanitized string
+     * @return a sanitized string
      */
     private static String stripRecipeItem(String item) {
         return item.replaceAll("[^A-Za-z0-9,%#]", "");
@@ -96,9 +96,9 @@ public class RecipeParser {
     /**
      * Attempts to convert the string into a number
      *
-     * @param value     the string to parse into an integer
+     * @param value the string to parse into an integer
      *
-     * @return          the number value of the string (null if it isn't a number)
+     * @return the number value of the string (null if it isn't a number)
      */
     @Nullable
     private static Integer tryParseInteger(String value) {
