@@ -20,13 +20,13 @@ import java.util.concurrent.TimeUnit;
 public class URLWatcher {
 
     @Getter
-    protected final String url;
+    private final String url;
     @Getter
     @Setter
-    protected String lastContent;
-    protected final Timer timer;
+    private String lastContent;
+    private final Timer timer;
     @Getter
-    protected boolean active;
+    private boolean active;
     private final OkHttpClient client;
     private final Map<String, String> headers;
 
@@ -78,7 +78,7 @@ public class URLWatcher {
         active = false;
     }
 
-    protected String fetchContent() {
+    public String fetchContent() {
         log.debug("Fetching content from " + url);
 
         Request.Builder requestBuilder = new Request.Builder().url(url);

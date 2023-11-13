@@ -16,27 +16,25 @@ import java.util.List;
 @Log4j2
 public class SkyBlockThreadParser {
 
-    public static HypixelThread getLastPostedSkyBlockThread(String xml) {
-        try {
-            return parseSkyBlockThreads(xml).get(0);
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static List<HypixelThread> parseSkyBlockThreads(String xml) throws ParserConfigurationException, SAXException, IOException {
+    public static List<HypixelThread> parseSkyBlockThreads(String xml) {
         SAXParserFactory factory = SAXParserFactory.newInstance();
-        SAXParser saxParser = factory.newSAXParser();
-
-        SkyBlockThreadHandler skyblockThreadHandler = new SkyBlockThreadHandler();
-        InputStream targetStream = new ByteArrayInputStream(xml.getBytes());
-        saxParser.parse(targetStream, skyblockThreadHandler);
-        return skyblockThreadHandler.getSkyBlockForum().getThreadList();
+        try {
+            SAXParser saxParser = factory.newSAXParser();
+            SkyBlockThreadHandler skyblockThreadHandler = new SkyBlockThreadHandler();
+            InputStream targetStream = new ByteArrayInputStream(xml.getBytes());
+            saxParser.parse(targetStream, skyblockThreadHandler);
+            return skyblockThreadHandler.getSkyBlockForum().getThreadList();
+        } catch (ParserConfigurationException | SAXException | IOException e){
+            log.error("Failed to parse content from: " + xml);
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Getter
     @Setter
     public static class SkyBlockForum {
+        private boolean finishedReadingPrelude = false;
         private List<HypixelThread> threadList;
     }
 
@@ -46,7 +44,7 @@ public class SkyBlockThreadParser {
         private String title;
         private String publicationDate;
         private String link;
-        private String guid;
+        private int guid;
         private String creator;
         private String forum;
     }

@@ -11,7 +11,6 @@ import java.util.List;
 @Log4j2
 public class SkyBlockThreadHandler extends DefaultHandler {
 
-    private static boolean finishedReadingPrelude = false;
     @Getter
     private SkyBlockThreadParser.SkyBlockForum skyBlockForum;
     private StringBuilder elementValue;
@@ -29,17 +28,17 @@ public class SkyBlockThreadHandler extends DefaultHandler {
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) {
         // We first handle the prelude tags.
-        if (!finishedReadingPrelude) {
+        if (!skyBlockForum.isFinishedReadingPrelude()) {
             switch (qName) {
                 case CHANNEL:
                     skyBlockForum.setThreadList(new ArrayList<>());
                     break;
-                case TITLE, DESCRIPTION:
+                case TITLE:
                     elementValue = new StringBuilder();
                     break;
                 case ATOMLINK:
                     // This tag should mark the end of prelude, and thus we stop checking for these here.
-                    finishedReadingPrelude = true;
+                    skyBlockForum.setFinishedReadingPrelude(true);
                     break;
             }
             return;
@@ -59,7 +58,7 @@ public class SkyBlockThreadHandler extends DefaultHandler {
     @Override
     public void endElement(String uri, String localName, String qName) {
         // We first read the prelude tags, once complete we can move onto the rest of the tags.
-        if (!finishedReadingPrelude) {
+        if (!skyBlockForum.isFinishedReadingPrelude()) {
             switch (qName) {
                 case TITLE:
                     forum = elementValue.toString();
@@ -83,7 +82,9 @@ public class SkyBlockThreadHandler extends DefaultHandler {
                 latestThread().setLink(elementValue.toString());
                 break;
             case GUID:
-                latestThread().setGuid(elementValue.toString());
+                int guid;
+                guid = Integer.parseInt(elementValue.toString());
+                latestThread().setGuid(guid);
                 break;
             case CREATOR:
                 latestThread().setCreator(elementValue.toString());
