@@ -288,7 +288,7 @@ public class ModMailListener {
             content = String.format("**%s:**%s%s", Util.getDisplayName(message.getAuthor()), "\n", content);
         }
 
-        return Util.splitString(content, 2_000);
+        return Util.splitString(content, 1_024);
     }
 
     private static List<FileUpload> buildFiles(Message message) {
