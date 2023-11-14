@@ -50,6 +50,16 @@ public class Util {
     private Util() {
     }
 
+    public static List<String> splitString(String text, int size) {
+        List<String> parts = new ArrayList<>();
+
+        for (int i = 0; i < text.length(); i += size) {
+            parts.add(text.substring(i, Math.min(text.length(), i + size)));
+        }
+
+        return parts;
+    }
+
     public static Stream<String> safeArrayStream(String[]... arrays) {
         Stream<String> stream = Stream.empty();
 
