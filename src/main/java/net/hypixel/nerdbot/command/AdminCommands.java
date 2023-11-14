@@ -193,9 +193,7 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         try {
-            JsonObject obj = NerdBotApp.GSON.toJsonTree(NerdBotApp.getBot().getConfig()).getAsJsonObject();
-            File file = Util.createTempFile("config-" + System.currentTimeMillis() + ".json", obj.toString());
-
+            File file = Util.createTempFile("config-" + System.currentTimeMillis() + ".json", NerdBotApp.GSON.toJson(NerdBotApp.getBot().getConfig()));
             event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred when reading the JSON file, please try again later!").queue();
