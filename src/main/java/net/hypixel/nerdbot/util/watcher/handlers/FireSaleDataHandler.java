@@ -28,7 +28,6 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
     public void handleData(String oldContent, String newContent, List<Tuple<String, Object, Object>> changedValues) {
         ChannelConfig config = NerdBotApp.getBot().getConfig().getChannelConfig();
         TextChannel announcementChannel = ChannelManager.getChannel(config.getAnnouncementChannelId());
-
         if (announcementChannel == null) {
             log.error("Couldn't find announcement channel!");
             return;

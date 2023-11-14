@@ -41,6 +41,7 @@ import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
 import net.hypixel.nerdbot.util.watcher.URLWatcher;
 import net.hypixel.nerdbot.util.watcher.handlers.FireSaleDataHandler;
+import net.hypixel.nerdbot.util.watcher.rss.HypixelThreadURLWatcher;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
@@ -230,6 +231,10 @@ public class NerdBot implements Bot {
 
         URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
         fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
+        HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
+        skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
+        HypixelThreadURLWatcher hypixelNewsWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/news-and-announcements.4/.rss");
+        hypixelNewsWatcher.startWatching(1, TimeUnit.MINUTES);
     }
 
     @Override
