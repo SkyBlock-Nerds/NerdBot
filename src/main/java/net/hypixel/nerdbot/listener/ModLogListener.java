@@ -191,7 +191,7 @@ public class ModLogListener {
             .addField("User", user.getAsMention(), false)
             .addField("Channel", channel.getAsMention(), false)
             .addField("User ID", user.getId(), false)
-            .addField("Content", message.getContentDisplay(), false);
+            .addField("Content", message.getContentDisplay().substring(0, 2_000), false);
 
         if (!message.getAttachments().isEmpty()) {
             StringBuilder attachments = new StringBuilder();

@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 @Log4j2
 public class ModMailListener {
@@ -301,10 +300,10 @@ public class ModMailListener {
                         attachment.getFileName()
                     );
                 } catch (InterruptedException | ExecutionException ex) {
-                    throw new RuntimeException(ex);
+                    ex.printStackTrace();
+                    return null;
                 }
             })
-            .collect(Collectors.toList());
+            .toList();
     }
-
 }
