@@ -140,7 +140,8 @@ public class ModMailListener {
                         content = appendModMailRoleMention(messages, content, i);
                     }
 
-                    if (i == messages.size() - 1) { // Last message
+                    // Last message
+                    if (i == messages.size() - 1) {
                         buildFiles(message).forEach(fileUpload -> webhookMessage.addFile(fileUpload.getName(), fileUpload.getData()));
                     }
 
@@ -159,7 +160,8 @@ public class ModMailListener {
                     content = appendModMailRoleMention(messages, content, i);
                 }
 
-                if (i == messages.size() - 1) { // Last message
+                // Last message
+                if (i == messages.size() - 1) {
                     messageBuilder.setFiles(buildFiles(message));
                 }
 
@@ -184,22 +186,20 @@ public class ModMailListener {
         String modMailRoleMention = "<@&%s>".formatted(modMailRoleId);
         ModMailConfig.RoleFormat roleFormat = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleFormat();
 
+        if (modMailRoleId == null) {
+            return content;
+        }
+
         if (index == 0) { // First message
-            if (modMailRoleId != null) {
-                if (roleFormat == ModMailConfig.RoleFormat.ABOVE) {
-                    content = modMailRoleMention + "\n\n" + content;
-                } else if (roleFormat == ModMailConfig.RoleFormat.INLINE) {
-                    content = modMailRoleMention + " " + content;
-                }
+            if (roleFormat == ModMailConfig.RoleFormat.ABOVE) {
+                content = modMailRoleMention + "\n\n" + content;
+            } else if (roleFormat == ModMailConfig.RoleFormat.INLINE) {
+                content = modMailRoleMention + " " + content;
             }
         }
 
-        if (index == messages.size() - 1) { // Last message
-            if (modMailRoleId != null) {
-                if (roleFormat == ModMailConfig.RoleFormat.BELOW) {
-                    content += "\n\n" + modMailRoleMention;
-                }
-            }
+        if (index == messages.size() - 1 && roleFormat == ModMailConfig.RoleFormat.BELOW) { // Last message
+            content += "\n\n" + modMailRoleMention;
         }
 
         return content;
@@ -288,22 +288,7 @@ public class ModMailListener {
             content = String.format("**%s:**%s%s", Util.getDisplayName(message.getAuthor()), "\n", content);
         }
 
-        List<String> messages = new ArrayList<>();
-
-        if (content.length() > 2000) {
-            String subContent = content;
-
-            while (subContent.length() > 1950) {
-                subContent = content.substring(0, 1950);
-                messages.add(subContent);
-            }
-
-            messages.add(subContent);
-        } else {
-            messages.add(content);
-        }
-
-        return messages;
+        return Util.splitString(content, 2_000);
     }
 
     private static List<FileUpload> buildFiles(Message message) {
