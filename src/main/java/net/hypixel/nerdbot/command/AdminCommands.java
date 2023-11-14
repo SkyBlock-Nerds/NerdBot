@@ -190,7 +190,17 @@ public class AdminCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "config", subcommand = "show", description = "View the currently loaded config", defaultLocked = true)
     public void showConfig(GuildSlashEvent event) {
-        event.reply("```json\n" + NerdBotApp.GSON.toJson(NerdBotApp.getBot().getConfig()) + "```").setEphemeral(true).queue();
+        event.deferReply(true).complete();
+
+        try {
+            JsonObject obj = NerdBotApp.GSON.toJsonTree(NerdBotApp.getBot().getConfig()).getAsJsonObject();
+            File file = Util.createTempFile("config-" + System.currentTimeMillis() + ".json", obj.toString());
+
+            event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred when reading the JSON file, please try again later!").queue();
+            exception.printStackTrace();
+        }
     }
 
     @JDASlashCommand(name = "config", subcommand = "reload", description = "Reload the config file", defaultLocked = true)
