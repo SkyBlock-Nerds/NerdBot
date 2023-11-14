@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.util.watcher.rss;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
+import net.hypixel.nerdbot.util.watcher.rss.xmlparsers.SkyBlockThreadParser;
 import net.hypixel.nerdbot.util.watcher.rss.xmlparsers.SkyBlockThreadParser.HypixelThread;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -11,9 +12,6 @@ import okhttp3.Response;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
-import static net.hypixel.nerdbot.util.watcher.rss.SkyBlockUpdateDataHandler.handleThread;
-import static net.hypixel.nerdbot.util.watcher.rss.xmlparsers.SkyBlockThreadParser.parseSkyBlockThreads;
 
 @Log4j2
 public class HypixelThreadURLWatcher {
@@ -54,7 +52,7 @@ public class HypixelThreadURLWatcher {
                     if (thread.getGuid() > lastGuid) {
                         log.debug("Watched " + url + " and found newest Guid!\nOld GUID: " + lastGuid + "\nNew GUID: " + thread.getGuid());
                         lastGuid = thread.getGuid();
-                        handleThread(thread);
+                        SkyBlockUpdateDataHandler.handleThread(thread);
                     }
                 }
             }
@@ -76,7 +74,7 @@ public class HypixelThreadURLWatcher {
             if (thread.getGuid() > lastGuid) {
                 log.debug("Watched " + url + " and found newest Guid!\nOld Guid: " + lastGuid + "\nNew Guid: " + thread.getGuid());
                 lastGuid = thread.getGuid();
-                handleThread(thread);
+                SkyBlockUpdateDataHandler.handleThread(thread);
             }
         }
 
@@ -111,7 +109,7 @@ public class HypixelThreadURLWatcher {
             if (response.isSuccessful() && response.body() != null) {
                 String content = response.body().string();
                 log.debug("Successfully fetched content from " + url + "!" + " (Content: " + content + ")");
-                return parseSkyBlockThreads(content);
+                return SkyBlockThreadParser.parseSkyBlockThreads(content);
             } else {
                 log.error("Failed to fetch content from " + url + "! (Response: " + response + ")");
             }
