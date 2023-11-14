@@ -78,7 +78,7 @@ public class URLWatcher {
         active = false;
     }
 
-    private String fetchContent() {
+    public String fetchContent() {
         log.debug("Fetching content from " + url);
 
         Request.Builder requestBuilder = new Request.Builder().url(url);
