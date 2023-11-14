@@ -49,9 +49,10 @@ public class HypixelThreadURLWatcher {
                 if (hypixelThreads == null) {
                     return;
                 }
+                
                 for (HypixelThread thread : hypixelThreads) {
                     if (thread.getGuid() > lastGuid) {
-                        log.debug("Watched " + url + " and found newest Guid!\nOld Guid: " + lastGuid + "\nNew Guid: " + thread.getGuid());
+                        log.debug("Watched " + url + " and found newest Guid!\nOld GUID: " + lastGuid + "\nNew GUID: " + thread.getGuid());
                         lastGuid = thread.getGuid();
                         handleThread(thread);
                     }
@@ -70,6 +71,7 @@ public class HypixelThreadURLWatcher {
         if (hypixelThreads == null) {
             return;
         }
+        
         for (HypixelThread thread : hypixelThreads) {
             if (thread.getGuid() > lastGuid) {
                 log.debug("Watched " + url + " and found newest Guid!\nOld Guid: " + lastGuid + "\nNew Guid: " + thread.getGuid());
@@ -81,12 +83,14 @@ public class HypixelThreadURLWatcher {
         active = false;
     }
 
-    public int getHighestGuid(){
+    public int getHighestGuid() {
         List<HypixelThread> hypixelThreads = fetchAndParseContent();
         int[] guidList = new int[hypixelThreads.size()];
+        
         for (int x = 0; x < hypixelThreads.size(); x++) {
             guidList[x] = hypixelThreads.get(x).getGuid();
         }
+        
         return Arrays.stream(guidList).max().getAsInt();
     }
 

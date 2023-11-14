@@ -20,6 +20,7 @@ public class SkyBlockUpdateDataHandler {
             log.error("Couldn't find announcement channel!");
             return;
         }
+        
         // Simple Check to make sure only SkyBlock threads are sent.
         if (!hypixelThread.getForum().equals("SkyBlock Patch Notes")){
             if (!hypixelThread.getTitle().contains("SkyBlock")){

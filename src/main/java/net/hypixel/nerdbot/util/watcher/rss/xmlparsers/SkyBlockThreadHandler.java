@@ -11,10 +11,6 @@ import java.util.List;
 @Log4j2
 public class SkyBlockThreadHandler extends DefaultHandler {
 
-    @Getter
-    private SkyBlockThreadParser.SkyBlockForum skyBlockForum;
-    private StringBuilder elementValue;
-    private static String forum = null;
     private static final String DESCRIPTION = "description";
     private static final String ATOMLINK = "atom:link";
     private static final String CHANNEL = "channel";
@@ -24,6 +20,11 @@ public class SkyBlockThreadHandler extends DefaultHandler {
     private static final String LINK = "link";
     private static final String GUID = "guid";
     private static final String CREATOR = "dc:creator";
+
+    @Getter
+    private SkyBlockThreadParser.SkyBlockForum skyBlockForum;
+    private StringBuilder elementValue;
+    private static String forum = null;
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) {
@@ -41,6 +42,7 @@ public class SkyBlockThreadHandler extends DefaultHandler {
                     skyBlockForum.setFinishedReadingPrelude(true);
                     break;
             }
+            
             return;
         }
 
@@ -67,6 +69,7 @@ public class SkyBlockThreadHandler extends DefaultHandler {
                     // For future use if someone wants to know the description of this forum.
                     break;
             }
+            
             return;
         }
 
@@ -98,7 +101,6 @@ public class SkyBlockThreadHandler extends DefaultHandler {
         return threadList.get(latestArticleIndex);
     }
 
-
     @Override
     public void characters(char[] ch, int start, int length) {
         if (elementValue == null) {
@@ -107,7 +109,6 @@ public class SkyBlockThreadHandler extends DefaultHandler {
             elementValue.append(ch, start, length);
         }
     }
-
 
     @Override
     public void startDocument() {
