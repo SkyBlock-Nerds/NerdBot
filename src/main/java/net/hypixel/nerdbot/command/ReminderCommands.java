@@ -12,12 +12,14 @@ import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
+import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -104,6 +106,16 @@ public class ReminderCommands extends ApplicationCommand {
             event.reply("I will remind you at " + new DiscordTimestamp(date.getTime()).toLongDateTime() + " about:")
                 .addEmbeds(new EmbedBuilder().setDescription(description).build())
                 .setEphemeral(true)
+                .queue();
+            // Sending a nice confirmation message within the dms, so it doesn't disappear.
+            PrivateChannel channel = event.getMember().getUser().openPrivateChannel().complete();
+            EmbedBuilder embedBuilder = new EmbedBuilder().setDescription(description)
+                .setTimestamp(Instant.now())
+                .setFooter(reminder.getUuid().toString())
+                .setColor(Color.GREEN);
+            channel.sendMessage("Reminder set for: " + new DiscordTimestamp(date.getTime()).toLongDateTime())
+                .addEmbeds(embedBuilder.build())
+                .setSuppressedNotifications(true)
                 .queue();
             reminder.schedule();
         } else {
