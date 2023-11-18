@@ -107,7 +107,6 @@ public class ReminderCommands extends ApplicationCommand {
                 .addEmbeds(new EmbedBuilder().setDescription(description).build())
                 .setEphemeral(true)
                 .queue();
-            reminder.schedule();
             // Sending a nice confirmation message within the dms, so it doesn't disappear.
             PrivateChannel channel = event.getMember().getUser().openPrivateChannel().complete();
             EmbedBuilder embedBuilder = new EmbedBuilder().setDescription(description);
