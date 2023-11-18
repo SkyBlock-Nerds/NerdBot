@@ -96,14 +96,16 @@ public class AdminCommands extends ApplicationCommand {
         TextChannel selected = Objects.requireNonNullElse(channel, NerdBotApp.getBot().getJDA().getTextChannelsByName("limbo", true).get(0));
         event.deferReply(true).complete();
 
-        if (ChannelManager.getLogChannel() != null) {
-            ChannelManager.getLogChannel().sendMessageEmbeds(
+        ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+            textChannel.sendMessageEmbeds(
                 new EmbedBuilder()
                     .setTitle("Invites Created")
                     .setDescription(event.getUser().getAsMention() + " created " + amount + " invite(s) for " + selected.getAsMention() + ".")
                     .build()
             ).queue();
-        }
+        }, () -> {
+            throw new IllegalStateException("Log channel not found!");
+        });
 
         for (int i = 0; i < amount; i++) {
             try {
@@ -136,14 +138,17 @@ public class AdminCommands extends ApplicationCommand {
             log.info(event.getUser().getName() + " deleted invite " + invite.getUrl());
         });
 
-        if (ChannelManager.getLogChannel() != null) {
-            ChannelManager.getLogChannel().sendMessageEmbeds(
+        ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+            textChannel.sendMessageEmbeds(
                 new EmbedBuilder()
                     .setTitle("Invites Deleted")
                     .setDescription(event.getUser().getAsMention() + " deleted all " + invites.size() + " invite(s).")
                     .build()
             ).queue();
-        }
+        }, () -> {
+            throw new IllegalStateException("Log channel not found!");
+        });
+
         event.getHook().editOriginal("Deleted " + invites.size() + " invites.").queue();
     }
 
@@ -293,28 +298,27 @@ public class AdminCommands extends ApplicationCommand {
             MyCommands.updateMojangProfile(member, mojangProfile);
             event.getHook().sendMessage("Updated " + member.getAsMention() + "'s Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
-            if (ChannelManager.getLogChannel() != null) {
-                ChannelManager.getLogChannel()
-                    .sendMessageEmbeds(
-                        new EmbedBuilder()
-                            .setAuthor(event.getMember().getEffectiveName() + " (" + event.getMember().getUser().getName() + ")")
-                            .setTitle("Admin Mojang Profile Change")
-                            .setThumbnail(member.getAvatarUrl())
-                            .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
-                            .addField("Username", mojangProfile.getUsername(), false)
-                            .addField(
-                                "UUID / SkyCrypt",
-                                String.format(
-                                    "[%s](https://sky.shiiyu.moe/stats/%s)",
-                                    mojangProfile.getUniqueId(),
-                                    mojangProfile.getUniqueId()
-                                ),
-                                false
-                            )
-                            .build()
-                    )
-                    .queue();
-            }
+            ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+                textChannel.sendMessageEmbeds(
+                    new EmbedBuilder()
+                        .setTitle("Mojang Profile Change")
+                        .setThumbnail(member.getAvatarUrl())
+                        .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
+                        .addField("Username", mojangProfile.getUsername(), false)
+                        .addField(
+                            "UUID / SkyCrypt",
+                            String.format(
+                                "[%s](https://sky.shiiyu.moe/stats/%s)",
+                                mojangProfile.getUniqueId(),
+                                mojangProfile.getUniqueId()
+                            ),
+                            false
+                        )
+                        .build()
+                ).queue();
+            }, () -> {
+                throw new IllegalStateException("Log channel not found!");
+            });
         } catch (HttpException exception) {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`: " + exception.getMessage()).queue();
             exception.printStackTrace();

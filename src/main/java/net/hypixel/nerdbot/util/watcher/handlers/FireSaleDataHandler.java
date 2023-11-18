@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
@@ -27,51 +26,50 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
     @Override
     public void handleData(String oldContent, String newContent, List<Tuple<String, Object, Object>> changedValues) {
         ChannelConfig config = NerdBotApp.getBot().getConfig().getChannelConfig();
-        TextChannel announcementChannel = ChannelManager.getChannel(config.getAnnouncementChannelId());
-        if (announcementChannel == null) {
-            log.error("Couldn't find announcement channel!");
-            return;
-        }
 
-        changedValues.forEach(tuple -> {
-            if (tuple.value1().equals("sales")) {
-                JsonArray array = JsonParser.parseString(String.valueOf(tuple.value3())).getAsJsonArray();
+        ChannelManager.getChannel(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
+            changedValues.forEach(tuple -> {
+                if (tuple.value1().equals("sales")) {
+                    JsonArray array = JsonParser.parseString(String.valueOf(tuple.value3())).getAsJsonArray();
 
-                if (array.isEmpty()) {
-                    return;
+                    if (array.isEmpty()) {
+                        return;
+                    }
+
+                    EmbedBuilder embedBuilder = new EmbedBuilder()
+                        .setTitle("New Fire Sale!")
+                        .setTimestamp(new Date().toInstant())
+                        .setColor(Color.GREEN);
+
+                    array.forEach(jsonElement -> {
+                        JsonObject jsonObject = jsonElement.getAsJsonObject();
+                        String itemId = jsonObject.get("item_id").getAsString().replace("PET_SKIN_", "");
+                        DiscordTimestamp start = new DiscordTimestamp(jsonObject.get("start").getAsLong());
+                        DiscordTimestamp end = new DiscordTimestamp(jsonObject.get("end").getAsLong());
+                        int amount = jsonObject.get("amount").getAsInt();
+                        int price = jsonObject.get("price").getAsInt();
+                        StringBuilder stringBuilder = new StringBuilder();
+
+                        stringBuilder.append("Starts: ").append(start.toLongDateTime()).append(" (").append(start.toRelativeTimestamp()).append(")\n")
+                            .append("Ends: ").append(end.toLongDateTime()).append(" (").append(end.toRelativeTimestamp()).append(")\n")
+                            .append("Amount: ").append(Util.COMMA_SEPARATED_FORMAT.format(amount)).append("\n")
+                            .append("Price: ").append(Util.COMMA_SEPARATED_FORMAT.format(price));
+
+                        embedBuilder.addField(itemId, stringBuilder.toString(), false);
+                    });
+
+                    MessageCreateBuilder messageCreateBuilder = new MessageCreateBuilder().setEmbeds(embedBuilder.build());
+                    PingableRole role = RoleManager.getPingableRoleByName("Fire Sale Alerts");
+
+                    if (role != null) {
+                        messageCreateBuilder.setContent(RoleManager.formatPingableRoleAsMention(role));
+                    }
+
+                    textChannel.sendMessage(messageCreateBuilder.build()).queue();
                 }
-
-                EmbedBuilder embedBuilder = new EmbedBuilder()
-                    .setTitle("New Fire Sale!")
-                    .setTimestamp(new Date().toInstant())
-                    .setColor(Color.GREEN);
-
-                array.forEach(jsonElement -> {
-                    JsonObject jsonObject = jsonElement.getAsJsonObject();
-                    String itemId = jsonObject.get("item_id").getAsString().replace("PET_SKIN_", "");
-                    DiscordTimestamp start = new DiscordTimestamp(jsonObject.get("start").getAsLong());
-                    DiscordTimestamp end = new DiscordTimestamp(jsonObject.get("end").getAsLong());
-                    int amount = jsonObject.get("amount").getAsInt();
-                    int price = jsonObject.get("price").getAsInt();
-                    StringBuilder stringBuilder = new StringBuilder();
-
-                    stringBuilder.append("Starts: ").append(start.toLongDateTime()).append(" (").append(start.toRelativeTimestamp()).append(")\n")
-                        .append("Ends: ").append(end.toLongDateTime()).append(" (").append(end.toRelativeTimestamp()).append(")\n")
-                        .append("Amount: ").append(Util.COMMA_SEPARATED_FORMAT.format(amount)).append("\n")
-                        .append("Price: ").append(Util.COMMA_SEPARATED_FORMAT.format(price));
-
-                    embedBuilder.addField(itemId, stringBuilder.toString(), false);
-                });
-
-                MessageCreateBuilder messageCreateBuilder = new MessageCreateBuilder().setEmbeds(embedBuilder.build());
-                PingableRole role = RoleManager.getPingableRoleByName("Fire Sale Alerts");
-
-                if (role != null) {
-                    messageCreateBuilder.setContent(RoleManager.formatPingableRoleAsMention(role));
-                }
-
-                announcementChannel.sendMessage(messageCreateBuilder.build()).queue();
-            }
+            });
+        }, () -> {
+            throw new IllegalStateException("Could not find announcement channel!");
         });
     }
 }

@@ -14,7 +14,6 @@ import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -661,14 +660,11 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         if (Util.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
-            // The top channel in the config should be considered the 'primary channel', which is referenced in the
-            // error message.
-            TextChannel channel = ChannelManager.getChannel(itemGenChannelIds[0]);
-            if (channel == null) {
-                event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue();
-                return true;
-            }
-            event.reply("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue();
+            ChannelManager.getChannel(itemGenChannelIds[0]).ifPresentOrElse(
+                channel -> event.reply("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue(),
+                () -> event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue()
+            );
+
             return true;
         }
 
