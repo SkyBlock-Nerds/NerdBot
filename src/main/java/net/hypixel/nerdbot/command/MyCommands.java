@@ -64,27 +64,30 @@ public class MyCommands extends ApplicationCommand {
             MojangProfile mojangProfile = requestMojangProfile(member, username, true);
             updateMojangProfile(member, mojangProfile);
             event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
+            ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+                textChannel.sendMessageEmbeds(
+                        new EmbedBuilder()
+                            .setTitle("Mojang Profile Link")
+                            .setDescription(member.getAsMention() + " has linked their Mojang Profile.")
+                            .setThumbnail(member.getEffectiveAvatarUrl())
+                            .setColor(Color.GREEN)
+                            .addField("Username", mojangProfile.getUsername(), false)
+                            .addField(
+                                "UUID / SkyCrypt",
+                                String.format(
+                                    "[%s](https://sky.shiiyu.moe/stats/%s)",
+                                    mojangProfile.getUniqueId(),
+                                    mojangProfile.getUniqueId()
+                                ),
+                                false
+                            )
+                            .build()
+                    )
+                    .queue();
+            }, () -> {
+                throw new RuntimeException("Log channel not found!");
+            });
 
-            if (ChannelManager.getLogChannel() != null) {
-                ChannelManager.getLogChannel().sendMessageEmbeds(
-                    new EmbedBuilder()
-                        .setAuthor(member.getEffectiveName() + " (" + member.getUser().getName() + ")")
-                        .setTitle("Mojang Profile Change")
-                        .setThumbnail(member.getAvatarUrl())
-                        .setDescription(member.getAsMention() + " updated their Mojang Profile.")
-                        .addField("Username", mojangProfile.getUsername(), false)
-                        .addField(
-                            "UUID / SkyCrypt",
-                            String.format(
-                                "[%s](https://sky.shiiyu.moe/stats/%s)",
-                                mojangProfile.getUniqueId(),
-                                mojangProfile.getUniqueId()
-                            ),
-                            false
-                        )
-                        .build()
-                ).queue();
-            }
         } catch (HttpException httpex) {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
         } catch (ProfileMismatchException exception) {
@@ -111,9 +114,8 @@ public class MyCommands extends ApplicationCommand {
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
             event.getHook().sendMessage("Your verification request has been sent. You will be contacted via DM if any further information is required.").queue();
 
-            if (ChannelManager.getVerifyLogChannel() != null) {
-                ChannelManager.getVerifyLogChannel()
-                    .sendMessageEmbeds(
+            ChannelManager.getVerifyLogChannel().ifPresentOrElse(textChannel -> {
+                textChannel.sendMessageEmbeds(
                         new EmbedBuilder()
                             .setTitle("Mojang Profile Verification")
                             .setDescription(event.getMember().getAsMention() + " has sent a mojang verification request. This discord account matches the social set for this Mojang Profile.")
@@ -151,7 +153,9 @@ public class MyCommands extends ApplicationCommand {
                         )
                     )
                     .queue();
-            }
+            }, () -> {
+                throw new RuntimeException("Verification log channel not found!");
+            });
         } catch (HttpException httpex) {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
         } catch (ProfileMismatchException exception) {

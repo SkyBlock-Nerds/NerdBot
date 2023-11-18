@@ -10,7 +10,6 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.api.interactions.commands.Command;
@@ -222,19 +221,16 @@ public class NerdBot implements Bot {
     }
 
     private void startUrlWatchers() {
-        TextChannel announcementChannel = ChannelManager.getChannel(config.getChannelConfig().getAnnouncementChannelId());
-
-        if (announcementChannel == null) {
-            log.error("Couldn't find announcement channel!");
-            return;
-        }
-
-        URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
-        fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
-        HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
-        skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
-        HypixelThreadURLWatcher hypixelNewsWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/news-and-announcements.4/.rss");
-        hypixelNewsWatcher.startWatching(1, TimeUnit.MINUTES);
+        ChannelManager.getChannel(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
+            URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
+            fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
+            HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
+            skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
+            HypixelThreadURLWatcher hypixelNewsWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/news-and-announcements.4/.rss");
+            hypixelNewsWatcher.startWatching(1, TimeUnit.MINUTES);
+        }, () -> {
+            throw new IllegalStateException("Announcement channel not found!");
+        });
     }
 
     @Override

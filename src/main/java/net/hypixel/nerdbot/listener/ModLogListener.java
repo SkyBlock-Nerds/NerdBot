@@ -25,7 +25,7 @@ public class ModLogListener {
 
     @SubscribeEvent
     public void onJoin(GuildMemberJoinEvent event) {
-        if (ChannelManager.getLogChannel() == null) {
+        if (ChannelManager.getLogChannel().isEmpty()) {
             return;
         }
 
@@ -37,12 +37,12 @@ public class ModLogListener {
             .setColor(Color.GREEN)
             .build();
 
-        ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
+        ChannelManager.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onMemberRemove(GuildMemberRemoveEvent event) {
-        if (ChannelManager.getLogChannel() == null) {
+        if (ChannelManager.getLogChannel().isEmpty()) {
             return;
         }
 
@@ -54,12 +54,12 @@ public class ModLogListener {
             .setColor(Color.BLUE)
             .build();
 
-        ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
+        ChannelManager.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onGuildBan(GuildBanEvent event) {
-        if (ChannelManager.getLogChannel() == null) {
+        if (ChannelManager.getLogChannel().isEmpty()) {
             return;
         }
 
@@ -71,12 +71,12 @@ public class ModLogListener {
             .setColor(Color.RED)
             .build();
 
-        ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
+        ChannelManager.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onGuildUnban(GuildUnbanEvent event) {
-        if (ChannelManager.getLogChannel() == null) {
+        if (ChannelManager.getLogChannel().isEmpty()) {
             return;
         }
 
@@ -88,12 +88,12 @@ public class ModLogListener {
             .setColor(Color.GREEN)
             .build();
 
-        ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
+        ChannelManager.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onInviteCreate(GuildInviteCreateEvent event) {
-        if (ChannelManager.getLogChannel() == null) {
+        if (ChannelManager.getLogChannel().isEmpty()) {
             return;
         }
 
@@ -112,12 +112,12 @@ public class ModLogListener {
             .setColor(Color.GREEN)
             .build();
 
-        ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
+        ChannelManager.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onInviteDelete(GuildInviteDeleteEvent event) {
-        if (ChannelManager.getLogChannel() == null) {
+        if (ChannelManager.getLogChannel().isEmpty()) {
             return;
         }
 
@@ -127,12 +127,12 @@ public class ModLogListener {
             .setColor(Color.RED)
             .build();
 
-        ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
+        ChannelManager.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onRoleAdd(GuildMemberRoleAddEvent event) {
-        if (ChannelManager.getLogChannel() == null) {
+        if (ChannelManager.getLogChannel().isEmpty()) {
             return;
         }
 
@@ -149,12 +149,12 @@ public class ModLogListener {
             .setThumbnail(member.getAvatarUrl())
             .setColor(Color.GREEN)
             .build();
-        ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
+        ChannelManager.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onRoleRemove(GuildMemberRoleRemoveEvent event) {
-        if (ChannelManager.getLogChannel() == null) {
+        if (ChannelManager.getLogChannel().isEmpty()) {
             return;
         }
 
@@ -168,12 +168,12 @@ public class ModLogListener {
             .setColor(Color.RED)
             .build();
 
-        ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
+        ChannelManager.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
     }
 
     @SubscribeEvent
     public void onMessageDelete(MessageDeleteEvent event) {
-        if (ChannelManager.getLogChannel() == null) {
+        if (ChannelManager.getLogChannel().isEmpty()) {
             return;
         }
 
@@ -199,12 +199,12 @@ public class ModLogListener {
             messageEmbed.addField("Attachments", attachments.toString(), false);
         }
 
-        ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed.build()).queue();
+        ChannelManager.getLogChannel().get().sendMessageEmbeds(messageEmbed.build()).queue();
     }
 
     @SubscribeEvent
     public void onMessageEdit(MessageUpdateEvent event) {
-        if (ChannelManager.getLogChannel() == null || event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
+        if (ChannelManager.getLogChannel().isEmpty() || event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
             return;
         }
 
@@ -227,7 +227,7 @@ public class ModLogListener {
             .addField("After", after.getContentDisplay(), true)
             .build();
 
-        ChannelManager.getLogChannel().sendMessageEmbeds(messageEmbed).queue();
+        ChannelManager.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
     }
 
     private EmbedBuilder getDefaultEmbed() {

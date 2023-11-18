@@ -7,7 +7,6 @@ import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.repository.ReminderRepository;
@@ -67,7 +66,6 @@ public class Reminder {
 
     public void sendReminder(boolean late) {
         ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-        TextChannel channel = ChannelManager.getChannel(channelId);
         User user = NerdBotApp.getBot().getJDA().getUserById(userId);
         String message;
         String timestamp = new DiscordTimestamp(time.getTime()).toLongDateTime();
@@ -85,23 +83,19 @@ public class Reminder {
         }
 
         if (!sendPublicly) {
-            String finalMessage = message;
-            user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(finalMessage).addEmbeds(new EmbedBuilder().setDescription(description).build()).queue());
+            user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(message).addEmbeds(new EmbedBuilder().setDescription(description).build()).queue());
         } else {
-            if (late) {
-                message = user.getAsMention() + ", while I was offline, you asked me to remind you at " + timestamp + " about: ";
-            } else {
-                message = user.getAsMention() + ", you asked me to remind you at " + timestamp + " about: ";
-            }
-
-            if (channel != null) {
-                channel.sendMessage(message)
+            ChannelManager.getChannel(channelId).ifPresentOrElse(textChannel -> {
+                textChannel.sendMessage(message)
                     .addEmbeds(new EmbedBuilder().setDescription(description).build())
                     .queue();
-            } else {
-                String finalMessage1 = message;
-                user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(finalMessage1).addEmbeds(new EmbedBuilder().setDescription(description).build()).queue());
-            }
+            }, () -> {
+                log.error("Couldn't find channel with ID '" + channelId + "' to send reminder " + uuid + "! Attempting to send privately");
+
+                user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(message)
+                    .addEmbeds(new EmbedBuilder().setDescription(description).build())
+                    .queue());
+            });
         }
 
         DeleteResult result = reminderRepository.deleteFromDatabase(uuid.toString());
