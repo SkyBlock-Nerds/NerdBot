@@ -178,14 +178,13 @@ public abstract class Repository<T> {
     }
 
     public Collection<T> filter(Predicate<T> filter) {
-        return cache.asMap().values()
-            .stream()
+        return getAll().stream()
             .filter(filter)
             .toList();
     }
 
     public void forEach(Consumer<T> consumer) {
-        cache.asMap().values().forEach(consumer);
+        getAll().forEach(consumer);
     }
 
     private void log(String message) {
