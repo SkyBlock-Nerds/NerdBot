@@ -61,7 +61,7 @@ public class ActivityListener {
             throw new RepositoryException("Failed to delete user '" + event.getUser().getName() + "' from database!");
         }
 
-        log.info("User " + event.getUser().getAsTag() + " left guild " + event.getGuild().getName());
+        log.info("User " + event.getUser().getName() + " left guild " + event.getGuild().getName());
     }
 
     @SubscribeEvent
@@ -213,7 +213,6 @@ public class ActivityListener {
         }
 
         if (event.getGuildChannel() instanceof ThreadChannel threadChannel) {
-            BotConfig config = NerdBotApp.getBot().getConfig();
             EmojiConfig emojiConfig = config.getEmojiConfig();
 
             if (emojiConfig.isEquals(event.getReaction(), EmojiConfig::getAgreeEmojiId) || emojiConfig.isEquals(event.getReaction(), EmojiConfig::getDisagreeEmojiId)

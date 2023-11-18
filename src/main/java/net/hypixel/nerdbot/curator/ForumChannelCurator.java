@@ -165,8 +165,8 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
                     GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
                     output.add(greenlitMessage);
-                } catch (Exception exception) {
-                    exception.printStackTrace();
+                } catch (Exception e) {
+                    log.error("Failed to curate thread '" + thread.getName() + "' (ID: " + thread.getId() + ")!", e);
                 }
             }
 

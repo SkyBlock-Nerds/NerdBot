@@ -10,8 +10,6 @@ import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 
-import java.util.ArrayList;
-
 @Log4j2
 public class UserGrabberFeature extends BotFeature {
 
@@ -38,7 +36,7 @@ public class UserGrabberFeature extends BotFeature {
 
                 DiscordUser discordUser = discordUserRepository.findById(member.getId());
                 if (discordUser == null) {
-                    discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new ArrayList<>(), new LastActivity(), new MojangProfile());
+                    discordUser = new DiscordUser(member.getId(), new LastActivity(), new MojangProfile());
                     log.info("Creating new DiscordUser for user " + member.getId());
                 }
 

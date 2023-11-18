@@ -194,15 +194,14 @@ public class Util {
         MojangProfile mojangProfile;
         int statusCode;
 
-        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
-        try {
+        try (Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer()) {
             HttpResponse<String> httpResponse = getHttpResponse(url);
             statusCode = httpResponse.statusCode();
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
+
+            requestTimer.observeDuration();
         } catch (Exception ex) {
             throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + ex.getMessage(), ex);
-        } finally {
-            requestTimer.observeDuration();
         }
 
         if (statusCode != 200) {
@@ -218,15 +217,14 @@ public class Util {
         MojangProfile mojangProfile;
         int statusCode;
 
-        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
-        try {
+        try (Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer()) {
             HttpResponse<String> httpResponse = getHttpResponse(url);
             statusCode = httpResponse.statusCode();
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
-        } catch (Exception ex) {
-            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`.", ex);
-        } finally {
+
             requestTimer.observeDuration();
+        } catch (Exception ex) {
+            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`", ex);
         }
 
         if (statusCode != 200) {
@@ -236,7 +234,7 @@ public class Util {
         return mojangProfile;
     }
 
-    private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws Exception {
+    private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url)).GET();
         Arrays.asList(headers).forEach(pair -> builder.header(pair.getLeft(), pair.getRight()));
@@ -251,17 +249,17 @@ public class Util {
         Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
 
         try {
-            String hypixelApiKey = NerdBotApp.getHypixelApiKey().map(UUID::toString).orElse("");
+            String hypixelApiKey = NerdBotApp.getHypixelAPIKey().map(UUID::toString).orElse("");
             return NerdBotApp.GSON.fromJson(getHttpResponse(url, Pair.of("API-Key", hypixelApiKey)).body(), HypixelPlayerResponse.class);
         } catch (Exception ex) {
-            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId.toString() + "`.", ex);
+            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId + "`", ex);
         } finally {
             requestTimer.observeDuration();
         }
     }
 
     public static boolean isUUID(String input) {
-        return (input != null && input.length() != 0) && (input.matches(UUID_REGEX.pattern()) || input.matches(TRIMMED_UUID_REGEX.pattern()));
+        return (input != null && !input.isEmpty()) && (input.matches(UUID_REGEX.pattern()) || input.matches(TRIMMED_UUID_REGEX.pattern()));
     }
 
     /**
