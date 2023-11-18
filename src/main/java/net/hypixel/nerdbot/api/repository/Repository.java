@@ -68,7 +68,7 @@ public abstract class Repository<T> {
     }
 
     public void loadAllDocumentsIntoCache() {
-        debug("Loading ALL documents from database into cache");
+        log("Loading ALL documents from database into cache");
 
         for (Document document : mongoCollection.find()) {
             T object = documentToEntity(document);
@@ -122,7 +122,7 @@ public abstract class Repository<T> {
 
     @Nullable
     public BulkWriteResult saveAllToDatabase() {
-        debug("Saving all documents in cache to database (found " + cache.asMap().size() + ")");
+        log("Saving all documents in cache to database (found " + cache.asMap().size() + ")");
 
         List<WriteModel<Document>> updates = new ArrayList<>();
 
@@ -143,8 +143,9 @@ public abstract class Repository<T> {
 
     public DeleteResult deleteFromDatabase(String id) {
         cache.invalidate(id);
-        debug("Deleting document with ID " + id + " from database");
-        return mongoCollection.deleteOne(new Document(identifierFieldName, id));
+        log("Deleting document with ID " + id + " from database");
+
+        return mongoCollection.deleteOne(Filters.eq(identifierFieldName, id));
     }
 
     protected String getId(T entity) {
