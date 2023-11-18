@@ -51,7 +51,7 @@ public class MetricsListener {
 
     @SubscribeEvent
     public void onSlashCommand(SlashCommandInteractionEvent event) {
-        PrometheusMetrics.SLASH_COMMANDS_AMOUNT.labels(event.getMember().getEffectiveName(), event.getFullCommandName()).inc();
+        PrometheusMetrics.SLASH_COMMANDS_AMOUNT.labels(event.getMember() == null ? "N/A" : event.getMember().getEffectiveName(), event.getFullCommandName()).inc();
     }
 
     @SubscribeEvent
