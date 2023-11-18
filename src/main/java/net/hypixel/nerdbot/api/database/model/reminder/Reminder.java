@@ -102,7 +102,7 @@ public class Reminder {
         if (result == null) {
             log.error("Couldn't delete reminder from database: " + uuid + " (result: null)");
         } else {
-            log.info("Reminder deleted from database: " + uuid);
+            log.info("Reminder deleted from database: " + uuid + " (result: " + result + ")");
         }
     }
 }
