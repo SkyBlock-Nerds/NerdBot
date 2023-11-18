@@ -109,10 +109,10 @@ public class ReminderCommands extends ApplicationCommand {
                 .queue();
             // Sending a nice confirmation message within the dms, so it doesn't disappear.
             PrivateChannel channel = event.getMember().getUser().openPrivateChannel().complete();
-            EmbedBuilder embedBuilder = new EmbedBuilder().setDescription(description);
-            embedBuilder.setTimestamp(Instant.now());
-            embedBuilder.setFooter(reminder.getUuid().toString());
-            embedBuilder.setColor(Color.GREEN);
+            EmbedBuilder embedBuilder = new EmbedBuilder().setDescription(description)
+                .setTimestamp(Instant.now())
+                .setFooter(reminder.getUuid().toString())
+                .setColor(Color.GREEN);
             channel.sendMessage("Reminder set for: " + new DiscordTimestamp(date.getTime()).toLongDateTime())
                 .addEmbeds(embedBuilder.build())
                 .setSuppressedNotifications(true)
