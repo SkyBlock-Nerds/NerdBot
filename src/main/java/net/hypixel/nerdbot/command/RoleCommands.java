@@ -22,26 +22,22 @@ public class RoleCommands extends ApplicationCommand {
     public void toggleRole(GuildSlashEvent event, @AppOption(autocomplete = "pingable-roles") String role) {
         event.deferReply().setEphemeral(true).complete();
 
-        PingableRole pingableRole = RoleManager.getPingableRoleByName(role);
-        if (pingableRole == null) {
-            event.getHook().editOriginal("Invalid role specified!").queue();
-            return;
-        }
+        RoleManager.getPingableRoleByName(role).ifPresentOrElse(pingableRole -> {
+            Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
+            if (discordRole == null) {
+                event.getHook().editOriginal("Invalid role specified!").queue();
+                return;
+            }
 
-        Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
-        if (discordRole == null) {
-            event.getHook().editOriginal("Invalid role specified!").queue();
-            return;
-        }
-
-        Member member = event.getMember();
-        if (RoleManager.hasRole(member, role)) {
-            event.getGuild().removeRoleFromMember(member, discordRole).queue();
-            event.getHook().editOriginal("Removed role " + discordRole.getAsMention() + " from you!\nUse the same command to re-add it!").queue();
-        } else {
-            event.getGuild().addRoleToMember(member, discordRole).queue();
-            event.getHook().editOriginal("Added role " + discordRole.getAsMention() + " to you!\nUse the same command to remove it!").queue();
-        }
+            Member member = event.getMember();
+            if (RoleManager.hasRole(member, role)) {
+                event.getGuild().removeRoleFromMember(member, discordRole).queue();
+                event.getHook().editOriginal("Removed role " + discordRole.getAsMention() + " from you!\nUse the same command to re-add it!").queue();
+            } else {
+                event.getGuild().addRoleToMember(member, discordRole).queue();
+                event.getHook().editOriginal("Added role " + discordRole.getAsMention() + " to you!\nUse the same command to remove it!").queue();
+            }
+        }, () -> event.getHook().editOriginal("Invalid role specified!").queue());
     }
 
     @AutocompletionHandler(name = "pingable-roles", showUserInput = false)

@@ -33,14 +33,14 @@ import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
-import net.hypixel.nerdbot.util.Environment;
+import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
-import net.hypixel.nerdbot.util.watcher.URLWatcher;
-import net.hypixel.nerdbot.util.watcher.handlers.FireSaleDataHandler;
-import net.hypixel.nerdbot.util.watcher.rss.HypixelThreadURLWatcher;
+import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
+import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
+import net.hypixel.nerdbot.api.urlwatcher.HypixelThreadURLWatcher;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;

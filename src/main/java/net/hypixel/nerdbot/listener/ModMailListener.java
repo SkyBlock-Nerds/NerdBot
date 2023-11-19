@@ -87,7 +87,9 @@ public class ModMailListener {
             String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
 
             if (modMailRoleId != null) {
-                modMailThread.getGuild().getMembersWithRoles(RoleManager.getRoleById(modMailRoleId)).forEach(member -> modMailThread.addThreadMember(member).complete());
+                RoleManager.getRoleById(modMailRoleId).ifPresent(role -> {
+                    modMailThread.getGuild().getMembersWithRoles(role).forEach(member -> modMailThread.addThreadMember(member).complete());
+                });
             }
         }
 

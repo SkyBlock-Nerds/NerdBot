@@ -5,30 +5,26 @@ import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class RoleManager {
 
     private RoleManager() {
     }
 
-    @Nullable
-    public static PingableRole getPingableRoleByName(String name) {
+    public static Optional<PingableRole> getPingableRoleByName(String name) {
         return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
             .filter(pingableRole -> pingableRole.name().equalsIgnoreCase(name))
-            .findFirst()
-            .orElse(null);
+            .findFirst();
     }
 
-    @Nullable
-    public static PingableRole getPingableRoleById(String id) {
+    public static Optional<PingableRole> getPingableRoleById(String id) {
         return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
             .filter(pingableRole -> pingableRole.roleId().equalsIgnoreCase(id))
-            .findFirst()
-            .orElse(null);
+            .findFirst();
     }
 
     public static String formatPingableRoleAsMention(@NotNull PingableRole pingableRole) {
@@ -54,23 +50,19 @@ public class RoleManager {
         return member.getRoles().stream().anyMatch(memberRole -> memberRole.getPosition() >= role.getPosition());
     }
 
-    @Nullable
-    public static Role getRole(String name) {
+    public static Optional<Role> getRole(String name) {
         return Util.getMainGuild().getRoles().stream()
             .filter(role -> role.getName().equals(name))
-            .findFirst()
-            .orElse(null);
+            .findFirst();
     }
 
     public static Role getHighestRole(Member member) {
         return member.getRoles().get(0);
     }
 
-    @Nullable
-    public static Role getRoleById(String id) {
+    public static Optional<Role> getRoleById(String id) {
         return Util.getMainGuild().getRoles().stream()
             .filter(role -> role.getId().equals(id))
-            .findFirst()
-            .orElse(null);
+            .findFirst();
     }
 }
