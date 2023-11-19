@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.generator;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import net.hypixel.nerdbot.generator.util.ColoredString;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
 

@@ -28,8 +28,8 @@ import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Environment;
-import net.hypixel.nerdbot.util.Time;
+import net.hypixel.nerdbot.api.bot.Environment;
+import net.hypixel.nerdbot.util.TimeUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.jetbrains.annotations.NotNull;
@@ -37,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -57,7 +58,7 @@ public class InfoCommands extends ApplicationCommand {
 
         builder.append("- Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n")
             .append("- Environment: ").append(Environment.getEnvironment()).append("\n")
-            .append("- Uptime: ").append(Time.formatMs(NerdBotApp.getBot().getUptime())).append("\n")
+            .append("- Uptime: ").append(TimeUtil.formatMs(NerdBotApp.getBot().getUptime())).append("\n")
             .append("- Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
 
         event.reply(builder.toString()).setEphemeral(true).queue();
@@ -121,13 +122,13 @@ public class InfoCommands extends ApplicationCommand {
         Guild guild = event.getGuild();
         StringBuilder builder = new StringBuilder();
 
-        int staff = 0;
+        AtomicInteger staff = new AtomicInteger();
+        AtomicInteger grapes = new AtomicInteger();
+        AtomicInteger nerds = new AtomicInteger();
         for (String roleName : SPECIAL_ROLES) {
-            if (RoleManager.getRole(roleName) == null) {
-                log.warn("Role {} not found", roleName);
-                continue;
-            }
-            staff += guild.getMembersWithRoles(RoleManager.getRole(roleName)).size();
+            RoleManager.getRole(roleName).ifPresentOrElse(role -> staff.addAndGet(guild.getMembersWithRoles(role).size()),
+                () -> log.warn("Role {} not found", roleName)
+            );
         }
 
         builder.append("Server name: ").append(guild.getName()).append(" (Server ID: ").append(guild.getId()).append(")\n")
@@ -135,9 +136,16 @@ public class InfoCommands extends ApplicationCommand {
             .append("Boosters: ").append(guild.getBoostCount()).append(" (").append(guild.getBoostTier().name()).append(")\n")
             .append("Channels: ").append(guild.getChannels().size()).append("\n")
             .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
-            .append("- Staff: ").append(staff).append("\n")
-            .append("- Grapes: ").append(guild.getMembersWithRoles(RoleManager.getRole("Grape")).size()).append("\n")
-            .append("- Nerds: ").append(guild.getMembersWithRoles(RoleManager.getRole("Nerd")).size());
+            .append("- Staff: ").append(staff.get()).append("\n");
+
+        RoleManager.getRole("Grape").ifPresentOrElse(role -> grapes.set(guild.getMembersWithRoles(role).size()),
+            () -> log.warn("Role {} not found", "Grape"));
+
+        RoleManager.getRole("Nerd").ifPresentOrElse(role -> nerds.set(guild.getMembersWithRoles(role).size()),
+            () -> log.warn("Role {} not found", "Nerd"));
+
+        builder.append("- Grapes: ").append(grapes.get()).append("\n")
+            .append("- Nerds: ").append(nerds.get());
 
         event.reply(builder.toString()).setEphemeral(true).queue();
     }

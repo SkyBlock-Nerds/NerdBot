@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
-import net.hypixel.nerdbot.util.discord.SuggestionCache;
+import net.hypixel.nerdbot.cache.SuggestionCache;
 
 import java.awt.Color;
 import java.util.Arrays;

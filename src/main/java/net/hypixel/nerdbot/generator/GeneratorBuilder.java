@@ -5,9 +5,11 @@ import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.command.GeneratorCommands;
+import net.hypixel.nerdbot.generator.parser.RecipeParser;
+import net.hypixel.nerdbot.generator.parser.StringColorParser;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.generator.Item;
-import net.hypixel.nerdbot.util.generator.overlay.*;
+import net.hypixel.nerdbot.generator.util.Item;
+import net.hypixel.nerdbot.generator.util.overlay.*;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 
@@ -27,16 +29,16 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.hypixel.nerdbot.generator.GeneratorStrings.FONTS_NOT_REGISTERED;
-import static net.hypixel.nerdbot.generator.GeneratorStrings.INVALID_HEAD_URL;
-import static net.hypixel.nerdbot.generator.GeneratorStrings.INVALID_RARITY;
-import static net.hypixel.nerdbot.generator.GeneratorStrings.ITEM_RESOURCE_NOT_LOADED;
-import static net.hypixel.nerdbot.generator.GeneratorStrings.MALFORMED_HEAD_URL;
-import static net.hypixel.nerdbot.generator.GeneratorStrings.MALFORMED_PLAYER_PROFILE;
-import static net.hypixel.nerdbot.generator.GeneratorStrings.PLAYER_NOT_FOUND;
-import static net.hypixel.nerdbot.generator.GeneratorStrings.REQUEST_PLAYER_UUID_ERROR;
-import static net.hypixel.nerdbot.generator.GeneratorStrings.UNKNOWN_EXTRA_DETAILS;
-import static net.hypixel.nerdbot.generator.GeneratorStrings.stripString;
+import static net.hypixel.nerdbot.generator.util.GeneratorStrings.FONTS_NOT_REGISTERED;
+import static net.hypixel.nerdbot.generator.util.GeneratorStrings.INVALID_HEAD_URL;
+import static net.hypixel.nerdbot.generator.util.GeneratorStrings.INVALID_RARITY;
+import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_RESOURCE_NOT_LOADED;
+import static net.hypixel.nerdbot.generator.util.GeneratorStrings.MALFORMED_HEAD_URL;
+import static net.hypixel.nerdbot.generator.util.GeneratorStrings.MALFORMED_PLAYER_PROFILE;
+import static net.hypixel.nerdbot.generator.util.GeneratorStrings.PLAYER_NOT_FOUND;
+import static net.hypixel.nerdbot.generator.util.GeneratorStrings.REQUEST_PLAYER_UUID_ERROR;
+import static net.hypixel.nerdbot.generator.util.GeneratorStrings.UNKNOWN_EXTRA_DETAILS;
+import static net.hypixel.nerdbot.generator.util.GeneratorStrings.stripString;
 
 @Log4j2
 public class GeneratorBuilder {

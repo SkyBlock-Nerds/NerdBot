@@ -27,7 +27,7 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.discord.SuggestionCache;
+import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;

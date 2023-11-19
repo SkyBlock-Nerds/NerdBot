@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.util.skyblock;
 
-import net.hypixel.nerdbot.generator.StatColorParser;
+import net.hypixel.nerdbot.generator.parser.StatColorParser;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
