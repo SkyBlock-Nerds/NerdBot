@@ -31,7 +31,7 @@ public class ConfigGenerator {
         }
     }
 
-    public static boolean isValidJson(String jsonStr) {
+    private static boolean isValidJson(String jsonStr) {
         try {
             JsonParser.parseString(jsonStr);
             return true;
@@ -41,7 +41,7 @@ public class ConfigGenerator {
         }
     }
 
-    public static void writeJsonToFile(String json) throws IOException {
+    private static void writeJsonToFile(String json) throws IOException {
         try (FileWriter writer = new FileWriter("./src/main/resources/example-config.json")) {
             writer.write(json);
             System.out.println("Created JSON file successfully!");
