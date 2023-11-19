@@ -245,8 +245,13 @@ public class MyCommands extends ApplicationCommand {
         }
 
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
+        String discordName = member.getUser().getName();
 
-        if (enforceSocial && !member.getUser().getName().equalsIgnoreCase(discord)) {
+        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0")) {
+            discordName += "#" + member.getUser().getDiscriminator();
+        }
+
+        if (enforceSocial && !discordName.equalsIgnoreCase(discord)) {
             throw new ProfileMismatchException("The Discord name on the Hypixel profile for `" + mojangProfile.getUsername() + "` does not match `" + member.getUser().getName() + "`!");
         }
 
