@@ -1,10 +1,11 @@
-package net.hypixel.nerdbot.util.watcher.rss;
+package net.hypixel.nerdbot.api.urlwatcher;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
-import net.hypixel.nerdbot.util.watcher.rss.xmlparsers.SkyBlockThreadParser;
-import net.hypixel.nerdbot.util.watcher.rss.xmlparsers.SkyBlockThreadParser.HypixelThread;
+import net.hypixel.nerdbot.api.urlwatcher.handler.SkyBlockUpdateDataHandler;
+import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser;
+import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser.HypixelThread;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;

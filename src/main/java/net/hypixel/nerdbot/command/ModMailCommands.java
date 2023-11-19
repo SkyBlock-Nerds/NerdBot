@@ -6,7 +6,6 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -71,10 +70,10 @@ public class ModMailCommands extends ApplicationCommand {
             thread.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
 
             String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
-            Role role = RoleManager.getRoleById(modMailRoleId);
-            if (role != null) {
-                thread.getGuild().getMembersWithRoles(RoleManager.getRoleById(modMailRoleId)).forEach(m -> thread.addThreadMember(m).complete());
-            }
+
+            RoleManager.getRoleById(modMailRoleId).ifPresent(role -> {
+                thread.getGuild().getMembersWithRoles(role).forEach(m -> thread.addThreadMember(m).complete());
+            });
 
             log.info("Forcefully created new Mod Mail thread for " + member.getId() + " (" + member.getEffectiveName() + ")");
             event.getHook().editOriginal("Created new Mod Mail thread for " + member.getAsMention() + ": " + thread.getAsMention()).queue();

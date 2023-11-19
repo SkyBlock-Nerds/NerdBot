@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util;
+package net.hypixel.nerdbot.api.bot;
 
 public enum Environment {
     PRODUCTION,

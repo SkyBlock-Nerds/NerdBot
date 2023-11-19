@@ -7,10 +7,10 @@ import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.discord.MessageCache;
-import net.hypixel.nerdbot.util.discord.SuggestionCache;
-import net.hypixel.nerdbot.util.gson.InstantTypeAdapter;
-import net.hypixel.nerdbot.util.gson.UUIDTypeAdapter;
+import net.hypixel.nerdbot.cache.MessageCache;
+import net.hypixel.nerdbot.cache.SuggestionCache;
+import net.hypixel.nerdbot.util.gson.adapter.InstantTypeAdapter;
+import net.hypixel.nerdbot.util.gson.adapter.UUIDTypeAdapter;
 import sun.misc.Signal;
 
 import javax.security.auth.login.LoginException;

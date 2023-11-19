@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util.discord;
+package net.hypixel.nerdbot.cache;
 
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;

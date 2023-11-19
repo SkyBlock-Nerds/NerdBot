@@ -42,7 +42,7 @@ import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Environment;
+import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.LoggingUtil;
 import net.hypixel.nerdbot.util.Util;

@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util.watcher.rss.xmlparsers;
+package net.hypixel.nerdbot.util.xml;
 
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
@@ -42,7 +42,7 @@ public class SkyBlockThreadHandler extends DefaultHandler {
                     skyBlockForum.setFinishedReadingPrelude(true);
                     break;
             }
-            
+
             return;
         }
 
@@ -69,7 +69,7 @@ public class SkyBlockThreadHandler extends DefaultHandler {
                     // For future use if someone wants to know the description of this forum.
                     break;
             }
-            
+
             return;
         }
 

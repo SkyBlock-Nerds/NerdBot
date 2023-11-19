@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util.watcher.handlers;
+package net.hypixel.nerdbot.urlwatcher;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -9,12 +9,11 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
-import net.hypixel.nerdbot.role.PingableRole;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Tuple;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
-import net.hypixel.nerdbot.util.watcher.URLWatcher;
+import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
 
 import java.awt.Color;
 import java.util.Date;
@@ -59,11 +58,10 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
                     });
 
                     MessageCreateBuilder messageCreateBuilder = new MessageCreateBuilder().setEmbeds(embedBuilder.build());
-                    PingableRole role = RoleManager.getPingableRoleByName("Fire Sale Alerts");
 
-                    if (role != null) {
-                        messageCreateBuilder.setContent(RoleManager.formatPingableRoleAsMention(role));
-                    }
+                    RoleManager.getPingableRoleByName("Fire Sale Alerts").ifPresent(pingableRole -> {
+                        messageCreateBuilder.addContent(RoleManager.formatPingableRoleAsMention(pingableRole) + "\n\n");
+                    });
 
                     textChannel.sendMessage(messageCreateBuilder.build()).queue();
                 }

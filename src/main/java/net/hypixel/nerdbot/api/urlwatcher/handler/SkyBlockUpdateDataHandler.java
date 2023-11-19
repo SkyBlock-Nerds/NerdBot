@@ -1,13 +1,12 @@
-package net.hypixel.nerdbot.util.watcher.rss;
+package net.hypixel.nerdbot.api.urlwatcher.handler;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
-import net.hypixel.nerdbot.role.PingableRole;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.watcher.rss.xmlparsers.SkyBlockThreadParser.HypixelThread;
+import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser.HypixelThread;
 
 @Log4j2
 public class SkyBlockUpdateDataHandler {
@@ -20,17 +19,15 @@ public class SkyBlockUpdateDataHandler {
 
         ChannelManager.getChannel(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             // Simple Check to make sure only SkyBlock threads are sent.
-            if (!hypixelThread.getForum().equals("SkyBlock Patch Notes")){
-                if (!hypixelThread.getTitle().contains("SkyBlock")){
-                    return;
-                }
+            if (!hypixelThread.getForum().equals("SkyBlock Patch Notes") && (!hypixelThread.getTitle().contains("SkyBlock"))) {
+                return;
             }
 
             MessageCreateBuilder messageCreateBuilder = new MessageCreateBuilder();
-            PingableRole role = RoleManager.getPingableRoleByName("SkyBlock Update Alerts");
-            if (role != null) {
-                messageCreateBuilder.addContent(RoleManager.formatPingableRoleAsMention(role) + "\n\n");
-            }
+
+            RoleManager.getPingableRoleByName("SkyBlock Update Alerts").ifPresent(pingableRole -> {
+                messageCreateBuilder.addContent(RoleManager.formatPingableRoleAsMention(pingableRole) + "\n\n");
+            });
 
             messageCreateBuilder.addContent(hypixelThread.getLink());
             textChannel.sendMessage(messageCreateBuilder.build()).queue();

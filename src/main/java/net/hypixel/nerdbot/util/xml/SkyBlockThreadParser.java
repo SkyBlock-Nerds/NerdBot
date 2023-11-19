@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util.watcher.rss.xmlparsers;
+package net.hypixel.nerdbot.util.xml;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -11,13 +11,18 @@ import javax.xml.parsers.SAXParserFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 
 @Log4j2
 public class SkyBlockThreadParser {
 
+    private SkyBlockThreadParser() {
+    }
+
     public static List<HypixelThread> parseSkyBlockThreads(String xml) {
         SAXParserFactory factory = SAXParserFactory.newInstance();
+
         try {
             SAXParser saxParser = factory.newSAXParser();
             SkyBlockThreadHandler skyblockThreadHandler = new SkyBlockThreadHandler();
@@ -28,7 +33,8 @@ public class SkyBlockThreadParser {
             log.error("Failed to parse content from: " + xml);
             e.printStackTrace();
         }
-        return null;
+
+        return Collections.emptyList();
     }
 
     @Getter
