@@ -35,7 +35,9 @@ public class URLWatcher {
     }
 
     public URLWatcher(String url, Map<String, String> headers) {
-        this.client = new OkHttpClient();
+        this.client = new OkHttpClient.Builder()
+            .callTimeout(10, TimeUnit.SECONDS)
+            .build();
         this.url = url;
         this.headers = headers;
         this.timer = new Timer();
