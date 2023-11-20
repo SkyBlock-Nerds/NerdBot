@@ -30,6 +30,7 @@ public class StatusPageDataHandler implements URLWatcher.DataHandler {
                 ));
 
                 textChannel.sendMessage(messageCreateData).queue();
+                log.info("Uploaded status page data to Discord!");
             } catch (IOException e) {
                 log.error("Failed to upload status page data to Discord!", e);
             }
