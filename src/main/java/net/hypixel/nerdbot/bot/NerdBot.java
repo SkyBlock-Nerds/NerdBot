@@ -19,10 +19,13 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
+import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.api.repository.Repository;
+import net.hypixel.nerdbot.api.urlwatcher.HypixelThreadURLWatcher;
+import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.CurateFeature;
@@ -33,14 +36,12 @@ import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
-import net.hypixel.nerdbot.api.bot.Environment;
+import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
+import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
 import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
-import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
-import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
-import net.hypixel.nerdbot.api.urlwatcher.HypixelThreadURLWatcher;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
@@ -224,8 +225,13 @@ public class NerdBot implements Bot {
         ChannelManager.getChannel(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
             fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
+
+            URLWatcher statusPageWatcher = new URLWatcher("https://status.hypixel.net/api/v2/summary.json");
+            statusPageWatcher.startWatching(1, TimeUnit.MINUTES, new StatusPageDataHandler());
+
             HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
             skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
+
             HypixelThreadURLWatcher hypixelNewsWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/news-and-announcements.4/.rss");
             hypixelNewsWatcher.startWatching(1, TimeUnit.MINUTES);
         }, () -> {
