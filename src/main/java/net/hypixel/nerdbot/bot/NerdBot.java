@@ -222,12 +222,17 @@ public class NerdBot implements Bot {
     }
 
     private void startUrlWatchers() {
+        // Temporary
+        ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+            URLWatcher statusPageWatcher = new URLWatcher("https://status.hypixel.net/api/v2/summary.json");
+            statusPageWatcher.startWatching(1, TimeUnit.MINUTES, new StatusPageDataHandler());
+        }, () -> {
+            throw new IllegalStateException("Log channel not found!");
+        });
+
         ChannelManager.getChannel(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
             fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
-
-            URLWatcher statusPageWatcher = new URLWatcher("https://status.hypixel.net/api/v2/summary.json");
-            statusPageWatcher.startWatching(1, TimeUnit.MINUTES, new StatusPageDataHandler());
 
             HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
             skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
