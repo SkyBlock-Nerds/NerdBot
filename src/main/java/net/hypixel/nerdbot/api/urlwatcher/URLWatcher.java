@@ -36,7 +36,9 @@ public class URLWatcher {
 
     public URLWatcher(String url, Map<String, String> headers) {
         this.client = new OkHttpClient.Builder()
-            .callTimeout(10, TimeUnit.SECONDS)
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
             .build();
         this.url = url;
         this.headers = headers;
@@ -50,9 +52,9 @@ public class URLWatcher {
             public void run() {
                 String newContent = fetchContent();
                 if (newContent != null && !newContent.equals(lastContent)) {
+                    log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
                     handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseJsonString(lastContent), JsonUtil.parseJsonString(newContent), ""));
                     lastContent = newContent;
-                    log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
                 }
             }
         }, 0, unit.toMillis(interval));
