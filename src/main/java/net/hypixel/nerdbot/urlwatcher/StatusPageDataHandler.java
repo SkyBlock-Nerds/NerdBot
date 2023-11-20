@@ -9,7 +9,6 @@ import net.hypixel.nerdbot.util.Tuple;
 import net.hypixel.nerdbot.util.Util;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Log4j2
@@ -24,10 +23,10 @@ public class StatusPageDataHandler implements URLWatcher.DataHandler {
 
         ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
             try {
-                List<FileUpload> files = new ArrayList<>(List.of(
+                List<FileUpload> files = List.of(
                     FileUpload.fromData(Util.createTempFile("status_page_data_old_content.json", NerdBotApp.GSON.toJson(oldContent))),
                     FileUpload.fromData(Util.createTempFile("status_page_data_new_content.json", NerdBotApp.GSON.toJson(newContent)))
-                ));
+                );
 
                 textChannel.sendMessage("**[STATUS PAGE DATA HANDLER]** Status page data changed!").addFiles(files).queue();
                 log.info("Uploaded status page data to Discord!");
