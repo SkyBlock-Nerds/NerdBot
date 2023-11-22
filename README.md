@@ -1,8 +1,18 @@
-<div style="text-align: center;">
-    <img src="assets/images/icon.png">
-    <h1>NerdBot</h1>
-    <p>A completely over-engineered solution to automating features in the SkyBlock Nerds Discord server.</p>
-</div>
+<h1 align="center">
+  <img src="assets/images/icon.png" alt="Nerd Bot Icon"/>
+  <br/>
+</h1>
+
+<h1 align="center">Nerd Bot</h1>
+<p align="center">A completely over-engineered solution to automation in the SkyBlock Nerds Discord</p>
+
+<h1 align="center">
+  <img src="https://img.shields.io/github/license/TheMGRF/NerdBot?style=for-the-badge" alt="License"/>
+  <img src="https://img.shields.io/github/issues/TheMGRF/NerdBot?style=for-the-badge" alt="Issues"/>
+  <img src="https://img.shields.io/github/issues-pr/TheMGRF/NerdBot?style=for-the-badge" alt="Pull Requests"/>
+  <img src="https://img.shields.io/github/last-commit/TheMGRF/NerdBot?style=for-the-badge" alt="Last Commit"/>
+  <img src="https://img.shields.io/github/contributors/TheMGRF/NerdBot?style=for-the-badge" alt="Contributors"/>
+</h1>
 
 ## Features
 
