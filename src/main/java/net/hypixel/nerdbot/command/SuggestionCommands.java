@@ -19,6 +19,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.util.Util;
 import org.apache.commons.lang.StringUtils;
 
 import java.awt.*;
@@ -42,8 +43,16 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         event.deferReply(true).complete();
-        SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(event.getChannel().getId());
         SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+        String parentId = event.getChannel().asThreadChannel().getParentChannel().getId();
+
+        // Handle Non-Suggestion Channels
+        if (Util.safeArrayStream(suggestionConfig.getSuggestionForumIds(), suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(forumId -> forumId.equals(parentId))) {
+            event.getHook().editOriginal("You cannot send non-suggestion posts for review!").complete();
+            return;
+        }
+
+        SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(event.getChannel().getId());
 
         // Handle User Deleted Posts
         if (suggestion.getFirstMessage().isEmpty()) {
