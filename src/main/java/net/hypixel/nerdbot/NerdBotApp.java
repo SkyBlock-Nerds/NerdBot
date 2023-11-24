@@ -31,7 +31,7 @@ public class NerdBotApp {
         .setPrettyPrinting()
         .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
         .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
-        .registerTypeAdapter(Date.class, new DateDeserializer())
+        //.registerTypeAdapter(Date.class, new DateDeserializer())
         .create();
 
     @Getter
