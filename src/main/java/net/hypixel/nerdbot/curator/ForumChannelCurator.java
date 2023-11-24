@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
@@ -122,6 +123,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     int neutral = votes.get(suggestionConfig.getNeutralEmojiId());
                     int disagree = votes.get(suggestionConfig.getDisagreeEmojiId());
                     List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+                    ThreadChannelManager threadManager = thread.getManager();
 
                     // Upsert into database if already greenlit
                     if (tags.stream().anyMatch(tag -> tag.getId().equals(suggestionConfig.getGreenlitTag()) || tag.getId().equals(suggestionConfig.getReviewedTag()))) {
@@ -152,14 +154,27 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         tags.add(greenlitTag);
                     }
 
-                    if (thread.isArchived()) {
-                        thread.getManager().setArchived(false).setAppliedTags(tags).setArchived(true).queue();
-                    } else {
-                        thread.getManager().setAppliedTags(tags).queue();
+                    boolean wasArchived = thread.isArchived();
+
+                    if (wasArchived) {
+                        threadManager = threadManager.setArchived(false);
                     }
 
-                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has been greenlit!");
+                    threadManager = threadManager.setAppliedTags(tags);
 
+                    // Handle Archiving and Locking
+                    if (wasArchived || suggestionConfig.isArchiveOnGreenlit()) {
+                        threadManager = threadManager.setArchived(true);
+                    }
+
+                    if (suggestionConfig.isLockOnGreenlit()) {
+                        threadManager = threadManager.setLocked(true);
+                    }
+
+                    // Send Changes
+                    threadManager.queue();
+
+                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has been greenlit!");
                     GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
                     output.add(greenlitMessage);
                 } catch (Exception e) {
