@@ -5,25 +5,175 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.mongodb.Function;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.bot.config.EmojiConfig;
+import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.cache.SuggestionCache;
+import net.hypixel.nerdbot.channel.ChannelManager;
+import org.apache.commons.lang.StringUtils;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Log4j2
 public class SuggestionCommands extends ApplicationCommand {
+
+    @JDASlashCommand(name = "request-review", description = "Request a greenlit review of your suggestion.")
+    public void requestSuggestionReview(
+        GuildSlashEvent event
+    ) {
+        if (event.getChannel().getType() != ChannelType.GUILD_PUBLIC_THREAD) {
+            event.reply("This command is only usable in forum channels!").complete();
+            return;
+        }
+
+        event.deferReply(true).complete();
+        SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(event.getChannel().getId());
+        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+
+        // Handle User Deleted Posts
+        if (suggestion.getFirstMessage().isEmpty()) {
+            event.getHook().editOriginal("You appear to be lost, there is no original post to review!").complete();
+            return;
+        }
+
+        // No Friends Allowed
+        if (suggestion.getFirstMessage().get().getAuthor().getIdLong() != event.getUser().getIdLong()) {
+            event.getHook().editOriginal("You can only request a review for your own posts!").complete();
+            return;
+        }
+
+        // Handle Already Greenlit
+        if (suggestion.isGreenlit()) {
+            event.getHook().editOriginal("You appear to be confused, this post is already greenlit!").complete();
+            return;
+        }
+
+        // Handle Minimum Agrees
+        if (suggestion.getAgrees() < suggestionConfig.getRequestReviewThreshold()) {
+            event.getHook().editOriginal(String.format("You need at least %s agrees to request a greenlit review!", suggestionConfig.getRequestReviewThreshold())).complete();
+            return;
+        }
+
+        // Handle Greenlit Ratio
+        if (suggestionConfig.isEnforcingGreenlitRatioForRequestReview() && suggestion.getRatio() <= suggestionConfig.getGreenlitRatio()) {
+            event.getHook().editOriginal(String.format("You need at least %s%% agrees to request a greenlit review!", suggestionConfig.getGreenlitRatio())).complete();
+            return;
+        }
+
+        // Send Request Review Message
+        ChannelManager.getRequestedReviewChannel().ifPresentOrElse(textChannel -> {
+            textChannel.sendMessageEmbeds(
+                    new EmbedBuilder()
+                        .setAuthor(String.format("Greenlit Review Request from %s", event.getUser().getEffectiveName()))
+                        .setTitle(
+                            suggestion.getThreadName(),
+                            suggestion.getFirstMessage()
+                                .map(Message::getJumpUrl)
+                                .orElse(suggestion.getThread().getJumpUrl())
+                        )
+                        .setDescription(
+                            suggestion.getFirstMessage()
+                                .map(Message::getContentRaw)
+                                .orElse("*Main message missing!*")
+                        )
+                        .setColor(Color.GRAY)
+                        .setFooter(String.format(
+                            "ID: %s",
+                            suggestion.getThread().getId()
+                        ))
+                        .addField(
+                            "Agrees",
+                            String.valueOf(suggestion.getAgrees()),
+                            true
+                        )
+                        .addField(
+                            "Disagrees",
+                            String.valueOf(suggestion.getDisagrees()),
+                            true
+                        )
+                        .addField(
+                            "Neutrals",
+                            String.valueOf(suggestion.getNeutrals()),
+                            true
+                        )
+                        .addField(
+                            "Tags",
+                            suggestion.getThread()
+                                .getAppliedTags()
+                                .stream()
+                                .map(ForumTag::getName)
+                                .collect(Collectors.joining(", ")),
+                            false
+                        )
+                        .addField(
+                            "Created",
+                            suggestion.getFirstMessage()
+                                .map(Message::getTimeCreated)
+                                .map(date -> String.format("<t:%s:R>", date.toInstant().toEpochMilli() / 1000))
+                                .orElse("?"),
+                            false
+                        )
+                        .build()
+                )
+                .addActionRow(
+                    net.dv8tion.jda.api.interactions.components.buttons.Button.of(
+                        ButtonStyle.SUCCESS,
+                        String.format(
+                            "suggestion-review-accept-%s",
+                            suggestion.getThread().getId()
+                        ),
+                        "Greenlit",
+                        java.util.Optional.ofNullable(suggestionConfig.getGreenlitEmojiId())
+                            .map(StringUtils::stripToNull)
+                            .map(emojiId -> Emoji.fromCustom(
+                                "greenlit",
+                                Long.parseLong(emojiId),
+                                false
+                            ))
+                            .orElse(null)
+                    ),
+                    Button.of(
+                        ButtonStyle.DANGER,
+                        String.format(
+                            "suggestion-review-deny-%s",
+                            suggestion.getThread().getId()
+                        ),
+                        "Deny",
+                        java.util.Optional.ofNullable(suggestionConfig.getDisagreeEmojiId())
+                            .map(StringUtils::stripToNull)
+                            .map(emojiId -> Emoji.fromCustom(
+                                "disagree",
+                                Long.parseLong(emojiId),
+                                false
+                            ))
+                            .orElse(null)
+                    )
+                )
+                .queue();
+        }, () -> {
+            throw new RuntimeException("Requested review channel not found!");
+        });
+
+        // Respond to User
+        event.getHook()
+            .editOriginal("This suggestion has been sent for review.")
+            .queue();
+    }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-id", description = "View user suggestions.")
     public void viewMemberSuggestions(
@@ -145,7 +295,7 @@ public class SuggestionCommands extends ApplicationCommand {
 
         for (SuggestionCache.Suggestion suggestion : pages) {
             String link = "[" + suggestion.getThreadName().replaceAll("`", "") + "](" + suggestion.getThread().getJumpUrl() + ")";
-            link += (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "") + "\n";
+            link += (suggestion.isGreenlit() ? " " + getEmojiFormat(SuggestionConfig::getGreenlitEmojiId) : "") + "\n";
             link += suggestion.getThread().getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "\n";
             link = link.replaceAll("\n\n", "\n");
 
@@ -156,7 +306,7 @@ public class SuggestionCommands extends ApplicationCommand {
                 }
             }
 
-            link += getEmojiFormat(EmojiConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + getEmojiFormat(EmojiConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
+            link += getEmojiFormat(SuggestionConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + getEmojiFormat(SuggestionConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
             links.add(link);
         }
 
@@ -172,7 +322,7 @@ public class SuggestionCommands extends ApplicationCommand {
                     true
                 )
                 .addField(
-                    getEmojiFormat(EmojiConfig::getGreenlitEmojiId),
+                    getEmojiFormat(SuggestionConfig::getGreenlitEmojiId),
                     (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
                     true
                 )
@@ -188,8 +338,8 @@ public class SuggestionCommands extends ApplicationCommand {
         return embedBuilder;
     }
 
-    private static String getEmojiFormat(Function<EmojiConfig, String> emojiIdFunction) {
-        return NerdBotApp.getBot().getJDA().getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getEmojiConfig())).getFormatted();
+    private static String getEmojiFormat(Function<SuggestionConfig, String> emojiIdFunction) {
+        return NerdBotApp.getBot().getJDA().getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getSuggestionConfig())).getFormatted();
     }
 
 }
