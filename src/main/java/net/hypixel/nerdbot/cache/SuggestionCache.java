@@ -10,14 +10,20 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
-import net.hypixel.nerdbot.bot.config.ChannelConfig;
-import net.hypixel.nerdbot.bot.config.EmojiConfig;
-import net.hypixel.nerdbot.curator.ForumChannelCurator;
+import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -40,8 +46,8 @@ public class SuggestionCache extends TimerTask {
         try {
             log.info("Started suggestion cache update.");
             this.cache.forEach((key, suggestion) -> suggestion.setExpired());
-            ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
-            Util.safeArrayStream(channelConfig.getSuggestionForumIds(), channelConfig.getAlphaSuggestionForumIds())
+            SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+            Util.safeArrayStream(suggestionConfig.getSuggestionForumIds(), suggestionConfig.getAlphaSuggestionForumIds())
                 .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
                 .filter(Objects::nonNull)
                 .flatMap(forumChannel -> Stream.concat(
@@ -58,7 +64,6 @@ public class SuggestionCache extends TimerTask {
                         return;
                     }
 
-                    EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
                     Message startMessage = suggestion.getThread().retrieveStartMessage().complete();
 
                     if (startMessage.getReactions().isEmpty()) {
@@ -68,8 +73,8 @@ public class SuggestionCache extends TimerTask {
 
                     startMessage.getReactions().stream()
                         .filter(messageReaction -> messageReaction.getEmoji().getType() == Emoji.Type.CUSTOM)
-                        .filter(messageReaction -> messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getAgreeEmojiId())
-                            || messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(emojiConfig.getDisagreeEmojiId()))
+                        .filter(messageReaction -> messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(suggestionConfig.getAgreeEmojiId())
+                            || messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(suggestionConfig.getDisagreeEmojiId()))
                         .forEach(messageReaction -> {
                             messageReaction.retrieveUsers().complete().forEach(user -> {
                                 DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -122,49 +127,45 @@ public class SuggestionCache extends TimerTask {
         log.debug("Removed suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") from the suggestion cache.");
     }
 
+    @Getter
     public static class Suggestion {
 
-        @Getter
         private final ThreadChannel thread;
-        @Getter
+        private final Optional<Message> firstMessage;
         private final String parentId;
-        @Getter
         private final String threadName;
-        @Getter
         private final boolean alpha;
-        @Getter
         private final int agrees;
-        @Getter
         private final int disagrees;
-        @Getter
         private final boolean greenlit;
-        @Getter
         private final boolean deleted;
-        @Getter
         private final long lastUpdated = System.currentTimeMillis();
-        @Getter
         private boolean expired;
+        private long lastBump = System.currentTimeMillis();
 
         public Suggestion(ThreadChannel thread) {
+            SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
             this.thread = thread;
             this.parentId = thread.getParentChannel().asForumChannel().getId();
             this.threadName = thread.getName();
-            this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> ForumChannelCurator.GREENLIT_TAGS.contains(forumTag.getName()));
+            this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> forumTag.getId().equals(suggestionConfig.getGreenlitTag()) || forumTag.getId().equals(suggestionConfig.getReviewedTag()));
             this.expired = false;
-            this.alpha = thread.getName().toLowerCase().contains("alpha") || Util.safeArrayStream(NerdBotApp.getBot().getConfig().getChannelConfig().getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
+            this.alpha = thread.getParentChannel().getName().toLowerCase().contains("alpha") || Util.safeArrayStream(suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
 
             // Message & Reactions
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
 
             if (history.isEmpty()) {
+                this.firstMessage = Optional.empty();
                 this.deleted = true;
                 this.agrees = 0;
                 this.disagrees = 0;
             } else {
                 Message message = history.getRetrievedHistory().get(0);
+                this.firstMessage = Optional.of(message);
                 this.deleted = message.getIdLong() != thread.getIdLong();
-                this.agrees = getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
-                this.disagrees = getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
+                this.agrees = getReactionCount(message, suggestionConfig.getAgreeEmojiId());
+                this.disagrees = getReactionCount(message, suggestionConfig.getDisagreeEmojiId());
             }
         }
 
