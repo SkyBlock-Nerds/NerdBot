@@ -5,7 +5,9 @@ import net.hypixel.nerdbot.util.TimeUtil;
 
 import java.lang.reflect.Type;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class DateDeserializer implements JsonDeserializer<Date> {
 
@@ -16,9 +18,11 @@ public class DateDeserializer implements JsonDeserializer<Date> {
 
         if (dateElement != null && dateElement.isJsonPrimitive()) {
             String dateString = dateElement.getAsString();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
             try {
-                return TimeUtil.GLOBAL_DATE_TIME_FORMAT.parse(dateString);
+                return dateFormat.parse(dateString);
             } catch (ParseException e) {
                 throw new JsonParseException("Error parsing date: " + dateString, e);
             }
