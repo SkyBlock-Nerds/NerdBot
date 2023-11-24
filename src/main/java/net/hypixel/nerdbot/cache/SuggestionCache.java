@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -153,9 +154,30 @@ public class SuggestionCache extends TimerTask {
             this.expired = false;
             this.alpha = thread.getParentChannel().getName().toLowerCase().contains("alpha") || Util.safeArrayStream(suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
 
+            // Activity
+            Message latestMessage = thread.getHistory().getMessageById(thread.getLatestMessageId());
+            if (latestMessage != null) {
+                long createdAt = latestMessage.getTimeCreated().toInstant().toEpochMilli();
+                long currentTime = System.currentTimeMillis();
+                long hoursAgo = TimeUnit.MILLISECONDS.toHours(currentTime - createdAt);
+                boolean archive = false;
+                boolean lock = false;
+
+                if (hoursAgo >= suggestionConfig.getAutoArchiveThreshold()) {
+                    archive = true;
+                }
+
+                if (hoursAgo >= suggestionConfig.getAutoLockThreshold()) {
+                    lock = true;
+                }
+
+                if (archive || lock) {
+                    thread.getManager().setArchived(archive).setLocked(lock).queue();
+                }
+            }
+
             // Message & Reactions
             MessageHistory history = thread.getHistoryFromBeginning(1).complete();
-
             if (history.isEmpty()) {
                 this.firstMessage = Optional.empty();
                 this.deleted = true;
