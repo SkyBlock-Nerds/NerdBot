@@ -14,7 +14,11 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
+import net.hypixel.nerdbot.cache.SuggestionCache;
+import net.hypixel.nerdbot.curator.ForumChannelCurator;
+import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,8 +57,14 @@ public class SuggestionListener {
                     return;
                 }
 
+                SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(thread.getId());
                 ForumChannel forum = thread.getParentChannel().asForumChannel();
                 List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+
+                if (suggestion.getFirstMessage().isEmpty()) {
+                    event.reply("Unable to locate first message.").setEphemeral(true).queue();
+                    return;
+                }
 
                 if (tags.stream().anyMatch(forumTag -> forumTag.getId().equals(suggestionConfig.getGreenlitTag()) || forumTag.getId().equals(suggestionConfig.getReviewedTag()))) {
                     event.reply("This suggestion is already greenlit!").setEphemeral(true).queue();
@@ -69,6 +79,8 @@ public class SuggestionListener {
                     thread.getManager().setAppliedTags(tags).queue();
                 }
 
+                GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(thread.getParentChannel().asForumChannel(), suggestion.getFirstMessage().get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
+                NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
                 accepted = true;
             }
 
