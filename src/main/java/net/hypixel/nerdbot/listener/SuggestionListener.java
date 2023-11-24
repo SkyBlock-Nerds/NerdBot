@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
@@ -71,13 +72,28 @@ public class SuggestionListener {
                     return;
                 }
 
-                tags.add(forum.getAvailableTagById(suggestionConfig.getGreenlitTag()));
 
-                if (thread.isArchived()) {
-                    thread.getManager().setArchived(false).setAppliedTags(tags).setArchived(true).queue();
-                } else {
-                    thread.getManager().setAppliedTags(tags).queue();
+                tags.add(forum.getAvailableTagById(suggestionConfig.getGreenlitTag()));
+                ThreadChannelManager threadManager = thread.getManager();
+                boolean wasArchived = thread.isArchived();
+
+                if (wasArchived) {
+                    threadManager = threadManager.setArchived(false);
                 }
+
+                threadManager = threadManager.setAppliedTags(tags);
+
+                // Handle Archiving and Locking
+                if (wasArchived || suggestionConfig.isArchiveOnGreenlit()) {
+                    threadManager = threadManager.setArchived(true);
+                }
+
+                if (suggestionConfig.isLockOnGreenlit()) {
+                    threadManager = threadManager.setLocked(true);
+                }
+
+                // Send Changes
+                threadManager.queue();
 
                 GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(thread.getParentChannel().asForumChannel(), suggestion.getFirstMessage().get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
                 NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
