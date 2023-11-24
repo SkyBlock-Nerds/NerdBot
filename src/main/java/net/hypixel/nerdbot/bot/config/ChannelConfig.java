@@ -45,16 +45,6 @@ public class ChannelConfig {
     private String announcementChannelId = "";
 
     /**
-     * The {@link TextChannel} IDs for the suggestion forums
-     */
-    private String[] suggestionForumIds = {};
-
-    /**
-     * The {@link TextChannel} IDs for the alpha suggestion forums
-     */
-    private String[] alphaSuggestionForumIds = {};
-
-    /**
      * The {@link TextChannel} ID for the itemgen channel
      */
     private String[] genChannelIds = {};
@@ -69,8 +59,4 @@ public class ChannelConfig {
      */
     private String[] blacklistedChannels = {};
 
-    /**
-     * Whether automatic pinning of first messages in threads should be enabled. This is disabled by default.
-     */
-    private boolean pinFirstMessageInThreads = false;
 }
