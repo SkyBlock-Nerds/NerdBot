@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.util.gson.adapter;
 
 import com.google.gson.*;
-import net.hypixel.nerdbot.util.TimeUtil;
 
 import java.lang.reflect.Type;
 import java.text.ParseException;
