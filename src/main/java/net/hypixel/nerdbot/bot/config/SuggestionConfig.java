@@ -87,7 +87,7 @@ public class SuggestionConfig {
      * <br><br>
      * Default value is 75%
      */
-    private double greenlitPercentage = 75;
+    private double greenlitRatio = 75;
 
     /**
      * Automatically archive posts when they get greenlit.
@@ -113,14 +113,20 @@ public class SuggestionConfig {
     private boolean autoPinFirstMessage = false;
 
     /**
-     * The amount of hours between thread bumping allowed. This value
-     * is ignored if the last bump was greater than 100 messages ago.
+     * The amount of agrees required to request a review.
      * <br><br>
-     * Default is 12 hours
+     * Default is 15
      * <br>
-     * Set to 0 to disable
+     * Set to -1 to disable
      */
-    private int bumpThreshold = 12;
+    private int requestReviewThreshold = 15;
+
+    /**
+     * Should greenlit threshold be enforced for requested reviews.
+     * <br><br>
+     * Default is disabled
+     */
+    private boolean enforcingGreenlitRatioForRequestReview = false;
 
     /**
      * The amount of hours with no activity to archive a thread.
@@ -136,9 +142,9 @@ public class SuggestionConfig {
      * <br><br>
      * Default is disabled
      * <br>
-     * Set to 0 to disable
+     * Set to -1 to disable
      */
-    private int autoLockThreshold = 0;
+    private int autoLockThreshold = -1;
 
     // Helper Methods
 
