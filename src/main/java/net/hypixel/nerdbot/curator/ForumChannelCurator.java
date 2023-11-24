@@ -138,7 +138,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has " + agree + " agree reactions, " + neutral + " neutral reactions, and " + disagree + " disagree reactions with a ratio of " + ratio + "%");
 
                     if ((agree < config.getMinimumThreshold()) || (ratio < config.getPercentage())) {
-                        log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does not meet the minimum requirements to be greenlit!");
+                        log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does not meet the minimum threshold of " + config.getMinimumThreshold() + " agree reactions to be greenlit!");
                         continue;
                     }
 
