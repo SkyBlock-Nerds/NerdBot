@@ -17,12 +17,11 @@ import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.bot.config.EmojiConfig;
+import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,8 +29,6 @@ import java.util.stream.Stream;
 
 @Log4j2
 public class ForumChannelCurator extends Curator<ForumChannel> {
-
-    public static final List<String> GREENLIT_TAGS = Arrays.asList("Greenlit", "Reviewed");
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
@@ -53,15 +50,15 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
             }
 
             BotConfig config = NerdBotApp.getBot().getConfig();
-            EmojiConfig emojiConfig = config.getEmojiConfig();
+            SuggestionConfig suggestionConfig = config.getSuggestionConfig();
 
-            if (emojiConfig == null) {
+            if (suggestionConfig == null) {
                 log.error("Couldn't find the emoji config from the bot config!");
                 timer.observeDuration();
                 return output;
             }
 
-            ForumTag greenlitTag = forumChannel.getAvailableTagsByName("greenlit", true).get(0);
+            ForumTag greenlitTag = forumChannel.getAvailableTagById(suggestionConfig.getGreenlitTag());
 
             if (greenlitTag == null) {
                 log.error("Couldn't find the greenlit tag for the forum channel " + forumChannel.getName() + " (ID: " + forumChannel.getId() + ")!");
@@ -103,9 +100,9 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         .toList();
 
                     Map<String, Integer> votes = Stream.of(
-                            emojiConfig.getAgreeEmojiId(),
-                            emojiConfig.getNeutralEmojiId(),
-                            emojiConfig.getDisagreeEmojiId()
+                            suggestionConfig.getAgreeEmojiId(),
+                            suggestionConfig.getNeutralEmojiId(),
+                            suggestionConfig.getDisagreeEmojiId()
                         )
                         .map(emojiId -> Pair.of(
                             emojiId,
@@ -121,13 +118,13 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         ))
                         .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
 
-                    int agree = votes.get(emojiConfig.getAgreeEmojiId());
-                    int neutral = votes.get(emojiConfig.getNeutralEmojiId());
-                    int disagree = votes.get(emojiConfig.getDisagreeEmojiId());
+                    int agree = votes.get(suggestionConfig.getAgreeEmojiId());
+                    int neutral = votes.get(suggestionConfig.getNeutralEmojiId());
+                    int disagree = votes.get(suggestionConfig.getDisagreeEmojiId());
                     List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
 
                     // Upsert into database if already greenlit
-                    if (tags.stream().anyMatch(tag -> GREENLIT_TAGS.contains(tag.getName()))) {
+                    if (tags.stream().anyMatch(tag -> tag.getId().equals(suggestionConfig.getGreenlitTag()) || tag.getId().equals(suggestionConfig.getReviewedTag()))) {
                         log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is already greenlit/reviewed!");
                         GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
                         database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
@@ -137,8 +134,8 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     double ratio = getRatio(agree, disagree);
                     log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has " + agree + " agree reactions, " + neutral + " neutral reactions, and " + disagree + " disagree reactions with a ratio of " + ratio + "%");
 
-                    if ((agree < config.getMinimumThreshold()) || (ratio < config.getPercentage())) {
-                        log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does not meet the minimum threshold of " + config.getMinimumThreshold() + " agree reactions to be greenlit!");
+                    if ((agree < suggestionConfig.getGreenlitThreshold()) || (ratio < suggestionConfig.getGreenlitPercentage())) {
+                        log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does not meet the minimum threshold of " + suggestionConfig.getGreenlitThreshold() + " agree reactions to be greenlit!");
                         continue;
                     }
 
@@ -178,7 +175,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
     }
 
     private GreenlitMessage createGreenlitMessage(ForumChannel forumChannel, Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
-        EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
 
         return GreenlitMessage.builder()
             .agrees(agree)
@@ -194,7 +191,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
             .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
             .positiveVoterIds(
                 message.getReactions().stream()
-                    .filter(reaction -> emojiConfig.isEquals(reaction, EmojiConfig::getAgreeEmojiId))
+                    .filter(reaction -> suggestionConfig.isReactionEquals(reaction, SuggestionConfig::getAgreeEmojiId))
                     .flatMap(reaction -> reaction.retrieveUsers()
                         .complete()
                         .stream()
