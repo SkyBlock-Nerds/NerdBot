@@ -137,6 +137,7 @@ public class SuggestionCache extends TimerTask {
         private final boolean alpha;
         private final int agrees;
         private final int disagrees;
+        private final int neutrals;
         private final boolean greenlit;
         private final boolean deleted;
         private final long lastUpdated = System.currentTimeMillis();
@@ -160,13 +161,22 @@ public class SuggestionCache extends TimerTask {
                 this.deleted = true;
                 this.agrees = 0;
                 this.disagrees = 0;
+                this.neutrals = 0;
             } else {
                 Message message = history.getRetrievedHistory().get(0);
                 this.firstMessage = Optional.of(message);
                 this.deleted = message.getIdLong() != thread.getIdLong();
                 this.agrees = getReactionCount(message, suggestionConfig.getAgreeEmojiId());
                 this.disagrees = getReactionCount(message, suggestionConfig.getDisagreeEmojiId());
+                this.neutrals = getReactionCount(message, suggestionConfig.getNeutralEmojiId());
             }
+        }
+
+        public double getRatio() {
+            if (this.getAgrees() == 0 && this.getDisagrees() == 0) {
+                return 0;
+            }
+            return (double) this.getAgrees() / (this.getAgrees() + this.getDisagrees()) * 100.0;
         }
 
         public static int getReactionCount(Message message, String emojiId) {
