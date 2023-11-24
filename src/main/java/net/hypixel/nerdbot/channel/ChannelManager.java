@@ -18,8 +18,7 @@ public class ChannelManager {
     }
 
     public static Optional<ForumChannel> getModMailChannel() {
-        return getChannel(NerdBotApp.getBot().getConfig().getModMailConfig().getChannelId())
-            .map(ForumChannel.class::cast);
+        return getChannel(NerdBotApp.getBot().getConfig().getModMailConfig().getChannelId()).map(ForumChannel.class::cast);
     }
 
     public static Optional<TextChannel> getLogChannel() {
@@ -28,5 +27,9 @@ public class ChannelManager {
 
     public static Optional<TextChannel> getVerifyLogChannel() {
         return getChannel(NerdBotApp.getBot().getConfig().getChannelConfig().getVerifyLogChannelId());
+    }
+
+    public static Optional<TextChannel> getRequestedReviewChannel() {
+        return getChannel(NerdBotApp.getBot().getConfig().getSuggestionConfig().getRequestedReviewForumId());
     }
 }
