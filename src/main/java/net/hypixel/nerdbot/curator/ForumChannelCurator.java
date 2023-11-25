@@ -176,6 +176,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
                     log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has been greenlit!");
                     GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
+                    NerdBotApp.getSuggestionCache().updateSuggestion(thread); // Update Suggestion
                     output.add(greenlitMessage);
                 } catch (Exception e) {
                     log.error("Failed to curate thread '" + thread.getName() + "' (ID: " + thread.getId() + ")!", e);

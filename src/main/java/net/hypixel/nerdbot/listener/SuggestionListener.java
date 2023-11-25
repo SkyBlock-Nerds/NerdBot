@@ -72,7 +72,6 @@ public class SuggestionListener {
                     return;
                 }
 
-
                 tags.add(forum.getAvailableTagById(suggestionConfig.getGreenlitTag()));
                 ThreadChannelManager threadManager = thread.getManager();
                 boolean wasArchived = thread.isArchived();
@@ -97,6 +96,7 @@ public class SuggestionListener {
 
                 GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(thread.getParentChannel().asForumChannel(), suggestion.getFirstMessage().get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
                 NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
+                NerdBotApp.getSuggestionCache().updateSuggestion(thread); // Update Suggestion
                 accepted = true;
             }
 

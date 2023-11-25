@@ -128,6 +128,11 @@ public class SuggestionCache extends TimerTask {
         log.debug("Removed suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") from the suggestion cache.");
     }
 
+    public void updateSuggestion(ThreadChannel thread) {
+        this.cache.put(thread.getId(), new Suggestion(thread));
+        log.debug("Updated existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") in the suggestion cache.");
+    }
+
     @Getter
     public static class Suggestion {
 
