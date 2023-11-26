@@ -34,7 +34,9 @@ public class SuggestionCache extends TimerTask {
     private final Map<String, Suggestion> cache = new HashMap<>();
 
     @Getter
-    private long lastUpdated;
+    private boolean initialized = false;
+    @Getter
+    private boolean updating = false;
     @Getter
     private final Timer timer = new Timer();
 
@@ -46,6 +48,7 @@ public class SuggestionCache extends TimerTask {
     public void run() {
         try {
             log.info("Started suggestion cache update.");
+            this.updating = true;
             this.cache.forEach((key, suggestion) -> suggestion.setExpired());
             SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
             Util.safeArrayStream(suggestionConfig.getSuggestionForumIds(), suggestionConfig.getAlphaSuggestionForumIds())
@@ -99,6 +102,8 @@ public class SuggestionCache extends TimerTask {
                 .forEach(suggestion -> this.removeSuggestion(suggestion.getThread()));
 
             log.info("Finished caching suggestions.");
+            this.initialized = true;
+            this.updating = false;
         } catch (Exception ex) {
             ex.printStackTrace();
         }

@@ -58,7 +58,18 @@ public class SuggestionListener {
                     return;
                 }
 
+                if (!NerdBotApp.getSuggestionCache().isInitialized()) {
+                    event.reply("Suggestion cache is still initializing. Try again later.").setEphemeral(true).queue();
+                    return;
+                }
+
                 SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(thread.getId());
+
+                if (suggestion == null) {
+                    event.reply("Unable to locate suggestion in the cache! Try again later.").complete();
+                    return;
+                }
+
                 ForumChannel forum = thread.getParentChannel().asForumChannel();
                 List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
 
