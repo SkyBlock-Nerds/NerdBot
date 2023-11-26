@@ -162,7 +162,7 @@ public class SuggestionCommands extends ApplicationCommand {
                         .build()
                 )
                 .addActionRow(
-                    net.dv8tion.jda.api.interactions.components.buttons.Button.of(
+                    Button.of(
                         ButtonStyle.SUCCESS,
                         String.format(
                             "suggestion-review-accept-%s",
