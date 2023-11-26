@@ -33,7 +33,7 @@ public class MetricsListener {
 
         if (event.getChannel() instanceof ThreadChannel threadChannel) {
             String forumChannelId = threadChannel.getParentChannel().getId();
-            if (Util.safeArrayStream(NerdBotApp.getBot().getConfig().getChannelConfig().getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            if (Util.safeArrayStream(NerdBotApp.getBot().getConfig().getSuggestionConfig().getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 PrometheusMetrics.TOTAL_SUGGESTIONS_AMOUNT.inc();
             }
         }

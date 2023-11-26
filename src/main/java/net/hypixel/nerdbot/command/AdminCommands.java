@@ -36,6 +36,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
+import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
@@ -462,29 +463,28 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
-        List<ForumTag> forumTags = forumChannel.getAvailableTagsByName("flared", true);
+        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+        ForumTag flaredTag = forumChannel.getAvailableTagById(suggestionConfig.getFlaredTag());
 
-        if (forumTags.isEmpty()) {
+        if (flaredTag == null) {
             event.reply("This forum channel does not have the Flared tag!").setEphemeral(true).queue();
             return;
         }
 
-        ForumTag forumTag = forumTags.get(0);
-
-        if (threadChannel.getAppliedTags().contains(forumTag)) {
+        if (threadChannel.getAppliedTags().contains(flaredTag)) {
             event.reply("This suggestion is already flared!").setEphemeral(true).queue();
             return;
         }
 
         List<ForumTag> appliedTags = new ArrayList<>(threadChannel.getAppliedTags());
-        appliedTags.add(forumTag);
+        appliedTags.add(flaredTag);
 
         threadChannel.getManager()
             .setLocked(true)
             .setAppliedTags(appliedTags)
             .queue();
 
-        event.reply(event.getUser().getAsMention() + " applied the " + forumTag.getName() + " tag and locked this suggestion!").queue();
+        event.reply(event.getUser().getAsMention() + " applied the " + flaredTag.getName() + " tag and locked this suggestion!").queue();
     }
 
     @JDASlashCommand(name = "cache", subcommand = "force-save", description = "Force save the specified cache to the database", defaultLocked = true)
