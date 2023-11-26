@@ -12,18 +12,13 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.bot.config.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 
 @Log4j2
 public class PinListener {
 
-    private final BotConfig config = NerdBotApp.getBot().getConfig();
-    private final ChannelConfig channelConfig = config.getChannelConfig();
-
     private final Emoji pushpin = Emoji.fromUnicode("\uD83D\uDCCC");
     private final Emoji roundPushpin = Emoji.fromUnicode("\uD83D\uDCCD");
-
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {
@@ -44,7 +39,9 @@ public class PinListener {
             return; // Ignore any other bot messages
         }
 
-        if (!channelConfig.isPinFirstMessageInThreads()) {
+        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+
+        if (!suggestionConfig.isAutoPinFirstMessage()) {
             return; // Ignore if feature is globally turned off.
         }
 
