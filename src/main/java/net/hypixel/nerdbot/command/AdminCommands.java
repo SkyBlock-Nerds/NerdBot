@@ -464,12 +464,13 @@ public class AdminCommands extends ApplicationCommand {
         }
 
         SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
-        ForumTag flaredTag = forumChannel.getAvailableTagById(suggestionConfig.getFlaredTag());
 
-        if (flaredTag == null) {
+        if (Util.hasTagByName(forumChannel, suggestionConfig.getFlaredTag())) {
             event.reply("This forum channel does not have the Flared tag!").setEphemeral(true).queue();
             return;
         }
+
+        ForumTag flaredTag = Util.getTagByName(forumChannel, suggestionConfig.getFlaredTag());
 
         if (threadChannel.getAppliedTags().contains(flaredTag)) {
             event.reply("This suggestion is already flared!").setEphemeral(true).queue();
