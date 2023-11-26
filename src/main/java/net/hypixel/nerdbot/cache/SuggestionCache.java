@@ -160,9 +160,13 @@ public class SuggestionCache extends TimerTask {
             this.thread = thread;
             this.parentId = thread.getParentChannel().asForumChannel().getId();
             this.threadName = thread.getName();
-            this.greenlit = thread.getAppliedTags().stream().anyMatch(forumTag -> forumTag.getId().equals(suggestionConfig.getGreenlitTag()) || forumTag.getId().equals(suggestionConfig.getReviewedTag()));
+            this.greenlit = Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag());
             this.expired = false;
-            this.alpha = thread.getParentChannel().getName().toLowerCase().contains("alpha") || Util.safeArrayStream(suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
+            this.alpha = thread.getParentChannel()
+                .getName()
+                .toLowerCase()
+                .contains("alpha") ||
+                Util.safeArrayStream(suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
 
             // Activity
             Message latestMessage = thread.getHistory().getMessageById(thread.getLatestMessageId());

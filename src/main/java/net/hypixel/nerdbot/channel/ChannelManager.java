@@ -18,7 +18,7 @@ public class ChannelManager {
     }
 
     public static Optional<ForumChannel> getModMailChannel() {
-        return getChannel(NerdBotApp.getBot().getConfig().getModMailConfig().getChannelId()).map(ForumChannel.class::cast);
+        return Optional.ofNullable(NerdBotApp.getBot().getJDA().getForumChannelById(NerdBotApp.getBot().getConfig().getModMailConfig().getChannelId()));
     }
 
     public static Optional<TextChannel> getLogChannel() {
