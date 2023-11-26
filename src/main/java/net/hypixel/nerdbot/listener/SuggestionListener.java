@@ -55,13 +55,8 @@ public class SuggestionListener {
 
                 ForumChannel forum = thread.getParentChannel().asForumChannel();
 
-                if (Util.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
+                if (!Util.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
                     event.reply("Unable to locate greenlit tag.").setEphemeral(true).queue();
-                    return;
-                }
-
-                if (!NerdBotApp.getSuggestionCache().isInitialized()) {
-                    event.reply("Suggestion cache is still initializing. Try again later.").setEphemeral(true).queue();
                     return;
                 }
 
