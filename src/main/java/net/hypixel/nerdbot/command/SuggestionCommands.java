@@ -5,6 +5,9 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
@@ -27,11 +30,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Log4j2
 public class SuggestionCommands extends ApplicationCommand {
+
+    private final Cache<String, Long> lastReviewRequestCache = Caffeine.newBuilder()
+        .expireAfterWrite(1, TimeUnit.HOURS)
+        .scheduler(Scheduler.systemScheduler())
+        .removalListener((o, o2, removalCause) -> log.info("Removed {} from last review request cache", o))
+        .build();
 
     @JDASlashCommand(name = "request-review", description = "Request a greenlit review of your suggestion.")
     public void requestSuggestionReview(
@@ -53,11 +63,10 @@ public class SuggestionCommands extends ApplicationCommand {
             return;
         }
 
-        // Handle Suggestion Initializing
-        /*if (!NerdBotApp.getSuggestionCache().isInitialized()) {
-            event.getHook().editOriginal("Suggestion cache is still initializing. Try again later.").complete();
+        if (lastReviewRequestCache.getIfPresent(event.getMember().getId()) != null) {
+            event.getHook().editOriginal("You cannot request another review yet!").complete();
             return;
-        }*/
+        }
 
         SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(event.getChannel().getId());
 
@@ -190,6 +199,8 @@ public class SuggestionCommands extends ApplicationCommand {
         }, () -> {
             throw new RuntimeException("Requested review channel not found!");
         });
+
+        lastReviewRequestCache.put(event.getMember().getId(), System.currentTimeMillis());
 
         // Respond to User
         event.getHook()
