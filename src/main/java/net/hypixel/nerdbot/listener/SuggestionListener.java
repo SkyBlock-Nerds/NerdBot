@@ -49,36 +49,31 @@ public class SuggestionListener {
                 SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
 
                 if (thread == null) {
-                    event.reply("Unable to locate thread with ID " + threadId).setEphemeral(true).queue();
+                    event.getHook().sendMessage("Unable to locate thread with ID " + threadId).setEphemeral(true).queue();
                     return;
                 }
 
                 ForumChannel forum = thread.getParentChannel().asForumChannel();
 
-                if (Util.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
-                    event.reply("Unable to locate greenlit tag.").setEphemeral(true).queue();
-                    return;
-                }
-
-                if (!NerdBotApp.getSuggestionCache().isInitialized()) {
-                    event.reply("Suggestion cache is still initializing. Try again later.").setEphemeral(true).queue();
+                if (!Util.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
+                    event.getHook().sendMessage("Unable to locate greenlit tag.").setEphemeral(true).queue();
                     return;
                 }
 
                 SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(thread.getId());
 
                 if (suggestion == null) {
-                    event.reply("Unable to locate suggestion in the cache! Try again later.").complete();
+                    event.getHook().sendMessage("Unable to locate suggestion in the cache! Try again later.").complete();
                     return;
                 }
 
                 if (suggestion.getFirstMessage().isEmpty()) {
-                    event.reply("Unable to locate first message.").setEphemeral(true).queue();
+                    event.getHook().sendMessage("Unable to locate first message.").setEphemeral(true).queue();
                     return;
                 }
 
                 if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
-                    event.reply("This suggestion is already greenlit!").setEphemeral(true).queue();
+                    event.getHook().sendMessage("This suggestion is already greenlit!").setEphemeral(true).queue();
                     return;
                 }
 
