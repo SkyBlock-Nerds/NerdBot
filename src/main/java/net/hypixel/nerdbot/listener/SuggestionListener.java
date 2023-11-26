@@ -60,7 +60,17 @@ public class SuggestionListener {
                     return;
                 }
 
+                if (!NerdBotApp.getSuggestionCache().isInitialized()) {
+                    event.reply("Suggestion cache is still initializing. Try again later.").setEphemeral(true).queue();
+                    return;
+                }
+
                 SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(thread.getId());
+
+                if (suggestion == null) {
+                    event.reply("Unable to locate suggestion in the cache! Try again later.").complete();
+                    return;
+                }
 
                 if (suggestion.getFirstMessage().isEmpty()) {
                     event.reply("Unable to locate first message.").setEphemeral(true).queue();

@@ -37,12 +37,13 @@ public class SuggestionCommands extends ApplicationCommand {
     public void requestSuggestionReview(
         GuildSlashEvent event
     ) {
+        event.deferReply(true).complete();
+
         if (event.getChannel().getType() != ChannelType.GUILD_PUBLIC_THREAD) {
-            event.reply("This command is only usable in forum channels!").complete();
+            event.getHook().editOriginal("This command is only usable in forum channels!").complete();
             return;
         }
 
-        event.deferReply(true).complete();
         SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
         String parentId = event.getChannel().asThreadChannel().getParentChannel().getId();
 
@@ -52,7 +53,19 @@ public class SuggestionCommands extends ApplicationCommand {
             return;
         }
 
+        // Handle Suggestion Initializing
+        if (!NerdBotApp.getSuggestionCache().isInitialized()) {
+            event.getHook().editOriginal("Suggestion cache is still initializing. Try again later.").complete();
+            return;
+        }
+
         SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(event.getChannel().getId());
+
+        // Handle Missing Suggestion
+        if (suggestion == null) {
+            event.getHook().editOriginal("This suggestion was not found in the cache! Try again later.").complete();
+            return;
+        }
 
         // Handle User Deleted Posts
         if (suggestion.getFirstMessage().isEmpty()) {
