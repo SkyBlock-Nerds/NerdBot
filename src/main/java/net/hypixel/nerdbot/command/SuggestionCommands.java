@@ -47,7 +47,7 @@ public class SuggestionCommands extends ApplicationCommand {
         String parentId = event.getChannel().asThreadChannel().getParentChannel().getId();
 
         // Handle Non-Suggestion Channels
-        if (Util.safeArrayStream(suggestionConfig.getSuggestionForumIds(), suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(forumId -> forumId.equals(parentId))) {
+        if (Util.safeArrayStream(suggestionConfig.getSuggestionForumIds(), suggestionConfig.getAlphaSuggestionForumIds()).noneMatch(forumId -> forumId.equals(parentId))) {
             event.getHook().editOriginal("You cannot send non-suggestion posts for review!").complete();
             return;
         }
