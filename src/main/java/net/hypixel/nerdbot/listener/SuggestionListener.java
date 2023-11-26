@@ -83,7 +83,6 @@ public class SuggestionListener {
                 }
 
                 List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
-                ForumChannel forum = thread.getParentChannel().asForumChannel();
                 tags.add(Util.getTagByName(forum, suggestionConfig.getGreenlitTag()));
                 ThreadChannelManager threadManager = thread.getManager();
                 boolean wasArchived = thread.isArchived();
