@@ -54,10 +54,10 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         // Handle Suggestion Initializing
-        if (!NerdBotApp.getSuggestionCache().isInitialized()) {
+        /*if (!NerdBotApp.getSuggestionCache().isInitialized()) {
             event.getHook().editOriginal("Suggestion cache is still initializing. Try again later.").complete();
             return;
-        }
+        }*/
 
         SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(event.getChannel().getId());
 
