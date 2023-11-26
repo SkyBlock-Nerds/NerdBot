@@ -44,34 +44,34 @@ public class SuggestionListener {
             String action = parts[2];
             String threadId = parts[3];
 
+            ThreadChannel thread = NerdBotApp.getBot().getJDA().getThreadChannelById(threadId);
+            SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+
+            if (thread == null) {
+                event.getHook().sendMessage("Unable to locate thread with ID " + threadId).setEphemeral(true).queue();
+                return;
+            }
+
+            ForumChannel forum = thread.getParentChannel().asForumChannel();
+
+            if (!Util.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
+                event.getHook().sendMessage("Unable to locate greenlit tag.").setEphemeral(true).queue();
+                return;
+            }
+
+            SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(thread.getId());
+
+            if (suggestion == null) {
+                event.getHook().sendMessage("Unable to locate suggestion in the cache! Try again later.").complete();
+                return;
+            }
+
+            if (suggestion.getFirstMessage().isEmpty()) {
+                event.getHook().sendMessage("Unable to locate first message.").setEphemeral(true).queue();
+                return;
+            }
+
             if (action.equals("accept")) {
-                ThreadChannel thread = NerdBotApp.getBot().getJDA().getThreadChannelById(threadId);
-                SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
-
-                if (thread == null) {
-                    event.getHook().sendMessage("Unable to locate thread with ID " + threadId).setEphemeral(true).queue();
-                    return;
-                }
-
-                ForumChannel forum = thread.getParentChannel().asForumChannel();
-
-                if (!Util.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
-                    event.getHook().sendMessage("Unable to locate greenlit tag.").setEphemeral(true).queue();
-                    return;
-                }
-
-                SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(thread.getId());
-
-                if (suggestion == null) {
-                    event.getHook().sendMessage("Unable to locate suggestion in the cache! Try again later.").complete();
-                    return;
-                }
-
-                if (suggestion.getFirstMessage().isEmpty()) {
-                    event.getHook().sendMessage("Unable to locate first message.").setEphemeral(true).queue();
-                    return;
-                }
-
                 if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
                     event.getHook().sendMessage("This suggestion is already greenlit!").setEphemeral(true).queue();
                     return;
@@ -104,6 +104,8 @@ public class SuggestionListener {
                 NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
                 NerdBotApp.getSuggestionCache().updateSuggestion(thread); // Update Suggestion
                 accepted = true;
+            } else if (action.equals("deny")) {
+                thread.sendMessage("Your recent review request has been denied. We recommend you review your suggestion and make any necessary changes before requesting another review. Thank you!").queue();
             }
 
             event.getHook().editOriginalComponents(ActionRow.of(
