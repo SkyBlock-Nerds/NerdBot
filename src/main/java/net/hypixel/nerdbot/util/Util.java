@@ -4,6 +4,9 @@ import com.google.gson.JsonObject;
 import io.prometheus.client.Summary;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
@@ -123,6 +126,38 @@ public class Util {
             .stream()
             .filter(user -> !users.contains(user))
             .count();
+    }
+
+    public static ForumTag getTagByName(ForumChannel forumChannel, String name) {
+        return getTagByName(forumChannel, name, true);
+    }
+
+    public static ForumTag getTagByName(ForumChannel forumChannel, String name, boolean ignoreCase) {
+        return forumChannel.getAvailableTags()
+            .stream()
+            .filter(forumTag -> (ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name)))
+            .findFirst()
+            .orElseThrow();
+    }
+
+    public static boolean hasTagByName(ForumChannel forumChannel, String name) {
+        return hasTagByName(forumChannel, name, true);
+    }
+
+    public static boolean hasTagByName(ForumChannel forumChannel, String name, boolean ignoreCase) {
+        return forumChannel.getAvailableTags()
+            .stream()
+            .anyMatch(forumTag -> (ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name)));
+    }
+
+    public static boolean hasTagByName(ThreadChannel threadChannel, String name) {
+        return hasTagByName(threadChannel, name, true);
+    }
+
+    public static boolean hasTagByName(ThreadChannel threadChannel, String name, boolean ignoreCase) {
+        return threadChannel.getAppliedTags()
+            .stream()
+            .anyMatch(forumTag -> (ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name)));
     }
 
     public static String formatSize(long size) {

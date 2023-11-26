@@ -21,6 +21,7 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
+import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +60,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 return output;
             }
 
-            ForumTag greenlitTag = forumChannel.getAvailableTagById(suggestionConfig.getGreenlitTag());
+            ForumTag greenlitTag = Util.getTagByName(forumChannel, suggestionConfig.getGreenlitTag());
 
             if (greenlitTag == null) {
                 log.error("Couldn't find the greenlit tag for the forum channel " + forumChannel.getName() + " (ID: " + forumChannel.getId() + ")!");
@@ -126,7 +127,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     ThreadChannelManager threadManager = thread.getManager();
 
                     // Upsert into database if already greenlit
-                    if (tags.stream().anyMatch(tag -> tag.getId().equals(suggestionConfig.getGreenlitTag()) || tag.getId().equals(suggestionConfig.getReviewedTag()))) {
+                    if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
                         log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is already greenlit/reviewed!");
                         GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
                         database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
