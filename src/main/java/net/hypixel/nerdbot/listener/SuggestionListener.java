@@ -53,26 +53,27 @@ public class SuggestionListener {
                     return;
                 }
 
-                if (suggestionConfig.getGreenlitTag() == null) {
+                ForumChannel forum = thread.getParentChannel().asForumChannel();
+
+                if (Util.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
                     event.reply("Unable to locate greenlit tag.").setEphemeral(true).queue();
                     return;
                 }
 
                 SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(thread.getId());
-                ForumChannel forum = thread.getParentChannel().asForumChannel();
-                List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
 
                 if (suggestion.getFirstMessage().isEmpty()) {
                     event.reply("Unable to locate first message.").setEphemeral(true).queue();
                     return;
                 }
 
-                if (tags.stream().anyMatch(forumTag -> forumTag.getId().equals(suggestionConfig.getGreenlitTag()) || forumTag.getId().equals(suggestionConfig.getReviewedTag()))) {
+                if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
                     event.reply("This suggestion is already greenlit!").setEphemeral(true).queue();
                     return;
                 }
 
-                tags.add(forum.getAvailableTagById(suggestionConfig.getGreenlitTag()));
+                List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+                tags.add(Util.getTagByName(forum, suggestionConfig.getGreenlitTag()));
                 ThreadChannelManager threadManager = thread.getManager();
                 boolean wasArchived = thread.isArchived();
 

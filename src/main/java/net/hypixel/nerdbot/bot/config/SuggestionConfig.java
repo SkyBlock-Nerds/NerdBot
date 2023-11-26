@@ -37,19 +37,19 @@ public class SuggestionConfig {
     // Forum Tags
 
     /**
-     * The ID of the flared {@link ForumTag tag} in an alpha {@link ForumChannel suggestion channel}.
+     * The name of the flared {@link ForumTag tag} in an alpha {@link ForumChannel suggestion channel}.
      */
-    private String flaredTag = "";
+    private String flaredTag = "flared";
 
     /**
-     * The ID of the greenlit {@link ForumTag tag} in a {@link ForumChannel forum channel}.
+     * The name of the greenlit {@link ForumTag tag} in a {@link ForumChannel forum channel}.
      */
-    private String greenlitTag = "";
+    private String greenlitTag = "greenlit";
 
     /**
-     * The ID of the reviewed {@link ForumTag tag} in a {@link ForumChannel forum channel}.
+     * The name of the reviewed {@link ForumTag tag} in a {@link ForumChannel forum channel}.
      */
-    private String reviewedTag = "";
+    private String reviewedTag = "reviewed";
 
     // Emojis
 
