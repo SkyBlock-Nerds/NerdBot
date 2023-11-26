@@ -55,7 +55,8 @@ public class SuggestionCache extends TimerTask {
                 .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
                 .filter(Objects::nonNull)
                 .flatMap(forumChannel -> Stream.concat(
-                    forumChannel.getThreadChannels().stream(), // Unarchived Posts
+                    forumChannel.getThreadChannels().stream()
+                        .sorted((o1, o2) -> Long.compare(o2.getTimeCreated().toEpochSecond(), o1.getTimeCreated().toEpochSecond())), // Unarchived Posts
                     forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
                 ))
                 .distinct()
