@@ -99,16 +99,17 @@ public class SuggestionListener {
                     GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(thread.getParentChannel().asForumChannel(), suggestion.getFirstMessage().get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
                     NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
                     NerdBotApp.getSuggestionCache().updateSuggestion(thread); // Update Suggestion
+                    thread.sendMessage("Your recent review request has been accepted! Thank you for your suggestion!").queue();
                     accepted = true;
                 }
                 case "deny" ->
                         thread.sendMessage("Your recent review request has been denied. We recommend you review your suggestion and make any necessary changes before requesting another review. Thank you!").queue();
                 case "lock" ->
                     thread.getManager().setLocked(true).queue(unused -> {
-                            event.getHook().sendMessage("Thread locked!").queue();
+                            event.getHook().sendMessage("Thread locked!").setEphemeral(true).queue();
                             thread.sendMessage("We have reviewed your recent request and have decided to lock this suggestion. If you believe this to be a mistake or would like more information, please contact us through mod mail.").queue();
-                        }, throwable -> event.getHook().sendMessage("Unable to lock thread!").queue());
-                default -> event.getHook().sendMessage("Invalid action!").queue();
+                        }, throwable -> event.getHook().sendMessage("Unable to lock thread!").setEphemeral(true).queue());
+                default -> event.getHook().sendMessage("Invalid action!").setEphemeral(true).queue();
             }
 
             event.getHook().editOriginalComponents(ActionRow.of(
