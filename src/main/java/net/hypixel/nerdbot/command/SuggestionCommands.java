@@ -23,6 +23,7 @@ import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.apache.commons.lang.StringUtils;
 
 import java.awt.*;
@@ -153,8 +154,8 @@ public class SuggestionCommands extends ApplicationCommand {
                             "Created",
                             suggestion.getFirstMessage()
                                 .map(Message::getTimeCreated)
-                                .map(date -> String.format("<t:%s:R>", date.toInstant().toEpochMilli() / 1000))
-                                .orElse("?"),
+                                .map(date -> new DiscordTimestamp(date.toInstant().toEpochMilli()).toRelativeTimestamp())
+                                .orElse("???"),
                             false
                         )
                         .build()
@@ -191,6 +192,15 @@ public class SuggestionCommands extends ApplicationCommand {
                                 false
                             ))
                             .orElse(null)
+                    ),
+                    Button.of(
+                        ButtonStyle.SECONDARY,
+                        String.format(
+                            "suggestion-review-lock-%s",
+                            suggestion.getThread().getId()
+                        ),
+                        "Lock",
+                        Emoji.fromUnicode("🔒")
                     )
                 )
                 .queue();

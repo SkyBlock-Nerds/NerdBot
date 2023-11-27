@@ -71,41 +71,43 @@ public class SuggestionListener {
                 return;
             }
 
-            if (action.equals("accept")) {
-                if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
-                    event.getHook().sendMessage("This suggestion is already greenlit!").setEphemeral(true).queue();
-                    return;
+            switch (action) {
+                case "accept" -> {
+                    if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
+                        event.getHook().sendMessage("This suggestion is already greenlit!").setEphemeral(true).queue();
+                        return;
+                    }
+                    List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+                    tags.add(Util.getTagByName(forum, suggestionConfig.getGreenlitTag()));
+                    ThreadChannelManager threadManager = thread.getManager();
+                    boolean wasArchived = thread.isArchived();
+                    if (wasArchived) {
+                        threadManager = threadManager.setArchived(false);
+                    }
+                    threadManager = threadManager.setAppliedTags(tags);
+
+                    // Handle Archiving and Locking
+                    if (wasArchived || suggestionConfig.isArchiveOnGreenlit()) {
+                        threadManager = threadManager.setArchived(true);
+                    }
+                    if (suggestionConfig.isLockOnGreenlit()) {
+                        threadManager = threadManager.setLocked(true);
+                    }
+
+                    // Send Changes
+                    threadManager.queue();
+                    GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(thread.getParentChannel().asForumChannel(), suggestion.getFirstMessage().get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
+                    NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
+                    NerdBotApp.getSuggestionCache().updateSuggestion(thread); // Update Suggestion
+                    accepted = true;
                 }
-
-                List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
-                tags.add(Util.getTagByName(forum, suggestionConfig.getGreenlitTag()));
-                ThreadChannelManager threadManager = thread.getManager();
-                boolean wasArchived = thread.isArchived();
-
-                if (wasArchived) {
-                    threadManager = threadManager.setArchived(false);
-                }
-
-                threadManager = threadManager.setAppliedTags(tags);
-
-                // Handle Archiving and Locking
-                if (wasArchived || suggestionConfig.isArchiveOnGreenlit()) {
-                    threadManager = threadManager.setArchived(true);
-                }
-
-                if (suggestionConfig.isLockOnGreenlit()) {
-                    threadManager = threadManager.setLocked(true);
-                }
-
-                // Send Changes
-                threadManager.queue();
-
-                GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(thread.getParentChannel().asForumChannel(), suggestion.getFirstMessage().get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
-                NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
-                NerdBotApp.getSuggestionCache().updateSuggestion(thread); // Update Suggestion
-                accepted = true;
-            } else if (action.equals("deny")) {
-                thread.sendMessage("Your recent review request has been denied. We recommend you review your suggestion and make any necessary changes before requesting another review. Thank you!").queue();
+                case "deny" ->
+                        thread.sendMessage("Your recent review request has been denied. We recommend you review your suggestion and make any necessary changes before requesting another review. Thank you!").queue();
+                case "lock" ->
+                    thread.getManager().setLocked(true).queue(unused -> {
+                            event.getHook().sendMessage("Thread locked!").queue();
+                            thread.sendMessage("This thread has been locked by a moderator. If you believe this is a mistake, please contact us through mod mail.").queue();
+                        }, throwable -> event.getHook().sendMessage("Unable to lock thread!").queue());
             }
 
             event.getHook().editOriginalComponents(ActionRow.of(
