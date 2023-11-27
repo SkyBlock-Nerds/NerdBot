@@ -199,11 +199,8 @@ public class SuggestionCommands extends ApplicationCommand {
         });
 
         lastReviewRequestCache.put(event.getChannel().getId(), System.currentTimeMillis());
-
-        // Respond to User
-        event.getHook()
-            .editOriginal("This suggestion has been sent for review.")
-            .queue();
+        event.getHook().editOriginal("This suggestion has been sent for review.").queue();
+        event.getChannel().sendMessage("This suggestion has been sent for manual review.").queue();
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-id", description = "View user suggestions.")
