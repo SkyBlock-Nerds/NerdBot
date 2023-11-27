@@ -108,6 +108,7 @@ public class SuggestionListener {
                             event.getHook().sendMessage("Thread locked!").queue();
                             thread.sendMessage("This thread has been locked by a moderator. If you believe this is a mistake, please contact us through mod mail.").queue();
                         }, throwable -> event.getHook().sendMessage("Unable to lock thread!").queue());
+                default -> event.getHook().sendMessage("Invalid action!").queue();
             }
 
             event.getHook().editOriginalComponents(ActionRow.of(
