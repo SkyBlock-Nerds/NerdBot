@@ -183,7 +183,7 @@ public class SuggestionCommands extends ApplicationCommand {
                             "suggestion-review-deny-%s",
                             suggestion.getThread().getId()
                         ),
-                        "Deny",
+                        "Deny w/o Locking",
                         java.util.Optional.ofNullable(suggestionConfig.getDisagreeEmojiId())
                             .map(StringUtils::stripToNull)
                             .map(emojiId -> Emoji.fromCustom(
