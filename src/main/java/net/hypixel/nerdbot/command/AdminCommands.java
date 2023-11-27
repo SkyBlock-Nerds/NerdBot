@@ -160,8 +160,12 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
-        threadChannel.getManager().setLocked(!threadChannel.isLocked()).complete();
-        event.reply("This thread is now " + (threadChannel.isLocked() ? "locked" : "unlocked") + "!").queue();
+        threadChannel.getManager().setLocked(!threadChannel.isLocked()).queue(unused ->
+                event.reply("This thread is now " + (threadChannel.isLocked() ? "locked" : "unlocked") + "!").queue(),
+            throwable -> {
+                event.reply("An error occurred when locking the thread!").setEphemeral(true).queue();
+                log.error("An error occurred when locking the thread " + threadChannel.getId() + "!", throwable);
+            });
     }
 
     @JDASlashCommand(name = "archive", subcommand = "channel", description = "Archives a specific channel.", defaultLocked = true)
