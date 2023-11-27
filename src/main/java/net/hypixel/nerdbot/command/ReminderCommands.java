@@ -113,7 +113,12 @@ public class ReminderCommands extends ApplicationCommand {
                 .setTimestamp(Instant.now())
                 .setFooter(reminder.getUuid().toString())
                 .setColor(Color.GREEN);
-            channel.sendMessage("Reminder set for: " + new DiscordTimestamp(date.getTime()).toLongDateTime())
+            StringBuilder messageContents = new StringBuilder();
+            messageContents.append("Reminder set for: ").append(new DiscordTimestamp(date.getTime()).toLongDateTime());
+            if (sendPublicly){
+                messageContents.append("\n\nIn channel: ").append(event.getChannel().getAsMention());
+            }
+            channel.sendMessage(messageContents.toString())
                 .addEmbeds(embedBuilder.build())
                 .setSuppressedNotifications(true)
                 .queue();
