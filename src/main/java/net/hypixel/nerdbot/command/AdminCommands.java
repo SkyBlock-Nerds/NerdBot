@@ -160,8 +160,10 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
-        threadChannel.getManager().setLocked(!threadChannel.isLocked()).queue(unused ->
-                event.reply("This thread is now " + (threadChannel.isLocked() ? "locked" : "unlocked") + "!").queue(),
+        boolean locked = threadChannel.isLocked();
+
+        threadChannel.getManager().setLocked(!locked).queue(unused ->
+                event.reply("This thread is now " + (!locked ? "locked" : "unlocked") + "!").queue(),
             throwable -> {
                 event.reply("An error occurred when locking the thread!").setEphemeral(true).queue();
                 log.error("An error occurred when locking the thread " + threadChannel.getId() + "!", throwable);
