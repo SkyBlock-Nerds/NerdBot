@@ -44,9 +44,7 @@ public class SuggestionCommands extends ApplicationCommand {
         .build();
 
     @JDASlashCommand(name = "request-review", description = "Request a greenlit review of your suggestion.")
-    public void requestSuggestionReview(
-        GuildSlashEvent event
-    ) {
+    public void requestSuggestionReview(GuildSlashEvent event) {
         event.deferReply(true).complete();
 
         if (event.getChannel().getType() != ChannelType.GUILD_PUBLIC_THREAD) {
@@ -63,7 +61,7 @@ public class SuggestionCommands extends ApplicationCommand {
             return;
         }
 
-        if (lastReviewRequestCache.getIfPresent(event.getMember().getId()) != null) {
+        if (lastReviewRequestCache.getIfPresent(event.getChannel().getId()) != null) {
             event.getHook().editOriginal("You cannot request another review yet!").complete();
             return;
         }
@@ -200,7 +198,7 @@ public class SuggestionCommands extends ApplicationCommand {
             throw new RuntimeException("Requested review channel not found!");
         });
 
-        lastReviewRequestCache.put(event.getMember().getId(), System.currentTimeMillis());
+        lastReviewRequestCache.put(event.getChannel().getId(), System.currentTimeMillis());
 
         // Respond to User
         event.getHook()
