@@ -106,7 +106,7 @@ public class SuggestionListener {
                 case "lock" ->
                     thread.getManager().setLocked(true).queue(unused -> {
                             event.getHook().sendMessage("Thread locked!").queue();
-                            thread.sendMessage("This thread has been locked by a moderator. If you believe this is a mistake, please contact us through mod mail.").queue();
+                            thread.sendMessage("We have reviewed your recent request and have decided to lock this suggestion. If you believe this to be a mistake or would like more information, please contact us through mod mail.").queue();
                         }, throwable -> event.getHook().sendMessage("Unable to lock thread!").queue());
                 default -> event.getHook().sendMessage("Invalid action!").queue();
             }
