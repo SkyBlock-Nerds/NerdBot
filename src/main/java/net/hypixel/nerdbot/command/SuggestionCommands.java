@@ -23,6 +23,7 @@ import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.apache.commons.lang.StringUtils;
 
 import java.awt.*;
@@ -44,9 +45,7 @@ public class SuggestionCommands extends ApplicationCommand {
         .build();
 
     @JDASlashCommand(name = "request-review", description = "Request a greenlit review of your suggestion.")
-    public void requestSuggestionReview(
-        GuildSlashEvent event
-    ) {
+    public void requestSuggestionReview(GuildSlashEvent event) {
         event.deferReply(true).complete();
 
         if (event.getChannel().getType() != ChannelType.GUILD_PUBLIC_THREAD) {
@@ -63,7 +62,7 @@ public class SuggestionCommands extends ApplicationCommand {
             return;
         }
 
-        if (lastReviewRequestCache.getIfPresent(event.getMember().getId()) != null) {
+        if (lastReviewRequestCache.getIfPresent(event.getChannel().getId()) != null) {
             event.getHook().editOriginal("You cannot request another review yet!").complete();
             return;
         }
@@ -155,8 +154,8 @@ public class SuggestionCommands extends ApplicationCommand {
                             "Created",
                             suggestion.getFirstMessage()
                                 .map(Message::getTimeCreated)
-                                .map(date -> String.format("<t:%s:R>", date.toInstant().toEpochMilli() / 1000))
-                                .orElse("?"),
+                                .map(date -> new DiscordTimestamp(date.toInstant().toEpochMilli()).toRelativeTimestamp())
+                                .orElse("???"),
                             false
                         )
                         .build()
@@ -184,7 +183,7 @@ public class SuggestionCommands extends ApplicationCommand {
                             "suggestion-review-deny-%s",
                             suggestion.getThread().getId()
                         ),
-                        "Deny",
+                        "Deny w/o Locking",
                         java.util.Optional.ofNullable(suggestionConfig.getDisagreeEmojiId())
                             .map(StringUtils::stripToNull)
                             .map(emojiId -> Emoji.fromCustom(
@@ -193,6 +192,15 @@ public class SuggestionCommands extends ApplicationCommand {
                                 false
                             ))
                             .orElse(null)
+                    ),
+                    Button.of(
+                        ButtonStyle.SECONDARY,
+                        String.format(
+                            "suggestion-review-lock-%s",
+                            suggestion.getThread().getId()
+                        ),
+                        "Lock",
+                        Emoji.fromUnicode("🔒")
                     )
                 )
                 .queue();
@@ -200,12 +208,9 @@ public class SuggestionCommands extends ApplicationCommand {
             throw new RuntimeException("Requested review channel not found!");
         });
 
-        lastReviewRequestCache.put(event.getMember().getId(), System.currentTimeMillis());
-
-        // Respond to User
-        event.getHook()
-            .editOriginal("This suggestion has been sent for review.")
-            .queue();
+        lastReviewRequestCache.put(event.getChannel().getId(), System.currentTimeMillis());
+        event.getHook().editOriginal("This suggestion has been sent for review.").queue();
+        event.getChannel().sendMessage("This suggestion has been sent for manual review.").queue();
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-id", description = "View user suggestions.")

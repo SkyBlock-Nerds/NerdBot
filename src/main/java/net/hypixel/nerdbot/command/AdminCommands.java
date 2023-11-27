@@ -153,6 +153,16 @@ public class AdminCommands extends ApplicationCommand {
         event.getHook().editOriginal("Deleted " + invites.size() + " invites.").queue();
     }
 
+    @JDASlashCommand(name = "lock", description = "Locks the thread that the command is executed in", defaultLocked = true)
+    public void lockThread(GuildSlashEvent event) {
+        if (!(event.getChannel() instanceof ThreadChannel threadChannel)) {
+            event.reply("This command can only be used inside a thread!").setEphemeral(true).queue();
+            return;
+        }
+
+        threadChannel.getManager().setLocked(!threadChannel.isLocked()).complete();
+        event.reply("This thread is now " + (threadChannel.isLocked() ? "locked" : "unlocked") + "!").queue();
+    }
 
     @JDASlashCommand(name = "archive", subcommand = "channel", description = "Archives a specific channel.", defaultLocked = true)
     public void archive(GuildSlashEvent event, @AppOption TextChannel channel, @AppOption @Optional Boolean nerd, @AppOption @Optional Boolean alpha) {
