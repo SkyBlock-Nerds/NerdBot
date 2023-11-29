@@ -9,7 +9,6 @@ import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.cache.MessageCache;
 import net.hypixel.nerdbot.cache.SuggestionCache;
-import net.hypixel.nerdbot.util.gson.adapter.DateDeserializer;
 import net.hypixel.nerdbot.util.gson.adapter.InstantTypeAdapter;
 import net.hypixel.nerdbot.util.gson.adapter.UUIDTypeAdapter;
 import sun.misc.Signal;
@@ -17,9 +16,7 @@ import sun.misc.Signal;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Date;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -31,7 +28,6 @@ public class NerdBotApp {
         .setPrettyPrinting()
         .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
         .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
-        //.registerTypeAdapter(Date.class, new DateDeserializer())
         .create();
 
     @Getter

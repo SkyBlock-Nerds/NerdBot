@@ -48,7 +48,8 @@ public class URLWatcher {
             public void run() {
                 String newContent = fetchContent();
                 if (newContent != null && !newContent.equals(lastContent)) {
-                    handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseJsonString(lastContent), JsonUtil.parseJsonString(newContent), ""));
+                    List<Tuple<String, Object, Object>> changedValues = JsonUtil.findChangedValues(JsonUtil.parseStringToMap(lastContent), JsonUtil.parseStringToMap(newContent), "");
+                    handler.handleData(lastContent, newContent, changedValues);
                     lastContent = newContent;
                     log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
                 }
@@ -59,12 +60,19 @@ public class URLWatcher {
         active = true;
     }
 
+    public void simulateDataChange(String oldData, String newData, DataHandler handler) {
+        List<Tuple<String, Object, Object>> changedValues = JsonUtil.findChangedValues(JsonUtil.parseStringToMap(oldData), JsonUtil.parseStringToMap(newData), "");
+        handler.handleData(oldData, newData, changedValues);
+        lastContent = newData;
+        log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newData);
+    }
+
     public void watchOnce(DataHandler handler) {
         String newContent = fetchContent();
         active = true;
 
         if (newContent != null && !newContent.equals(lastContent)) {
-            handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseJsonString(lastContent), JsonUtil.parseJsonString(newContent), ""));
+            handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseStringToMap(lastContent), JsonUtil.parseStringToMap(newContent), ""));
             lastContent = newContent;
             log.debug("Watched " + url + " once, found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
         }

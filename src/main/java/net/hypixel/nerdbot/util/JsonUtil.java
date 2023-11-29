@@ -96,12 +96,20 @@ public class JsonUtil {
     }
 
 
-    public static Map<String, Object> parseJsonString(String json) {
+    public static Map<String, Object> parseStringToMap(String json) {
         try {
             return convertObjectToMap(JsonParser.parseString(json).getAsJsonObject());
         } catch (JsonParseException e) {
             e.printStackTrace();
             return Collections.emptyMap();
+        }
+    }
+
+    public static JsonElement parseString(String json) {
+        try {
+            return JsonParser.parseString(json);
+        } catch (JsonParseException e) {
+            return null;
         }
     }
 

@@ -34,6 +34,8 @@ import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.repository.Repository;
+import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
+import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
@@ -44,6 +46,7 @@ import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.api.bot.Environment;
+import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.LoggingUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -66,6 +69,16 @@ import java.util.stream.Stream;
 
 @Log4j2
 public class AdminCommands extends ApplicationCommand {
+
+    @JDASlashCommand(name = "simulatefiresale", description = "Simulate a fire sale", defaultLocked = true)
+    public void simulateFireSaleChange(GuildSlashEvent event, @AppOption String oldContent, @AppOption String newContent) {
+        event.deferReply(true).complete();
+        
+        FireSaleDataHandler fireSaleDataHandler = new FireSaleDataHandler();
+        NerdBot.getFireSaleWatcher().simulateDataChange(oldContent, newContent, fireSaleDataHandler);
+
+        event.getHook().editOriginal("Simulated fire sale change!").queue();
+    }
 
     @JDASlashCommand(name = "curate", description = "Manually run the curation process", defaultLocked = true)
     public void curate(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Run the curator without greenlighting suggestions") Boolean readOnly) {
