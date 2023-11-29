@@ -32,14 +32,7 @@ import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
-import net.hypixel.nerdbot.listener.ActivityListener;
-import net.hypixel.nerdbot.listener.MetricsListener;
-import net.hypixel.nerdbot.listener.ModLogListener;
-import net.hypixel.nerdbot.listener.ModMailListener;
-import net.hypixel.nerdbot.listener.PinListener;
-import net.hypixel.nerdbot.listener.ReactionChannelListener;
-import net.hypixel.nerdbot.listener.SuggestionListener;
-import net.hypixel.nerdbot.listener.VerificationListener;
+import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
@@ -94,8 +87,6 @@ public class NerdBot implements Bot {
 
         loadRemindersFromDatabase();
         startUrlWatchers();
-
-        database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).loadAllDocumentsIntoCache();
 
         Util.getMainGuild().loadMembers()
             .onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size()))
@@ -233,7 +224,7 @@ public class NerdBot implements Bot {
     }
 
     private void startUrlWatchers() {
-        ChannelManager.getChannel(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
+        ChannelManager.getChannelById(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
             fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
             HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
