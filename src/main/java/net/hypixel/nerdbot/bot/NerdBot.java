@@ -73,6 +73,7 @@ public class NerdBot implements Bot {
     );
 
     private final Database database = new Database(System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/"), "skyblock_nerds");
+    private static URLWatcher fireSaleWatcher;
     private JDA jda;
     private BotConfig config;
     private long startTime;
@@ -229,7 +230,7 @@ public class NerdBot implements Bot {
 
     private void startUrlWatchers() {
         ChannelManager.getChannel(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
-            URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
+            fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
             fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
             HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
             skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
@@ -338,5 +339,9 @@ public class NerdBot implements Bot {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public static URLWatcher getFireSaleWatcher() {
+        return fireSaleWatcher;
     }
 }
