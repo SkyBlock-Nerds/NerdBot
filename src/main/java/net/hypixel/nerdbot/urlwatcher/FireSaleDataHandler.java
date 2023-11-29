@@ -5,9 +5,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Tuple;
 import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
@@ -52,9 +54,9 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
             }
 
             EmbedBuilder embedBuilder = new EmbedBuilder()
-                .setTitle("Fire Sale")
+                .setTitle("New Fire Sale!")
                 .setTimestamp(Instant.now())
-                .setColor(Color.RED);
+                .setColor(Color.GREEN);
 
             newSaleData.asList().stream()
                 .map(JsonElement::getAsJsonObject)
@@ -78,7 +80,13 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
                     embedBuilder.addField(itemId, stringBuilder.toString(), false);
                 });
 
-            textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
+            MessageCreateBuilder messageCreateBuilder = new MessageCreateBuilder().setEmbeds(embedBuilder.build());
+
+            RoleManager.getPingableRoleByName("Fire Sale Alerts").ifPresent(pingableRole -> {
+                messageCreateBuilder.addContent(RoleManager.formatPingableRoleAsMention(pingableRole) + "\n\n");
+            });
+
+            textChannel.sendMessage(messageCreateBuilder.build()).queue();
         }, () -> log.error("Announcement channel not found!"));
     }
 
