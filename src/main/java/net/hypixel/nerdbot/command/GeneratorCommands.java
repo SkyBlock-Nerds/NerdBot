@@ -660,7 +660,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         if (Util.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
-            ChannelManager.getChannel(itemGenChannelIds[0]).ifPresentOrElse(
+            ChannelManager.getChannelById(itemGenChannelIds[0]).ifPresentOrElse(
                 channel -> event.reply("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue(),
                 () -> event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue()
             );

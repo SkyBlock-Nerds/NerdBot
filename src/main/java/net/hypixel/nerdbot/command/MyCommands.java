@@ -20,20 +20,24 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.model.user.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
+import org.apache.commons.lang.time.DateFormatUtils;
+import org.apache.commons.lang.time.DateUtils;
 
 import java.awt.Color;
 import java.time.Duration;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -232,6 +236,63 @@ public class MyCommands extends ApplicationCommand {
         ).queue();
     }
 
+    @JDASlashCommand(name = "birthday", subcommand = "remove", description = "Remove your birthday.")
+    public void removeBirthday(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+
+        if (discordUser.getBirthdayData().getTimer() != null) {
+            discordUser.getBirthdayData().getTimer().cancel();
+        }
+
+        discordUser.setBirthdayData(new BirthdayData());
+        discordUserRepository.cacheObject(discordUser);
+
+        event.getHook().editOriginal("Your birthday has been removed!").queue();
+    }
+
+    @JDASlashCommand(name = "birthday", subcommand = "get", description = "Get your birthday.")
+    public void getBirthday(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+
+        if (!discordUser.getBirthdayData().isBirthdaySet()) {
+            event.getHook().editOriginal("You have not set your birthday!").queue();
+            return;
+        }
+
+        Date birthday = discordUser.getBirthdayData().getBirthday();
+        event.getHook().editOriginal("Your birthday is currently set to " + "`" + DateFormatUtils.format(birthday, "dd MMMM yyyy") + "`!").queue();
+    }
+
+    @JDASlashCommand(name = "birthday", subcommand = "set", description = "Set your birthday.")
+    public void setBirthday(GuildSlashEvent event, @AppOption(description = "Your birthday in the format MM/DD/YYYY.") String birthday, @AppOption(description = "Whether to announce your age.") @Optional Boolean announceAge) {
+        event.deferReply(true).complete();
+
+        try {
+            Member member = event.getMember();
+            DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+            DiscordUser discordUser = discordUserRepository.findById(member.getId());
+
+            if (discordUser.getBirthdayData().getTimer() != null) {
+                discordUser.getBirthdayData().getTimer().cancel();
+            }
+
+            discordUser.setBirthday(DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"}));
+            discordUser.getBirthdayData().setShouldAnnounceAge(announceAge != null && announceAge);
+            discordUser.scheduleBirthdayReminder(discordUser.getBirthdayData().getBirthdayThisYear());
+            discordUserRepository.cacheObject(discordUser);
+            event.getHook().editOriginal("Your birthday has been set to `" + birthday + "`!").queue();
+        } catch (Exception ex) {
+            event.getHook().editOriginal("Encountered an error while parsing that date! Please try again or contact a bot developer!").queue();
+            ex.printStackTrace();
+        }
+    }
+
     public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws ProfileMismatchException, HttpException {
         MojangProfile mojangProfile = Util.getMojangProfile(username);
         HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
@@ -333,5 +394,4 @@ public class MyCommands extends ApplicationCommand {
 
         return Pair.of(globalEmbedBuilder, alphaEmbedBuilder);
     }
-
 }

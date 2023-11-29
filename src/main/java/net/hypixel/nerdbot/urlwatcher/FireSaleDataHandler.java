@@ -29,7 +29,7 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
 
         log.info("Fire sale data changed!");
 
-        ChannelManager.getChannel(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
+        ChannelManager.getChannelById(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             log.debug("Changed values: " + changedValues);
 
             JsonArray oldSaleData = JsonUtil.parseString(oldContent).getAsJsonObject().getAsJsonArray("sales");
