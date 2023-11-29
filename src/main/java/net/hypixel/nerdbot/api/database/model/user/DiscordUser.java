@@ -111,6 +111,5 @@ public class DiscordUser {
         log.info("Setting birthday for " + discordId + " to " + calendar.getTime());
 
         birthdayData.setBirthday(calendar.getTime());
-        birthdayData.setBirthdaySet(true);
     }
 }

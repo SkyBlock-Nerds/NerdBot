@@ -14,7 +14,6 @@ import java.util.Timer;
 public class BirthdayData {
 
     private Date birthday;
-    private boolean isBirthdaySet;
     private boolean shouldAnnounceAge;
     private transient Timer timer;
 
@@ -33,5 +32,9 @@ public class BirthdayData {
         Date now = new Date();
         long diff = now.getTime() - birthday.getTime();
         return (int) (diff / (1000L * 60L * 60L * 24L * 365L));
+    }
+
+    public boolean isBirthdaySet() {
+        return birthday != null;
     }
 }
