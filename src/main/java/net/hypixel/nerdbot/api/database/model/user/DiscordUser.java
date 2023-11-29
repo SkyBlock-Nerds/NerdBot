@@ -81,11 +81,11 @@ public class DiscordUser {
                 log.info("Sending birthday message for " + discordId + " at " + finalDate);
                 String finalMessage = message;
 
-                ChannelManager.getChannelByName("off-topic").ifPresentOrElse(channel -> {
+                ChannelManager.getChannelByName("general").ifPresentOrElse(channel -> {
                     channel.sendMessage(String.format(finalMessage, discordId, birthdayData.getAge())).queue();
                     log.info("Sent birthday message for " + discordId + " at " + finalDate);
                 }, () -> {
-                    throw new IllegalStateException("Cannot find off-topic channel to send birthday message!");
+                    throw new IllegalStateException("Cannot find #general channel to send birthday message!");
                 });
 
                 Calendar calendar = Calendar.getInstance();
