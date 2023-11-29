@@ -41,7 +41,7 @@ import net.hypixel.nerdbot.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.listener.SuggestionListener;
 import net.hypixel.nerdbot.listener.VerificationListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
@@ -88,10 +88,13 @@ public class NerdBot implements Bot {
             log.info("Started feature " + feature.getClass().getSimpleName());
         }
 
+        DiscordUserRepository discordUserRepository = database.getRepositoryManager().getRepository(DiscordUserRepository.class);
+        if (discordUserRepository != null) {
+            discordUserRepository.loadAllDocumentsIntoCache();
+        }
+
         loadRemindersFromDatabase();
         startUrlWatchers();
-
-        database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).loadAllDocumentsIntoCache();
 
         Util.getMainGuild().loadMembers()
             .onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size()))
@@ -229,8 +232,8 @@ public class NerdBot implements Bot {
     }
 
     private void startUrlWatchers() {
-        ChannelManager.getChannel(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
-            fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
+        ChannelManager.getChannelById(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
+            URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
             fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
             HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
             skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
