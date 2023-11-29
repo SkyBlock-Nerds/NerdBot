@@ -9,6 +9,7 @@
             <PatternLayout>
                 <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%level] [%t] [%c{1}] %msg%n</pattern>
             </PatternLayout>
+            <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
         </Console>
 
         <RollingFile name="FileLogger" fileName="${basePath}/app.log" filePattern="${basePath}/app-%d{yyyy-MM-dd}.log">
@@ -19,19 +20,18 @@
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
                 <SizeBasedTriggeringPolicy size="25MB"/>
             </Policies>
-            <!-- Max 10 files will be created everyday -->
             <DefaultRolloverStrategy max="10">
                 <Delete basePath="${basePath}" maxDepth="10">
-                    <!-- Delete all files older than 30 days -->
                     <IfLastModified age="30d"/>
                 </Delete>
             </DefaultRolloverStrategy>
         </RollingFile>
     </Appenders>
+
     <Loggers>
-        <Root level="info" additivity="false">
-            <appender-ref ref="FileLogger"/>
-            <appender-ref ref="ConsoleLogger"/>
+        <Root level="debug">
+            <AppenderRef ref="ConsoleLogger"/>
+            <AppenderRef ref="FileLogger"/>
         </Root>
     </Loggers>
 </Configuration>
