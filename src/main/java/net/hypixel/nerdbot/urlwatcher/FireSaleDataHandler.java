@@ -25,8 +25,10 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
     @Override
     public void handleData(String oldContent, String newContent, List<Tuple<String, Object, Object>> changedValues) {
         ChannelConfig config = NerdBotApp.getBot().getConfig().getChannelConfig();
-
+        
         ChannelManager.getChannel(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
+            log.debug("Changed values: " + changedValues);
+
             changedValues.forEach(tuple -> {
                 if (tuple.value1().equals("sales")) {
                     JsonArray array = JsonParser.parseString(String.valueOf(tuple.value3())).getAsJsonArray();
