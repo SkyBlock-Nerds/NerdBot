@@ -101,6 +101,15 @@ public abstract class Repository<T> {
         return null;
     }
 
+    public T getByIndex(int index) {
+        return getAll()
+            .stream()
+            .skip(index)
+            .limit(1)
+            .findFirst()
+            .orElse(null);
+    }
+
     public void cacheObject(String id, T object) {
         cache.put(id, object);
         debug("Cached document with ID " + id);

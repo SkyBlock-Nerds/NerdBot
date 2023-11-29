@@ -13,8 +13,12 @@ public class ChannelManager {
     private ChannelManager() {
     }
 
-    public static Optional<TextChannel> getChannel(String channel) {
+    public static Optional<TextChannel> getChannelById(String channel) {
         return Optional.ofNullable(NerdBotApp.getBot().getJDA().getTextChannelById(channel));
+    }
+
+    public static Optional<TextChannel> getChannelByName(String name) {
+        return NerdBotApp.getBot().getJDA().getTextChannelsByName(name, true).stream().findFirst();
     }
 
     public static Optional<ForumChannel> getModMailChannel() {
@@ -22,14 +26,14 @@ public class ChannelManager {
     }
 
     public static Optional<TextChannel> getLogChannel() {
-        return getChannel(NerdBotApp.getBot().getConfig().getChannelConfig().getLogChannelId());
+        return getChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getLogChannelId());
     }
 
     public static Optional<TextChannel> getVerifyLogChannel() {
-        return getChannel(NerdBotApp.getBot().getConfig().getChannelConfig().getVerifyLogChannelId());
+        return getChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getVerifyLogChannelId());
     }
 
     public static Optional<TextChannel> getRequestedReviewChannel() {
-        return getChannel(NerdBotApp.getBot().getConfig().getSuggestionConfig().getRequestedReviewForumId());
+        return getChannelById(NerdBotApp.getBot().getConfig().getSuggestionConfig().getRequestedReviewForumId());
     }
 }

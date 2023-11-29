@@ -14,11 +14,4 @@ public class GreenlitMessageRepository extends Repository<GreenlitMessage> {
     protected String getId(GreenlitMessage entity) {
         return entity.getMessageId();
     }
-
-    public GreenlitMessage getByIndex(int index) {
-        return getCache().asMap().values().stream()
-            .skip(index)
-            .findFirst()
-            .orElse(null);
-    }
 }

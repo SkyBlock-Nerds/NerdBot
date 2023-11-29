@@ -17,7 +17,7 @@ public class SkyBlockUpdateDataHandler {
     public static void handleThread(HypixelThread hypixelThread) {
         ChannelConfig config = NerdBotApp.getBot().getConfig().getChannelConfig();
 
-        ChannelManager.getChannel(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
+        ChannelManager.getChannelById(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             // Simple Check to make sure only SkyBlock threads are sent.
             if (!hypixelThread.getForum().equals("SkyBlock Patch Notes") && (!hypixelThread.getTitle().contains("SkyBlock"))) {
                 return;

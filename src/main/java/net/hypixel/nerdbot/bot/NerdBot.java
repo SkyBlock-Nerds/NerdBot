@@ -41,7 +41,7 @@ import net.hypixel.nerdbot.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.listener.SuggestionListener;
 import net.hypixel.nerdbot.listener.VerificationListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
@@ -85,6 +85,11 @@ public class NerdBot implements Bot {
         for (BotFeature feature : FEATURES) {
             feature.onFeatureStart();
             log.info("Started feature " + feature.getClass().getSimpleName());
+        }
+
+        DiscordUserRepository discordUserRepository = database.getRepositoryManager().getRepository(DiscordUserRepository.class);
+        if (discordUserRepository != null) {
+            discordUserRepository.loadAllDocumentsIntoCache();
         }
 
         loadRemindersFromDatabase();
