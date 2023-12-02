@@ -139,6 +139,7 @@ public class PrometheusMetrics {
 
             collectorRegistry.register(TOTAL_GREENLIT_MESSAGES_AMOUNT);
             collectorRegistry.register(GREENLIT_SUGGESTION_LENGTH);
+            collectorRegistry.register(REVIEW_REQUEST_STATISTICS);
             collectorRegistry.register(TOTAL_USERS_AMOUNT);
             collectorRegistry.register(TOTAL_SUGGESTIONS_AMOUNT);
             collectorRegistry.register(TOTAL_MESSAGES_AMOUNT);
@@ -155,6 +156,7 @@ public class PrometheusMetrics {
         } else {
             collectorRegistry.unregister(TOTAL_GREENLIT_MESSAGES_AMOUNT);
             collectorRegistry.unregister(GREENLIT_SUGGESTION_LENGTH);
+            collectorRegistry.unregister(REVIEW_REQUEST_STATISTICS);
             collectorRegistry.unregister(TOTAL_USERS_AMOUNT);
             collectorRegistry.unregister(TOTAL_SUGGESTIONS_AMOUNT);
             collectorRegistry.unregister(TOTAL_MESSAGES_AMOUNT);
