@@ -19,6 +19,7 @@ import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
+import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
@@ -109,7 +110,10 @@ public class SuggestionListener {
                             event.getHook().sendMessage("Thread locked!").setEphemeral(true).queue();
                             thread.sendMessage("We have reviewed your recent request and have decided to lock this suggestion. If you believe this to be a mistake or would like more information, please contact us through mod mail.").queue();
                         }, throwable -> event.getHook().sendMessage("Unable to lock thread!").setEphemeral(true).queue());
-                default -> event.getHook().sendMessage("Invalid action!").setEphemeral(true).queue();
+                default -> {
+                    event.getHook().sendMessage("Invalid action!").setEphemeral(true).queue();
+                    action = "n/a";
+                }
             }
 
             event.getHook().editOriginalComponents(ActionRow.of(
@@ -120,6 +124,8 @@ public class SuggestionListener {
                     ).asDisabled()
                 ))
                 .queue();
+
+            PrometheusMetrics.REVIEW_REQUEST_STATISTICS.labels(suggestion.getFirstMessage().get().getId(), suggestion.getFirstMessage().get().getAuthor().getId(), suggestion.getThreadName(), action).inc();
         }
     }
 
