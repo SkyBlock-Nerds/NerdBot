@@ -31,6 +31,12 @@ public class PrometheusMetrics {
         .labelNames("message_id", "message_length")
         .register();
 
+    public static final Counter REVIEW_REQUEST_STATISTICS = Counter.build()
+        .name("review_request_statistics")
+        .help("Statistics of Review Requests")
+        .labelNames("message_id", "user_id", "title", "state")
+        .register();
+
     public static final Summary CURATOR_LENGTH_SECONDS = Summary.build()
         .name("curator_length_seconds")
         .help("Time taken to curate a suggestions channel in seconds")
