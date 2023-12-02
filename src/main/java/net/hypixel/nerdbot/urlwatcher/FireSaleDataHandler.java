@@ -91,9 +91,6 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
     }
 
     private boolean isEqual(JsonObject oldObject, JsonObject newObject) {
-        return oldObject.get("item_id").getAsString().equals(newObject.get("item_id").getAsString())
-            && oldObject.get("start").getAsLong() == newObject.get("start").getAsLong()
-            && oldObject.get("end").getAsLong() == newObject.get("end").getAsLong()
-            && oldObject.get("amount").getAsInt() == newObject.get("amount").getAsInt();
+        return oldObject.get("item_id").getAsString().equals(newObject.get("item_id").getAsString());
     }
 }
