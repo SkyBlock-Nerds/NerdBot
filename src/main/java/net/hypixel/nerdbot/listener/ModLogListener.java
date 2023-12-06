@@ -30,9 +30,13 @@ public class ModLogListener {
         }
 
         Member member = event.getMember();
+        String roles = member.getRoles().stream().map(Role::getName).reduce((a, b) -> a + ", " + b).orElse("None");
         MessageEmbed messageEmbed = getDefaultEmbed()
             .setTitle("Member joined")
-            .setDescription(member.getAsMention())
+            .addField("Member ID", member.getId(), false)
+            .addField("Member Name", member.getEffectiveName(), false)
+            .addField("Join Date", member.getTimeJoined().toString(), false)
+            .addField("Member Roles", roles, false)
             .setThumbnail(member.getAvatarUrl())
             .setColor(Color.GREEN)
             .build();
@@ -47,9 +51,19 @@ public class ModLogListener {
         }
 
         Member member = event.getMember();
+
+        if (member == null) {
+            ChannelManager.getLogChannel().get().sendMessage("Could not find member with ID " + event.getUser().getId() + " who left the server!").queue();
+            return;
+        }
+
+        String roles = member.getRoles().stream().map(Role::getName).reduce((a, b) -> a + ", " + b).orElse("None");
         MessageEmbed messageEmbed = getDefaultEmbed()
             .setTitle("Member removed")
-            .setDescription(member.getAsMention())
+            .addField("Member ID", member.getId(), false)
+            .addField("Member Name", member.getEffectiveName(), false)
+            .addField("Join Date", member.getTimeJoined().toString(), false)
+            .addField("Member Roles", roles, false)
             .setThumbnail(member.getAvatarUrl())
             .setColor(Color.BLUE)
             .build();
