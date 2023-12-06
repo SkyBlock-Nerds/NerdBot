@@ -146,6 +146,17 @@ public class SuggestionConfig {
      */
     private int autoLockThreshold = -1;
 
+    // Review Settings
+
+    /**
+     * The minimum required age of a suggestion to be eligible for a review
+     * <br><br>
+     * Default is 7 days
+     * <br>
+     * Set to 0 to disable
+     */
+    private long minimumSuggestionRequestAge = 1_000L * 60L * 60L * 24L * 7L; // 7 days
+
     // Helper Methods
 
     public boolean isReactionEquals(MessageReaction reaction, Function<SuggestionConfig, String> function) {

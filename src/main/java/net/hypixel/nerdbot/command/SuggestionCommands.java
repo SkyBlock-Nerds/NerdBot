@@ -99,6 +99,12 @@ public class SuggestionCommands extends ApplicationCommand {
             return;
         }
 
+        // Make sure the suggestion is old enough
+        if (System.currentTimeMillis() - suggestion.getFirstMessage().get().getTimeCreated().toInstant().toEpochMilli() < suggestionConfig.getMinimumSuggestionRequestAge()) {
+            event.getHook().editOriginal("This suggestion is not eligible for a review request yet!").complete();
+            return;
+        }
+
         // Handle Greenlit Ratio
         if (suggestionConfig.isEnforcingGreenlitRatioForRequestReview() && suggestion.getRatio() <= suggestionConfig.getGreenlitRatio()) {
             event.getHook().editOriginal(String.format("You need at least %s%% agrees to request a greenlit review!", suggestionConfig.getGreenlitRatio())).complete();
