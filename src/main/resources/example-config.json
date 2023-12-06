@@ -25,7 +25,8 @@
     "requestReviewThreshold": 15,
     "enforcingGreenlitRatioForRequestReview": false,
     "autoArchiveThreshold": 168,
-    "autoLockThreshold": -1
+    "autoLockThreshold": -1,
+    "minimumSuggestionRequestAge": 604800000
   },
   "channelConfig": {
     "logChannelId": "",
