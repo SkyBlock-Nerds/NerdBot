@@ -30,7 +30,6 @@ import java.util.stream.Stream;
 @Log4j2
 public class SuggestionCache extends TimerTask {
 
-    private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
     private final Map<String, Suggestion> cache = new HashMap<>();
 
     @Getter
@@ -48,9 +47,12 @@ public class SuggestionCache extends TimerTask {
     public void run() {
         try {
             log.info("Started suggestion cache update.");
+
             this.updating = true;
             this.cache.forEach((key, suggestion) -> suggestion.setExpired());
+
             SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+
             Util.safeArrayStream(suggestionConfig.getSuggestionForumIds(), suggestionConfig.getAlphaSuggestionForumIds())
                 .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
                 .filter(Objects::nonNull)
@@ -66,6 +68,7 @@ public class SuggestionCache extends TimerTask {
                     log.debug("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
 
                     if (suggestion.isDeleted()) {
+                        log.debug("Suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") has been deleted.");
                         return;
                     }
 
@@ -87,6 +90,7 @@ public class SuggestionCache extends TimerTask {
 
                                 if (discordUser == null || discordUser.getLastActivity().getSuggestionReactionHistory().stream().anyMatch(history -> history.channelId().equals(suggestion.getParentId())
                                     && history.reactionName().equals(messageReaction.getEmoji().getName()))) {
+                                    log.debug("User '" + user.getId() + "' has already reacted to suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ").");
                                     return;
                                 }
 
@@ -154,7 +158,7 @@ public class SuggestionCache extends TimerTask {
         private final boolean deleted;
         private final long lastUpdated = System.currentTimeMillis();
         private boolean expired;
-        private long lastBump = System.currentTimeMillis();
+        private final long lastBump = System.currentTimeMillis();
 
         public Suggestion(ThreadChannel thread) {
             SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
@@ -166,8 +170,7 @@ public class SuggestionCache extends TimerTask {
             this.alpha = thread.getParentChannel()
                 .getName()
                 .toLowerCase()
-                .contains("alpha") ||
-                Util.safeArrayStream(suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
+                .contains("alpha") || Util.safeArrayStream(suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
 
             // Activity
             Message latestMessage = thread.getHistory().getMessageById(thread.getLatestMessageId());
@@ -179,14 +182,17 @@ public class SuggestionCache extends TimerTask {
                 boolean lock = false;
 
                 if (hoursAgo >= suggestionConfig.getAutoArchiveThreshold()) {
+                    log.debug("Auto-archiving suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") due to inactivity. (Hours: " + hoursAgo + ", Auto Archive Threshold: " + suggestionConfig.getAutoArchiveThreshold() + ")");
                     archive = true;
                 }
 
                 if (hoursAgo >= suggestionConfig.getAutoLockThreshold()) {
+                    log.debug("Auto-locking suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") due to inactivity. (Hours: " + hoursAgo + ", Auto Lock Threshold: " + suggestionConfig.getAutoLockThreshold() + ")");
                     lock = true;
                 }
 
                 if (archive || lock) {
+                    log.debug("Locking and/or archiving suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") due to inactivity.");
                     thread.getManager().setArchived(archive).setLocked(lock).queue();
                 }
             }
@@ -213,6 +219,7 @@ public class SuggestionCache extends TimerTask {
             if (this.getAgrees() == 0 && this.getDisagrees() == 0) {
                 return 0;
             }
+
             return (double) this.getAgrees() / (this.getAgrees() + this.getDisagrees()) * 100.0;
         }
 
@@ -234,5 +241,4 @@ public class SuggestionCache extends TimerTask {
             this.expired = true;
         }
     }
-
 }
