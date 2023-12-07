@@ -12,6 +12,7 @@ public enum Rarity {
     VERY_SPECIAL("VERY SPECIAL", MCColor.RED),
     ADMIN("ADMIN", MCColor.DARK_RED),
     SUPREME("SUPREME", MCColor.DARK_RED),
+    ULTIMATE("ULTIMATE", MCColor.DARK_RED),
     NONE("", MCColor.GRAY);
 
     public static final Rarity[] VALUES = values();
