@@ -1,0 +1,84 @@
+{
+  "permissions": {
+    "cannot_send_messages": "I do not have the correct permission to send messages in this channel!",
+    "cannot_send_messages_in_threads": "I do not have the correct permission to send messages in threads!"
+  },
+  "database": {
+    "no_connection": "Could not connect to database!"
+  },
+  "user": {
+    "not_found": "User not found",
+    "language_set": "You set your language to %s"
+  },
+  "repository": {
+    "not_found": "Repository not found",
+    "saved_to_database": "Saved %d documents to the database!",
+    "loaded_from_database": "Loaded %d documents from the database!",
+    "save_error": "An error occurred while saving the repository: %s",
+    "load_error": "An error occurred while loading the repository: %s",
+    "stats_error": "An error occurred while getting the statistics for that repository: %s"
+  },
+  "curator": {
+    "no_greenlit_messages": "No suggestions were greenlit",
+    "greenlit_messages": "Greenlit %d suggestions in %d!"
+  },
+  "commands": {
+    "only_available_in_threads": "This command is only available in threads!",
+    "invalid_uuid": "Invalid UUID!",
+    "invite": {
+      "no_permission": "I do not have the correct permission to create invites in %s!",
+      "header": "Created %d invites:"
+    },
+    "reminders": {
+      "no_description": "You need to provide a description for the reminder!",
+      "description_too_long": "Your description is too long! Please keep it under %d characters.",
+      "invalid_time_format": "I could not parse that date/time format, please try again!",
+      "time_in_past": "You cannot set a reminder in the past!",
+      "save_error": "An error occurred while saving that reminder! Please try again!",
+      "delete_error": "An error occurred while deleting that reminder! Please try again!",
+      "no_reminders": "You do not have any reminders set!",
+      "delete_reminder": "You can delete reminders with `/remind delete <uuid>`",
+      "reminder_not_found": "I could not find a reminder with that UUID!",
+      "reminder_set": "I will remind you at %s about:",
+      "reminder_deleted": "Deleted reminder %s!"
+    },
+    "lock": {
+      "no_permission": "I do not have the correct permission to lock %s!",
+      "error": "An error occurred while locking %s!"
+    },
+    "archive": {
+      "channel_moved": "Moved %s to %s!"
+    },
+    "config": {
+      "read_error": "An error occurred while reading the config file! Please check the logs for more information.",
+      "invalid_value": "Could not find given key `%s` in the config file!",
+      "reloaded": "Reloaded config file!",
+      "updated": "Updated config file!"
+    },
+    "metrics": {
+      "toggle": "Toggled metrics: %s"
+    },
+    "user": {
+      "linked_by_admin": "Updated profile for %s to %s (UUID: %s)",
+      "username_not_found": "Could not find player with username `%s`! (%s)",
+      "profile_mismatch": "Profile mismatch error for %s: %s",
+      "no_missing_profiles": "No missing profiles found!",
+      "migrated_profiles": "Migrated %d profiles!"
+    },
+    "flared": {
+      "no_tag": "I could not find a tag with the name `%s`!",
+      "already_tagged": "This message is already tagged!",
+      "tagged": "%s applied the %s tag and locked this suggestion!"
+    },
+    "transfer_tag": {
+      "invalid_tags": "You have entered invalid from/to tags, please try again!",
+      "no_threads_found": "No threads were found with the tag %s!",
+      "updated_threads": "Updated %d/%d threads ...",
+      "updated_threads_complete": "Finished transferring %s to %s in %d threads!"
+    },
+    "log_level": {
+      "invalid_level": "Invalid log level specified!",
+      "set_level": "Set log level to %s"
+    }
+  }
+}

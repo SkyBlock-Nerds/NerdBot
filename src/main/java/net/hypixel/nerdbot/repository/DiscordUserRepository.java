@@ -4,6 +4,7 @@ import com.mongodb.client.MongoClient;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.database.model.user.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.repository.Repository;
 
@@ -32,6 +33,11 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
             if (discordUser.getBirthdayData() == null) {
                 log.info("Birthday data for " + discordUser.getDiscordId() + " was null. Setting to default values!");
                 discordUser.setBirthdayData(new BirthdayData());
+            }
+
+            if (discordUser.getLanguage() == null) {
+                log.info("Language for " + discordUser.getDiscordId() + " was null. Setting to default values!");
+                discordUser.setLanguage(UserLanguage.ENGLISH);
             }
 
             cacheObject(discordUser);
