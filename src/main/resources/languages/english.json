@@ -7,8 +7,7 @@
     "no_connection": "Could not connect to database!"
   },
   "user": {
-    "not_found": "User not found",
-    "language_set": "You set your language to %s"
+    "not_found": "User not found"
   },
   "repository": {
     "not_found": "Repository not found",
@@ -25,6 +24,9 @@
   "commands": {
     "only_available_in_threads": "This command is only available in threads!",
     "invalid_uuid": "Invalid UUID!",
+    "language": {
+      "language_set": "You set your language to %s"
+    },
     "invite": {
       "no_permission": "I do not have the correct permission to create invites in %s!",
       "header": "Created %d invites:"

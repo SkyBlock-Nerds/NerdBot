@@ -34,7 +34,7 @@ public class UserCommands extends ApplicationCommand {
         }
 
         user.setLanguage(language);
-        TranslationManager.getInstance().edit(event.getHook(), user, "user.language_set", language.getName());
+        TranslationManager.getInstance().edit(event.getHook(), user, "commands.language.language_set", language.getName());
     }
 
     @AutocompletionHandler(name = "languages")
