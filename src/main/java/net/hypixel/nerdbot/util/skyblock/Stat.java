@@ -54,6 +54,7 @@ public enum Stat {
     ENCHANTING_WISDOM("☯", "Enchanting Wisdom", MCColor.DARK_AQUA),
     ALCHEMY_WISDOM("☯", "Alchemy Wisdom", MCColor.DARK_AQUA),
     CARPENTRY_WISDOM("☯", "Carpentry Wisdom", MCColor.DARK_AQUA),
+    TAMING_WISDOM("☯", "Taming Wisdom", MCColor.DARK_AQUA),
     RUNECRAFTING_WISDOM("☯", "Runecrafting Wisdom", MCColor.DARK_AQUA),
     SOCIAL_WISDOM("☯", "Social Wisdom", MCColor.DARK_AQUA),
     RIFT_TIME("ф", "Rift Time", MCColor.GREEN),
