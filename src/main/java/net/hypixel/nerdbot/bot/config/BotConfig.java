@@ -74,12 +74,12 @@ public class BotConfig {
      * The {@link Activity.ActivityType} that the bot will display on its profile
      * Default is PLAYING
      */
-    private Activity.ActivityType activityType = Activity.ActivityType.PLAYING;
+    private Activity.ActivityType activityType = Activity.ActivityType.WATCHING;
 
     /**
      * The message being displayed as the bots {@link Activity} on its profile
      */
-    private String activity = "";
+    private String activity = "with a default message!";
 
     /**
      * The amount of days that a user must be inactive for to show up in the inactive user list
