@@ -22,6 +22,7 @@ import net.hypixel.nerdbot.generator.impl.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
 import net.hypixel.nerdbot.generator.util.Item;
 import net.hypixel.nerdbot.util.ImageUtil;
+import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.spritesheet.ItemSpritesheet;
 
@@ -31,8 +32,10 @@ import java.util.List;
 
 public class GeneratorCommands extends ApplicationCommand {
 
-    @JDASlashCommand(name = "generate", group = "display", subcommand = "item", description = "Display an item")
-    public void generateItem(GuildSlashEvent event, @AppOption String minecraftItemId, @AppOption Boolean enchanted) {
+    private static final String BASE_COMMAND = "generate";
+
+    @JDASlashCommand(name = BASE_COMMAND, group = "display", subcommand = "item", description = "Display an item")
+    public void generateItem(GuildSlashEvent event, @AppOption(autocomplete = "item-names") String itemId, @AppOption Boolean enchanted) {
         event.deferReply().complete();
 
         enchanted = enchanted != null && enchanted;
@@ -40,7 +43,7 @@ public class GeneratorCommands extends ApplicationCommand {
         try {
             Item item = new ItemBuilder()
                 .addGenerator(new MinecraftItemGenerator.Builder()
-                    .withItem(minecraftItemId)
+                    .withItem(itemId)
                     .isEnchanted(enchanted)
                     .build()
                 ).build();
@@ -54,7 +57,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "generate", subcommand = "head", description = "Generate a player head")
+    @JDASlashCommand(name = BASE_COMMAND, subcommand = "head", description = "Generate a player head")
     public void generateHead(GuildSlashEvent event, @AppOption String texture) {
         event.deferReply().complete();
 
@@ -72,7 +75,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "generate", subcommand = "recipe", description = "Generate a recipe")
+    @JDASlashCommand(name = BASE_COMMAND, subcommand = "recipe", description = "Generate a recipe")
     public void generateRecipe(GuildSlashEvent event, @AppOption String recipeString, @AppOption @Optional Boolean renderBackground) {
         event.deferReply().complete();
 
@@ -95,7 +98,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "generate", group = "parse", subcommand = "nbt", description = "Parse an NBT string")
+    @JDASlashCommand(name = BASE_COMMAND, group = "parse", subcommand = "nbt", description = "Parse an NBT string")
     public void parseNbtString(GuildSlashEvent event, @AppOption String nbt, @AppOption @Optional Integer alpha, @AppOption @Optional Integer padding) {
         event.deferReply().complete();
 
@@ -159,7 +162,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "generate", subcommand = "item", description = "Generate a tooltip")
+    @JDASlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a tooltip")
     public void generateTooltip(
         GuildSlashEvent event,
         @AppOption(autocomplete = "item-names") String itemId,
@@ -189,7 +192,7 @@ public class GeneratorCommands extends ApplicationCommand {
             ItemBuilder itemBuilder = new ItemBuilder();
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withName(name)
-                .withRarity(Rarity.valueOf(rarity.toUpperCase()))
+                .withRarity((Rarity) Util.findValue(Rarity.VALUES, rarity.toUpperCase()))
                 .withItemLore(itemLore)
                 .withType(type)
                 .withAlpha(alpha)
@@ -219,10 +222,51 @@ public class GeneratorCommands extends ApplicationCommand {
             Item item = itemBuilder.build();
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "tooltip.png")).queue();
-        } catch (GeneratorException exception) {
+        } catch (GeneratorException | IllegalArgumentException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating that player head!").queue();
+            exception.printStackTrace();
+        }
+    }
+
+    @JDASlashCommand(name = BASE_COMMAND, subcommand = "text", description = "Generate some text")
+    public void generateText(
+        GuildSlashEvent event,
+        @AppOption String text,
+        @AppOption @Optional Boolean centered,
+        @AppOption @Optional Integer alpha,
+        @AppOption @Optional Integer padding,
+        @AppOption @Optional Integer maxLineLength
+    ) {
+        event.deferReply().complete();
+
+        centered = centered != null && centered;
+        alpha = alpha == null ? 245 : alpha;
+        padding = padding == null ? 0 : padding;
+        maxLineLength = maxLineLength == null ? 30 : maxLineLength;
+
+        try {
+            ItemBuilder itemBuilder = new ItemBuilder();
+            MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                .withItemLore(text)
+                .withAlpha(alpha)
+                .withPadding(padding)
+                .isCentered(centered)
+                .withMaxLineLength(maxLineLength)
+                .isNormalItem(false)
+                .withEmptyLine(false)
+                .build();
+
+            itemBuilder.addGenerator(tooltipGenerator);
+
+            Item item = itemBuilder.build();
+
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "text.png")).queue();
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating the text!").queue();
             exception.printStackTrace();
         }
     }

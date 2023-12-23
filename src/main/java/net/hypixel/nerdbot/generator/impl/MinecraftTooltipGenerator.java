@@ -10,12 +10,12 @@ import net.hypixel.nerdbot.generator.parser.StringColorParser;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
 import net.hypixel.nerdbot.generator.util.Item;
 import net.hypixel.nerdbot.generator.util.MinecraftTooltip;
+import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 import java.util.Objects;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -34,7 +34,7 @@ public class MinecraftTooltipGenerator implements Generator {
 
     @Override
     public Item generate() {
-        return new Item(buildItem(name, rarity.name(), itemLore, type, emptyLine, alpha, padding, maxLineLength, normalItem, centeredText));
+        return new Item(buildItem(name, rarity, itemLore, type, emptyLine, alpha, padding, maxLineLength, normalItem, centeredText));
     }
 
     public static class Builder implements ClassBuilder<MinecraftTooltipGenerator> {
@@ -139,28 +139,31 @@ public class MinecraftTooltipGenerator implements Generator {
      * @return a Minecraft item description
      */
     @Nullable
-    public BufferedImage buildItem(String name, String rarity, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, int maxLineLength, boolean isNormalItem, boolean isCentered) {
+    public BufferedImage buildItem(String name, Rarity rarity, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, int maxLineLength, boolean isNormalItem, boolean isCentered) {
         // Checking that the fonts have been loaded correctly
         if (!MinecraftTooltip.isFontsRegistered()) {
             throw new GeneratorException(GeneratorMessages.FONTS_NOT_REGISTERED);
         }
 
-        // verify rarity argument
-        if (Arrays.stream(Rarity.VALUES).noneMatch(rarity1 -> rarity.equalsIgnoreCase(rarity1.name()))) {
-            throw new GeneratorException(String.format(GeneratorMessages.INVALID_RARITY, GeneratorMessages.stripString(rarity)));
+        if (rarity == null) {
+            rarity = Rarity.NONE;
+        }
+
+        // Check if the given rarity is a valid enum value
+        if (Util.findValue(Rarity.VALUES, rarity.name()) == null) {
+            throw new GeneratorException(GeneratorMessages.INVALID_RARITY);
         }
 
         StringBuilder itemLore = new StringBuilder(itemLoreString);
 
         // adds the item's name to the array list
-        Rarity itemRarity = Rarity.valueOf(rarity.toUpperCase());
-        if (!name.equalsIgnoreCase("NONE")) { // allow user to pass NONE for the title
-            String createTitle = "%%" + itemRarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%\\n";
+        if (name != null && !name.equalsIgnoreCase("NONE")) { // allow user to pass NONE for the title
+            String createTitle = "%%" + rarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%\\n";
             itemLore.insert(0, createTitle);
         }
 
         // writing the rarity if the rarity is not none
-        if (itemRarity != Rarity.NONE) {
+        if (rarity != Rarity.NONE) {
             // checks if there is a type for the item
             if (type == null || type.equalsIgnoreCase("none")) {
                 type = "";
@@ -171,7 +174,7 @@ public class MinecraftTooltipGenerator implements Generator {
             }
 
             // adds the items type in the item lore
-            String createRarity = "\\n%%" + itemRarity.getRarityColor() + "%%%%BOLD%%" + itemRarity.getId().toUpperCase() + " " + type;
+            String createRarity = "\\n%%" + rarity.getRarityColor() + "%%%%BOLD%%" + rarity.getId().toUpperCase() + " " + type;
             itemLore.append(createRarity);
         } else {
             itemLore.append("\\n");

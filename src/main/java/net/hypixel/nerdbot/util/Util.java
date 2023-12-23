@@ -18,7 +18,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.Font;
 import java.awt.FontFormatException;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -323,11 +322,9 @@ public class Util {
      */
     @Nullable
     public static Enum<?> findValue(Enum<?>[] enumSet, String match) {
-        for (Enum<?> enumItem : enumSet) {
-            if (match.equalsIgnoreCase(enumItem.name()))
-                return enumItem;
-        }
-
-        return null;
+        return Arrays.stream(enumSet)
+            .filter(item -> item.name().equalsIgnoreCase(match))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("No value found with name " + match));
     }
 }
