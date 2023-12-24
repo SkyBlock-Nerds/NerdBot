@@ -220,8 +220,10 @@ public class GeneratorCommands extends ApplicationCommand {
             }
 
             Item item = itemBuilder.build();
+            JsonObject tooltipJson = tooltipGenerator.generateNbtJson();
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "tooltip.png")).queue();
+            System.out.println("Generated Tooltip JSON: " + tooltipJson.toString());
         } catch (GeneratorException | IllegalArgumentException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {

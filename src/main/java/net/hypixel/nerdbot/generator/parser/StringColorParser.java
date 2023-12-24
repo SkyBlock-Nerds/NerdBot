@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.generator.parser;
 
+import lombok.Getter;
 import net.hypixel.nerdbot.generator.util.ColoredString;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
 import net.hypixel.nerdbot.util.Util;
@@ -22,6 +23,7 @@ public class StringColorParser {
     private static final Icon[] icons = Icon.VALUES;
 
     // variables used to store the description
+    @Getter
     private final List<List<ColoredString>> parsedDescription;
     private ArrayList<ColoredString> currentLine = new ArrayList<>();
     private ColoredString currentString;
@@ -32,6 +34,7 @@ public class StringColorParser {
     private final int wrappedLineLength;
     private int imageMaxLineLength = 0;
 
+    @Getter
     private String errorString;
     private boolean successfullyParsed;
 
@@ -47,16 +50,8 @@ public class StringColorParser {
         wrappedLineLength = Math.min(StringColorParser.MAX_FINAL_LINE_LENGTH, Math.max(1, maxLength));
     }
 
-    public List<List<ColoredString>> getParsedDescription() {
-        return parsedDescription;
-    }
-
-    public boolean isSuccessfullyParsed() {
+    public boolean parsedSuccessfully() {
         return successfullyParsed;
-    }
-
-    public String getErrorString() {
-        return errorString;
     }
 
     public int getEstimatedImageWidth() {

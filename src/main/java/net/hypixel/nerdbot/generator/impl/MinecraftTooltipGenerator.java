@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.generator.impl;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -154,10 +155,32 @@ public class MinecraftTooltipGenerator implements Generator {
             throw new GeneratorException(GeneratorMessages.INVALID_RARITY);
         }
 
-        StringBuilder itemLore = new StringBuilder(itemLoreString);
+        StringColorParser parsedLore = parseLore(emptyLine, itemLore);
+
+        // alpha value validation
+        alpha = Objects.requireNonNullElse(alpha, 255); // checks if the image transparency was set
+        alpha = Math.min(255, Math.max(0, alpha));
+
+        // padding value validation
+        padding = Math.max(0, padding);
+
+        return new MinecraftTooltip(
+            parsedLore.getParsedDescription(),
+            MCColor.GRAY,
+            parsedLore.getEstimatedImageWidth() * 30,
+            alpha,
+            padding,
+            isNormalItem,
+            isCentered
+        ).render().getImage();
+    }
+
+    private StringColorParser parseLore(boolean emptyLine, String input) {
+        StringBuilder itemLore = new StringBuilder(input);
+        String type = this.type;
 
         // adds the item's name to the array list
-        if (name != null && !name.equalsIgnoreCase("NONE")) { // allow user to pass NONE for the title
+        if (!name.equalsIgnoreCase("NONE")) { // allow user to pass NONE for the title
             String createTitle = "%%" + rarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%\\n";
             itemLore.insert(0, createTitle);
         }
@@ -169,7 +192,7 @@ public class MinecraftTooltipGenerator implements Generator {
                 type = "";
             }
             // checking if there is custom line break happening
-            if (addEmptyLine) {
+            if (emptyLine) {
                 itemLore.append("\\n");
             }
 
@@ -188,28 +211,39 @@ public class MinecraftTooltipGenerator implements Generator {
         colorParser.parseString(itemLore);
 
         // checking that there were no errors while parsing the string
-        if (!colorParser.isSuccessfullyParsed()) {
+        if (!colorParser.parsedSuccessfully()) {
             throw new GeneratorException(colorParser.getErrorString());
         }
 
-        // alpha value validation
-        alpha = Objects.requireNonNullElse(alpha, 255); // checks if the image transparency was set
-        alpha = Math.min(255, Math.max(0, alpha));
+        return colorParser;
+    }
 
-        // padding value validation
-        padding = Math.max(0, padding);
+    // Example:
+    // {display:{Name:'[{"text":"Name of ","italic":false,"color":"yellow"},{"text":"Item","color":"gold"}]',Lore:['[{"text":"This is text lore.","italic":false,"color":"gray"},{"text":"","italic":false,"color":"dark_purple"}]','[{"text":"Line break!","italic":false,"color":"gray"},{"text":"","italic":false,"color":"dark_purple"}]','[{"text":"Line break OF COLOR RED and BOLD","italic":false,"color":"dark_red","bold":true}]']}} 1
+    public JsonObject generateNbtJson() {
+        StringColorParser itemLore = parseLore(this.emptyLine, this.itemLore);
+        JsonObject nbtJson = new JsonObject();
+        JsonObject displayJson = new JsonObject();
+        JsonArray nameJson = new JsonArray();
+        JsonArray loreJson = new JsonArray();
 
-        return new MinecraftTooltip(
-            colorParser.getParsedDescription(),
-            MCColor.GRAY,
-            colorParser.getEstimatedImageWidth() * 30,
-            alpha,
-            padding,
-            isNormalItem,
-            isCentered
-        )
-            .render()
-            .getImage();
+        nameJson.add(itemLore.getParsedDescription().get(0).get(0).convertToJson());
+
+        itemLore.getParsedDescription().stream()
+            .skip(1)
+            .forEach(coloredStrings -> {
+                coloredStrings.forEach(coloredString -> {
+                    JsonArray coloredStringJson = new JsonArray();
+                    coloredStringJson.add(coloredString.convertToJson());
+                    loreJson.add(coloredStringJson);
+                });
+            });
+
+        displayJson.add("Name", nameJson);
+        displayJson.add("Lore", loreJson);
+        nbtJson.add("display", displayJson);
+
+        return nbtJson;
     }
 
     public enum TooltipSide {
