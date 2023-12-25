@@ -493,7 +493,7 @@ public class AdminCommands extends ApplicationCommand {
 
         discordUserRepository.forEach(discordUser -> {
             if (discordUser.isProfileAssigned()) {
-                ProfileUpdateFeature.updateNickname(discordUser);
+                ProfileUpdateFeature.updateUser(discordUser);
                 updated.getAndIncrement();
             }
         });

@@ -3,13 +3,16 @@ package net.hypixel.nerdbot.feature;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.wiki.MediaWikiAPI;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -32,7 +35,7 @@ public class ProfileUpdateFeature extends BotFeature {
                     DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
                     discordUserRepository.forEach(discordUser -> {
                         if (discordUser.isProfileAssigned() && discordUser.getMojangProfile().requiresCacheUpdate()) {
-                            updateNickname(discordUser);
+                            updateUser(discordUser);
                         }
                     });
                 }
@@ -44,7 +47,7 @@ public class ProfileUpdateFeature extends BotFeature {
         this.timer.cancel();
     }
 
-    public static void updateNickname(DiscordUser discordUser) {
+    public static void updateUser(DiscordUser discordUser) {
         MojangProfile mojangProfile = Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId());
         discordUser.setMojangProfile(mojangProfile);
         Guild guild = Util.getMainGuild();
@@ -57,5 +60,23 @@ public class ProfileUpdateFeature extends BotFeature {
                 log.error("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "]", exception);
             }
         }
+
+        boolean wikiEditor = MediaWikiAPI.isEditor(mojangProfile.getUsername());
+        if (!wikiEditor || !discordUser.isAutoGiveWikiRole()) {
+            return;
+        }
+
+        RoleManager.getPingableRoleByName("Wiki Editor").ifPresent(pingableRole -> {
+            Role role = guild.getRoleById(pingableRole.roleId());
+            if (role == null) {
+                log.warn("Role with ID " + pingableRole.roleId() + " does not exist");
+                return;
+            }
+
+            if (!member.getRoles().contains(role)) {
+                guild.addRoleToMember(member, role).complete();
+                log.info("Added " + role.getName() + " role to " + member.getUser().getName() + " (" + member.getId() + ")");
+            }
+        });
     }
 }
