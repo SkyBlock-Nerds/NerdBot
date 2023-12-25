@@ -27,11 +27,6 @@ public class RoleConfig {
     private String limboRoleId = "";
 
     /**
-     * The {@link Role} ID of the Wiki Editor role
-     */
-    private String wikiEditorRoleId = "";
-
-    /**
      * A list of {@link PingableRole PingableRoles} used for announcements etc.
      */
     private PingableRole[] pingableRoles = {};

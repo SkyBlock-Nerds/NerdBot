@@ -21,6 +21,7 @@ import java.util.TimerTask;
 public class DiscordUser {
 
     private String discordId;
+    private boolean autoGiveWikiRole = true;
     private LastActivity lastActivity;
     private BirthdayData birthdayData;
     private MojangProfile mojangProfile;
@@ -29,7 +30,7 @@ public class DiscordUser {
     }
 
     public DiscordUser(Member member) {
-        this(member.getId(), new LastActivity(), new BirthdayData(), new MojangProfile());
+        this(member.getId(), true, new LastActivity(), new BirthdayData(), new MojangProfile());
     }
 
     public int getTotalMessageCount() {

@@ -37,7 +37,7 @@ public class UserGrabberFeature extends BotFeature {
 
                 DiscordUser discordUser = discordUserRepository.findById(member.getId());
                 if (discordUser == null) {
-                    discordUser = new DiscordUser(member.getId(), new LastActivity(), new BirthdayData(), new MojangProfile());
+                    discordUser = new DiscordUser(member.getId(), true, new LastActivity(), new BirthdayData(), new MojangProfile());
                     log.info("Creating new DiscordUser for user " + member.getId());
                 }
 

@@ -341,10 +341,14 @@ public class MyCommands extends ApplicationCommand {
             newMemberRole = java.util.Optional.ofNullable(guild.getRoleById(newMemberRoleId));
         }
 
-        String wikiEditorRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getWikiEditorRoleId();
-        RoleManager.getRoleById(wikiEditorRoleId).ifPresent(role -> {
-            boolean wikiEditor = MediaWikiAPI.isEditor(mojangProfile.getUsername());
+        RoleManager.getPingableRoleByName("Wiki Editor").ifPresent(pingableRole -> {
+            Role role = guild.getRoleById(pingableRole.roleId());
+            if (role == null) {
+                log.warn("Role with ID " + pingableRole.roleId() + " does not exist");
+                return;
+            }
 
+            boolean wikiEditor = MediaWikiAPI.isEditor(mojangProfile.getUsername());
             if (wikiEditor && !member.getRoles().contains(role)) {
                 guild.addRoleToMember(member, role).complete();
                 log.info("Added " + role.getName() + " role to " + member.getUser().getName() + " (" + member.getId() + ")");
