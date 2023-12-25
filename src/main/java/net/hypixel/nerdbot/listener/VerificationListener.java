@@ -10,8 +10,11 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.command.MyCommands;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
@@ -98,7 +101,16 @@ public class VerificationListener {
                         if (member == null) {
                             buttonLabel = "Left Server";
                         } else {
-                            MyCommands.updateMojangProfile(member, mojangProfile);
+                            DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+                            DiscordUser discordUser = discordUserRepository.findById(memberId);
+
+                            if (discordUser == null) {
+                                discordUser = new DiscordUser(member);
+                                discordUserRepository.cacheObject(discordUser);
+                            }
+
+                            discordUser.setMojangProfile(mojangProfile);
+
                             buttonStyle = ButtonStyle.SUCCESS;
                             buttonLabel = "Accepted";
                         }
