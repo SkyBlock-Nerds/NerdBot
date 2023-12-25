@@ -31,7 +31,6 @@ import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
-import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.ActivityListener;
 import net.hypixel.nerdbot.listener.MetricsListener;
 import net.hypixel.nerdbot.listener.ModLogListener;
@@ -68,7 +67,6 @@ public class NerdBot implements Bot {
     private static final List<BotFeature> FEATURES = Arrays.asList(
         new HelloGoodbyeFeature(),
         new CurateFeature(),
-        new UserGrabberFeature(),
         new ProfileUpdateFeature()
     );
 
