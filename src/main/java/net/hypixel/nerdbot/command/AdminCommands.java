@@ -341,9 +341,17 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).complete();
         bypassSocial = (bypassSocial == null || !bypassSocial);
 
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
+
+        if (discordUser == null) {
+            event.getHook().sendMessage("Could not find you in the database!").queue();
+            return;
+        }
+
         try {
             MojangProfile mojangProfile = MyCommands.requestMojangProfile(member, username, bypassSocial);
-            MyCommands.updateMojangProfile(member, mojangProfile);
+            ProfileUpdateFeature.updateUser(discordUser, mojangProfile);
             event.getHook().sendMessage("Updated " + member.getAsMention() + "'s Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
             ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
@@ -493,7 +501,7 @@ public class AdminCommands extends ApplicationCommand {
         AtomicInteger updated = new AtomicInteger();
         discordUsers.forEach(discordUser -> {
             if (discordUser.isProfileAssigned()) {
-                ProfileUpdateFeature.updateUser(discordUser);
+                ProfileUpdateFeature.updateUser(discordUser, Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId()));
                 updated.getAndIncrement();
             }
         });

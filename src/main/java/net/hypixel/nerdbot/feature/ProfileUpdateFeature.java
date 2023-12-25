@@ -34,7 +34,7 @@ public class ProfileUpdateFeature extends BotFeature {
                     DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
                     discordUserRepository.forEach(discordUser -> {
                         if (discordUser.isProfileAssigned() && discordUser.getMojangProfile().requiresCacheUpdate()) {
-                            updateUser(discordUser);
+                            updateUser(discordUser, discordUser.getMojangProfile());
                         }
                     });
                 }
@@ -46,8 +46,7 @@ public class ProfileUpdateFeature extends BotFeature {
         this.timer.cancel();
     }
 
-    public static void updateUser(DiscordUser discordUser) {
-        MojangProfile mojangProfile = Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId());
+    public static void updateUser(DiscordUser discordUser, MojangProfile mojangProfile) {
         discordUser.setMojangProfile(mojangProfile);
         Guild guild = Util.getMainGuild();
         guild.retrieveMemberById(discordUser.getDiscordId()).queue(m -> {

@@ -123,7 +123,7 @@ public class RoleCommands extends ApplicationCommand {
         event.getHook().editOriginal("**Assignable Roles:**\n" + String.join("\n", roles) + "\n\n**Use /role <name> to toggle the role!**").queue();
     }
 
-    public static boolean isWikiRole(String roleId) {
+    private boolean isWikiRole(String roleId) {
         return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
             .filter(pingableRole -> pingableRole.name().equalsIgnoreCase("Wiki Editor"))
             .map(pingableRole -> pingableRole.roleId().equals(roleId))

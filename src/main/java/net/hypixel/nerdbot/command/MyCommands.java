@@ -12,10 +12,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
@@ -26,13 +23,12 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
-import net.hypixel.nerdbot.util.wiki.MediaWikiAPI;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 
@@ -65,9 +61,17 @@ public class MyCommands extends ApplicationCommand {
             return;
         }
 
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
+
+        if (discordUser == null) {
+            event.getHook().editOriginal("Could not find you in the database!").queue();
+            return;
+        }
+
         try {
             MojangProfile mojangProfile = requestMojangProfile(member, username, true);
-            updateMojangProfile(member, mojangProfile);
+            ProfileUpdateFeature.updateUser(discordUser, mojangProfile);
             event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
             ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
@@ -318,66 +322,6 @@ public class MyCommands extends ApplicationCommand {
         }
 
         return mojangProfile;
-    }
-
-    public static void updateMojangProfile(Member member, MojangProfile mojangProfile) throws HttpException {
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(member.getId());
-        discordUser.setMojangProfile(mojangProfile);
-
-        if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
-            try {
-                member.modifyNickname(mojangProfile.getUsername()).queue();
-            } catch (HierarchyException hex) {
-                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
-            }
-        }
-
-        Guild guild = member.getGuild();
-        String newMemberRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getNewMemberRoleId();
-        java.util.Optional<Role> newMemberRole = java.util.Optional.empty();
-
-        if (newMemberRoleId != null) {
-            newMemberRole = java.util.Optional.ofNullable(guild.getRoleById(newMemberRoleId));
-        }
-
-        RoleManager.getPingableRoleByName("Wiki Editor").ifPresent(pingableRole -> {
-            Role role = guild.getRoleById(pingableRole.roleId());
-            if (role == null) {
-                log.warn("Role with ID " + pingableRole.roleId() + " does not exist");
-                return;
-            }
-
-            boolean wikiEditor = MediaWikiAPI.isEditor(mojangProfile.getUsername());
-            if (wikiEditor && !member.getRoles().contains(role)) {
-                guild.addRoleToMember(member, role).complete();
-                log.info("Added " + role.getName() + " role to " + member.getUser().getName() + " (" + member.getId() + ")");
-            } else if (!wikiEditor && member.getRoles().contains(role)) {
-                guild.removeRoleFromMember(member, role).complete();
-                log.info("Removed " + role.getName() + " role from " + member.getUser().getName() + " (" + member.getId() + ")");
-            }
-        });
-
-        if (newMemberRole.isPresent()) {
-            if (!RoleManager.hasHigherOrEqualRole(member, newMemberRole.get())) { // Ignore Existing Members
-                try {
-                    guild.addRoleToMember(member, newMemberRole.get()).complete();
-                    String limboRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getLimboRoleId();
-
-                    if (limboRoleId != null) {
-                        Role limboRole = guild.getRoleById(limboRoleId);
-
-                        if (limboRole != null) {
-                            guild.removeRoleFromMember(member, limboRole).complete();
-                        }
-                    }
-                } catch (HierarchyException hex) {
-                    log.warn("Unable to assign " + newMemberRole.get().getName() + " role to " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
-                }
-            }
-        } else {
-            log.warn("Role with ID " + "" + " does not exist.");
-        }
     }
 
     public static Pair<EmbedBuilder, EmbedBuilder> getActivityEmbeds(Member member) {
