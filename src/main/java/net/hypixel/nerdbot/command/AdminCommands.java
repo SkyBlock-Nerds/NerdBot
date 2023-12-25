@@ -483,15 +483,15 @@ public class AdminCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository discordUserRepository = database.getRepositoryManager().getRepository(DiscordUserRepository.class);
+        List<DiscordUser> discordUsers = discordUserRepository.getAll();
 
-        if (discordUserRepository == null) {
+        if (discordUserRepository == null || discordUsers.isEmpty()) {
             event.getHook().sendMessage("No users found.").queue();
             return;
         }
 
         AtomicInteger updated = new AtomicInteger();
-
-        discordUserRepository.forEach(discordUser -> {
+        discordUsers.forEach(discordUser -> {
             if (discordUser.isProfileAssigned()) {
                 ProfileUpdateFeature.updateUser(discordUser);
                 updated.getAndIncrement();

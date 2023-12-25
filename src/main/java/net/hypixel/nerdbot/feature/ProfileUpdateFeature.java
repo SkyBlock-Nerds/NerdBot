@@ -2,7 +2,6 @@ package net.hypixel.nerdbot.feature;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -51,32 +50,35 @@ public class ProfileUpdateFeature extends BotFeature {
         MojangProfile mojangProfile = Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId());
         discordUser.setMojangProfile(mojangProfile);
         Guild guild = Util.getMainGuild();
-        Member member = guild.retrieveMemberById(discordUser.getDiscordId()).complete();
-
-        if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
-            try {
-                member.modifyNickname(mojangProfile.getUsername()).queue();
-            } catch (HierarchyException exception) {
-                log.error("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "]", exception);
+        guild.retrieveMemberById(discordUser.getDiscordId()).queue(m -> {
+            if (!m.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
+                try {
+                    m.modifyNickname(mojangProfile.getUsername()).queue();
+                    log.info("Modified nickname of " + m.getUser().getName() + " (ID: " + m.getId() + ") to " + mojangProfile.getUsername());
+                } catch (HierarchyException exception) {
+                    log.error("Unable to modify the nickname of " + m.getUser().getName() + " (" + m.getEffectiveName() + ") [" + m.getId() + "]", exception);
+                }
             }
-        }
 
-        boolean wikiEditor = MediaWikiAPI.isEditor(mojangProfile.getUsername());
-        if (!wikiEditor || !discordUser.isAutoGiveWikiRole()) {
-            return;
-        }
-
-        RoleManager.getPingableRoleByName("Wiki Editor").ifPresent(pingableRole -> {
-            Role role = guild.getRoleById(pingableRole.roleId());
-            if (role == null) {
-                log.warn("Role with ID " + pingableRole.roleId() + " does not exist");
+            boolean wikiEditor = MediaWikiAPI.isEditor(mojangProfile.getUsername());
+            if (!wikiEditor || !discordUser.isAutoGiveWikiRole()) {
                 return;
             }
 
-            if (!member.getRoles().contains(role)) {
-                guild.addRoleToMember(member, role).complete();
-                log.info("Added " + role.getName() + " role to " + member.getUser().getName() + " (" + member.getId() + ")");
-            }
+            RoleManager.getPingableRoleByName("Wiki Editor").ifPresent(pingableRole -> {
+                Role role = guild.getRoleById(pingableRole.roleId());
+                if (role == null) {
+                    log.warn("Role with ID " + pingableRole.roleId() + " does not exist");
+                    return;
+                }
+
+                if (!m.getRoles().contains(role)) {
+                    guild.addRoleToMember(m, role).complete();
+                    log.info("Added " + role.getName() + " role to " + m.getUser().getName() + " (" + m.getId() + ")");
+                }
+            });
+        }, e -> {
+            log.error("Unable to retrieve member with ID " + discordUser.getDiscordId(), e);
         });
     }
 }
