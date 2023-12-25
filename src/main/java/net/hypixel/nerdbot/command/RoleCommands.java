@@ -107,16 +107,11 @@ public class RoleCommands extends ApplicationCommand {
             return;
         }
 
-        if (user.noProfileAssigned()) {
-            event.getHook().editOriginal("You need to link your Minecraft account before you can do this!").queue();
-            return;
-        }
-
         List<String> roles = new ArrayList<>(Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
             .map(PingableRole::name)
             .toList());
 
-        if (!MediaWikiAPI.isEditor(user.getMojangProfile().getUsername())) {
+        if (user.noProfileAssigned() || !MediaWikiAPI.isEditor(user.getMojangProfile().getUsername())) {
             roles.remove("Wiki Editor");
         }
 
