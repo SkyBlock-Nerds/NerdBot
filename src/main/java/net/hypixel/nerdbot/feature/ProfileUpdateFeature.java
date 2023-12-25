@@ -61,10 +61,6 @@ public class ProfileUpdateFeature extends BotFeature {
             }
 
             boolean wikiEditor = MediaWikiAPI.isEditor(mojangProfile.getUsername());
-            if (!wikiEditor || !discordUser.isAutoGiveWikiRole()) {
-                return;
-            }
-
             RoleManager.getPingableRoleByName("Wiki Editor").ifPresent(pingableRole -> {
                 Role role = guild.getRoleById(pingableRole.roleId());
                 if (role == null) {
@@ -72,9 +68,12 @@ public class ProfileUpdateFeature extends BotFeature {
                     return;
                 }
 
-                if (!m.getRoles().contains(role)) {
+                if (!wikiEditor && m.getRoles().contains(role)) {
+                    guild.removeRoleFromMember(m, role).complete();
+                    log.info("Removed " + role.getName() + " role from " + m.getUser().getName() + " (ID: " + m.getId() + ") because they are not a Wiki Editor");
+                } else if (wikiEditor && discordUser.isAutoGiveWikiRole() && !m.getRoles().contains(role)) {
                     guild.addRoleToMember(m, role).complete();
-                    log.info("Added " + role.getName() + " role to " + m.getUser().getName() + " (" + m.getId() + ")");
+                    log.info("Added " + role.getName() + " role to " + m.getUser().getName() + " (ID: " + m.getId() + ") because they are a Wiki Editor");
                 }
             });
         }, e -> {
