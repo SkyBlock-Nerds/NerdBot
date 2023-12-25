@@ -35,6 +35,10 @@ public class RoleManager {
         return member.getRoles().stream().anyMatch(role -> role.getName().equalsIgnoreCase(name));
     }
 
+    public static boolean hasRole(Member member, Role role) {
+        return hasRole(member, role.getName());
+    }
+
     public static boolean hasAnyRole(Member member, String... names) {
         List<Role> roles = member.getRoles();
         List<String> nameList = Arrays.asList(names);

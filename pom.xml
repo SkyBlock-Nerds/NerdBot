@@ -105,6 +105,11 @@
             <artifactId>HikariCP</artifactId>
             <version>5.0.1</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.fastily</groupId>
+            <artifactId>jwiki</artifactId>
+            <version>1.11.0</version>
+        </dependency>
     </dependencies>
 
     <build>

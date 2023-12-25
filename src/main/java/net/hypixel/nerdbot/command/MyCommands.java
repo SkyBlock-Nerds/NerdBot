@@ -32,6 +32,7 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
+import net.hypixel.nerdbot.util.wiki.MediaWikiAPI;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 
@@ -339,6 +340,19 @@ public class MyCommands extends ApplicationCommand {
         if (newMemberRoleId != null) {
             newMemberRole = java.util.Optional.ofNullable(guild.getRoleById(newMemberRoleId));
         }
+
+        String wikiEditorRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getWikiEditorRoleId();
+        RoleManager.getRoleById(wikiEditorRoleId).ifPresent(role -> {
+            boolean wikiEditor = MediaWikiAPI.isEditor(mojangProfile.getUsername());
+
+            if (wikiEditor && !member.getRoles().contains(role)) {
+                guild.addRoleToMember(member, role).complete();
+                log.info("Added " + role.getName() + " role to " + member.getUser().getName() + " (" + member.getId() + ")");
+            } else if (!wikiEditor && member.getRoles().contains(role)) {
+                guild.removeRoleFromMember(member, role).complete();
+                log.info("Removed " + role.getName() + " role from " + member.getUser().getName() + " (" + member.getId() + ")");
+            }
+        });
 
         if (newMemberRole.isPresent()) {
             if (!RoleManager.hasHigherOrEqualRole(member, newMemberRole.get())) { // Ignore Existing Members
