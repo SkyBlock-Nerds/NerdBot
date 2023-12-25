@@ -50,6 +50,11 @@ public class RoleCommands extends ApplicationCommand {
             // Hardcoded Wiki Editor role check
             if (isWikiRole(discordRole.getId()) && !MediaWikiAPI.isEditor(user.getMojangProfile().getUsername())) {
                 event.getHook().editOriginal("You need to be a Wiki Editor to toggle that role!").queue();
+
+                if (RoleManager.hasRole(event.getMember(), role)) {
+                    event.getGuild().removeRoleFromMember(event.getMember(), discordRole).queue();
+                }
+
                 return;
             }
 
