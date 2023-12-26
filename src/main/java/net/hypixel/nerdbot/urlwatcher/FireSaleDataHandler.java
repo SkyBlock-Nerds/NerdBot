@@ -8,7 +8,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Tuple;
@@ -29,7 +29,7 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
 
         log.info("Fire sale data changed!");
 
-        ChannelManager.getChannelById(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
+        ChannelCache.getTextChannelById(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             log.debug("Changed values: " + changedValues);
 
             JsonArray oldSaleData = JsonUtil.parseString(oldContent).getAsJsonObject().getAsJsonArray("sales");
