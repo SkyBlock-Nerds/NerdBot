@@ -19,16 +19,17 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
+import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.util.TimeUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
@@ -249,15 +250,12 @@ public class InfoCommands extends ApplicationCommand {
 
         page = Math.max(1, page);
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
-        List<RichCustomEmoji> emojis = Util.getMainGuild().retrieveEmojis().complete();
 
         getPage(reactionHistoryMap, page, 10).forEach(stringListEntry -> {
             stringBuilder.append("<#").append(stringListEntry.getKey()).append(">\n");
             stringListEntry.getValue().forEach(history -> {
-                String emoji = emojis.stream()
-                    .filter(e -> e.getName().equals(history.reactionName()))
-                    .findFirst()
-                    .map(RichCustomEmoji::getAsMention)
+                String emoji = EmojiCache.getEmojiByName(history.reactionName())
+                    .map(Emoji::getFormatted)
                     .orElse(":question:");
 
                 stringBuilder.append(emoji);

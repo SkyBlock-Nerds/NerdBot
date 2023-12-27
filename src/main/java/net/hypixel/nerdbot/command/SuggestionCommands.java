@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
+import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.util.Util;
@@ -383,7 +384,9 @@ public class SuggestionCommands extends ApplicationCommand {
     }
 
     private static String getEmojiFormat(Function<SuggestionConfig, String> emojiIdFunction) {
-        return NerdBotApp.getBot().getJDA().getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getSuggestionConfig())).getFormatted();
+        return EmojiCache.getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getSuggestionConfig()))
+            .orElseGet(() -> Emoji.fromUnicode("❓"))
+            .getFormatted();
     }
 
 }
