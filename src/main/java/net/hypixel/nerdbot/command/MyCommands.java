@@ -298,7 +298,7 @@ public class MyCommands extends ApplicationCommand {
         HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
 
         if (!hypixelPlayerResponse.isSuccess()) {
-            throw new HttpException("Unable to lookup `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
+            throw new HttpException("Unable to look up `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
         }
 
         if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
@@ -313,7 +313,7 @@ public class MyCommands extends ApplicationCommand {
         }
 
         if (enforceSocial && !discordName.equalsIgnoreCase(discord)) {
-            throw new ProfileMismatchException("The Discord name on the Hypixel profile for `" + mojangProfile.getUsername() + "` does not match `" + member.getUser().getName() + "`!");
+            throw new ProfileMismatchException("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
         }
 
         return mojangProfile;
