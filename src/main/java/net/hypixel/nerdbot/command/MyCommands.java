@@ -308,8 +308,7 @@ public class MyCommands extends ApplicationCommand {
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
         String discordName = member.getUser().getName();
 
-        // Apparently there's two different formats
-        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0") || !member.getUser().getDiscriminator().equalsIgnoreCase("0000")) {
+        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0000")) {
             discordName += "#" + member.getUser().getDiscriminator();
         }
 
