@@ -1,6 +1,5 @@
 package net.hypixel.nerdbot.command;
 
-import com.freya02.botcommands.api.annotations.Optional;
 import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
@@ -14,17 +13,14 @@ import com.freya02.botcommands.api.pagination.paginator.Paginator;
 import com.freya02.botcommands.api.pagination.paginator.PaginatorBuilder;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
@@ -38,7 +34,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 @Log4j2
 public class InfoCommands extends ApplicationCommand {
@@ -216,63 +211,6 @@ public class InfoCommands extends ApplicationCommand {
             }
 
             stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getTotalMessageCount())).append(")").append("\n");
-        });
-
-        event.reply(stringBuilder.toString()).setEphemeral(true).queue();
-    }
-
-    @JDASlashCommand(name = "reactions", description = "View a list of recent reactions on suggestions")
-    public void showRecentReactions(GuildSlashEvent event, @Optional @AppOption Member member, @Optional @AppOption int page) {
-        if (member == null || !event.getMember().hasPermission(Permission.BAN_MEMBERS)) {
-            member = event.getMember();
-        }
-
-        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = repository.findById(member.getId());
-
-        if (discordUser == null) {
-            event.reply("Couldn't find that user!").setEphemeral(true).queue();
-            return;
-        }
-
-        List<ReactionHistory> reactionHistory = discordUser.getLastActivity().getSuggestionReactionHistory();
-        reactionHistory.sort(Comparator.comparingLong(ReactionHistory::suggestionTimestamp).reversed());
-
-        if (reactionHistory.isEmpty()) {
-            event.reply("Cannot find any history of your suggestion votes!").setEphemeral(true).queue();
-            return;
-        }
-
-        Map<String, List<ReactionHistory>> reactionHistoryMap = reactionHistory.stream().collect(Collectors.groupingBy(ReactionHistory::channelId));
-        // Show most recent reaction first for each suggestion
-        reactionHistoryMap.forEach((s, reactionHistories) -> reactionHistories.sort(Comparator.comparingLong(ReactionHistory::reactionTimestamp).reversed()));
-
-        page = Math.max(1, page);
-        StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
-        List<RichCustomEmoji> emojis = Util.getMainGuild().retrieveEmojis().complete();
-
-        getPage(reactionHistoryMap, page, 10).forEach(stringListEntry -> {
-            stringBuilder.append("<#").append(stringListEntry.getKey()).append(">\n");
-            stringListEntry.getValue().forEach(history -> {
-                String emoji = emojis.stream()
-                    .filter(e -> e.getName().equals(history.reactionName()))
-                    .findFirst()
-                    .map(RichCustomEmoji::getAsMention)
-                    .orElse(":question:");
-
-                stringBuilder.append(emoji);
-
-                if (history.reactionTimestamp() != -1) {
-                    DiscordTimestamp discordTimestamp = new DiscordTimestamp(history.reactionTimestamp());
-                    stringBuilder.append(" ").append(discordTimestamp.toShortDateTime()).append(" (").append(discordTimestamp.toRelativeTimestamp()).append(")");
-                } else {
-                    stringBuilder.append(" (Unknown date/time)");
-                }
-
-                stringBuilder.append("\n");
-            });
-
-            stringBuilder.append("\n");
         });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();

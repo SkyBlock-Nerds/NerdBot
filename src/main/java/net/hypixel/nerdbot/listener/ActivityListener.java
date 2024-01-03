@@ -4,7 +4,6 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -20,7 +19,6 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -225,20 +223,11 @@ public class ActivityListener {
                 }
 
                 String forumChannelId = threadChannel.getParentChannel().getId();
-                Message startMessage = threadChannel.retrieveStartMessage().complete();
                 long time = System.currentTimeMillis();
-
-                discordUser.getLastActivity().getSuggestionReactionHistory().removeIf(reactionHistory ->
-                    reactionHistory.channelId().equals(threadChannel.getId())
-                        && reactionHistory.reactionName().equals(event.getReaction().getEmoji().asCustom().getName())
-                );
-
-                ReactionHistory reactionHistory = new ReactionHistory(threadChannel.getId(), event.getReaction().getEmoji().asCustom().getName(), startMessage.getTimeCreated().toEpochSecond());
 
                 // New Suggestion Voting
                 if (Util.safeArrayStream(suggestionConfig.getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setSuggestionVoteDate(time);
-                    discordUser.getLastActivity().getSuggestionReactionHistory().add(reactionHistory);
                     NerdBotApp.getSuggestionCache().updateSuggestion(threadChannel);
                     log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
@@ -246,7 +235,6 @@ public class ActivityListener {
                 // New Alpha Suggestion Voting
                 if (Util.safeArrayStream(suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setAlphaSuggestionVoteDate(time);
-                    discordUser.getLastActivity().getSuggestionReactionHistory().add(reactionHistory);
                     NerdBotApp.getSuggestionCache().updateSuggestion(threadChannel);
                     log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
