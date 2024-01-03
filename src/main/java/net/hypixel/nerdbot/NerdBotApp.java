@@ -2,6 +2,7 @@ package net.hypixel.nerdbot;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mongodb.MongoException;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.bot.Bot;
@@ -60,10 +61,12 @@ public class NerdBotApp {
             suggestionCache = new SuggestionCache();
             log.info("Bot created!");
         } catch (LoginException e) {
-            log.error("Failed to find login for bot!");
+            log.error("Failed to log into the bot with the given credentials!");
             System.exit(-1);
+        } catch (MongoException exception) {
+            log.error("Failed to connect to MongoDB!");
+            exception.printStackTrace();
         } catch (Exception exception) {
-            log.error("Failed to create bot!");
             exception.printStackTrace();
             System.exit(-1);
         }

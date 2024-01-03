@@ -27,7 +27,7 @@ import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.api.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
@@ -153,7 +153,8 @@ public class NerdBot implements Bot {
                 new VerificationListener(),
                 new PinListener(),
                 new MetricsListener()
-            ).setActivity(Activity.of(config.getActivityType(), config.getActivity()));
+            )
+            .setActivity(Activity.of(config.getActivityType(), config.getActivity()));
         configureMemoryUsage(builder);
 
         if (config.getModMailConfig() != null) {
@@ -161,8 +162,10 @@ public class NerdBot implements Bot {
         }
 
         jda = builder.build();
+
         try {
             jda.awaitReady();
+            jda.addEventListener(new ChannelCache());
         } catch (InterruptedException exception) {
             log.error("Failed to create JDA instance!");
             exception.printStackTrace();
@@ -232,7 +235,7 @@ public class NerdBot implements Bot {
     }
 
     private void startUrlWatchers() {
-        ChannelManager.getChannelById(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
+        ChannelCache.getChannelByName(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
             fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
             HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");

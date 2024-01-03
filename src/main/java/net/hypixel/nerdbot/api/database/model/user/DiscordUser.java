@@ -7,7 +7,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -81,7 +81,7 @@ public class DiscordUser {
                 log.info("Sending birthday message for " + discordId + " at " + finalDate);
                 String finalMessage = message;
 
-                ChannelManager.getChannelByName("general").ifPresentOrElse(channel -> {
+                ChannelCache.getTextChannelByName("general").ifPresentOrElse(channel -> {
                     channel.sendMessage(String.format(finalMessage, discordId, birthdayData.getAge())).queue();
                     log.info("Sent birthday message for " + discordId + " at " + finalDate);
                 }, () -> {
