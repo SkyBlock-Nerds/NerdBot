@@ -235,7 +235,7 @@ public class NerdBot implements Bot {
     }
 
     private void startUrlWatchers() {
-        ChannelCache.getChannelByName(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
+        ChannelCache.getChannelById(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
             fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
             HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
