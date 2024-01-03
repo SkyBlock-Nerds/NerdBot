@@ -26,7 +26,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
-import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -44,7 +43,7 @@ import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
@@ -77,7 +76,7 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "simulatefiresale", description = "Simulate a fire sale", defaultLocked = true)
     public void simulateFireSaleChange(GuildSlashEvent event, @AppOption String oldContent, @AppOption String newContent) {
         event.deferReply(true).complete();
-        
+
         FireSaleDataHandler fireSaleDataHandler = new FireSaleDataHandler();
         NerdBot.getFireSaleWatcher().simulateDataChange(oldContent, newContent, fireSaleDataHandler);
 
@@ -114,7 +113,7 @@ public class AdminCommands extends ApplicationCommand {
         TextChannel selected = Objects.requireNonNullElse(channel, NerdBotApp.getBot().getJDA().getTextChannelsByName("limbo", true).get(0));
         event.deferReply(true).complete();
 
-        ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
             textChannel.sendMessageEmbeds(
                 new EmbedBuilder()
                     .setTitle("Invites Created")
@@ -156,7 +155,7 @@ public class AdminCommands extends ApplicationCommand {
             log.info(event.getUser().getName() + " deleted invite " + invite.getUrl());
         });
 
-        ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
             textChannel.sendMessageEmbeds(
                 new EmbedBuilder()
                     .setTitle("Invites Deleted")
@@ -346,7 +345,7 @@ public class AdminCommands extends ApplicationCommand {
             MyCommands.updateMojangProfile(member, mojangProfile);
             event.getHook().sendMessage("Updated " + member.getAsMention() + "'s Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
-            ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+            ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                     new EmbedBuilder()
                         .setTitle("Mojang Profile Change")
@@ -680,17 +679,13 @@ public class AdminCommands extends ApplicationCommand {
 
     @AutocompletionHandler(name = "forumtags", mode = AutocompletionMode.FUZZY, showUserInput = false)
     public List<ForumTag> listForumTags(CommandAutoCompleteInteractionEvent event) {
-        OptionMapping forumChannelId = event.getOption("channel");
+        List<ForumTag> forumTags = new ArrayList<>();
 
-        if (forumChannelId != null) {
-            ForumChannel forumChannel = Util.getMainGuild().getForumChannelById(forumChannelId.getAsString());
+        ChannelCache.getForumChannelById(event.getOption("channel").getAsString()).ifPresent(forumChannel -> {
+            forumTags.addAll(forumChannel.getAvailableTags());
+        });
 
-            if (forumChannel != null) {
-                return forumChannel.getAvailableTags();
-            }
-        }
-
-        return List.of();
+        return forumTags;
     }
 
     @JDASlashCommand(name = "loglevel", description = "Set the log level", defaultLocked = true)

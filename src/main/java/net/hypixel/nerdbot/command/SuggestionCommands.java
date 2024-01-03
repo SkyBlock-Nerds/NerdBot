@@ -21,7 +21,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.cache.SuggestionCache;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.apache.commons.lang.StringUtils;
@@ -112,7 +112,7 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         // Send Request Review Message
-        ChannelManager.getRequestedReviewChannel().ifPresentOrElse(textChannel -> {
+        ChannelCache.getRequestedReviewChannel().ifPresentOrElse(textChannel -> {
             textChannel.sendMessageEmbeds(
                     new EmbedBuilder()
                         .setAuthor(String.format("Greenlit Review Request from %s", event.getUser().getEffectiveName()))

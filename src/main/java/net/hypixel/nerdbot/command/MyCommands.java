@@ -25,7 +25,7 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.SuggestionCache;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
@@ -68,7 +68,7 @@ public class MyCommands extends ApplicationCommand {
             MojangProfile mojangProfile = requestMojangProfile(member, username, true);
             updateMojangProfile(member, mojangProfile);
             event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
-            ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+            ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                         new EmbedBuilder()
                             .setTitle("Mojang Profile Link")
@@ -118,7 +118,7 @@ public class MyCommands extends ApplicationCommand {
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
             event.getHook().sendMessage("Your verification request has been sent. You will be contacted via DM if any further information is required.").queue();
 
-            ChannelManager.getVerifyLogChannel().ifPresentOrElse(textChannel -> {
+            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                         new EmbedBuilder()
                             .setTitle("Mojang Profile Verification")
