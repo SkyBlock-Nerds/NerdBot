@@ -285,7 +285,6 @@ public class MyCommands extends ApplicationCommand {
             discordUser.setBirthday(DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"}));
             discordUser.getBirthdayData().setShouldAnnounceAge(announceAge != null && announceAge);
             discordUser.scheduleBirthdayReminder(discordUser.getBirthdayData().getBirthdayThisYear());
-            discordUserRepository.cacheObject(discordUser);
             event.getHook().editOriginal("Your birthday has been set to `" + birthday + "`!").queue();
         } catch (Exception ex) {
             event.getHook().editOriginal("Encountered an error while parsing that date! Please try again or contact a bot developer!").queue();
