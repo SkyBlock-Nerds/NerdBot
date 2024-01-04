@@ -68,7 +68,7 @@ public class Database implements ServerMonitorListener {
         try {
             repositoryManager.registerRepositoriesFromPackage("net.hypixel.nerdbot.repository", mongoClient, databaseName);
         } catch (RepositoryException exception) {
-            exception.printStackTrace();
+            log.error("Failed to register repositories!", exception);
         }
     }
 

@@ -67,7 +67,7 @@ public class SuggestionCommands extends ApplicationCommand {
             return;
         }
 
-        SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(event.getChannel().getId());
+        SuggestionCache.Suggestion suggestion = NerdBotApp.getBot().getSuggestionCache().getSuggestion(event.getChannel().getId());
 
         // Handle Missing Suggestion
         if (suggestion == null) {
@@ -304,12 +304,12 @@ public class SuggestionCommands extends ApplicationCommand {
     public static List<SuggestionCache.Suggestion> getSuggestions(Long userID, String tags, String title, boolean alpha) {
         final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
 
-        if (NerdBotApp.getSuggestionCache().getSuggestions().isEmpty()) {
+        if (NerdBotApp.getBot().getSuggestionCache().getSuggestions().isEmpty()) {
             log.info("Suggestions cache is empty!");
             return Collections.emptyList();
         }
 
-        return NerdBotApp.getSuggestionCache()
+        return NerdBotApp.getBot().getSuggestionCache()
             .getSuggestions()
             .stream()
             .filter(suggestion -> suggestion.isAlpha() == alpha)

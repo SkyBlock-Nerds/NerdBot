@@ -1,11 +1,13 @@
 package net.hypixel.nerdbot.util.discord;
 
 import com.zaxxer.hikari.HikariDataSource;
+import lombok.extern.log4j.Log4j2;
 import org.postgresql.ds.PGSimpleDataSource;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
+@Log4j2
 public class ComponentDatabaseConnection {
 
     private final HikariDataSource source;
@@ -27,8 +29,8 @@ public class ComponentDatabaseConnection {
     public Connection getConnection() {
         try {
             return source.getConnection();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (SQLException exception) {
+            log.error("Failed to get connection from pool", exception);
             return null;
         }
     }

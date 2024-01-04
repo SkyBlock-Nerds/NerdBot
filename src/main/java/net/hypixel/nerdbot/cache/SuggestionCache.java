@@ -73,8 +73,8 @@ public class SuggestionCache extends TimerTask {
             log.info("Finished caching suggestions.");
             this.initialized = true;
             this.updating = false;
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception exception) {
+            log.error("Failed to update suggestion cache!", exception);
         }
     }
 

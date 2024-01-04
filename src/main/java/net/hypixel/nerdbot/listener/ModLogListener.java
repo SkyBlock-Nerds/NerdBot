@@ -191,7 +191,7 @@ public class ModLogListener {
             return;
         }
 
-        Message message = NerdBotApp.getMessageCache().getMessage(event.getMessageId());
+        Message message = NerdBotApp.getBot().getMessageCache().getMessage(event.getMessageId());
         if (message == null) {
             return;
         }
@@ -222,7 +222,7 @@ public class ModLogListener {
             return;
         }
 
-        Message before = NerdBotApp.getMessageCache().getMessage(event.getMessageId());
+        Message before = NerdBotApp.getBot().getMessageCache().getMessage(event.getMessageId());
         if (before == null) {
             return;
         }

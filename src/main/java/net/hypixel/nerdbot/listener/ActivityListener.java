@@ -228,14 +228,14 @@ public class ActivityListener {
                 // New Suggestion Voting
                 if (Util.safeArrayStream(suggestionConfig.getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setSuggestionVoteDate(time);
-                    NerdBotApp.getSuggestionCache().updateSuggestion(threadChannel);
+                    NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                     log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
 
                 // New Alpha Suggestion Voting
                 if (Util.safeArrayStream(suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                     discordUser.getLastActivity().setAlphaSuggestionVoteDate(time);
-                    NerdBotApp.getSuggestionCache().updateSuggestion(threadChannel);
+                    NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                     log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
                 }
             }

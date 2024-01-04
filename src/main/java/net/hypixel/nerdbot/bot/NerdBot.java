@@ -5,6 +5,7 @@ import com.freya02.botcommands.api.components.DefaultComponentManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.bulk.BulkWriteResult;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -28,6 +29,8 @@ import net.hypixel.nerdbot.api.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
+import net.hypixel.nerdbot.cache.MessageCache;
+import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
@@ -72,8 +75,12 @@ public class NerdBot implements Bot {
         new ProfileUpdateFeature()
     );
 
+    @Getter
     private final Database database = new Database(System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/"), "skyblock_nerds");
-    private static URLWatcher fireSaleWatcher;
+    @Getter
+    private SuggestionCache suggestionCache;
+    @Getter
+    private MessageCache messageCache;
     private JDA jda;
     private BotConfig config;
     private long startTime;
@@ -83,11 +90,6 @@ public class NerdBot implements Bot {
 
     @Override
     public void onStart() {
-        for (BotFeature feature : FEATURES) {
-            feature.onFeatureStart();
-            log.info("Started feature " + feature.getClass().getSimpleName());
-        }
-
         DiscordUserRepository discordUserRepository = database.getRepositoryManager().getRepository(DiscordUserRepository.class);
         if (discordUserRepository != null) {
             discordUserRepository.loadAllDocumentsIntoCache();
@@ -98,14 +100,24 @@ public class NerdBot implements Bot {
 
         Util.getMainGuild().loadMembers()
             .onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size()))
-            .onError(Throwable::printStackTrace);
+            .onError(throwable -> log.error("Failed to load members!", throwable));
 
         if (config.getMetricsConfig().isEnabled()) {
             PrometheusMetrics.setMetricsEnabled(true);
         }
 
+        for (BotFeature feature : FEATURES) {
+            feature.onFeatureStart();
+            log.info("Started feature " + feature.getClass().getSimpleName());
+        }
+
         startTime = System.currentTimeMillis();
         log.info("Bot started in environment " + Environment.getEnvironment());
+    }
+
+    @Override
+    public List<BotFeature> getFeatures() {
+        return FEATURES;
     }
 
     @Override
@@ -129,8 +141,8 @@ public class NerdBot implements Bot {
                     log.info("Saved 0 documents to database for repository " + repository.getClass().getSimpleName());
                 }
             });
-        } catch (Exception e) {
-            log.error("Error while saving data: " + e.getMessage(), e);
+        } catch (Exception exception) {
+            log.error("Error while saving data: " + exception.getMessage(), exception);
         } finally {
             database.getMongoClient().close();
         }
@@ -155,6 +167,7 @@ public class NerdBot implements Bot {
                 new MetricsListener()
             )
             .setActivity(Activity.of(config.getActivityType(), config.getActivity()));
+
         configureMemoryUsage(builder);
 
         if (config.getModMailConfig() != null) {
@@ -167,10 +180,12 @@ public class NerdBot implements Bot {
             jda.awaitReady();
             jda.addEventListener(new ChannelCache());
         } catch (InterruptedException exception) {
-            log.error("Failed to create JDA instance!");
-            exception.printStackTrace();
+            log.error("Failed to create JDA instance!", exception);
             System.exit(-1);
         }
+
+        messageCache = new MessageCache();
+        suggestionCache = new SuggestionCache();
 
         CommandsBuilder commandsBuilder = CommandsBuilder
             .newBuilder()
@@ -184,14 +199,13 @@ public class NerdBot implements Bot {
         try {
             commandsBuilder.setComponentManager(new DefaultComponentManager(new ComponentDatabaseConnection()::getConnection));
         } catch (SQLException exception) {
-            log.error("Failed to connect to the SQL database! Components will not work correctly!");
-            exception.printStackTrace();
+            log.error("Failed to connect to the SQL database! Components will not work correctly!", exception);
         }
 
         try {
             commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
         } catch (IOException exception) {
-            log.error("Failed to build the command builder!");
+            log.error("Failed to build the command builder!", exception);
         }
 
         NerdBotApp.getBot().onStart();
@@ -237,11 +251,12 @@ public class NerdBot implements Bot {
     private void startUrlWatchers() {
         ChannelCache.getChannelById(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
-            fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
             HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
-            skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
             HypixelThreadURLWatcher hypixelNewsWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/news-and-announcements.4/.rss");
+
+            fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
             hypixelNewsWatcher.startWatching(1, TimeUnit.MINUTES);
+            skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
         }, () -> {
             throw new IllegalStateException("Announcement channel not found!");
         });
@@ -271,10 +286,6 @@ public class NerdBot implements Bot {
     @Override
     public JDA getJDA() {
         return jda;
-    }
-
-    public List<BotFeature> getFeatures() {
-        return FEATURES;
     }
 
     @Override
@@ -340,14 +351,9 @@ public class NerdBot implements Bot {
             jsonConfig.toJson(newConfig, fw);
             fw.close();
             return true;
-        } catch (IOException e) {
-            log.error("Could not save config file.");
-            e.printStackTrace();
+        } catch (IOException exception) {
+            log.error("Could not save config file!", exception);
             return false;
         }
-    }
-
-    public static URLWatcher getFireSaleWatcher() {
-        return fireSaleWatcher;
     }
 }
