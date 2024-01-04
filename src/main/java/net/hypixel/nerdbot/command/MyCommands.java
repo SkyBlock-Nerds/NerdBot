@@ -96,8 +96,8 @@ public class MyCommands extends ApplicationCommand {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
         } catch (ProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception exception) {
+            log.error("Encountered an error while linking " + member.getUser().getName() + " (ID: " + member.getId() + ") to " + username + "!", exception);
         }
     }
 
@@ -286,9 +286,9 @@ public class MyCommands extends ApplicationCommand {
             discordUser.getBirthdayData().setShouldAnnounceAge(announceAge != null && announceAge);
             discordUser.scheduleBirthdayReminder(discordUser.getBirthdayData().getBirthdayThisYear());
             event.getHook().editOriginal("Your birthday has been set to `" + birthday + "`!").queue();
-        } catch (Exception ex) {
+        } catch (Exception exception) {
             event.getHook().editOriginal("Encountered an error while parsing that date! Please try again or contact a bot developer!").queue();
-            ex.printStackTrace();
+            log.error("Encountered an error while parsing date " + birthday + "!", exception);
         }
     }
 

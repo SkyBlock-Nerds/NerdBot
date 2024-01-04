@@ -90,8 +90,8 @@ public class Util {
     public static void sleep(TimeUnit unit, long time) {
         try {
             Thread.sleep(unit.toMillis(time));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (InterruptedException exception) {
+            log.error("Failed to sleep for " + time + " " + unit.name().toLowerCase() + "!", exception);
         }
     }
 
@@ -235,8 +235,8 @@ public class Util {
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
 
             requestTimer.observeDuration();
-        } catch (Exception ex) {
-            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + ex.getMessage(), ex);
+        } catch (Exception exception) {
+            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + exception.getMessage(), exception);
         }
 
         if (statusCode != 200) {
@@ -258,8 +258,8 @@ public class Util {
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
 
             requestTimer.observeDuration();
-        } catch (Exception ex) {
-            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`", ex);
+        } catch (Exception exception) {
+            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`", exception);
         }
 
         if (statusCode != 200) {
@@ -286,8 +286,8 @@ public class Util {
         try {
             String hypixelApiKey = NerdBotApp.getHypixelAPIKey().map(UUID::toString).orElse("");
             return NerdBotApp.GSON.fromJson(getHttpResponse(url, Pair.of("API-Key", hypixelApiKey)).body(), HypixelPlayerResponse.class);
-        } catch (Exception ex) {
-            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId + "`", ex);
+        } catch (Exception exception) {
+            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId + "`", exception);
         } finally {
             requestTimer.observeDuration();
         }
@@ -346,12 +346,12 @@ public class Util {
         Font font;
         try (InputStream fontStream = GeneratorCommands.class.getResourceAsStream(path)) {
             if (fontStream == null) {
-                log.error("Couldn't initialise font: " + path);
+                log.error("Couldn't initialize font: " + path);
                 return null;
             }
             font = Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(size);
-        } catch (IOException | FontFormatException e) {
-            e.printStackTrace();
+        } catch (IOException | FontFormatException exception) {
+            log.error("Couldn't initialize font: " + path, exception);
             return null;
         }
         return font;

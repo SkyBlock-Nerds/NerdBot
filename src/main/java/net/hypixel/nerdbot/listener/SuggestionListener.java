@@ -60,7 +60,7 @@ public class SuggestionListener {
                 return;
             }
 
-            SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(thread.getId());
+            SuggestionCache.Suggestion suggestion = NerdBotApp.getBot().getSuggestionCache().getSuggestion(thread.getId());
 
             if (suggestion == null) {
                 event.getHook().sendMessage("Unable to locate suggestion in the cache! Try again later.").complete();
@@ -99,7 +99,7 @@ public class SuggestionListener {
                     threadManager.queue();
                     GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(thread.getParentChannel().asForumChannel(), suggestion.getFirstMessage().get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
                     NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
-                    NerdBotApp.getSuggestionCache().updateSuggestion(thread); // Update Suggestion
+                    NerdBotApp.getBot().getSuggestionCache().updateSuggestion(thread); // Update Suggestion
                     thread.sendMessage("Your recent review request has been accepted! Thank you for your suggestion!").queue();
                     accepted = true;
                 }
@@ -132,14 +132,14 @@ public class SuggestionListener {
     @SubscribeEvent
     public void onThreadCreateEvent(@NotNull ChannelCreateEvent event) {
         if (isInSuggestionChannel(event)) {
-            NerdBotApp.getSuggestionCache().addSuggestion(event.getChannel().asThreadChannel());
+            NerdBotApp.getBot().getSuggestionCache().addSuggestion(event.getChannel().asThreadChannel());
         }
     }
 
     @SubscribeEvent
     public void onThreadDeleteEvent(@NotNull ChannelDeleteEvent event) {
         if (isInSuggestionChannel(event)) {
-            NerdBotApp.getSuggestionCache().removeSuggestion(event.getChannel().asThreadChannel());
+            NerdBotApp.getBot().getSuggestionCache().removeSuggestion(event.getChannel().asThreadChannel());
         }
     }
 

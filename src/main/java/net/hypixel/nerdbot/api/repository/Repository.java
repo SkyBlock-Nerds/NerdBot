@@ -165,8 +165,8 @@ public abstract class Repository<T> {
 
             Object value = field.get(entity);
             return value != null ? value.toString() : null;
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException("Error accessing identifier field: " + identifierFieldName, e);
+        } catch (NoSuchFieldException | IllegalAccessException exception) {
+            throw new RuntimeException("Error accessing identifier field: " + identifierFieldName, exception);
         }
     }
 

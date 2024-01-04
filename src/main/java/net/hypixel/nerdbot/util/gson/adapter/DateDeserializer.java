@@ -22,8 +22,8 @@ public class DateDeserializer implements JsonDeserializer<Date> {
 
             try {
                 return dateFormat.parse(dateString);
-            } catch (ParseException e) {
-                throw new JsonParseException("Error parsing date: " + dateString, e);
+            } catch (ParseException exception) {
+                throw new JsonParseException("Error parsing date: " + dateString, exception);
             }
         } else {
             throw new JsonParseException("Invalid date format");
