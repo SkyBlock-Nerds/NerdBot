@@ -4,11 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 
 import java.io.FileWriter;
 import java.io.IOException;
 
+@Log4j2
 public class ConfigGenerator {
 
     public static void main(String[] args) {
@@ -17,16 +19,15 @@ public class ConfigGenerator {
         String json = gson.toJson(botConfig);
 
         if (isValidJson(json)) {
-            System.out.println("The provided JSON string is valid!");
+            log.info("The provided JSON string is valid!");
 
             try {
                 writeJsonToFile(json);
-            } catch (IOException e) {
-                System.err.println("Error writing JSON to file:");
-                e.printStackTrace();
+            } catch (IOException exception) {
+                log.error("Error writing JSON to file", exception);
             }
         } else {
-            System.err.println("The provided JSON string is invalid!");
+            log.error("The provided JSON string is invalid: \n" + json + "\n");
             System.exit(-1);
         }
     }
@@ -36,7 +37,7 @@ public class ConfigGenerator {
             JsonParser.parseString(jsonStr);
             return true;
         } catch (JsonSyntaxException exception) {
-            exception.printStackTrace();
+            log.error("Invalid JSON string: " + jsonStr);
             return false;
         }
     }
@@ -44,7 +45,7 @@ public class ConfigGenerator {
     private static void writeJsonToFile(String json) throws IOException {
         try (FileWriter writer = new FileWriter("./src/main/resources/example-config.json")) {
             writer.write(json);
-            System.out.println("Created JSON file successfully!");
+            log.info("Created JSON file successfully!");
         }
     }
 }

@@ -299,7 +299,7 @@ public class GeneratorCommands extends ApplicationCommand {
         JsonObject itemJSON;
         try {
             itemJSON = NerdBotApp.GSON.fromJson(itemNBT, JsonObject.class);
-        } catch (JsonSyntaxException e) {
+        } catch (JsonSyntaxException exception) {
             event.getHook().sendMessage(ITEM_PARSE_JSON_FORMAT).queue();
             return;
         }
@@ -376,7 +376,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 // converting the Base64 string into the Skin URL
                 try {
                     extraModifiers = builder.base64ToSkinURL(base64String);
-                } catch (NullPointerException | IllegalArgumentException e) {
+                } catch (NullPointerException | IllegalArgumentException exception) {
                     event.getHook().sendMessage(INVALID_BASE_64_SKIN_URL).queue();
                     return;
                 }

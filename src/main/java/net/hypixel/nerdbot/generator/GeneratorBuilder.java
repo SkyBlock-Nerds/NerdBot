@@ -48,7 +48,7 @@ public class GeneratorBuilder {
     private static final Pattern TEXTURE_URL = Pattern.compile("(?:https?://textures.minecraft.net/texture/)?([a-zA-Z0-9]+)");
 
     private final HashMap<String, Item> items;
-    private boolean itemsInitialisedCorrectly = true;
+    private boolean itemsInitialized = true;
     private BufferedImage itemSpriteSheet;
 
     public GeneratorBuilder() {
@@ -61,10 +61,9 @@ public class GeneratorBuilder {
             }
 
             itemSpriteSheet = ImageIO.read(itemStackStream);
-        } catch (IOException e) {
-            log.error("Couldn't initialise the item stack file for ItemStack Generation");
-            log.error(e.getMessage());
-            itemsInitialisedCorrectly = false;
+        } catch (IOException exception) {
+            log.error("Couldn't initialise the item stack file for ItemStack Generation", exception);
+            itemsInitialized = false;
         }
 
         // loading the items position in the sprite sheet
@@ -90,10 +89,9 @@ public class GeneratorBuilder {
 
                 items.put(item.getName(), item);
             }
-        } catch (IOException e) {
-            log.error("Couldn't initialise the items for ItemStack Generation");
-            log.error(e.getMessage());
-            itemsInitialisedCorrectly = false;
+        } catch (IOException exception) {
+            log.error("Couldn't initialise the items for ItemStack Generation", exception);
+            itemsInitialized = false;
         }
 
         // loading the overlays for some Minecraft Items
@@ -144,10 +142,9 @@ public class GeneratorBuilder {
             Item.setAvailableOverlays(overlaysHashMap);
             Item.setSmallEnchantGlint(smallEnchantGlint);
             Item.setLargeEnchantGlint(largeEnchantGlint);
-        } catch (IOException e) {
-            log.error("Couldn't initialise the overlays for ItemStack Generation");
-            log.error(e.getMessage());
-            itemsInitialisedCorrectly = false;
+        } catch (IOException exception) {
+            log.error("Couldn't initialise the overlays for ItemStack Generation", exception);
+            itemsInitialized = false;
         }
     }
 
@@ -271,10 +268,10 @@ public class GeneratorBuilder {
         try {
             URL target = new URL("http://textures.minecraft.net/texture/" + textureID);
             skin = ImageIO.read(target);
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException exception) {
             event.getHook().sendMessage(MALFORMED_HEAD_URL).setEphemeral(false).queue();
             return null;
-        } catch (IOException e) {
+        } catch (IOException exception) {
             event.getHook().sendMessage(String.format(INVALID_HEAD_URL, stripString(textureID))).setEphemeral(false).queue();
             return null;
         }
@@ -298,7 +295,7 @@ public class GeneratorBuilder {
         JsonObject userUUID;
         try {
             userUUID = Util.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException exception) {
             event.getHook().sendMessage(REQUEST_PLAYER_UUID_ERROR).queue();
             return null;
         }
@@ -311,7 +308,7 @@ public class GeneratorBuilder {
         JsonObject userProfile;
         try {
             userProfile = Util.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException exception) {
             event.getHook().sendMessage(REQUEST_PLAYER_UUID_ERROR).queue();
             return null;
         }
@@ -349,7 +346,7 @@ public class GeneratorBuilder {
     @Nullable
     public BufferedImage buildItemStack(GuildSlashEvent event, String itemName, String extraDetails) {
         // checks that all the textures required to render the items were loaded correctly
-        if (!itemsInitialisedCorrectly) {
+        if (!itemsInitialized) {
             event.getHook().sendMessage(ITEM_RESOURCE_NOT_LOADED).queue();
             return null;
         }
@@ -387,7 +384,7 @@ public class GeneratorBuilder {
         }
         // checking if the user wanted to build something that isn't a skull
         if (itemName.equalsIgnoreCase("player_head") || itemName.equalsIgnoreCase("skull")) {
-            if (extraDetails.length() > 0) {
+            if (!extraDetails.isEmpty()) {
                 itemImage = buildHead(event, extraDetails);
             } else {
                 itemImage = buildItemStack(event, "player_head", extraDetails);

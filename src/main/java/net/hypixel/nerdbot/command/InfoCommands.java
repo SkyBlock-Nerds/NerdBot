@@ -159,13 +159,9 @@ public class InfoCommands extends ApplicationCommand {
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
         getPage(users, page, 10).forEach(discordUser -> {
-            Member member = Util.getMainGuild().getMemberById(discordUser.getDiscordId());
-            if (member == null) {
-                log.error("Couldn't find member " + discordUser.getDiscordId());
-                return;
-            }
-
-            stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(new DiscordTimestamp(discordUser.getLastActivity().getLastGlobalActivity()).toLongDateTime()).append(")").append("\n");
+            discordUser.getMember().ifPresentOrElse(member -> {
+                stringBuilder.append(" • ").append(member.getAsMention()).append(" (").append(new DiscordTimestamp(discordUser.getLastActivity().getLastGlobalActivity()).toLongDateTime()).append(")").append("\n");
+            }, () -> log.error("Couldn't find member " + discordUser.getDiscordId()));
         });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
@@ -176,15 +172,11 @@ public class InfoCommands extends ApplicationCommand {
         List<DiscordUser> users = repository.getAll();
 
         users.removeIf(discordUser -> {
-            Member member = Util.getMainGuild().getMemberById(discordUser.getDiscordId());
-
-            if (member == null) {
-                return true;
-            }
-
-            if (Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
-                return true;
-            }
+            discordUser.getMember().ifPresent(member -> {
+                if (member.getUser().isBot() || Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
+                    users.remove(discordUser);
+                }
+            });
 
             return !Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getInactivityDays())));
         });
@@ -204,13 +196,9 @@ public class InfoCommands extends ApplicationCommand {
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
         getPage(users, page, 10).forEach(discordUser -> {
-            Member member = Util.getMainGuild().getMemberById(discordUser.getDiscordId());
-            if (member == null) {
-                log.error("Couldn't find member " + discordUser.getDiscordId());
-                return;
-            }
-
-            stringBuilder.append(" • ").append(member.getUser().getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getTotalMessageCount())).append(")").append("\n");
+            discordUser.getMember().ifPresentOrElse(member -> {
+                stringBuilder.append(" • ").append(member.getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getTotalMessageCount())).append(")").append("\n");
+            }, () -> log.error("Couldn't find member " + discordUser.getDiscordId()));
         });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
