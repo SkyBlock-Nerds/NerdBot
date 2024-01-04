@@ -196,6 +196,9 @@ public class GeneratorBuilder {
             // checks if there is a type for the item
             if (type == null || type.equalsIgnoreCase("none")) {
                 type = "";
+            // if there is a type, make it uppercase
+            } else {
+                type = type.toUpperCase();
             }
             // checking if there is custom line break happening
             if (addEmptyLine == null || !addEmptyLine) {
