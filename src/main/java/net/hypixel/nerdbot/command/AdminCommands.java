@@ -26,7 +26,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
-import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -44,7 +43,7 @@ import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
@@ -73,16 +72,6 @@ import java.util.stream.Stream;
 
 @Log4j2
 public class AdminCommands extends ApplicationCommand {
-
-    @JDASlashCommand(name = "simulatefiresale", description = "Simulate a fire sale", defaultLocked = true)
-    public void simulateFireSaleChange(GuildSlashEvent event, @AppOption String oldContent, @AppOption String newContent) {
-        event.deferReply(true).complete();
-        
-        FireSaleDataHandler fireSaleDataHandler = new FireSaleDataHandler();
-        NerdBot.getFireSaleWatcher().simulateDataChange(oldContent, newContent, fireSaleDataHandler);
-
-        event.getHook().editOriginal("Simulated fire sale change!").queue();
-    }
 
     @JDASlashCommand(name = "curate", description = "Manually run the curation process", defaultLocked = true)
     public void curate(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Run the curator without greenlighting suggestions") Boolean readOnly) {
@@ -114,7 +103,7 @@ public class AdminCommands extends ApplicationCommand {
         TextChannel selected = Objects.requireNonNullElse(channel, NerdBotApp.getBot().getJDA().getTextChannelsByName("limbo", true).get(0));
         event.deferReply(true).complete();
 
-        ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
             textChannel.sendMessageEmbeds(
                 new EmbedBuilder()
                     .setTitle("Invites Created")
@@ -156,7 +145,7 @@ public class AdminCommands extends ApplicationCommand {
             log.info(event.getUser().getName() + " deleted invite " + invite.getUrl());
         });
 
-        ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
             textChannel.sendMessageEmbeds(
                 new EmbedBuilder()
                     .setTitle("Invites Deleted")
@@ -250,7 +239,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred when reading the JSON file, please try again later!").queue();
-            exception.printStackTrace();
+            log.error("An error occurred when reading the JSON file!", exception);
         }
     }
 
@@ -278,8 +267,8 @@ public class AdminCommands extends ApplicationCommand {
         JsonElement element;
         try {
             element = JsonParser.parseString(value);
-        } catch (JsonSyntaxException e) {
-            event.reply("You specified an invalid value! (`" + e.getMessage() + "`)").setEphemeral(true).queue();
+        } catch (JsonSyntaxException exception) {
+            event.reply("You specified an invalid value! (`" + exception.getMessage() + "`)").setEphemeral(true).queue();
             return;
         }
 
@@ -346,7 +335,7 @@ public class AdminCommands extends ApplicationCommand {
             MyCommands.updateMojangProfile(member, mojangProfile);
             event.getHook().sendMessage("Updated " + member.getAsMention() + "'s Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
-            ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+            ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                     new EmbedBuilder()
                         .setTitle("Mojang Profile Change")
@@ -369,7 +358,7 @@ public class AdminCommands extends ApplicationCommand {
             });
         } catch (HttpException exception) {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`: " + exception.getMessage()).queue();
-            exception.printStackTrace();
+            log.error("Unable to locate Minecraft UUID for " + username + "!", exception);
         } catch (ProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
         }
@@ -462,9 +451,8 @@ public class AdminCommands extends ApplicationCommand {
                     DiscordUser discordUser = discordUserRepository.findById(member.getId());
                     discordUser.setMojangProfile(mojangProfile);
                     log.info("Migrated " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ") to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId() + ")");
-                } catch (HttpException ex) {
-                    log.warn("Unable to migrate " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ")");
-                    ex.printStackTrace();
+                } catch (HttpException exception) {
+                    log.error("Unable to migrate " + member.getEffectiveName() + "(ID: " + member.getId() + ")", exception);
                 }
             });
 
@@ -550,7 +538,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginal("Saved " + repository.getCache().estimatedSize() + " documents to the database!").queue();
         } catch (RepositoryException exception) {
             event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
-            exception.printStackTrace();
+            log.error("An error occurred while saving the repository!", exception);
         }
     }
 
@@ -570,7 +558,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginal("Loaded " + repository.getCache().estimatedSize() + " documents into the cache!").queue();
         } catch (RepositoryException exception) {
             event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
-            exception.printStackTrace();
+            log.error("An error occurred while saving the repository!", exception);
         }
     }
 
@@ -589,7 +577,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginal(repository.getCache().stats().toString()).queue();
         } catch (RepositoryException exception) {
             event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
-            exception.printStackTrace();
+            log.error("An error occurred while saving the repository!", exception);
         }
     }
 
@@ -613,7 +601,7 @@ public class AdminCommands extends ApplicationCommand {
                 // "I can type it myself" Support
                 fromTag = channel.getAvailableTagsByName(from, true).get(0);
                 toTag = channel.getAvailableTagsByName(to, true).get(0);
-            } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
+            } catch (IllegalArgumentException | IndexOutOfBoundsException exception) {
                 event.getHook().editOriginal("You have entered invalid from/to tags, please try again.").complete();
                 return;
             }
@@ -657,8 +645,8 @@ public class AdminCommands extends ApplicationCommand {
 
             try {
                 threadChannel.getManager().setAppliedTags(threadTags).complete();
-            } catch (Exception ex) {
-                log.warn("Unable to set applied tags for [" + threadChannel.getId() + "] " + threadChannel.getName(), ex);
+            } catch (Exception exception) {
+                log.warn("Unable to set applied tags for [" + threadChannel.getId() + "] " + threadChannel.getName(), exception);
             }
 
             if (archived) {
@@ -680,17 +668,13 @@ public class AdminCommands extends ApplicationCommand {
 
     @AutocompletionHandler(name = "forumtags", mode = AutocompletionMode.FUZZY, showUserInput = false)
     public List<ForumTag> listForumTags(CommandAutoCompleteInteractionEvent event) {
-        OptionMapping forumChannelId = event.getOption("channel");
+        List<ForumTag> forumTags = new ArrayList<>();
 
-        if (forumChannelId != null) {
-            ForumChannel forumChannel = Util.getMainGuild().getForumChannelById(forumChannelId.getAsString());
+        ChannelCache.getForumChannelById(event.getOption("channel").getAsString()).ifPresent(forumChannel -> {
+            forumTags.addAll(forumChannel.getAvailableTags());
+        });
 
-            if (forumChannel != null) {
-                return forumChannel.getAvailableTags();
-            }
-        }
-
-        return List.of();
+        return forumTags;
     }
 
     @JDASlashCommand(name = "loglevel", description = "Set the log level", defaultLocked = true)

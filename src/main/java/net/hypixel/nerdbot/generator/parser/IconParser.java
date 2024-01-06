@@ -35,7 +35,7 @@ public class IconParser {
                 return text;
             }
             return text.repeat(amount);
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException exception) {
             return text;
         }
     }

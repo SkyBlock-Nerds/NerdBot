@@ -2,6 +2,7 @@ package net.hypixel.nerdbot;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mongodb.MongoException;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.bot.Bot;
@@ -30,11 +31,6 @@ public class NerdBotApp {
         .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
         .create();
 
-    @Getter
-    private static SuggestionCache suggestionCache;
-    @Getter
-    private static MessageCache messageCache;
-    @Getter
     private static Bot bot;
 
     public NerdBotApp() throws IOException {
@@ -54,22 +50,25 @@ public class NerdBotApp {
         log.info("Starting bot...");
 
         try {
-            log.info("Attempting to create bot...");
             nerdBot.create(args);
-            messageCache = new MessageCache();
-            suggestionCache = new SuggestionCache();
-            log.info("Bot created!");
-        } catch (LoginException e) {
-            log.error("Failed to find login for bot!");
+        } catch (LoginException exception) {
+            log.error("Failed to log into the bot with the given credentials!");
             System.exit(-1);
+        } catch (MongoException exception) {
+            log.error("Failed to connect to MongoDB!");
         } catch (Exception exception) {
-            log.error("Failed to create bot!");
-            exception.printStackTrace();
+            log.error("Failed to create bot!", exception);
             System.exit(-1);
         }
+
+        log.info("Bot created!");
     }
 
     public static Optional<UUID> getHypixelAPIKey() {
         return Optional.ofNullable(System.getProperty("hypixel.key")).map(Util::toUUID);
+    }
+
+    public static NerdBot getBot() {
+        return (NerdBot) bot;
     }
 }

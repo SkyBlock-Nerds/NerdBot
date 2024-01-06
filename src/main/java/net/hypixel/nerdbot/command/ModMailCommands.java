@@ -12,7 +12,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.listener.ModMailListener;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
@@ -28,7 +28,7 @@ public class ModMailCommands extends ApplicationCommand {
     public void findModMailThread(GuildSlashEvent event, @AppOption Member member) {
         event.deferReply(true).complete();
 
-        ChannelManager.getModMailChannel().ifPresentOrElse(forumChannel -> {
+        ChannelCache.getModMailChannel().ifPresentOrElse(forumChannel -> {
             Optional<ThreadChannel> modMailThread = getModMailThread(member.getUser());
             if (modMailThread.isEmpty()) {
                 event.getHook().editOriginal("Couldn't find a Mod Mail thread for " + member.getAsMention() + "!").queue();
@@ -43,7 +43,7 @@ public class ModMailCommands extends ApplicationCommand {
     public void createNewModMail(GuildSlashEvent event, @AppOption Member member) {
         event.deferReply(true).complete();
 
-        ChannelManager.getModMailChannel().ifPresentOrElse(forumChannel -> {
+        ChannelCache.getModMailChannel().ifPresentOrElse(forumChannel -> {
             Optional<ThreadChannel> modMailThread = getModMailThread(member.getUser());
             if (modMailThread.isPresent()) {
                 event.getHook().editOriginal("A Mod Mail thread for " + member.getAsMention() + " already exists: " + modMailThread.get().getAsMention()).queue();
@@ -81,7 +81,7 @@ public class ModMailCommands extends ApplicationCommand {
     }
 
     public Optional<ThreadChannel> getModMailThread(User user) {
-        Optional<ForumChannel> optionalModMailChannel = ChannelManager.getModMailChannel();
+        Optional<ForumChannel> optionalModMailChannel = ChannelCache.getModMailChannel();
         if (optionalModMailChannel.isEmpty()) {
             return Optional.empty();
         }

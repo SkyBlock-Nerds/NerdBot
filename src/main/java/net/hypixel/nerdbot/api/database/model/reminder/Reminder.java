@@ -8,7 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
@@ -85,7 +85,7 @@ public class Reminder {
         if (!sendPublicly) {
             user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(message).addEmbeds(new EmbedBuilder().setDescription(description).build()).queue());
         } else {
-            ChannelManager.getChannelById(channelId).ifPresentOrElse(textChannel -> {
+            ChannelCache.getTextChannelById(channelId).ifPresentOrElse(textChannel -> {
                 textChannel.sendMessage(message)
                     .addEmbeds(new EmbedBuilder().setDescription(description).build())
                     .queue();

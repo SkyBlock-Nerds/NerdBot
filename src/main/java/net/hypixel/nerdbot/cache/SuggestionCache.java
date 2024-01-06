@@ -8,15 +8,11 @@ import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
-import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,38 +62,6 @@ public class SuggestionCache extends TimerTask {
                     Suggestion suggestion = new Suggestion(thread);
                     this.cache.put(thread.getId(), suggestion);
                     log.debug("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
-
-                    if (suggestion.isDeleted()) {
-                        log.debug("Suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") has been deleted.");
-                        return;
-                    }
-
-                    Message startMessage = suggestion.getThread().retrieveStartMessage().complete();
-
-                    if (startMessage.getReactions().isEmpty()) {
-                        log.debug("Suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") has no reactions.");
-                        return;
-                    }
-
-                    startMessage.getReactions().stream()
-                        .filter(messageReaction -> messageReaction.getEmoji().getType() == Emoji.Type.CUSTOM)
-                        .filter(messageReaction -> messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(suggestionConfig.getAgreeEmojiId())
-                            || messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(suggestionConfig.getDisagreeEmojiId()))
-                        .forEach(messageReaction -> {
-                            messageReaction.retrieveUsers().complete().forEach(user -> {
-                                DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-                                DiscordUser discordUser = userRepository.findById(user.getId());
-
-                                if (discordUser == null || discordUser.getLastActivity().getSuggestionReactionHistory().stream().anyMatch(history -> history.channelId().equals(suggestion.getParentId())
-                                    && history.reactionName().equals(messageReaction.getEmoji().getName()))) {
-                                    log.debug("User '" + user.getId() + "' has already reacted to suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ").");
-                                    return;
-                                }
-
-                                discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(thread.getId(), messageReaction.getEmoji().getName(), thread.getTimeCreated().toEpochSecond(), -1));
-                                log.debug("Added reaction history for user '" + user.getId() + "' on suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ")");
-                            });
-                        });
                 });
 
             log.info("Removing expired suggestions.");
@@ -109,8 +73,8 @@ public class SuggestionCache extends TimerTask {
             log.info("Finished caching suggestions.");
             this.initialized = true;
             this.updating = false;
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception exception) {
+            log.error("Failed to update suggestion cache!", exception);
         }
     }
 

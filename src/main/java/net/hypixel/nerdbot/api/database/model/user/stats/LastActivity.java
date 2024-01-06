@@ -35,7 +35,6 @@ public class LastActivity {
     private long alphaSuggestionCommentDate = -1L;
 
     private Map<String, Integer> channelActivity = new HashMap<>();
-    private List<ReactionHistory> suggestionReactionHistory = new ArrayList<>();
 
     public LastActivity() {
     }

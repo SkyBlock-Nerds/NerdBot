@@ -2,10 +2,13 @@ package net.hypixel.nerdbot.repository;
 
 import com.mongodb.client.MongoClient;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.api.database.model.user.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.repository.Repository;
+import net.hypixel.nerdbot.util.Util;
 
 @Log4j2
 public class DiscordUserRepository extends Repository<DiscordUser> {
@@ -40,5 +43,13 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
                 discordUser.scheduleBirthdayReminder(discordUser.getBirthdayData().getBirthdayThisYear());
             }
         });
+    }
+
+    public Member getMemberById(String id) {
+        return Util.getMainGuild().getMemberById(id);
+    }
+
+    public User getUserById(String id) {
+        return Util.getMainGuild().getJDA().getUserById(id);
     }
 }
