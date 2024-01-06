@@ -28,6 +28,7 @@ import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.api.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.bot.config.BotConfig;
+import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.MessageCache;
 import net.hypixel.nerdbot.cache.SuggestionCache;
@@ -178,6 +179,7 @@ public class NerdBot implements Bot {
 
         try {
             jda.awaitReady();
+            jda.addEventListener(new EmojiCache());
             jda.addEventListener(new ChannelCache());
         } catch (InterruptedException exception) {
             log.error("Failed to create JDA instance!", exception);
