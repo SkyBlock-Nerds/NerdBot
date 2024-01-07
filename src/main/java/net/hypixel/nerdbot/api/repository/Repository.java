@@ -101,6 +101,15 @@ public abstract class Repository<T> {
         return null;
     }
 
+    public T getByIndex(int index) {
+        return getAll()
+            .stream()
+            .skip(index)
+            .limit(1)
+            .findFirst()
+            .orElse(null);
+    }
+
     public void cacheObject(String id, T object) {
         cache.put(id, object);
         debug("Cached document with ID " + id);
@@ -156,8 +165,8 @@ public abstract class Repository<T> {
 
             Object value = field.get(entity);
             return value != null ? value.toString() : null;
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException("Error accessing identifier field: " + identifierFieldName, e);
+        } catch (NoSuchFieldException | IllegalAccessException exception) {
+            throw new RuntimeException("Error accessing identifier field: " + identifierFieldName, exception);
         }
     }
 

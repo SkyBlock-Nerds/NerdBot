@@ -27,7 +27,7 @@ public class RoleConfig {
     private String limboRoleId = "";
 
     /**
-     * A list of {@link PingableRole}s used for announcements etc.
+     * A list of {@link PingableRole PingableRoles} used for announcements etc.
      */
     private PingableRole[] pingableRoles = {};
 }

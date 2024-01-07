@@ -7,7 +7,11 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -22,27 +26,30 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
-import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
+import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.repository.Repository;
+import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.bot.config.SuggestionConfig;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.api.bot.Environment;
+import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.LoggingUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -51,7 +58,7 @@ import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.logging.log4j.Level;
 
-import java.awt.Color;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -96,7 +103,7 @@ public class AdminCommands extends ApplicationCommand {
         TextChannel selected = Objects.requireNonNullElse(channel, NerdBotApp.getBot().getJDA().getTextChannelsByName("limbo", true).get(0));
         event.deferReply(true).complete();
 
-        ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
             textChannel.sendMessageEmbeds(
                 new EmbedBuilder()
                     .setTitle("Invites Created")
@@ -138,7 +145,7 @@ public class AdminCommands extends ApplicationCommand {
             log.info(event.getUser().getName() + " deleted invite " + invite.getUrl());
         });
 
-        ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
             textChannel.sendMessageEmbeds(
                 new EmbedBuilder()
                     .setTitle("Invites Deleted")
@@ -152,6 +159,36 @@ public class AdminCommands extends ApplicationCommand {
         event.getHook().editOriginal("Deleted " + invites.size() + " invites.").queue();
     }
 
+    @JDASlashCommand(name = "lock", description = "Locks the thread that the command is executed in", defaultLocked = true)
+    public void lockThread(GuildSlashEvent event) {
+        if (!(event.getChannel() instanceof ThreadChannel threadChannel)) {
+            event.reply("This command can only be used inside a thread!").setEphemeral(true).queue();
+            return;
+        }
+
+        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+        boolean locked = threadChannel.isLocked();
+        ThreadChannelManager threadManager = threadChannel.getManager();
+
+        // Add Reviewed Tag
+        if (threadChannel.getParentChannel() instanceof ForumChannel forumChannel) { // Is thread inside a forum?
+            if (Util.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) { // Does forum contain the reviewed tag?
+                if (!Util.hasTagByName(threadChannel, suggestionConfig.getReviewedTag())) { // Does thread not currently have reviewed tag?
+                    List<ForumTag> forumTags = new ArrayList<>(threadChannel.getAppliedTags());
+                    forumTags.removeIf(forumTag -> forumTag.getName().equalsIgnoreCase(suggestionConfig.getGreenlitTag())); // Remove Greenlit just in-case
+                    forumTags.add(Util.getTagByName(forumChannel, suggestionConfig.getReviewedTag()));
+                    threadManager = threadManager.setAppliedTags(forumTags);
+                }
+            }
+        }
+
+        threadManager.setLocked(!locked).queue(unused ->
+                event.reply("This thread is now " + (!locked ? "locked" : "unlocked") + "!").queue(),
+            throwable -> {
+                event.reply("An error occurred when locking the thread!").setEphemeral(true).queue();
+                log.error("An error occurred when locking the thread " + threadChannel.getId() + "!", throwable);
+            });
+    }
 
     @JDASlashCommand(name = "archive", subcommand = "channel", description = "Archives a specific channel.", defaultLocked = true)
     public void archive(GuildSlashEvent event, @AppOption TextChannel channel, @AppOption @Optional Boolean nerd, @AppOption @Optional Boolean alpha) {
@@ -202,7 +239,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred when reading the JSON file, please try again later!").queue();
-            exception.printStackTrace();
+            log.error("An error occurred when reading the JSON file!", exception);
         }
     }
 
@@ -230,8 +267,8 @@ public class AdminCommands extends ApplicationCommand {
         JsonElement element;
         try {
             element = JsonParser.parseString(value);
-        } catch (JsonSyntaxException e) {
-            event.reply("You specified an invalid value! (`" + e.getMessage() + "`)").setEphemeral(true).queue();
+        } catch (JsonSyntaxException exception) {
+            event.reply("You specified an invalid value! (`" + exception.getMessage() + "`)").setEphemeral(true).queue();
             return;
         }
 
@@ -298,7 +335,7 @@ public class AdminCommands extends ApplicationCommand {
             MyCommands.updateMojangProfile(member, mojangProfile);
             event.getHook().sendMessage("Updated " + member.getAsMention() + "'s Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
 
-            ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+            ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                     new EmbedBuilder()
                         .setTitle("Mojang Profile Change")
@@ -321,7 +358,7 @@ public class AdminCommands extends ApplicationCommand {
             });
         } catch (HttpException exception) {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`: " + exception.getMessage()).queue();
-            exception.printStackTrace();
+            log.error("Unable to locate Minecraft UUID for " + username + "!", exception);
         } catch (ProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
         }
@@ -414,9 +451,8 @@ public class AdminCommands extends ApplicationCommand {
                     DiscordUser discordUser = discordUserRepository.findById(member.getId());
                     discordUser.setMojangProfile(mojangProfile);
                     log.info("Migrated " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ") to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId() + ")");
-                } catch (HttpException ex) {
-                    log.warn("Unable to migrate " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ")");
-                    ex.printStackTrace();
+                } catch (HttpException exception) {
+                    log.error("Unable to migrate " + member.getEffectiveName() + "(ID: " + member.getId() + ")", exception);
                 }
             });
 
@@ -462,29 +498,29 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
-        List<ForumTag> forumTags = forumChannel.getAvailableTagsByName("flared", true);
+        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
 
-        if (forumTags.isEmpty()) {
+        if (Util.hasTagByName(forumChannel, suggestionConfig.getFlaredTag())) {
             event.reply("This forum channel does not have the Flared tag!").setEphemeral(true).queue();
             return;
         }
 
-        ForumTag forumTag = forumTags.get(0);
+        ForumTag flaredTag = Util.getTagByName(forumChannel, suggestionConfig.getFlaredTag());
 
-        if (threadChannel.getAppliedTags().contains(forumTag)) {
+        if (threadChannel.getAppliedTags().contains(flaredTag)) {
             event.reply("This suggestion is already flared!").setEphemeral(true).queue();
             return;
         }
 
         List<ForumTag> appliedTags = new ArrayList<>(threadChannel.getAppliedTags());
-        appliedTags.add(forumTag);
+        appliedTags.add(flaredTag);
 
         threadChannel.getManager()
             .setLocked(true)
             .setAppliedTags(appliedTags)
             .queue();
 
-        event.reply(event.getUser().getAsMention() + " applied the " + forumTag.getName() + " tag and locked this suggestion!").queue();
+        event.reply(event.getUser().getAsMention() + " applied the " + flaredTag.getName() + " tag and locked this suggestion!").queue();
     }
 
     @JDASlashCommand(name = "cache", subcommand = "force-save", description = "Force save the specified cache to the database", defaultLocked = true)
@@ -502,7 +538,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginal("Saved " + repository.getCache().estimatedSize() + " documents to the database!").queue();
         } catch (RepositoryException exception) {
             event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
-            exception.printStackTrace();
+            log.error("An error occurred while saving the repository!", exception);
         }
     }
 
@@ -522,7 +558,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginal("Loaded " + repository.getCache().estimatedSize() + " documents into the cache!").queue();
         } catch (RepositoryException exception) {
             event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
-            exception.printStackTrace();
+            log.error("An error occurred while saving the repository!", exception);
         }
     }
 
@@ -541,7 +577,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginal(repository.getCache().stats().toString()).queue();
         } catch (RepositoryException exception) {
             event.getHook().editOriginal("An error occurred while saving the repository: " + exception.getMessage()).queue();
-            exception.printStackTrace();
+            log.error("An error occurred while saving the repository!", exception);
         }
     }
 
@@ -565,7 +601,7 @@ public class AdminCommands extends ApplicationCommand {
                 // "I can type it myself" Support
                 fromTag = channel.getAvailableTagsByName(from, true).get(0);
                 toTag = channel.getAvailableTagsByName(to, true).get(0);
-            } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
+            } catch (IllegalArgumentException | IndexOutOfBoundsException exception) {
                 event.getHook().editOriginal("You have entered invalid from/to tags, please try again.").complete();
                 return;
             }
@@ -609,8 +645,8 @@ public class AdminCommands extends ApplicationCommand {
 
             try {
                 threadChannel.getManager().setAppliedTags(threadTags).complete();
-            } catch (Exception ex) {
-                log.warn("Unable to set applied tags for [" + threadChannel.getId() + "] " + threadChannel.getName(), ex);
+            } catch (Exception exception) {
+                log.warn("Unable to set applied tags for [" + threadChannel.getId() + "] " + threadChannel.getName(), exception);
             }
 
             if (archived) {
@@ -632,17 +668,13 @@ public class AdminCommands extends ApplicationCommand {
 
     @AutocompletionHandler(name = "forumtags", mode = AutocompletionMode.FUZZY, showUserInput = false)
     public List<ForumTag> listForumTags(CommandAutoCompleteInteractionEvent event) {
-        OptionMapping forumChannelId = event.getOption("channel");
+        List<ForumTag> forumTags = new ArrayList<>();
 
-        if (forumChannelId != null) {
-            ForumChannel forumChannel = Util.getMainGuild().getForumChannelById(forumChannelId.getAsString());
+        ChannelCache.getForumChannelById(event.getOption("channel").getAsString()).ifPresent(forumChannel -> {
+            forumTags.addAll(forumChannel.getAvailableTags());
+        });
 
-            if (forumChannel != null) {
-                return forumChannel.getAvailableTags();
-            }
-        }
-
-        return List.of();
+        return forumTags;
     }
 
     @JDASlashCommand(name = "loglevel", description = "Set the log level", defaultLocked = true)

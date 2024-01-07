@@ -4,6 +4,9 @@ import com.google.gson.JsonObject;
 import io.prometheus.client.Summary;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
@@ -87,8 +90,8 @@ public class Util {
     public static void sleep(TimeUnit unit, long time) {
         try {
             Thread.sleep(unit.toMillis(time));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (InterruptedException exception) {
+            log.error("Failed to sleep for " + time + " " + unit.name().toLowerCase() + "!", exception);
         }
     }
 
@@ -123,6 +126,38 @@ public class Util {
             .stream()
             .filter(user -> !users.contains(user))
             .count();
+    }
+
+    public static ForumTag getTagByName(ForumChannel forumChannel, String name) {
+        return getTagByName(forumChannel, name, true);
+    }
+
+    public static ForumTag getTagByName(ForumChannel forumChannel, String name, boolean ignoreCase) {
+        return forumChannel.getAvailableTags()
+            .stream()
+            .filter(forumTag -> (ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name)))
+            .findFirst()
+            .orElseThrow();
+    }
+
+    public static boolean hasTagByName(ForumChannel forumChannel, String name) {
+        return hasTagByName(forumChannel, name, true);
+    }
+
+    public static boolean hasTagByName(ForumChannel forumChannel, String name, boolean ignoreCase) {
+        return forumChannel.getAvailableTags()
+            .stream()
+            .anyMatch(forumTag -> (ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name)));
+    }
+
+    public static boolean hasTagByName(ThreadChannel threadChannel, String name) {
+        return hasTagByName(threadChannel, name, true);
+    }
+
+    public static boolean hasTagByName(ThreadChannel threadChannel, String name, boolean ignoreCase) {
+        return threadChannel.getAppliedTags()
+            .stream()
+            .anyMatch(forumTag -> (ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name)));
     }
 
     public static String formatSize(long size) {
@@ -211,8 +246,8 @@ public class Util {
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
 
             requestTimer.observeDuration();
-        } catch (Exception ex) {
-            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + ex.getMessage(), ex);
+        } catch (Exception exception) {
+            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + exception.getMessage(), exception);
         }
 
         if (statusCode != 200) {
@@ -234,8 +269,8 @@ public class Util {
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
 
             requestTimer.observeDuration();
-        } catch (Exception ex) {
-            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`", ex);
+        } catch (Exception exception) {
+            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`", exception);
         }
 
         if (statusCode != 200) {
@@ -262,8 +297,8 @@ public class Util {
         try {
             String hypixelApiKey = NerdBotApp.getHypixelAPIKey().map(UUID::toString).orElse("");
             return NerdBotApp.GSON.fromJson(getHttpResponse(url, Pair.of("API-Key", hypixelApiKey)).body(), HypixelPlayerResponse.class);
-        } catch (Exception ex) {
-            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId + "`", ex);
+        } catch (Exception exception) {
+            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId + "`", exception);
         } finally {
             requestTimer.observeDuration();
         }
@@ -322,12 +357,12 @@ public class Util {
         Font font;
         try (InputStream fontStream = GeneratorCommands.class.getResourceAsStream(path)) {
             if (fontStream == null) {
-                log.error("Couldn't initialise font: " + path);
+                log.error("Couldn't initialize font: " + path);
                 return null;
             }
             font = Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(size);
-        } catch (IOException | FontFormatException e) {
-            e.printStackTrace();
+        } catch (IOException | FontFormatException exception) {
+            log.error("Couldn't initialize font: " + path, exception);
             return null;
         }
         return font;

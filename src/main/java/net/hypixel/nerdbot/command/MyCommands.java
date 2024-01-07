@@ -20,20 +20,24 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.model.user.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.SuggestionCache;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
+import org.apache.commons.lang.time.DateFormatUtils;
+import org.apache.commons.lang.time.DateUtils;
 
 import java.awt.Color;
 import java.time.Duration;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -64,7 +68,7 @@ public class MyCommands extends ApplicationCommand {
             MojangProfile mojangProfile = requestMojangProfile(member, username, true);
             updateMojangProfile(member, mojangProfile);
             event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
-            ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+            ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                         new EmbedBuilder()
                             .setTitle("Mojang Profile Link")
@@ -92,8 +96,8 @@ public class MyCommands extends ApplicationCommand {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
         } catch (ProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception exception) {
+            log.error("Encountered an error while linking " + member.getUser().getName() + " (ID: " + member.getId() + ") to " + username + "!", exception);
         }
     }
 
@@ -114,7 +118,7 @@ public class MyCommands extends ApplicationCommand {
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
             event.getHook().sendMessage("Your verification request has been sent. You will be contacted via DM if any further information is required.").queue();
 
-            ChannelManager.getVerifyLogChannel().ifPresentOrElse(textChannel -> {
+            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                         new EmbedBuilder()
                             .setTitle("Mojang Profile Verification")
@@ -232,12 +236,68 @@ public class MyCommands extends ApplicationCommand {
         ).queue();
     }
 
+    @JDASlashCommand(name = "birthday", subcommand = "remove", description = "Remove your birthday.")
+    public void removeBirthday(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+
+        if (discordUser.getBirthdayData().getTimer() != null) {
+            discordUser.getBirthdayData().getTimer().cancel();
+        }
+
+        discordUser.setBirthdayData(new BirthdayData());
+        discordUserRepository.cacheObject(discordUser);
+
+        event.getHook().editOriginal("Your birthday has been removed!").queue();
+    }
+
+    @JDASlashCommand(name = "birthday", subcommand = "get", description = "Get your birthday.")
+    public void getBirthday(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+
+        if (!discordUser.getBirthdayData().isBirthdaySet()) {
+            event.getHook().editOriginal("You have not set your birthday!").queue();
+            return;
+        }
+
+        Date birthday = discordUser.getBirthdayData().getBirthday();
+        event.getHook().editOriginal("Your birthday is currently set to " + "`" + DateFormatUtils.format(birthday, "dd MMMM yyyy") + "`!").queue();
+    }
+
+    @JDASlashCommand(name = "birthday", subcommand = "set", description = "Set your birthday.")
+    public void setBirthday(GuildSlashEvent event, @AppOption(description = "Your birthday in the format MM/DD/YYYY.") String birthday, @AppOption(description = "Whether to announce your age.") @Optional Boolean announceAge) {
+        event.deferReply(true).complete();
+
+        try {
+            Member member = event.getMember();
+            DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+            DiscordUser discordUser = discordUserRepository.findById(member.getId());
+
+            if (discordUser.getBirthdayData().getTimer() != null) {
+                discordUser.getBirthdayData().getTimer().cancel();
+            }
+
+            discordUser.setBirthday(DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"}));
+            discordUser.getBirthdayData().setShouldAnnounceAge(announceAge != null && announceAge);
+            discordUser.scheduleBirthdayReminder(discordUser.getBirthdayData().getBirthdayThisYear());
+            event.getHook().editOriginal("Your birthday has been set to `" + birthday + "`!").queue();
+        } catch (Exception exception) {
+            event.getHook().editOriginal("Encountered an error while parsing that date! Please try again or contact a bot developer!").queue();
+            log.error("Encountered an error while parsing date " + birthday + "!", exception);
+        }
+    }
+
     public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws ProfileMismatchException, HttpException {
         MojangProfile mojangProfile = Util.getMojangProfile(username);
         HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
 
         if (!hypixelPlayerResponse.isSuccess()) {
-            throw new HttpException("Unable to lookup `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
+            throw new HttpException("Unable to look up `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
         }
 
         if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
@@ -247,12 +307,12 @@ public class MyCommands extends ApplicationCommand {
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
         String discordName = member.getUser().getName();
 
-        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0")) {
+        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0000")) {
             discordName += "#" + member.getUser().getDiscriminator();
         }
 
         if (enforceSocial && !discordName.equalsIgnoreCase(discord)) {
-            throw new ProfileMismatchException("The Discord name on the Hypixel profile for `" + mojangProfile.getUsername() + "` does not match `" + member.getUser().getName() + "`!");
+            throw new ProfileMismatchException("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
         }
 
         return mojangProfile;
@@ -297,7 +357,7 @@ public class MyCommands extends ApplicationCommand {
                 }
             }
         } else {
-            log.warn("Role with ID " + "" + " does not exist.");
+            log.warn("Role with ID " + newMemberRoleId + " does not exist.");
         }
     }
 
@@ -333,5 +393,4 @@ public class MyCommands extends ApplicationCommand {
 
         return Pair.of(globalEmbedBuilder, alphaEmbedBuilder);
     }
-
 }

@@ -31,6 +31,12 @@ public class PrometheusMetrics {
         .labelNames("message_id", "message_length")
         .register();
 
+    public static final Counter REVIEW_REQUEST_STATISTICS = Counter.build()
+        .name("review_request_statistics")
+        .help("Statistics of Review Requests")
+        .labelNames("message_id", "user_id", "title", "state")
+        .register();
+
     public static final Summary CURATOR_LENGTH_SECONDS = Summary.build()
         .name("curator_length_seconds")
         .help("Time taken to curate a suggestions channel in seconds")
@@ -127,12 +133,14 @@ public class PrometheusMetrics {
                     .build();
 
                 DefaultExports.initialize();
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            } catch (Exception exception) {
+                log.error("Failed to start Prometheus metrics server!", exception);
+                return;
             }
 
             collectorRegistry.register(TOTAL_GREENLIT_MESSAGES_AMOUNT);
             collectorRegistry.register(GREENLIT_SUGGESTION_LENGTH);
+            collectorRegistry.register(REVIEW_REQUEST_STATISTICS);
             collectorRegistry.register(TOTAL_USERS_AMOUNT);
             collectorRegistry.register(TOTAL_SUGGESTIONS_AMOUNT);
             collectorRegistry.register(TOTAL_MESSAGES_AMOUNT);
@@ -149,6 +157,7 @@ public class PrometheusMetrics {
         } else {
             collectorRegistry.unregister(TOTAL_GREENLIT_MESSAGES_AMOUNT);
             collectorRegistry.unregister(GREENLIT_SUGGESTION_LENGTH);
+            collectorRegistry.unregister(REVIEW_REQUEST_STATISTICS);
             collectorRegistry.unregister(TOTAL_USERS_AMOUNT);
             collectorRegistry.unregister(TOTAL_SUGGESTIONS_AMOUNT);
             collectorRegistry.unregister(TOTAL_MESSAGES_AMOUNT);

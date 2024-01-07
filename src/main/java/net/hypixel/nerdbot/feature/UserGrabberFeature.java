@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.feature;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.model.user.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
@@ -36,7 +37,7 @@ public class UserGrabberFeature extends BotFeature {
 
                 DiscordUser discordUser = discordUserRepository.findById(member.getId());
                 if (discordUser == null) {
-                    discordUser = new DiscordUser(member.getId(), new LastActivity(), new MojangProfile());
+                    discordUser = new DiscordUser(member.getId(), new LastActivity(), new BirthdayData(), new MojangProfile());
                     log.info("Creating new DiscordUser for user " + member.getId());
                 }
 
@@ -48,7 +49,7 @@ public class UserGrabberFeature extends BotFeature {
                 discordUserRepository.cacheObject(discordUser);
             })
             .onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName()))
-            .onError(Throwable::printStackTrace);
+            .onError(throwable -> log.error("Failed to grab users from guild " + guild.getName(), throwable));
     }
 
     @Override

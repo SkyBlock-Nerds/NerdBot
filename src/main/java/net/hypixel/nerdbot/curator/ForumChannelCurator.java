@@ -11,18 +11,19 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.bot.config.EmojiConfig;
+import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
+import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,8 +31,6 @@ import java.util.stream.Stream;
 
 @Log4j2
 public class ForumChannelCurator extends Curator<ForumChannel> {
-
-    public static final List<String> GREENLIT_TAGS = Arrays.asList("Greenlit", "Reviewed");
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
@@ -53,15 +52,15 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
             }
 
             BotConfig config = NerdBotApp.getBot().getConfig();
-            EmojiConfig emojiConfig = config.getEmojiConfig();
+            SuggestionConfig suggestionConfig = config.getSuggestionConfig();
 
-            if (emojiConfig == null) {
+            if (suggestionConfig == null) {
                 log.error("Couldn't find the emoji config from the bot config!");
                 timer.observeDuration();
                 return output;
             }
 
-            ForumTag greenlitTag = forumChannel.getAvailableTagsByName("greenlit", true).get(0);
+            ForumTag greenlitTag = Util.getTagByName(forumChannel, suggestionConfig.getGreenlitTag());
 
             if (greenlitTag == null) {
                 log.error("Couldn't find the greenlit tag for the forum channel " + forumChannel.getName() + " (ID: " + forumChannel.getId() + ")!");
@@ -103,9 +102,9 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         .toList();
 
                     Map<String, Integer> votes = Stream.of(
-                            emojiConfig.getAgreeEmojiId(),
-                            emojiConfig.getNeutralEmojiId(),
-                            emojiConfig.getDisagreeEmojiId()
+                            suggestionConfig.getAgreeEmojiId(),
+                            suggestionConfig.getNeutralEmojiId(),
+                            suggestionConfig.getDisagreeEmojiId()
                         )
                         .map(emojiId -> Pair.of(
                             emojiId,
@@ -121,13 +120,14 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         ))
                         .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
 
-                    int agree = votes.get(emojiConfig.getAgreeEmojiId());
-                    int neutral = votes.get(emojiConfig.getNeutralEmojiId());
-                    int disagree = votes.get(emojiConfig.getDisagreeEmojiId());
+                    int agree = votes.get(suggestionConfig.getAgreeEmojiId());
+                    int neutral = votes.get(suggestionConfig.getNeutralEmojiId());
+                    int disagree = votes.get(suggestionConfig.getDisagreeEmojiId());
                     List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+                    ThreadChannelManager threadManager = thread.getManager();
 
                     // Upsert into database if already greenlit
-                    if (tags.stream().anyMatch(tag -> GREENLIT_TAGS.contains(tag.getName()))) {
+                    if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
                         log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is already greenlit/reviewed!");
                         GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
                         database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
@@ -137,8 +137,8 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     double ratio = getRatio(agree, disagree);
                     log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has " + agree + " agree reactions, " + neutral + " neutral reactions, and " + disagree + " disagree reactions with a ratio of " + ratio + "%");
 
-                    if ((agree < config.getMinimumThreshold()) || (ratio < config.getPercentage())) {
-                        log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does not meet the minimum requirements to be greenlit!");
+                    if ((agree < suggestionConfig.getGreenlitThreshold()) || (ratio < suggestionConfig.getGreenlitRatio())) {
+                        log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does not meet the minimum threshold of " + suggestionConfig.getGreenlitThreshold() + " agree reactions to be greenlit!");
                         continue;
                     }
 
@@ -155,18 +155,32 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         tags.add(greenlitTag);
                     }
 
-                    if (thread.isArchived()) {
-                        thread.getManager().setArchived(false).setAppliedTags(tags).setArchived(true).queue();
-                    } else {
-                        thread.getManager().setAppliedTags(tags).queue();
+                    boolean wasArchived = thread.isArchived();
+
+                    if (wasArchived) {
+                        threadManager = threadManager.setArchived(false);
                     }
 
-                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has been greenlit!");
+                    threadManager = threadManager.setAppliedTags(tags);
 
+                    // Handle Archiving and Locking
+                    if (wasArchived || suggestionConfig.isArchiveOnGreenlit()) {
+                        threadManager = threadManager.setArchived(true);
+                    }
+
+                    if (suggestionConfig.isLockOnGreenlit()) {
+                        threadManager = threadManager.setLocked(true);
+                    }
+
+                    // Send Changes
+                    threadManager.queue();
+
+                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has been greenlit!");
                     GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
+                    NerdBotApp.getBot().getSuggestionCache().updateSuggestion(thread); // Update Suggestion
                     output.add(greenlitMessage);
-                } catch (Exception e) {
-                    log.error("Failed to curate thread '" + thread.getName() + "' (ID: " + thread.getId() + ")!", e);
+                } catch (Exception exception) {
+                    log.error("Failed to curate thread '" + thread.getName() + "' (ID: " + thread.getId() + ")!", exception);
                 }
             }
 
@@ -177,8 +191,8 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         }
     }
 
-    private GreenlitMessage createGreenlitMessage(ForumChannel forumChannel, Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
-        EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+    public static GreenlitMessage createGreenlitMessage(ForumChannel forumChannel, Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
+        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
 
         return GreenlitMessage.builder()
             .agrees(agree)
@@ -194,7 +208,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
             .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
             .positiveVoterIds(
                 message.getReactions().stream()
-                    .filter(reaction -> emojiConfig.isEquals(reaction, EmojiConfig::getAgreeEmojiId))
+                    .filter(reaction -> suggestionConfig.isReactionEquals(reaction, SuggestionConfig::getAgreeEmojiId))
                     .flatMap(reaction -> reaction.retrieveUsers()
                         .complete()
                         .stream()

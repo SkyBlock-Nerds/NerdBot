@@ -4,7 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser.HypixelThread;
 
@@ -17,7 +17,7 @@ public class SkyBlockUpdateDataHandler {
     public static void handleThread(HypixelThread hypixelThread) {
         ChannelConfig config = NerdBotApp.getBot().getConfig().getChannelConfig();
 
-        ChannelManager.getChannel(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
+        ChannelCache.getTextChannelById(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             // Simple Check to make sure only SkyBlock threads are sent.
             if (!hypixelThread.getForum().equals("SkyBlock Patch Notes") && (!hypixelThread.getTitle().contains("SkyBlock"))) {
                 return;

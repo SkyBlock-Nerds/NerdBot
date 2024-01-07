@@ -6,9 +6,6 @@ import lombok.ToString;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageReaction;
-import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 
 @Getter
 @Setter
@@ -21,14 +18,9 @@ public class BotConfig {
     private ModMailConfig modMailConfig = new ModMailConfig();
 
     /**
-     * {@link Emoji Emojis} that the bot will use to react to suggestions
+     * Configuration for anything suggestions related
      */
-    private EmojiConfig emojiConfig = new EmojiConfig();
-
-    /**
-     * {@link ForumTag Forum tags} for the bot to use, such as the greenlit tag to set suggestions as greenlit
-     */
-    private TagConfig tagConfig = new TagConfig();
+    private SuggestionConfig suggestionConfig = new SuggestionConfig();
 
     /**
      * Configuration for channels that the bot will be using
@@ -56,12 +48,6 @@ public class BotConfig {
     private long[] ownerIds = {};
 
     /**
-     * The minimum threshold of {@link MessageReaction reactions} needed for a suggestion to be considered greenlit
-     * Default value is 15 {@link MessageReaction reactions}
-     */
-    private int minimumThreshold = 15;
-
-    /**
      * The limit of {@link Message messages} that the bot will curate in one go
      * Default value is 100 {@link Message messages}
      */
@@ -79,12 +65,6 @@ public class BotConfig {
     private long voiceThreshold = 60;
 
     /**
-     * The percentage of positive {@link MessageReaction reactions} needed for a suggestion to be considered greenlit
-     * Default value is 75%
-     */
-    private double percentage = 75;
-
-    /**
      * The interval between each curate cycle in milliseconds
      * Default value is 43200000 (12 hours)
      */
@@ -94,12 +74,12 @@ public class BotConfig {
      * The {@link Activity.ActivityType} that the bot will display on its profile
      * Default is PLAYING
      */
-    private Activity.ActivityType activityType = Activity.ActivityType.PLAYING;
+    private Activity.ActivityType activityType = Activity.ActivityType.WATCHING;
 
     /**
      * The message being displayed as the bots {@link Activity} on its profile
      */
-    private String activity = "";
+    private String activity = "with a default message!";
 
     /**
      * The amount of days that a user must be inactive for to show up in the inactive user list

@@ -114,9 +114,8 @@ public class HypixelThreadURLWatcher {
             } else {
                 log.error("Failed to fetch content from " + url + "! (Response: " + response + ")");
             }
-        } catch (IOException e) {
-            log.error("Failed to fetch content from " + url + "!" + " (Exception: " + e.getMessage() + ")");
-            e.printStackTrace();
+        } catch (IOException exception) {
+            log.error("Failed to fetch content from " + url + "!", exception);
         }
 
         return null;

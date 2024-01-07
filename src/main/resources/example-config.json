@@ -6,14 +6,27 @@
     "timeBetweenPings": 60,
     "roleFormat": "BELOW"
   },
-  "emojiConfig": {
+  "suggestionConfig": {
+    "suggestionForumIds": [],
+    "alphaSuggestionForumIds": [],
+    "requestedReviewForumId": "",
+    "flaredTag": "flared",
+    "greenlitTag": "greenlit",
+    "reviewedTag": "reviewed",
     "agreeEmojiId": "",
     "disagreeEmojiId": "",
     "neutralEmojiId": "",
-    "greenlitEmojiId": ""
-  },
-  "tagConfig": {
-    "greenlit": ""
+    "greenlitEmojiId": "",
+    "greenlitThreshold": 20,
+    "greenlitRatio": 75.0,
+    "archiveOnGreenlit": false,
+    "lockOnGreenlit": false,
+    "autoPinFirstMessage": false,
+    "requestReviewThreshold": 15,
+    "enforcingGreenlitRatioForRequestReview": false,
+    "autoArchiveThreshold": 168,
+    "autoLockThreshold": -1,
+    "minimumSuggestionRequestAge": 604800000
   },
   "channelConfig": {
     "logChannelId": "",
@@ -22,12 +35,9 @@
     "nerdArchiveCategoryId": "",
     "alphaArchiveCategoryId": "",
     "announcementChannelId": "",
-    "suggestionForumIds": [],
-    "alphaSuggestionForumIds": [],
     "genChannelIds": [],
     "reactionChannels": [],
-    "blacklistedChannels": [],
-    "pinFirstMessageInThreads": false
+    "blacklistedChannels": []
   },
   "roleConfig": {
     "botManagerRoleId": "",
@@ -41,13 +51,11 @@
   },
   "guildId": "",
   "ownerIds": [],
-  "minimumThreshold": 15,
   "messageLimit": 100,
   "mojangUsernameCacheTTL": 12,
   "voiceThreshold": 60,
-  "percentage": 75.0,
   "interval": 43200000,
-  "activityType": "PLAYING",
-  "activity": "",
+  "activityType": "WATCHING",
+  "activity": "with a default message!",
   "inactivityDays": 7
 }

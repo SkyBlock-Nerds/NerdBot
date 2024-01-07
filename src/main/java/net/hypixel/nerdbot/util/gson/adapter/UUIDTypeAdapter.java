@@ -24,5 +24,4 @@ public class UUIDTypeAdapter extends TypeAdapter<UUID> {
     public UUID read(JsonReader jsonReader) throws IOException {
         return Util.toUUID(jsonReader.nextString());
     }
-
 }

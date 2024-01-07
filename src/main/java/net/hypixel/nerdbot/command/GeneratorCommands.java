@@ -18,7 +18,7 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.generator.GeneratorBuilder;
 import net.hypixel.nerdbot.generator.ImageMerger;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
@@ -299,7 +299,7 @@ public class GeneratorCommands extends ApplicationCommand {
         JsonObject itemJSON;
         try {
             itemJSON = NerdBotApp.GSON.fromJson(itemNBT, JsonObject.class);
-        } catch (JsonSyntaxException e) {
+        } catch (JsonSyntaxException exception) {
             event.getHook().sendMessage(ITEM_PARSE_JSON_FORMAT).queue();
             return;
         }
@@ -376,7 +376,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 // converting the Base64 string into the Skin URL
                 try {
                     extraModifiers = builder.base64ToSkinURL(base64String);
-                } catch (NullPointerException | IllegalArgumentException e) {
+                } catch (NullPointerException | IllegalArgumentException exception) {
                     event.getHook().sendMessage(INVALID_BASE_64_SKIN_URL).queue();
                     return;
                 }
@@ -660,7 +660,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         if (Util.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
-            ChannelManager.getChannel(itemGenChannelIds[0]).ifPresentOrElse(
+            ChannelCache.getChannelByName(itemGenChannelIds[0]).ifPresentOrElse(
                 channel -> event.reply("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue(),
                 () -> event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue()
             );

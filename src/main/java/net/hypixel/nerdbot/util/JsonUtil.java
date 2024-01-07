@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.util;
 
 import com.google.gson.*;
+import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.NerdBotApp;
 
 import java.io.*;
@@ -8,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Log4j2
 public class JsonUtil {
 
     private JsonUtil() {
@@ -19,8 +21,8 @@ public class JsonUtil {
             JsonObject jsonObject = NerdBotApp.GSON.fromJson(reader, JsonObject.class);
             reader.close();
             return jsonObject;
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException exception) {
+            log.error("Failed to read json file: " + filename, exception);
             return null;
         }
     }
@@ -28,8 +30,8 @@ public class JsonUtil {
     public static void writeJsonFile(String filename, JsonObject jsonObject) {
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(filename), StandardCharsets.UTF_8)) {
             NerdBotApp.GSON.toJson(jsonObject, writer);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException exception) {
+            log.error("Failed to write json file: " + filename, exception);
         }
     }
 
@@ -96,12 +98,21 @@ public class JsonUtil {
     }
 
 
-    public static Map<String, Object> parseJsonString(String json) {
+    public static Map<String, Object> parseStringToMap(String json) {
         try {
             return convertObjectToMap(JsonParser.parseString(json).getAsJsonObject());
-        } catch (JsonParseException e) {
-            e.printStackTrace();
+        } catch (JsonParseException exception) {
+            log.error("Failed to parse json string to map: " + json, exception);
             return Collections.emptyMap();
+        }
+    }
+
+    public static JsonElement parseString(String json) {
+        try {
+            return JsonParser.parseString(json);
+        } catch (JsonParseException exception) {
+            log.error("Failed to parse json string: " + json,  exception);
+            return null;
         }
     }
 
