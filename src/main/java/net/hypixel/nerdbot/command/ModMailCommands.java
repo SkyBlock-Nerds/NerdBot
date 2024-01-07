@@ -90,7 +90,7 @@ public class ModMailCommands extends ApplicationCommand {
         String expectedThreadName = ModMailListener.MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(user), user.getId());
         Stream<ThreadChannel> archivedThreads = modMailChannel.retrieveArchivedPublicThreadChannels().stream();
         Optional<ThreadChannel> foundArchivedThread = archivedThreads
-            .filter(channel -> channel.getName().matches(expectedThreadName))
+            .filter(channel -> channel.getName().equalsIgnoreCase(expectedThreadName))
             .findFirst();
 
         if (foundArchivedThread.isPresent()) {
@@ -98,9 +98,7 @@ public class ModMailCommands extends ApplicationCommand {
         }
 
         Stream<ThreadChannel> activeThreads = modMailChannel.getThreadChannels().stream();
-        return activeThreads
-            .filter(thread -> !thread.isArchived())
-            .filter(thread -> thread.getName().matches(expectedThreadName))
+        return activeThreads.filter(thread -> thread.getName().equalsIgnoreCase(expectedThreadName))
             .findFirst();
     }
 }
