@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.api.repository;
 
 import com.mongodb.client.MongoClient;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.util.ClassUtil;
@@ -12,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+@Getter
 @Log4j2
 public class RepositoryManager {
 
@@ -67,9 +69,5 @@ public class RepositoryManager {
                  InvocationTargetException exception) {
             throw new RepositoryException("Failed to create repository instance: " + repositoryClass.getName(), exception);
         }
-    }
-
-    public Map<Class<?>, Object> getRepositories() {
-        return repositories;
     }
 }
