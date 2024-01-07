@@ -357,7 +357,7 @@ public class MyCommands extends ApplicationCommand {
                 }
             }
         } else {
-            log.warn("Role with ID " + "" + " does not exist.");
+            log.warn("Role with ID " + newMemberRoleId + " does not exist.");
         }
     }
 
