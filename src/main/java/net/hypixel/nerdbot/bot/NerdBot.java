@@ -48,6 +48,7 @@ import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
+import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
@@ -251,6 +252,14 @@ public class NerdBot implements Bot {
     }
 
     private void startUrlWatchers() {
+        // Temporary
+        ChannelCache.getChannelByName("contributor-chat").ifPresentOrElse(textChannel -> {
+            URLWatcher statusPageWatcher = new URLWatcher("https://status.hypixel.net/api/v2/summary.json");
+            statusPageWatcher.startWatching(1, TimeUnit.MINUTES, new StatusPageDataHandler());
+        }, () -> {
+            throw new IllegalStateException("Log channel not found!");
+        });
+
         ChannelCache.getChannelById(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
             HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
