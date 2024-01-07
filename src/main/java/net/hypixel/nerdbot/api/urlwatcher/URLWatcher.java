@@ -53,7 +53,7 @@ public class URLWatcher {
                 String newContent = fetchContent();
                 if (newContent != null && !newContent.equals(lastContent)) {
                     log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
-                    handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseJsonString(lastContent), JsonUtil.parseJsonString(newContent), ""));
+                    handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseStringToMap(lastContent), JsonUtil.parseStringToMap(newContent), ""));
                     lastContent = newContent;
                 }
             }
