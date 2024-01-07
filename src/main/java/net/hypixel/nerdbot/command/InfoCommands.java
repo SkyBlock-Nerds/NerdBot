@@ -14,16 +14,13 @@ import com.freya02.botcommands.api.pagination.paginator.PaginatorBuilder;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
@@ -32,8 +29,6 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.jetbrains.annotations.NotNull;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -171,17 +166,22 @@ public class InfoCommands extends ApplicationCommand {
 
     @NotNull
     private static List<DiscordUser> getDiscordUsers(DiscordUserRepository repository) {
-        List<DiscordUser> users = repository.getAll();
+        List<DiscordUser> users = new ArrayList<>(repository.getAll());
 
-        users.removeIf(discordUser -> {
-            discordUser.getMember().ifPresent(member -> {
+        log.info("Checking " + users.size() + " users");
+
+        Iterator<DiscordUser> iterator = users.iterator();
+        while (iterator.hasNext()) {
+            DiscordUser user = iterator.next();
+
+            user.getMember().ifPresent(member -> {
                 if (member.getUser().isBot() || Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
-                    users.remove(discordUser);
+                    iterator.remove();
+                    log.debug("Removed " + user.getDiscordId() + " from the list of users because they are a bot or have a special role");
                 }
             });
+        }
 
-            return !Instant.ofEpochMilli(discordUser.getLastActivity().getLastGlobalActivity()).isBefore(Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getInactivityDays())));
-        });
         return users;
     }
 
