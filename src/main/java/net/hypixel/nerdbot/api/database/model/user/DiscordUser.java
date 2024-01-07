@@ -116,10 +116,10 @@ public class DiscordUser {
     }
 
     public Optional<Member> getMember() {
-        return Optional.ofNullable(Util.getMainGuild().getMemberById(discordId));
+        return Optional.of(Util.getMainGuild().retrieveMemberById(discordId).complete());
     }
 
     public Optional<User> getUser() {
-        return Optional.ofNullable(Util.getMainGuild().getJDA().getUserById(discordId));
+        return Optional.of(Util.getMainGuild().getJDA().retrieveUserById(discordId).complete());
     }
 }
