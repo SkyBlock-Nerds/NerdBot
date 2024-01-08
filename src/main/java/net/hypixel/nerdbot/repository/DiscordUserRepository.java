@@ -10,11 +10,13 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.util.Util;
 
+import java.util.concurrent.TimeUnit;
+
 @Log4j2
 public class DiscordUserRepository extends Repository<DiscordUser> {
 
     public DiscordUserRepository(MongoClient mongoClient, String databaseName) {
-        super(mongoClient, databaseName, "users", "discordId");
+        super(mongoClient, databaseName, "users", "discordId", 1, TimeUnit.DAYS);
     }
 
     @Override
