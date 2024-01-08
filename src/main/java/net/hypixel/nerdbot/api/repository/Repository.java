@@ -42,7 +42,7 @@ public abstract class Repository<T> {
     private Field field;
 
     protected Repository(MongoClient mongoClient, String databaseName, String collectionName, String identifierFieldName) {
-        this(mongoClient, databaseName, collectionName, identifierFieldName, 1, TimeUnit.DAYS);
+        this(mongoClient, databaseName, collectionName, identifierFieldName, 0, null);
     }
 
     protected Repository(MongoClient mongoClient, String databaseName, String collectionName, String identifierFieldName, long expireAfterAccess, TimeUnit timeUnit) {
@@ -52,13 +52,21 @@ public abstract class Repository<T> {
         MongoDatabase database = mongoClient.getDatabase(databaseName);
         this.mongoCollection = database.getCollection(collectionName);
 
-        this.cache = Caffeine.newBuilder()
-            .expireAfterAccess(expireAfterAccess, timeUnit)
-            .scheduler(Scheduler.systemScheduler())
+        Caffeine<Object, Object> builder = Caffeine.newBuilder();
+
+        if (expireAfterAccess > 0 && timeUnit != null) {
+            log("Documents in this repository will expire after " + expireAfterAccess + " " + timeUnit.toString().toLowerCase());
+            builder.expireAfterAccess(expireAfterAccess, timeUnit)
+                .scheduler(Scheduler.systemScheduler());
+        } else {
+            log("Documents in this repository will not expire");
+        }
+
+        this.cache = builder
             .removalListener((String key, T value, RemovalCause cause) -> {
                 debug("Removing document with ID " + key + " from cache for reason " + cause.toString());
 
-                if (cause != RemovalCause.EXPLICIT || cause != RemovalCause.REPLACED) {
+                if (cause != RemovalCause.EXPLICIT && cause != RemovalCause.REPLACED) {
                     saveToDatabase(value);
                 }
             })
