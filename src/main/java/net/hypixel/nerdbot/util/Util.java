@@ -236,7 +236,7 @@ public class Util {
     }
 
     public static MojangProfile getMojangProfile(String username) throws HttpException {
-        String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
+        String url = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
         MojangProfile mojangProfile;
         int statusCode;
 
@@ -259,25 +259,7 @@ public class Util {
 
     @NotNull
     public static MojangProfile getMojangProfile(UUID uniqueId) throws HttpException {
-        String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
-        MojangProfile mojangProfile;
-        int statusCode;
-
-        try (Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer()) {
-            HttpResponse<String> httpResponse = getHttpResponse(url);
-            statusCode = httpResponse.statusCode();
-            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
-
-            requestTimer.observeDuration();
-        } catch (Exception exception) {
-            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`", exception);
-        }
-
-        if (statusCode != 200) {
-            throw new HttpException("Failed to request Mojang Profile for `" + uniqueId + "`: " + mojangProfile.getErrorMessage());
-        }
-
-        return mojangProfile;
+        return getMojangProfile(uniqueId.toString());
     }
 
     private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws IOException, InterruptedException {
