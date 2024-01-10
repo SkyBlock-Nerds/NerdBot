@@ -77,8 +77,8 @@ public class GoogleCommands extends ApplicationCommand {
                 .append(username).append(";")
                 .append("=HYPERLINK(\"").append(threadChannel.getJumpUrl()).append("\", \"").append(threadChannel.getName()).append("\");")
                 .append("\"").append(startMessage.getContentRaw().replace("\"", "\"\"")).append("\"").append(";")
-                .append(reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("agree")).toList().size()).append(";")
-                .append(reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("disagree")).toList().size());
+                .append(reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("agree")).toList().get(0).getCount()).append(";")
+                .append(reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("disagree")).toList().get(0).getCount());
 
             event.getHook().editOriginal("Exported thread " + (index + 1) + "/" + threadList.size() + ": " + threadChannel.getName() + " by " + username).queue();
 
