@@ -115,6 +115,7 @@ public class MyCommands extends ApplicationCommand {
 
         try {
             MojangProfile mojangProfile = requestMojangProfile(event.getMember(), username, true);
+
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
             event.getHook().sendMessage("Your verification request has been sent. You will be contacted via DM if any further information is required.").queue();
 
@@ -160,10 +161,11 @@ public class MyCommands extends ApplicationCommand {
             }, () -> {
                 throw new RuntimeException("Verification log channel not found!");
             });
-        } catch (HttpException httpex) {
-            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
-        } catch (ProfileMismatchException exception) {
+        } catch (HttpException | ProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
+        } catch (Exception exception) {
+            log.error("Encountered an error while requesting verification for " + event.getMember().getUser().getName() + " (ID: " + event.getMember().getId() + ") with username " + username + "!", exception);
+            event.getHook().sendMessage("Encountered an error while requesting verification! Please try again or contact a bot developer!").queue();
         }
     }
 

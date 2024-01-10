@@ -13,9 +13,8 @@ import java.util.UUID;
 @Setter
 public class MojangProfile {
 
-    @SerializedName("id")
+    @SerializedName("uuid")
     private UUID uniqueId;
-    @SerializedName("name")
     private String username;
     private String errorMessage;
     private long lastUpdated;
