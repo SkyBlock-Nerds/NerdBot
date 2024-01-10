@@ -73,12 +73,23 @@ public class GoogleCommands extends ApplicationCommand {
                 .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
                 .toList();
 
+            int agrees = 0;
+            int disagrees = 0;
+
+            if (!reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("agree")).toList().isEmpty()) {
+                agrees = reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("agree")).toList().get(0).getCount();
+            }
+
+            if (!reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("disagree")).toList().isEmpty()) {
+                disagrees = reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("disagree")).toList().get(0).getCount();
+            }
+
             stringBuilder.append("\n")
                 .append(username).append(";")
                 .append("=HYPERLINK(\"").append(threadChannel.getJumpUrl()).append("\", \"").append(threadChannel.getName()).append("\");")
                 .append("\"").append(startMessage.getContentRaw().replace("\"", "\"\"")).append("\"").append(";")
-                .append(reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("agree")).toList().get(0).getCount()).append(";")
-                .append(reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("disagree")).toList().get(0).getCount());
+                .append(agrees).append(";")
+                .append(disagrees);
 
             event.getHook().editOriginal("Exported thread " + (index + 1) + "/" + threadList.size() + ": " + threadChannel.getName() + " by " + username).queue();
 
