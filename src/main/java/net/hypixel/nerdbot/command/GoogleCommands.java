@@ -29,13 +29,13 @@ import java.util.stream.Stream;
 @Log4j2
 public class GoogleCommands extends ApplicationCommand {
 
-    @JDASlashCommand(name = "export", subcommand = "threads", description = "Export Shen Threads")
+    @JDASlashCommand(name = "export", subcommand = "threads", description = "Export Shen Threads", defaultLocked = true)
     public void exportShenThreads(GuildSlashEvent event, @AppOption ForumChannel forumChannel) {
         event.deferReply(true).queue();
         event.getHook().editOriginal("Exporting threads from " + forumChannel.getAsMention()).queue();
 
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Username|Item|Summary|Agree|Disagree");
+        stringBuilder.append("Username;Item;Summary;Agree;Disagree");
 
         Stream<ThreadChannel> threads = Util.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
             .map(ThreadChannel.class::cast)
@@ -74,10 +74,10 @@ public class GoogleCommands extends ApplicationCommand {
                 .toList();
 
             stringBuilder.append("\n")
-                .append(username).append("|")
-                .append("=HYPERLINK(\"").append(threadChannel.getJumpUrl()).append("\",\"").append(threadChannel.getName()).append("\")|")
-                .append("\"").append(startMessage.getContentRaw().replace("\"", "\"\"")).append("\"").append("|")
-                .append(reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("agree")).toList().size()).append("|")
+                .append(username).append(";")
+                .append("=HYPERLINK(\"").append(threadChannel.getJumpUrl()).append("\", \"").append(threadChannel.getName()).append("\");")
+                .append("\"").append(startMessage.getContentRaw().replace("\"", "\"\"")).append("\"").append(";")
+                .append(reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("agree")).toList().size()).append(";")
                 .append(reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("disagree")).toList().size());
 
             event.getHook().editOriginal("Exported thread " + (index + 1) + "/" + threadList.size() + ": " + threadChannel.getName() + " by " + username).queue();
