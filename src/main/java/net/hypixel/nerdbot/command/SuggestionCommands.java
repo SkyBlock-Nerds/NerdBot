@@ -242,7 +242,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(userID, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
+            TranslationManager.getInstance().edit(event.getHook(), "commands.suggestions.filtered_none_found");
             return;
         }
 
@@ -271,7 +271,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(member.getIdLong(), tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
+            TranslationManager.getInstance().edit(event.getHook(), "commands.suggestions.filtered_none_found");
             return;
         }
 
@@ -299,7 +299,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(null, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
+            TranslationManager.getInstance().edit(event.getHook(), "commands.suggestions.filtered_none_found");
             return;
         }
 
@@ -390,5 +390,4 @@ public class SuggestionCommands extends ApplicationCommand {
     private static String getEmojiFormat(Function<SuggestionConfig, String> emojiIdFunction) {
         return NerdBotApp.getBot().getJDA().getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getSuggestionConfig())).getFormatted();
     }
-
 }

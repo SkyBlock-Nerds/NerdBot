@@ -12,6 +12,7 @@
   "cache": {
     "suggestions": {
       "not_found": "Couldn't find that suggestion in the cache! Please try again later!",
+      "filtered_none_found": "No suggestions found matching that filter!",
       "user_deleted_post": "The original message for this suggestion was deleted!"
     }
   },
