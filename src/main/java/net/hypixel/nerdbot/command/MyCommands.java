@@ -24,6 +24,7 @@ import net.hypixel.nerdbot.api.database.model.user.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -108,8 +109,11 @@ public class MyCommands extends ApplicationCommand {
     public void requestLinkProfile(GuildSlashEvent event, @AppOption(description = "Your Minecraft IGN to link. Use the account you applied with.") String username) {
         event.deferReply(true).complete();
 
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
+
         if (VERIFY_CACHE.getIfPresent(event.getMember().getId()) != null) {
-            event.getHook().sendMessage("Your previous verification request has not been reviewed. You will be contacted via DM if any further information is required.").queue();
+            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.verify.already_requested");
             return;
         }
 
@@ -117,13 +121,13 @@ public class MyCommands extends ApplicationCommand {
             MojangProfile mojangProfile = requestMojangProfile(event.getMember(), username, true);
 
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
-            event.getHook().sendMessage("Your verification request has been sent. You will be contacted via DM if any further information is required.").queue();
+            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.verify.request_sent");
 
             ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                         new EmbedBuilder()
                             .setTitle("Mojang Profile Verification")
-                            .setDescription(event.getMember().getAsMention() + " has sent a mojang verification request. This discord account matches the social set for this Mojang Profile.")
+                            .setDescription(event.getMember().getAsMention() + " has sent a Mojang verification request. This discord account matches the social set for this Mojang Profile.")
                             .setColor(Color.PINK)
                             .setThumbnail(event.getMember().getEffectiveAvatarUrl())
                             .setFooter("This request expires in 1 day.")
@@ -219,6 +223,10 @@ public class MyCommands extends ApplicationCommand {
         @AppOption(description = "Toggle alpha suggestions.") @Optional Boolean alpha
     ) {
         event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
+
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
         final boolean isAlpha = (alpha != null && alpha);
@@ -226,7 +234,7 @@ public class MyCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember().getIdLong(), tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
+            TranslationManager.getInstance().edit(event.getHook(), discordUser, "cache.suggestions.filtered_none_found");
             return;
         }
 
@@ -252,7 +260,7 @@ public class MyCommands extends ApplicationCommand {
         discordUser.setBirthdayData(new BirthdayData());
         discordUserRepository.cacheObject(discordUser);
 
-        event.getHook().editOriginal("Your birthday has been removed!").queue();
+        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.birthday.removed");
     }
 
     @JDASlashCommand(name = "birthday", subcommand = "get", description = "Get your birthday.")
@@ -263,23 +271,23 @@ public class MyCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (!discordUser.getBirthdayData().isBirthdaySet()) {
-            event.getHook().editOriginal("You have not set your birthday!").queue();
+            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.birthday.not_set_yet");
             return;
         }
 
         Date birthday = discordUser.getBirthdayData().getBirthday();
-        event.getHook().editOriginal("Your birthday is currently set to " + "`" + DateFormatUtils.format(birthday, "dd MMMM yyyy") + "`!").queue();
+        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.birthday.set", DateFormatUtils.format(birthday, "dd MMMM yyyy"));
     }
 
     @JDASlashCommand(name = "birthday", subcommand = "set", description = "Set your birthday.")
     public void setBirthday(GuildSlashEvent event, @AppOption(description = "Your birthday in the format MM/DD/YYYY.") String birthday, @AppOption(description = "Whether to announce your age.") @Optional Boolean announceAge) {
         event.deferReply(true).complete();
 
-        try {
-            Member member = event.getMember();
-            DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-            DiscordUser discordUser = discordUserRepository.findById(member.getId());
+        Member member = event.getMember();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
 
+        try {
             if (discordUser.getBirthdayData().getTimer() != null) {
                 discordUser.getBirthdayData().getTimer().cancel();
             }
@@ -287,10 +295,10 @@ public class MyCommands extends ApplicationCommand {
             discordUser.setBirthday(DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"}));
             discordUser.getBirthdayData().setShouldAnnounceAge(announceAge != null && announceAge);
             discordUser.scheduleBirthdayReminder(discordUser.getBirthdayData().getBirthdayThisYear());
-            event.getHook().editOriginal("Your birthday has been set to `" + birthday + "`!").queue();
-        } catch (Exception exception) {
-            event.getHook().editOriginal("Encountered an error while parsing that date! Please try again or contact a bot developer!").queue();
-            log.error("Encountered an error while parsing date " + birthday + "!", exception);
+            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.birthday.set", birthday);
+        } catch (Exception ex) {
+            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.birthday.bad_date");
+            ex.printStackTrace();
         }
     }
 

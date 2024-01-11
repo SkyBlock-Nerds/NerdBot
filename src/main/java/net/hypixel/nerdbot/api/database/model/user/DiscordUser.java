@@ -29,6 +29,10 @@ public class DiscordUser {
     public DiscordUser() {
     }
 
+    public DiscordUser(String discordId) {
+        this(discordId, UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
+    }
+
     public DiscordUser(Member member) {
         this(member.getId(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
     }

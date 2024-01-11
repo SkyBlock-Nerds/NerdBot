@@ -37,7 +37,8 @@
     },
     "invite": {
       "no_permission": "I do not have the correct permission to create invites in %s!",
-      "header": "Created %d invites:"
+      "header": "Created %d invites:",
+      "deleted": "Deleted %d invites!"
     },
     "reminders": {
       "no_description": "You need to provide a description for the reminder!",
@@ -105,6 +106,17 @@
       "removed_role": "Removed role %s from you! Use the same command to add it back.",
       "added_role": "Added role %s to you! Use the same command to remove it.",
       "list_roles": "**Assignable Roles:**\n%s\n\n**Use /role <name> to toggle the role!**"
+    },
+    "verify": {
+      "already_requested": "Your previous verification request has not been reviewed. You will be contacted via DM if any further information is required.",
+      "request_sent": "Your verification request has been sent. You will be contacted via DM if any further information is required."
+    },
+    "birthday": {
+      "removed": "Your birthday has been removed!",
+      "not_set_yet": "Your birthday has not been configured yet!",
+      "get": "Your birthday is currently set to %s",
+      "set": "Set your birthday to %s!",
+      "bad_date": "That doesn't seem to be a valid date. Please try again or contact a bot developer!"
     }
   }
 }

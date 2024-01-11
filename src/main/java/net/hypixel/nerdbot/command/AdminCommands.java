@@ -7,11 +7,7 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -39,7 +35,6 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.api.repository.Repository;
-import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
@@ -48,7 +43,6 @@ import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.LoggingUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -57,7 +51,7 @@ import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.logging.log4j.Level;
 
-import java.awt.*;
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -154,6 +148,9 @@ public class AdminCommands extends ApplicationCommand {
     public void deleteInvites(GuildSlashEvent event) {
         event.deferReply(true).complete();
 
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
+
         List<Invite> invites = event.getGuild().retrieveInvites().complete();
         invites.forEach(invite -> {
             invite.delete().complete();
@@ -171,7 +168,7 @@ public class AdminCommands extends ApplicationCommand {
             throw new IllegalStateException("Log channel not found!");
         });
 
-        event.getHook().editOriginal("Deleted " + invites.size() + " invites.").queue();
+        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.invite.deleted", invites.size());
     }
 
     @JDASlashCommand(name = "lock", description = "Locks the thread that the command is executed in", defaultLocked = true)
@@ -324,7 +321,7 @@ public class AdminCommands extends ApplicationCommand {
         try {
             element = JsonParser.parseString(value);
         } catch (JsonSyntaxException exception) {
-            TranslationManager.getInstance().reply(event, discordUser, "commands.config.invalid_value", e.getMessage());
+            TranslationManager.getInstance().reply(event, discordUser, "commands.config.invalid_value", exception.getMessage());
             return;
         }
 
