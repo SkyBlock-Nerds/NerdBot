@@ -643,12 +643,7 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
-
-        if (discordUser == null) {
-            event.getHook().editOriginal("User not found!").queue();
-            return;
-        }
+        DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getUser().getId());
 
         try {
             Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
