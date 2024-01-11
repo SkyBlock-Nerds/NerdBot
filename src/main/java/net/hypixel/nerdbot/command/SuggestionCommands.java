@@ -25,7 +25,6 @@ import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.cache.ChannelCache;
-import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
