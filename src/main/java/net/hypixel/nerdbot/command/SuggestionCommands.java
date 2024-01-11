@@ -22,7 +22,9 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
+import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.SuggestionCache;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.channel.ChannelManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
@@ -73,7 +75,7 @@ public class SuggestionCommands extends ApplicationCommand {
             return;
         }
 
-        SuggestionCache.Suggestion suggestion = NerdBotApp.getSuggestionCache().getSuggestion(event.getChannel().getId());
+        SuggestionCache.Suggestion suggestion = NerdBotApp.getBot().getSuggestionCache().getSuggestion(event.getChannel().getId());
 
         // Handle Missing Suggestion
         if (suggestion == null) {
@@ -118,7 +120,7 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         // Send Request Review Message
-        ChannelManager.getRequestedReviewChannel().ifPresentOrElse(textChannel -> {
+        ChannelCache.getRequestedReviewChannel().ifPresentOrElse(textChannel -> {
             textChannel.sendMessageEmbeds(
                     new EmbedBuilder()
                         .setAuthor(String.format("Greenlit Review Request from %s", event.getUser().getEffectiveName()))
@@ -309,12 +311,12 @@ public class SuggestionCommands extends ApplicationCommand {
     public static List<SuggestionCache.Suggestion> getSuggestions(Long userID, String tags, String title, boolean alpha) {
         final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
 
-        if (NerdBotApp.getSuggestionCache().getSuggestions().isEmpty()) {
+        if (NerdBotApp.getBot().getSuggestionCache().getSuggestions().isEmpty()) {
             log.info("Suggestions cache is empty!");
             return Collections.emptyList();
         }
 
-        return NerdBotApp.getSuggestionCache()
+        return NerdBotApp.getBot().getSuggestionCache()
             .getSuggestions()
             .stream()
             .filter(suggestion -> suggestion.isAlpha() == alpha)
@@ -388,6 +390,8 @@ public class SuggestionCommands extends ApplicationCommand {
     }
 
     private static String getEmojiFormat(Function<SuggestionConfig, String> emojiIdFunction) {
-        return NerdBotApp.getBot().getJDA().getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getSuggestionConfig())).getFormatted();
+        return EmojiCache.getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getSuggestionConfig()))
+            .orElseGet(() -> Emoji.fromUnicode("❓"))
+            .getFormatted();
     }
 }

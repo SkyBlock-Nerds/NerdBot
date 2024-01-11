@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.generator.parser;
 
 import lombok.Getter;
+import lombok.Setter;
 import net.hypixel.nerdbot.generator.util.GeneratorStrings;
 
 import javax.annotation.Nullable;
@@ -104,7 +105,7 @@ public class RecipeParser {
     private static Integer tryParseInteger(String value) {
         try {
             return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException exception) {
             return null;
         }
     }
@@ -115,6 +116,7 @@ public class RecipeParser {
         private final int amount;
         private final String itemName;
         private final String extraDetails;
+        @Setter
         private BufferedImage image;
 
         public RecipeItem(int slot, int amount, String itemName, String extraDetails) {
@@ -124,13 +126,5 @@ public class RecipeParser {
             this.extraDetails = extraDetails;
         }
 
-        /**
-         * Sets the rendered item stack for this item
-         *
-         * @param image the image
-         */
-        public void setImage(BufferedImage image) {
-            this.image = image;
-        }
     }
 }

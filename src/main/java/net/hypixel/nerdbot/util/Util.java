@@ -90,8 +90,8 @@ public class Util {
     public static void sleep(TimeUnit unit, long time) {
         try {
             Thread.sleep(unit.toMillis(time));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (InterruptedException exception) {
+            log.error("Failed to sleep for " + time + " " + unit.name().toLowerCase() + "!", exception);
         }
     }
 
@@ -236,7 +236,7 @@ public class Util {
     }
 
     public static MojangProfile getMojangProfile(String username) throws HttpException {
-        String url = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
+        String url = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
         MojangProfile mojangProfile;
         int statusCode;
 
@@ -246,8 +246,8 @@ public class Util {
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
 
             requestTimer.observeDuration();
-        } catch (Exception ex) {
-            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + ex.getMessage(), ex);
+        } catch (Exception exception) {
+            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + exception.getMessage(), exception);
         }
 
         if (statusCode != 200) {
@@ -259,25 +259,7 @@ public class Util {
 
     @NotNull
     public static MojangProfile getMojangProfile(UUID uniqueId) throws HttpException {
-        String url = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", uniqueId.toString());
-        MojangProfile mojangProfile;
-        int statusCode;
-
-        try (Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer()) {
-            HttpResponse<String> httpResponse = getHttpResponse(url);
-            statusCode = httpResponse.statusCode();
-            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
-
-            requestTimer.observeDuration();
-        } catch (Exception ex) {
-            throw new HttpException("Unable to locate Minecraft Username for `" + uniqueId + "`", ex);
-        }
-
-        if (statusCode != 200) {
-            throw new HttpException("Failed to request Mojang Profile for `" + uniqueId + "`: " + mojangProfile.getErrorMessage());
-        }
-
-        return mojangProfile;
+        return getMojangProfile(uniqueId.toString());
     }
 
     private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws IOException, InterruptedException {
@@ -297,8 +279,8 @@ public class Util {
         try {
             String hypixelApiKey = NerdBotApp.getHypixelAPIKey().map(UUID::toString).orElse("");
             return NerdBotApp.GSON.fromJson(getHttpResponse(url, Pair.of("API-Key", hypixelApiKey)).body(), HypixelPlayerResponse.class);
-        } catch (Exception ex) {
-            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId + "`", ex);
+        } catch (Exception exception) {
+            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId + "`", exception);
         } finally {
             requestTimer.observeDuration();
         }
@@ -357,12 +339,12 @@ public class Util {
         Font font;
         try (InputStream fontStream = GeneratorCommands.class.getResourceAsStream(path)) {
             if (fontStream == null) {
-                log.error("Couldn't initialise font: " + path);
+                log.error("Couldn't initialize font: " + path);
                 return null;
             }
             font = Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(size);
-        } catch (IOException | FontFormatException e) {
-            e.printStackTrace();
+        } catch (IOException | FontFormatException exception) {
+            log.error("Couldn't initialize font: " + path, exception);
             return null;
         }
         return font;

@@ -301,8 +301,8 @@ public class ModMailListener {
                         attachment.getProxy().download().get(),
                         attachment.getFileName()
                     );
-                } catch (InterruptedException | ExecutionException ex) {
-                    ex.printStackTrace();
+                } catch (InterruptedException | ExecutionException exception) {
+                    log.error("Failed to download attachment " + attachment.getFileName() + "!", exception);
                     return null;
                 }
             })

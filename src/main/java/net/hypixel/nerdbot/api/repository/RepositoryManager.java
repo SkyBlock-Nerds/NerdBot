@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.api.repository;
 
 import com.mongodb.client.MongoClient;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.util.ClassUtil;
@@ -12,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+@Getter
 @Log4j2
 public class RepositoryManager {
 
@@ -50,8 +52,8 @@ public class RepositoryManager {
                     log.info("Registered repository: " + clazz.getName());
                 }
             }
-        } catch (Exception e) {
-            throw new RepositoryException("Failed to register repositories from package: " + packageName, e);
+        } catch (Exception exception) {
+            throw new RepositoryException("Failed to register repositories from package: " + packageName, exception);
         }
     }
 
@@ -64,12 +66,8 @@ public class RepositoryManager {
             Constructor<T> constructor = repositoryClass.getDeclaredConstructor(MongoClient.class, String.class);
             return constructor.newInstance(mongoClient, databaseName);
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException e) {
-            throw new RepositoryException("Failed to create repository instance: " + repositoryClass.getName(), e);
+                 InvocationTargetException exception) {
+            throw new RepositoryException("Failed to create repository instance: " + repositoryClass.getName(), exception);
         }
-    }
-
-    public Map<Class<?>, Object> getRepositories() {
-        return repositories;
     }
 }

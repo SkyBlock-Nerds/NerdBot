@@ -25,7 +25,7 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.SuggestionCache;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
@@ -68,7 +68,7 @@ public class MyCommands extends ApplicationCommand {
             MojangProfile mojangProfile = requestMojangProfile(member, username, true);
             updateMojangProfile(member, mojangProfile);
             event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
-            ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+            ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                         new EmbedBuilder()
                             .setTitle("Mojang Profile Link")
@@ -96,8 +96,8 @@ public class MyCommands extends ApplicationCommand {
             event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
         } catch (ProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception exception) {
+            log.error("Encountered an error while linking " + member.getUser().getName() + " (ID: " + member.getId() + ") to " + username + "!", exception);
         }
     }
 
@@ -115,10 +115,11 @@ public class MyCommands extends ApplicationCommand {
 
         try {
             MojangProfile mojangProfile = requestMojangProfile(event.getMember(), username, true);
+
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
             event.getHook().sendMessage("Your verification request has been sent. You will be contacted via DM if any further information is required.").queue();
 
-            ChannelManager.getVerifyLogChannel().ifPresentOrElse(textChannel -> {
+            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                         new EmbedBuilder()
                             .setTitle("Mojang Profile Verification")
@@ -160,10 +161,11 @@ public class MyCommands extends ApplicationCommand {
             }, () -> {
                 throw new RuntimeException("Verification log channel not found!");
             });
-        } catch (HttpException httpex) {
-            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
-        } catch (ProfileMismatchException exception) {
+        } catch (HttpException | ProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
+        } catch (Exception exception) {
+            log.error("Encountered an error while requesting verification for " + event.getMember().getUser().getName() + " (ID: " + event.getMember().getId() + ") with username " + username + "!", exception);
+            event.getHook().sendMessage("Encountered an error while requesting verification! Please try again or contact a bot developer!").queue();
         }
     }
 
@@ -285,11 +287,10 @@ public class MyCommands extends ApplicationCommand {
             discordUser.setBirthday(DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"}));
             discordUser.getBirthdayData().setShouldAnnounceAge(announceAge != null && announceAge);
             discordUser.scheduleBirthdayReminder(discordUser.getBirthdayData().getBirthdayThisYear());
-            discordUserRepository.cacheObject(discordUser);
             event.getHook().editOriginal("Your birthday has been set to `" + birthday + "`!").queue();
-        } catch (Exception ex) {
+        } catch (Exception exception) {
             event.getHook().editOriginal("Encountered an error while parsing that date! Please try again or contact a bot developer!").queue();
-            ex.printStackTrace();
+            log.error("Encountered an error while parsing date " + birthday + "!", exception);
         }
     }
 
@@ -298,7 +299,7 @@ public class MyCommands extends ApplicationCommand {
         HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
 
         if (!hypixelPlayerResponse.isSuccess()) {
-            throw new HttpException("Unable to lookup `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
+            throw new HttpException("Unable to look up `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
         }
 
         if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
@@ -308,12 +309,12 @@ public class MyCommands extends ApplicationCommand {
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
         String discordName = member.getUser().getName();
 
-        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0")) {
+        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0000")) {
             discordName += "#" + member.getUser().getDiscriminator();
         }
 
         if (enforceSocial && !discordName.equalsIgnoreCase(discord)) {
-            throw new ProfileMismatchException("The Discord name on the Hypixel profile for `" + mojangProfile.getUsername() + "` does not match `" + member.getUser().getName() + "`!");
+            throw new ProfileMismatchException("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
         }
 
         return mojangProfile;
@@ -358,7 +359,7 @@ public class MyCommands extends ApplicationCommand {
                 }
             }
         } else {
-            log.warn("Role with ID " + "" + " does not exist.");
+            log.warn("Role with ID " + newMemberRoleId + " does not exist.");
         }
     }
 

@@ -7,7 +7,11 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -22,7 +26,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
-import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
@@ -35,14 +39,16 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.api.repository.Repository;
+import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
+import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.LoggingUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -51,7 +57,7 @@ import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.logging.log4j.Level;
 
-import java.awt.Color;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -112,7 +118,7 @@ public class AdminCommands extends ApplicationCommand {
         TextChannel selected = Objects.requireNonNullElse(channel, NerdBotApp.getBot().getJDA().getTextChannelsByName("limbo", true).get(0));
         event.deferReply(true).complete();
 
-        ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
             textChannel.sendMessageEmbeds(
                 new EmbedBuilder()
                     .setTitle("Invites Created")
@@ -154,7 +160,7 @@ public class AdminCommands extends ApplicationCommand {
             log.info(event.getUser().getName() + " deleted invite " + invite.getUrl());
         });
 
-        ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
             textChannel.sendMessageEmbeds(
                 new EmbedBuilder()
                     .setTitle("Invites Deleted")
@@ -183,9 +189,23 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
+        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
         boolean locked = threadChannel.isLocked();
+        ThreadChannelManager threadManager = threadChannel.getManager();
 
-        threadChannel.getManager().setLocked(!locked).queue(unused ->
+        // Add Reviewed Tag
+        if (threadChannel.getParentChannel() instanceof ForumChannel forumChannel) { // Is thread inside a forum?
+            if (Util.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) { // Does forum contain the reviewed tag?
+                if (!Util.hasTagByName(threadChannel, suggestionConfig.getReviewedTag())) { // Does thread not currently have reviewed tag?
+                    List<ForumTag> forumTags = new ArrayList<>(threadChannel.getAppliedTags());
+                    forumTags.removeIf(forumTag -> forumTag.getName().equalsIgnoreCase(suggestionConfig.getGreenlitTag())); // Remove Greenlit just in-case
+                    forumTags.add(Util.getTagByName(forumChannel, suggestionConfig.getReviewedTag()));
+                    threadManager = threadManager.setAppliedTags(forumTags);
+                }
+            }
+        }
+
+        threadManager.setLocked(!locked).queue(unused ->
                 event.reply("This thread is now " + (!locked ? "locked" : "unlocked") + "!").queue(),
             throwable -> {
                 TranslationManager.getInstance().reply(event, discordUser, "commands.lock.error");
@@ -258,7 +278,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.config.read_error");
-            exception.printStackTrace();
+            log.error("An error occurred when reading the JSON file!", exception);
         }
     }
 
@@ -303,7 +323,7 @@ public class AdminCommands extends ApplicationCommand {
         JsonElement element;
         try {
             element = JsonParser.parseString(value);
-        } catch (JsonSyntaxException e) {
+        } catch (JsonSyntaxException exception) {
             TranslationManager.getInstance().reply(event, discordUser, "commands.config.invalid_value", e.getMessage());
             return;
         }
@@ -389,7 +409,7 @@ public class AdminCommands extends ApplicationCommand {
             MyCommands.updateMojangProfile(member, mojangProfile);
             TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.user.linked_by_admin", member.getAsMention(), mojangProfile.getUsername(), mojangProfile.getUniqueId());
 
-            ChannelManager.getLogChannel().ifPresentOrElse(textChannel -> {
+            ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                     new EmbedBuilder()
                         .setTitle("Mojang Profile Change")
@@ -412,7 +432,7 @@ public class AdminCommands extends ApplicationCommand {
             });
         } catch (HttpException exception) {
             TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.user.username_not_found", username, exception.getMessage());
-            exception.printStackTrace();
+            log.error("Unable to locate Minecraft UUID for " + username + "!", exception);
         } catch (ProfileMismatchException exception) {
             TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.user.profile_mismatch", username, exception.getMessage());
         }
@@ -444,7 +464,7 @@ public class AdminCommands extends ApplicationCommand {
             .map(IMentionable::getAsMention)
             .collect(Collectors.joining(", "));
 
-        if (missing.length() > 0) {
+        if (!missing.isEmpty()) {
             event.getHook().editOriginalEmbeds(
                 new EmbedBuilder()
                     .setColor(Color.MAGENTA)
@@ -519,9 +539,8 @@ public class AdminCommands extends ApplicationCommand {
                     DiscordUser user = discordUserRepository.findById(member.getId());
                     user.setMojangProfile(mojangProfile);
                     log.info("Migrated " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ") to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId() + ")");
-                } catch (HttpException ex) {
-                    log.warn("Unable to migrate " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ")");
-                    ex.printStackTrace();
+                } catch (HttpException exception) {
+                    log.error("Unable to migrate " + member.getEffectiveName() + "(ID: " + member.getId() + ")", exception);
                 }
             });
 
@@ -590,7 +609,7 @@ public class AdminCommands extends ApplicationCommand {
             TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.saved_to_database", repository.getCache().estimatedSize());
         } catch (RepositoryException exception) {
             TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.save_error", exception.getMessage());
-            exception.printStackTrace();
+            log.error("An error occurred while saving the repository!", exception);
         }
     }
 
@@ -618,7 +637,7 @@ public class AdminCommands extends ApplicationCommand {
             TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.loaded_from_database", repository.getCache().estimatedSize());
         } catch (RepositoryException exception) {
             TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.load_error", exception.getMessage());
-            exception.printStackTrace();
+            log.error("An error occurred while saving the repository!", exception);
         }
     }
 
@@ -645,7 +664,7 @@ public class AdminCommands extends ApplicationCommand {
             event.getHook().editOriginal(repository.getCache().stats().toString()).queue();
         } catch (RepositoryException exception) {
             TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.stats_error", exception.getMessage());
-            exception.printStackTrace();
+            log.error("An error occurred while saving the repository!", exception);
         }
     }
 
@@ -722,8 +741,8 @@ public class AdminCommands extends ApplicationCommand {
 
             try {
                 threadChannel.getManager().setAppliedTags(threadTags).complete();
-            } catch (Exception ex) {
-                log.warn("Unable to set applied tags for [" + threadChannel.getId() + "] " + threadChannel.getName(), ex);
+            } catch (Exception exception) {
+                log.warn("Unable to set applied tags for [" + threadChannel.getId() + "] " + threadChannel.getName(), exception);
             }
 
             if (archived) {
@@ -745,17 +764,13 @@ public class AdminCommands extends ApplicationCommand {
 
     @AutocompletionHandler(name = "forumtags", mode = AutocompletionMode.FUZZY, showUserInput = false)
     public List<ForumTag> listForumTags(CommandAutoCompleteInteractionEvent event) {
-        OptionMapping forumChannelId = event.getOption("channel");
+        List<ForumTag> forumTags = new ArrayList<>();
 
-        if (forumChannelId != null) {
-            ForumChannel forumChannel = Util.getMainGuild().getForumChannelById(forumChannelId.getAsString());
+        ChannelCache.getForumChannelById(event.getOption("channel").getAsString()).ifPresent(forumChannel -> {
+            forumTags.addAll(forumChannel.getAvailableTags());
+        });
 
-            if (forumChannel != null) {
-                return forumChannel.getAvailableTags();
-            }
-        }
-
-        return List.of();
+        return forumTags;
     }
 
     @JDASlashCommand(name = "loglevel", description = "Set the log level", defaultLocked = true)

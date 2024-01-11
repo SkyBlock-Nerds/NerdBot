@@ -55,7 +55,7 @@
   "mojangUsernameCacheTTL": 12,
   "voiceThreshold": 60,
   "interval": 43200000,
-  "activityType": "PLAYING",
-  "activity": "",
+  "activityType": "WATCHING",
+  "activity": "with a default message!",
   "inactivityDays": 7
 }

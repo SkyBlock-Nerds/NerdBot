@@ -133,8 +133,9 @@ public class PrometheusMetrics {
                     .build();
 
                 DefaultExports.initialize();
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            } catch (Exception exception) {
+                log.error("Failed to start Prometheus metrics server!", exception);
+                return;
             }
 
             collectorRegistry.register(TOTAL_GREENLIT_MESSAGES_AMOUNT);

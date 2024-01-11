@@ -8,15 +8,11 @@ import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.stats.ReactionHistory;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
-import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +26,6 @@ import java.util.stream.Stream;
 @Log4j2
 public class SuggestionCache extends TimerTask {
 
-    private static final List<String> GREENLIT_TAGS = Arrays.asList("greenlit", "docced");
     private final Map<String, Suggestion> cache = new HashMap<>();
 
     @Getter
@@ -48,9 +43,12 @@ public class SuggestionCache extends TimerTask {
     public void run() {
         try {
             log.info("Started suggestion cache update.");
+
             this.updating = true;
             this.cache.forEach((key, suggestion) -> suggestion.setExpired());
+
             SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+
             Util.safeArrayStream(suggestionConfig.getSuggestionForumIds(), suggestionConfig.getAlphaSuggestionForumIds())
                 .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
                 .filter(Objects::nonNull)
@@ -64,36 +62,6 @@ public class SuggestionCache extends TimerTask {
                     Suggestion suggestion = new Suggestion(thread);
                     this.cache.put(thread.getId(), suggestion);
                     log.debug("Added existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
-
-                    if (suggestion.isDeleted()) {
-                        return;
-                    }
-
-                    Message startMessage = suggestion.getThread().retrieveStartMessage().complete();
-
-                    if (startMessage.getReactions().isEmpty()) {
-                        log.debug("Suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") has no reactions.");
-                        return;
-                    }
-
-                    startMessage.getReactions().stream()
-                        .filter(messageReaction -> messageReaction.getEmoji().getType() == Emoji.Type.CUSTOM)
-                        .filter(messageReaction -> messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(suggestionConfig.getAgreeEmojiId())
-                            || messageReaction.getEmoji().asCustom().getId().equalsIgnoreCase(suggestionConfig.getDisagreeEmojiId()))
-                        .forEach(messageReaction -> {
-                            messageReaction.retrieveUsers().complete().forEach(user -> {
-                                DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-                                DiscordUser discordUser = userRepository.findById(user.getId());
-
-                                if (discordUser == null || discordUser.getLastActivity().getSuggestionReactionHistory().stream().anyMatch(history -> history.channelId().equals(suggestion.getParentId())
-                                    && history.reactionName().equals(messageReaction.getEmoji().getName()))) {
-                                    return;
-                                }
-
-                                discordUser.getLastActivity().getSuggestionReactionHistory().add(new ReactionHistory(thread.getId(), messageReaction.getEmoji().getName(), thread.getTimeCreated().toEpochSecond(), -1));
-                                log.debug("Added reaction history for user '" + user.getId() + "' on suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ")");
-                            });
-                        });
                 });
 
             log.info("Removing expired suggestions.");
@@ -105,8 +73,8 @@ public class SuggestionCache extends TimerTask {
             log.info("Finished caching suggestions.");
             this.initialized = true;
             this.updating = false;
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception exception) {
+            log.error("Failed to update suggestion cache!", exception);
         }
     }
 
@@ -154,7 +122,7 @@ public class SuggestionCache extends TimerTask {
         private final boolean deleted;
         private final long lastUpdated = System.currentTimeMillis();
         private boolean expired;
-        private long lastBump = System.currentTimeMillis();
+        private final long lastBump = System.currentTimeMillis();
 
         public Suggestion(ThreadChannel thread) {
             SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
@@ -166,8 +134,7 @@ public class SuggestionCache extends TimerTask {
             this.alpha = thread.getParentChannel()
                 .getName()
                 .toLowerCase()
-                .contains("alpha") ||
-                Util.safeArrayStream(suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
+                .contains("alpha") || Util.safeArrayStream(suggestionConfig.getAlphaSuggestionForumIds()).anyMatch(this.parentId::equalsIgnoreCase);
 
             // Activity
             Message latestMessage = thread.getHistory().getMessageById(thread.getLatestMessageId());
@@ -179,14 +146,17 @@ public class SuggestionCache extends TimerTask {
                 boolean lock = false;
 
                 if (hoursAgo >= suggestionConfig.getAutoArchiveThreshold()) {
+                    log.debug("Auto-archiving suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") due to inactivity. (Hours: " + hoursAgo + ", Auto Archive Threshold: " + suggestionConfig.getAutoArchiveThreshold() + ")");
                     archive = true;
                 }
 
                 if (hoursAgo >= suggestionConfig.getAutoLockThreshold()) {
+                    log.debug("Auto-locking suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") due to inactivity. (Hours: " + hoursAgo + ", Auto Lock Threshold: " + suggestionConfig.getAutoLockThreshold() + ")");
                     lock = true;
                 }
 
                 if (archive || lock) {
+                    log.debug("Locking and/or archiving suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") due to inactivity.");
                     thread.getManager().setArchived(archive).setLocked(lock).queue();
                 }
             }
@@ -213,6 +183,7 @@ public class SuggestionCache extends TimerTask {
             if (this.getAgrees() == 0 && this.getDisagrees() == 0) {
                 return 0;
             }
+
             return (double) this.getAgrees() / (this.getAgrees() + this.getDisagrees()) * 100.0;
         }
 
@@ -234,5 +205,4 @@ public class SuggestionCache extends TimerTask {
             this.expired = true;
         }
     }
-
 }

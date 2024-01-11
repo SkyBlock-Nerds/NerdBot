@@ -72,8 +72,8 @@ public class ItemSpritesheetGenerator {
                     TextureInfo textureInfo = new TextureInfo(file.getName(), texture, -1, -1);
                     textureInfoList.add(textureInfo);
                     textureNames.add(file.getName());
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } catch (IOException exception) {
+                    exception.printStackTrace();
                 }
             }
         }
@@ -178,9 +178,9 @@ public class ItemSpritesheetGenerator {
             System.out.println("Texture atlas saved successfully!");
 
             saveTextureCoordinatesJson(outputFolder, jsonFileName);
-        } catch (IOException e) {
+        } catch (IOException exception) {
             System.err.println("Failed to save texture atlas!");
-            e.printStackTrace();
+            exception.printStackTrace();
         }
     }
 
@@ -206,8 +206,8 @@ public class ItemSpritesheetGenerator {
         try (FileWriter fileWriter = new FileWriter(jsonFile)) {
             NerdBotApp.GSON.toJson(jsonArray, fileWriter);
             System.out.println("Texture coordinates JSON file saved successfully!");
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException exception) {
+            exception.printStackTrace();
         }
     }
 

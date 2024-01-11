@@ -8,6 +8,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
@@ -38,7 +39,7 @@ public class CurateFeature extends BotFeature {
                     Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(NerdBotApp.getBot().isReadOnly());
 
                     Util.safeArrayStream(suggestionConfig.getSuggestionForumIds(), suggestionConfig.getAlphaSuggestionForumIds())
-                        .map(NerdBotApp.getBot().getJDA()::getForumChannelById)
+                        .map(s -> ChannelCache.getForumChannelById(s).orElse(null))
                         .filter(Objects::nonNull)
                         .forEach(channel -> {
                             boolean alpha;

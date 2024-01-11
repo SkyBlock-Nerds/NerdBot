@@ -49,9 +49,8 @@ public class MinecraftInventory {
                 throw new FileNotFoundException("Could not find find the file called \"/Minecraft/inventory_background.png\"");
             }
             INVENTORY_IMAGE = ImageIO.read(backgroundStream);
-        } catch (IOException e) {
-            log.error("Couldn't initialise the item stack file for ItemStack Generation");
-            log.error(e.getMessage());
+        } catch (IOException exception) {
+            log.error("Couldn't initialise the item stack file for ItemStack Generation", exception);
         }
 
         RESOURCES_INITIALISED = MINECRAFT_FONT != null && INVENTORY_IMAGE != null;

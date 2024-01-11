@@ -50,7 +50,7 @@ public class UserGrabberFeature extends BotFeature {
                 discordUserRepository.cacheObject(discordUser);
             })
             .onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName()))
-            .onError(Throwable::printStackTrace);
+            .onError(throwable -> log.error("Failed to grab users from guild " + guild.getName(), throwable));
     }
 
     @Override

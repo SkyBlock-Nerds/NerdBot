@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.feature;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.hypixel.nerdbot.api.feature.BotFeature;
-import net.hypixel.nerdbot.channel.ChannelManager;
+import net.hypixel.nerdbot.cache.ChannelCache;
 
 import java.awt.Color;
 import java.time.OffsetDateTime;
@@ -27,11 +27,11 @@ public class HelloGoodbyeFeature extends BotFeature {
 
     @Override
     public void onFeatureStart() {
-        ChannelManager.getLogChannel().ifPresent(textChannel -> textChannel.sendMessageEmbeds(HELLO_THERE).queue());
+        ChannelCache.getLogChannel().ifPresent(textChannel -> textChannel.sendMessageEmbeds(HELLO_THERE).queue());
     }
 
     @Override
     public void onFeatureEnd() {
-        ChannelManager.getLogChannel().ifPresent(textChannel -> textChannel.sendMessageEmbeds(GOODBYE).queue());
+        ChannelCache.getLogChannel().ifPresent(textChannel -> textChannel.sendMessageEmbeds(GOODBYE).queue());
     }
 }
