@@ -99,6 +99,12 @@
       "bad_reaction_ratio": "You need at least a %d%% agree ratio to request a review!",
       "too_new": "This suggestion is too new to request a review!",
       "success": "This suggestion has been sent for review!"
+    },
+    "role": {
+      "invalid_role": "Could not find a role with ID `%s`!",
+      "removed_role": "Removed role %s from you! Use the same command to add it back.",
+      "added_role": "Added role %s to you! Use the same command to remove it.",
+      "list_roles": "**Assignable Roles:**\n%s\n\n**Use /role <name> to toggle the role!**"
     }
   }
 }
