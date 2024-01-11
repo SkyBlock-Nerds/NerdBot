@@ -9,6 +9,12 @@
   "user": {
     "not_found": "User not found"
   },
+  "cache": {
+    "suggestions": {
+      "not_found": "Couldn't find that suggestion in the cache! Please try again later!",
+      "user_deleted_post": "The original message for this suggestion was deleted!"
+    }
+  },
   "repository": {
     "not_found": "Repository not found",
     "saved_to_database": "Saved %d documents to the database!",
@@ -23,6 +29,7 @@
   },
   "commands": {
     "only_available_in_threads": "This command is only available in threads!",
+    "cannot_be_used_here": "This command cannot be used here!",
     "invalid_uuid": "Invalid UUID!",
     "language": {
       "language_set": "You set your language to %s"
@@ -81,6 +88,16 @@
     "log_level": {
       "invalid_level": "Invalid log level specified!",
       "set_level": "Set log level to %s"
+    },
+    "request_review": {
+      "not_suggestion_channel": "You cannot send threads in non-suggestion channels for review!",
+      "too_soon": "You cannot request another review on this thread yet!",
+      "not_own_thread": "You cannot request a review on a thread you did not create!",
+      "already_greenlit": "You can only request reviews on threads that are not greenlit!",
+      "not_enough_reactions": "You need at least %d agrees to request a review!",
+      "bad_reaction_ratio": "You need at least a %d%% agree ratio to request a review!",
+      "too_new": "This suggestion is too new to request a review!",
+      "success": "This suggestion has been sent for review!"
     }
   }
 }

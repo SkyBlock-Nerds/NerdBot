@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.api.language;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
@@ -53,13 +54,9 @@ public class TranslationManager {
     }
 
     public String translate(@Nullable DiscordUser user, String key, Object... args) {
-        UserLanguage language = DEFAULT_LANGUAGE;
-
-        if (user != null) {
-            language = user.getLanguage();
-        }
-
+        UserLanguage language = user != null ? user.getLanguage() : DEFAULT_LANGUAGE;
         JsonObject jsonObject = loadTranslations(language);
+
         if (jsonObject == null) {
             return ERROR_MESSAGE;
         }
@@ -110,5 +107,9 @@ public class TranslationManager {
 
     public void edit(InteractionHook hook, String key, Object... args) {
         hook.editOriginal(translate(key, args)).queue();
+    }
+
+    public void send(MessageChannel channel, DiscordUser discordUser, String key, Object... args) {
+        channel.sendMessage(translate(discordUser, key, args)).queue();
     }
 }
