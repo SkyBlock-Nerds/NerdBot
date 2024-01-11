@@ -65,10 +65,15 @@ public class MyCommands extends ApplicationCommand {
             return;
         }
 
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getUser().getId());
+
         try {
             MojangProfile mojangProfile = requestMojangProfile(member, username, true);
             updateMojangProfile(member, mojangProfile);
-            event.getHook().sendMessage("Updated your Mojang Profile to `" + mojangProfile.getUsername() + "` (`" + mojangProfile.getUniqueId() + "`).").queue();
+
+            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.verify.profile_updated", mojangProfile.getUsername(), mojangProfile.getUniqueId());
+
             ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
                         new EmbedBuilder()
@@ -93,9 +98,7 @@ public class MyCommands extends ApplicationCommand {
                 throw new RuntimeException("Log channel not found!");
             });
 
-        } catch (HttpException httpex) {
-            event.getHook().sendMessage("Unable to locate Minecraft UUID for `" + username + "`.").queue();
-        } catch (ProfileMismatchException exception) {
+        } catch (HttpException | ProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
         } catch (Exception exception) {
             log.error("Encountered an error while linking " + member.getUser().getName() + " (ID: " + member.getId() + ") to " + username + "!", exception);
@@ -169,7 +172,7 @@ public class MyCommands extends ApplicationCommand {
             event.getHook().sendMessage(exception.getMessage()).queue();
         } catch (Exception exception) {
             log.error("Encountered an error while requesting verification for " + event.getMember().getUser().getName() + " (ID: " + event.getMember().getId() + ") with username " + username + "!", exception);
-            event.getHook().sendMessage("Encountered an error while requesting verification! Please try again or contact a bot developer!").queue();
+            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.verify.error");
         }
     }
 

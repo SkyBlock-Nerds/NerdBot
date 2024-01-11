@@ -16,6 +16,9 @@
       "user_deleted_post": "The original message for this suggestion was deleted!"
     }
   },
+  "bot_logs": {
+    "member_removed_not_found": "Could not find member with ID %s who left the server!"
+  },
   "repository": {
     "not_found": "Repository not found",
     "saved_to_database": "Saved %d documents to the database!",
@@ -110,7 +113,9 @@
     },
     "verify": {
       "already_requested": "Your previous verification request has not been reviewed. You will be contacted via DM if any further information is required.",
-      "request_sent": "Your verification request has been sent. You will be contacted via DM if any further information is required."
+      "request_sent": "Your verification request has been sent. You will be contacted via DM if any further information is required.",
+      "error": "Encountered an error whilst attempting to verify you! If this persists, please contact us through Mod Mail",
+      "profile_updated": "Updated your Mojang profile to %s (`%s`)"
     },
     "birthday": {
       "removed": "Your birthday has been removed!",
@@ -131,7 +136,6 @@
       "exporting_thread": "Exporting thread %d/%d: %s by %s",
       "exported_thread": "Finished exporting thread %d/%d: %s by %s",
       "complete": "Finished exporting all threads from %s!",
-      ""
     }
   }
 }
