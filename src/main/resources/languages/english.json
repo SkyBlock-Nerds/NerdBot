@@ -32,6 +32,7 @@
     "only_available_in_threads": "This command is only available in threads!",
     "cannot_be_used_here": "This command cannot be used here!",
     "invalid_uuid": "Invalid UUID!",
+    "temp_file_error": "Failed to create temporary file: %s",
     "language": {
       "language_set": "You set your language to %s"
     },
@@ -124,6 +125,13 @@
       "thread_not_found": "Could not find a Mod Mail thread for %s!",
       "already_exists": "A Mod Mail thread for %s already exists: %s",
       "thread_found": "Found Mod Mail thread for %s: %s"
+    },
+    "export": {
+      "exporting_threads": "Exporting threads from %s...",
+      "exporting_thread": "Exporting thread %d/%d: %s by %s",
+      "exported_thread": "Finished exporting thread %d/%d: %s by %s",
+      "complete": "Finished exporting all threads from %s!",
+      ""
     }
   }
 }
