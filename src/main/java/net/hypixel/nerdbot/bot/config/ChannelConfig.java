@@ -45,6 +45,11 @@ public class ChannelConfig {
     private String announcementChannelId = "";
 
     /**
+     * The {@link TextChannel} ID for the bot-spam channel, used for miscellaneous bot output, mostly for debugging
+     */
+    private String botSpamChannelId = "";
+
+    /**
      * The {@link TextChannel} ID for the itemgen channel
      */
     private String[] genChannelIds = {};

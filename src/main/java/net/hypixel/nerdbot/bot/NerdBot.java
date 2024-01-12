@@ -253,7 +253,7 @@ public class NerdBot implements Bot {
 
     private void startUrlWatchers() {
         // Temporary
-        ChannelCache.getChannelByName("contributor-chat").ifPresentOrElse(textChannel -> {
+        ChannelCache.getTextChannelById(config.getChannelConfig().getBotSpamChannelId()).ifPresentOrElse(textChannel -> {
             URLWatcher statusPageWatcher = new URLWatcher("https://status.hypixel.net/api/v2/summary.json");
             statusPageWatcher.startWatching(1, TimeUnit.MINUTES, new StatusPageDataHandler());
         }, () -> {
