@@ -35,6 +35,7 @@
     "nerdArchiveCategoryId": "",
     "alphaArchiveCategoryId": "",
     "announcementChannelId": "",
+    "botSpamChannelId": "",
     "genChannelIds": [],
     "reactionChannels": [],
     "blacklistedChannels": []
