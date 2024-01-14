@@ -80,20 +80,7 @@ public class SuggestionListener {
                     }
                     List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
                     tags.add(Util.getTagByName(forum, suggestionConfig.getGreenlitTag()));
-                    ThreadChannelManager threadManager = thread.getManager();
-                    boolean wasArchived = thread.isArchived();
-                    if (wasArchived) {
-                        threadManager = threadManager.setArchived(false);
-                    }
-                    threadManager = threadManager.setAppliedTags(tags);
-
-                    // Handle Archiving and Locking
-                    if (wasArchived || suggestionConfig.isArchiveOnGreenlit()) {
-                        threadManager = threadManager.setArchived(true);
-                    }
-                    if (suggestionConfig.isLockOnGreenlit()) {
-                        threadManager = threadManager.setLocked(true);
-                    }
+                    ThreadChannelManager threadManager = getThreadChannelManager(thread, tags, suggestionConfig);
 
                     // Send Changes
                     threadManager.queue();
@@ -127,6 +114,29 @@ public class SuggestionListener {
 
             PrometheusMetrics.REVIEW_REQUEST_STATISTICS.labels(suggestion.getFirstMessage().get().getId(), suggestion.getFirstMessage().get().getAuthor().getId(), suggestion.getThreadName(), action).inc();
         }
+    }
+
+    @NotNull
+    private ThreadChannelManager getThreadChannelManager(ThreadChannel thread, List<ForumTag> tags, SuggestionConfig suggestionConfig) {
+        ThreadChannelManager threadManager = thread.getManager();
+        boolean wasArchived = thread.isArchived();
+
+        if (wasArchived) {
+            threadManager = threadManager.setArchived(false);
+        }
+
+        threadManager = threadManager.setAppliedTags(tags);
+
+        // Handle Archiving and Locking
+        if (wasArchived || suggestionConfig.isArchiveOnGreenlit()) {
+            threadManager = threadManager.setArchived(true);
+        }
+
+        if (suggestionConfig.isLockOnGreenlit()) {
+            threadManager = threadManager.setLocked(true);
+        }
+
+        return threadManager;
     }
 
     @SubscribeEvent

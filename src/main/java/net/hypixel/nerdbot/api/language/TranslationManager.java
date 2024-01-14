@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.api.language;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -17,10 +18,11 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+@Log4j2
 public class TranslationManager {
 
     private static final UserLanguage DEFAULT_LANGUAGE = UserLanguage.ENGLISH;
-    private static final String ERROR_MESSAGE = "Translation not found";
+    private static final String ERROR_MESSAGE = "Translation not found: %s";
     private static final Map<UserLanguage, JsonObject> TRANSLATION_CACHE = new HashMap<>();
     private static final TranslationManager INSTANCE = new TranslationManager();
 
@@ -43,7 +45,7 @@ public class TranslationManager {
             TRANSLATION_CACHE.put(language, jsonObject);
             return jsonObject;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to load translations for language " + language.name(), e);
             return null;
         }
     }
@@ -58,7 +60,7 @@ public class TranslationManager {
         JsonObject jsonObject = loadTranslations(language);
 
         if (jsonObject == null) {
-            return ERROR_MESSAGE;
+            return ERROR_MESSAGE.formatted(key);
         }
 
         JsonElement element = jsonObject;
@@ -73,12 +75,12 @@ public class TranslationManager {
             }
 
             if (element == null) {
-                return ERROR_MESSAGE;
+                return ERROR_MESSAGE.formatted(key);
             }
         }
 
         if (!element.isJsonPrimitive()) {
-            return ERROR_MESSAGE;
+            return ERROR_MESSAGE.formatted(key);
         }
 
         String translation = element.getAsString();
@@ -111,5 +113,9 @@ public class TranslationManager {
 
     public void send(MessageChannel channel, DiscordUser discordUser, String key, Object... args) {
         channel.sendMessage(translate(discordUser, key, args)).queue();
+    }
+
+    public void send(InteractionHook hook, DiscordUser discordUser, String key, Object... args) {
+        hook.sendMessage(translate(discordUser, key, args)).queue();
     }
 }
