@@ -50,7 +50,7 @@ public class SuggestionCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "request-review", description = "Request a greenlit review of your suggestion.")
     public void requestSuggestionReview(GuildSlashEvent event) {
-        event.deferReply().complete();
+        event.deferReply(true).complete();
 
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = repository.findOrCreateById(event.getMember().getId());
@@ -222,7 +222,8 @@ public class SuggestionCommands extends ApplicationCommand {
         });
 
         lastReviewRequestCache.put(event.getChannel().getId(), System.currentTimeMillis());
-        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.request_review.success");
+        event.getHook().deleteOriginal().complete();
+        event.getChannel().sendMessage(TranslationManager.getInstance().translate(discordUser, "commands.request_review.success")).queue();
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-id", description = "View user suggestions.")

@@ -135,7 +135,7 @@
       "exporting_threads": "Exporting threads from %s...",
       "exporting_thread": "Exporting thread %d/%d: %s by %s",
       "exported_thread": "Finished exporting thread %d/%d: %s by %s",
-      "complete": "Finished exporting all threads from %s!",
+      "complete": "Finished exporting all threads from %s!"
     }
   }
 }
