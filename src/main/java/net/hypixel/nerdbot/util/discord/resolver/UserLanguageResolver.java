@@ -19,10 +19,6 @@ public class UserLanguageResolver extends ParameterResolver implements SlashPara
 
     @Override
     public @Nullable Object resolve(@NotNull BContext context, @NotNull SlashCommandInfo info, @NotNull CommandInteractionPayload event, @NotNull OptionMapping optionMapping) {
-        if (UserLanguage.getLanguage(optionMapping.getAsString()) == null) {
-            return null;
-        }
-
         return UserLanguage.getLanguage(optionMapping.getAsString());
     }
 

@@ -32,6 +32,7 @@ import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.api.repository.Repository;
@@ -328,6 +329,26 @@ public class AdminCommands extends ApplicationCommand {
         JsonUtil.writeJsonFile(fileName, JsonUtil.setJsonValue(obj, key, element));
         log.info(event.getUser().getName() + " edited the config file!");
         TranslationManager.getInstance().reply(event, discordUser, "commands.config.updated");
+    }
+
+    @JDASlashCommand(name = "translations", subcommand = "reload", description = "Reload the translations file", defaultLocked = true)
+    public void reloadTranslations(GuildSlashEvent event, @AppOption(autocomplete = "languages") @Optional UserLanguage language) {
+        event.deferReply(true).complete();
+
+        if (language == null) {
+            for (UserLanguage value : UserLanguage.values()) {
+                TranslationManager.getInstance().reloadTranslations(value);
+                TranslationManager.getInstance().edit(event.getHook(), "commands.translations.reloaded", value.name());
+
+                // Set to different message once done
+                if (value.ordinal() == UserLanguage.VALUES.length - 1) {
+                    TranslationManager.getInstance().edit(event.getHook(), "commands.translations.reload_complete");
+                }
+            }
+        } else {
+            TranslationManager.getInstance().reloadTranslations(language);
+            TranslationManager.getInstance().edit(event.getHook(), "commands.translations.reloaded", language.name());
+        }
     }
 
     @JDASlashCommand(name = "metrics", subcommand = "toggle", description = "Toggle metrics collection", defaultLocked = true)

@@ -136,6 +136,10 @@
       "exporting_thread": "Exporting thread %d/%d: %s by %s",
       "exported_thread": "Finished exporting thread %d/%d: %s by %s",
       "complete": "Finished exporting all threads from %s!"
+    },
+    "translations": {
+      "reloaded": "Reloaded translations for language %s",
+      "reload_complete": "Reloaded translations for all languages!"
     }
   }
 }
