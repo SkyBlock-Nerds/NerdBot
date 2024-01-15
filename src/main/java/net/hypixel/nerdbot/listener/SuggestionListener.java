@@ -83,7 +83,7 @@ public class SuggestionListener {
                     ThreadChannelManager threadManager = getThreadChannelManager(thread, tags, suggestionConfig);
 
                     // Send Changes
-                    threadManager.queue();
+                    threadManager.complete();
                     GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(thread.getParentChannel().asForumChannel(), suggestion.getFirstMessage().get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
                     NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
                     NerdBotApp.getBot().getSuggestionCache().updateSuggestion(thread); // Update Suggestion
