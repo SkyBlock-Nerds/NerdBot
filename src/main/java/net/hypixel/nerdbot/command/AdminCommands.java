@@ -336,7 +336,7 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         if (language == null) {
-            for (UserLanguage value : UserLanguage.values()) {
+            for (UserLanguage value : UserLanguage.VALUES) {
                 TranslationManager.getInstance().reloadTranslations(value);
                 TranslationManager.getInstance().edit(event.getHook(), "commands.translations.reloaded", value.name());
 

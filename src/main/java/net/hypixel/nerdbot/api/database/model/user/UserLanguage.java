@@ -1,10 +1,11 @@
 package net.hypixel.nerdbot.api.database.model.user;
 
+import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
+@Getter
 public enum UserLanguage {
-    ENGLISH("English", "english.json"),
-    SPANISH("Español", "spanish.json");
+    ENGLISH("English", "english.json");
 
     public static final UserLanguage[] VALUES = values();
 
@@ -14,14 +15,6 @@ public enum UserLanguage {
     UserLanguage(String name, String fileName) {
         this.name = name;
         this.fileName = fileName;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getFileName() {
-        return fileName;
     }
 
     @Nullable
