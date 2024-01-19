@@ -21,7 +21,6 @@
     "member_removed_not_found": "Could not find member with ID %s who left the server!"
   },
   "repository": {
-    "not_found": "Repository not found",
     "saved_to_database": "Saved %d documents to the database!",
     "loaded_from_database": "Loaded %d documents from the database!",
     "save_error": "An error occurred while saving the repository: %s",

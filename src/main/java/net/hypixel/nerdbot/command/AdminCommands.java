@@ -619,7 +619,7 @@ public class AdminCommands extends ApplicationCommand {
         try {
             Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
             if (repository == null) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.not_found");
+                TranslationManager.getInstance().edit(event.getHook(), discordUser, "generic.not_found", "Repository");
                 return;
             }
 
@@ -647,7 +647,7 @@ public class AdminCommands extends ApplicationCommand {
             Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
 
             if (repository == null) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.not_found");
+                TranslationManager.getInstance().edit(event.getHook(), discordUser, "generic.not_found", "Repository");
                 return;
             }
 
@@ -670,7 +670,7 @@ public class AdminCommands extends ApplicationCommand {
             Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
 
             if (repository == null) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.not_found");
+                TranslationManager.getInstance().edit(event.getHook(), discordUser, "generic.not_found", "Repository");
                 return;
             }
 
