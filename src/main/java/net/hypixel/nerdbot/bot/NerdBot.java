@@ -29,8 +29,8 @@ import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.api.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.ChannelCache;
+import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.MessageCache;
 import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.feature.CurateFeature;
@@ -249,25 +249,15 @@ public class NerdBot implements Bot {
     }
 
     private void startUrlWatchers() {
-        // Temporary
-        ChannelCache.getChannelByName("contributor-chat").ifPresentOrElse(textChannel -> {
-            URLWatcher statusPageWatcher = new URLWatcher("https://status.hypixel.net/api/v2/summary.json");
-            statusPageWatcher.startWatching(1, TimeUnit.MINUTES, new StatusPageDataHandler());
-        }, () -> {
-            throw new IllegalStateException("Log channel not found!");
-        });
+        URLWatcher statusPageWatcher = new URLWatcher("https://status.hypixel.net/api/v2/summary.json");
+        URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
+        HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
+        HypixelThreadURLWatcher hypixelNewsWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/news-and-announcements.4/.rss");
 
-        ChannelCache.getChannelById(config.getChannelConfig().getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
-            URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
-            HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
-            HypixelThreadURLWatcher hypixelNewsWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/news-and-announcements.4/.rss");
-
-            fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
-            hypixelNewsWatcher.startWatching(1, TimeUnit.MINUTES);
-            skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
-        }, () -> {
-            throw new IllegalStateException("Announcement channel not found!");
-        });
+        statusPageWatcher.startWatching(1, TimeUnit.MINUTES, new StatusPageDataHandler());
+        fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
+        hypixelNewsWatcher.startWatching(1, TimeUnit.MINUTES);
+        skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
     }
 
     @Override

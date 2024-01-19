@@ -21,11 +21,12 @@ public class StatusPageDataHandler implements URLWatcher.DataHandler {
         log.info("  New content: " + newContent);
         log.info("  Changed values: " + changedValues.toString());
 
-        ChannelCache.getTextChannelByName("contributor-chat").ifPresentOrElse(textChannel -> {
+        ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getBotSpamChannelId()).ifPresentOrElse(textChannel -> {
             try {
                 List<FileUpload> files = List.of(
                     FileUpload.fromData(Util.createTempFile("status_page_data_old_content.json", NerdBotApp.GSON.toJson(oldContent))),
-                    FileUpload.fromData(Util.createTempFile("status_page_data_new_content.json", NerdBotApp.GSON.toJson(newContent)))
+                    FileUpload.fromData(Util.createTempFile("status_page_data_new_content.json", NerdBotApp.GSON.toJson(newContent))),
+                    FileUpload.fromData(Util.createTempFile("status_page_data_changed_values.json", NerdBotApp.GSON.toJson(changedValues)))
                 );
 
                 textChannel.sendMessage("**[STATUS PAGE DATA HANDLER]** Status page data changed!").addFiles(files).queue();
@@ -33,6 +34,6 @@ public class StatusPageDataHandler implements URLWatcher.DataHandler {
             } catch (IOException e) {
                 log.error("Failed to upload status page data to Discord!", e);
             }
-        }, () -> log.warn("No log channel set, cannot send status update!"));
+        }, () -> log.warn("No bot-spam channel set, cannot send status update!"));
     }
 }

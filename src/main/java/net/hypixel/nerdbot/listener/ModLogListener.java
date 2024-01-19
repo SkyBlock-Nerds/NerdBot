@@ -199,6 +199,7 @@ public class ModLogListener {
 
         User user = message.getAuthor();
         Channel channel = message.getChannel();
+        String messageContent = message.getContentDisplay().length() > 2_000 ? message.getContentDisplay().substring(0, 2_000) : message.getContentDisplay();
         EmbedBuilder messageEmbed = getDefaultEmbed()
             .setTitle("Message deleted")
             .setThumbnail(user.getAvatarUrl())
@@ -206,7 +207,7 @@ public class ModLogListener {
             .addField("User", user.getAsMention(), false)
             .addField("Channel", channel.getAsMention(), false)
             .addField("User ID", user.getId(), false)
-            .addField("Content", message.getContentDisplay().substring(0, 2_000), false);
+            .addField("Content", messageContent, false);
 
         if (!message.getAttachments().isEmpty()) {
             StringBuilder attachments = new StringBuilder();
