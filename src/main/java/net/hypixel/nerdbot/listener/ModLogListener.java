@@ -54,7 +54,7 @@ public class ModLogListener {
         Member member = event.getMember();
 
         if (member == null) {
-            ChannelCache.getLogChannel().get().sendMessage(TranslationManager.getInstance().translate("bot_logs.member_removed_not_found", event.getUser().getId())).queue();
+            ChannelCache.getLogChannel().get().sendMessage(TranslationManager.translate("bot_logs.member_removed_not_found", event.getUser().getId())).queue();
             return;
         }
 

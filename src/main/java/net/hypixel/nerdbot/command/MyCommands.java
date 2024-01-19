@@ -72,7 +72,7 @@ public class MyCommands extends ApplicationCommand {
             MojangProfile mojangProfile = requestMojangProfile(member, username, true);
             updateMojangProfile(member, mojangProfile);
 
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.verify.profile_updated", mojangProfile.getUsername(), mojangProfile.getUniqueId());
+            TranslationManager.edit(event.getHook(), discordUser, "commands.verify.profile_updated", mojangProfile.getUsername(), mojangProfile.getUniqueId());
 
             ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
@@ -116,7 +116,7 @@ public class MyCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
 
         if (VERIFY_CACHE.getIfPresent(event.getMember().getId()) != null) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.verify.already_requested");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.verify.already_requested");
             return;
         }
 
@@ -124,7 +124,7 @@ public class MyCommands extends ApplicationCommand {
             MojangProfile mojangProfile = requestMojangProfile(event.getMember(), username, true);
 
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.verify.request_sent");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.verify.request_sent");
 
             ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
@@ -172,7 +172,7 @@ public class MyCommands extends ApplicationCommand {
             event.getHook().sendMessage(exception.getMessage()).queue();
         } catch (Exception exception) {
             log.error("Encountered an error while requesting verification for " + event.getMember().getUser().getName() + " (ID: " + event.getMember().getId() + ") with username " + username + "!", exception);
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.verify.error");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.verify.error");
         }
     }
 
@@ -237,7 +237,7 @@ public class MyCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember().getIdLong(), tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "cache.suggestions.filtered_none_found");
+            TranslationManager.edit(event.getHook(), discordUser, "cache.suggestions.filtered_none_found");
             return;
         }
 
@@ -263,7 +263,7 @@ public class MyCommands extends ApplicationCommand {
         discordUser.setBirthdayData(new BirthdayData());
         discordUserRepository.cacheObject(discordUser);
 
-        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.birthday.removed");
+        TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.removed");
     }
 
     @JDASlashCommand(name = "birthday", subcommand = "get", description = "Get your birthday.")
@@ -274,12 +274,12 @@ public class MyCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (!discordUser.getBirthdayData().isBirthdaySet()) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.birthday.not_set_yet");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.not_set_yet");
             return;
         }
 
         Date birthday = discordUser.getBirthdayData().getBirthday();
-        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.birthday.set", DateFormatUtils.format(birthday, "dd MMMM yyyy"));
+        TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.set", DateFormatUtils.format(birthday, "dd MMMM yyyy"));
     }
 
     @JDASlashCommand(name = "birthday", subcommand = "set", description = "Set your birthday.")
@@ -298,9 +298,9 @@ public class MyCommands extends ApplicationCommand {
             discordUser.setBirthday(DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"}));
             discordUser.getBirthdayData().setShouldAnnounceAge(announceAge != null && announceAge);
             discordUser.scheduleBirthdayReminder(discordUser.getBirthdayData().getBirthdayThisYear());
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.birthday.set", birthday);
+            TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.set", birthday);
         } catch (Exception ex) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.birthday.bad_date");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.bad_date");
             ex.printStackTrace();
         }
     }

@@ -72,7 +72,6 @@ public class NerdBot implements Bot {
         new ProfileUpdateFeature()
     );
 
-    @Getter
     private final Database database = new Database(System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/"), "skyblock_nerds");
     @Getter
     private SuggestionCache suggestionCache;

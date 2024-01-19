@@ -31,19 +31,19 @@ public class RoleCommands extends ApplicationCommand {
         RoleManager.getPingableRoleByName(role).ifPresentOrElse(pingableRole -> {
             Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
             if (discordRole == null) {
-                TranslationManager.getInstance().edit(event.getHook(), "commands.role.invalid_role");
+                TranslationManager.edit(event.getHook(), "commands.role.invalid_role");
                 return;
             }
 
             Member member = event.getMember();
             if (RoleManager.hasRole(member, role)) {
                 event.getGuild().removeRoleFromMember(member, discordRole).queue();
-                TranslationManager.getInstance().edit(event.getHook(), "commands.role.removed_role", discordRole.getAsMention());
+                TranslationManager.edit(event.getHook(), "commands.role.removed_role", discordRole.getAsMention());
             } else {
                 event.getGuild().addRoleToMember(member, discordRole).queue();
-                TranslationManager.getInstance().edit(event.getHook(), "commands.role.added_role", discordRole.getAsMention());
+                TranslationManager.edit(event.getHook(), "commands.role.added_role", discordRole.getAsMention());
             }
-        }, () -> TranslationManager.getInstance().edit(event.getHook(), "commands.role.invalid_role", role));
+        }, () -> TranslationManager.edit(event.getHook(), "commands.role.invalid_role", role));
     }
 
     @AutocompletionHandler(name = "pingable-roles", showUserInput = false)
@@ -58,6 +58,6 @@ public class RoleCommands extends ApplicationCommand {
             .map(PingableRole::name)
             .collect(Collectors.joining("\n"));
 
-        TranslationManager.getInstance().edit(event.getHook(), "commands.role.list_roles", roles);
+        TranslationManager.edit(event.getHook(), "commands.role.list_roles", roles);
     }
 }

@@ -56,7 +56,7 @@ public class SuggestionCommands extends ApplicationCommand {
         DiscordUser discordUser = repository.findOrCreateById(event.getMember().getId());
 
         if (event.getChannel().getType() != ChannelType.GUILD_PUBLIC_THREAD) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.cannot_be_used_here");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.cannot_be_used_here");
             return;
         }
 
@@ -65,12 +65,12 @@ public class SuggestionCommands extends ApplicationCommand {
 
         // Handle Non-Suggestion Channels
         if (Util.safeArrayStream(suggestionConfig.getSuggestionForumIds(), suggestionConfig.getAlphaSuggestionForumIds()).noneMatch(forumId -> forumId.equals(parentId))) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.request_review.not_suggestion_channel");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.not_suggestion_channel");
             return;
         }
 
         if (lastReviewRequestCache.getIfPresent(event.getChannel().getId()) != null) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.request_review.too_soon");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.too_soon");
             return;
         }
 
@@ -78,43 +78,43 @@ public class SuggestionCommands extends ApplicationCommand {
 
         // Handle Missing Suggestion
         if (suggestion == null) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "cache.suggestions.not_found");
+            TranslationManager.edit(event.getHook(), discordUser, "cache.suggestions.not_found");
             return;
         }
 
         // Handle User Deleted Posts
         if (suggestion.getFirstMessage().isEmpty()) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "cache.suggestions.user_deleted_post");
+            TranslationManager.edit(event.getHook(), discordUser, "cache.suggestions.user_deleted_post");
             return;
         }
 
         // No Friends Allowed
         if (suggestion.getFirstMessage().get().getAuthor().getIdLong() != event.getUser().getIdLong()) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.request_review.not_own_thread");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.not_own_thread");
             return;
         }
 
         // Handle Already Greenlit
         if (suggestion.isGreenlit()) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.request_review.already_greenlit");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.already_greenlit");
             return;
         }
 
         // Handle Minimum Agrees
         if (suggestion.getAgrees() < suggestionConfig.getRequestReviewThreshold()) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.request_review.not_enough_reactions", suggestionConfig.getRequestReviewThreshold());
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.not_enough_reactions", suggestionConfig.getRequestReviewThreshold());
             return;
         }
 
         // Make sure the suggestion is old enough
         if (System.currentTimeMillis() - suggestion.getFirstMessage().get().getTimeCreated().toInstant().toEpochMilli() < suggestionConfig.getMinimumSuggestionRequestAge()) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.request_review.too_new");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.too_new");
             return;
         }
 
         // Handle Greenlit Ratio
         if (suggestionConfig.isEnforcingGreenlitRatioForRequestReview() && suggestion.getRatio() <= suggestionConfig.getGreenlitRatio()) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.request_review.bad_reaction_ratio", suggestionConfig.getGreenlitRatio());
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.bad_reaction_ratio", suggestionConfig.getGreenlitRatio());
             return;
         }
 
@@ -223,7 +223,7 @@ public class SuggestionCommands extends ApplicationCommand {
 
         lastReviewRequestCache.put(event.getChannel().getId(), System.currentTimeMillis());
         event.getHook().deleteOriginal().complete();
-        event.getChannel().sendMessage(TranslationManager.getInstance().translate(discordUser, "commands.request_review.success")).queue();
+        event.getChannel().sendMessage(TranslationManager.translate(discordUser, "commands.request_review.success")).queue();
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-id", description = "View user suggestions.")
@@ -244,7 +244,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(userID, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            TranslationManager.getInstance().edit(event.getHook(), "commands.suggestions.filtered_none_found");
+            TranslationManager.edit(event.getHook(), "commands.suggestions.filtered_none_found");
             return;
         }
 
@@ -273,7 +273,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(member.getIdLong(), tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            TranslationManager.getInstance().edit(event.getHook(), "commands.suggestions.filtered_none_found");
+            TranslationManager.edit(event.getHook(), "commands.suggestions.filtered_none_found");
             return;
         }
 
@@ -301,7 +301,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(null, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            TranslationManager.getInstance().edit(event.getHook(), "commands.suggestions.filtered_none_found");
+            TranslationManager.edit(event.getHook(), "commands.suggestions.filtered_none_found");
             return;
         }
 

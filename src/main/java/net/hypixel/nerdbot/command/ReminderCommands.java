@@ -47,28 +47,28 @@ public class ReminderCommands extends ApplicationCommand {
         DiscordUser user = userRepository.findById(event.getUser().getId());
 
         if (user == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
         // Check if the bot has permission to send messages in the channel
         if (!event.getGuild().getSelfMember().hasPermission(event.getGuildChannel(), Permission.MESSAGE_SEND)) {
-            TranslationManager.getInstance().edit(event.getHook(), user, "permissions.cannot_send_messages");
+            TranslationManager.edit(event.getHook(), user, "permissions.cannot_send_messages");
             return;
         }
 
         if (event.getChannel() instanceof ThreadChannel && !event.getGuild().getSelfMember().hasPermission(event.getGuildChannel(), Permission.MESSAGE_SEND_IN_THREADS)) {
-            TranslationManager.getInstance().edit(event.getHook(), user, "permissions.cannot_send_messages_in_threads");
+            TranslationManager.edit(event.getHook(), user, "permissions.cannot_send_messages_in_threads");
             return;
         }
 
         if (description == null) {
-            TranslationManager.getInstance().edit(event.getHook(), user, "commands.reminders.no_description");
+            TranslationManager.edit(event.getHook(), user, "commands.reminders.no_description");
             return;
         }
 
         if (description.length() > 4_096) {
-            TranslationManager.getInstance().edit(event.getHook(), user, "commands.reminders.description_too_long", 4_096);
+            TranslationManager.edit(event.getHook(), user, "commands.reminders.description_too_long", 4_096);
             return;
         }
 
@@ -93,14 +93,14 @@ public class ReminderCommands extends ApplicationCommand {
             try {
                 date = parseCustomFormat(time);
             } catch (DateTimeParseException exception) {
-                TranslationManager.getInstance().edit(event.getHook(), user, "commands.reminders.invalid_time_format");
+                TranslationManager.edit(event.getHook(), user, "commands.reminders.invalid_time_format");
                 return;
             }
         }
 
         // Check if the provided time is in the past
         if (date.before(new Date())) {
-            TranslationManager.getInstance().edit(event.getHook(), user, "commands.reminders.time_in_past");
+            TranslationManager.edit(event.getHook(), user, "commands.reminders.time_in_past");
             return;
         }
 
@@ -119,7 +119,7 @@ public class ReminderCommands extends ApplicationCommand {
         if (result != null && result.wasAcknowledged() && result.getUpsertedId() != null) {
             MessageEditBuilder builder = new MessageEditBuilder();
             builder.setEmbeds(new EmbedBuilder().setDescription(description).build());
-            builder.setContent(TranslationManager.getInstance().translate(user, "commands.reminders.reminder_set", new DiscordTimestamp(date.getTime()).toLongDateTime()));
+            builder.setContent(TranslationManager.translate(user, "commands.reminders.reminder_set", new DiscordTimestamp(date.getTime()).toLongDateTime()));
             event.getHook().editOriginal(builder.build()).complete();
 
             // Sending a nice confirmation message within the dms, so it doesn't disappear.
@@ -140,7 +140,7 @@ public class ReminderCommands extends ApplicationCommand {
             reminder.schedule();
         } else {
             // If the reminder could not be saved, send an error message and log the error too
-            TranslationManager.getInstance().edit(event.getHook(), user, "commands.reminders.save_error");
+            TranslationManager.edit(event.getHook(), user, "commands.reminders.save_error");
             log.error("Could not save reminder: " + reminder + " for user: " + event.getUser().getId() + " (" + result + ")");
         }
     }
@@ -153,7 +153,7 @@ public class ReminderCommands extends ApplicationCommand {
         DiscordUser user = userRepository.findById(event.getUser().getId());
 
         if (user == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -164,7 +164,7 @@ public class ReminderCommands extends ApplicationCommand {
             .toList());
 
         if (reminders.isEmpty()) {
-            TranslationManager.getInstance().edit(event.getHook(), user, "commands.reminders.no_reminders");
+            TranslationManager.edit(event.getHook(), user, "commands.reminders.no_reminders");
             return;
         }
 
@@ -185,7 +185,7 @@ public class ReminderCommands extends ApplicationCommand {
         }
 
         builder.append("\n**")
-            .append(TranslationManager.getInstance().translate(user, "commands.reminders.delete_reminder"))
+            .append(TranslationManager.translate(user, "commands.reminders.delete_reminder"))
             .append("**");
 
         event.getHook().editOriginal(builder.toString()).queue();
@@ -199,7 +199,7 @@ public class ReminderCommands extends ApplicationCommand {
         DiscordUser user = userRepository.findById(event.getUser().getId());
 
         if (user == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -210,7 +210,7 @@ public class ReminderCommands extends ApplicationCommand {
 
             // Check if the reminder exists first
             if (reminder == null || !reminder.getUserId().equalsIgnoreCase(event.getUser().getId())) {
-                TranslationManager.getInstance().edit(event.getHook(), user, "commands.reminders.reminder_not_found");
+                TranslationManager.edit(event.getHook(), user, "commands.reminders.reminder_not_found");
                 return;
             }
 
@@ -222,15 +222,15 @@ public class ReminderCommands extends ApplicationCommand {
                     reminder.getTimer().cancel();
                 }
 
-                TranslationManager.getInstance().edit(event.getHook(), user, "commands.reminders.reminder_deleted", reminder.getUuid());
+                TranslationManager.edit(event.getHook(), user, "commands.reminders.reminder_deleted", reminder.getUuid());
                 log.info("Deleted reminder: " + uuid + " for user: " + event.getUser().getId());
             } else {
                 // If the reminder could not be deleted, send an error message and log the error
-                TranslationManager.getInstance().edit(event.getHook(), user, "commands.reminders.delete_error", uuid);
+                TranslationManager.edit(event.getHook(), user, "commands.reminders.delete_error", uuid);
                 log.info("Could not delete reminder " + uuid + " for user: " + event.getUser().getId() + " (" + result + ")");
             }
         } catch (IllegalArgumentException exception) {
-            TranslationManager.getInstance().edit(event.getHook(), user, "commands.invalid_uuid");
+            TranslationManager.edit(event.getHook(), user, "commands.invalid_uuid");
         }
     }
 

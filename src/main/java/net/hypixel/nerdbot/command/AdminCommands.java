@@ -72,12 +72,12 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
+            TranslationManager.reply(event, "generic.not_found", "User");
             return;
         }
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.getInstance().reply(event, discordUser, "database.not_connected");
+            TranslationManager.reply(event, discordUser, "database.not_connected");
             log.error("Couldn't connect to the database!");
             return;
         }
@@ -92,9 +92,9 @@ public class AdminCommands extends ApplicationCommand {
             List<GreenlitMessage> output = forumChannelCurator.curate(channel);
 
             if (output.isEmpty()) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
+                TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
             } else {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "curator.greenlit_messages", output.size());
+                TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_messages", output.size());
             }
         });
     }
@@ -105,7 +105,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
+            TranslationManager.reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -135,12 +135,12 @@ public class AdminCommands extends ApplicationCommand {
                 invites.add(invite);
                 log.info("Created new temporary invite '" + invite.getUrl() + "' for channel " + selected.getName() + " by " + event.getUser().getName());
             } catch (InsufficientPermissionException exception) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "permissions.cannot_create_invites", selected.getAsMention());
+                TranslationManager.edit(event.getHook(), discordUser, "permissions.cannot_create_invites", selected.getAsMention());
                 return;
             }
         }
 
-        StringBuilder stringBuilder = new StringBuilder("**" + TranslationManager.getInstance().translate(discordUser, "commands.invite.header", invites.size()) + "**\n");
+        StringBuilder stringBuilder = new StringBuilder("**" + TranslationManager.translate(discordUser, "commands.invite.header", invites.size()) + "**\n");
         invites.forEach(invite -> stringBuilder.append(invite.getUrl()).append("\n"));
         event.getHook().editOriginal(stringBuilder.toString()).queue();
     }
@@ -169,7 +169,7 @@ public class AdminCommands extends ApplicationCommand {
             throw new IllegalStateException("Log channel not found!");
         });
 
-        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.invite.deleted", invites.size());
+        TranslationManager.edit(event.getHook(), discordUser, "commands.invite.deleted", invites.size());
     }
 
     @JDASlashCommand(name = "lock", description = "Locks the thread that the command is executed in", defaultLocked = true)
@@ -178,12 +178,12 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
+            TranslationManager.reply(event, "generic.not_found", "User");
             return;
         }
 
         if (!(event.getChannel() instanceof ThreadChannel threadChannel)) {
-            TranslationManager.getInstance().reply(event, discordUser, "commands.only_available_in_threads");
+            TranslationManager.reply(event, discordUser, "commands.only_available_in_threads");
             return;
         }
 
@@ -206,7 +206,7 @@ public class AdminCommands extends ApplicationCommand {
         threadManager.setLocked(!locked).queue(unused ->
                 event.reply("This thread is now " + (!locked ? "locked" : "unlocked") + "!").queue(),
             throwable -> {
-                TranslationManager.getInstance().reply(event, discordUser, "commands.lock.error");
+                TranslationManager.reply(event, discordUser, "commands.lock.error");
                 log.error("An error occurred when locking the thread " + threadChannel.getId() + "!", throwable);
             });
     }
@@ -219,7 +219,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
+            TranslationManager.reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -239,7 +239,7 @@ public class AdminCommands extends ApplicationCommand {
             // Moves Channel to Nerd Archive category here.
             channel.getManager().setParent(nerdArchive).queue();
             channel.getManager().sync(nerdArchive.getPermissionContainer()).queue();
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.archive.channel_moved", channel.getAsMention(), nerdArchive.getName());
+            TranslationManager.edit(event.getHook(), discordUser, "commands.archive.channel_moved", channel.getAsMention(), nerdArchive.getName());
             return;
         }
 
@@ -248,7 +248,7 @@ public class AdminCommands extends ApplicationCommand {
             // Moves Channel to Alpha Archive category here.
             channel.getManager().setParent(alphaArchive).queue();
             channel.getManager().sync(alphaArchive.getPermissionContainer()).queue();
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.archive.channel_moved", channel.getAsMention(), alphaArchive.getName());
+            TranslationManager.edit(event.getHook(), discordUser, "commands.archive.channel_moved", channel.getAsMention(), alphaArchive.getName());
             return;
         }
 
@@ -256,7 +256,7 @@ public class AdminCommands extends ApplicationCommand {
         // Moves Channel to Public Archive category here.
         channel.getManager().setParent(publicArchive).queue();
         channel.getManager().sync(publicArchive.getPermissionContainer()).queue();
-        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.archive.channel_moved", channel.getAsMention(), publicArchive.getName());
+        TranslationManager.edit(event.getHook(), discordUser, "commands.archive.channel_moved", channel.getAsMention(), publicArchive.getName());
     }
 
     @JDASlashCommand(name = "config", subcommand = "show", description = "View the currently loaded config", defaultLocked = true)
@@ -267,7 +267,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -275,7 +275,7 @@ public class AdminCommands extends ApplicationCommand {
             File file = Util.createTempFile("config-" + System.currentTimeMillis() + ".json", NerdBotApp.GSON.toJson(NerdBotApp.getBot().getConfig()));
             event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.config.read_error");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.config.read_error");
             log.error("An error occurred when reading the JSON file!", exception);
         }
     }
@@ -286,7 +286,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
+            TranslationManager.reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -296,7 +296,7 @@ public class AdminCommands extends ApplicationCommand {
         bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
         PrometheusMetrics.setMetricsEnabled(bot.getConfig().getMetricsConfig().isEnabled());
 
-        TranslationManager.getInstance().reply(event, discordUser, "commands.config.reloaded");
+        TranslationManager.reply(event, discordUser, "commands.config.reloaded");
     }
 
     @JDASlashCommand(name = "config", subcommand = "edit", description = "Edit the config file", defaultLocked = true)
@@ -305,7 +305,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
+            TranslationManager.reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -314,7 +314,7 @@ public class AdminCommands extends ApplicationCommand {
         JsonObject obj = JsonUtil.readJsonFile(fileName);
 
         if (obj == null) {
-            TranslationManager.getInstance().reply(event, discordUser, "commands.config.read_error");
+            TranslationManager.reply(event, discordUser, "commands.config.read_error");
             return;
         }
 
@@ -322,13 +322,13 @@ public class AdminCommands extends ApplicationCommand {
         try {
             element = JsonParser.parseString(value);
         } catch (JsonSyntaxException exception) {
-            TranslationManager.getInstance().reply(event, discordUser, "commands.config.invalid_value", exception.getMessage());
+            TranslationManager.reply(event, discordUser, "commands.config.invalid_value", exception.getMessage());
             return;
         }
 
         JsonUtil.writeJsonFile(fileName, JsonUtil.setJsonValue(obj, key, element));
         log.info(event.getUser().getName() + " edited the config file!");
-        TranslationManager.getInstance().reply(event, discordUser, "commands.config.updated");
+        TranslationManager.reply(event, discordUser, "commands.config.updated");
     }
 
     @JDASlashCommand(name = "translations", subcommand = "reload", description = "Reload the translations file", defaultLocked = true)
@@ -337,17 +337,17 @@ public class AdminCommands extends ApplicationCommand {
 
         if (language == null) {
             for (UserLanguage value : UserLanguage.VALUES) {
-                TranslationManager.getInstance().reloadTranslations(value);
-                TranslationManager.getInstance().edit(event.getHook(), "commands.translations.reloaded", value.name());
+                TranslationManager.reloadTranslations(value);
+                TranslationManager.edit(event.getHook(), "commands.translations.reloaded", value.name());
 
                 // Set to different message once done
                 if (value.ordinal() == UserLanguage.VALUES.length - 1) {
-                    TranslationManager.getInstance().edit(event.getHook(), "commands.translations.reload_complete");
+                    TranslationManager.edit(event.getHook(), "commands.translations.reload_complete");
                 }
             }
         } else {
-            TranslationManager.getInstance().reloadTranslations(language);
-            TranslationManager.getInstance().edit(event.getHook(), "commands.translations.reloaded", language.name());
+            TranslationManager.reloadTranslations(language);
+            TranslationManager.edit(event.getHook(), "commands.translations.reloaded", language.name());
         }
     }
 
@@ -357,7 +357,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
+            TranslationManager.reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -366,7 +366,7 @@ public class AdminCommands extends ApplicationCommand {
         metricsConfig.setEnabled(!metricsConfig.isEnabled());
         PrometheusMetrics.setMetricsEnabled(metricsConfig.isEnabled());
 
-        TranslationManager.getInstance().reply(event, discordUser, "commands.metrics.toggle", metricsConfig.isEnabled());
+        TranslationManager.reply(event, discordUser, "commands.metrics.toggle", metricsConfig.isEnabled());
     }
 
     @JDASlashCommand(
@@ -416,7 +416,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(member.getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
+            TranslationManager.reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -425,7 +425,7 @@ public class AdminCommands extends ApplicationCommand {
         try {
             MojangProfile mojangProfile = MyCommands.requestMojangProfile(member, username, bypassSocial);
             MyCommands.updateMojangProfile(member, mojangProfile);
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.user.linked_by_admin", member.getAsMention(), mojangProfile.getUsername(), mojangProfile.getUniqueId());
+            TranslationManager.edit(event.getHook(), discordUser, "commands.user.linked_by_admin", member.getAsMention(), mojangProfile.getUsername(), mojangProfile.getUniqueId());
 
             ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
                 textChannel.sendMessageEmbeds(
@@ -449,10 +449,10 @@ public class AdminCommands extends ApplicationCommand {
                 throw new IllegalStateException("Log channel not found!");
             });
         } catch (HttpException exception) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.user.username_not_found", username, exception.getMessage());
+            TranslationManager.edit(event.getHook(), discordUser, "commands.user.username_not_found", username, exception.getMessage());
             log.error("Unable to locate Minecraft UUID for " + username + "!", exception);
         } catch (ProfileMismatchException exception) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.user.profile_mismatch", username, exception.getMessage());
+            TranslationManager.edit(event.getHook(), discordUser, "commands.user.profile_mismatch", username, exception.getMessage());
         }
     }
 
@@ -469,7 +469,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -491,7 +491,7 @@ public class AdminCommands extends ApplicationCommand {
                     .build()
             ).queue();
         } else {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.user.no_missing_profiles");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.user.no_missing_profiles");
         }
     }
 
@@ -535,7 +535,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -562,7 +562,7 @@ public class AdminCommands extends ApplicationCommand {
                 }
             });
 
-        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.user.migrated_profiles", mojangProfiles.size());
+        TranslationManager.edit(event.getHook(), discordUser, "commands.user.migrated_profiles", mojangProfiles.size());
     }
 
     @JDASlashCommand(name = "flared", description = "Add the Flared tag to a suggestion and lock it", defaultLocked = true)
@@ -571,25 +571,25 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
+            TranslationManager.reply(event, "generic.not_found", "User");
             return;
         }
 
         Channel channel = event.getChannel();
         if (!(channel instanceof ThreadChannel threadChannel) || !(threadChannel.getParentChannel() instanceof ForumChannel forumChannel)) {
-            TranslationManager.getInstance().reply(event, discordUser, "commands.only_available_in_threads");
+            TranslationManager.reply(event, discordUser, "commands.only_available_in_threads");
             return;
         }
 
         SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
         if (Util.hasTagByName(forumChannel, suggestionConfig.getFlaredTag())) {
-            TranslationManager.getInstance().reply(event, discordUser, "commands.flared.no_tag", "Flared");
+            TranslationManager.reply(event, discordUser, "commands.flared.no_tag", "Flared");
             return;
         }
 
         ForumTag flaredTag = Util.getTagByName(forumChannel, suggestionConfig.getFlaredTag());
         if (threadChannel.getAppliedTags().contains(flaredTag)) {
-            TranslationManager.getInstance().reply(event, discordUser, "commands.flared.already_tagged");
+            TranslationManager.reply(event, discordUser, "commands.flared.already_tagged");
             return;
         }
 
@@ -601,7 +601,7 @@ public class AdminCommands extends ApplicationCommand {
             .setAppliedTags(appliedTags)
             .queue();
 
-        TranslationManager.getInstance().reply(event, discordUser, "commands.flared.tagged", event.getUser().getAsMention(), flaredTag.getName());
+        TranslationManager.reply(event, discordUser, "commands.flared.tagged", event.getUser().getAsMention(), flaredTag.getName());
     }
 
     @JDASlashCommand(name = "cache", subcommand = "force-save", description = "Force save the specified cache to the database", defaultLocked = true)
@@ -612,21 +612,21 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
         try {
             Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
             if (repository == null) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "generic.not_found", "Repository");
+                TranslationManager.edit(event.getHook(), discordUser, "generic.not_found", "Repository");
                 return;
             }
 
             repository.saveAllToDatabase();
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.saved_to_database", repository.getCache().estimatedSize());
+            TranslationManager.edit(event.getHook(), discordUser, "repository.saved_to_database", repository.getCache().estimatedSize());
         } catch (RepositoryException exception) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.save_error", exception.getMessage());
+            TranslationManager.edit(event.getHook(), discordUser, "repository.save_error", exception.getMessage());
             log.error("An error occurred while saving the repository!", exception);
         }
     }
@@ -639,7 +639,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -647,14 +647,14 @@ public class AdminCommands extends ApplicationCommand {
             Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
 
             if (repository == null) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "generic.not_found", "Repository");
+                TranslationManager.edit(event.getHook(), discordUser, "generic.not_found", "Repository");
                 return;
             }
 
             repository.loadAllDocumentsIntoCache();
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.loaded_from_database", repository.getCache().estimatedSize());
+            TranslationManager.edit(event.getHook(), discordUser, "repository.loaded_from_database", repository.getCache().estimatedSize());
         } catch (RepositoryException exception) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.load_error", exception.getMessage());
+            TranslationManager.edit(event.getHook(), discordUser, "repository.load_error", exception.getMessage());
             log.error("An error occurred while saving the repository!", exception);
         }
     }
@@ -670,13 +670,13 @@ public class AdminCommands extends ApplicationCommand {
             Repository<?> repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(repositoryName);
 
             if (repository == null) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "generic.not_found", "Repository");
+                TranslationManager.edit(event.getHook(), discordUser, "generic.not_found", "Repository");
                 return;
             }
 
             event.getHook().editOriginal(repository.getCache().stats().toString()).queue();
         } catch (RepositoryException exception) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "repository.stats_error", exception.getMessage());
+            TranslationManager.edit(event.getHook(), discordUser, "repository.stats_error", exception.getMessage());
             log.error("An error occurred while saving the repository!", exception);
         }
     }
@@ -694,7 +694,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -711,7 +711,7 @@ public class AdminCommands extends ApplicationCommand {
                 fromTag = channel.getAvailableTagsByName(from, true).get(0);
                 toTag = channel.getAvailableTagsByName(to, true).get(0);
             } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.transfer_tag.invalid_tags");
+                TranslationManager.edit(event.getHook(), discordUser, "commands.transfer_tag.invalid_tags");
                 return;
             }
         }
@@ -728,13 +728,13 @@ public class AdminCommands extends ApplicationCommand {
 
         int total = threadChannels.size();
         if (total == 0) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.transfer_tag.no_threads_found", fromTag.getName());
+            TranslationManager.edit(event.getHook(), discordUser, "commands.transfer_tag.no_threads_found", fromTag.getName());
             return;
         }
 
         int processed = 0;
         int modulo = Math.min(total, 10);
-        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.transfer_tag.updated_threads", 0, total);
+        TranslationManager.edit(event.getHook(), discordUser, "commands.transfer_tag.updated_threads", 0, total);
 
         // Process Threads
         for (ThreadChannel threadChannel : threadChannels) {
@@ -763,11 +763,11 @@ public class AdminCommands extends ApplicationCommand {
             }
 
             if (++processed % modulo == 0 && processed != total) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.transfer_tag.updated_threads", processed, total);
+                TranslationManager.edit(event.getHook(), discordUser, "commands.transfer_tag.updated_threads", processed, total);
             }
         }
 
-        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.transfer_tag.updated_threads_complete", fromTag.getName(), toTag.getName(), total);
+        TranslationManager.edit(event.getHook(), discordUser, "commands.transfer_tag.updated_threads_complete", fromTag.getName(), toTag.getName(), total);
     }
 
     @AutocompletionHandler(name = "forumchannels", mode = AutocompletionMode.FUZZY, showUserInput = false)
@@ -794,19 +794,19 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
         Level logLevel = Level.toLevel(level.toUpperCase());
 
         if (logLevel == null) {
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.log_level.invalid_level");
+            TranslationManager.edit(event.getHook(), discordUser, "commands.log_level.invalid_level");
             return;
         }
 
         LoggingUtil.setGlobalLogLevel(logLevel);
-        TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.log_level.set_level", logLevel);
+        TranslationManager.edit(event.getHook(), discordUser, "commands.log_level.set_level", logLevel);
     }
 
     @AutocompletionHandler(name = "loglevels", mode = AutocompletionMode.FUZZY, showUserInput = false)

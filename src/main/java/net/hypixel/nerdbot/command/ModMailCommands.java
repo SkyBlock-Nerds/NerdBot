@@ -35,12 +35,12 @@ public class ModMailCommands extends ApplicationCommand {
         ChannelCache.getModMailChannel().ifPresentOrElse(forumChannel -> {
             Optional<ThreadChannel> modMailThread = getModMailThread(member.getUser());
             if (modMailThread.isEmpty()) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.mod_mail.thread_not_found", member.getAsMention());
+                TranslationManager.edit(event.getHook(), discordUser, "commands.mod_mail.thread_not_found", member.getAsMention());
                 return;
             }
 
-            TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.mod_mail.thread_found", member.getAsMention(), modMailThread.get().getAsMention());
-        }, () -> TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.mod_mail.channel_not_found"));
+            TranslationManager.edit(event.getHook(), discordUser, "commands.mod_mail.thread_found", member.getAsMention(), modMailThread.get().getAsMention());
+        }, () -> TranslationManager.edit(event.getHook(), discordUser, "commands.mod_mail.channel_not_found"));
     }
 
     @JDASlashCommand(name = "modmail", subcommand = "new", description = "Create a new Mod Mail thread for the specified member", defaultLocked = true)
@@ -53,7 +53,7 @@ public class ModMailCommands extends ApplicationCommand {
         ChannelCache.getModMailChannel().ifPresentOrElse(forumChannel -> {
             Optional<ThreadChannel> modMailThread = getModMailThread(member.getUser());
             if (modMailThread.isPresent()) {
-                TranslationManager.getInstance().edit(event.getHook(), commandSender, "commands.mod_mail.already_exists", member.getAsMention(), modMailThread.get().getAsMention());
+                TranslationManager.edit(event.getHook(), commandSender, "commands.mod_mail.already_exists", member.getAsMention(), modMailThread.get().getAsMention());
                 return;
             }
 
@@ -82,8 +82,8 @@ public class ModMailCommands extends ApplicationCommand {
             });
 
             log.info("Forcefully created new Mod Mail thread for " + member.getId() + " (" + member.getEffectiveName() + ")");
-            TranslationManager.getInstance().edit(event.getHook(), commandSender, "commands.mod_mail.created", member.getAsMention(), thread.getAsMention());
-        }, () -> TranslationManager.getInstance().edit(event.getHook(), commandSender, "commands.mod_mail.channel_not_found"));
+            TranslationManager.edit(event.getHook(), commandSender, "commands.mod_mail.created", member.getAsMention(), thread.getAsMention());
+        }, () -> TranslationManager.edit(event.getHook(), commandSender, "commands.mod_mail.channel_not_found"));
     }
 
     public Optional<ThreadChannel> getModMailThread(User user) {

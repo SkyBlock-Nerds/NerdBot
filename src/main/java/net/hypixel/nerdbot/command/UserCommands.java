@@ -21,7 +21,7 @@ public class UserCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.getInstance().edit(event.getHook(), "database.not_connected");
+            TranslationManager.edit(event.getHook(), "database.not_connected");
             return;
         }
 
@@ -29,12 +29,12 @@ public class UserCommands extends ApplicationCommand {
         DiscordUser user = repository.findById(event.getMember().getId());
 
         if (user == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
         user.setLanguage(language);
-        TranslationManager.getInstance().edit(event.getHook(), user, "commands.language.language_set", language.getName());
+        TranslationManager.edit(event.getHook(), user, "commands.language.language_set", language.getName());
     }
 
     @AutocompletionHandler(name = "languages")

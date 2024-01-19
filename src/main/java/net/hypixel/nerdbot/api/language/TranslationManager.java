@@ -24,13 +24,8 @@ public class TranslationManager {
     private static final UserLanguage DEFAULT_LANGUAGE = UserLanguage.ENGLISH;
     private static final String ERROR_MESSAGE = "Translation not found: %s";
     private static final Map<UserLanguage, JsonObject> TRANSLATION_CACHE = new HashMap<>();
-    private static final TranslationManager INSTANCE = new TranslationManager();
 
     private TranslationManager() {
-    }
-
-    public static TranslationManager getInstance() {
-        return INSTANCE;
     }
 
     /**
@@ -40,7 +35,7 @@ public class TranslationManager {
      *
      * @return A {@link JsonObject} containing the file contents
      */
-    private JsonObject loadTranslations(UserLanguage language) {
+    private static JsonObject loadTranslations(UserLanguage language) {
         if (TRANSLATION_CACHE.containsKey(language)) {
             return TRANSLATION_CACHE.get(language);
         }
@@ -62,7 +57,7 @@ public class TranslationManager {
      *
      * @param language The {@link UserLanguage} to reload translations for
      */
-    public void reloadTranslations(UserLanguage language) {
+    public static void reloadTranslations(UserLanguage language) {
         TRANSLATION_CACHE.remove(language);
         loadTranslations(language);
     }
@@ -76,7 +71,7 @@ public class TranslationManager {
      *
      * @return A string with the translated key based on the {@link DiscordUser}'s {@link UserLanguage} and any optional arguments
      */
-    public String translate(@Nullable DiscordUser discordUser, String key, Object... args) {
+    public static String translate(@Nullable DiscordUser discordUser, String key, Object... args) {
         UserLanguage language = discordUser != null ? discordUser.getLanguage() : DEFAULT_LANGUAGE;
         JsonObject jsonObject = loadTranslations(language);
 
@@ -121,7 +116,7 @@ public class TranslationManager {
      *
      * @return A translated string using the default {@link UserLanguage} of the given key and optional arguments
      */
-    public String translate(String key, Object... args) {
+    public static String translate(String key, Object... args) {
         return translate(null, key, args);
     }
 
@@ -133,7 +128,7 @@ public class TranslationManager {
      * @param key         The key of the translation
      * @param args        Optional arguments to replace variables in the translation
      */
-    public void reply(GuildSlashEvent event, DiscordUser discordUser, String key, Object... args) {
+    public static void reply(GuildSlashEvent event, DiscordUser discordUser, String key, Object... args) {
         event.reply(translate(discordUser, key, args)).queue();
     }
 
@@ -144,7 +139,7 @@ public class TranslationManager {
      * @param key   The key of the translation
      * @param args  Optional arguments to replace variables in the translation
      */
-    public void reply(GuildSlashEvent event, String key, Object... args) {
+    public static void reply(GuildSlashEvent event, String key, Object... args) {
         event.reply(translate(key, args)).queue();
     }
 
@@ -156,7 +151,7 @@ public class TranslationManager {
      * @param key         The key of the translation
      * @param args        Optional arguments to replace variables in the translation
      */
-    public void edit(InteractionHook hook, DiscordUser discordUser, String key, Object... args) {
+    public static void edit(InteractionHook hook, DiscordUser discordUser, String key, Object... args) {
         hook.editOriginal(translate(discordUser, key, args)).queue();
     }
 
@@ -167,7 +162,7 @@ public class TranslationManager {
      * @param key  The key of the translation
      * @param args Optional arguments to replace variables in the translation
      */
-    public void edit(InteractionHook hook, String key, Object... args) {
+    public static void edit(InteractionHook hook, String key, Object... args) {
         hook.editOriginal(translate(key, args)).queue();
     }
 
@@ -179,7 +174,7 @@ public class TranslationManager {
      * @param key         The key of the translation
      * @param args        Optional arguments to replace variables in the translation
      */
-    public void send(GuildMessageChannel channel, DiscordUser discordUser, String key, Object... args) {
+    public static void send(GuildMessageChannel channel, DiscordUser discordUser, String key, Object... args) {
         channel.sendMessage(translate(discordUser, key, args)).queue();
     }
 
@@ -189,7 +184,7 @@ public class TranslationManager {
      * @param key         The key of the translation
      * @param args        Optional arguments to replace variables in the translation
      */
-    public void send(InteractionHook hook, DiscordUser discordUser, String key, Object... args) {
+    public static void send(InteractionHook hook, DiscordUser discordUser, String key, Object... args) {
         hook.sendMessage(translate(discordUser, key, args)).queue();
     }
 }

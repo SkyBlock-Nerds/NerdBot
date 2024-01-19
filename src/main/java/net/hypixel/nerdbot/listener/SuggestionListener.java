@@ -56,33 +56,33 @@ public class SuggestionListener {
             SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
 
             if (thread == null) {
-                TranslationManager.getInstance().send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "thread with ID " + threadId);
+                TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "thread with ID " + threadId);
                 return;
             }
 
             ForumChannel forum = thread.getParentChannel().asForumChannel();
 
             if (!Util.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
-                TranslationManager.getInstance().send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "the greenlit tag");
+                TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "the greenlit tag");
                 return;
             }
 
             SuggestionCache.Suggestion suggestion = NerdBotApp.getBot().getSuggestionCache().getSuggestion(thread.getId());
 
             if (suggestion == null) {
-                TranslationManager.getInstance().send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "this suggestion in the cache! Please try again later.");
+                TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "this suggestion in the cache! Please try again later.");
                 return;
             }
 
             if (suggestion.getFirstMessage().isEmpty()) {
-                TranslationManager.getInstance().send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "the first message in this thread");
+                TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "the first message in this thread");
                 return;
             }
 
             switch (action) {
                 case "accept" -> {
                     if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
-                        TranslationManager.getInstance().send(event.getHook().setEphemeral(true), user, "curator.already_greenlit");
+                        TranslationManager.send(event.getHook().setEphemeral(true), user, "curator.already_greenlit");
                         return;
                     }
                     List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
@@ -94,15 +94,15 @@ public class SuggestionListener {
                     GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(thread.getParentChannel().asForumChannel(), suggestion.getFirstMessage().get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
                     NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
                     NerdBotApp.getBot().getSuggestionCache().updateSuggestion(thread); // Update Suggestion
-                    thread.sendMessage(TranslationManager.getInstance().translate("commands.request_review.accepted")).queue();
+                    thread.sendMessage(TranslationManager.translate("commands.request_review.accepted")).queue();
                     accepted = true;
                 }
                 case "deny" ->
-                    thread.sendMessage(TranslationManager.getInstance().translate("commands.request_review.changes_requested")).queue();
+                    thread.sendMessage(TranslationManager.translate("commands.request_review.changes_requested")).queue();
                 case "lock" ->
                     thread.getManager().setLocked(true).queue(unused -> {
                         event.getHook().sendMessage("Thread locked!").setEphemeral(true).queue();
-                        thread.sendMessage(TranslationManager.getInstance().translate("commands.request_review.locked")).queue();
+                        thread.sendMessage(TranslationManager.translate("commands.request_review.locked")).queue();
                         }, throwable -> event.getHook().sendMessage("Unable to lock thread!").setEphemeral(true).queue());
                 default -> {
                     event.getHook().sendMessage("Invalid action!").setEphemeral(true).queue();
