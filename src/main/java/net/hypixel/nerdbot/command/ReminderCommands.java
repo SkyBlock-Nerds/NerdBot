@@ -47,7 +47,7 @@ public class ReminderCommands extends ApplicationCommand {
         DiscordUser user = userRepository.findById(event.getUser().getId());
 
         if (user == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "user.not_found");
+            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -153,7 +153,7 @@ public class ReminderCommands extends ApplicationCommand {
         DiscordUser user = userRepository.findById(event.getUser().getId());
 
         if (user == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "user.not_found");
+            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -199,7 +199,7 @@ public class ReminderCommands extends ApplicationCommand {
         DiscordUser user = userRepository.findById(event.getUser().getId());
 
         if (user == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "user.not_found");
+            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 

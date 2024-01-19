@@ -72,7 +72,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "user.not_found");
+            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -105,7 +105,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "user.not_found");
+            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -178,7 +178,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "user.not_found");
+            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -219,7 +219,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "user.not_found");
+            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -267,7 +267,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "user.not_found");
+            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -286,7 +286,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "user.not_found");
+            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -305,7 +305,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "user.not_found");
+            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -357,7 +357,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "user.not_found");
+            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -416,7 +416,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(member.getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "user.not_found");
+            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -469,7 +469,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "user.not_found");
+            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -535,7 +535,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "user.not_found");
+            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -571,7 +571,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().reply(event, "user.not_found");
+            TranslationManager.getInstance().reply(event, "generic.not_found", "User");
             return;
         }
 
@@ -612,7 +612,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "user.not_found");
+            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -639,7 +639,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "user.not_found");
+            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -694,7 +694,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "user.not_found");
+            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 
@@ -794,7 +794,7 @@ public class AdminCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
 
         if (discordUser == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "user.not_found");
+            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 

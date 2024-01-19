@@ -29,7 +29,7 @@ public class UserCommands extends ApplicationCommand {
         DiscordUser user = repository.findById(event.getMember().getId());
 
         if (user == null) {
-            TranslationManager.getInstance().edit(event.getHook(), "user.not_found");
+            TranslationManager.getInstance().edit(event.getHook(), "generic.not_found", "User");
             return;
         }
 

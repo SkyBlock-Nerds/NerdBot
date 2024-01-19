@@ -10,9 +10,6 @@
   "database": {
     "no_connection": "Could not connect to database!"
   },
-  "user": {
-    "not_found": "User not found"
-  },
   "cache": {
     "suggestions": {
       "not_found": "Couldn't find that suggestion in the cache! Please try again later!",
