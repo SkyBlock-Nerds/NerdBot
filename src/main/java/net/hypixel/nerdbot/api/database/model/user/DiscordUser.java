@@ -10,7 +10,6 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.util.Util;
-import org.postgresql.core.Utils;
 
 import java.util.*;
 
@@ -21,6 +20,7 @@ import java.util.*;
 public class DiscordUser {
 
     private String discordId;
+    private UserLanguage language;
     private LastActivity lastActivity;
     private BirthdayData birthdayData;
     private MojangProfile mojangProfile;
@@ -28,8 +28,12 @@ public class DiscordUser {
     public DiscordUser() {
     }
 
+    public DiscordUser(String discordId) {
+        this(discordId, UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
+    }
+
     public DiscordUser(Member member) {
-        this(member.getId(), new LastActivity(), new BirthdayData(), new MojangProfile());
+        this(member.getId(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
     }
 
     public int getTotalMessageCount() {

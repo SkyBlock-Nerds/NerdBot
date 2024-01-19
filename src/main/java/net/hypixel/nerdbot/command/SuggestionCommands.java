@@ -19,10 +19,13 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.cache.ChannelCache;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.apache.commons.lang.StringUtils;
@@ -49,8 +52,11 @@ public class SuggestionCommands extends ApplicationCommand {
     public void requestSuggestionReview(GuildSlashEvent event) {
         event.deferReply(true).complete();
 
+        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = repository.findOrCreateById(event.getMember().getId());
+
         if (event.getChannel().getType() != ChannelType.GUILD_PUBLIC_THREAD) {
-            event.getHook().editOriginal("This command is only usable in forum channels!").complete();
+            TranslationManager.edit(event.getHook(), discordUser, "commands.cannot_be_used_here");
             return;
         }
 
@@ -59,12 +65,12 @@ public class SuggestionCommands extends ApplicationCommand {
 
         // Handle Non-Suggestion Channels
         if (Util.safeArrayStream(suggestionConfig.getSuggestionForumIds(), suggestionConfig.getAlphaSuggestionForumIds()).noneMatch(forumId -> forumId.equals(parentId))) {
-            event.getHook().editOriginal("You cannot send non-suggestion posts for review!").complete();
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.not_suggestion_channel");
             return;
         }
 
         if (lastReviewRequestCache.getIfPresent(event.getChannel().getId()) != null) {
-            event.getHook().editOriginal("You cannot request another review yet!").complete();
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.too_soon");
             return;
         }
 
@@ -72,43 +78,43 @@ public class SuggestionCommands extends ApplicationCommand {
 
         // Handle Missing Suggestion
         if (suggestion == null) {
-            event.getHook().editOriginal("This suggestion was not found in the cache! Try again later.").complete();
+            TranslationManager.edit(event.getHook(), discordUser, "cache.suggestions.not_found");
             return;
         }
 
         // Handle User Deleted Posts
         if (suggestion.getFirstMessage().isEmpty()) {
-            event.getHook().editOriginal("You appear to be lost, there is no original post to review!").complete();
+            TranslationManager.edit(event.getHook(), discordUser, "cache.suggestions.user_deleted_post");
             return;
         }
 
         // No Friends Allowed
         if (suggestion.getFirstMessage().get().getAuthor().getIdLong() != event.getUser().getIdLong()) {
-            event.getHook().editOriginal("You can only request a review for your own posts!").complete();
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.not_own_thread");
             return;
         }
 
         // Handle Already Greenlit
         if (suggestion.isGreenlit()) {
-            event.getHook().editOriginal("You appear to be confused, this post is already greenlit!").complete();
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.already_greenlit");
             return;
         }
 
         // Handle Minimum Agrees
         if (suggestion.getAgrees() < suggestionConfig.getRequestReviewThreshold()) {
-            event.getHook().editOriginal(String.format("You need at least %s agrees to request a greenlit review!", suggestionConfig.getRequestReviewThreshold())).complete();
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.not_enough_reactions", suggestionConfig.getRequestReviewThreshold());
             return;
         }
 
         // Make sure the suggestion is old enough
         if (System.currentTimeMillis() - suggestion.getFirstMessage().get().getTimeCreated().toInstant().toEpochMilli() < suggestionConfig.getMinimumSuggestionRequestAge()) {
-            event.getHook().editOriginal("This suggestion is not eligible for a review request yet!").complete();
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.too_new");
             return;
         }
 
         // Handle Greenlit Ratio
         if (suggestionConfig.isEnforcingGreenlitRatioForRequestReview() && suggestion.getRatio() <= suggestionConfig.getGreenlitRatio()) {
-            event.getHook().editOriginal(String.format("You need at least %s%% agrees to request a greenlit review!", suggestionConfig.getGreenlitRatio())).complete();
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.bad_reaction_ratio", suggestionConfig.getGreenlitRatio());
             return;
         }
 
@@ -216,8 +222,8 @@ public class SuggestionCommands extends ApplicationCommand {
         });
 
         lastReviewRequestCache.put(event.getChannel().getId(), System.currentTimeMillis());
-        event.getHook().editOriginal("This suggestion has been sent for review.").queue();
-        event.getChannel().sendMessage("This suggestion has been sent for manual review.").queue();
+        event.getHook().deleteOriginal().complete();
+        event.getChannel().sendMessage(TranslationManager.translate(discordUser, "commands.request_review.success")).queue();
     }
 
     @JDASlashCommand(name = "suggestions", subcommand = "by-id", description = "View user suggestions.")
@@ -238,7 +244,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(userID, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
+            TranslationManager.edit(event.getHook(), "commands.suggestions.filtered_none_found");
             return;
         }
 
@@ -267,7 +273,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(member.getIdLong(), tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
+            TranslationManager.edit(event.getHook(), "commands.suggestions.filtered_none_found");
             return;
         }
 
@@ -295,7 +301,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(null, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            event.getHook().editOriginal("Found no suggestions matching the specified filters!").queue();
+            TranslationManager.edit(event.getHook(), "commands.suggestions.filtered_none_found");
             return;
         }
 
@@ -388,5 +394,4 @@ public class SuggestionCommands extends ApplicationCommand {
             .orElseGet(() -> Emoji.fromUnicode("❓"))
             .getFormatted();
     }
-
 }

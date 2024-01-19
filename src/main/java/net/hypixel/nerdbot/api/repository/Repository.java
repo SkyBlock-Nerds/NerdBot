@@ -22,8 +22,10 @@ import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -106,6 +108,32 @@ public abstract class Repository<T> {
         }
 
         debug("Could not find document with ID " + id + " in cache or database");
+        return null;
+    }
+
+    public T findOrCreateById(String id, Object... parameters) {
+        try {
+            T existingObject = findById(id);
+
+            if (existingObject != null) {
+                return existingObject;
+            }
+
+            List<Class<?>> constructorParameters = new ArrayList<>(List.of(parameters.getClass()));
+            T object = entityClass.getConstructor(constructorParameters.toArray(new Class[0])).newInstance(parameters);
+
+            log.debug("Created new instance of " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+
+            cacheObject(id, object);
+            saveToDatabase(object);
+
+            return object;
+        } catch (NoSuchMethodException e) {
+            log.error("Could not find constructor for " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+            log.error("Error creating new instance of " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+        }
+
         return null;
     }
 
