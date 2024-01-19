@@ -16,10 +16,13 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
@@ -33,6 +36,10 @@ public class SuggestionListener {
     @SubscribeEvent
     public void onButtonClickEvent(@NotNull ButtonInteractionEvent event) {
         event.deferEdit().queue();
+
+        DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser user = userRepository.findById(event.getUser().getId());
+
         String buttonId = event.getButton().getId();
         boolean accepted = false;
 
@@ -49,33 +56,33 @@ public class SuggestionListener {
             SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
 
             if (thread == null) {
-                event.getHook().sendMessage("Unable to locate thread with ID " + threadId).setEphemeral(true).queue();
+                TranslationManager.getInstance().send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "thread with ID " + threadId);
                 return;
             }
 
             ForumChannel forum = thread.getParentChannel().asForumChannel();
 
             if (!Util.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
-                event.getHook().sendMessage("Unable to locate greenlit tag.").setEphemeral(true).queue();
+                TranslationManager.getInstance().send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "the greenlit tag");
                 return;
             }
 
             SuggestionCache.Suggestion suggestion = NerdBotApp.getBot().getSuggestionCache().getSuggestion(thread.getId());
 
             if (suggestion == null) {
-                event.getHook().sendMessage("Unable to locate suggestion in the cache! Try again later.").complete();
+                TranslationManager.getInstance().send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "this suggestion in the cache! Please try again later.");
                 return;
             }
 
             if (suggestion.getFirstMessage().isEmpty()) {
-                event.getHook().sendMessage("Unable to locate first message.").setEphemeral(true).queue();
+                TranslationManager.getInstance().send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "the first message in this thread");
                 return;
             }
 
             switch (action) {
                 case "accept" -> {
                     if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
-                        event.getHook().sendMessage("This suggestion is already greenlit!").setEphemeral(true).queue();
+                        TranslationManager.getInstance().send(event.getHook().setEphemeral(true), user, "curator.already_greenlit");
                         return;
                     }
                     List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
@@ -87,15 +94,15 @@ public class SuggestionListener {
                     GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(thread.getParentChannel().asForumChannel(), suggestion.getFirstMessage().get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
                     NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
                     NerdBotApp.getBot().getSuggestionCache().updateSuggestion(thread); // Update Suggestion
-                    thread.sendMessage("Your recent review request has been accepted! Thank you for your suggestion!").queue();
+                    thread.sendMessage(TranslationManager.getInstance().translate("commands.request_review.accepted")).queue();
                     accepted = true;
                 }
                 case "deny" ->
-                        thread.sendMessage("Your recent review request has been denied. We recommend you review your suggestion and make any necessary changes before requesting another review. Thank you!").queue();
+                    thread.sendMessage(TranslationManager.getInstance().translate("commands.request_review.changes_requested")).queue();
                 case "lock" ->
                     thread.getManager().setLocked(true).queue(unused -> {
-                            event.getHook().sendMessage("Thread locked!").setEphemeral(true).queue();
-                            thread.sendMessage("We have reviewed your recent request and have decided to lock this suggestion. If you believe this to be a mistake or would like more information, please contact us through mod mail.").queue();
+                        event.getHook().sendMessage("Thread locked!").setEphemeral(true).queue();
+                        thread.sendMessage(TranslationManager.getInstance().translate("commands.request_review.locked")).queue();
                         }, throwable -> event.getHook().sendMessage("Unable to lock thread!").setEphemeral(true).queue());
                 default -> {
                     event.getHook().sendMessage("Invalid action!").setEphemeral(true).queue();

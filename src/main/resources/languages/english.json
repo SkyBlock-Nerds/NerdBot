@@ -1,4 +1,8 @@
 {
+  "generic": {
+    "not_found": "%s not found",
+    "could_not_find": "Could not find %s"
+  },
   "permissions": {
     "cannot_send_messages": "I do not have the correct permission to send messages in this channel!",
     "cannot_send_messages_in_threads": "I do not have the correct permission to send messages in threads!"
@@ -29,7 +33,8 @@
   },
   "curator": {
     "no_greenlit_messages": "No suggestions were greenlit",
-    "greenlit_messages": "Greenlit %d suggestions in %d!"
+    "greenlit_messages": "Greenlit %d suggestions in %d!",
+    "already_greenlit": "This suggestion has already been greenlit!"
   },
   "commands": {
     "only_available_in_threads": "This command is only available in threads!",
@@ -103,7 +108,10 @@
       "not_enough_reactions": "You need at least %d agrees to request a review!",
       "bad_reaction_ratio": "You need at least a %d%% agree ratio to request a review!",
       "too_new": "This suggestion is too new to request a review!",
-      "success": "This suggestion has been sent for review!"
+      "success": "This suggestion has been sent for review!",
+      "accepted": "Your recent review request has been accepted! Thank you for your suggestion!",
+      "changes_requested": "Your recent review request has been denied. We recommend you review your suggestion and make any necessary changes before requesting another review. Thank you!",
+      "locked": "We have reviewed your recent request and have decided to lock this suggestion. If you believe this to be a mistake or would like more information, please contact us through Mod Mail."
     },
     "role": {
       "invalid_role": "Could not find a role with ID `%s`!",

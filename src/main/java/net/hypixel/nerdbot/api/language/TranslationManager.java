@@ -4,7 +4,7 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
@@ -111,7 +111,7 @@ public class TranslationManager {
         hook.editOriginal(translate(key, args)).queue();
     }
 
-    public void send(MessageChannel channel, DiscordUser discordUser, String key, Object... args) {
+    public void send(GuildMessageChannel channel, DiscordUser discordUser, String key, Object... args) {
         channel.sendMessage(translate(discordUser, key, args)).queue();
     }
 
