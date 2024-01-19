@@ -135,7 +135,7 @@ public class AdminCommands extends ApplicationCommand {
                 invites.add(invite);
                 log.info("Created new temporary invite '" + invite.getUrl() + "' for channel " + selected.getName() + " by " + event.getUser().getName());
             } catch (InsufficientPermissionException exception) {
-                TranslationManager.getInstance().edit(event.getHook(), discordUser, "commands.invite.no_permission", selected.getAsMention());
+                TranslationManager.getInstance().edit(event.getHook(), discordUser, "permissions.cannot_create_invites", selected.getAsMention());
                 return;
             }
         }

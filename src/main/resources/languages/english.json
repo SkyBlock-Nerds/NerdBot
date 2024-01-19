@@ -5,7 +5,8 @@
   },
   "permissions": {
     "cannot_send_messages": "I do not have the correct permission to send messages in this channel!",
-    "cannot_send_messages_in_threads": "I do not have the correct permission to send messages in threads!"
+    "cannot_send_messages_in_threads": "I do not have the correct permission to send messages in threads!",
+    "cannot_create_invites": "I do not have the correct permission to create invites in %s!"
   },
   "database": {
     "no_connection": "Could not connect to database!"
@@ -41,7 +42,6 @@
       "language_set": "You set your language to %s"
     },
     "invite": {
-      "no_permission": "I do not have the correct permission to create invites in %s!",
       "header": "Created %d invites:",
       "deleted": "Deleted %d invites!"
     },
