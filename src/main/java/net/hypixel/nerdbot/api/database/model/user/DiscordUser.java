@@ -10,7 +10,6 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.util.Util;
-import org.postgresql.core.Utils;
 
 import java.util.*;
 

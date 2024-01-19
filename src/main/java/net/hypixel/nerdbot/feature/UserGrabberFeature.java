@@ -47,6 +47,11 @@ public class UserGrabberFeature extends BotFeature {
                     discordUser.setLastActivity(new LastActivity());
                 }
 
+                if (discordUser.getLanguage() == null) {
+                    log.info("Setting language for " + member.getEffectiveName() + " to ENGLISH");
+                    discordUser.setLanguage(UserLanguage.ENGLISH);
+                }
+
                 discordUserRepository.cacheObject(discordUser);
             })
             .onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName()))
