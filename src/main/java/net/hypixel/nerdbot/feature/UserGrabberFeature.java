@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.feature.BotFeature;
@@ -37,13 +38,18 @@ public class UserGrabberFeature extends BotFeature {
 
                 DiscordUser discordUser = discordUserRepository.findById(member.getId());
                 if (discordUser == null) {
-                    discordUser = new DiscordUser(member.getId(), new LastActivity(), new BirthdayData(), new MojangProfile());
+                    discordUser = new DiscordUser(member.getId(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
                     log.info("Creating new DiscordUser for user " + member.getId());
                 }
 
                 if (discordUser.getLastActivity() == null) {
                     log.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
                     discordUser.setLastActivity(new LastActivity());
+                }
+
+                if (discordUser.getLanguage() == null) {
+                    log.info("Setting language for " + member.getEffectiveName() + " to ENGLISH");
+                    discordUser.setLanguage(UserLanguage.ENGLISH);
                 }
 
                 discordUserRepository.cacheObject(discordUser);

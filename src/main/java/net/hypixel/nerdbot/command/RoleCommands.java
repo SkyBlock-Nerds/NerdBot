@@ -9,6 +9,9 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.language.TranslationManager;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.PingableRole;
 import net.hypixel.nerdbot.role.RoleManager;
 
@@ -22,22 +25,25 @@ public class RoleCommands extends ApplicationCommand {
     public void toggleRole(GuildSlashEvent event, @AppOption(autocomplete = "pingable-roles") String role) {
         event.deferReply().setEphemeral(true).complete();
 
+        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser user = repository.findOrCreateById(event.getUser().getId());
+
         RoleManager.getPingableRoleByName(role).ifPresentOrElse(pingableRole -> {
             Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
             if (discordRole == null) {
-                event.getHook().editOriginal("Invalid role specified!").queue();
+                TranslationManager.edit(event.getHook(), "commands.role.invalid_role");
                 return;
             }
 
             Member member = event.getMember();
             if (RoleManager.hasRole(member, role)) {
                 event.getGuild().removeRoleFromMember(member, discordRole).queue();
-                event.getHook().editOriginal("Removed role " + discordRole.getAsMention() + " from you!\nUse the same command to re-add it!").queue();
+                TranslationManager.edit(event.getHook(), "commands.role.removed_role", discordRole.getAsMention());
             } else {
                 event.getGuild().addRoleToMember(member, discordRole).queue();
-                event.getHook().editOriginal("Added role " + discordRole.getAsMention() + " to you!\nUse the same command to remove it!").queue();
+                TranslationManager.edit(event.getHook(), "commands.role.added_role", discordRole.getAsMention());
             }
-        }, () -> event.getHook().editOriginal("Invalid role specified!").queue());
+        }, () -> TranslationManager.edit(event.getHook(), "commands.role.invalid_role", role));
     }
 
     @AutocompletionHandler(name = "pingable-roles", showUserInput = false)
@@ -48,7 +54,10 @@ public class RoleCommands extends ApplicationCommand {
     @JDASlashCommand(name = "roles", description = "List all roles that can be assigned")
     public void listRoles(GuildSlashEvent event) {
         event.deferReply(true).complete();
-        String roles = Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles()).map(PingableRole::name).collect(Collectors.joining("\n"));
-        event.getHook().editOriginal("**Assignable Roles:**\n" + roles + "\n\n**Use /role <name> to toggle the role!**").queue();
+        String roles = Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
+            .map(PingableRole::name)
+            .collect(Collectors.joining("\n"));
+
+        TranslationManager.edit(event.getHook(), "commands.role.list_roles", roles);
     }
 }

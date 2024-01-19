@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 
@@ -32,7 +33,11 @@ public class GoogleCommands extends ApplicationCommand {
     @JDASlashCommand(name = "export", subcommand = "threads", description = "Export Shen Threads", defaultLocked = true)
     public void exportShenThreads(GuildSlashEvent event, @AppOption ForumChannel forumChannel) {
         event.deferReply(true).queue();
-        event.getHook().editOriginal("Exporting threads from " + forumChannel.getAsMention()).queue();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser commandSender = discordUserRepository.findOrCreateById(event.getMember().getId());
+
+        TranslationManager.edit(event.getHook(), commandSender, "commands.export.exporting_threads", forumChannel.getAsMention());
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Username;Item;Summary;Agree;Disagree");
@@ -65,7 +70,7 @@ public class GoogleCommands extends ApplicationCommand {
             }
 
             int index = threadList.indexOf(threadChannel);
-            event.getHook().editOriginal("Exporting thread " + (index + 1) + "/" + threadList.size() + ": " + threadChannel.getName() + " by " + username).queue();
+            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exporting_thread", index + 1, threadList.size(), threadChannel.getName(), username);
 
             Message startMessage = threadChannel.retrieveStartMessage().complete();
             List<MessageReaction> reactions = startMessage.getReactions()
@@ -91,16 +96,16 @@ public class GoogleCommands extends ApplicationCommand {
                 .append(agrees).append(";")
                 .append(disagrees);
 
-            event.getHook().editOriginal("Exported thread " + (index + 1) + "/" + threadList.size() + ": " + threadChannel.getName() + " by " + username).queue();
+            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exported_thread", index + 1, threadList.size(), threadChannel.getName(), username);
 
             // Check if all threads have been exported
             if ((index + 1) == threadList.size()) {
                 try {
                     File file = Util.createTempFile("threads-" + forumChannel.getName() + "-" + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now()) + ".csv", stringBuilder.toString());
-                    event.getHook().editOriginal("Exported all threads from " + forumChannel.getAsMention()).setFiles(FileUpload.fromData(file)).queue();
+                    event.getHook().editOriginal(TranslationManager.translate("commands.export.complete", forumChannel.getAsMention())).setFiles(FileUpload.fromData(file)).queue();
                 } catch (IOException exception) {
                     log.error("Failed to create temp file!", exception);
-                    event.getHook().editOriginal("Failed to create temp file!").queue();
+                    TranslationManager.edit(event.getHook(), commandSender, "commands.temp_file_error", exception.getMessage());
                 }
             }
         }

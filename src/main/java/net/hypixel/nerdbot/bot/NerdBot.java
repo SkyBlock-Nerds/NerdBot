@@ -22,6 +22,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
+import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.api.repository.Repository;
@@ -36,14 +37,7 @@ import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
-import net.hypixel.nerdbot.listener.ActivityListener;
-import net.hypixel.nerdbot.listener.MetricsListener;
-import net.hypixel.nerdbot.listener.ModLogListener;
-import net.hypixel.nerdbot.listener.ModMailListener;
-import net.hypixel.nerdbot.listener.PinListener;
-import net.hypixel.nerdbot.listener.ReactionChannelListener;
-import net.hypixel.nerdbot.listener.SuggestionListener;
-import net.hypixel.nerdbot.listener.VerificationListener;
+import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
@@ -52,7 +46,8 @@ import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
-import net.hypixel.nerdbot.util.discord.ForumChannelResolver;
+import net.hypixel.nerdbot.util.discord.resolver.ForumChannelResolver;
+import net.hypixel.nerdbot.util.discord.resolver.UserLanguageResolver;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
@@ -77,7 +72,6 @@ public class NerdBot implements Bot {
         new ProfileUpdateFeature()
     );
 
-    @Getter
     private final Database database = new Database(System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/"), "skyblock_nerds");
     @Getter
     private SuggestionCache suggestionCache;
@@ -195,6 +189,8 @@ public class NerdBot implements Bot {
             .addOwners(config.getOwnerIds())
             .extensionsBuilder(extensionsBuilder -> extensionsBuilder
                 .registerParameterResolver(new ForumChannelResolver())
+                .registerParameterResolver(new UserLanguageResolver())
+                .registerAutocompletionTransformer(UserLanguage.class, userLanguage -> new Command.Choice(userLanguage.getName(), userLanguage.name()))
                 .registerAutocompletionTransformer(ForumChannel.class, forumChannel -> new Command.Choice(forumChannel.getName(), forumChannel.getId()))
                 .registerAutocompletionTransformer(ForumTag.class, forumTag -> new Command.Choice(forumTag.getName(), forumTag.getId()))
             );

@@ -175,4 +175,35 @@ public class JsonUtil {
         }
         return foundItem.getAsJsonArray();
     }
+
+    public static JsonElement getIndexedElement(JsonElement element, String property, String indexStr) {
+        try {
+            int index = Integer.parseInt(indexStr);
+            JsonElement propertyElement = element.getAsJsonObject().get(property);
+            if (propertyElement == null || !propertyElement.isJsonArray()) {
+                return null;
+            }
+            return propertyElement.getAsJsonArray().get(index);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    public static JsonElement getNextElement(JsonElement element, String key) {
+        if (element.isJsonObject()) {
+            return element.getAsJsonObject().get(key);
+        } else if (element.isJsonArray()) {
+            return getElementFromArray(element.getAsJsonArray(), key);
+        }
+        return null;
+    }
+
+    private static JsonElement getElementFromArray(JsonArray array, String indexStr) {
+        try {
+            int index = Integer.parseInt(indexStr);
+            return array.get(index);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 }
