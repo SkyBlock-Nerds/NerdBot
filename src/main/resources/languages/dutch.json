@@ -1,0 +1,148 @@
+  "generic": {
+    "not_found": "%s is niet gevonden",
+    "could_not_find": "Kon %s niet vinden"
+  },
+  "permissions": {
+    "cannot_send_messages": "Ik heb geen toegang om berichten te versturen in dit kanaal!",
+    "cannot_send_messages_in_threads": "Ik heb geen toegang om berichten te sturen in threads!",
+    "cannot_create_invites": "Ik heb geen toegang om uitnodigingen te maken in %s!"
+  },
+  "database": {
+    "no_connection": "Kon niet verbinden met de database!"
+  },
+  "cache": {
+    "suggestions": {
+      "not_found": "Kon die suggestie niet vinden in de cache! Probeer het later opnieuw!",
+      "filtered_none_found": "Geen suggesties gevonden die overeenkomen met die filter!",
+      "user_deleted_post": "Het originele bericht van deze suggestie was verwijderd!"
+    }
+  },
+  "bot_logs": {
+    "member_removed_not_found": "Kon niet het lid vinden met ID %s die de server is verlaten!"
+  },
+  "repository": {
+    "saved_to_database": "Sloeg %d documenten op naar de database!",
+    "loaded_from_database": "Laadde %d documenten van de database!",
+    "save_error": "Er is een fout opgetreden bij het opslaan van de repository: %s",
+    "load_error": "Er is een fout opgetreden bij het laden van de repository: %s",
+    "stats_error": "Er is een fout opgetreden bij het verkrijgen van de statistieken van die repository: %s"
+  },
+  "curator": {
+    "no_greenlit_messages": "Er waren geen suggesties met groen licht",
+    "greenlit_messages": "%d suggesties hebben groen licht gekregen in %d!",
+    "already_greenlit": "Deze suggestie heeft al groen licht!"
+  },
+  "commands": {
+    "only_available_in_threads": "Dit commando is alleen beschikbaar in threads!",
+    "cannot_be_used_here": "Dit commando kan hier niet gebruikt worden!",
+    "invalid_uuid": "Ongeldige UUID!",
+    "temp_file_error": "Faalde om een tijdelijk bestand te maken: %s",
+    "language": {
+      "language_set": "Je hebt je taal gezet naar %s"
+    },
+    "invite": {
+      "header": "Maakte %d uitnodigingen:",
+      "deleted": "Verwijderde %d uitnodigingen!"
+    },
+    "reminders": {
+      "no_description": "Je moet een beschrijving geven voor de herinnering!",
+      "description_too_long": "Je beschrijving is te lang! Houd het onder de %d karakters.",
+      "invalid_time_format": "Ik kon het gegeven datum/tijd format niet ontleden, probeer het nog eens!",
+      "time_in_past": "Je kunt niet een herinnering maken voor in het verleden!",
+      "save_error": "Er is een fout opgetreden bij het opslaan van die herinnering! Probeer het nog eens!",
+      "delete_error": "Er is een fout opgetreden bij het verwijderen van die herinnering! Probeer het nog eens!",
+      "no_reminders": "Je hebt nog geen herinneringen gemaakt!",
+      "delete_reminder": "Je kunt herinneringen verwijderen met `/remind delete <uuid>`",
+      "reminder_not_found": "Ik kon niet een herinnering vinden met die UUID!",
+      "reminder_set": "Ik zal je herinneren op %s over:",
+      "reminder_deleted": "Verwijderde herinnering %s!"
+    },
+    "lock": {
+      "no_permission": "Ik heb geen toegang om %s te sluiten!",
+      "error": "Er is een fout opgetreden bij het sluiten van %s!"
+    },
+    "archive": {
+      "channel_moved": "Verplaatste %s naar %s!"
+    },
+    "config": {
+      "read_error": "Er is een fout opgetreden bij het lezen van het configuratiebestand! Bekijk de logs voor meer informatie.",
+      "invalid_value": "Kon niet de gegeven sleutel vinden `%s` in het configuratiebestand!",
+      "reloaded": "Herlaadde het configuratiebestand!",
+      "updated": "Updatete het configuratiebestand!"
+    },
+    "metrics": {
+      "toggle": "Schakelde metrieken om: %s"
+    },
+    "user": {
+      "linked_by_admin": "Updatete profiel voor %s naar %s (UUID: %s)",
+      "username_not_found": "Kon de speler met de naam `%s` niet vinden! (%s)",
+      "profile_mismatch": "Profiel komt niet overeen voor %s: %s",
+      "no_missing_profiles": "Geen missende profielen gevonden!",
+      "migrated_profiles": "Migreerde %d profielen!"
+    },
+    "flared": {
+      "no_tag": "Ik kon niet een label vinden met de naam `%s`!",
+      "already_tagged": "Dit bericht is al gelabeld!",
+      "tagged": "%s heeft de %s label toegevoegd en heeft deze suggestie gesloten!"
+    },
+    "transfer_tag": {
+      "invalid_tags": "Je hebt verkeerde van/naar labels ingevoerd, probeer het nog eens!",
+      "no_threads_found": "Geen threads waren gevonden met de label %s!",
+      "updated_threads": "Updatete %d/%d threads ...",
+      "updated_threads_complete": "Rondde het overzetten van %s naar %s in %d threads af!"
+    },
+    "log_level": {
+      "invalid_level": "Er is een ongeldig log level gespecificeerd!",
+      "set_level": "Zette het log level naar %s"
+    },
+    "request_review": {
+      "not_suggestion_channel": "Je kunt niet threads versturen in niet-suggestie kanalen voor de beoordeling!",
+      "too_soon": "Je kunt nog niet een nieuwe beoordeling aanvragen voor deze thread!",
+      "not_own_thread": "Je kunt niet een beoordeling aanvragen voor een thread die je niet zelf gemaakt hebt!",
+      "already_greenlit": "Je kunt alleen een beoordeling aanvragen voor threads die nog geen groen licht hebben!",
+      "not_enough_reactions": "Je moet minimaal %d toestemmingen hebben om een beoordeling aan te vragen!",
+      "bad_reaction_ratio": "Je moet minimaal een %d%% toestemmingen verhouding hebben om een beoordeling aan te vragen!",
+      "too_new": "Deze suggestie is te nieuw om een beoordeling aan te vragen!",
+      "success": "Deze suggestie is verstuurd voor beoordeling!",
+      "accepted": "Je aanvraag om deze suggestie te beoordelen is geaccepteerd! Bedankt voor je suggestie!",
+      "changes_requested": "Je aanvraag om deze suggestie te beoordelen is afgekeurd. We raden je aan je suggestie aan te passen voordat je nog een beoordeling aanvraagt. Bedankt!",
+      "locked": "We hebben je aanvraag om deze suggestie te beoordelen bekeken en besloten deze suggestie te sluiten. Als je denkt dat dit een fout is of meer informatie zou willen, contacteer ons via Mod Mail."
+    },
+    "role": {
+      "invalid_role": "Kon niet een rol vinden met ID `%s`!",
+      "removed_role": "Verwijderde de rol %s van je! Gebruik hetzelfde commando om het opnieuw toe te voegen.",
+      "added_role": "Voegde de rol %s aan je toe! Gebruik hetzelfde commando om het te verwijderen.",
+      "list_roles": "**Toewijsbare rollen:**\n%s\n\n**Gebruik /role <naam> om de rol om te schakelen!"
+    },
+    "verify": {
+      "already_requested": "Je voorgaande verificatieverzoek is nog niet bekeken. Je wordt gecontacteerd via DM als er verdere informatie nodig is. ",
+      "request_sent": "Je verificatieverzoek is verstuurd. Je zal gecontacteerd worden via DM mocht er verdere informatie nodig zijn.",
+      "error": "Er is een fout opgetreden bij het verificatieproces! Als dit blijft aanhouden, contacteer ons met Mod Mail",
+      "profile_updated": "Updatete je Mojang profiel naar %s (`%s`)"
+    },
+    "birthday": {
+      "removed": "Je verjaardag is verwijderd!",
+      "not_set_yet": "Je verjaardag is nog niet ingesteld!",
+      "get": "Je verjaardag staat momenteel op %s",
+      "set": "Zette je verjaardag naar %s!",
+      "bad_date": "Dat is niet een geldige datum. Probeer het nog eens of contacteer een bot ontwikkelaar!"
+    },
+    "mod_mail": {
+      "created": "Maakte een nieuwe Mod Mail thread aan voor %s: %s",
+      "channel_not_found": "Kon het Mod Mail kanaal niet vinden! Is er één ingesteld?",
+      "thread_not_found": "Kon niet een Mod Mail thread voor %s vinden!",
+      "already_exists": "Er bestaat al een Mod Mail thread voor %s: %s",
+      "thread_found": "Er is een Mod Mail thread gevonden voor %s: %s"
+    },
+    "export": {
+      "exporting_threads": "Exporteren van threads van %s...",
+      "exporting_thread": "Exporteren van thread %d/%d: %s van %s",
+      "exported_thread": "Rondde het exporteren van thread %d/%d af: %s van %s",
+      "complete": "Ronnde het exporteren van alle threads van %s af!"
+    },
+    "translations": {
+      "reloaded": "Herlaadde vertalingen voor de taal %s",
+      "reload_complete": "Herlaadde vertalingen voor alle talen!"
+    }
+  }
+}
