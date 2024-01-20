@@ -21,7 +21,7 @@ public enum UserLanguage {
 
     @Nullable
     public static UserLanguage getLanguage(String name) {
-        for (UserLanguage language : values()) {
+        for (UserLanguage language : VALUES) {
             if (language.name().equalsIgnoreCase(name) || language.getName().equalsIgnoreCase(name)) {
                 return language;
             }
