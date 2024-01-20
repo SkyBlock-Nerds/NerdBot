@@ -6,7 +6,8 @@ import org.jetbrains.annotations.Nullable;
 @Getter
 public enum UserLanguage {
     ENGLISH("English", "english.json"),
-    DUTCH("Dutch", "dutch.json");
+    DUTCH("Dutch", "dutch.json"),
+    GERMAN("German", "german.json");
 
     public static final UserLanguage[] VALUES = values();
 
