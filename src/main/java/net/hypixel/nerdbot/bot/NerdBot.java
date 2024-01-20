@@ -46,7 +46,6 @@ import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
-import net.hypixel.nerdbot.util.discord.resolver.ForumChannelResolver;
 import net.hypixel.nerdbot.util.discord.resolver.UserLanguageResolver;
 import org.jetbrains.annotations.NotNull;
 
@@ -188,7 +187,6 @@ public class NerdBot implements Bot {
             .newBuilder()
             .addOwners(config.getOwnerIds())
             .extensionsBuilder(extensionsBuilder -> extensionsBuilder
-                .registerParameterResolver(new ForumChannelResolver())
                 .registerParameterResolver(new UserLanguageResolver())
                 .registerAutocompletionTransformer(UserLanguage.class, userLanguage -> new Command.Choice(userLanguage.getName(), userLanguage.name()))
                 .registerAutocompletionTransformer(ForumChannel.class, forumChannel -> new Command.Choice(forumChannel.getName(), forumChannel.getId()))
