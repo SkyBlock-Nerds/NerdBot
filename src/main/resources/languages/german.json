@@ -1,0 +1,149 @@
+{
+  "generic": {
+    "not_found": "%s nicht gefunden",
+    "could_not_find": "%s konnte nicht gefunden werden"
+  },
+  "permissions": {
+    "cannot_send_messages": "Ich habe nicht die richtigen Berechtigungen, um Nachrichten in diesen Kanal zu senden!",
+    "cannot_send_messages_in_threads": "Ich habe nicht die richtigen Berechtigungen, um Nachrichten in Threads zu senden!",
+    "cannot_create_invites": "Ich habe nicht die richtigen Berechtigungen, um Einladungen in %s zu erstellen!"
+  },
+  "database": {
+    "no_connection": "Konnte keine Verbindung zur Datenbank herstellen!"
+  },
+  "cache": {
+    "suggestions": {
+      "not_found": "Konnte diesen Vorschlag nicht im Zwischenspeicher finden! Versuche es später erneut!",
+      "filtered_none_found": "Keine Vorschläge passen zu diesem Filter!",
+      "user_deleted_post": "Die originelle Nachricht für diesen Vorschlag wurde gelöscht!"
+    }
+  },
+  "bot_logs": {
+    "member_removed_not_found": "Konnte nicht das Mitglied mit der ID %s, das den Server verlassen hat, finden!"
+  },
+  "repository": {
+    "saved_to_database": "%d Dokumente in der Datenbank gespeichert!",
+    "loaded_from_database": "%d Dokumente aus der Datenbank geladen!",
+    "save_error": "Ein Fehler ist beim Speichern der Ablage aufgetreten: %s",
+    "load_error": "Ein Fehler ist beim Laden der Ablage aufgetreten: %s",
+    "stats_error": "Ein Fehler ist beim Erhalten der Statistiken für diese Ablage aufgetreten: %s"
+  },
+  "curator": {
+    "no_greenlit_messages": "Keine Vorschläge wurden markiert",
+    "greenlit_messages": "Markierte %d Vorschläge in %d!",
+    "already_greenlit": "Dieser Vorschlag wurde bereits markiert!"
+  },
+  "commands": {
+    "only_available_in_threads": "Dieser Befehl ist nur in Threads verfügbar!",
+    "cannot_be_used_here": "Dieser Befehl kann hier nicht benutzt werden!",
+    "invalid_uuid": "Ungültige UUID!",
+    "temp_file_error": "Fehler beim Erstellen einer temporären Datei: %s",
+    "language": {
+      "language_set": "Du hast deine Sprache auf %s gestellt"
+    },
+    "invite": {
+      "header": "%d Einladungen erstellt:",
+      "deleted": "%d Einladungen gelöscht!"
+    },
+    "reminders": {
+      "no_description": "Du musst eine Beschreibung für die Erinnerung abgeben!",
+      "description_too_long": "Deine Beschreibung ist zu lang! Bitte halte sie unter %d Zeichen.",
+      "invalid_time_format": "Ich konnte dieses Daten-/Zeitformat nicht verstehen, bitte versuche es erneut!",
+      "time_in_past": "Du kannst keine Erinnerung in der Vergangenheit setzen!",
+      "save_error": "Ein Fehler ist beim Speichern der Erinnerung aufgetreten! Bitte versuche es erneut!",
+      "delete_error": "Ein Fehler ist beim Löschen der Erinnerung aufgetreten! Bitte versuche es erneut!",
+      "no_reminders": "Du hast keine Erinnerungen gesetzt!",
+      "delete_reminder": "Du kannst Erinnerungen mit `/remind delete <uuid>` löschen",
+      "reminder_not_found": "Ich konnte keine Erinnerung mit dieser UUID finden!",
+      "reminder_set": "Ich werde dich am %s an Folgendes erinnern:",
+      "reminder_deleted": "Erinnerung gelöscht %s!"
+    },
+    "lock": {
+      "no_permission": "Ich habe nicht die benötigten Berechtigungen, um %s zu sperren!",
+      "error": "Ein Fehler ist beim Sperren von %s aufgetreten!"
+    },
+    "archive": {
+      "channel_moved": "%s wurde nach %s verschoben!"
+    },
+    "config": {
+      "read_error": "Ein Fehler ist beim Lesen der Konfigurationsdatei aufgetreten! Bitte überprüfe das Protokoll für mehr Informationen.",
+      "invalid_value": "Konnte den gegebenen Schlüssel `%s` in der Konfigurationsdatei nicht finden!",
+      "reloaded": "Konfigurationsdatei erneut geladen!",
+      "updated": "Konfigurationsdatei aktualisiert!"
+    },
+    "metrics": {
+      "toggle": "Metrik umgeschaltet: %s"
+    },
+    "user": {
+      "linked_by_admin": "Profil von %s zu %s aktualisiert (UUID: %s)",
+      "username_not_found": "Konnte den Spieler mit dem Benutzernamen `%s` nicht finden!",
+      "profile_mismatch": "Profildiskrepantz für %s: %s",
+      "no_missing_profiles": "Keine fehlenden Profile gefunden!",
+      "migrated_profiles": "%d Profile migriert!"
+    },
+    "flared": {
+      "no_tag": "Ich konnte kein Tag mit dem Namen `%s` finden!",
+      "already_tagged": "Diese Nachricht wurde bereits gekennzeichnet!",
+      "tagged": "%s hat das %s-Tag angewand und diesen Vorschlag gesperrt!"
+    },
+    "transfer_tag": {
+      "invalid_tags": "Du hast ungültige von/zu Tags eingegeben, bitte versuche es erneut!",
+      "no_threads_found": "Keine Threads wurden mit diesem Tag gefunden %s!",
+      "updated_threads": "%d/%d Threads aktualisiert …",
+      "updated_threads_complete": "Das Übertragen von %s nach %s in %d Threads wurde abgeschlossen!"
+    },
+    "log_level": {
+      "invalid_level": "Ungültiges Protokoll-Level festgelegt!",
+      "set_level": "Protokoll-Level auf %s gesetzt"
+    },
+    "request_review": {
+      "not_suggestion_channel": "Du kannst keine Threads in Kanälen, die nicht für Vorschläge dienen, zur Überprüfung schicken",
+      "too_soon": "Du kannste derzeit keine weitere Überprüfung für diesen Thread anfragen!",
+      "not_own_thread": "Du kannste keine Überprüfung für einen Thread anfragen, den du nicht erstellt hast!",
+      "already_greenlit": "Du kannst nur Überprüfungen für Threads anfragen, die nicht markiert sind!",
+      "not_enough_reactions": "Du brauchst mindestens %s Zustimmungen, um eine Überprüfung anzufragen!",
+      "bad_reaction_ratio": "Du brauchst mindestens ein %d %% Zustimmungsverhältnis, um eine Überprüfung anzufragen!",
+      "too_new": "Dieser Vorschlag ist zu neu, um eine Überprüfung anzufragen!",
+      "success": "Dieser Vorschlag wurde für eine Überprüfung gesendet!",
+      "accepted": "Deine Überprüfungsanfrage wurde akzeptiert! Vielen Dank für deinen Vorschlag!",
+      "changes_requested": "Deine Überprüfungsanfrage wurde abgelehnt. Wir empfehlen dir, deinen Vorschlag zu überprüfen und notwendige Veränderungen vorzunehmen, bevor du eine weitere Überprüfung anfragst. Vielen Dank!",
+      "locked": "Wir haben deine Anfrage überprüft und haben beschlossen diesen Vorschlag zu sperren. Wenn du denkst, dass es sich um einen Fehler handelt oder mehr Informationen möchtest, kontaktiere uns über die Mod-Mail."
+    },
+    "role": {
+      "invalid_role": "Konnte keine Rolle mit der ID `%s` finden!",
+      "removed_role": "Die Rolle `%s` wurde von dir entfernt! Benutze denselben Befehl, um sie wieder hinzuzufügen.",
+      "added_role": "Die Rolle `%s` wurde zu dir hinzugefügt! Benutze denselben Befehl, um sie wieder zu entfernen.",
+      "list_roles": "**Zuweisbare Rollen:**\n%s\n\n**Benutze /role <name>, um die Rolle umzuschalten!**"
+    },
+    "verify": {
+      "already_requested": "Deine vorherige Verifikationsanfrage wurde nicht überprüft. Du wirst über deine DMs kontaktiert, wenn weitere Informationen benötigt werden.",
+      "request_sent": "Deine Verifikationsanfrage wurde versendet. Du wirst über deine DMs kontaktiert, wenn weitere Informationen benötigt werden.",
+      "error": "Ein Fehler ist beim Versuch dich zu verifizieren aufgetreten. Wenn dies bleibt, kontaktiere uns bitte über Mod-Mail",
+      "profile_updated": "Dein Mojang-Profil wurde aktualisiert zu %s (`%s`)"
+    },
+    "birthday": {
+      "removed": "Dein Geburtstag wurde entfernt!",
+      "not_set_yet": "Dein Geburtstag wurde noch nicht konfiguriert!",
+      "get": "Dein Geburtstag ist derzeit am %s",
+      "set": "Dein Geburtstag wurde auf den %s gesetzt!",
+      "bad_date": "Das scheint kein valides Datum zu sein. Bitte versuche es erneut oder kontaktiere einen Bot-Entwickler"
+    },
+    "mod_mail": {
+      "created": "Neuer Mod-Mail-Thread für %s erstellt: %s",
+      "channel_not_found": "Konnte den Mod-Mail-Kanal nicht finden! Ist einer konfiguriert?",
+      "thread_not_found": "Konnte keinen Mod-Mail-Thread für %s finden!",
+      "already_exists": "Ein Mod-Mail-Thread für %s existiert bereits: %s",
+      "thread_found": "Mod-Mail-Thread für %s gefunden: %s"
+    },
+    "export": {
+      "exporting_threads": "Exportiere Threads von %s …",
+      "exporting_thread": "Exportiere Thread %d/%d: %s von %s",
+      "exported_thread": "Threads exportieren abgeschlossen %d/%d: %s von %s",
+      "complete": "Das Exportieren von allen Threads wurde abgeschlossen %s!"
+    },
+    "translations": {
+      "reloaded": "Übersetzungen für %s erneut geladen!",
+      "reload_complete": "Übersetzungen für alle Sprachen erneut geladen!"
+    }
+  }
+}
