@@ -54,10 +54,14 @@ public class RoleCommands extends ApplicationCommand {
     @JDASlashCommand(name = "roles", description = "List all roles that can be assigned")
     public void listRoles(GuildSlashEvent event) {
         event.deferReply(true).complete();
+
+        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser user = repository.findById(event.getMember().getId());
+
         String roles = Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
             .map(PingableRole::name)
             .collect(Collectors.joining("\n"));
 
-        TranslationManager.edit(event.getHook(), "commands.role.list_roles", roles);
+        TranslationManager.edit(event.getHook(), user, "commands.role.list_roles", roles);
     }
 }
