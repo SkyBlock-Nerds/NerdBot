@@ -20,6 +20,7 @@ import static net.hypixel.nerdbot.util.Util.initFont;
 
 @Log4j2
 public class MinecraftInventory {
+
     private static final boolean RESOURCES_INITIALISED;
     private static final Font MINECRAFT_FONT;
     private static final int PIXELS_PER_SLOT = 18;
@@ -28,6 +29,7 @@ public class MinecraftInventory {
     private static final Color NORMAL_TEXT_COLOR = new Color(255, 255, 255);
     private static final Color DROP_SHADOW_COLOR = new Color(63, 63, 63);
     private static BufferedImage INVENTORY_IMAGE;
+
     private final Graphics2D g2d;
     @Getter
     private BufferedImage image;

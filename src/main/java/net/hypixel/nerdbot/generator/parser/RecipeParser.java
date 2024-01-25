@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.generator.parser;
 
 import lombok.Getter;
+import lombok.Setter;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
 import org.jetbrains.annotations.Nullable;
 
@@ -115,22 +116,14 @@ public class RecipeParser {
         private final int amount;
         private final String itemName;
         private final String extraDetails;
+        @Setter
         private BufferedImage image;
 
         public RecipeItem(int slot, int amount, String itemName, String extraDetails) {
             this.slot = slot;
             this.amount = amount;
-            this.itemName = itemName;
+            this.itemName = itemName.equalsIgnoreCase("skull") ? "player_head" : itemName;
             this.extraDetails = extraDetails;
-        }
-
-        /**
-         * Sets the rendered item stack for this item
-         *
-         * @param image the image
-         */
-        public void setImage(BufferedImage image) {
-            this.image = image;
         }
     }
 }

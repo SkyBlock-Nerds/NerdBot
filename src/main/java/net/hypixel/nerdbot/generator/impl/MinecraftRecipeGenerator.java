@@ -54,12 +54,14 @@ public class MinecraftRecipeGenerator implements Generator {
         // creates a recipe parser to convert the string into different item slots
         RecipeParser parser = new RecipeParser();
         parser.parseRecipe(recipeString);
+
         if (!parser.isSuccessfullyParsed()) {
             throw new GeneratorException(parser.getErrorString());
         }
 
         // iterates through each of the items and fetches the associated sprite/Minecraft head with its given attributes
         for (RecipeParser.RecipeItem item : parser.getRecipeData().values()) {
+
             // checking if the image was correctly found
             if (item.getItemName().equalsIgnoreCase("player_head")) {
                 MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder().withSkin(item.getExtraDetails()).build();
@@ -87,7 +89,6 @@ public class MinecraftRecipeGenerator implements Generator {
             item.setImage(itemImage);
         }
 
-        // renders the image
         MinecraftInventory inventory = new MinecraftInventory(parser.getRecipeData(), renderBackground).render();
         return inventory.getImage();
     }
