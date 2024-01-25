@@ -1,15 +1,18 @@
 package net.hypixel.nerdbot.util.skyblock;
 
+import lombok.Getter;
 import net.hypixel.nerdbot.generator.parser.IconParser;
 
 import java.util.function.BiFunction;
 
+@Getter
 public enum Icon {
     DOT("•", "Dot"),
     TICKER("Ⓞ", "Ticker", IconParser::repeatingIconParser),
     ZOMBIE_CHARGE("ⓩ", "Available Charge", IconParser::repeatingIconParser),
     STAR("✪", "Star", IconParser::repeatingIconParser),
     STARRED("⚚", "Starred"),
+    FRAGGED("⚚", "Starred"),
     BINGO("Ⓑ", "Bingo");
 
     public static final Icon[] VALUES = values();
@@ -26,14 +29,6 @@ public enum Icon {
         this.icon = icon;
         this.name = name;
         this.iconParser = iconParser;
-    }
-
-    public String getIcon() {
-        return icon;
-    }
-
-    public String getName() {
-        return name;
     }
 
     /**
