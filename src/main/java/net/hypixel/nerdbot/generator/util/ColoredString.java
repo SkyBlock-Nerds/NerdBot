@@ -45,19 +45,6 @@ public class ColoredString {
         return this.bold || this.italic || this.strikethrough || this.underlined;
     }
 
-    public String printClass() {
-        return "ColoredString{" +
-                "currentString=" + currentString +
-                ", currentColor=" + currentColor +
-                ", hexColor=" + hexColor +
-                ", hexColorValue=" + hexColorValue +
-                ", bold=" + bold +
-                ", italic=" + italic +
-                ", strikethrough=" + strikethrough +
-                ", underlined=" + underlined +
-                '}';
-    }
-
     @Override
     public String toString() {
         return this.currentString.toString();

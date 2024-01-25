@@ -216,6 +216,6 @@ public class MinecraftTooltipGenerator implements Generator {
 
     public enum TooltipSide {
         LEFT,
-        RIGHT;
+        RIGHT
     }
 }
