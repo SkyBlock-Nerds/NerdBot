@@ -285,7 +285,6 @@ public class MinecraftTooltip {
             this.getGraphics().setColor(segment.getCurrentColor().getBackgroundColor());
         }
 
-        //this.getGraphics().setColor(this.currentColor.getBackgroundColor());
         this.getGraphics().drawString(value, this.locationX + PIXEL_SIZE, this.locationY + PIXEL_SIZE);
 
         // Draw Text
@@ -321,6 +320,9 @@ public class MinecraftTooltip {
         }
 
         // TODO fix
+        this.getGraphics().setColor(dropShadow ? this.currentColor.darker().darker().darker() : this.currentColor);
+
+
         //this.getGraphics().setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
         this.getGraphics().drawLine(xPosition1, yPosition, xPosition2, yPosition);
         this.getGraphics().drawLine(xPosition1, yPosition + 1, xPosition2, yPosition + 1);

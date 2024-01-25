@@ -1,6 +1,5 @@
 package net.hypixel.nerdbot.generator.impl;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -154,10 +153,9 @@ public class MinecraftTooltipGenerator implements Generator {
             throw new GeneratorException(GeneratorMessages.INVALID_RARITY);
         }
 
-        StringColorParser parsedLore = parseLore(emptyLine, itemLore);
+        StringColorParser parsedLore = parseLore(name, itemLoreString, addEmptyLine, type, maxLineLength);
 
         // alpha value validation
-        // checks if the image transparency was set
         alpha = Math.min(255, Math.max(0, alpha));
 
         // padding value validation
@@ -174,9 +172,8 @@ public class MinecraftTooltipGenerator implements Generator {
         ).render().getImage();
     }
 
-    private StringColorParser parseLore(boolean emptyLine, String input) {
+    private StringColorParser parseLore(String name, String input, boolean emptyLine, String type, int maxLineLength) {
         StringBuilder itemLore = new StringBuilder(input);
-        String type = this.type;
 
         // adds the item's name to the array list
         if (name != null && !name.equalsIgnoreCase("NONE")) { // allow user to pass NONE for the title
@@ -205,13 +202,9 @@ public class MinecraftTooltipGenerator implements Generator {
         // Replace all section symbols to & symbols
         itemLore = new StringBuilder(itemLore.toString().replace("§", "&"));
 
-        System.out.println("Parsing item lore: " + itemLore);
-
         // creating a string parser to convert the string into color flagged text
         StringColorParser colorParser = new StringColorParser(maxLineLength);
         colorParser.parseString(itemLore);
-
-        System.out.println("Parsed item lore: " + colorParser.getParsedDescription());
 
         // checking that there were no errors while parsing the string
         if (!colorParser.parsedSuccessfully()) {
@@ -219,34 +212,6 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         return colorParser;
-    }
-
-    // Example:
-    // {display:{Name:'[{"text":"Name of ","italic":false,"color":"yellow"},{"text":"Item","color":"gold"}]',Lore:['[{"text":"This is text lore.","italic":false,"color":"gray"},{"text":"","italic":false,"color":"dark_purple"}]','[{"text":"Line break!","italic":false,"color":"gray"},{"text":"","italic":false,"color":"dark_purple"}]','[{"text":"Line break OF COLOR RED and BOLD","italic":false,"color":"dark_red","bold":true}]']}} 1
-    public JsonObject generateNbtJson() {
-        StringColorParser itemLore = parseLore(this.emptyLine, this.itemLore);
-        JsonObject nbtJson = new JsonObject();
-        JsonObject displayJson = new JsonObject();
-        JsonArray nameJson = new JsonArray();
-        JsonArray loreJson = new JsonArray();
-
-        //nameJson.add(itemLore.getParsedDescription().get(0).get(0).convertToJson());
-
-        itemLore.getParsedDescription().stream()
-            .skip(1)
-            .forEach(coloredStrings -> {
-                coloredStrings.forEach(coloredString -> {
-                    JsonArray coloredStringJson = new JsonArray();
-                    //coloredStringJson.add(coloredString.convertToJson());
-                    loreJson.add(coloredStringJson);
-                });
-            });
-
-        displayJson.add("Name", nameJson);
-        displayJson.add("Lore", loreJson);
-        nbtJson.add("display", displayJson);
-
-        return nbtJson;
     }
 
     public enum TooltipSide {

@@ -111,7 +111,6 @@ public class StringColorParser {
                         continue;
                     } catch (IllegalArgumentException ignored) {
                         if (selectedCommand.startsWith("#")) {
-                            System.out.println("Setting hex color: " + selectedCommand);
                             setHexColor(selectedCommand);
                             charIndex = closingIndex + 2;
                             continue;
@@ -239,11 +238,12 @@ public class StringColorParser {
             String currentSubstring = description.substring(charIndex, nearestSplit);
             if (lineLength + currentSubstring.length() >= wrappedLineLength) {
                 // splitting the current string if it cannot fit onto a single line
-                if (currentSubstring.length() >= wrappedLineLength) {
+                if (currentSubstring.length() > wrappedLineLength) {
                     currentSubstring = currentSubstring.substring(0, wrappedLineLength);
                 }
 
                 createNewLine();
+
                 // checking if the first character is a space
                 if (currentSubstring.charAt(0) == ' ') {
                     currentSubstring = currentSubstring.substring(1);
@@ -258,7 +258,7 @@ public class StringColorParser {
         }
 
         // checks that the string is not empty before adding it.
-        if (!currentString.isEmpty()) {
+        if (!currentString.isEmpty() && !currentLine.isEmpty()) {
             currentLine.add(currentString);
             parsedDescription.add(currentLine);
 
@@ -274,8 +274,13 @@ public class StringColorParser {
      * Creates a new line within the arraylist, keeping the previous color
      */
     private void createNewLine() {
+        if (currentString.getCurrentString().isEmpty()) {
+            return;
+        }
+
         currentLine.add(currentString);
         parsedDescription.add(currentLine);
+
         // creating a new line and segment
         currentLine = new ArrayList<>();
         currentString = new ColoredString(currentString);
@@ -283,6 +288,7 @@ public class StringColorParser {
         if (lineLength > imageMaxLineLength) {
             imageMaxLineLength = lineLength;
         }
+
         lineLength = 0;
     }
 

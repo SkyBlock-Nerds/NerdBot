@@ -1,6 +1,5 @@
 package net.hypixel.nerdbot.generator.util;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
@@ -11,7 +10,6 @@ import java.awt.Color;
 @Getter
 @Setter
 public class ColoredString {
-    @Getter(AccessLevel.NONE)
     private final StringBuilder currentString;
     private MCColor currentColor;
     private boolean hexColor;
@@ -45,6 +43,19 @@ public class ColoredString {
 
     public boolean hasSpecialFormatting() {
         return this.bold || this.italic || this.strikethrough || this.underlined;
+    }
+
+    public String printClass() {
+        return "ColoredString{" +
+                "currentString=" + currentString +
+                ", currentColor=" + currentColor +
+                ", hexColor=" + hexColor +
+                ", hexColorValue=" + hexColorValue +
+                ", bold=" + bold +
+                ", italic=" + italic +
+                ", strikethrough=" + strikethrough +
+                ", underlined=" + underlined +
+                '}';
     }
 
     @Override
