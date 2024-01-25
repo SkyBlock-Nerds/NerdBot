@@ -11,6 +11,7 @@ public enum Icon {
     ZOMBIE_CHARGE("ⓩ", "Available Charge"),
     STAR("✪", "Star"),
     STARRED("⚚", "Starred"),
+    FRAGGED("⚚", "Starred"),
     BINGO("Ⓑ", "Bingo");
 
     public static final Icon[] VALUES = values();
