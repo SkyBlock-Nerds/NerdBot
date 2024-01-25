@@ -11,6 +11,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.generator.ItemBuilder;
@@ -30,12 +31,36 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+@Log4j2
 public class GeneratorCommands extends ApplicationCommand {
 
-    private static final String BASE_COMMAND = "generate";
+    private static final String BASE_COMMAND = "gen";
+    private static final String ITEM_DESCRIPTION = "The ID of the item to display";
+    private static final String ENCHANTED_DESCRIPTION = "Whether or not the item should be enchanted";
+    private static final String NAME_DESCRIPTION = "The name of the item";
+    private static final String RARITY_DESCRIPTION = "The rarity of the item";
+    private static final String TYPE_DESCRIPTION = "The type of the item";
+    private static final String LORE_DESCRIPTION = "The lore of the item";
+    private static final String SKIN_VALUE_DESCRIPTION = "The skin value of the player head";
+    private static final String ALPHA_DESCRIPTION = "The alpha of the tooltip";
+    private static final String PADDING_DESCRIPTION = "The padding of the tooltip";
+    private static final String EMPTY_LINE_DESCRIPTION = "Whether or not the tooltip should have an empty line";
+    private static final String CENTERED_DESCRIPTION = "Whether or not the tooltip should be centered";
+    private static final String MAX_LINE_LENGTH_DESCRIPTION = "The max line length of the tooltip";
+    private static final String NORMAL_ITEM_DESCRIPTION = "TODO";
+    private static final String TOOLTIP_SIDE_DESCRIPTION = "Which side the tooltip should be displayed on";
+    private static final String TEXT_DESCRIPTION = "The text to display";
+    private static final String TEXTURE_DESCRIPTION = "The texture of the player head";
+    private static final String RECIPE_STRING_DESCRIPTION = "The recipe string to display";
+    private static final String RENDER_BACKGROUND_DESCRIPTION = "Whether or not the background should be rendered";
+    private static final String NBT_DESCRIPTION = "The NBT string to parse";
 
     @JDASlashCommand(name = BASE_COMMAND, group = "display", subcommand = "item", description = "Display an item")
-    public void generateItem(GuildSlashEvent event, @AppOption(autocomplete = "item-names") String itemId, @AppOption Boolean enchanted) {
+    public void generateItem(
+        GuildSlashEvent event,
+        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
+        @AppOption(description = ENCHANTED_DESCRIPTION) Boolean enchanted
+    ) {
         event.deferReply().complete();
 
         enchanted = enchanted != null && enchanted;
@@ -53,12 +78,12 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating that item!").queue();
-            exception.printStackTrace();
+            log.error("Encountered an error while generating an item display", exception);
         }
     }
 
     @JDASlashCommand(name = BASE_COMMAND, subcommand = "head", description = "Generate a player head")
-    public void generateHead(GuildSlashEvent event, @AppOption String texture) {
+    public void generateHead(GuildSlashEvent event, @AppOption(description = TEXTURE_DESCRIPTION) String texture) {
         event.deferReply().complete();
 
         try {
@@ -71,12 +96,16 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating that player head!").queue();
-            exception.printStackTrace();
+            log.error("Encountered an error while generating a player head", exception);
         }
     }
 
     @JDASlashCommand(name = BASE_COMMAND, subcommand = "recipe", description = "Generate a recipe")
-    public void generateRecipe(GuildSlashEvent event, @AppOption String recipeString, @AppOption @Optional Boolean renderBackground) {
+    public void generateRecipe(
+        GuildSlashEvent event,
+        @AppOption(description = RECIPE_STRING_DESCRIPTION) String recipeString,
+        @AppOption(description = RENDER_BACKGROUND_DESCRIPTION) @Optional Boolean renderBackground
+    ) {
         event.deferReply().complete();
 
         renderBackground = renderBackground == null || renderBackground;
@@ -94,12 +123,17 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating that recipe!").queue();
-            exception.printStackTrace();
+            log.error("Encountered an error while generating a recipe", exception);
         }
     }
 
     @JDASlashCommand(name = BASE_COMMAND, group = "parse", subcommand = "nbt", description = "Parse an NBT string")
-    public void parseNbtString(GuildSlashEvent event, @AppOption String nbt, @AppOption @Optional Integer alpha, @AppOption @Optional Integer padding) {
+    public void parseNbtString(
+        GuildSlashEvent event,
+        @AppOption(description = NBT_DESCRIPTION) String nbt,
+        @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
+        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding
+    ) {
         event.deferReply().complete();
 
         alpha = alpha == null ? 245 : alpha;
@@ -153,31 +187,31 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "recipe.png")).queue();
         } catch (JsonParseException exception) {
             event.getHook().editOriginal(GeneratorMessages.MISSING_ITEM_NBT).queue();
-            return;
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException e) {
             event.getHook().editOriginal("An error occurred while parsing the NBT!").queue();
-            throw new RuntimeException(e);
+            log.error("Encountered an error while parsing NBT", e);
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a tooltip")
+    @JDASlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a full item image. Supports displaying items, recipes, and tooltips")
     public void generateTooltip(
         GuildSlashEvent event,
-        @AppOption(autocomplete = "item-names") String itemId,
-        @AppOption String name,
-        @AppOption(autocomplete = "item-rarities") String rarity,
-        @AppOption String type,
-        @AppOption String itemLore,
-        @AppOption @Optional String skinValue,
-        @AppOption @Optional Integer alpha,
-        @AppOption @Optional Integer padding,
-        @AppOption @Optional Boolean emptyLine,
-        @AppOption @Optional Boolean centered,
-        @AppOption @Optional Integer maxLineLength,
-        @AppOption @Optional Boolean normalItem,
-        @AppOption(autocomplete = "tooltip-side") @Optional String tooltipSide
+        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
+        @AppOption(description = NAME_DESCRIPTION) String name,
+        @AppOption(autocomplete = "item-rarities", description = RARITY_DESCRIPTION) String rarity,
+        @AppOption(description = TYPE_DESCRIPTION) String type,
+        @AppOption(description = LORE_DESCRIPTION) String itemLore,
+        @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
+        @AppOption(description = RECIPE_STRING_DESCRIPTION) @Optional String recipeString,
+        @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
+        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
+        @AppOption(description = EMPTY_LINE_DESCRIPTION) @Optional Boolean emptyLine,
+        @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
+        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
+        @AppOption(description = NORMAL_ITEM_DESCRIPTION) @Optional Boolean normalItem,
+        @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide
     ) {
         event.deferReply().complete();
 
@@ -213,6 +247,14 @@ public class GeneratorCommands extends ApplicationCommand {
                 itemBuilder.addGenerator(new MinecraftItemGenerator.Builder().withItem(itemId).build());
             }
 
+            if (recipeString != null) {
+                itemBuilder.addGenerator(0, new MinecraftRecipeGenerator.Builder()
+                    .withRecipeString(recipeString)
+                    .renderBackground(true)
+                    .build()
+                );
+            }
+
             if (tooltipSide != null && MinecraftTooltipGenerator.TooltipSide.valueOf(tooltipSide.toUpperCase()) == MinecraftTooltipGenerator.TooltipSide.LEFT) {
                 itemBuilder.addGenerator(0, tooltipGenerator);
             } else {
@@ -220,26 +262,23 @@ public class GeneratorCommands extends ApplicationCommand {
             }
 
             Item item = itemBuilder.build();
-            JsonObject tooltipJson = tooltipGenerator.generateNbtJson();
-
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "tooltip.png")).queue();
-            System.out.println("Generated Tooltip JSON: " + tooltipJson.toString());
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "item.png")).queue();
         } catch (GeneratorException | IllegalArgumentException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating that player head!").queue();
-            exception.printStackTrace();
+            log.error("Encountered an error while generating a player head", exception);
         }
     }
 
     @JDASlashCommand(name = BASE_COMMAND, subcommand = "text", description = "Generate some text")
     public void generateText(
         GuildSlashEvent event,
-        @AppOption String text,
-        @AppOption @Optional Boolean centered,
-        @AppOption @Optional Integer alpha,
-        @AppOption @Optional Integer padding,
-        @AppOption @Optional Integer maxLineLength
+        @AppOption(description = TEXT_DESCRIPTION) String text,
+        @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
+        @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
+        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
+        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength
     ) {
         event.deferReply().complete();
 
@@ -261,15 +300,12 @@ public class GeneratorCommands extends ApplicationCommand {
                 .build();
 
             itemBuilder.addGenerator(tooltipGenerator);
-
-            Item item = itemBuilder.build();
-
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "text.png")).queue();
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(itemBuilder.build().getImage()), "text.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating the text!").queue();
-            exception.printStackTrace();
+            log.error("Encountered an error while generating text", exception);
         }
     }
 
