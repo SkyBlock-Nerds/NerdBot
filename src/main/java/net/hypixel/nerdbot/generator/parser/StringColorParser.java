@@ -9,6 +9,7 @@ import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -88,16 +89,16 @@ public class StringColorParser {
                         this.errorString = String.format(GeneratorMessages.PERCENT_NOT_FOUND, GeneratorMessages.stripString(surroundingError));
                         return;
                     }
+
                     if (closingIndex <= charIndex + 2) {
                         this.errorString = GeneratorMessages.PERCENT_OUT_OF_RANGE;
                         return;
                     }
 
                     String selectedCommand = description.substring(charIndex + 2, closingIndex);
-                    // checking if the command is a color code
-                    MCColor mcColor = (MCColor) Util.findValue(colors, selectedCommand);
-                    if (mcColor != null) {
-                        // setting the correct option for the segment
+
+                    try {
+                        MCColor mcColor = (MCColor) Util.findValue(colors, selectedCommand);
                         switch (mcColor) {
                             case BOLD -> this.setBold(true);
                             case ITALIC -> this.setItalic(true);
@@ -108,11 +109,20 @@ public class StringColorParser {
                         }
                         charIndex = closingIndex + 2;
                         continue;
+                    } catch (IllegalArgumentException ignored) {
+                        if (selectedCommand.startsWith("#")) {
+                            System.out.println("Setting hex color: " + selectedCommand);
+                            setHexColor(selectedCommand);
+                            charIndex = closingIndex + 2;
+                            continue;
+                        }
                     }
 
-                    String currentColor = "&" + currentString.getCurrentColor().getColorCode() + (currentString.hasSpecialFormatting() ?
-                        (currentString.isBold() ? "&l" : "") + (currentString.isItalic() ? "&o" : "") + (currentString.isStrikethrough() ? "&m" : "") +
-                            (currentString.isUnderlined() ? "&n" : "") : "");
+                    String currentColor = "&" + currentString.getCurrentColor().getColorCode()
+                        + (currentString.hasSpecialFormatting() ? (currentString.isBold() ? "&l" : "")
+                            + (currentString.isItalic() ? "&o" : "")
+                            + (currentString.isStrikethrough() ? "&m" : "")
+                            + (currentString.isUnderlined() ? "&n" : "") : "");
 
                     // checking if the command is a gemstone type
                     Gemstone gemstone = (Gemstone) Util.findValue(gemstones, selectedCommand);
@@ -289,6 +299,22 @@ public class StringColorParser {
         }
 
         currentString.setCurrentColor(color);
+        currentString.setBold(false);
+        currentString.setItalic(false);
+        currentString.setStrikethrough(false);
+        currentString.setUnderlined(false);
+    }
+
+    private void setHexColor(String hexColor) {
+        // checking if there is text on the current string before changing the color
+        if (!currentString.isEmpty()) {
+            currentLine.add(currentString);
+            currentString = new ColoredString();
+        }
+
+        currentString.setHexColor(true);
+        currentString.setHexColorValue(Color.decode(hexColor));
+
         currentString.setBold(false);
         currentString.setItalic(false);
         currentString.setStrikethrough(false);

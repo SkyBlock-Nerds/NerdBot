@@ -166,7 +166,7 @@ public class MinecraftTooltipGenerator implements Generator {
 
         return new MinecraftTooltip(
             parsedLore.getParsedDescription(),
-            MCColor.GRAY,
+            MCColor.GRAY.getColor(),
             parsedLore.getEstimatedImageWidth() * 30,
             alpha,
             padding,
@@ -180,13 +180,13 @@ public class MinecraftTooltipGenerator implements Generator {
         String type = this.type;
 
         // adds the item's name to the array list
-        if (!name.equalsIgnoreCase("NONE")) { // allow user to pass NONE for the title
+        if (name != null && !name.equalsIgnoreCase("NONE")) { // allow user to pass NONE for the title
             String createTitle = "%%" + rarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%\\n";
             itemLore.insert(0, createTitle);
         }
 
         // writing the rarity if the rarity is not none
-        if (rarity != Rarity.NONE) {
+        if (rarity != null && rarity != Rarity.NONE) {
             // checks if there is a type for the item
             if (type == null || type.equalsIgnoreCase("none")) {
                 type = "";
@@ -206,9 +206,13 @@ public class MinecraftTooltipGenerator implements Generator {
         // Replace all section symbols to & symbols
         itemLore = new StringBuilder(itemLore.toString().replace("§", "&"));
 
+        System.out.println("Parsing item lore: " + itemLore);
+
         // creating a string parser to convert the string into color flagged text
         StringColorParser colorParser = new StringColorParser(maxLineLength);
         colorParser.parseString(itemLore);
+
+        System.out.println("Parsed item lore: " + colorParser.getParsedDescription());
 
         // checking that there were no errors while parsing the string
         if (!colorParser.parsedSuccessfully()) {
@@ -227,14 +231,14 @@ public class MinecraftTooltipGenerator implements Generator {
         JsonArray nameJson = new JsonArray();
         JsonArray loreJson = new JsonArray();
 
-        nameJson.add(itemLore.getParsedDescription().get(0).get(0).convertToJson());
+        //nameJson.add(itemLore.getParsedDescription().get(0).get(0).convertToJson());
 
         itemLore.getParsedDescription().stream()
             .skip(1)
             .forEach(coloredStrings -> {
                 coloredStrings.forEach(coloredString -> {
                     JsonArray coloredStringJson = new JsonArray();
-                    coloredStringJson.add(coloredString.convertToJson());
+                    //coloredStringJson.add(coloredString.convertToJson());
                     loreJson.add(coloredStringJson);
                 });
             });

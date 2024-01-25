@@ -3,7 +3,6 @@ package net.hypixel.nerdbot.generator.util;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
@@ -47,7 +46,7 @@ public class MinecraftTooltip {
     @Getter
     private BufferedImage image;
     @Getter
-    private MCColor currentColor;
+    private Color currentColor;
     private Font currentFont;
 
     // Positioning & Size
@@ -74,7 +73,7 @@ public class MinecraftTooltip {
         }
     }
 
-    public MinecraftTooltip(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem, boolean isCentered) {
+    public MinecraftTooltip(List<List<ColoredString>> lines, Color defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem, boolean isCentered) {
         this.alpha = alpha;
         this.padding = padding;
         this.lines = lines;
@@ -175,7 +174,13 @@ public class MinecraftTooltip {
                 // setting the font if it is meant to be bold or italicised
                 currentFont = minecraftFonts[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
                 this.getGraphics().setFont(currentFont);
-                currentColor = segment.getCurrentColor();
+
+                // Check if hex color or regular color
+                if (segment.isHexColor()) {
+                    this.currentColor = segment.getHexColorValue();
+                } else {
+                    this.currentColor = segment.getCurrentColor().getColor();
+                }
 
                 StringBuilder subWord = new StringBuilder();
                 String displayingLine = segment.toString();
@@ -273,12 +278,18 @@ public class MinecraftTooltip {
             this.drawThickLine(nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, true);
         }
 
-        // Draw Drop Shadow Text
-        this.getGraphics().setColor(this.currentColor.getBackgroundColor());
+        // Make the background colour a slightly darker version of the text colour
+        if (segment.isHexColor()) {
+            this.getGraphics().setColor(segment.getHexColorValue().darker().darker().darker());
+        } else {
+            this.getGraphics().setColor(segment.getCurrentColor().getBackgroundColor());
+        }
+
+        //this.getGraphics().setColor(this.currentColor.getBackgroundColor());
         this.getGraphics().drawString(value, this.locationX + PIXEL_SIZE, this.locationY + PIXEL_SIZE);
 
         // Draw Text
-        this.getGraphics().setColor(this.currentColor.getColor());
+        this.getGraphics().setColor(this.currentColor);
         this.getGraphics().drawString(value, this.locationX, this.locationY);
 
         // Draw Strikethrough
@@ -309,7 +320,8 @@ public class MinecraftTooltip {
             yPosition += PIXEL_SIZE;
         }
 
-        this.getGraphics().setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
+        // TODO fix
+        //this.getGraphics().setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
         this.getGraphics().drawLine(xPosition1, yPosition, xPosition2, yPosition);
         this.getGraphics().drawLine(xPosition1, yPosition + 1, xPosition2, yPosition + 1);
     }
