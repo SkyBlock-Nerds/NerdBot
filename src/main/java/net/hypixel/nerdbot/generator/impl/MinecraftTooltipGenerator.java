@@ -17,7 +17,6 @@ import net.hypixel.nerdbot.util.skyblock.Rarity;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
-import java.util.Objects;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftTooltipGenerator implements Generator {
@@ -158,7 +157,7 @@ public class MinecraftTooltipGenerator implements Generator {
         StringColorParser parsedLore = parseLore(emptyLine, itemLore);
 
         // alpha value validation
-        alpha = Objects.requireNonNullElse(alpha, 255); // checks if the image transparency was set
+        // checks if the image transparency was set
         alpha = Math.min(255, Math.max(0, alpha));
 
         // padding value validation
