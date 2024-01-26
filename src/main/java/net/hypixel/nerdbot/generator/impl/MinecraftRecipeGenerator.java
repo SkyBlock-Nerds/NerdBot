@@ -61,7 +61,6 @@ public class MinecraftRecipeGenerator implements Generator {
 
         // iterates through each of the items and fetches the associated sprite/Minecraft head with its given attributes
         for (RecipeParser.RecipeItem item : parser.getRecipeData().values()) {
-
             // checking if the image was correctly found
             if (item.getItemName().equalsIgnoreCase("player_head")) {
                 MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder().withSkin(item.getExtraDetails()).build();
@@ -77,9 +76,9 @@ public class MinecraftRecipeGenerator implements Generator {
 
             MinecraftItemGenerator itemGenerator = new MinecraftItemGenerator.Builder()
                 .withItem(item.getItemName())
-                // TODO: add enchant glint support
-                .isEnchanted(false)
+                .isEnchanted(item.getExtraDetails().equalsIgnoreCase("enchant"))
                 .build();
+
             BufferedImage itemImage = itemGenerator.generate().getImage();
 
             if (itemImage == null) {

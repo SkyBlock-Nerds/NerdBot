@@ -30,7 +30,11 @@ public class MinecraftItemGenerator implements Generator {
 
     @Override
     public Item generate() {
-        itemImage = ItemSpritesheet.getTexture(itemId);
+        itemImage = ItemSpritesheet.getTexture(itemId.toLowerCase());
+
+        if (itemImage == null) {
+            throw new GeneratorException("Item with ID " + itemId + " not found");
+        }
 
         if (itemImage.getWidth() <= 16 && itemImage.getHeight() <= 16) {
             itemImage = ImageUtil.upscaleImage(itemImage, 20);
@@ -39,6 +43,9 @@ public class MinecraftItemGenerator implements Generator {
         if (enchanted) {
             itemImage = applyEnchantGlint();
         }
+
+        // TODO overlays
+
 
         return new Item(itemImage);
     }
