@@ -105,7 +105,7 @@ public class StringColorParser {
                             case STRIKETHROUGH -> this.setStrikethrough(true);
                             case UNDERLINE -> this.setUnderlined(true);
                             case OBFUSCATED -> this.setObfuscated(true);
-                            default -> this.setColor(mcColor);
+                            default -> this.setMinecraftColor(mcColor);
                         }
                         charIndex = closingIndex + 2;
                         continue;
@@ -190,7 +190,7 @@ public class StringColorParser {
                                 case STRIKETHROUGH -> this.setStrikethrough(true);
                                 case UNDERLINE -> this.setUnderlined(true);
                                 case OBFUSCATED -> this.setObfuscated(true);
-                                default -> this.setColor(mcColor);
+                                default -> this.setMinecraftColor(mcColor);
                             }
                             charIndex += 2;
                             break;
@@ -303,7 +303,7 @@ public class StringColorParser {
      *
      * @param color color to change to
      */
-    private void setColor(MCColor color) {
+    private void setMinecraftColor(MCColor color) {
         // checking if there is text on the current string before changing the color
         if (!currentString.isEmpty()) {
             currentLine.add(currentString);
