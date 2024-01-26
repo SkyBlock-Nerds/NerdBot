@@ -46,22 +46,19 @@ public class MinecraftRecipeGenerator implements Generator {
 
     @Nullable
     public BufferedImage buildRecipe(String recipeString, boolean renderBackground) {
-        // checking that the resources were correctly loaded into memory
         if (!MinecraftInventory.resourcesRegistered()) {
             throw new GeneratorException(GeneratorMessages.ITEM_RESOURCE_NOT_LOADED);
         }
 
-        // creates a recipe parser to convert the string into different item slots
         RecipeParser parser = new RecipeParser();
         parser.parseRecipe(recipeString);
 
         if (!parser.isSuccessfullyParsed()) {
-            throw new GeneratorException(parser.getErrorString());
+            throw new GeneratorException(GeneratorMessages.RECIPE_NOT_PARSED);
         }
 
-        // iterates through each of the items and fetches the associated sprite/Minecraft head with its given attributes
+        // Iterate through all items and generate an item using the MinecraftItemGenerator
         for (RecipeParser.RecipeItem item : parser.getRecipeData().values()) {
-            // checking if the image was correctly found
             if (item.getItemName().equalsIgnoreCase("player_head")) {
                 MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder().withSkin(item.getExtraDetails()).build();
                 BufferedImage playerHeadImage = playerHeadGenerator.generate().getImage();
