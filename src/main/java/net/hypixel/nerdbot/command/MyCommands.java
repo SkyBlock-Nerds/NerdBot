@@ -276,7 +276,7 @@ public class MyCommands extends ApplicationCommand {
                     guild.addRoleToMember(member, newMemberRole.get()).complete();
                     String limboRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getLimboRoleId();
 
-                    if (limboRoleId != null) {
+                    if (limboRoleId != null && !limboRoleId.isEmpty()) {
                         Role limboRole = guild.getRoleById(limboRoleId);
 
                         if (limboRole != null) {
