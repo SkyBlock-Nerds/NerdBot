@@ -268,14 +268,20 @@ public class StringColorParser {
         }
 
         successfullyParsed = true;
+
+        // Hacky fix for blank lines that shouldn't exist
+        if (parsedDescription.get(0).get(0).isEmpty()) {
+            parsedDescription.remove(0);
+        }
     }
 
     /**
      * Creates a new line within the arraylist, keeping the previous color
      */
     private void createNewLine() {
+        // TODO figure out why this fixes one and breaks another
         if (currentString.getCurrentString().isEmpty()) {
-            return;
+            //return;
         }
 
         currentLine.add(currentString);
