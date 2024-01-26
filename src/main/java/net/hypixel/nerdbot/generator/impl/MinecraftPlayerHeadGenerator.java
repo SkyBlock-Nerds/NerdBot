@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftPlayerHeadGenerator implements Generator {
 
+    private static final String DEFAULT_SKIN_VALUE = "Steve"; // TODO find better value
     private static final Pattern TEXTURE_URL = Pattern.compile("(?:https?://textures.minecraft.net/texture/)?([a-zA-Z0-9]+)");
 
     private final String textureId;
@@ -33,6 +34,10 @@ public class MinecraftPlayerHeadGenerator implements Generator {
     }
 
     private BufferedImage createHead(String textureId) {
+        if (textureId == null) {
+            textureId = DEFAULT_SKIN_VALUE;
+        }
+
         // Checking if the texture ID is a player name
         if (textureId.length() <= 16) {
             textureId = getPlayerHeadURL(textureId);

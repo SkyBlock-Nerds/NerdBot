@@ -59,21 +59,33 @@ public class GeneratorCommands extends ApplicationCommand {
     public void generateItem(
         GuildSlashEvent event,
         @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
-        @AppOption(description = ENCHANTED_DESCRIPTION) Boolean enchanted
+        @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
+        @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue
     ) {
         event.deferReply().complete();
 
         enchanted = enchanted != null && enchanted;
 
         try {
-            Item item = new ItemBuilder()
-                .addGenerator(new MinecraftItemGenerator.Builder()
+            ItemBuilder item = new ItemBuilder();
+
+            if (itemId.equalsIgnoreCase("player_head")) {
+                MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder();
+
+                if (skinValue != null) {
+                    generator.withSkin(skinValue);
+                }
+
+                item.addGenerator(generator.build());
+            } else {
+                item.addGenerator(new MinecraftItemGenerator.Builder()
                     .withItem(itemId)
                     .isEnchanted(enchanted)
                     .build()
-                ).build();
+                );
+            }
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "item.png")).queue();
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.build().getImage()), "item.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
@@ -238,11 +250,13 @@ public class GeneratorCommands extends ApplicationCommand {
                 .build();
 
             if (itemId.equalsIgnoreCase("player_head")) {
-                if (skinValue == null) {
-                    itemBuilder.addGenerator(new MinecraftItemGenerator.Builder().withItem(itemId).build());
-                } else {
-                    itemBuilder.addGenerator(new MinecraftPlayerHeadGenerator.Builder().withSkin(skinValue).build());
+                MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder();
+
+                if (skinValue != null) {
+                    generator.withSkin(skinValue);
                 }
+
+                itemBuilder.addGenerator(generator.build());
             } else {
                 itemBuilder.addGenerator(new MinecraftItemGenerator.Builder().withItem(itemId).build());
             }
