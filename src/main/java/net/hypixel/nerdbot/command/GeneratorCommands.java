@@ -14,6 +14,7 @@ import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
+import net.hypixel.nerdbot.generator.GeneratedItem;
 import net.hypixel.nerdbot.generator.ItemBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
@@ -21,7 +22,6 @@ import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftRecipeGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
-import net.hypixel.nerdbot.generator.util.Item;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
@@ -95,11 +95,11 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply().complete();
 
         try {
-            Item item = new ItemBuilder()
+            GeneratedItem generatedItem = new ItemBuilder()
                 .addGenerator(new MinecraftPlayerHeadGenerator.Builder().withSkin(texture).build())
                 .build();
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "head.png")).queue();
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedItem.getImage()), "head.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
@@ -119,14 +119,14 @@ public class GeneratorCommands extends ApplicationCommand {
         renderBackground = renderBackground == null || renderBackground;
 
         try {
-            Item item = new ItemBuilder()
+            GeneratedItem generatedItem = new ItemBuilder()
                 .addGenerator(new MinecraftRecipeGenerator.Builder()
                     .withRecipeString(recipeString)
                     .renderBackground(renderBackground)
                     .build()
                 ).build();
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "recipe.png")).queue();
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedItem.getImage()), "recipe.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
@@ -183,7 +183,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 );
             }
 
-            Item item = itemBuilder
+            GeneratedItem generatedItem = itemBuilder
                 .addGenerator(
                     new MinecraftTooltipGenerator.Builder()
                         .parseNbtJson(jsonObject)
@@ -192,7 +192,7 @@ public class GeneratorCommands extends ApplicationCommand {
                         .build()
                 ).build();
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "recipe.png")).queue();
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedItem.getImage()), "recipe.png")).queue();
         } catch (JsonParseException exception) {
             event.getHook().editOriginal(GeneratorMessages.MISSING_ITEM_NBT).queue();
         } catch (GeneratorException exception) {
@@ -271,8 +271,8 @@ public class GeneratorCommands extends ApplicationCommand {
                 itemBuilder.addGenerator(tooltipGenerator);
             }
 
-            Item item = itemBuilder.build();
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.getImage()), "item.png")).queue();
+            GeneratedItem generatedItem = itemBuilder.build();
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedItem.getImage()), "item.png")).queue();
         } catch (GeneratorException | IllegalArgumentException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {

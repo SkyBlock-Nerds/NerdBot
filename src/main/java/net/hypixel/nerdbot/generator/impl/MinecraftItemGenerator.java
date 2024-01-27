@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.ClassBuilder;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.util.Item;
+import net.hypixel.nerdbot.generator.GeneratedItem;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.spritesheet.ItemSpritesheet;
 
@@ -29,7 +29,7 @@ public class MinecraftItemGenerator implements Generator {
     }
 
     @Override
-    public Item generate() {
+    public GeneratedItem generate() {
         itemImage = ItemSpritesheet.getTexture(itemId.toLowerCase());
 
         if (itemImage == null) {
@@ -37,7 +37,7 @@ public class MinecraftItemGenerator implements Generator {
         }
 
         if (itemImage.getWidth() <= 16 && itemImage.getHeight() <= 16) {
-            itemImage = ImageUtil.upscaleImage(itemImage, 20);
+            itemImage = ImageUtil.upscaleImage(itemImage, 16);
         }
 
         if (enchanted) {
@@ -47,7 +47,7 @@ public class MinecraftItemGenerator implements Generator {
         // TODO overlays
 
 
-        return new Item(itemImage);
+        return new GeneratedItem(itemImage);
     }
 
     public static class Builder implements ClassBuilder<MinecraftItemGenerator> {

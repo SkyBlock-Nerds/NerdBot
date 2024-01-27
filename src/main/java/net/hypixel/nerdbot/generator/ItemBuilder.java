@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.generator;
 
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.util.Item;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -26,12 +25,12 @@ public class ItemBuilder {
         return this;
     }
 
-    public Item build() {
+    public GeneratedItem build() {
         int totalWidth = 0;
         int maxHeight = 0;
 
         for (Generator generator : generators) {
-            Item generatedItem = generator.generate();
+            GeneratedItem generatedItem = generator.generate();
             BufferedImage generatedImage = generatedItem.getImage();
 
             if (generatedImage == null) {
@@ -48,7 +47,7 @@ public class ItemBuilder {
         int x = 0;
 
         for (Generator generator : generators) {
-            Item generatedItem = generator.generate();
+            GeneratedItem generatedItem = generator.generate();
             BufferedImage generatedImage = generatedItem.getImage();
 
             if (generatedImage == null) {
@@ -67,6 +66,6 @@ public class ItemBuilder {
 
         graphics.dispose();
 
-        return new Item(finalImage);
+        return new GeneratedItem(finalImage);
     }
 }

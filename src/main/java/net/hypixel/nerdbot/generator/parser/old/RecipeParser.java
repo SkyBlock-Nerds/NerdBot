@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator.parser;
+package net.hypixel.nerdbot.generator.parser.old;
 
 import lombok.Getter;
 import lombok.Setter;

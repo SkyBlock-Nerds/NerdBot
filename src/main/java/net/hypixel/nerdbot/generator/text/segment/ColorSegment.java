@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator.parser.segment;
+package net.hypixel.nerdbot.generator.text.segment;
 
 import com.google.gson.JsonObject;
 import lombok.Getter;

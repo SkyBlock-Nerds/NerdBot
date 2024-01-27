@@ -5,9 +5,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.ClassBuilder;
+import net.hypixel.nerdbot.generator.GeneratedItem;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.util.Item;
 import net.hypixel.nerdbot.generator.util.MinecraftHead;
 import net.hypixel.nerdbot.util.Util;
 
@@ -29,8 +29,8 @@ public class MinecraftPlayerHeadGenerator implements Generator {
     private final String textureId;
 
     @Override
-    public Item generate() {
-        return new Item(createHead(textureId));
+    public GeneratedItem generate() {
+        return new GeneratedItem(createHead(textureId));
     }
 
     private BufferedImage createHead(String textureId) {

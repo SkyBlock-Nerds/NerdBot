@@ -4,11 +4,15 @@ import com.google.gson.JsonObject;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.ClassBuilder;
+import net.hypixel.nerdbot.generator.GeneratedItem;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.parser.segment.LineSegment;
+import net.hypixel.nerdbot.generator.parser.ColorCodeParser;
+import net.hypixel.nerdbot.generator.parser.IconParser;
+import net.hypixel.nerdbot.generator.parser.StatParser;
+import net.hypixel.nerdbot.generator.parser.TextParser;
+import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
-import net.hypixel.nerdbot.generator.util.Item;
 import net.hypixel.nerdbot.generator.util.MinecraftTooltip;
 import net.hypixel.nerdbot.util.Range;
 import net.hypixel.nerdbot.util.Util;
@@ -16,6 +20,7 @@ import net.hypixel.nerdbot.util.skyblock.Rarity;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
+import java.util.List;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftTooltipGenerator implements Generator {
@@ -32,8 +37,8 @@ public class MinecraftTooltipGenerator implements Generator {
     private final boolean centeredText;
 
     @Override
-    public Item generate() {
-        return new Item(buildItem(name, rarity, itemLore, type, emptyLine, alpha, padding, maxLineLength, normalItem, centeredText));
+    public GeneratedItem generate() {
+        return new GeneratedItem(buildItem(name, rarity, itemLore, type, emptyLine, alpha, padding, maxLineLength, normalItem, centeredText));
     }
 
     public static class Builder implements ClassBuilder<MinecraftTooltipGenerator> {
@@ -104,6 +109,7 @@ public class MinecraftTooltipGenerator implements Generator {
             this.normalItem = false;
             this.centered = false;
             this.rarity = Rarity.NONE;
+            this.itemLore = "";
 
             JsonObject tagObject = nbtJson.get("tag").getAsJsonObject();
             JsonObject displayObject = tagObject.get("display").getAsJsonObject();
@@ -161,7 +167,13 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         for (String line : input.split("\\\\n")) {
-            builder.withLines(LineSegment.fromLegacy(line, '&'));
+            String parsed = TextParser.parseString(line, List.of(
+                new ColorCodeParser(),
+                new IconParser(),
+                new StatParser()
+            ));
+
+            builder.withLines(LineSegment.fromLegacy(parsed, '&'));
         }
 
         if (rarity != null && rarity != Rarity.NONE) {

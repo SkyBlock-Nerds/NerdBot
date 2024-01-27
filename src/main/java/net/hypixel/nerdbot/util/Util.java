@@ -329,4 +329,12 @@ public class Util {
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("No value found with name " + match));
     }
+
+    @Nullable
+    public static Enum<?> findValueOrNull(Enum<?>[] enumSet, String match) {
+        return Arrays.stream(enumSet)
+            .filter(item -> item.name().equalsIgnoreCase(match))
+            .findFirst()
+            .orElse(null);
+    }
 }

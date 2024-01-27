@@ -5,9 +5,9 @@ import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.ClassBuilder;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.parser.RecipeParser;
+import net.hypixel.nerdbot.generator.parser.old.RecipeParser;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
-import net.hypixel.nerdbot.generator.util.Item;
+import net.hypixel.nerdbot.generator.GeneratedItem;
 import net.hypixel.nerdbot.generator.util.MinecraftInventory;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,8 +20,8 @@ public class MinecraftRecipeGenerator implements Generator {
     private final boolean renderBackground;
 
     @Override
-    public Item generate() {
-        return new Item(buildRecipe(recipeString, renderBackground));
+    public GeneratedItem generate() {
+        return new GeneratedItem(buildRecipe(recipeString, renderBackground));
     }
 
     public static class Builder implements ClassBuilder<MinecraftRecipeGenerator> {

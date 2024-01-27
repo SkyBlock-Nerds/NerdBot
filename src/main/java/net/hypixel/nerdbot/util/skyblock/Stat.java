@@ -1,28 +1,26 @@
 package net.hypixel.nerdbot.util.skyblock;
 
-import net.hypixel.nerdbot.generator.parser.StatColorParser;
+import lombok.Getter;
 
-import java.util.function.BiFunction;
-import java.util.function.Function;
-
+@Getter
 public enum Stat {
     STRENGTH("❁", "Strength", MCColor.RED),
     DAMAGE("❁", "Damage", MCColor.RED),
-    HEALTH("❤", "Health", MCColor.RED, MCColor.GREEN, StatColorParser::normalStatColorParser, null),
+    HEALTH("❤", "Health", MCColor.RED, MCColor.GREEN, ParseType.NORMAL),
     DEFENSE("❈", "Defense", MCColor.GREEN),
     TRUE_DEFENSE("❂", "True Defense", MCColor.WHITE),
-    SPEED("✦", "Speed", MCColor.WHITE, MCColor.GREEN, StatColorParser::normalStatColorParser, null),
+    SPEED("✦", "Speed", MCColor.WHITE, MCColor.GREEN, ParseType.NORMAL),
     INTELLIGENCE("✎", "Intelligence", MCColor.AQUA),
     CRIT_CHANCE("☣", "Crit Chance", MCColor.BLUE),
     CRIT_DAMAGE("☠", "Crit Damage", MCColor.BLUE),
-    ATTACK_SPEED("⚔", "Bonus Attack Speed", MCColor.YELLOW, MCColor.GREEN, StatColorParser::normalStatColorParser, null),
+    ATTACK_SPEED("⚔", "Bonus Attack Speed", MCColor.YELLOW, MCColor.GREEN, ParseType.NORMAL),
     FEROCITY("⫽", "Ferocity", MCColor.RED),
     MENDING("☄", "Mending", MCColor.GREEN),
     VITALITY("♨", "Vitality", MCColor.DARK_RED),
     HEALTH_REGEN("❣", "Health Regen", MCColor.RED),
     MAGIC_FIND("✯", "Magic Find", MCColor.AQUA),
-    PET_LUCK("♣", "Pet Luck", MCColor.LIGHT_PURPLE, MCColor.WHITE, StatColorParser::normalStatColorParser, null),
-    SEA_CREATURE_CHANCE("α", "Sea Creature Chance", MCColor.DARK_AQUA, null, StatColorParser::boldedIconColorParser, StatColorParser::boldedIconParser),
+    PET_LUCK("♣", "Pet Luck", MCColor.LIGHT_PURPLE, MCColor.WHITE, ParseType.NORMAL),
+    SEA_CREATURE_CHANCE("α", "Sea Creature Chance", MCColor.DARK_AQUA, null, ParseType.BOLD_ICON),
     FISHING_SPEED("☂", "Fishing Speed", MCColor.AQUA),
     ABILITY_DAMAGE("๑", "Ability Damage", MCColor.RED),
     MINING_SPEED("⸕", "Mining Speed", MCColor.GOLD),
@@ -37,17 +35,17 @@ public enum Stat {
     FUEL("♢", "Fuel", MCColor.DARK_GREEN),
     MITHRIL_POWDER("᠅", "Mithril Powder", MCColor.DARK_GREEN),
     GEMSTONE_POWDER("᠅", "Gemstone Powder", MCColor.LIGHT_PURPLE),
-    REQUIRE("❣", "Requires", MCColor.RED, StatColorParser::postStatColorParser),
-    RECIPE("", "Right-click to view recipes!", MCColor.YELLOW, StatColorParser::noParsing),
-    COOP_SOULBOUND("", "Co-op Soulbound", MCColor.DARK_GRAY, StatColorParser::soulboundColorParsing),
-    SOULBOUND("", "Soulbound", MCColor.DARK_GRAY, StatColorParser::soulboundColorParsing),
-    REFORGABLE("", "This item can be reforged!", MCColor.DARK_GRAY, StatColorParser::noParsing),
-    ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser, null),
-    ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser, null),
-    ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, StatColorParser::itemStatColorParser, null),
-    MANA_COST("", "Mana Cost:", MCColor.DARK_GRAY, MCColor.DARK_AQUA, StatColorParser::postDualColorParser, null),
-    COOLDOWN("", "Cooldown:", MCColor.DARK_GRAY, MCColor.GREEN, StatColorParser::postDualColorParser, null),
-    ABILITY("", "Ability", MCColor.GOLD, MCColor.YELLOW, StatColorParser::abilityColorParser, null),
+    REQUIRE("❣", "Requires", MCColor.RED, ParseType.POST),
+    RECIPE("", "Right-click to view recipes!", MCColor.YELLOW, ParseType.NONE),
+    COOP_SOULBOUND("", "Co-op Soulbound", MCColor.DARK_GRAY, ParseType.SOULBOUND),
+    SOULBOUND("", "Soulbound", MCColor.DARK_GRAY, ParseType.SOULBOUND),
+    REFORGABLE("", "This item can be reforged!", MCColor.DARK_GRAY, ParseType.NONE),
+    ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, ParseType.ITEM_STAT),
+    ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, ParseType.ITEM_STAT),
+    ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, ParseType.ITEM_STAT),
+    MANA_COST("", "Mana Cost:", MCColor.DARK_GRAY, MCColor.DARK_AQUA, ParseType.POST_DUAL),
+    COOLDOWN("", "Cooldown:", MCColor.DARK_GRAY, MCColor.GREEN, ParseType.POST_DUAL),
+    ABILITY("", "Ability", MCColor.GOLD, MCColor.YELLOW, ParseType.ABILITY),
     COMBAT_WISDOM("☯", "Combat Wisdom", MCColor.DARK_AQUA),
     MINING_WISDOM("☯", "Mining Wisdom", MCColor.DARK_AQUA),
     FARMING_WISDOM("☯", "Farming Wisdom", MCColor.DARK_AQUA),
@@ -61,8 +59,8 @@ public enum Stat {
     RIFT_TIME("ф", "Rift Time", MCColor.GREEN),
     RIFT_DAMAGE("❁", "Rift Damage", MCColor.DARK_PURPLE),
     MANA_REGEN("⚡", "Mana Regen", MCColor.AQUA),
-    RIFT_TRANSFERABLE("", "Rift-Transferable", MCColor.DARK_PURPLE, StatColorParser::noParsing),
-    UNDEAD("༕", "This armor piece is undead ༕!", MCColor.DARK_GREEN, StatColorParser::noParsing);
+    RIFT_TRANSFERABLE("", "Rift-Transferable", MCColor.DARK_PURPLE, ParseType.NONE),
+    UNDEAD("༕", "This armor piece is undead ༕!", MCColor.DARK_GREEN, ParseType.NONE);
 
     public static final Stat[] VALUES = values();
 
@@ -70,63 +68,25 @@ public enum Stat {
     private final String stat;
     private final String display;
     private final MCColor color;
-    private final BiFunction<Stat, String, String> statColorParser;
-    private final Function<Stat, String> iconColorParser;
+    private final ParseType parseType;
     // Some stats have special colors which are used in conjunction to the normal color.
     private final MCColor subColor;
 
-    Stat(String icon, String stat, MCColor color, MCColor subColor, BiFunction<Stat, String, String> statColorParser, Function<Stat, String> iconColorParser) {
+    Stat(String icon, String stat, MCColor color, MCColor subColor, ParseType parseType) {
         this.icon = icon;
         this.stat = stat;
         this.display = icon + " " + stat;
         this.color = color;
         this.subColor = subColor;
-        this.statColorParser = statColorParser;
-        this.iconColorParser = iconColorParser;
+        this.parseType = parseType;
     }
 
     Stat(String icon, String stat, MCColor color) {
-        this(icon, stat, color, null, StatColorParser::normalStatColorParser, null);
+        this(icon, stat, color, null, ParseType.NORMAL);
     }
 
-    Stat(String icon, String stat, MCColor color, BiFunction<Stat, String, String> statColorParser) {
-        this(icon, stat, color, null, statColorParser, null);
-    }
-
-    public String getIcon() {
-        return icon;
-    }
-
-    public String getStat() {
-        return stat;
-    }
-
-    public String getDisplay() {
-        return display;
-    }
-
-    public MCColor getColor() {
-        return color;
-    }
-
-    /**
-     * Parses the string into its color and id components
-     *
-     * @param isIcon    specifying if the stat's icon is meant to be displayed
-     * @param extraData extra arguments provided in the section
-     *
-     * @return returns a color parsed replacement string
-     */
-    public String getParsedStat(boolean isIcon, String extraData) {
-        if (isIcon) {
-            if (iconColorParser == null) {
-                return "%%" + getColor() + "%%" + getIcon();
-            }
-
-            return iconColorParser.apply(this);
-        }
-
-        return statColorParser.apply(this, extraData);
+    Stat(String icon, String stat, MCColor color, ParseType parseType) {
+        this(icon, stat, color, null, parseType);
     }
 
     /**
@@ -141,5 +101,18 @@ public enum Stat {
         } else {
             return color;
         }
+    }
+
+    public enum ParseType {
+        NONE,
+        NORMAL,
+        BOLD,
+        BOLD_ICON,
+        DUAL,
+        SOULBOUND,
+        POST,
+        POST_DUAL,
+        ITEM_STAT,
+        ABILITY
     }
 }

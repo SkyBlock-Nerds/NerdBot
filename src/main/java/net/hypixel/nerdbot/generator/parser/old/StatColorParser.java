@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator.parser;
+package net.hypixel.nerdbot.generator.parser.old;
 
 import net.hypixel.nerdbot.util.skyblock.Stat;
 

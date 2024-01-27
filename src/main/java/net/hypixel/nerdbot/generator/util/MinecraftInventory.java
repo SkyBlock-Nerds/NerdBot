@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.generator.util;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.command.GeneratorCommands;
-import net.hypixel.nerdbot.generator.parser.RecipeParser;
+import net.hypixel.nerdbot.generator.parser.old.RecipeParser;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;

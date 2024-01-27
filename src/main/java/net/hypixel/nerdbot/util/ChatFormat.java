@@ -33,7 +33,9 @@ public enum ChatFormat {
     ITALIC('o', true, 0x5555FF),
     RESET('r', false, 0x000000);
 
+    public static final ChatFormat[] VALUES = values();
     public static final char SECTION_SYMBOL = '§';
+
     @Getter
     private final char code;
     @Getter private final boolean isFormat;

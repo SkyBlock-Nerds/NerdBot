@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator.parser.event;
+package net.hypixel.nerdbot.generator.text.event;
 
 import com.google.gson.JsonObject;
 import lombok.Getter;

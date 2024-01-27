@@ -1,42 +1,47 @@
 package net.hypixel.nerdbot.generator.parser;
 
+import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Icon;
 
-public class IconParser {
+import java.util.regex.Matcher;
 
-    private IconParser() {
-    }
+public class IconParser implements TextParser {
 
-    /**
-     * Returns the icon with no extra data
-     *
-     * @param icon      the selected icon
-     * @param extraData the extra arguments provided
-     *
-     * @return the icon with no extra data
-     */
-    public static String defaultIconParser(Icon icon, String extraData) {
-        return icon.getIcon();
-    }
+    @Override
+    public String parse(String input) {
+        if (input.isBlank()) {
+            return input;
+        }
 
-    /**
-     * Returns the icon repeated the amount of times specified in the extra data
-     *
-     * @param icon      the selected icon
-     * @param extraData the extra arguments provided
-     *
-     * @return the icon repeated the amount of times specified in the extra data
-     */
-    public static String repeatingIconParser(Icon icon, String extraData) {
-        String text = defaultIconParser(icon, extraData);
-        try {
-            int amount = Integer.parseInt(extraData);
-            if (amount < 1) {
-                return text;
+        Matcher matcher = VARIABLE_PATTERN.matcher(input);
+
+        while (matcher.find()) {
+            String match = matcher.group(0);
+            String icon = matcher.group(1);
+            String extraData = matcher.group(2);
+
+            Icon iconEnum = (Icon) Util.findValueOrNull(Icon.VALUES, icon);
+
+            if (iconEnum == null) {
+                continue;
             }
-            return text.repeat(amount);
+
+            input = input.replace(match, parseIcon(iconEnum, extraData));
+        }
+
+        return input;
+    }
+
+    private String parseIcon(Icon icon, String extra) {
+        if (extra == null) {
+            return icon.getIcon();
+        }
+
+        try {
+            int amount = Integer.parseInt(extra);
+            return icon.getIcon().repeat(amount);
         } catch (NumberFormatException e) {
-            return text;
+            return icon.getIcon();
         }
     }
 }
