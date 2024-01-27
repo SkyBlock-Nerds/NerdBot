@@ -6,12 +6,12 @@ import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.ClassBuilder;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.parser.StringColorParser;
+import net.hypixel.nerdbot.generator.parser.segment.LineSegment;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
 import net.hypixel.nerdbot.generator.util.Item;
 import net.hypixel.nerdbot.generator.util.MinecraftTooltip;
+import net.hypixel.nerdbot.util.Range;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import org.jetbrains.annotations.Nullable;
 
@@ -123,7 +123,7 @@ public class MinecraftTooltipGenerator implements Generator {
     }
 
     /**
-     * Converts text into a Minecraft Item tooltip into a rendered image
+     * Converts text into a rendered image
      *
      * @param name           the name of the item
      * @param rarity         the rarity of the item
@@ -135,83 +135,44 @@ public class MinecraftTooltipGenerator implements Generator {
      * @param maxLineLength  the maximum length before content overflows onto the next
      * @param isNormalItem   if the item should add an extra line between the title and first line
      *
-     * @return a Minecraft item description
+     * @return a Minecraft item tooltip as a rendered image
      */
     @Nullable
     public BufferedImage buildItem(String name, Rarity rarity, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, int maxLineLength, boolean isNormalItem, boolean isCentered) {
-        // Checking that the fonts have been loaded correctly
-        if (!MinecraftTooltip.isFontsRegistered()) {
-            throw new GeneratorException(GeneratorMessages.FONTS_NOT_REGISTERED);
-        }
-
         if (rarity == null) {
             rarity = Rarity.NONE;
         }
 
-        // Check if the given rarity is a valid enum value
         if (Util.findValue(Rarity.VALUES, rarity.name()) == null) {
             throw new GeneratorException(GeneratorMessages.INVALID_RARITY);
         }
 
-        StringColorParser parsedLore = parseLore(name, itemLoreString, addEmptyLine, type, maxLineLength);
-
-        // alpha value validation
-        alpha = Math.min(255, Math.max(0, alpha));
-
-        // padding value validation
-        padding = Math.max(0, padding);
-
-        return new MinecraftTooltip(
-            parsedLore.getParsedDescription(),
-            MCColor.GRAY.getColor(),
-            parsedLore.getEstimatedImageWidth() * 30,
-            alpha,
-            padding,
-            isNormalItem,
-            isCentered
-        ).render().getImage();
+        MinecraftTooltip parsedLore = parseLore(name, itemLoreString, addEmptyLine, type, maxLineLength, alpha, padding);
+        return parsedLore.render().getImage();
     }
 
-    private StringColorParser parseLore(String name, String input, boolean emptyLine, String type, int maxLineLength) {
-        StringBuilder itemLore = new StringBuilder(input);
+    private MinecraftTooltip parseLore(String name, String input, boolean emptyLine, String type, int maxLineLength, int alpha, int padding) {
+        MinecraftTooltip.Builder builder = MinecraftTooltip.builder()
+            .withPadding(padding)
+            .withAlpha(Range.between(0, 255).fit(alpha));
 
-        // adds the item's name to the array list
-        if (name != null && !name.equalsIgnoreCase("NONE")) { // allow user to pass NONE for the title
-            String createTitle = "%%" + rarity.getRarityColor().toString() + "%%" + name + "%%GRAY%%\\n";
-            itemLore.insert(0, createTitle);
+        if (name != null && !name.isEmpty()) {
+            builder.withLines(LineSegment.fromLegacy(rarity.getColorCode() + name, '&'));
         }
 
-        // writing the rarity if the rarity is not none
+        for (String line : input.split("\\\\n")) {
+            builder.withLines(LineSegment.fromLegacy(line, '&'));
+        }
+
         if (rarity != null && rarity != Rarity.NONE) {
-            // checks if there is a type for the item
-            if (type == null || type.equalsIgnoreCase("none")) {
-                type = "";
-            }
-            // checking if there is custom line break happening
             if (emptyLine) {
-                itemLore.append("\\n");
+                builder.withEmptyLine();
             }
 
-            // adds the items type in the item lore
-            String createRarity = "\\n%%" + rarity.getRarityColor() + "%%%%BOLD%%" + rarity.getId().toUpperCase() + " " + type;
-            itemLore.append(createRarity);
-        } else {
-            itemLore.append("\\n");
+            builder.withLines(LineSegment.fromLegacy(rarity.getFormattedDisplay() + " " + type, '&'));
         }
 
-        // Replace all section symbols to & symbols
-        itemLore = new StringBuilder(itemLore.toString().replace("§", "&"));
-
-        // creating a string parser to convert the string into color flagged text
-        StringColorParser colorParser = new StringColorParser(maxLineLength);
-        colorParser.parseString(itemLore);
-
-        // checking that there were no errors while parsing the string
-        if (!colorParser.parsedSuccessfully()) {
-            throw new GeneratorException(colorParser.getErrorString());
-        }
-
-        return colorParser;
+        return builder.build();
     }
 
     public enum TooltipSide {

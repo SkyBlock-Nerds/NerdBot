@@ -36,6 +36,8 @@ import java.util.stream.Stream;
 @Log4j2
 public class Util {
 
+    private static final String ALL_PATTERN = "[0-9A-FK-ORa-fk-or]";
+    public static final Pattern VANILLA_PATTERN = Pattern.compile(ChatFormat.SECTION_SYMBOL + "+(" + ALL_PATTERN + ")");
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
     public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");

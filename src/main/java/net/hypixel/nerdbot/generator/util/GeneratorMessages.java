@@ -1,6 +1,5 @@
 package net.hypixel.nerdbot.generator.util;
 
-import net.hypixel.nerdbot.generator.parser.StringColorParser;
 import net.hypixel.nerdbot.util.skyblock.*;
 
 import java.util.Arrays;

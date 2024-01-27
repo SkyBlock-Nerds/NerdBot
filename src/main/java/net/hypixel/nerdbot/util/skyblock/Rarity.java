@@ -31,4 +31,12 @@ public enum Rarity {
     public MCColor getRarityColor() {
         return color;
     }
+
+    public String getColorCode() {
+        return "&" + color.getColorCode();
+    }
+
+    public String getFormattedDisplay() {
+        return getColorCode() + "&" + MCColor.BOLD.getColorCode() + display;
+    }
 }

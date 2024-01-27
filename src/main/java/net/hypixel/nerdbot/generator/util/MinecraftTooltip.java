@@ -2,19 +2,31 @@ package net.hypixel.nerdbot.generator.util;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j2;
+import net.hypixel.nerdbot.generator.ClassBuilder;
+import net.hypixel.nerdbot.util.ChatFormat;
+import net.hypixel.nerdbot.generator.parser.segment.ColorSegment;
+import net.hypixel.nerdbot.generator.parser.segment.LineSegment;
+import net.hypixel.nerdbot.util.Range;
+import net.hypixel.nerdbot.util.Util;
+import org.apache.commons.lang.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 
+import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
-import static net.hypixel.nerdbot.util.Util.initFont;
-
+@Log4j2
 public class MinecraftTooltip {
 
     private static final int PIXEL_SIZE = 2;
@@ -22,31 +34,24 @@ public class MinecraftTooltip {
     private static final int Y_INCREMENT = PIXEL_SIZE * 10;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
-
-    private static final Font[] minecraftFonts;
+    private static final Range<Integer> LINE_LENGTH = Range.between(38, 80);
+    private static final @NotNull List<Font> MINECRAFT_FONTS = new ArrayList<>();
     private static final Font sansSerif;
-    private static boolean fontsRegisteredCorrectly = true;
 
-    // Current Settings
     @Getter
-    private final List<List<ColoredString>> lines;
-    @Getter(AccessLevel.PRIVATE)
-    private final ArrayList<Integer> lineWidths = new ArrayList<>();
+    private final List<LineSegment> lines;
     @Getter
     private final int alpha;
     @Getter
     private final int padding;
     @Getter
-    private final boolean isNormalItem;
-    @Getter
-    private final boolean isCentered;
+    private final boolean paddingFirstLine;
     @Getter(AccessLevel.PRIVATE)
-    @Setter(AccessLevel.PRIVATE)
-    private Graphics2D graphics;
+    private final Graphics2D graphics;
     @Getter
     private BufferedImage image;
     @Getter
-    private Color currentColor;
+    private ChatFormat currentColor;
     private Font currentFont;
 
     // Positioning & Size
@@ -56,35 +61,39 @@ public class MinecraftTooltip {
 
     static {
         sansSerif = new Font("SansSerif", Font.PLAIN, 20);
-        minecraftFonts = new Font[]{
-            initFont("/minecraft/fonts/minecraft.otf", 15.5f),
-            initFont("/minecraft/fonts/3_Minecraft-Bold.otf", 20.0f),
-            initFont("/minecraft/fonts/2_Minecraft-Italic.otf", 20.5f),
-            initFont("/minecraft/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
-        };
+
+        MINECRAFT_FONTS.addAll(
+            Arrays.asList(
+                Util.initFont("/minecraft/fonts/minecraft.otf", 15.5f),
+                Util.initFont("/minecraft/fonts/3_Minecraft-Bold.otf", 20.0f),
+                Util.initFont("/minecraft/fonts/2_Minecraft-Italic.otf", 20.5f),
+                Util.initFont("/minecraft/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
+            )
+        );
 
         // Register Minecraft Fonts
-        for (Font font : minecraftFonts) {
-            if (font == null) {
-                fontsRegisteredCorrectly = false;
-                break;
-            }
-            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-        }
+        MINECRAFT_FONTS.forEach(GraphicsEnvironment.getLocalGraphicsEnvironment()::registerFont);
     }
 
-    public MinecraftTooltip(List<List<ColoredString>> lines, Color defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem, boolean isCentered) {
+    private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean paddingFirstLine) {
         this.alpha = alpha;
         this.padding = padding;
+        this.paddingFirstLine = paddingFirstLine;
         this.lines = lines;
-        this.isNormalItem = isNormalItem;
-        this.isCentered = isCentered;
-        this.graphics = this.initG2D(defaultWidth + 2 * START_XY, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4 - (this.lines.size() == 1 ? PIXEL_SIZE : 0));
+        int lineLength = lines.stream()
+            .mapToInt(LineSegment::length)
+            .max()
+            .orElse(LINE_LENGTH.getMaximum());
+        this.graphics = this.initG2D(LINE_LENGTH.fit(lineLength) * 25, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4);
         this.currentColor = defaultColor;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     /**
-     * Creates an image, then initializes a Graphics2D object from that image.
+     * Creates an image, then initialized a Graphics2D object from that image.
      *
      * @return G2D object
      */
@@ -93,22 +102,16 @@ public class MinecraftTooltip {
         this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
         // Draw Primary Background
-        Graphics2D g2d = this.getImage().createGraphics();
-        if (isNormalItem) {
-            g2d.setColor(new Color(18, 3, 18, this.getAlpha()));
-            g2d.fillRect(
-                PIXEL_SIZE * 2,
-                PIXEL_SIZE * 2,
-                width - PIXEL_SIZE * 4,
-                height - PIXEL_SIZE * 4
-            );
-        } else {
-            g2d.setColor(new Color(0, 0, 0, this.getAlpha()));
-            g2d.fillRect(0, 0, width, height);
-        }
+        Graphics2D graphics = this.getImage().createGraphics();
+        graphics.setColor(new Color(18, 3, 18, this.getAlpha()));
+        graphics.fillRect(
+            PIXEL_SIZE * 2,
+            PIXEL_SIZE * 2,
+            width - PIXEL_SIZE * 4,
+            height - PIXEL_SIZE * 4
+        );
 
-
-        return g2d;
+        return graphics;
     }
 
     /**
@@ -145,10 +148,6 @@ public class MinecraftTooltip {
      * Creates the inner and outer purple borders around the image.
      */
     public void drawBorders() {
-        if (!this.isNormalItem) {
-            return;
-        }
-
         final int width = this.getImage().getWidth();
         final int height = this.getImage().getHeight();
 
@@ -166,30 +165,24 @@ public class MinecraftTooltip {
     }
 
     /**
-     * Draws the strings to the generated image.
+     * Draws the lines on the image.
      */
     public void drawLines() {
-        for (List<ColoredString> line : this.getLines()) {
-            for (ColoredString segment : line) {
-                // setting the font if it is meant to be bold or italicised
-                currentFont = minecraftFonts[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
-                this.getGraphics().setFont(currentFont);
-
-                // Check if hex color or regular color
-                if (segment.isHexColor()) {
-                    this.currentColor = segment.getHexColorValue();
-                } else {
-                    this.currentColor = segment.getCurrentColor().getColor();
-                }
+        this.getLines().forEach(line -> {
+            line.getSegments().forEach(segment -> {
+                // Change Fonts and Color
+                this.currentFont = MINECRAFT_FONTS.get((segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0));
+                this.getGraphics().setFont(this.currentFont);
+                this.currentColor = segment.getColor().orElse(ChatFormat.GRAY);
 
                 StringBuilder subWord = new StringBuilder();
-                String displayingLine = segment.toString();
+                String segmentText = segment.getText();
 
-                // iterating through all the indexes of the current line until there is a character which cannot be displayed
-                for (int charIndex = 0; charIndex < displayingLine.length(); charIndex++) {
-                    char character = displayingLine.charAt(charIndex);
+                // Iterate through all characters on the current segment until there is a character which cannot be displayed
+                for (int charIndex = 0; charIndex < segmentText.length(); charIndex++) {
+                    char character = segmentText.charAt(charIndex);
 
-                    if (!currentFont.canDisplay(character)) {
+                    if (!this.currentFont.canDisplay(character)) {
                         this.drawString(subWord.toString(), segment);
                         subWord.setLength(0);
                         this.drawSymbol(character, segment);
@@ -201,46 +194,10 @@ public class MinecraftTooltip {
                 }
 
                 this.drawString(subWord.toString(), segment);
-            }
+            });
 
-            // increase size of first line if there are more than one lines present
-            this.updatePositionAndSize(this.isNormalItem() && this.getLines().indexOf(line) == 0);
-        }
-    }
-
-    /***
-     * Centers the lines into the middle of the width of the screen
-     */
-    private void centerLines() {
-        if (this.isNormalItem() || !this.isCentered()) {
-            return;
-        }
-
-        BufferedImage centeredImage = new BufferedImage(this.image.getWidth(), this.image.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = centeredImage.createGraphics();
-        if (this.isNormalItem()) {
-            g2d.setColor(new Color(18, 3, 18, this.getAlpha()));
-            g2d.fillRect(
-                PIXEL_SIZE * 2,
-                PIXEL_SIZE * 2,
-                this.image.getWidth() - PIXEL_SIZE * 4,
-                this.image.getHeight() - PIXEL_SIZE * 4
-            );
-        }
-
-        int currentY = START_XY;
-        int imageMidpoint = this.image.getWidth() / 2 - START_XY / 2;
-
-        for (int length : this.getLineWidths()) {
-            int displacement = imageMidpoint - (length / 2);
-            BufferedImage textTaken = this.image.getSubimage(START_XY, currentY, length, Y_INCREMENT);
-            g2d.drawImage(textTaken, START_XY + displacement, currentY, length, Y_INCREMENT, null);
-
-            currentY += Y_INCREMENT;
-        }
-
-        this.image = centeredImage;
-        this.graphics = g2d;
+            this.updatePositionAndSize(this.getLines().indexOf(line) == 0 && this.isPaddingFirstLine());
+        });
     }
 
     /**
@@ -248,8 +205,8 @@ public class MinecraftTooltip {
      *
      * @param symbol The symbol to draw.
      */
-    private void drawSymbol(char symbol, @NotNull ColoredString segment) {
-        this.drawString(Character.toString(symbol), segment, sansSerif);
+    private void drawSymbol(char symbol, @NotNull ColorSegment colorSegment) {
+        this.drawString(Character.toString(symbol), colorSegment, sansSerif);
     }
 
     /**
@@ -257,11 +214,11 @@ public class MinecraftTooltip {
      *
      * @param value The value to draw.
      */
-    private void drawString(@NotNull String value, @NotNull ColoredString segment) {
-        this.drawString(value, segment, this.currentFont);
+    private void drawString(@NotNull String value, @NotNull ColorSegment colorSegment) {
+        this.drawString(value, colorSegment, this.currentFont);
     }
 
-    private void drawString(@NotNull String value, @NotNull ColoredString segment, @NotNull Font font) {
+    private void drawString(@NotNull String value, @NotNull ColorSegment colorSegment, @NotNull Font font) {
         // Change Font
         this.getGraphics().setFont(font);
 
@@ -269,37 +226,28 @@ public class MinecraftTooltip {
         int nextBounds = (int) font.getStringBounds(value, this.getGraphics().getFontRenderContext()).getWidth();
 
         // Draw Strikethrough Drop Shadow
-        if (segment.isStrikethrough()) {
+        if (colorSegment.isStrikethrough())
             this.drawThickLine(nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, true);
-        }
 
         // Draw Underlined Drop Shadow
-        if (segment.isUnderlined()) {
+        if (colorSegment.isUnderlined())
             this.drawThickLine(nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, true);
-        }
 
-        // Make the background colour a slightly darker version of the text colour
-        if (segment.isHexColor()) {
-            this.getGraphics().setColor(segment.getHexColorValue().darker().darker().darker());
-        } else {
-            this.getGraphics().setColor(segment.getCurrentColor().getBackgroundColor());
-        }
-
+        // Draw Drop Shadow Text
+        this.getGraphics().setColor(this.currentColor.getBackgroundColor());
         this.getGraphics().drawString(value, this.locationX + PIXEL_SIZE, this.locationY + PIXEL_SIZE);
 
         // Draw Text
-        this.getGraphics().setColor(this.currentColor);
+        this.getGraphics().setColor(this.currentColor.getColor());
         this.getGraphics().drawString(value, this.locationX, this.locationY);
 
         // Draw Strikethrough
-        if (segment.isStrikethrough()) {
+        if (colorSegment.isStrikethrough())
             this.drawThickLine(nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, false);
-        }
 
         // Draw Underlined
-        if (segment.isUnderlined()) {
+        if (colorSegment.isUnderlined())
             this.drawThickLine(nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, false);
-        }
 
         // Update Draw Pointer Location
         this.locationX += nextBounds;
@@ -319,25 +267,39 @@ public class MinecraftTooltip {
             yPosition += PIXEL_SIZE;
         }
 
-        this.getGraphics().setColor(dropShadow ? this.currentColor.darker().darker().darker() : this.currentColor);
+        this.getGraphics().setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
         this.getGraphics().drawLine(xPosition1, yPosition, xPosition2, yPosition);
         this.getGraphics().drawLine(xPosition1, yPosition + 1, xPosition2, yPosition + 1);
     }
 
-    public static boolean isFontsRegistered() {
-        return fontsRegisteredCorrectly;
-    }
-
     /**
-     * Draws the Lines, Resizes the Image and Draws the Borders.
+     * Draws lines, resizes the image and draws borders.
      */
     public MinecraftTooltip render() {
         this.drawLines();
         this.cropImage();
-        this.centerLines();
         this.drawBorders();
         this.addPadding();
         return this;
+    }
+
+    @SneakyThrows
+    public InputStream toStream() {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ImageIO.write(this.getImage(), "PNG", outputStream);
+        return new ByteArrayInputStream(outputStream.toByteArray());
+    }
+
+    public File toFile() {
+        try {
+            File tempFile = new File(SystemUtils.getJavaIoTmpDir(), String.format("%s.png", UUID.randomUUID()));
+            ImageIO.write(this.getImage(), "PNG", tempFile);
+            return tempFile;
+        } catch (IOException exception) {
+            log.error("Unable to write image to file!", exception);
+        }
+
+        return null;
     }
 
     /**
@@ -348,8 +310,73 @@ public class MinecraftTooltip {
     private void updatePositionAndSize(boolean increaseGap) {
         this.locationY += Y_INCREMENT + (increaseGap ? PIXEL_SIZE * 2 : 0);
         this.largestWidth = Math.max(this.locationX, this.largestWidth);
-        this.getLineWidths().add(this.locationX);
         this.locationX = START_XY;
     }
 
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    public static class Builder implements ClassBuilder<MinecraftTooltip> {
+
+        private final List<LineSegment> lines = new ArrayList<>();
+        private ChatFormat defaultColor = ChatFormat.GRAY;
+        private int alpha = 255;
+        private int padding = 0;
+        private boolean paddingFirstLine = true;
+
+        public Builder isPaddingFirstLine() {
+            return this.isPaddingFirstLine(true);
+        }
+
+        public Builder isPaddingFirstLine(boolean value) {
+            this.paddingFirstLine = value;
+            return this;
+        }
+
+        public Builder withAlpha(int value) {
+            this.alpha = Range.between(0, 255).fit(value);
+            return this;
+        }
+
+        public Builder withDefaultColor(@NotNull ChatFormat chatColor) {
+            this.defaultColor = chatColor;
+            return this;
+        }
+
+        public Builder withEmptyLine() {
+            return this.withSegments(ColorSegment.builder().build());
+        }
+
+        public Builder withLines(@NotNull LineSegment... lines) {
+            return this.withLines(Arrays.asList(lines));
+        }
+
+        public Builder withLines(@NotNull Iterable<LineSegment> lines) {
+            lines.forEach(this.lines::add);
+            return this;
+        }
+
+        public Builder withPadding(int padding) {
+            this.padding = Math.max(0, padding);
+            return this;
+        }
+
+        public Builder withSegments(@NotNull ColorSegment... segments) {
+            return this.withSegments(Arrays.asList(segments));
+        }
+
+        public Builder withSegments(@NotNull Iterable<ColorSegment> segments) {
+            this.lines.add(LineSegment.builder().withSegments(segments).build());
+            return this;
+        }
+
+        @Override
+        public @NotNull MinecraftTooltip build() {
+            return new MinecraftTooltip(
+                this.lines,
+                this.defaultColor,
+                this.alpha,
+                this.padding,
+                this.paddingFirstLine
+            );
+        }
+    }
 }

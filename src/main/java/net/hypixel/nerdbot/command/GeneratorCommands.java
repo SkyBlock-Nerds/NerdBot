@@ -69,14 +69,10 @@ public class GeneratorCommands extends ApplicationCommand {
         try {
             ItemBuilder item = new ItemBuilder();
 
-            if (itemId.equalsIgnoreCase("player_head")) {
-                MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder();
-
-                if (skinValue != null) {
-                    generator.withSkin(skinValue);
-                }
-
-                item.addGenerator(generator.build());
+            if (itemId.equalsIgnoreCase("player_head") && skinValue != null) {
+                item.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
+                    .withSkin(skinValue)
+                    .build());
             } else {
                 item.addGenerator(new MinecraftItemGenerator.Builder()
                     .withItem(itemId)
