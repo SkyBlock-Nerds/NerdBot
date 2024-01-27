@@ -98,7 +98,7 @@ public class MinecraftTooltipGenerator implements Generator {
             return this;
         }
 
-        public MinecraftTooltipGenerator.Builder isCentered(boolean centered) {
+        public MinecraftTooltipGenerator.Builder isTextCentered(boolean centered) {
             this.centered = centered;
             return this;
         }

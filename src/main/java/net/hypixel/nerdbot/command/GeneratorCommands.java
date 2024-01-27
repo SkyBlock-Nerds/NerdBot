@@ -240,7 +240,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withAlpha(alpha)
                 .withPadding(padding)
                 .withEmptyLine(emptyLine)
-                .isCentered(centered)
+                .isTextCentered(centered)
                 .withMaxLineLength(maxLineLength)
                 .isNormalItem(normalItem)
                 .build();
@@ -303,7 +303,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withItemLore(text)
                 .withAlpha(alpha)
                 .withPadding(padding)
-                .isCentered(centered)
+                .isTextCentered(centered)
                 .withMaxLineLength(maxLineLength)
                 .isNormalItem(false)
                 .withEmptyLine(false)
