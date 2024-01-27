@@ -55,17 +55,15 @@ public class StatParser implements TextParser {
                     input = input.replace(match, abilityColorParser(statEnum, extraData));
                     break;
                 default:
+                    input = input.replace(match, parseStat(statEnum, extraData));
                     break;
             }
-
-            input = input.replace(match, parseStat(statEnum, extraData));
         }
 
         return input;
     }
 
     private String parseStat(Stat stat, String extra) {
-        System.out.println("[parseStat] Parsing stat: " + stat.getStat() + " with extra: " + extra);
         return stat.getStat();
     }
 
