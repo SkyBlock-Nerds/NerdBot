@@ -22,7 +22,6 @@ public class GeneratorMessages {
     public static final String DESC_DISABLE_RARITY_LINEBREAK = "If you will deal with the line break before the item's rarity";
     public static final String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
     public static final String DESC_PADDING = "Sets the transparent padding around the image (0 = none, 1 = discord)";
-    public static final String DESC_MAX_LINE_LENGTH = "Sets the maximum length for a line (1 - " + StringColorParser.MAX_FINAL_LINE_LENGTH + ") default " + StringColorParser.MAX_STANDARD_LINE_LENGTH;
     public static final String DESC_CENTERED = "Centers text to the middle of the image";
     public static final String DESC_ITEM_ID = "The name of the Minecraft item you want to display";
     public static final String DESC_HIDDEN = "If you only want the generated image visible to be yourself. (Deleted on client restart!)";
