@@ -29,8 +29,9 @@ public class ItemBuilder {
         int totalWidth = 0;
         int maxHeight = 0;
 
-        for (Generator generator : generators) {
-            GeneratedItem generatedItem = generator.generate();
+        List<GeneratedItem> generatedItems = generators.stream().map(Generator::generate).toList();
+
+        for (GeneratedItem generatedItem : generatedItems) {
             BufferedImage generatedImage = generatedItem.getImage();
 
             if (generatedImage == null) {
@@ -43,11 +44,9 @@ public class ItemBuilder {
 
         BufferedImage finalImage = new BufferedImage(totalWidth, maxHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = finalImage.createGraphics();
-
         int x = 0;
 
-        for (Generator generator : generators) {
-            GeneratedItem generatedItem = generator.generate();
+        for (GeneratedItem generatedItem : generatedItems) {
             BufferedImage generatedImage = generatedItem.getImage();
 
             if (generatedImage == null) {
