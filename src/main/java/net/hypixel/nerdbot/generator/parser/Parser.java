@@ -23,7 +23,7 @@ public interface Parser<T> {
         T result = null;
 
         for (Parser<T> parser : parsers) {
-            result = parser.parse(input);
+            result = parser.parse(result == null ? input : result.toString());
         }
 
         return result;
