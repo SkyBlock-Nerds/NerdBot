@@ -76,7 +76,7 @@ public class StatParser implements TextParser {
      *
      * @return returns the color parsed replacement string
      */
-    public String normalStatColorParser(Stat stat, String extraDetails) {
+    private String normalStatColorParser(Stat stat, String extraDetails) {
         if (extraDetails == null || extraDetails.isEmpty()) {
             return "&" + stat.getColor().getColorCode() + stat.getDisplay();
         }
@@ -92,7 +92,7 @@ public class StatParser implements TextParser {
      *
      * @return the color parsed replacement string
      */
-    public String boldedIconColorParser(Stat stat, String extraDetails) {
+    private String boldedIconColorParser(Stat stat, String extraDetails) {
         return "&" + stat.getColor().getColorCode() + extraDetails + "&" + ChatFormat.BOLD.getCode() + stat.getIcon() + "&" + stat.getColor().getColorCode() + " " + stat.getStat();
     }
 
@@ -103,7 +103,7 @@ public class StatParser implements TextParser {
      *
      * @return the color parsed replacement string
      */
-    public String boldedIconParser(Stat stat) {
+    private String boldedIconParser(Stat stat) {
         return "&" + stat.getColor().getColorCode() + "&" + ChatFormat.BOLD.getCode() + stat.getIcon();
     }
 
@@ -115,7 +115,7 @@ public class StatParser implements TextParser {
      *
      * @return returns the color parsed replacement string
      */
-    public String dualStatColorParser(Stat stat, String extraDetails) {
+    private String dualStatColorParser(Stat stat, String extraDetails) {
         if (extraDetails.isEmpty()) {
             return normalStatColorParser(stat, extraDetails);
         }
@@ -130,7 +130,7 @@ public class StatParser implements TextParser {
      *
      * @return returns the color parsed replacement string
      */
-    public String noParsing(Stat stat, String e) {
+    private String noParsing(Stat stat, String e) {
         return "&" + stat.getColor().getColorCode() + stat.getStat();
     }
 
@@ -142,7 +142,7 @@ public class StatParser implements TextParser {
      *
      * @return the color parsed replacement string
      */
-    public String soulboundColorParsing(Stat stat, String e) {
+    private String soulboundColorParsing(Stat stat, String e) {
         return "&" + stat.getColor().getColorCode() + "&" + ChatFormat.BOLD.getCode() + "* &" + stat.getColor().getColorCode() + stat.getStat() + " &" + stat.getColor().getColorCode() + "&" + ChatFormat.BOLD.getCode() + "*";
     }
 
@@ -154,7 +154,7 @@ public class StatParser implements TextParser {
      *
      * @return returns the color parsed replacement string
      */
-    public String postStatColorParser(Stat stat, String extraDetails) {
+    private String postStatColorParser(Stat stat, String extraDetails) {
         return "&" + stat.getColor().getColorCode() + stat.getDisplay() + " " + extraDetails;
     }
 
@@ -166,7 +166,7 @@ public class StatParser implements TextParser {
      *
      * @return the color parsed replacement string
      */
-    public String postDualColorParser(Stat stat, String extraDetails) {
+    private String postDualColorParser(Stat stat, String extraDetails) {
         return "&" + stat.getColor().getColorCode() + stat.getStat() + " &" + stat.getSecondaryColor().getColorCode() + extraDetails;
     }
 
@@ -178,7 +178,7 @@ public class StatParser implements TextParser {
      *
      * @return returns the color parsed replacements string
      */
-    public String itemStatColorParser(Stat stat, String extraDetails) {
+    private String itemStatColorParser(Stat stat, String extraDetails) {
         if (extraDetails.isEmpty()) {
             return "ITEM_STAT_MISSING_DETAILS";
         }
@@ -202,7 +202,7 @@ public class StatParser implements TextParser {
      *
      * @return the color parsed replacements string
      */
-    public String abilityColorParser(Stat stat, String extraDetails) {
+    private String abilityColorParser(Stat stat, String extraDetails) {
         if (extraDetails.isEmpty()) {
             return "ABILITY_MISSING_DETAILS";
         }

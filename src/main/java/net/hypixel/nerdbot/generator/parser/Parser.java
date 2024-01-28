@@ -30,7 +30,7 @@ public interface Parser<T> {
     }
 
     /**
-     * Parses a string into {@link T}.
+     * Parses a string into the given {@link T type}.
      *
      * @param input The string to parse.
      *
