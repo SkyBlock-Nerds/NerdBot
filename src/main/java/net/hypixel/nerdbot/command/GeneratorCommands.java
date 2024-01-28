@@ -21,7 +21,6 @@ import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftRecipeGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedItem;
-import net.hypixel.nerdbot.generator.util.GeneratorMessages;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
@@ -166,7 +165,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     .get("textures").getAsJsonArray();
 
                 if (textures.size() > 1) {
-                    event.getHook().editOriginal(GeneratorMessages.MULTIPLE_ITEM_SKULL_DATA).queue();
+                    event.getHook().editOriginal("There seems to be more than 1 texture in the player head's NBT data. Please double-check it is correct!").queue();
                     return;
                 }
 
@@ -192,7 +191,7 @@ public class GeneratorCommands extends ApplicationCommand {
             // TODO output a command
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedItem.getImage()), "recipe.png")).queue();
         } catch (JsonParseException exception) {
-            event.getHook().editOriginal(GeneratorMessages.MISSING_ITEM_NBT).queue();
+            event.getHook().editOriginal("You provided badly formatted NBT!").queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException e) {

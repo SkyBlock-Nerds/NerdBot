@@ -3,19 +3,16 @@ package net.hypixel.nerdbot.generator.impl;
 import com.google.gson.JsonObject;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.generator.item.GeneratedItem;
 import net.hypixel.nerdbot.generator.Generator;
-import net.hypixel.nerdbot.generator.exception.GeneratorException;
+import net.hypixel.nerdbot.generator.builder.ClassBuilder;
+import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
+import net.hypixel.nerdbot.generator.item.GeneratedItem;
 import net.hypixel.nerdbot.generator.parser.Parser;
 import net.hypixel.nerdbot.generator.parser.text.ColorCodeParser;
 import net.hypixel.nerdbot.generator.parser.text.IconParser;
 import net.hypixel.nerdbot.generator.parser.text.StatParser;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
-import net.hypixel.nerdbot.generator.util.GeneratorMessages;
-import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.util.Range;
-import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,7 +35,7 @@ public class MinecraftTooltipGenerator implements Generator {
 
     @Override
     public GeneratedItem generate() {
-        return new GeneratedItem(buildItem(name, rarity, itemLore, type, emptyLine, alpha, padding, maxLineLength, normalItem, centeredText));
+        return new GeneratedItem(buildItem(name, itemLore, type, emptyLine, alpha, padding, maxLineLength, normalItem, centeredText));
     }
 
     public static class Builder implements ClassBuilder<MinecraftTooltipGenerator> {
@@ -132,7 +129,6 @@ public class MinecraftTooltipGenerator implements Generator {
      * Converts text into a rendered image
      *
      * @param name           the name of the item
-     * @param rarity         the rarity of the item
      * @param itemLoreString the lore of the item
      * @param type           the type of the item
      * @param addEmptyLine   if there should be an extra line added between the lore and the final type line
@@ -144,15 +140,7 @@ public class MinecraftTooltipGenerator implements Generator {
      * @return a Minecraft item tooltip as a rendered image
      */
     @Nullable
-    public BufferedImage buildItem(String name, Rarity rarity, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, int maxLineLength, boolean isNormalItem, boolean isCentered) {
-        if (rarity == null) {
-            rarity = Rarity.NONE;
-        }
-
-        if (Util.findValue(Rarity.VALUES, rarity.name()) == null) {
-            throw new GeneratorException(GeneratorMessages.INVALID_RARITY);
-        }
-
+    public BufferedImage buildItem(String name, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, int maxLineLength, boolean isNormalItem, boolean isCentered) {
         MinecraftTooltip parsedLore = parseLore(name, itemLoreString, addEmptyLine, type, maxLineLength, alpha, padding);
         return parsedLore.render().getImage();
     }
