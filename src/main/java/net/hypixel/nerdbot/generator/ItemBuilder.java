@@ -9,6 +9,8 @@ import java.util.List;
 
 public class ItemBuilder {
 
+    private static final int IMAGE_PADDING_PX = 25;
+
     private final List<Generator> generators;
 
     public ItemBuilder() {
@@ -38,7 +40,7 @@ public class ItemBuilder {
                 throw new GeneratorException("Could not generate that image!");
             }
 
-            totalWidth += generatedImage.getWidth();
+            totalWidth += generatedImage.getWidth() + IMAGE_PADDING_PX;
             maxHeight = Math.max(maxHeight, generatedImage.getHeight());
         }
 
@@ -60,7 +62,7 @@ public class ItemBuilder {
             graphics.drawImage(generatedImage, x, yOffset, null);
 
             // Adjust the x position for the next generator
-            x += generatedImage.getWidth();
+            x += generatedImage.getWidth() + IMAGE_PADDING_PX;
         }
 
         graphics.dispose();
