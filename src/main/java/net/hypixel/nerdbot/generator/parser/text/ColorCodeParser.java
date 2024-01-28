@@ -1,5 +1,6 @@
-package net.hypixel.nerdbot.generator.parser;
+package net.hypixel.nerdbot.generator.parser.text;
 
+import net.hypixel.nerdbot.generator.parser.TextParser;
 import net.hypixel.nerdbot.util.ChatFormat;
 
 public class ColorCodeParser implements TextParser {

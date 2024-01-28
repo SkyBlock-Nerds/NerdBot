@@ -7,10 +7,10 @@ import net.hypixel.nerdbot.generator.ClassBuilder;
 import net.hypixel.nerdbot.generator.GeneratedItem;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.parser.ColorCodeParser;
-import net.hypixel.nerdbot.generator.parser.IconParser;
-import net.hypixel.nerdbot.generator.parser.StatParser;
-import net.hypixel.nerdbot.generator.parser.TextParser;
+import net.hypixel.nerdbot.generator.parser.Parser;
+import net.hypixel.nerdbot.generator.parser.text.ColorCodeParser;
+import net.hypixel.nerdbot.generator.parser.text.IconParser;
+import net.hypixel.nerdbot.generator.parser.text.StatParser;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
 import net.hypixel.nerdbot.generator.util.MinecraftTooltip;
@@ -167,7 +167,7 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         for (String line : input.split("\\\\n")) {
-            String parsed = TextParser.parseString(line, List.of(
+            String parsed = Parser.parseString(line, List.of(
                 new ColorCodeParser(),
                 new IconParser(),
                 new StatParser()
