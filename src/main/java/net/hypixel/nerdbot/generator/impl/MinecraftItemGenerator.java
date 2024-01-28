@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.GeneratedItem;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.spritesheet.ItemSpritesheet;
 

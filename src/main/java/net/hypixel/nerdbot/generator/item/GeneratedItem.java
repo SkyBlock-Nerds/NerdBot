@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator;
+package net.hypixel.nerdbot.generator.item;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.generator.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.GeneratedItem;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.parser.Parser;
@@ -13,7 +13,7 @@ import net.hypixel.nerdbot.generator.parser.text.IconParser;
 import net.hypixel.nerdbot.generator.parser.text.StatParser;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
-import net.hypixel.nerdbot.generator.util.MinecraftTooltip;
+import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.util.Range;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
@@ -157,7 +157,7 @@ public class MinecraftTooltipGenerator implements Generator {
         return parsedLore.render().getImage();
     }
 
-    private MinecraftTooltip parseLore(String name, String input, boolean emptyLine, String type, int maxLineLength, int alpha, int padding) {
+    public MinecraftTooltip parseLore(String name, String input, boolean emptyLine, String type, int maxLineLength, int alpha, int padding) {
         MinecraftTooltip.Builder builder = MinecraftTooltip.builder()
             .withPadding(padding)
             .withAlpha(Range.between(0, 255).fit(alpha));

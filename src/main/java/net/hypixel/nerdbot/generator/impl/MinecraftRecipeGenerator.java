@@ -2,14 +2,13 @@ package net.hypixel.nerdbot.generator.impl;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.generator.GeneratedItem;
 import net.hypixel.nerdbot.generator.Generator;
+import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.parser.recipe.RecipeItem;
+import net.hypixel.nerdbot.generator.image.MinecraftInventory;
+import net.hypixel.nerdbot.generator.item.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.RecipeItem;
 import net.hypixel.nerdbot.generator.parser.recipe.RecipeStringParser;
-import net.hypixel.nerdbot.generator.util.GeneratorMessages;
-import net.hypixel.nerdbot.generator.util.MinecraftInventory;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
@@ -49,7 +48,7 @@ public class MinecraftRecipeGenerator implements Generator {
     @Nullable
     public BufferedImage buildRecipe(String recipeString, boolean renderBackground) {
         if (!MinecraftInventory.resourcesRegistered()) {
-            throw new GeneratorException(GeneratorMessages.ITEM_RESOURCE_NOT_LOADED);
+            throw new GeneratorException("Textures not loaded correctly");
         }
 
         RecipeStringParser parser = new RecipeStringParser();

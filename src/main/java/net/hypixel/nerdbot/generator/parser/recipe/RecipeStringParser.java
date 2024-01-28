@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.generator.parser.recipe;
 
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
+import net.hypixel.nerdbot.generator.item.RecipeItem;
 import net.hypixel.nerdbot.generator.parser.Parser;
 import net.hypixel.nerdbot.util.Range;
 

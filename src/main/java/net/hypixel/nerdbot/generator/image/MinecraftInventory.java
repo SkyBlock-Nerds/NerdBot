@@ -1,9 +1,9 @@
-package net.hypixel.nerdbot.generator.util;
+package net.hypixel.nerdbot.generator.image;
 
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.command.GeneratorCommands;
-import net.hypixel.nerdbot.generator.parser.recipe.RecipeItem;
+import net.hypixel.nerdbot.generator.item.RecipeItem;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;

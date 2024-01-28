@@ -6,10 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.generator.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.GeneratedItem;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.util.MinecraftHead;
+import net.hypixel.nerdbot.generator.image.MinecraftHead;
 import net.hypixel.nerdbot.util.Util;
 
 import javax.imageio.ImageIO;

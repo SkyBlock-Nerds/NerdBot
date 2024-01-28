@@ -14,13 +14,13 @@ import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.hypixel.nerdbot.generator.GeneratedItem;
 import net.hypixel.nerdbot.generator.builder.ItemBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftRecipeGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftTooltipGenerator;
+import net.hypixel.nerdbot.generator.item.GeneratedItem;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -183,15 +183,13 @@ public class GeneratorCommands extends ApplicationCommand {
                 );
             }
 
-            GeneratedItem generatedItem = itemBuilder
-                .addGenerator(
-                    new MinecraftTooltipGenerator.Builder()
-                        .parseNbtJson(jsonObject)
-                        .withAlpha(alpha)
-                        .withPadding(padding)
-                        .build()
-                ).build();
+            MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                .parseNbtJson(jsonObject)
+                .withAlpha(alpha)
+                .withPadding(padding);
+            GeneratedItem generatedItem = itemBuilder.addGenerator(tooltipGenerator.build()).build();
 
+            // TODO output a command
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedItem.getImage()), "recipe.png")).queue();
         } catch (JsonParseException exception) {
             event.getHook().editOriginal(GeneratorMessages.MISSING_ITEM_NBT).queue();

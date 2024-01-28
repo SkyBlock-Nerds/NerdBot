@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator.util;
+package net.hypixel.nerdbot.generator.image;
 
 import lombok.Getter;
 
