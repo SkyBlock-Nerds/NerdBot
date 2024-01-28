@@ -9,7 +9,7 @@ import java.awt.image.BufferedImage;
 @Setter
 public class GeneratedItem {
 
-    private final BufferedImage image;
+    private BufferedImage image;
 
     public GeneratedItem(BufferedImage image) {
         this.image = image;

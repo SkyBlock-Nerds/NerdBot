@@ -3,15 +3,17 @@ package net.hypixel.nerdbot.generator.impl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.ClassBuilder;
+import net.hypixel.nerdbot.generator.GeneratedItem;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.parser.old.RecipeParser;
+import net.hypixel.nerdbot.generator.parser.recipe.RecipeItem;
+import net.hypixel.nerdbot.generator.parser.recipe.RecipeStringParser;
 import net.hypixel.nerdbot.generator.util.GeneratorMessages;
-import net.hypixel.nerdbot.generator.GeneratedItem;
 import net.hypixel.nerdbot.generator.util.MinecraftInventory;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
+import java.util.Map;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftRecipeGenerator implements Generator {
@@ -50,42 +52,30 @@ public class MinecraftRecipeGenerator implements Generator {
             throw new GeneratorException(GeneratorMessages.ITEM_RESOURCE_NOT_LOADED);
         }
 
-        RecipeParser parser = new RecipeParser();
-        parser.parseRecipe(recipeString);
+        RecipeStringParser parser = new RecipeStringParser();
+        Map<Integer, RecipeItem> items = parser.parse(recipeString);
 
-        if (!parser.isSuccessfullyParsed()) {
-            throw new GeneratorException(GeneratorMessages.RECIPE_NOT_PARSED);
-        }
-
-        // Iterate through all items and generate an item using the MinecraftItemGenerator
-        for (RecipeParser.RecipeItem item : parser.getRecipeData().values()) {
-            if (item.getItemName().equalsIgnoreCase("player_head")) {
-                MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder().withSkin(item.getExtraDetails()).build();
+        for (RecipeItem parsedItem : items.values()) {
+            if (parsedItem.getItemName().contains("player_head")) {
+                MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder()
+                    .withSkin(parsedItem.getExtraContent())
+                    .build();
                 BufferedImage playerHeadImage = playerHeadGenerator.generate().getImage();
 
-                if (playerHeadImage == null) {
-                    return null;
-                }
-
-                item.setImage(playerHeadImage);
+                parsedItem.setImage(playerHeadImage);
                 continue;
             }
 
             MinecraftItemGenerator itemGenerator = new MinecraftItemGenerator.Builder()
-                .withItem(item.getItemName())
-                .isEnchanted(item.getExtraDetails().equalsIgnoreCase("enchant"))
+                .withItem(parsedItem.getItemName())
+                .isEnchanted(parsedItem.getExtraContent() != null && parsedItem.getExtraContent().equalsIgnoreCase("enchant"))
                 .build();
 
             BufferedImage itemImage = itemGenerator.generate().getImage();
-
-            if (itemImage == null) {
-                return null;
-            }
-
-            item.setImage(itemImage);
+            parsedItem.setImage(itemImage);
         }
 
-        MinecraftInventory inventory = new MinecraftInventory(parser.getRecipeData(), renderBackground).render();
+        MinecraftInventory inventory = new MinecraftInventory(items, renderBackground).render();
         return inventory.getImage();
     }
 }

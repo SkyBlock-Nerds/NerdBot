@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.generator.util;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.command.GeneratorCommands;
-import net.hypixel.nerdbot.generator.parser.old.RecipeParser;
+import net.hypixel.nerdbot.generator.parser.recipe.RecipeItem;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;
@@ -36,7 +36,7 @@ public class MinecraftInventory {
     private final int horizontalSlots;
     private final int verticalSlots;
     private final boolean renderBackground;
-    private final Map<Integer, RecipeParser.RecipeItem> recipe;
+    private final Map<Integer, RecipeItem> recipe;
 
     static {
         // Register Minecraft Font
@@ -48,18 +48,18 @@ public class MinecraftInventory {
         // loading the inventory background into memory
         try (InputStream backgroundStream = GeneratorCommands.class.getResourceAsStream("/minecraft/textures/inventory_background.png")) {
             if (backgroundStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/inventory_background.png\"");
+                throw new FileNotFoundException("Could not find the inventory background file");
             }
+
             INVENTORY_IMAGE = ImageIO.read(backgroundStream);
-        } catch (IOException e) {
-            log.error("Couldn't initialise the item stack file for ItemStack Generation");
-            log.error(e.getMessage());
+        } catch (IOException exception) {
+            log.error("Could not initialize the inventory background file", exception);
         }
 
         RESOURCES_INITIALISED = MINECRAFT_FONT != null && INVENTORY_IMAGE != null;
     }
 
-    public MinecraftInventory(Map<Integer, RecipeParser.RecipeItem> recipe, boolean renderBackground) {
+    public MinecraftInventory(Map<Integer, RecipeItem> recipe, boolean renderBackground) {
         this.horizontalSlots = 3;
         this.verticalSlots = 3;
         this.recipe = recipe;
@@ -78,6 +78,7 @@ public class MinecraftInventory {
 
         Graphics2D g2d = this.image.createGraphics();
         g2d.setFont(MINECRAFT_FONT);
+
         return g2d;
     }
 
@@ -94,34 +95,46 @@ public class MinecraftInventory {
      * Draws the items and amounts onto the recipe
      */
     private void drawRecipeItems() {
-        for (RecipeParser.RecipeItem item : this.recipe.values()) {
-            if (item.getSlot() < 1 || item.getSlot() > 9)
-                continue;
+        for (RecipeItem item : this.recipe.values()) {
+            if (item.getSlot() < 1 || item.getSlot() > 9) {
+                throw new IllegalArgumentException("Slot number must be between 1 and 9 (slot: " + item.getSlot() + ")");
+            }
 
-            // converts the index into an x and y coordinates bottom right hand corner
+            // Converts the index into an x/y coordinate
             int itemSlotIndex = item.getSlot() - 1;
             int x = (itemSlotIndex % horizontalSlots) * SLOT_DIMENSION;
             int y = (itemSlotIndex / verticalSlots) * SLOT_DIMENSION;
 
-            // drawing the item to the slot
+            // Draw the item on the slot
             BufferedImage itemToDraw = item.getImage();
             int offset = Math.abs(itemToDraw.getWidth() - itemToDraw.getHeight()) / 2;
-            this.g2d.drawImage(itemToDraw, x + PIXELS_PER_PIXEL, y + PIXELS_PER_PIXEL,
-                x + SLOT_DIMENSION - PIXELS_PER_PIXEL, y + SLOT_DIMENSION - PIXELS_PER_PIXEL,
-                -offset, 0, itemToDraw.getWidth() + offset, itemToDraw.getHeight(), null);
 
-            // checking if numbers should be written
-            if (item.getAmount() == 1)
+            this.g2d.drawImage(itemToDraw,
+                x + PIXELS_PER_PIXEL,
+                y + PIXELS_PER_PIXEL,
+                x + SLOT_DIMENSION - PIXELS_PER_PIXEL,
+                y + SLOT_DIMENSION - PIXELS_PER_PIXEL,
+                -offset,
+                0,
+                itemToDraw.getWidth() + offset,
+                itemToDraw.getHeight(),
+                null
+            );
+
+            // Check if we need to draw the amount
+            if (item.getAmount() == 1) {
                 continue;
+            }
 
-            // writes the text and drop shadow in the bottom right
+            // Set the text coordinates to the bottom right
             int textX = x + SLOT_DIMENSION - PIXELS_PER_PIXEL;
             int textY = y + SLOT_DIMENSION - PIXELS_PER_PIXEL;
 
-            // moving the cursor to be writing as right justified
+            // Move the cursor to be writing as right justified
             int startBounds = (int) MINECRAFT_FONT.getStringBounds(String.valueOf(item.getAmount()), this.g2d.getFontRenderContext()).getWidth();
             startBounds -= PIXELS_PER_PIXEL;
 
+            // Draw the amount number with the drop shadow at the slot position
             this.g2d.setColor(DROP_SHADOW_COLOR);
             this.g2d.drawString(String.valueOf(item.getAmount()), textX - startBounds + PIXELS_PER_PIXEL, textY + PIXELS_PER_PIXEL);
             this.g2d.setColor(NORMAL_TEXT_COLOR);

@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.generator.impl;
 import com.google.gson.JsonObject;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.ClassBuilder;
 import net.hypixel.nerdbot.generator.GeneratedItem;
@@ -20,6 +21,7 @@ import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Log4j2
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftPlayerHeadGenerator implements Generator {
 
@@ -35,18 +37,22 @@ public class MinecraftPlayerHeadGenerator implements Generator {
 
     private BufferedImage createHead(String textureId) {
         if (textureId == null) {
+            System.out.println("Texture ID is null, using default");
             textureId = DEFAULT_SKIN_VALUE;
         }
 
         // Checking if the texture ID is a player name
         if (textureId.length() <= 16) {
+            System.out.println("Texture ID is a player name, getting player head URL");
             textureId = getPlayerHeadURL(textureId);
         }
 
         // Checking if the texture ID is a texture URL to a skin
         Matcher textureMatcher = TEXTURE_URL.matcher(textureId);
         if (textureMatcher.matches()) {
+            System.out.println("Texture ID is a texture URL to a skin");
             textureId = textureMatcher.group(1);
+            System.out.println("Texture ID: " + textureId);
         }
 
         // Convert the texture ID to a skin URL
@@ -54,10 +60,11 @@ public class MinecraftPlayerHeadGenerator implements Generator {
         try {
             URL target = new URL("http://textures.minecraft.net/texture/" + textureId);
             skin = ImageIO.read(target);
-        } catch (MalformedURLException e) {
+            System.out.println("Skin: " + target);
+        } catch (MalformedURLException exception) {
             throw new GeneratorException("Malformed URL: " + textureId);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException exception) {
+            log.error("Could not find skin with ID: " + textureId, exception);
             throw new GeneratorException("Could not find skin with ID: " + textureId);
         }
 
@@ -67,9 +74,12 @@ public class MinecraftPlayerHeadGenerator implements Generator {
     private String getPlayerHeadURL(String playerName) {
         playerName = playerName.replaceAll("[^a-zA-Z0-9_]", "");
 
+        System.out.println("Getting player head URL for player: " + playerName);
+
         JsonObject userUUID;
         try {
             userUUID = Util.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
+            System.out.println("User UUID: " + userUUID);
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new GeneratorException("Could not find player with name: " + playerName);
@@ -92,6 +102,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
         }
 
         String base64SkinData = userProfile.get("properties").getAsJsonArray().get(0).getAsJsonObject().get("value").getAsString();
+        System.out.println("Base64 Skin Data: " + base64SkinData);
         return base64ToSkinURL(base64SkinData);
     }
 
@@ -104,6 +115,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
      */
     private static String base64ToSkinURL(String base64SkinData) {
         JsonObject skinData = NerdBotApp.GSON.fromJson(new String(Base64.getDecoder().decode(base64SkinData)), JsonObject.class);
+        System.out.println("Skin Data: " + skinData);
         return skinData.get("textures").getAsJsonObject().get("SKIN").getAsJsonObject().get("url").getAsString().replace("http://textures.minecraft.net/texture/", "");
     }
 
