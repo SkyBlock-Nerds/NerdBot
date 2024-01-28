@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 
 public interface TextParser {
 
-    Pattern VARIABLE_PATTERN = Pattern.compile("%%([a-zA-Z_]+)(?::(\\d+))?%%");
+    Pattern VARIABLE_PATTERN = Pattern.compile("%%([a-zA-Z_]+)(?::(.+))?%%");
 
     String parse(String input);
 
