@@ -1,5 +1,7 @@
-package net.hypixel.nerdbot.generator;
+package net.hypixel.nerdbot.generator.builder;
 
+import net.hypixel.nerdbot.generator.GeneratedItem;
+import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 
 import java.awt.Graphics2D;

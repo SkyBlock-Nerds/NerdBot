@@ -6,7 +6,7 @@ import com.google.gson.JsonParser;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.hypixel.nerdbot.generator.ClassBuilder;
+import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.util.ChatFormat;
 import net.hypixel.nerdbot.generator.text.event.ClickEvent;
 import net.hypixel.nerdbot.generator.text.event.HoverEvent;

@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.generator.parser.recipe;
 
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.parser.Parser;
+import net.hypixel.nerdbot.util.Range;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,13 +39,14 @@ public class RecipeStringParser implements Parser<Map<Integer, RecipeItem>> {
             int amount = 1;
 
             if (material.contains(":")) {
+                split = material.split(":");
+
                 try {
-                    amount = Integer.parseInt(material.split(":")[1]);
-                } catch (NumberFormatException exception) {
-                    throw new GeneratorException("Invalid amount: " + material.split(":")[1] + " in item: `" + item + "`");
+                    amount = Range.between(1, 64).fit(Integer.parseInt(split[1]));
+                } catch (NumberFormatException ignore) {
                 }
 
-                material = material.split(":")[0];
+                material = split[0];
             }
 
             RecipeItem recipeItem = new RecipeItem(slot, amount, material, data);
