@@ -23,11 +23,6 @@ public class MinecraftItemGenerator implements Generator {
     private final boolean enchanted;
     private BufferedImage itemImage;
 
-    public MinecraftItemGenerator(String itemId) {
-        this.itemId = itemId;
-        this.enchanted = false;
-    }
-
     @Override
     public GeneratedItem generate() {
         itemImage = ItemSpritesheet.getTexture(itemId.toLowerCase());
