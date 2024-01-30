@@ -3,25 +3,23 @@ package net.hypixel.nerdbot.generator.text.segment;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.util.ChatFormat;
 import net.hypixel.nerdbot.generator.text.event.ClickEvent;
 import net.hypixel.nerdbot.generator.text.event.HoverEvent;
+import net.hypixel.nerdbot.util.ChatFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-@Getter
 @Setter
 @ToString
 public final class TextSegment extends ColorSegment {
 
-    private @NotNull Optional<ClickEvent> clickEvent = Optional.empty();
-    private @NotNull Optional<HoverEvent> hoverEvent = Optional.empty();
+    private ClickEvent clickEvent;
+    private HoverEvent hoverEvent;
 
     public TextSegment(@NotNull String text) {
         super(text);
@@ -42,8 +40,8 @@ public final class TextSegment extends ColorSegment {
     public static @Nullable TextSegment fromJson(@NotNull JsonObject jsonObject) {
         if (jsonObject.has("text")) {
             TextSegment textSegment = new TextSegment(jsonObject.get("text").getAsString());
-            if (jsonObject.has("clickEvent")) textSegment.setClickEvent(Optional.of(ClickEvent.fromJson(jsonObject.get("clickEvent").getAsJsonObject())));
-            if (jsonObject.has("hoverEvent")) textSegment.setHoverEvent(Optional.of(HoverEvent.fromJson(jsonObject.get("hoverEvent").getAsJsonObject())));
+            if (jsonObject.has("clickEvent")) textSegment.setClickEvent(ClickEvent.fromJson(jsonObject.get("clickEvent").getAsJsonObject()));
+            if (jsonObject.has("hoverEvent")) textSegment.setHoverEvent(HoverEvent.fromJson(jsonObject.get("hoverEvent").getAsJsonObject()));
             if (jsonObject.has("color")) textSegment.setColor(ChatFormat.valueOf(jsonObject.get("color").getAsString().toUpperCase()));
             if (jsonObject.has("obfuscated")) textSegment.setObfuscated(jsonObject.get("obfuscated").getAsBoolean());
             if (jsonObject.has("italic")) textSegment.setItalic(jsonObject.get("italic").getAsBoolean());
@@ -75,13 +73,21 @@ public final class TextSegment extends ColorSegment {
         return fromLegacyHandler(legacyText, symbolSubstitute, () -> new TextSegment(""));
     }
 
+    public Optional<ClickEvent> getClickEvent() {
+        return Optional.ofNullable(clickEvent);
+    }
+
+    public Optional<HoverEvent> getHoverEvent() {
+        return Optional.ofNullable(hoverEvent);
+    }
+
     public static class Builder implements ClassBuilder<TextSegment> {
 
         protected String text = "";
-        protected Optional<ChatFormat> color = Optional.empty();
+        protected ChatFormat color;
         protected boolean italic, bold, underlined, obfuscated, strikethrough;
-        private Optional<ClickEvent> clickEvent = Optional.empty();
-        private Optional<HoverEvent> hoverEvent = Optional.empty();
+        private ClickEvent clickEvent;
+        private HoverEvent hoverEvent;
 
         public Builder isBold() {
             return this.isBold(true);
@@ -128,39 +134,23 @@ public final class TextSegment extends ColorSegment {
             return this;
         }
 
-        public Builder withColor(@Nullable ChatFormat color) {
-            return this.withColor(Optional.ofNullable(color));
-        }
-
-        public Builder withColor(@NotNull Optional<ChatFormat> color) {
-            this.color = color.filter(ChatFormat::isColor);
+        public Builder withColor(@NotNull ChatFormat color) {
+            this.color = color;
             return this;
         }
 
-        public Builder withClickEvent(@Nullable ClickEvent clickEvent) {
-            return this.withClickEvent(Optional.ofNullable(clickEvent));
-        }
-
-        public Builder withClickEvent(@NotNull Optional<ClickEvent> clickEvent) {
+        public Builder withClickEvent(@NotNull ClickEvent clickEvent) {
             this.clickEvent = clickEvent;
             return this;
         }
 
-        public Builder withHoverEvent(@Nullable HoverEvent hoverEvent) {
-            return this.withHoverEvent(Optional.ofNullable(hoverEvent));
-        }
-
-        public Builder withHoverEvent(@NotNull Optional<HoverEvent> hoverEvent) {
+        public Builder withHoverEvent(@NotNull HoverEvent hoverEvent) {
             this.hoverEvent = hoverEvent;
             return this;
         }
 
-        public Builder withText(@Nullable String text) {
-            return this.withText(Optional.ofNullable(text));
-        }
-
-        public Builder withText(@NotNull Optional<String> text) {
-            this.text = text.filter(s -> !s.isEmpty()).orElse("");
+        public Builder withText(@NotNull String text) {
+            this.text = text;
             return this;
         }
 

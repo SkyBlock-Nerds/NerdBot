@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 public class ColorSegment {
 
     protected @NotNull String text;
-    protected @NotNull Optional<ChatFormat> color = Optional.empty();
+    protected ChatFormat color = ChatFormat.WHITE;
     protected boolean italic, bold, underlined, obfuscated, strikethrough;
 
     public ColorSegment(@NotNull String text) {
@@ -123,11 +123,11 @@ public class ColorSegment {
         return builder.build();
     }
 
-    public void setColor(@Nullable ChatFormat color) {
-        this.setColor(Optional.ofNullable(Objects.isNull(color) || !color.isColor() ? null : color));
+    public Optional<ChatFormat> getColor() {
+        return Optional.ofNullable(this.color);
     }
 
-    public void setColor(@NotNull Optional<ChatFormat> color) {
+    public void setColor(@NotNull ChatFormat color) {
         this.color = color;
     }
 
@@ -197,7 +197,7 @@ public class ColorSegment {
 
     public static class Builder implements ClassBuilder<ColorSegment> {
         protected String text = "";
-        protected Optional<ChatFormat> color = Optional.empty();
+        protected ChatFormat color = ChatFormat.WHITE;
         protected boolean italic, bold, underlined, obfuscated, strikethrough;
 
         public Builder isBold() {
@@ -245,21 +245,13 @@ public class ColorSegment {
             return this;
         }
 
-        public Builder withColor(@Nullable ChatFormat color) {
-            return this.withColor(Optional.ofNullable(color));
-        }
-
-        public Builder withColor(@NotNull Optional<ChatFormat> color) {
-            this.color = color.filter(ChatFormat::isColor);
+        public Builder withColor(@NotNull ChatFormat color) {
+            this.color = color;
             return this;
         }
 
-        public Builder withText(@Nullable String text) {
-            return this.withText(Optional.ofNullable(text));
-        }
-
-        public Builder withText(@NotNull Optional<String> text) {
-            this.text = text.filter(s -> !s.isEmpty()).orElse("");
+        public Builder withText(@NotNull String text) {
+            this.text = text;
             return this;
         }
 
