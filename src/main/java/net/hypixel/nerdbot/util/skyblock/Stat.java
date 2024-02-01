@@ -9,6 +9,7 @@ public enum Stat {
     STRENGTH("❁", "Strength", MCColor.RED),
     DAMAGE("❁", "Damage", MCColor.RED),
     HEALTH("❤", "Health", MCColor.RED, MCColor.GREEN, StatColorParser::normalStatColorParser, null),
+    ABSORPTION("❤", "Absorption", MCColor.GOLD, MCColor.GREEN, StatColorParser::normalStatColorParser, null),
     DEFENSE("❈", "Defense", MCColor.GREEN),
     TRUE_DEFENSE("❂", "True Defense", MCColor.WHITE),
     SPEED("✦", "Speed", MCColor.WHITE, MCColor.GREEN, StatColorParser::normalStatColorParser, null),
@@ -62,6 +63,7 @@ public enum Stat {
     ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, StatColorParser::itemStatColorParser, null),
     MANA_COST("", "Mana Cost:", MCColor.DARK_GRAY, MCColor.DARK_AQUA, StatColorParser::postDualColorParser, null),
     COOLDOWN("", "Cooldown:", MCColor.DARK_GRAY, MCColor.GREEN, StatColorParser::postDualColorParser, null),
+    HEALTH_COST("", "Health Cost:", MCColor.DARK_GRAY, MCColor.RED, StatColorParser::postDualColorParser, null),
     ABILITY("", "Ability", MCColor.GOLD, MCColor.YELLOW, StatColorParser::abilityColorParser, null),
     RIFT_TRANSFERABLE("", "Rift-Transferable", MCColor.DARK_PURPLE, StatColorParser::noParsing),
     UNDEAD("༕", "This armor piece is undead ༕!", MCColor.DARK_GREEN, StatColorParser::noParsing);
