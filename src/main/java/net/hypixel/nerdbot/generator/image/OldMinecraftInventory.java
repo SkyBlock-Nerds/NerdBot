@@ -19,7 +19,7 @@ import java.util.Map;
 import static net.hypixel.nerdbot.util.Util.initFont;
 
 @Log4j2
-public class MinecraftInventory {
+public class OldMinecraftInventory {
 
     private static final boolean RESOURCES_INITIALISED;
     private static final Font MINECRAFT_FONT;
@@ -59,9 +59,9 @@ public class MinecraftInventory {
         RESOURCES_INITIALISED = MINECRAFT_FONT != null && INVENTORY_IMAGE != null;
     }
 
-    public MinecraftInventory(Map<Integer, RecipeItem> recipe, boolean renderBackground) {
-        this.horizontalSlots = 3;
-        this.verticalSlots = 3;
+    public OldMinecraftInventory(Map<Integer, RecipeItem> recipe, boolean renderBackground) {
+        this.horizontalSlots = 9;
+        this.verticalSlots = 5;
         this.recipe = recipe;
         this.renderBackground = renderBackground;
 
@@ -96,9 +96,9 @@ public class MinecraftInventory {
      */
     private void drawRecipeItems() {
         for (RecipeItem item : this.recipe.values()) {
-            if (item.getSlot() < 1 || item.getSlot() > 9) {
+            /*if (item.getSlot() < 1 || item.getSlot() > 9) {
                 throw new IllegalArgumentException("Slot number must be between 1 and 9 (slot: " + item.getSlot() + ")");
-            }
+            }*/
 
             // Converts the index into an x/y coordinate
             int itemSlotIndex = item.getSlot() - 1;
@@ -147,7 +147,7 @@ public class MinecraftInventory {
      *
      * @return a minecraft crafting recipe image
      */
-    public MinecraftInventory render() {
+    public OldMinecraftInventory render() {
         this.createBackground();
         this.drawRecipeItems();
         g2d.dispose();

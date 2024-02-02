@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.image.MinecraftInventory;
+import net.hypixel.nerdbot.generator.image.OldMinecraftInventory;
 import net.hypixel.nerdbot.generator.item.GeneratedItem;
 import net.hypixel.nerdbot.generator.item.RecipeItem;
 import net.hypixel.nerdbot.generator.parser.recipe.RecipeStringParser;
@@ -47,7 +47,7 @@ public class MinecraftRecipeGenerator implements Generator {
 
     @Nullable
     public BufferedImage buildRecipe(String recipeString, boolean renderBackground) {
-        if (!MinecraftInventory.resourcesRegistered()) {
+        if (!OldMinecraftInventory.resourcesRegistered()) {
             throw new GeneratorException("Textures not loaded correctly");
         }
 
@@ -74,7 +74,7 @@ public class MinecraftRecipeGenerator implements Generator {
             parsedItem.setImage(itemImage);
         }
 
-        MinecraftInventory inventory = new MinecraftInventory(items, renderBackground).render();
+        OldMinecraftInventory inventory = new OldMinecraftInventory(items, renderBackground).render();
         return inventory.getImage();
     }
 }

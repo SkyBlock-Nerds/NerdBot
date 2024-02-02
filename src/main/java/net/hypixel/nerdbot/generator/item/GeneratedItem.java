@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.generator.item;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.hypixel.nerdbot.util.ImageUtil;
 
 import java.awt.image.BufferedImage;
 
@@ -9,7 +10,7 @@ import java.awt.image.BufferedImage;
 @Setter
 public class GeneratedItem {
 
-    private BufferedImage image;
+    protected BufferedImage image;
 
     public GeneratedItem(BufferedImage image) {
         this.image = image;

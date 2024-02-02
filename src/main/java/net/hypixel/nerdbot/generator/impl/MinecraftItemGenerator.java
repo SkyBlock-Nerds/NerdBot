@@ -31,7 +31,7 @@ public class MinecraftItemGenerator implements Generator {
             throw new GeneratorException("Item with ID " + itemId + " not found");
         }
 
-        if (itemImage.getWidth() <= 16 && itemImage.getHeight() <= 16) {
+        if (itemImage.getWidth() < 16 && itemImage.getHeight() < 16) {
             itemImage = ImageUtil.upscaleImage(itemImage, 16);
         }
 
@@ -40,8 +40,6 @@ public class MinecraftItemGenerator implements Generator {
         }
 
         // TODO overlays
-
-
         return new GeneratedItem(itemImage);
     }
 
