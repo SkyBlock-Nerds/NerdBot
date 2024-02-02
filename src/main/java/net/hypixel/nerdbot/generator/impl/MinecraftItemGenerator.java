@@ -70,6 +70,7 @@ public class MinecraftItemGenerator implements Generator {
     private BufferedImage applyEnchantGlint() {
         try {
             BufferedImage glintImage = ImageIO.read(new File("src/main/resources/minecraft/textures/overlays.png"));
+            glintImage = glintImage.getSubimage(0, 17, glintImage.getWidth(), glintImage.getHeight() - 17);
             glintImage = ImageUtil.resizeImage(glintImage, itemImage.getWidth(), itemImage.getHeight());
 
             BufferedImage enchantedItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
