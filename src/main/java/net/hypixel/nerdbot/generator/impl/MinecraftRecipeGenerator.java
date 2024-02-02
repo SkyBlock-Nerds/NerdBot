@@ -6,7 +6,7 @@ import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.OldMinecraftInventory;
-import net.hypixel.nerdbot.generator.item.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.item.RecipeItem;
 import net.hypixel.nerdbot.generator.parser.recipe.RecipeStringParser;
 import org.jetbrains.annotations.Nullable;
@@ -21,8 +21,8 @@ public class MinecraftRecipeGenerator implements Generator {
     private final boolean renderBackground;
 
     @Override
-    public GeneratedItem generate() {
-        return new GeneratedItem(buildRecipe(recipeString, renderBackground));
+    public GeneratedObject generate() {
+        return new GeneratedObject(buildRecipe(recipeString, renderBackground));
     }
 
     public static class Builder implements ClassBuilder<MinecraftRecipeGenerator> {

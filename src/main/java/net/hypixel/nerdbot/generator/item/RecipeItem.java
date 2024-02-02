@@ -7,7 +7,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class RecipeItem extends GeneratedItem {
+public class RecipeItem extends GeneratedObject {
 
     private int slot;
     private int amount;

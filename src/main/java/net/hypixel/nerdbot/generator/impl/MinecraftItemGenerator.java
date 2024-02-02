@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.item.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.spritesheet.ItemSpritesheet;
 
@@ -21,18 +21,20 @@ public class MinecraftItemGenerator implements Generator {
 
     private final String itemId;
     private final boolean enchanted;
+    private final int scale;
+
     private BufferedImage itemImage;
 
     @Override
-    public GeneratedItem generate() {
+    public GeneratedObject generate() {
         itemImage = ItemSpritesheet.getTexture(itemId.toLowerCase());
 
         if (itemImage == null) {
             throw new GeneratorException("Item with ID " + itemId + " not found");
         }
 
-        if (itemImage.getWidth() < 16 && itemImage.getHeight() < 16) {
-            itemImage = ImageUtil.upscaleImage(itemImage, 16);
+        if (scale != 0) {
+            itemImage = ImageUtil.scaleImage(itemImage, scale);
         }
 
         if (enchanted) {
@@ -40,12 +42,13 @@ public class MinecraftItemGenerator implements Generator {
         }
 
         // TODO overlays
-        return new GeneratedItem(itemImage);
+        return new GeneratedObject(itemImage);
     }
 
     public static class Builder implements ClassBuilder<MinecraftItemGenerator> {
         private String itemId;
         private boolean enchanted;
+        private int scale = 0;
 
         public MinecraftItemGenerator.Builder withItem(String itemId) {
             this.itemId = itemId
@@ -59,9 +62,14 @@ public class MinecraftItemGenerator implements Generator {
             return this;
         }
 
+        public MinecraftItemGenerator.Builder scale(int scale) {
+            this.scale = scale;
+            return this;
+        }
+
         @Override
         public MinecraftItemGenerator build() {
-            return new MinecraftItemGenerator(itemId, enchanted);
+            return new MinecraftItemGenerator(itemId, enchanted, scale);
         }
     }
 

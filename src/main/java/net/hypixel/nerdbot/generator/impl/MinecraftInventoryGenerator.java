@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.image.ImageCoordinates;
-import net.hypixel.nerdbot.generator.image.NewMinecraftInventory;
+import net.hypixel.nerdbot.generator.image.MinecraftInventoryImage;
 import net.hypixel.nerdbot.generator.item.InventoryItem;
 
 import javax.imageio.ImageIO;
@@ -18,8 +18,9 @@ import java.util.List;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftInventoryGenerator implements Generator {
 
+    private static final int SLOT_DIMENSIONS = 32;
     private static final File SINGLE_SLOT_FILE = new File("./src/main/resources/minecraft/textures/slot.png");
-    public static final BufferedImage SINGLE_SLOT_IMAGE = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+    public static final BufferedImage SINGLE_SLOT_IMAGE = new BufferedImage(SLOT_DIMENSIONS, SLOT_DIMENSIONS, BufferedImage.TYPE_INT_ARGB);
 
     static {
         try {
@@ -34,7 +35,7 @@ public class MinecraftInventoryGenerator implements Generator {
     private final int slotsPerRow;
 
     @Override
-    public NewMinecraftInventory generate() {
+    public MinecraftInventoryImage generate() {
         int imageWidth = SINGLE_SLOT_IMAGE.getWidth() * slotsPerRow;
         int imageHeight = SINGLE_SLOT_IMAGE.getHeight() * rows;
 
@@ -51,7 +52,7 @@ public class MinecraftInventoryGenerator implements Generator {
             }
         }
 
-        return new NewMinecraftInventory(rows, slotsPerRow, slots, inventoryImage);
+        return new MinecraftInventoryImage(rows, slotsPerRow, slots, inventoryImage);
     }
 
     public static class Builder implements ClassBuilder<MinecraftInventoryGenerator> {

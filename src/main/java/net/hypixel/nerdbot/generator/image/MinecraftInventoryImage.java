@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.generator.image;
 import lombok.Getter;
 import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
-import net.hypixel.nerdbot.generator.item.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.item.InventoryItem;
 
 import java.awt.Graphics2D;
@@ -11,20 +11,20 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 @Getter
-public class NewMinecraftInventory extends GeneratedItem {
+public class MinecraftInventoryImage extends GeneratedObject {
 
     private final int rows;
     private final int slotsPerRow;
     private final List<InventoryItem> items;
 
-    public NewMinecraftInventory(int rows, int slotsPerRow, List<InventoryItem> items) {
+    public MinecraftInventoryImage(int rows, int slotsPerRow, List<InventoryItem> items) {
         super(null);
         this.rows = rows;
         this.slotsPerRow = slotsPerRow;
         this.items = items;
     }
 
-    public NewMinecraftInventory(int rows, int slotsPerRow, List<InventoryItem> items, BufferedImage image) {
+    public MinecraftInventoryImage(int rows, int slotsPerRow, List<InventoryItem> items, BufferedImage image) {
         super(image);
         this.rows = rows;
         this.slotsPerRow = slotsPerRow;
@@ -46,6 +46,10 @@ public class NewMinecraftInventory extends GeneratedItem {
             .build()
             .generate()
             .getImage();
+
+        /*if (item.getHeight() > 16 && item.getWidth() > 16) {
+            item = ImageUtil.resizeImage(item, 16, 16);
+        }*/
 
         ImageCoordinates slotCoordinates = getSlotCoordinates(slot);
 

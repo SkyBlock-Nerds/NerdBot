@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator.builder;
 
-import net.hypixel.nerdbot.generator.item.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 
@@ -29,14 +29,14 @@ public class ItemBuilder {
         return this;
     }
 
-    public GeneratedItem build() {
+    public GeneratedObject build() {
         int totalWidth = 0;
         int maxHeight = 0;
 
-        List<GeneratedItem> generatedItems = generators.stream().map(Generator::generate).toList();
+        List<GeneratedObject> generatedObjects = generators.stream().map(Generator::generate).toList();
 
-        for (GeneratedItem generatedItem : generatedItems) {
-            BufferedImage generatedImage = generatedItem.getImage();
+        for (GeneratedObject generatedObject : generatedObjects) {
+            BufferedImage generatedImage = generatedObject.getImage();
 
             if (generatedImage == null) {
                 throw new GeneratorException("Could not generate that image!");
@@ -50,8 +50,8 @@ public class ItemBuilder {
         Graphics2D graphics = finalImage.createGraphics();
         int x = 0;
 
-        for (GeneratedItem generatedItem : generatedItems) {
-            BufferedImage generatedImage = generatedItem.getImage();
+        for (GeneratedObject generatedObject : generatedObjects) {
+            BufferedImage generatedImage = generatedObject.getImage();
 
             if (generatedImage == null) {
                 throw new GeneratorException("Could not generate that image!");
@@ -69,6 +69,6 @@ public class ItemBuilder {
 
         graphics.dispose();
 
-        return new GeneratedItem(finalImage);
+        return new GeneratedObject(finalImage);
     }
 }

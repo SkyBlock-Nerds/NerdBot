@@ -10,7 +10,7 @@ import java.awt.image.BufferedImage;
 @Getter
 @Setter
 @ToString
-public class InventoryItem extends GeneratedItem {
+public class InventoryItem extends GeneratedObject {
 
     private int overallSlot;
     private int slotInRow;

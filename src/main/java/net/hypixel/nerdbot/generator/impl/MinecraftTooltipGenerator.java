@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
-import net.hypixel.nerdbot.generator.item.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.parser.Parser;
 import net.hypixel.nerdbot.generator.parser.text.ColorCodeParser;
 import net.hypixel.nerdbot.generator.parser.text.IconParser;
@@ -34,8 +34,8 @@ public class MinecraftTooltipGenerator implements Generator {
     private final boolean centeredText;
 
     @Override
-    public GeneratedItem generate() {
-        return new GeneratedItem(buildItem(name, itemLore, type, emptyLine, alpha, padding, maxLineLength, normalItem, centeredText));
+    public GeneratedObject generate() {
+        return new GeneratedObject(buildItem(name, itemLore, type, emptyLine, alpha, padding, maxLineLength, normalItem, centeredText));
     }
 
     public static class Builder implements ClassBuilder<MinecraftTooltipGenerator> {
