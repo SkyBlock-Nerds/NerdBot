@@ -1,13 +1,13 @@
 package net.hypixel.nerdbot.generator;
 
-import net.hypixel.nerdbot.generator.item.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.GeneratedObject;
 
 public interface Generator {
 
     /**
      * Generate an item
      *
-     * @return the {@link GeneratedItem generated item}
+     * @return the {@link GeneratedObject generated item}
      */
-    GeneratedItem generate();
+    GeneratedObject generate();
 }

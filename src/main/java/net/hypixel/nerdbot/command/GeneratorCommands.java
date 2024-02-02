@@ -20,7 +20,7 @@ import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftRecipeGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftTooltipGenerator;
-import net.hypixel.nerdbot.generator.item.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
@@ -94,11 +94,11 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply().complete();
 
         try {
-            GeneratedItem generatedItem = new ItemBuilder()
+            GeneratedObject generatedObject = new ItemBuilder()
                 .addGenerator(new MinecraftPlayerHeadGenerator.Builder().withSkin(texture).build())
                 .build();
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedItem.getImage()), "head.png")).queue();
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "head.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
@@ -118,14 +118,14 @@ public class GeneratorCommands extends ApplicationCommand {
         renderBackground = renderBackground == null || renderBackground;
 
         try {
-            GeneratedItem generatedItem = new ItemBuilder()
+            GeneratedObject generatedObject = new ItemBuilder()
                 .addGenerator(new MinecraftRecipeGenerator.Builder()
                     .withRecipeString(recipeString)
                     .renderBackground(renderBackground)
                     .build()
                 ).build();
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedItem.getImage()), "recipe.png")).queue();
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
@@ -186,10 +186,10 @@ public class GeneratorCommands extends ApplicationCommand {
                 .parseNbtJson(jsonObject)
                 .withAlpha(alpha)
                 .withPadding(padding);
-            GeneratedItem generatedItem = itemBuilder.addGenerator(tooltipGenerator.build()).build();
+            GeneratedObject generatedObject = itemBuilder.addGenerator(tooltipGenerator.build()).build();
 
             // TODO output a command
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedItem.getImage()), "recipe.png")).queue();
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
         } catch (JsonParseException exception) {
             event.getHook().editOriginal("You provided badly formatted NBT!").queue();
         } catch (GeneratorException exception) {
@@ -268,8 +268,8 @@ public class GeneratorCommands extends ApplicationCommand {
                 itemBuilder.addGenerator(tooltipGenerator);
             }
 
-            GeneratedItem generatedItem = itemBuilder.build();
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedItem.getImage()), "item.png")).queue();
+            GeneratedObject generatedObject = itemBuilder.build();
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
         } catch (GeneratorException | IllegalArgumentException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {

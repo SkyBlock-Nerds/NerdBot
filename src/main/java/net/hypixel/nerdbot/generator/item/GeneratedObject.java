@@ -7,11 +7,11 @@ import java.awt.image.BufferedImage;
 
 @Getter
 @Setter
-public class GeneratedItem {
+public class GeneratedObject {
 
     private BufferedImage image;
 
-    public GeneratedItem(BufferedImage image) {
+    public GeneratedObject(BufferedImage image) {
         this.image = image;
     }
 }
