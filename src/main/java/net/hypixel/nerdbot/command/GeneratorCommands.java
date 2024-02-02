@@ -76,16 +76,12 @@ public class GeneratorCommands extends ApplicationCommand {
                 item.addGenerator(new MinecraftItemGenerator.Builder()
                     .withItem(itemId)
                     .isEnchanted(enchanted)
+                    .isBigImage()
                     .build()
                 );
             }
 
             GeneratedObject generatedObject = item.build();
-
-            if (generatedObject.getImage().getHeight() <= 16 && generatedObject.getImage().getWidth() <= 16) {
-                generatedObject.scale(20);
-            }
-
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
@@ -184,14 +180,15 @@ public class GeneratorCommands extends ApplicationCommand {
             } else {
                 itemBuilder.addGenerator(new MinecraftItemGenerator.Builder()
                     .withItem(jsonObject.get("id").getAsString())
-                    .build()
-                );
+                    .isBigImage()
+                    .build());
             }
 
             MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .parseNbtJson(jsonObject)
                 .withAlpha(alpha)
                 .withPadding(padding);
+
             GeneratedObject generatedObject = itemBuilder.addGenerator(tooltipGenerator.build()).build();
 
             // TODO output a command
@@ -257,7 +254,10 @@ public class GeneratorCommands extends ApplicationCommand {
 
                 itemBuilder.addGenerator(generator.build());
             } else {
-                itemBuilder.addGenerator(new MinecraftItemGenerator.Builder().withItem(itemId).build());
+                itemBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                    .withItem(itemId)
+                    .isBigImage()
+                    .build());
             }
 
             if (recipeString != null) {

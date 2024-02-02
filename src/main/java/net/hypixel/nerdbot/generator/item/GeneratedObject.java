@@ -2,7 +2,6 @@ package net.hypixel.nerdbot.generator.item;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.hypixel.nerdbot.util.ImageUtil;
 
 import java.awt.image.BufferedImage;
 
@@ -14,10 +13,5 @@ public class GeneratedObject {
 
     public GeneratedObject(BufferedImage image) {
         this.image = image;
-    }
-
-    public GeneratedObject scale(int scalingFactor) {
-        image = ImageUtil.upscaleImage(image, scalingFactor);
-        return this;
     }
 }
