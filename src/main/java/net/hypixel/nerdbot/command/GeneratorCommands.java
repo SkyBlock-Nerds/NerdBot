@@ -80,7 +80,13 @@ public class GeneratorCommands extends ApplicationCommand {
                 );
             }
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(item.build().getImage()), "item.png")).queue();
+            GeneratedObject generatedObject = item.build();
+
+            if (generatedObject.getImage().getHeight() <= 16 && generatedObject.getImage().getWidth() <= 16) {
+                generatedObject.scale(20);
+            }
+
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {

@@ -21,7 +21,6 @@ public class MinecraftItemGenerator implements Generator {
 
     private final String itemId;
     private final boolean enchanted;
-    private final int scale;
 
     private BufferedImage itemImage;
 
@@ -31,10 +30,6 @@ public class MinecraftItemGenerator implements Generator {
 
         if (itemImage == null) {
             throw new GeneratorException("Item with ID " + itemId + " not found");
-        }
-
-        if (scale != 0) {
-            itemImage = ImageUtil.scaleImage(itemImage, scale);
         }
 
         if (enchanted) {
@@ -48,7 +43,6 @@ public class MinecraftItemGenerator implements Generator {
     public static class Builder implements ClassBuilder<MinecraftItemGenerator> {
         private String itemId;
         private boolean enchanted;
-        private int scale = 0;
 
         public MinecraftItemGenerator.Builder withItem(String itemId) {
             this.itemId = itemId
@@ -62,14 +56,9 @@ public class MinecraftItemGenerator implements Generator {
             return this;
         }
 
-        public MinecraftItemGenerator.Builder scale(int scale) {
-            this.scale = scale;
-            return this;
-        }
-
         @Override
         public MinecraftItemGenerator build() {
-            return new MinecraftItemGenerator(itemId, enchanted, scale);
+            return new MinecraftItemGenerator(itemId, enchanted);
         }
     }
 
