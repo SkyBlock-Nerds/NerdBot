@@ -7,6 +7,7 @@ import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.image.ImageCoordinates;
 import net.hypixel.nerdbot.generator.image.MinecraftInventoryImage;
 import net.hypixel.nerdbot.generator.item.InventoryItem;
+import net.hypixel.nerdbot.util.ImageUtil;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -24,7 +25,7 @@ public class MinecraftInventoryGenerator implements Generator {
 
     static {
         try {
-            BufferedImage singleSlotImage = ImageIO.read(SINGLE_SLOT_FILE);
+            BufferedImage singleSlotImage = ImageUtil.resizeImage(ImageIO.read(SINGLE_SLOT_FILE), SLOT_DIMENSIONS, SLOT_DIMENSIONS);;
             SINGLE_SLOT_IMAGE.getGraphics().drawImage(singleSlotImage, 0, 0, null);
         } catch (IOException e) {
             throw new RuntimeException(e);

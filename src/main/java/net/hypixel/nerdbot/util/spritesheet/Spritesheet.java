@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ItemSpritesheet {
+public class Spritesheet {
 
     private static BufferedImage textureAtlas;
     @Getter
@@ -49,7 +49,7 @@ public class ItemSpritesheet {
         }
     }
 
-    private ItemSpritesheet() {
+    private Spritesheet() {
     }
 
     public static BufferedImage getTexture(String textureId) {

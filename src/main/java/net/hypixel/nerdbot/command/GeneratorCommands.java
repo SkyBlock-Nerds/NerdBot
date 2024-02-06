@@ -24,7 +24,7 @@ import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
-import net.hypixel.nerdbot.util.spritesheet.ItemSpritesheet;
+import net.hypixel.nerdbot.util.spritesheet.Spritesheet;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -190,7 +190,6 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withPadding(padding);
 
             GeneratedObject generatedObject = itemBuilder.addGenerator(tooltipGenerator.build()).build();
-
             // TODO output a command
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
         } catch (JsonParseException exception) {
@@ -324,7 +323,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
     @AutocompletionHandler(name = "item-names", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> itemNames(CommandAutoCompleteInteractionEvent event) {
-        return ItemSpritesheet.getItems().keySet().stream().toList();
+        return Spritesheet.getItems().keySet().stream().toList();
     }
 
     @AutocompletionHandler(name = "item-rarities", showUserInput = false, mode = AutocompletionMode.CONTINUITY)

@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-public class ItemSpritesheetGenerator {
+public class SpritesheetGenerator {
 
     private static final int ATLAS_WIDTH = 1_024 * 8;
     public static final int IMAGE_HEIGHT = 512;
