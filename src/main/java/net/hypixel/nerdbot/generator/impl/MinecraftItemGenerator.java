@@ -7,7 +7,7 @@ import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedItem;
 import net.hypixel.nerdbot.util.ImageUtil;
-import net.hypixel.nerdbot.util.spritesheet.ItemSpritesheet;
+import net.hypixel.nerdbot.util.spritesheet.Spritesheet;
 
 import javax.imageio.ImageIO;
 import java.awt.AlphaComposite;
@@ -25,7 +25,7 @@ public class MinecraftItemGenerator implements Generator {
 
     @Override
     public GeneratedItem generate() {
-        itemImage = ItemSpritesheet.getTexture(itemId.toLowerCase());
+        itemImage = Spritesheet.getTexture(itemId.toLowerCase());
 
         if (itemImage == null) {
             throw new GeneratorException("Item with ID " + itemId + " not found");

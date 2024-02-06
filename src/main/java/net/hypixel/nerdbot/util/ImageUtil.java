@@ -48,7 +48,11 @@ public class ImageUtil {
     }
 
     public static BufferedImage resizeImage(BufferedImage originalImage, int width, int height) {
-        BufferedImage resizedImage = new BufferedImage(width, height, originalImage.getType());
+        return resizeImage(originalImage, width, height, originalImage.getType());
+    }
+
+    public static BufferedImage resizeImage(BufferedImage originalImage, int width, int height, int type) {
+        BufferedImage resizedImage = new BufferedImage(width, height, type);
         Graphics2D g = resizedImage.createGraphics();
 
         g.drawImage(originalImage, 0, 0, width, height, null);
