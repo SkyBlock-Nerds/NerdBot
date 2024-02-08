@@ -62,6 +62,12 @@ public class WikiImageDownloader {
     public static void main(String[] args) {
         debug = Arrays.asList(args).contains("--debug");
         baseUrl = Arrays.stream(args).filter(arg -> arg.startsWith("--url=")).findFirst().map(arg -> arg.substring(6)).orElse(baseUrl);
+
+        if (baseUrl == null) {
+            System.err.println("No URL provided! Please provide a valid MediaWiki URL using the --url argument");
+            System.exit(-1);
+        }
+
         String folderName = baseUrl.substring(baseUrl.indexOf("://") + 3, baseUrl.indexOf("/", baseUrl.indexOf("://") + 3)).replace(".", "_");
         primaryFolderName = "./src/main/resources/wiki_image_export/" + folderName + "/";
 
