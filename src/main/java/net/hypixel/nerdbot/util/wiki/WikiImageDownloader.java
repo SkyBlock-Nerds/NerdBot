@@ -17,14 +17,10 @@ import java.util.Map;
 
 public class WikiImageDownloader {
 
-    private static final String BASE_URL = "https://minecraft.wiki/api.php";
-    private static final String FOLDER_NAME = BASE_URL.substring(BASE_URL.indexOf("://") + 3, BASE_URL.indexOf("/", BASE_URL.indexOf("://") + 3)).replace(".", "_");
-    private static final String PRIMARY_FOLDER = "./src/main/resources/wiki_image_export/" + FOLDER_NAME + "/";
     private static final String URL_REGEX = ".*_?JE[1-9]_?.*";
     private static final int BATCH_SIZE = 500;
     private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
     private static final Request.Builder REQUEST_BUILDER = new Request.Builder();
-    private static final boolean DEBUG = false;
 
     private static final String[] BLACKLISTED_WORDS = {
         "inventory",
@@ -59,7 +55,20 @@ public class WikiImageDownloader {
         {800, 800}
     };
 
+    private static boolean debug = false;
+    private static String baseUrl;
+    private static String primaryFolderName;
+
     public static void main(String[] args) {
+        debug = Arrays.asList(args).contains("--debug");
+        baseUrl = Arrays.stream(args).filter(arg -> arg.startsWith("--url=")).findFirst().map(arg -> arg.substring(6)).orElse(baseUrl);
+        String folderName = baseUrl.substring(baseUrl.indexOf("://") + 3, baseUrl.indexOf("/", baseUrl.indexOf("://") + 3)).replace(".", "_");
+        primaryFolderName = "./src/main/resources/wiki_image_export/" + folderName + "/";
+
+        if (debug) {
+            System.out.println("Debug mode enabled");
+        }
+
         try {
             scrapeImages();
         } catch (IOException e) {
@@ -72,7 +81,7 @@ public class WikiImageDownloader {
         Map<String, Integer> imageDimensions = new HashMap<>();
         int total = 0;
 
-        System.out.println("Starting image scraping process for URL: " + BASE_URL);
+        System.out.println("Starting image scraping process for URL: " + baseUrl);
 
         do {
             String apiUrl = buildApiUrl(continueParam);
@@ -84,7 +93,7 @@ public class WikiImageDownloader {
                 printDebug("Continue param: " + continueParam);
             } else {
                 continueParam = null;
-                printDebug("Fetched all pages for URL: " + BASE_URL);
+                printDebug("Fetched all pages for URL: " + baseUrl);
             }
 
             JSONArray imagesArray = responseJson.getJSONObject("query").getJSONArray("allimages");
@@ -122,7 +131,7 @@ public class WikiImageDownloader {
             }
         } while (continueParam != null);
 
-        System.out.println("\rFinished image scraping process for URL: " + BASE_URL);
+        System.out.println("\rFinished image scraping process for URL: " + baseUrl);
         System.out.println("Total images found: " + imageDimensions.values().stream().mapToInt(Integer::intValue).sum());
         System.out.println("Total images downloaded: " + total);
 
@@ -137,7 +146,7 @@ public class WikiImageDownloader {
     }
 
     private static String buildApiUrl(String continueParam) {
-        StringBuilder apiUrl = new StringBuilder(BASE_URL);
+        StringBuilder apiUrl = new StringBuilder(baseUrl);
         apiUrl.append("?action=query");
         apiUrl.append("&ailimit=").append(BATCH_SIZE);
         apiUrl.append("&aiprop=url");
@@ -179,7 +188,7 @@ public class WikiImageDownloader {
     }
 
     private static void saveImageToFolder(BufferedImage image, String imageName) throws IOException {
-        File outputfile = new File(PRIMARY_FOLDER + imageName + ".png");
+        File outputfile = new File(primaryFolderName + imageName + ".png");
 
         if (outputfile.getParentFile().mkdirs()) {
             printDebug("Created directory: " + outputfile.getParentFile().getAbsolutePath());
@@ -190,7 +199,7 @@ public class WikiImageDownloader {
     }
 
     private static void printDebug(String message) {
-        if (DEBUG) {
+        if (debug) {
             System.out.println(message);
         }
     }
