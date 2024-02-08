@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.hypixel.nerdbot.NerdBotApp;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -167,4 +168,24 @@ public class SuggestionConfig {
         return Objects.equals(reaction.getEmoji().asCustom().getId(), function.apply(this));
     }
 
+    public void addNewAlphaSuggestionForumId(BotConfig botConfig, String id) {
+        String[] newIds = new String[alphaSuggestionForumIds.length + 1];
+        System.arraycopy(alphaSuggestionForumIds, 0, newIds, 0, alphaSuggestionForumIds.length);
+        newIds[alphaSuggestionForumIds.length] = id;
+        alphaSuggestionForumIds = newIds;
+        NerdBotApp.getBot().writeConfig(botConfig);
+    }
+
+    public void removeAlphaSuggestionForumId(BotConfig botConfig, String id) {
+        String[] newIds = new String[alphaSuggestionForumIds.length - 1];
+        int index = 0;
+        for (String alphaSuggestionForumId : alphaSuggestionForumIds) {
+            if (alphaSuggestionForumId.equals(id)) {
+                continue;
+            }
+            newIds[index++] = alphaSuggestionForumId;
+        }
+        alphaSuggestionForumIds = newIds;
+        NerdBotApp.getBot().writeConfig(botConfig);
+    }
 }

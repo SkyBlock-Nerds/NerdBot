@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.entities.channel.unions.GuildMessageChannelUnion;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
+import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
@@ -59,6 +60,12 @@ public class ActivityListener {
 
     @SubscribeEvent
     public void onThreadCreateEvent(@NotNull ChannelCreateEvent event) {
+        if (event.getChannelType() == ChannelType.FORUM && event.getChannel().getName().startsWith("alpha-")) {
+            SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+            suggestionConfig.addNewAlphaSuggestionForumId(NerdBotApp.getBot().getConfig(), event.getChannel().getId());
+            log.info("New alpha suggestion forum created and added to bot config: " + event.getChannel().getName() + " (ID: " + event.getChannel().getId() + ")");
+        }
+
         if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD) {
             Member member = event.getChannel().asThreadChannel().getOwner();
             if (member == null || member.getUser().isBot()) {
@@ -86,6 +93,15 @@ public class ActivityListener {
                 discordUser.getLastActivity().setLastAlphaSuggestionDate(time);
                 log.info("Updating new alpha suggestion activity date for " + member.getEffectiveName() + " to " + time);
             }
+        }
+    }
+
+    @SubscribeEvent
+    public void onChannelDelete(ChannelDeleteEvent event) {
+        if (event.getChannelType() == ChannelType.FORUM && event.getChannel().getName().startsWith("alpha-")) {
+            SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+            suggestionConfig.removeAlphaSuggestionForumId(NerdBotApp.getBot().getConfig(), event.getChannel().getId());
+            log.info("Alpha suggestion forum deleted and removed from bot config: " + event.getChannel().getName() + " (ID: " + event.getChannel().getId() + ")");
         }
     }
 
