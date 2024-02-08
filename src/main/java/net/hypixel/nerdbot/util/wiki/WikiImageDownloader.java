@@ -56,8 +56,7 @@ public class WikiImageDownloader {
         {400, 680},
         {600, 900},
         {600, 900},
-        {800, 800},
-        {854, 480}
+        {800, 800}
     };
 
     public static void main(String[] args) {
