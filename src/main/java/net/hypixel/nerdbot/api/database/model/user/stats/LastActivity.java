@@ -4,9 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.ToLongFunction;
 
@@ -44,6 +42,10 @@ public class LastActivity {
     }
 
     public String toRelativeTimestamp(ToLongFunction<LastActivity> function) {
+        if (function.applyAsLong(this) <= 0) {
+            return "Never";
+        }
+
         return this.toTimestamp(function).toRelativeTimestamp();
     }
 }
