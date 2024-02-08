@@ -14,27 +14,55 @@ public class DiscordTimestamp {
         return TIMESTAMP_FORMAT.formatted("t", timestamp, "t");
     }
 
+    public static String toShortTime(long timestamp) {
+        return new DiscordTimestamp(timestamp / 1_000).toShortTime();
+    }
+
     public String toLongTime() {
         return TIMESTAMP_FORMAT.formatted("t", timestamp, "T");
+    }
+
+    public static String toLongTime(long timestamp) {
+        return new DiscordTimestamp(timestamp / 1_000).toLongTime();
     }
 
     public String toShortDate() {
         return TIMESTAMP_FORMAT.formatted("t", timestamp, "d");
     }
 
+    public static String toShortDate(long timestamp) {
+        return new DiscordTimestamp(timestamp / 1_000).toShortDate();
+    }
+
     public String toLongDate() {
         return TIMESTAMP_FORMAT.formatted("t", timestamp, "D");
+    }
+
+    public static String toLongDate(long timestamp) {
+        return new DiscordTimestamp(timestamp / 1_000).toLongDate();
     }
 
     public String toShortDateTime() {
         return TIMESTAMP_FORMAT.formatted("t", timestamp, "f");
     }
 
+    public static String toShortDateTime(long timestamp) {
+        return new DiscordTimestamp(timestamp / 1_000).toShortDateTime();
+    }
+
     public String toLongDateTime() {
         return TIMESTAMP_FORMAT.formatted("t", timestamp, "F");
     }
 
+    public static String toLongDateTime(long timestamp) {
+        return new DiscordTimestamp(timestamp / 1_000).toLongDateTime();
+    }
+
     public String toRelativeTimestamp() {
         return TIMESTAMP_FORMAT.formatted("t", timestamp, "R");
+    }
+
+    public static String toRelativeTimestamp(long timestamp) {
+        return new DiscordTimestamp(timestamp / 1_000).toRelativeTimestamp();
     }
 }

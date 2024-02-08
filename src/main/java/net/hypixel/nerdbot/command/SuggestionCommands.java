@@ -167,7 +167,7 @@ public class SuggestionCommands extends ApplicationCommand {
                             "Created",
                             suggestion.getFirstMessage()
                                 .map(Message::getTimeCreated)
-                                .map(date -> new DiscordTimestamp(date.toInstant().toEpochMilli()).toRelativeTimestamp())
+                                .map(date -> DiscordTimestamp.toRelativeTimestamp(date.toInstant().toEpochMilli()))
                                 .orElse("???"),
                             false
                         )

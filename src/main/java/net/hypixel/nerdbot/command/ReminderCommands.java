@@ -119,7 +119,7 @@ public class ReminderCommands extends ApplicationCommand {
         if (result != null && result.wasAcknowledged() && result.getUpsertedId() != null) {
             MessageEditBuilder builder = new MessageEditBuilder();
             builder.setEmbeds(new EmbedBuilder().setDescription(description).build());
-            builder.setContent(TranslationManager.translate(user, "commands.reminders.reminder_set", new DiscordTimestamp(date.getTime()).toLongDateTime()));
+            builder.setContent(TranslationManager.translate(user, "commands.reminders.reminder_set", DiscordTimestamp.toLongDateTime(date.getTime())));
             event.getHook().editOriginal(builder.build()).complete();
 
             // Sending a nice confirmation message within the dms, so it doesn't disappear.
@@ -129,7 +129,7 @@ public class ReminderCommands extends ApplicationCommand {
                 .setFooter(reminder.getUuid().toString())
                 .setColor(Color.GREEN);
             StringBuilder messageContents = new StringBuilder();
-            messageContents.append("Reminder set for: ").append(new DiscordTimestamp(date.getTime()).toLongDateTime());
+            messageContents.append("Reminder set for: ").append(DiscordTimestamp.toLongDateTime(date.getTime()));
             if (sendPublicly){
                 messageContents.append("\n\nIn channel: ").append(event.getChannel().getAsMention());
             }
@@ -181,7 +181,15 @@ public class ReminderCommands extends ApplicationCommand {
 
         StringBuilder builder = new StringBuilder("**Your reminders:**\n");
         for (Reminder reminder : reminders) {
-            builder.append("(").append(reminder.getUuid()).append(") Public: `").append(reminder.isSendPublicly()).append("` ").append(new DiscordTimestamp(reminder.getTime().getTime()).toLongDateTime()).append(" - `").append(reminder.getDescription()).append("`\n");
+            builder.append("(")
+                .append(reminder.getUuid())
+                .append(") Public: `")
+                .append(reminder.isSendPublicly())
+                .append("` ")
+                .append(DiscordTimestamp.toLongDateTime(reminder.getTime().getTime()))
+                .append(" - `")
+                .append(reminder.getDescription())
+                .append("`\n");
         }
 
         builder.append("\n**")

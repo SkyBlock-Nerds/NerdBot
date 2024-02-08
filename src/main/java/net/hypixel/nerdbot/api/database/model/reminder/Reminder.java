@@ -68,7 +68,7 @@ public class Reminder {
         ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
         User user = NerdBotApp.getBot().getJDA().getUserById(userId);
         String message;
-        String timestamp = new DiscordTimestamp(time.getTime()).toLongDateTime();
+        String timestamp = DiscordTimestamp.toLongDateTime(time.getTime());
 
         if (user == null) {
             log.error("Couldn't find user with ID '" + userId + "' to send reminder " + uuid + "!");

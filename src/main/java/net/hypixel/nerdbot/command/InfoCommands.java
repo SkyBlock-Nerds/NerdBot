@@ -124,7 +124,7 @@ public class InfoCommands extends ApplicationCommand {
         }
 
         builder.append("Server name: ").append(guild.getName()).append(" (Server ID: ").append(guild.getId()).append(")\n")
-            .append("Created at: ").append(new DiscordTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()).toRelativeTimestamp()).append("\n")
+            .append("Created at: ").append(DiscordTimestamp.toRelativeTimestamp(guild.getTimeCreated().toInstant().toEpochMilli())).append("\n")
             .append("Boosters: ").append(guild.getBoostCount()).append(" (").append(guild.getBoostTier().name()).append(")\n")
             .append("Channels: ").append(guild.getChannels().size()).append("\n")
             .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
@@ -157,7 +157,12 @@ public class InfoCommands extends ApplicationCommand {
 
         getPage(users, page, 10).forEach(discordUser -> {
             discordUser.getMember().ifPresentOrElse(member -> {
-                stringBuilder.append(" • ").append(member.getAsMention()).append(" (").append(new DiscordTimestamp(discordUser.getLastActivity().getLastGlobalActivity()).toLongDateTime()).append(")").append("\n");
+                stringBuilder.append(" • ")
+                    .append(member.getAsMention())
+                    .append(" (")
+                    .append(DiscordTimestamp.toLongDateTime(discordUser.getLastActivity().getLastGlobalActivity()))
+                    .append(")")
+                    .append("\n");
             }, () -> log.error("Couldn't find member " + discordUser.getDiscordId()));
         });
 
