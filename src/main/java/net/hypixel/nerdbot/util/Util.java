@@ -49,6 +49,10 @@ public class Util {
     public static final Pattern UUID_REGEX = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}");
     public static final Pattern TRIMMED_UUID_REGEX = Pattern.compile("[a-f0-9]{12}4[a-f0-9]{3}[89aAbB][a-f0-9]{15}");
     private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
+    @Deprecated
+    private static final String REGEX = "^[a-zA-Z0-9_]{2,16}";
+    @Deprecated
+    private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
 
     private Util() {
     }
@@ -202,11 +206,6 @@ public class Util {
         ImageIO.write(imageToSave, "PNG", tempFile);
         return tempFile;
     }
-
-    @Deprecated
-    private static final String REGEX = "^[a-zA-Z0-9_]{2,16}";
-    @Deprecated
-    private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
 
     @Deprecated
     public static Optional<String> getScuffedMinecraftIGN(Member member) {

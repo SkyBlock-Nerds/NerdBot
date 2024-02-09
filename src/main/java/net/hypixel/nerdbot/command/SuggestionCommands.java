@@ -22,9 +22,9 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.SuggestionCache;
-import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
@@ -47,6 +47,93 @@ public class SuggestionCommands extends ApplicationCommand {
         .scheduler(Scheduler.systemScheduler())
         .removalListener((o, o2, removalCause) -> log.info("Removed {} from last review request cache", o))
         .build();
+
+    public static List<SuggestionCache.Suggestion> getSuggestions(Long userID, String tags, String title, boolean alpha) {
+        final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
+
+        if (NerdBotApp.getBot().getSuggestionCache().getSuggestions().isEmpty()) {
+            log.info("Suggestions cache is empty!");
+            return Collections.emptyList();
+        }
+
+        return NerdBotApp.getBot().getSuggestionCache()
+            .getSuggestions()
+            .stream()
+            .filter(suggestion -> suggestion.isAlpha() == alpha)
+            .filter(SuggestionCache.Suggestion::notDeleted)
+            .filter(suggestion -> userID == null || suggestion.getThread().getOwnerIdLong() == userID)
+            .filter(suggestion -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> suggestion.getThread()
+                .getAppliedTags()
+                .stream()
+                .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
+            ))
+            .filter(suggestion -> title == null || suggestion.getThread()
+                .getName()
+                .toLowerCase()
+                .contains(title.toLowerCase())
+            )
+            .toList();
+    }
+
+    public static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum, boolean showNames, boolean showStats) {
+        List<SuggestionCache.Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
+        int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
+
+        StringJoiner links = new StringJoiner("\n");
+        double total = suggestions.size();
+        double greenlit = suggestions.stream().filter(SuggestionCache.Suggestion::isGreenlit).count();
+        String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`\n" : "") + (alpha ? "- Filtered by Alpha: `Yes`" : "");
+
+        for (SuggestionCache.Suggestion suggestion : pages) {
+            String link = "[" + suggestion.getThreadName().replaceAll("`", "") + "](" + suggestion.getThread().getJumpUrl() + ")";
+            link += (suggestion.isGreenlit() ? " " + getEmojiFormat(SuggestionConfig::getGreenlitEmojiId) : "") + "\n";
+            link += suggestion.getThread().getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "\n";
+            link = link.replaceAll("\n\n", "\n");
+
+            if (showNames) {
+                User user = NerdBotApp.getBot().getJDA().getUserById(suggestion.getThread().getOwnerIdLong());
+                if (user != null) {
+                    link += "Created by " + user.getEffectiveName() + "\n";
+                }
+            }
+
+            link += getEmojiFormat(SuggestionConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + getEmojiFormat(SuggestionConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
+            links.add(link);
+        }
+
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setColor(Color.GREEN)
+            .setTitle("Suggestions")
+            .setDescription(links.toString());
+
+        if (showStats) {
+            embedBuilder.addField(
+                    "Total",
+                    String.valueOf((int) total),
+                    true
+                )
+                .addField(
+                    getEmojiFormat(SuggestionConfig::getGreenlitEmojiId),
+                    (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
+                    true
+                )
+                .addBlankField(true);
+        }
+
+        embedBuilder.setFooter("Page: " + pageNum + "/" + totalPages);
+
+        if (!filters.isEmpty()) {
+            embedBuilder.addField("Filters", filters, false);
+        }
+
+        return embedBuilder;
+    }
+
+    private static String getEmojiFormat(Function<SuggestionConfig, String> emojiIdFunction) {
+        return EmojiCache.getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getSuggestionConfig()))
+            .orElseGet(() -> Emoji.fromUnicode("❓"))
+            .getFormatted();
+    }
 
     @JDASlashCommand(name = "request-review", description = "Request a greenlit review of your suggestion.")
     public void requestSuggestionReview(GuildSlashEvent event) {
@@ -306,92 +393,5 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, isAlpha, pageNum, true, true).build()).queue();
-    }
-
-    public static List<SuggestionCache.Suggestion> getSuggestions(Long userID, String tags, String title, boolean alpha) {
-        final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
-
-        if (NerdBotApp.getBot().getSuggestionCache().getSuggestions().isEmpty()) {
-            log.info("Suggestions cache is empty!");
-            return Collections.emptyList();
-        }
-
-        return NerdBotApp.getBot().getSuggestionCache()
-            .getSuggestions()
-            .stream()
-            .filter(suggestion -> suggestion.isAlpha() == alpha)
-            .filter(SuggestionCache.Suggestion::notDeleted)
-            .filter(suggestion -> userID == null || suggestion.getThread().getOwnerIdLong() == userID)
-            .filter(suggestion -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> suggestion.getThread()
-                .getAppliedTags()
-                .stream()
-                .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
-            ))
-            .filter(suggestion -> title == null || suggestion.getThread()
-                .getName()
-                .toLowerCase()
-                .contains(title.toLowerCase())
-            )
-            .toList();
-    }
-
-    public static EmbedBuilder buildSuggestionsEmbed(List<SuggestionCache.Suggestion> suggestions, String tags, String title, boolean alpha, int pageNum, boolean showNames, boolean showStats) {
-        List<SuggestionCache.Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
-        int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
-
-        StringJoiner links = new StringJoiner("\n");
-        double total = suggestions.size();
-        double greenlit = suggestions.stream().filter(SuggestionCache.Suggestion::isGreenlit).count();
-        String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`\n" : "") + (alpha ? "- Filtered by Alpha: `Yes`" : "");
-
-        for (SuggestionCache.Suggestion suggestion : pages) {
-            String link = "[" + suggestion.getThreadName().replaceAll("`", "") + "](" + suggestion.getThread().getJumpUrl() + ")";
-            link += (suggestion.isGreenlit() ? " " + getEmojiFormat(SuggestionConfig::getGreenlitEmojiId) : "") + "\n";
-            link += suggestion.getThread().getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "\n";
-            link = link.replaceAll("\n\n", "\n");
-
-            if (showNames) {
-                User user = NerdBotApp.getBot().getJDA().getUserById(suggestion.getThread().getOwnerIdLong());
-                if (user != null) {
-                    link += "Created by " + user.getEffectiveName() + "\n";
-                }
-            }
-
-            link += getEmojiFormat(SuggestionConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + getEmojiFormat(SuggestionConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
-            links.add(link);
-        }
-
-        EmbedBuilder embedBuilder = new EmbedBuilder();
-        embedBuilder.setColor(Color.GREEN)
-            .setTitle("Suggestions")
-            .setDescription(links.toString());
-
-        if (showStats) {
-            embedBuilder.addField(
-                    "Total",
-                    String.valueOf((int) total),
-                    true
-                )
-                .addField(
-                    getEmojiFormat(SuggestionConfig::getGreenlitEmojiId),
-                    (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
-                    true
-                )
-                .addBlankField(true);
-        }
-
-        embedBuilder.setFooter("Page: " + pageNum + "/" + totalPages);
-
-        if (!filters.isEmpty()) {
-            embedBuilder.addField("Filters", filters, false);
-        }
-
-        return embedBuilder;
-    }
-
-    private static String getEmojiFormat(Function<SuggestionConfig, String> emojiIdFunction) {
-        return EmojiCache.getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getSuggestionConfig()))
-            .orElseGet(() -> Emoji.fromUnicode("❓"))
-            .getFormatted();
     }
 }

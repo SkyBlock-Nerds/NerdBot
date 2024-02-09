@@ -34,6 +34,92 @@ public class ModMailListener {
 
     public static final String MOD_MAIL_TITLE_TEMPLATE = "%s (%s)";
 
+    private static boolean shouldAppendRoleMention(DiscordUser discordUser) {
+        long lastUsage = discordUser.getLastActivity().getLastModMailUsage();
+        long currentTime = System.currentTimeMillis();
+        int timeBetweenPings = NerdBotApp.getBot().getConfig().getModMailConfig().getTimeBetweenPings();
+        return (currentTime - lastUsage) / 1000 > timeBetweenPings;
+    }
+
+    private static String appendModMailRoleMention(List<String> messages, String content, int index) {
+        String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
+        String modMailRoleMention = "<@&%s>".formatted(modMailRoleId);
+        ModMailConfig.RoleFormat roleFormat = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleFormat();
+
+        if (modMailRoleId == null) {
+            return content;
+        }
+
+        if (index == 0) { // First message
+            if (roleFormat == ModMailConfig.RoleFormat.ABOVE) {
+                content = modMailRoleMention + "\n\n" + content;
+            } else if (roleFormat == ModMailConfig.RoleFormat.INLINE) {
+                content = modMailRoleMention + " " + content;
+            }
+        }
+
+        if (index == messages.size() - 1 && roleFormat == ModMailConfig.RoleFormat.BELOW) { // Last message
+            content += "\n\n" + modMailRoleMention;
+        }
+
+        return content;
+    }
+
+    private static Optional<Webhook> getWebhook() {
+        return Util.getMainGuild()
+            .retrieveWebhooks()
+            .complete()
+            .stream()
+            .filter(webhook -> webhook.getId().equals(
+                NerdBotApp.getBot()
+                    .getConfig()
+                    .getModMailConfig()
+                    .getWebhookId()
+            ))
+            .findFirst();
+    }
+
+    private static ForumChannel getModMailChannel() {
+        return NerdBotApp.getBot()
+            .getJDA()
+            .getForumChannelById(
+                NerdBotApp.getBot()
+                    .getConfig()
+                    .getModMailConfig()
+                    .getChannelId()
+            );
+    }
+
+    private static List<String> buildContent(Message message, boolean webhook) {
+        String content = message.getContentDisplay();
+
+        // Remove any mentions of users, roles, or @everyone/@here
+        content = content.replaceAll("@(everyone|here|&\\d+)", "@\u200b$1");
+
+        if (!webhook) {
+            content = String.format("**%s:**%s%s", Util.getDisplayName(message.getAuthor()), "\n", content);
+        }
+
+        return Util.splitString(content, 1_024);
+    }
+
+    private static List<FileUpload> buildFiles(Message message) {
+        return message.getAttachments()
+            .stream()
+            .map(attachment -> {
+                try {
+                    return FileUpload.fromData(
+                        attachment.getProxy().download().get(),
+                        attachment.getFileName()
+                    );
+                } catch (InterruptedException | ExecutionException exception) {
+                    log.error("Failed to download attachment " + attachment.getFileName() + "!", exception);
+                    return null;
+                }
+            })
+            .toList();
+    }
+
     @SubscribeEvent
     public void onModMailReceived(MessageReceivedEvent event) {
         User author = event.getAuthor();
@@ -175,37 +261,6 @@ public class ModMailListener {
         discordUser.getLastActivity().setLastModMailUsage(System.currentTimeMillis());
     }
 
-    private static boolean shouldAppendRoleMention(DiscordUser discordUser) {
-        long lastUsage = discordUser.getLastActivity().getLastModMailUsage();
-        long currentTime = System.currentTimeMillis();
-        int timeBetweenPings = NerdBotApp.getBot().getConfig().getModMailConfig().getTimeBetweenPings();
-        return (currentTime - lastUsage) / 1000 > timeBetweenPings;
-    }
-
-    private static String appendModMailRoleMention(List<String> messages, String content, int index) {
-        String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
-        String modMailRoleMention = "<@&%s>".formatted(modMailRoleId);
-        ModMailConfig.RoleFormat roleFormat = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleFormat();
-
-        if (modMailRoleId == null) {
-            return content;
-        }
-
-        if (index == 0) { // First message
-            if (roleFormat == ModMailConfig.RoleFormat.ABOVE) {
-                content = modMailRoleMention + "\n\n" + content;
-            } else if (roleFormat == ModMailConfig.RoleFormat.INLINE) {
-                content = modMailRoleMention + " " + content;
-            }
-        }
-
-        if (index == messages.size() - 1 && roleFormat == ModMailConfig.RoleFormat.BELOW) { // Last message
-            content += "\n\n" + modMailRoleMention;
-        }
-
-        return content;
-    }
-
     @SubscribeEvent
     public void onModMailResponse(MessageReceivedEvent event) {
         User author = event.getAuthor();
@@ -252,60 +307,5 @@ public class ModMailListener {
                     .build()
             ))
             .queue();
-    }
-
-    private static Optional<Webhook> getWebhook() {
-        return Util.getMainGuild()
-            .retrieveWebhooks()
-            .complete()
-            .stream()
-            .filter(webhook -> webhook.getId().equals(
-                NerdBotApp.getBot()
-                    .getConfig()
-                    .getModMailConfig()
-                    .getWebhookId()
-            ))
-            .findFirst();
-    }
-
-    private static ForumChannel getModMailChannel() {
-        return NerdBotApp.getBot()
-            .getJDA()
-            .getForumChannelById(
-                NerdBotApp.getBot()
-                    .getConfig()
-                    .getModMailConfig()
-                    .getChannelId()
-            );
-    }
-
-    private static List<String> buildContent(Message message, boolean webhook) {
-        String content = message.getContentDisplay();
-
-        // Remove any mentions of users, roles, or @everyone/@here
-        content = content.replaceAll("@(everyone|here|&\\d+)", "@\u200b$1");
-
-        if (!webhook) {
-            content = String.format("**%s:**%s%s", Util.getDisplayName(message.getAuthor()), "\n", content);
-        }
-
-        return Util.splitString(content, 1_024);
-    }
-
-    private static List<FileUpload> buildFiles(Message message) {
-        return message.getAttachments()
-            .stream()
-            .map(attachment -> {
-                try {
-                    return FileUpload.fromData(
-                        attachment.getProxy().download().get(),
-                        attachment.getFileName()
-                    );
-                } catch (InterruptedException | ExecutionException exception) {
-                    log.error("Failed to download attachment " + attachment.getFileName() + "!", exception);
-                    return null;
-                }
-            })
-            .toList();
     }
 }

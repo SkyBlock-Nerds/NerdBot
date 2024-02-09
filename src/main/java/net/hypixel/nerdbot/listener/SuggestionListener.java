@@ -99,11 +99,10 @@ public class SuggestionListener {
                 }
                 case "deny" ->
                     thread.sendMessage(TranslationManager.translate("commands.request_review.changes_requested")).queue();
-                case "lock" ->
-                    thread.getManager().setLocked(true).queue(unused -> {
-                        event.getHook().sendMessage("Thread locked!").setEphemeral(true).queue();
-                        thread.sendMessage(TranslationManager.translate("commands.request_review.locked")).queue();
-                        }, throwable -> event.getHook().sendMessage("Unable to lock thread!").setEphemeral(true).queue());
+                case "lock" -> thread.getManager().setLocked(true).queue(unused -> {
+                    event.getHook().sendMessage("Thread locked!").setEphemeral(true).queue();
+                    thread.sendMessage(TranslationManager.translate("commands.request_review.locked")).queue();
+                }, throwable -> event.getHook().sendMessage("Unable to lock thread!").setEphemeral(true).queue());
                 default -> {
                     event.getHook().sendMessage("Invalid action!").setEphemeral(true).queue();
                     action = "n/a";

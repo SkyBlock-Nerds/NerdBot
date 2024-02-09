@@ -30,6 +30,7 @@ public class TranslationManager {
      * Load the language file based on the {@link UserLanguage} file name
      *
      * @param language The {@link UserLanguage} to load translations for
+     *
      * @return A {@link JsonObject} containing the file contents
      */
     private static JsonObject loadTranslations(UserLanguage language) {
@@ -69,6 +70,7 @@ public class TranslationManager {
      * @param discordUser The {@link DiscordUser} to take the {@link UserLanguage} from
      * @param key         The key of the translation
      * @param args        Optional arguments to replace variables in the translation
+     *
      * @return A string with the translated key based on the {@link DiscordUser}'s {@link UserLanguage} and any optional arguments
      */
     public static String translate(@Nullable DiscordUser discordUser, String key, Object... args) {
@@ -113,6 +115,7 @@ public class TranslationManager {
      *
      * @param key  The key of the translation
      * @param args Optional arguments to replace variables in the translation
+     *
      * @return A translated string using the default {@link UserLanguage} of the given key and optional arguments
      */
     public static String translate(String key, Object... args) {

@@ -11,12 +11,39 @@ import java.util.HashMap;
 @Getter
 public class RecipeParser {
     private static final String FIELD_SEPARATOR = ",";
+    private final HashMap<Integer, RecipeItem> recipeData;
     private boolean successfullyParsed = false;
     private String errorString;
-    private final HashMap<Integer, RecipeItem> recipeData;
 
     public RecipeParser() {
         recipeData = new HashMap<>();
+    }
+
+    /**
+     * Strips the string of any links or malicious data
+     *
+     * @param item the recipe item to clean
+     *
+     * @return a sanitized string
+     */
+    private static String stripRecipeItem(String item) {
+        return item.replaceAll("[^A-Za-z0-9,%#]", "");
+    }
+
+    /**
+     * Attempts to convert the string into a number
+     *
+     * @param value the string to parse into an integer
+     *
+     * @return the number value of the string (null if it isn't a number)
+     */
+    @Nullable
+    private static Integer tryParseInteger(String value) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException exception) {
+            return null;
+        }
     }
 
     public void parseRecipe(String recipe) {
@@ -81,33 +108,6 @@ public class RecipeParser {
         }
 
         this.successfullyParsed = true;
-    }
-
-    /**
-     * Strips the string of any links or malicious data
-     *
-     * @param item the recipe item to clean
-     *
-     * @return a sanitized string
-     */
-    private static String stripRecipeItem(String item) {
-        return item.replaceAll("[^A-Za-z0-9,%#]", "");
-    }
-
-    /**
-     * Attempts to convert the string into a number
-     *
-     * @param value the string to parse into an integer
-     *
-     * @return the number value of the string (null if it isn't a number)
-     */
-    @Nullable
-    private static Integer tryParseInteger(String value) {
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException exception) {
-            return null;
-        }
     }
 
     @Getter

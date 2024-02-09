@@ -41,6 +41,94 @@ public class InfoCommands extends ApplicationCommand {
 
     private final Database database = NerdBotApp.getBot().getDatabase();
 
+    @NotNull
+    private static List<DiscordUser> getDiscordUsers(DiscordUserRepository repository) {
+        List<DiscordUser> users = new ArrayList<>(repository.getAll());
+
+        log.info("Checking " + users.size() + " users");
+
+        Iterator<DiscordUser> iterator = users.iterator();
+        while (iterator.hasNext()) {
+            DiscordUser user = iterator.next();
+
+            user.getMember().ifPresent(member -> {
+                if (member.getUser().isBot() || Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
+                    iterator.remove();
+                    log.debug("Removed " + user.getDiscordId() + " from the list of users because they are a bot or have a special role");
+                }
+            });
+        }
+
+        return users;
+    }
+
+    /**
+     * returns a view (not a new list) of the sourceList for the
+     * range based on page and pageSize
+     *
+     * @param sourceList
+     * @param page       page number should start from 1
+     * @param pageSize
+     *
+     * @return custom error can be given instead of returning emptyList
+     */
+    public static <T> List<T> getPage(List<T> sourceList, int page, int pageSize) {
+        if (sourceList == null) {
+            throw new IllegalArgumentException("Invalid source list");
+        }
+
+        if (pageSize <= 0) {
+            throw new IllegalArgumentException("Invalid page size: " + pageSize);
+        }
+
+        page = Math.max(page, 1);
+        int fromIndex = (page - 1) * pageSize;
+
+        if (sourceList.size() <= fromIndex) {
+            return getPage(sourceList, page - 1, pageSize); // Revert to last page
+        }
+
+        return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
+    }
+
+    /**
+     * Returns a view (not a new list) of the source Map for the range based on page and pageSize.
+     *
+     * @param sourceMap the source map
+     * @param page      page number should start from 1
+     * @param pageSize  page size
+     * @param <K>       the type of keys in the map
+     * @param <V>       the type of values in the map
+     *
+     * @return a list view of map entries for the specified page
+     *
+     * @throws IllegalArgumentException if the sourceMap is null, page is invalid, or pageSize is non-positive
+     */
+    public static <K, V> List<Map.Entry<K, V>> getPage(Map<K, V> sourceMap, int page, int pageSize) {
+        if (sourceMap == null) {
+            throw new IllegalArgumentException("Invalid source map");
+        }
+
+        if (page < 1) {
+            throw new IllegalArgumentException("Invalid page number: " + page);
+        }
+
+        if (pageSize <= 0) {
+            throw new IllegalArgumentException("Invalid page size: " + pageSize);
+        }
+
+        int fromIndex = (page - 1) * pageSize;
+        int toIndex = fromIndex + pageSize;
+        List<Map.Entry<K, V>> entries = new ArrayList<>(sourceMap.entrySet());
+
+        if (fromIndex >= entries.size()) {
+            return new ArrayList<>();
+        }
+
+        toIndex = Math.min(toIndex, entries.size());
+        return entries.subList(fromIndex, toIndex);
+    }
+
     @JDASlashCommand(name = "info", subcommand = "bot", description = "View information about the bot", defaultLocked = true)
     public void botInfo(GuildSlashEvent event) {
         StringBuilder builder = new StringBuilder();
@@ -169,27 +257,6 @@ public class InfoCommands extends ApplicationCommand {
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
     }
 
-    @NotNull
-    private static List<DiscordUser> getDiscordUsers(DiscordUserRepository repository) {
-        List<DiscordUser> users = new ArrayList<>(repository.getAll());
-
-        log.info("Checking " + users.size() + " users");
-
-        Iterator<DiscordUser> iterator = users.iterator();
-        while (iterator.hasNext()) {
-            DiscordUser user = iterator.next();
-
-            user.getMember().ifPresent(member -> {
-                if (member.getUser().isBot() || Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
-                    iterator.remove();
-                    log.debug("Removed " + user.getDiscordId() + " from the list of users because they are a bot or have a special role");
-                }
-            });
-        }
-
-        return users;
-    }
-
     @JDASlashCommand(name = "info", subcommand = "messages", description = "View an ordered list of users with the most messages", defaultLocked = true)
     public void userMessageInfo(GuildSlashEvent event, @AppOption int page) {
         if (!database.isConnected()) {
@@ -209,72 +276,5 @@ public class InfoCommands extends ApplicationCommand {
         });
 
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
-    }
-
-    /**
-     * returns a view (not a new list) of the sourceList for the
-     * range based on page and pageSize
-     *
-     * @param sourceList
-     * @param page       page number should start from 1
-     * @param pageSize
-     *
-     * @return custom error can be given instead of returning emptyList
-     */
-    public static <T> List<T> getPage(List<T> sourceList, int page, int pageSize) {
-        if (sourceList == null) {
-            throw new IllegalArgumentException("Invalid source list");
-        }
-
-        if (pageSize <= 0) {
-            throw new IllegalArgumentException("Invalid page size: " + pageSize);
-        }
-
-        page = Math.max(page, 1);
-        int fromIndex = (page - 1) * pageSize;
-
-        if (sourceList.size() <= fromIndex) {
-            return getPage(sourceList, page - 1, pageSize); // Revert to last page
-        }
-
-        return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
-    }
-
-    /**
-     * Returns a view (not a new list) of the source Map for the range based on page and pageSize.
-     *
-     * @param sourceMap the source map
-     * @param page      page number should start from 1
-     * @param pageSize  page size
-     * @param <K>       the type of keys in the map
-     * @param <V>       the type of values in the map
-     *
-     * @return a list view of map entries for the specified page
-     *
-     * @throws IllegalArgumentException if the sourceMap is null, page is invalid, or pageSize is non-positive
-     */
-    public static <K, V> List<Map.Entry<K, V>> getPage(Map<K, V> sourceMap, int page, int pageSize) {
-        if (sourceMap == null) {
-            throw new IllegalArgumentException("Invalid source map");
-        }
-
-        if (page < 1) {
-            throw new IllegalArgumentException("Invalid page number: " + page);
-        }
-
-        if (pageSize <= 0) {
-            throw new IllegalArgumentException("Invalid page size: " + pageSize);
-        }
-
-        int fromIndex = (page - 1) * pageSize;
-        int toIndex = fromIndex + pageSize;
-        List<Map.Entry<K, V>> entries = new ArrayList<>(sourceMap.entrySet());
-
-        if (fromIndex >= entries.size()) {
-            return new ArrayList<>();
-        }
-
-        toIndex = Math.min(toIndex, entries.size());
-        return entries.subList(fromIndex, toIndex);
     }
 }

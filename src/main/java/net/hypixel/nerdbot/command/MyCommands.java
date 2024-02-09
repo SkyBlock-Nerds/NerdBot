@@ -25,8 +25,8 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
-import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.cache.ChannelCache;
+import net.hypixel.nerdbot.cache.SuggestionCache;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
@@ -45,11 +45,113 @@ import java.util.regex.Pattern;
 @Log4j2
 public class MyCommands extends ApplicationCommand {
 
-    private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
     public static final Cache<String, MojangProfile> VERIFY_CACHE = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofDays(1L))
         .scheduler(Scheduler.systemScheduler())
         .build();
+    private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
+
+    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws ProfileMismatchException, HttpException {
+        MojangProfile mojangProfile = Util.getMojangProfile(username);
+        HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
+
+        if (!hypixelPlayerResponse.isSuccess()) {
+            throw new HttpException("Unable to look up `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
+        }
+
+        if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
+            throw new ProfileMismatchException("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
+        }
+
+        String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
+        String discordName = member.getUser().getName();
+
+        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0000")) {
+            discordName += "#" + member.getUser().getDiscriminator();
+        }
+
+        if (enforceSocial && !discordName.equalsIgnoreCase(discord)) {
+            throw new ProfileMismatchException("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
+        }
+
+        return mojangProfile;
+    }
+
+    public static void updateMojangProfile(Member member, MojangProfile mojangProfile) throws HttpException {
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
+        discordUser.setMojangProfile(mojangProfile);
+
+        if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
+            try {
+                member.modifyNickname(mojangProfile.getUsername()).queue();
+            } catch (HierarchyException hex) {
+                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
+            }
+        }
+
+        Guild guild = member.getGuild();
+        String newMemberRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getNewMemberRoleId();
+        java.util.Optional<Role> newMemberRole = java.util.Optional.empty();
+
+        if (newMemberRoleId != null) {
+            newMemberRole = java.util.Optional.ofNullable(guild.getRoleById(newMemberRoleId));
+        }
+
+        if (newMemberRole.isPresent()) {
+            if (!RoleManager.hasHigherOrEqualRole(member, newMemberRole.get())) { // Ignore Existing Members
+                try {
+                    guild.addRoleToMember(member, newMemberRole.get()).complete();
+                    String limboRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getLimboRoleId();
+
+                    if (limboRoleId != null && !limboRoleId.isEmpty()) {
+                        Role limboRole = guild.getRoleById(limboRoleId);
+
+                        if (limboRole != null) {
+                            guild.removeRoleFromMember(member, limboRole).complete();
+                        }
+                    }
+                } catch (HierarchyException hex) {
+                    log.warn("Unable to assign " + newMemberRole.get().getName() + " role to " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
+                }
+            }
+        } else {
+            log.warn("Role with ID " + newMemberRoleId + " does not exist.");
+        }
+    }
+
+    public static Pair<EmbedBuilder, EmbedBuilder> getActivityEmbeds(Member member) {
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
+
+        LastActivity lastActivity = discordUser.getLastActivity();
+        EmbedBuilder globalEmbedBuilder = new EmbedBuilder();
+        EmbedBuilder alphaEmbedBuilder = new EmbedBuilder();
+
+        // Global Activity
+        globalEmbedBuilder.setColor(Color.GREEN)
+            .setTitle("Last Global Activity")
+            .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastGlobalActivity), true)
+            .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
+            .addField("Item Generator", lastActivity.toRelativeTimestamp(LastActivity::getLastItemGenUsage), true)
+            // Suggestions
+            .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastSuggestionDate), true)
+            .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionVoteDate), true)
+            .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentDate), true);
+
+        // Alpha Activity
+        alphaEmbedBuilder.setColor(Color.RED)
+            .setTitle("Last Alpha Activity")
+            .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaActivity), true)
+            .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getAlphaVoiceJoinDate), true)
+            .addBlankField(true)
+            // Suggestions
+            .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaSuggestionDate), true)
+            .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionVoteDate), true)
+            .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentDate), true);
+
+        return Pair.of(globalEmbedBuilder, alphaEmbedBuilder);
+    }
 
     @JDASlashCommand(
         name = "link",
@@ -301,109 +403,6 @@ public class MyCommands extends ApplicationCommand {
             TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.set", birthday);
         } catch (Exception ex) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.bad_date");
-            ex.printStackTrace();
         }
-    }
-
-    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws ProfileMismatchException, HttpException {
-        MojangProfile mojangProfile = Util.getMojangProfile(username);
-        HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
-
-        if (!hypixelPlayerResponse.isSuccess()) {
-            throw new HttpException("Unable to look up `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
-        }
-
-        if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
-            throw new ProfileMismatchException("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
-        }
-
-        String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
-        String discordName = member.getUser().getName();
-
-        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0000")) {
-            discordName += "#" + member.getUser().getDiscriminator();
-        }
-
-        if (enforceSocial && !discordName.equalsIgnoreCase(discord)) {
-            throw new ProfileMismatchException("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
-        }
-
-        return mojangProfile;
-    }
-
-    public static void updateMojangProfile(Member member, MojangProfile mojangProfile) throws HttpException {
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(member.getId());
-        discordUser.setMojangProfile(mojangProfile);
-
-        if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
-            try {
-                member.modifyNickname(mojangProfile.getUsername()).queue();
-            } catch (HierarchyException hex) {
-                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
-            }
-        }
-
-        Guild guild = member.getGuild();
-        String newMemberRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getNewMemberRoleId();
-        java.util.Optional<Role> newMemberRole = java.util.Optional.empty();
-
-        if (newMemberRoleId != null) {
-            newMemberRole = java.util.Optional.ofNullable(guild.getRoleById(newMemberRoleId));
-        }
-
-        if (newMemberRole.isPresent()) {
-            if (!RoleManager.hasHigherOrEqualRole(member, newMemberRole.get())) { // Ignore Existing Members
-                try {
-                    guild.addRoleToMember(member, newMemberRole.get()).complete();
-                    String limboRoleId = NerdBotApp.getBot().getConfig().getRoleConfig().getLimboRoleId();
-
-                    if (limboRoleId != null && !limboRoleId.isEmpty()) {
-                        Role limboRole = guild.getRoleById(limboRoleId);
-
-                        if (limboRole != null) {
-                            guild.removeRoleFromMember(member, limboRole).complete();
-                        }
-                    }
-                } catch (HierarchyException hex) {
-                    log.warn("Unable to assign " + newMemberRole.get().getName() + " role to " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
-                }
-            }
-        } else {
-            log.warn("Role with ID " + newMemberRoleId + " does not exist.");
-        }
-    }
-
-    public static Pair<EmbedBuilder, EmbedBuilder> getActivityEmbeds(Member member) {
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(member.getId());
-
-        LastActivity lastActivity = discordUser.getLastActivity();
-        EmbedBuilder globalEmbedBuilder = new EmbedBuilder();
-        EmbedBuilder alphaEmbedBuilder = new EmbedBuilder();
-
-        // Global Activity
-        globalEmbedBuilder.setColor(Color.GREEN)
-            .setTitle("Last Global Activity")
-            .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastGlobalActivity), true)
-            .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
-            .addField("Item Generator", lastActivity.toRelativeTimestamp(LastActivity::getLastItemGenUsage), true)
-            // Suggestions
-            .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastSuggestionDate), true)
-            .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionVoteDate), true)
-            .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentDate), true);
-
-        // Alpha Activity
-        alphaEmbedBuilder.setColor(Color.RED)
-            .setTitle("Last Alpha Activity")
-            .addField("Most Recent", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaActivity), true)
-            .addField("Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getAlphaVoiceJoinDate), true)
-            .addBlankField(true)
-            // Suggestions
-            .addField("Created Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaSuggestionDate), true)
-            .addField("Voted on Suggestion", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionVoteDate), true)
-            .addField("New Comment", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentDate), true);
-
-        return Pair.of(globalEmbedBuilder, alphaEmbedBuilder);
     }
 }

@@ -12,9 +12,9 @@ import java.util.List;
 @Setter
 public abstract class Curator<T> {
 
+    private final boolean readOnly;
     private long startTime;
     private long endTime;
-    private final boolean readOnly;
 
     protected Curator(boolean readOnly) {
         this.readOnly = readOnly;

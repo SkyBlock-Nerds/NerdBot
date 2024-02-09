@@ -28,30 +28,6 @@ public class ChannelCache {
         });
     }
 
-    @SubscribeEvent
-    public void onChannelCreate(ChannelCreateEvent event) {
-        CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel().asGuildChannel());
-        log.debug("Cached channel '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was created");
-    }
-
-    @SubscribeEvent
-    public void onChannelUpdate(GenericChannelUpdateEvent<?> event) {
-        CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel().asGuildChannel());
-        log.debug("Cached channel '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was updated");
-    }
-
-    @SubscribeEvent
-    public void onChannelDelete(ChannelDeleteEvent event) {
-        CHANNEL_CACHE.remove(event.getChannel().getId());
-        log.debug("Removed channel from cache '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was deleted");
-    }
-
-    @SubscribeEvent
-    public void onForumChannelUpdate(GenericForumTagEvent event) {
-        CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel());
-        log.debug("Cached channel '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was updated");
-    }
-
     public static Optional<GuildChannel> getChannelById(String channelId) {
         return Optional.ofNullable(CHANNEL_CACHE.get(channelId));
     }
@@ -100,5 +76,29 @@ public class ChannelCache {
     public static Optional<TextChannel> getRequestedReviewChannel() {
         return getChannelById(NerdBotApp.getBot().getConfig().getSuggestionConfig().getRequestedReviewForumId())
             .map(channel -> (TextChannel) channel);
+    }
+
+    @SubscribeEvent
+    public void onChannelCreate(ChannelCreateEvent event) {
+        CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel().asGuildChannel());
+        log.debug("Cached channel '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was created");
+    }
+
+    @SubscribeEvent
+    public void onChannelUpdate(GenericChannelUpdateEvent<?> event) {
+        CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel().asGuildChannel());
+        log.debug("Cached channel '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was updated");
+    }
+
+    @SubscribeEvent
+    public void onChannelDelete(ChannelDeleteEvent event) {
+        CHANNEL_CACHE.remove(event.getChannel().getId());
+        log.debug("Removed channel from cache '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was deleted");
+    }
+
+    @SubscribeEvent
+    public void onForumChannelUpdate(GenericForumTagEvent event) {
+        CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel());
+        log.debug("Cached channel '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was updated");
     }
 }

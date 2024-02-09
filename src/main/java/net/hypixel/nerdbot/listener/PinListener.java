@@ -31,7 +31,7 @@ public class PinListener {
             return; // Ignore Empty Member
         }
 
-        if (member.getUser().isBot()){
+        if (member.getUser().isBot()) {
             // This deletes automated pinned messages sent by the bot.
             if (event.getMessage().getType() == MessageType.CHANNEL_PINNED_ADD) {
                 event.getMessage().delete().complete();

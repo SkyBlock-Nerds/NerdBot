@@ -3,7 +3,10 @@ package net.hypixel.nerdbot.api.database;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoException;
-import com.mongodb.client.*;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.result.DeleteResult;
@@ -31,11 +34,10 @@ import java.util.List;
 public class Database implements ServerMonitorListener {
 
     private static final FindOneAndReplaceOptions REPLACE_OPTIONS = new FindOneAndReplaceOptions().upsert(true);
-
-    private MongoClient mongoClient = null;
     private final ConnectionString connectionString;
-    private boolean connected;
     private final RepositoryManager repositoryManager = new RepositoryManager();
+    private MongoClient mongoClient = null;
+    private boolean connected;
 
     public Database(String uri, String databaseName) {
         if (uri == null || uri.isBlank() || databaseName == null || databaseName.isBlank()) {

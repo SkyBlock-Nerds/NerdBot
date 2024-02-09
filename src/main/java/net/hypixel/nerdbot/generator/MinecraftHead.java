@@ -1,9 +1,54 @@
 package net.hypixel.nerdbot.generator;
 
+import lombok.Getter;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+
+/**
+ * Describes the 4 points of the square which fit the isometric pattern
+ */
+@Getter
+enum Side {
+    LEFT_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.SQUARE_DISTANCE + HeadTransforms.Y_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
+    RIGHT_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.SQUARE_DISTANCE - HeadTransforms.Y_DISTANCE, HeadTransforms.X_DISTANCE, -HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
+    TOP_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[]{0, 0, -HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
+    LEFT_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.SQUARE_HAT_DISTANCE + HeadTransforms.Y_DISTANCE_HAT, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT),
+    RIGHT_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.SQUARE_HAT_DISTANCE - HeadTransforms.Y_DISTANCE_HAT, HeadTransforms.X_DISTANCE_HAT, -HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT),
+    TOP_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[]{0, 0, -HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT);
+
+    private final double distance;
+    private final double[] transforms;
+    private final double xDistance;
+    private final double yDistance;
+
+    Side(double distance, double[] transforms, double xDistance, double yDistance) {
+        this.distance = distance;
+        this.transforms = transforms;
+        this.xDistance = xDistance;
+        this.yDistance = yDistance;
+    }
+}
+
+/**
+ * The X/Y coordinates for where the head is located in the skin image
+ */
+@Getter
+enum Face {
+    HEAD_FRONT(8, 8), HEAD_BACK(24, 8), HEAD_LEFT(0, 8), HEAD_RIGHT(16, 8), HEAD_TOP(8, 0), HEAD_BOTTOM(16, 0),
+    HAT_FRONT(40, 8), HAT_BACK(56, 8), HAT_LEFT(32, 8), HAT_RIGHT(48, 8), HAT_TOP(40, 0), HAT_BOTTOM(48, 0);
+
+    private final int startX;
+    private final int startY;
+
+    Face(int startX, int startY) {
+        this.startX = startX;
+        this.startY = startY;
+    }
+
+}
 
 public class MinecraftHead {
     private static final int HEAD_SCALE_UP = 3;
@@ -182,69 +227,5 @@ class HeadTransforms {
     public static final double Y_DISTANCE_HAT = SQUARE_HAT_DISTANCE * Math.sin(Math.toRadians(30));
 
     private HeadTransforms() {
-    }
-}
-
-/**
- * Describes the 4 points of the square which fit the isometric pattern
- */
-enum Side {
-    LEFT_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.SQUARE_DISTANCE + HeadTransforms.Y_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
-    RIGHT_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.SQUARE_DISTANCE - HeadTransforms.Y_DISTANCE, HeadTransforms.X_DISTANCE, -HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
-    TOP_SIDE(HeadTransforms.SQUARE_DISTANCE, new double[]{0, 0, -HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE, 0, HeadTransforms.SQUARE_DISTANCE, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE}, HeadTransforms.X_DISTANCE, HeadTransforms.Y_DISTANCE),
-    LEFT_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.SQUARE_HAT_DISTANCE + HeadTransforms.Y_DISTANCE_HAT, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT),
-    RIGHT_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[]{0, 0, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.SQUARE_HAT_DISTANCE - HeadTransforms.Y_DISTANCE_HAT, HeadTransforms.X_DISTANCE_HAT, -HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT),
-    TOP_HAT_SIDE(HeadTransforms.SQUARE_HAT_DISTANCE, new double[]{0, 0, -HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT, 0, HeadTransforms.SQUARE_HAT_DISTANCE, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT}, HeadTransforms.X_DISTANCE_HAT, HeadTransforms.Y_DISTANCE_HAT);
-
-    private final double distance;
-    private final double[] transforms;
-    private final double xDistance;
-    private final double yDistance;
-
-    Side(double distance, double[] transforms, double xDistance, double yDistance) {
-        this.distance = distance;
-        this.transforms = transforms;
-        this.xDistance = xDistance;
-        this.yDistance = yDistance;
-    }
-
-    public double getDistance() {
-        return distance;
-    }
-
-    public double[] getTransforms() {
-        return this.transforms;
-    }
-
-    public double getXDistance() {
-        return this.xDistance;
-    }
-
-    public double getYDistance() {
-        return this.yDistance;
-    }
-}
-
-/**
- * The X/Y coordinates for where the head is located in the skin image
- */
-enum Face {
-    HEAD_FRONT(8, 8), HEAD_BACK(24, 8), HEAD_LEFT(0, 8), HEAD_RIGHT(16, 8), HEAD_TOP(8, 0), HEAD_BOTTOM(16, 0),
-    HAT_FRONT(40, 8), HAT_BACK(56, 8), HAT_LEFT(32, 8), HAT_RIGHT(48, 8), HAT_TOP(40, 0), HAT_BOTTOM(48, 0);
-
-    private final int startX;
-    private final int startY;
-
-    Face(int startX, int startY) {
-        this.startX = startX;
-        this.startY = startY;
-    }
-
-    public int getStartX() {
-        return this.startX;
-    }
-
-    public int getStartY() {
-        return this.startY;
     }
 }

@@ -12,14 +12,7 @@ import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -27,13 +20,12 @@ import java.util.stream.Stream;
 public class SuggestionCache extends TimerTask {
 
     private final Map<String, Suggestion> cache = new HashMap<>();
-
+    @Getter
+    private final Timer timer = new Timer();
     @Getter
     private boolean initialized = false;
     @Getter
     private boolean updating = false;
-    @Getter
-    private final Timer timer = new Timer();
 
     public SuggestionCache() {
         this.timer.scheduleAtFixedRate(this, 0, Duration.ofMinutes(60).toMillis());
@@ -121,8 +113,8 @@ public class SuggestionCache extends TimerTask {
         private final boolean greenlit;
         private final boolean deleted;
         private final long lastUpdated = System.currentTimeMillis();
-        private boolean expired;
         private final long lastBump = System.currentTimeMillis();
+        private boolean expired;
 
         public Suggestion(ThreadChannel thread) {
             SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
@@ -179,14 +171,6 @@ public class SuggestionCache extends TimerTask {
             }
         }
 
-        public double getRatio() {
-            if (this.getAgrees() == 0 && this.getDisagrees() == 0) {
-                return 0;
-            }
-
-            return (double) this.getAgrees() / (this.getAgrees() + this.getDisagrees()) * 100.0;
-        }
-
         public static int getReactionCount(Message message, String emojiId) {
             return message.getReactions()
                 .stream()
@@ -195,6 +179,14 @@ public class SuggestionCache extends TimerTask {
                 .mapToInt(MessageReaction::getCount)
                 .findFirst()
                 .orElse(0);
+        }
+
+        public double getRatio() {
+            if (this.getAgrees() == 0 && this.getDisagrees() == 0) {
+                return 0;
+            }
+
+            return (double) this.getAgrees() / (this.getAgrees() + this.getDisagrees()) * 100.0;
         }
 
         public boolean notDeleted() {

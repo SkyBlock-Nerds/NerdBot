@@ -1,8 +1,13 @@
 package net.hypixel.nerdbot.util.skyblock;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 import java.awt.Color;
 import java.util.HashMap;
 
+@Getter
+@AllArgsConstructor
 public enum MCColor {
     BLACK('0', new Color(0, 0, 0), new Color(0, 0, 0)),
     DARK_BLUE('1', new Color(0, 0, 170), new Color(0, 0, 42)),
@@ -28,29 +33,6 @@ public enum MCColor {
     RESET('r', new Color(170, 170, 170), new Color(42, 42, 42));
 
     public static final MCColor[] VALUES = values();
-
-    private final char colorCode;
-    private final Color color;
-    private final Color backgroundColor;
-
-    MCColor(char colorCode, Color color, Color backgroundColor) {
-        this.colorCode = colorCode;
-        this.color = color;
-        this.backgroundColor = backgroundColor;
-    }
-
-    public char getColorCode() {
-        return colorCode;
-    }
-
-    public Color getColor() {
-        return color;
-    }
-
-    public Color getBackgroundColor() {
-        return backgroundColor;
-    }
-
     public static final HashMap<String, Color> FIREWORK_COLORS = new HashMap<>() {{
         put("red", new Color(11743532));
         put("orange", new Color(15435844));
@@ -69,7 +51,6 @@ public enum MCColor {
         put("black", new Color(1973019));
         put("brown", new Color(5320730));
     }};
-
     public static final HashMap<String, Color> LEATHER_ARMOR_COLORS = new HashMap<>() {{
         put("red", new Color(11546150));
         put("orange", new Color(16351261));
@@ -88,7 +69,6 @@ public enum MCColor {
         put("black", new Color(1908001));
         put("brown", new Color(8606770));
     }};
-
     public static final HashMap<String, Color> POTION_COLORS = new HashMap<>() {{
         put("water", new Color(-13017142));
         put("uncraftable", new Color(-261892));
@@ -109,7 +89,6 @@ public enum MCColor {
         put("luck", new Color(-13329408));
         put("slow_falling", new Color(-199467));
     }};
-
     public static final HashMap<String, Color[]> SPAWN_EGG_COLORS = new HashMap<>() {{
         put("allay", new Color[]{new Color(56063), new Color(44543)});
         put("axolotl", new Color[]{new Color(16499171), new Color(10890612)});
@@ -189,7 +168,6 @@ public enum MCColor {
         put("zombie_villager", new Color[]{new Color(5651507), new Color(7969893)});
         put("zombified_piglin", new Color[]{new Color(15373203), new Color(5009705)});
     }};
-
     public static final HashMap<Integer, Integer> ARMOR_TRIM_BINDING = new HashMap<>() {{
         put(-2039584, 0);
         put(-4144960, 1);
@@ -200,7 +178,6 @@ public enum MCColor {
         put(-14671840, 6);
         put(-16777216, 7);
     }};
-
     public static final HashMap<String, int[]> ARMOR_TRIM_COLOR = new HashMap<>() {{
         put("amethyst", new int[]{-3567629, -6660922, -9680470, -11389305, -12441738, -13230998, -14414765, -15268293});
         put("copper", new int[]{-1867156, -4954035, -6666452, -8831960, -9620448, -10540264, -11788272, -12773365});
@@ -218,4 +195,9 @@ public enum MCColor {
         put("quartz", new int[]{-856083, -595233, -1844284, -4805226, -7303552, -10133162, -12238020, -14014430});
         put("redstone", new int[]{-1695736, -4382712, -6875641, -8908543, -10155263, -11399930, -13236221, -14875390});
     }};
+
+    private final char colorCode;
+    private final Color color;
+    private final Color backgroundColor;
+
 }

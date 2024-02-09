@@ -5,8 +5,8 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
 public abstract class Overlay {
-    private final String name;
     protected final BufferedImage overlay;
+    private final String name;
     private final boolean applyIfNoColor;
 
     /***

@@ -47,18 +47,6 @@ public class Reminder {
         this.sendPublicly = sendPublicly;
     }
 
-    class ReminderTask extends TimerTask {
-        public void run() {
-            ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-            DeleteResult result = reminderRepository.deleteFromDatabase(uuid.toString());
-
-            if (result != null && result.wasAcknowledged() && result.getDeletedCount() > 0) {
-                timer.cancel();
-                sendReminder(false);
-            }
-        }
-    }
-
     public void schedule() {
         timer = new Timer();
         timer.schedule(new ReminderTask(), time);
@@ -103,6 +91,18 @@ public class Reminder {
             log.error("Couldn't delete reminder from database: " + uuid + " (result: null)");
         } else {
             log.info("Reminder deleted from database: " + uuid + " (result: " + result + ")");
+        }
+    }
+
+    class ReminderTask extends TimerTask {
+        public void run() {
+            ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
+            DeleteResult result = reminderRepository.deleteFromDatabase(uuid.toString());
+
+            if (result != null && result.wasAcknowledged() && result.getDeletedCount() > 0) {
+                timer.cancel();
+                sendReminder(false);
+            }
         }
     }
 }

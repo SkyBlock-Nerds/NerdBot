@@ -7,9 +7,9 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
-import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.generator.util.Item;
 import net.hypixel.nerdbot.generator.util.overlay.*;
+import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 
@@ -193,7 +193,7 @@ public class GeneratorBuilder {
             // checks if there is a type for the item
             if (type == null || type.equalsIgnoreCase("none")) {
                 type = "";
-            // if there is a type, make it uppercase
+                // if there is a type, make it uppercase
             } else {
                 type = type.toUpperCase();
             }

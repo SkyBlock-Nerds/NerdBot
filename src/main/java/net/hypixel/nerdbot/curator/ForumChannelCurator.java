@@ -36,6 +36,34 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
         super(readOnly);
     }
 
+    public static GreenlitMessage createGreenlitMessage(ForumChannel forumChannel, Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
+        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+
+        return GreenlitMessage.builder()
+            .agrees(agree)
+            .neutrals(neutral)
+            .disagrees(disagree)
+            .messageId(message.getId())
+            .userId(message.getAuthor().getId())
+            .alpha(forumChannel.getName().toLowerCase().contains("alpha"))
+            .suggestionUrl(message.getJumpUrl())
+            .suggestionTitle(thread.getName())
+            .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
+            .suggestionContent(message.getContentRaw())
+            .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
+            .positiveVoterIds(
+                message.getReactions().stream()
+                    .filter(reaction -> suggestionConfig.isReactionEquals(reaction, SuggestionConfig::getAgreeEmojiId))
+                    .flatMap(reaction -> reaction.retrieveUsers()
+                        .complete()
+                        .stream()
+                    )
+                    .map(User::getId)
+                    .toList()
+            )
+            .build();
+    }
+
     @Override
     public List<GreenlitMessage> curate(ForumChannel forumChannel) {
         setStartTime(System.currentTimeMillis());
@@ -189,33 +217,5 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
             log.info("Curated forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ") in " + (getEndTime() - getStartTime()) + "ms");
             return output;
         }
-    }
-
-    public static GreenlitMessage createGreenlitMessage(ForumChannel forumChannel, Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
-        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
-
-        return GreenlitMessage.builder()
-            .agrees(agree)
-            .neutrals(neutral)
-            .disagrees(disagree)
-            .messageId(message.getId())
-            .userId(message.getAuthor().getId())
-            .alpha(forumChannel.getName().toLowerCase().contains("alpha"))
-            .suggestionUrl(message.getJumpUrl())
-            .suggestionTitle(thread.getName())
-            .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
-            .suggestionContent(message.getContentRaw())
-            .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
-            .positiveVoterIds(
-                message.getReactions().stream()
-                    .filter(reaction -> suggestionConfig.isReactionEquals(reaction, SuggestionConfig::getAgreeEmojiId))
-                    .flatMap(reaction -> reaction.retrieveUsers()
-                        .complete()
-                        .stream()
-                    )
-                    .map(User::getId)
-                    .toList()
-            )
-            .build();
     }
 }

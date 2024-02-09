@@ -39,6 +39,47 @@ public class ReminderCommands extends ApplicationCommand {
 
     private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
 
+    /**
+     * Parse a time string in the format of {@code 1w2d3h4m5s} into a Date
+     *
+     * @param time The time string to parse
+     *
+     * @return The parsed string as a Date
+     *
+     * @throws DateTimeParseException If the string could not be parsed
+     */
+    public static Date parseCustomFormat(String time) throws DateTimeParseException {
+        Matcher matcher = DURATION.matcher(time);
+
+        if (!matcher.matches()) {
+            throw new DateTimeParseException("Could not parse date: " + time, time, 0);
+        }
+
+        Duration duration = Duration.ZERO;
+        if (matcher.group(2) != null) {
+            duration = duration.plusDays(Long.parseLong(matcher.group(2)) * 7);
+        }
+
+        if (matcher.group(4) != null) {
+            duration = duration.plusDays(Long.parseLong(matcher.group(4)));
+        }
+
+        if (matcher.group(6) != null) {
+            duration = duration.plusHours(Long.parseLong(matcher.group(6)));
+        }
+
+        if (matcher.group(8) != null) {
+            duration = duration.plusMinutes(Long.parseLong(matcher.group(8)));
+        }
+
+        if (matcher.group(10) != null) {
+            duration = duration.plusSeconds(Long.parseLong(matcher.group(10)));
+        }
+
+        Instant date = Instant.now().plus(duration);
+        return Date.from(date);
+    }
+
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
     public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description, @AppOption(description = "Send the reminder publicly in this channel") @Optional Boolean sendPublicly) {
         event.deferReply(true).complete();
@@ -130,7 +171,7 @@ public class ReminderCommands extends ApplicationCommand {
                 .setColor(Color.GREEN);
             StringBuilder messageContents = new StringBuilder();
             messageContents.append("Reminder set for: ").append(DiscordTimestamp.toLongDateTime(date.getTime()));
-            if (sendPublicly){
+            if (sendPublicly) {
                 messageContents.append("\n\nIn channel: ").append(event.getChannel().getAsMention());
             }
             channel.sendMessage(messageContents.toString())
@@ -240,46 +281,5 @@ public class ReminderCommands extends ApplicationCommand {
         } catch (IllegalArgumentException exception) {
             TranslationManager.edit(event.getHook(), user, "commands.invalid_uuid");
         }
-    }
-
-    /**
-     * Parse a time string in the format of {@code 1w2d3h4m5s} into a Date
-     *
-     * @param time The time string to parse
-     *
-     * @return The parsed string as a Date
-     *
-     * @throws DateTimeParseException If the string could not be parsed
-     */
-    public static Date parseCustomFormat(String time) throws DateTimeParseException {
-        Matcher matcher = DURATION.matcher(time);
-
-        if (!matcher.matches()) {
-            throw new DateTimeParseException("Could not parse date: " + time, time, 0);
-        }
-
-        Duration duration = Duration.ZERO;
-        if (matcher.group(2) != null) {
-            duration = duration.plusDays(Long.parseLong(matcher.group(2)) * 7);
-        }
-
-        if (matcher.group(4) != null) {
-            duration = duration.plusDays(Long.parseLong(matcher.group(4)));
-        }
-
-        if (matcher.group(6) != null) {
-            duration = duration.plusHours(Long.parseLong(matcher.group(6)));
-        }
-
-        if (matcher.group(8) != null) {
-            duration = duration.plusMinutes(Long.parseLong(matcher.group(8)));
-        }
-
-        if (matcher.group(10) != null) {
-            duration = duration.plusSeconds(Long.parseLong(matcher.group(10)));
-        }
-
-        Instant date = Instant.now().plus(duration);
-        return Date.from(date);
     }
 }

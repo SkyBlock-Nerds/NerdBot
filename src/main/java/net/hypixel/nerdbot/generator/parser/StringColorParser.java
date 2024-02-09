@@ -23,13 +23,12 @@ public class StringColorParser {
 
     // variables used to store the description
     private final List<List<ColoredString>> parsedDescription;
+    private final int wrappedLineLength;
     private ArrayList<ColoredString> currentLine = new ArrayList<>();
     private ColoredString currentString;
-
     // variables for keeping track of line length and position
     private int charIndex;
     private int lineLength;
-    private final int wrappedLineLength;
     private int imageMaxLineLength = 0;
 
     private String errorString;

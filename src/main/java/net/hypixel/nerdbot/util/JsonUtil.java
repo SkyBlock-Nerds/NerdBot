@@ -111,7 +111,7 @@ public class JsonUtil {
         try {
             return JsonParser.parseString(json);
         } catch (JsonParseException exception) {
-            log.error("Failed to parse json string: " + json,  exception);
+            log.error("Failed to parse json string: " + json, exception);
             return null;
         }
     }

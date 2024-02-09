@@ -218,7 +218,7 @@ public class ActivityListener {
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(member.getId());
-      
+
         if (discordUser == null) {
             return; // Ignore Empty User
         }
@@ -228,8 +228,7 @@ public class ActivityListener {
 
             if (suggestionConfig.isReactionEquals(event.getReaction(), SuggestionConfig::getAgreeEmojiId) ||
                 suggestionConfig.isReactionEquals(event.getReaction(), SuggestionConfig::getDisagreeEmojiId) ||
-                suggestionConfig.isReactionEquals(event.getReaction(), SuggestionConfig::getNeutralEmojiId))
-            {
+                suggestionConfig.isReactionEquals(event.getReaction(), SuggestionConfig::getNeutralEmojiId)) {
                 MessageHistory history = threadChannel.getHistoryFromBeginning(1).complete();
                 boolean deleted = history.isEmpty() || history.getRetrievedHistory().get(0).getIdLong() != threadChannel.getIdLong();
 

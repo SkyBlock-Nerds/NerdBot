@@ -11,8 +11,8 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
-import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.bot.config.objects.PingableRole;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 
 import java.util.Arrays;

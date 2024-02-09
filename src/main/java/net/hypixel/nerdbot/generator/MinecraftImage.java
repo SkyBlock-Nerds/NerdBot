@@ -29,6 +29,25 @@ public class MinecraftImage {
     private static final Font sansSerif;
     private static boolean fontsRegisteredCorrectly = true;
 
+    static {
+        sansSerif = new Font("SansSerif", Font.PLAIN, 20);
+        minecraftFonts = new Font[]{
+            initFont("/minecraft_assets/fonts/minecraft.otf", 15.5f),
+            initFont("/minecraft_assets/fonts/3_Minecraft-Bold.otf", 20.0f),
+            initFont("/minecraft_assets/fonts/2_Minecraft-Italic.otf", 20.5f),
+            initFont("/minecraft_assets/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
+        };
+
+        // Register Minecraft Fonts
+        for (Font font : minecraftFonts) {
+            if (font == null) {
+                fontsRegisteredCorrectly = false;
+                break;
+            }
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+        }
+    }
+
     // Current Settings
     @Getter
     private final List<List<ColoredString>> lines;
@@ -50,30 +69,10 @@ public class MinecraftImage {
     @Getter
     private MCColor currentColor;
     private Font currentFont;
-
     // Positioning & Size
     private int locationX = START_XY;
     private int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
     private int largestWidth = 0;
-
-    static {
-        sansSerif = new Font("SansSerif", Font.PLAIN, 20);
-        minecraftFonts = new Font[]{
-            initFont("/minecraft_assets/fonts/minecraft.otf", 15.5f),
-            initFont("/minecraft_assets/fonts/3_Minecraft-Bold.otf", 20.0f),
-            initFont("/minecraft_assets/fonts/2_Minecraft-Italic.otf", 20.5f),
-            initFont("/minecraft_assets/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
-        };
-
-        // Register Minecraft Fonts
-        for (Font font : minecraftFonts) {
-            if (font == null) {
-                fontsRegisteredCorrectly = false;
-                break;
-            }
-            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-        }
-    }
 
     public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem, boolean isCentered) {
         this.alpha = alpha;
@@ -83,6 +82,10 @@ public class MinecraftImage {
         this.isCentered = isCentered;
         this.graphics = this.initG2D(defaultWidth + 2 * START_XY, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4 - (this.lines.size() == 1 ? PIXEL_SIZE : 0));
         this.currentColor = defaultColor;
+    }
+
+    public static boolean isFontsRegistered() {
+        return fontsRegisteredCorrectly;
     }
 
     /**
@@ -313,10 +316,6 @@ public class MinecraftImage {
         this.getGraphics().setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
         this.getGraphics().drawLine(xPosition1, yPosition, xPosition2, yPosition);
         this.getGraphics().drawLine(xPosition1, yPosition + 1, xPosition2, yPosition + 1);
-    }
-
-    public static boolean isFontsRegistered() {
-        return fontsRegisteredCorrectly;
     }
 
     /**

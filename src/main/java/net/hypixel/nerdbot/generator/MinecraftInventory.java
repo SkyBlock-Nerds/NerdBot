@@ -28,13 +28,6 @@ public class MinecraftInventory {
     private static final Color NORMAL_TEXT_COLOR = new Color(255, 255, 255);
     private static final Color DROP_SHADOW_COLOR = new Color(63, 63, 63);
     private static BufferedImage INVENTORY_IMAGE;
-    private final Graphics2D g2d;
-    @Getter
-    private BufferedImage image;
-    private final int horizontalSlots;
-    private final int verticalSlots;
-    private final boolean renderBackground;
-    private final HashMap<Integer, RecipeParser.RecipeItem> recipe;
 
     static {
         // Register Minecraft Font
@@ -56,6 +49,14 @@ public class MinecraftInventory {
         RESOURCES_INITIALISED = MINECRAFT_FONT != null && INVENTORY_IMAGE != null;
     }
 
+    private final Graphics2D g2d;
+    private final int horizontalSlots;
+    private final int verticalSlots;
+    private final boolean renderBackground;
+    private final HashMap<Integer, RecipeParser.RecipeItem> recipe;
+    @Getter
+    private BufferedImage image;
+
     public MinecraftInventory(HashMap<Integer, RecipeParser.RecipeItem> recipe, boolean renderBackground) {
         this.horizontalSlots = 3;
         this.verticalSlots = 3;
@@ -63,6 +64,13 @@ public class MinecraftInventory {
         this.renderBackground = renderBackground;
 
         this.g2d = this.initG2D();
+    }
+
+    /**
+     * Checks if the fonts have been registered correctly
+     */
+    public static boolean resourcesRegistered() {
+        return RESOURCES_INITIALISED;
     }
 
     /**
@@ -136,12 +144,5 @@ public class MinecraftInventory {
         this.drawRecipeItems();
         g2d.dispose();
         return this;
-    }
-
-    /**
-     * Checks if the fonts have been registered correctly
-     */
-    public static boolean resourcesRegistered() {
-        return RESOURCES_INITIALISED;
     }
 }

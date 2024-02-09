@@ -138,10 +138,10 @@ public class HypixelPlayerResponse {
 
         public static class SkyBlock {
 
-            private Map<String, Profile> profiles = new HashMap<>();
+            private final Map<String, Profile> profiles = new HashMap<>();
 
             public Optional<Set<Profile>> getProfiles() {
-                return this.profiles == null ? Optional.empty() : Optional.of(new HashSet<>(this.profiles.values()));
+                return this.profiles.isEmpty() ? Optional.empty() : Optional.of(new HashSet<>(this.profiles.values()));
             }
 
             public static class Profile {
