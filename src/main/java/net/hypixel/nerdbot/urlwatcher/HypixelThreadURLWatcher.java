@@ -51,7 +51,7 @@ public class HypixelThreadURLWatcher {
 
                 for (HypixelThread thread : hypixelThreads) {
                     if (thread.getGuid() > lastGuid) {
-                        log.debug("Watched " + url + " and found newest Guid!\nOld GUID: " + lastGuid + "\nNew GUID: " + thread.getGuid());
+                        log.debug("Watched " + url + " and found newest GUID!\nOld GUID: " + lastGuid + "\nNew GUID: " + thread.getGuid());
                         lastGuid = thread.getGuid();
                         SkyBlockUpdateDataHandler.handleThread(thread);
                     }
