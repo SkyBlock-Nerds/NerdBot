@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.api.urlwatcher.handler;
+package net.hypixel.nerdbot.urlwatcher.handler;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;

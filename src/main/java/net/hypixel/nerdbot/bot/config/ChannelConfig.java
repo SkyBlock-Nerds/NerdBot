@@ -5,7 +5,7 @@ import lombok.Setter;
 import lombok.ToString;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.hypixel.nerdbot.channel.ReactionChannel;
+import net.hypixel.nerdbot.bot.config.objects.ReactionChannel;
 
 import java.util.List;
 

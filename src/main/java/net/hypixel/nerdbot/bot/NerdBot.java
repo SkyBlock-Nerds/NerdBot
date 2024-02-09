@@ -26,7 +26,7 @@ import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.api.repository.Repository;
-import net.hypixel.nerdbot.api.urlwatcher.HypixelThreadURLWatcher;
+import net.hypixel.nerdbot.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
