@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.api.language;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.interactions.InteractionHook;
@@ -10,6 +11,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
 import net.hypixel.nerdbot.util.JsonUtil;
+import net.hypixel.nerdbot.util.exception.TranslationException;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
@@ -33,6 +35,7 @@ public class TranslationManager {
      *
      * @return A {@link JsonObject} containing the file contents
      */
+    @SneakyThrows
     private static JsonObject loadTranslations(UserLanguage language) {
         if (TRANSLATION_CACHE.containsKey(language)) {
             return TRANSLATION_CACHE.get(language);
@@ -49,8 +52,7 @@ public class TranslationManager {
             log.info("Loaded translations for language " + language.name() + " from " + language.getFileName());
             return jsonObject;
         } catch (Exception e) {
-            log.error("Failed to load translations for language " + language.name(), e);
-            return null;
+            throw new TranslationException("Failed to load translations for language " + language.name(), e);
         }
     }
 

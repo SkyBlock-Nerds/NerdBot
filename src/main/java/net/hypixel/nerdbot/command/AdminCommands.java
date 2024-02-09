@@ -120,9 +120,7 @@ public class AdminCommands extends ApplicationCommand {
                     .setDescription(event.getUser().getAsMention() + " created " + amount + " invite(s) for " + selected.getAsMention() + ".")
                     .build()
             ).queue();
-        }, () -> {
-            throw new IllegalStateException("Log channel not found!");
-        });
+        }, () -> log.warn("Log channel not found!"));
 
         for (int i = 0; i < amount; i++) {
             try {
@@ -166,7 +164,7 @@ public class AdminCommands extends ApplicationCommand {
                     .build()
             ).queue();
         }, () -> {
-            throw new IllegalStateException("Log channel not found!");
+            log.warn("Log channel not found!");
         });
 
         TranslationManager.edit(event.getHook(), discordUser, "commands.invite.deleted", invites.size());
@@ -446,7 +444,7 @@ public class AdminCommands extends ApplicationCommand {
                         .build()
                 ).queue();
             }, () -> {
-                throw new IllegalStateException("Log channel not found!");
+                log.warn("Log channel not found!");
             });
         } catch (HttpException exception) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.user.username_not_found", username, exception.getMessage());

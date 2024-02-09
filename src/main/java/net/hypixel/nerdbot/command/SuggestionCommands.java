@@ -304,9 +304,7 @@ public class SuggestionCommands extends ApplicationCommand {
                     )
                 )
                 .queue();
-        }, () -> {
-            throw new RuntimeException("Requested review channel not found!");
-        });
+        }, () -> log.warn("Review request channel not found!"));
 
         lastReviewRequestCache.put(event.getChannel().getId(), System.currentTimeMillis());
         event.getHook().deleteOriginal().complete();

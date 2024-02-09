@@ -86,7 +86,7 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
             });
 
             textChannel.sendMessage(messageCreateBuilder.build()).queue();
-        }, () -> log.error("Announcement channel not found!"));
+        }, () -> log.warn("Announcement channel not found!"));
     }
 
     private boolean isEqual(JsonObject oldObject, JsonObject newObject) {

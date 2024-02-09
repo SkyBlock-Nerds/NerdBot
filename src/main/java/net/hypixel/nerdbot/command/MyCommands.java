@@ -196,9 +196,7 @@ public class MyCommands extends ApplicationCommand {
                             .build()
                     )
                     .queue();
-            }, () -> {
-                throw new RuntimeException("Log channel not found!");
-            });
+            }, () -> log.warn("Log channel not found!"));
 
         } catch (HttpException | ProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
@@ -268,7 +266,7 @@ public class MyCommands extends ApplicationCommand {
                     )
                     .queue();
             }, () -> {
-                throw new RuntimeException("Verification log channel not found!");
+                log.warn("Profile verification log channel not found!");
             });
         } catch (HttpException | ProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();

@@ -31,8 +31,6 @@ public class SkyBlockUpdateDataHandler {
 
             messageCreateBuilder.addContent(hypixelThread.getLink());
             textChannel.sendMessage(messageCreateBuilder.build()).queue();
-        }, () -> {
-            throw new IllegalStateException("Could not find announcement channel!");
-        });
+        }, () -> log.warn("Could not find announcement channel!"));
     }
 }

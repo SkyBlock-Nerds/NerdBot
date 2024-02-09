@@ -88,9 +88,7 @@ public class DiscordUser {
                 ChannelCache.getTextChannelByName("general").ifPresentOrElse(channel -> {
                     channel.sendMessage(String.format(finalMessage, discordId, birthdayData.getAge())).queue();
                     log.info("Sent birthday message for " + discordId + " at " + finalDate);
-                }, () -> {
-                    throw new IllegalStateException("Cannot find #general channel to send birthday message!");
-                });
+                }, () -> log.warn("Cannot find channel to send birthday message into!"));
 
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(finalDate);
