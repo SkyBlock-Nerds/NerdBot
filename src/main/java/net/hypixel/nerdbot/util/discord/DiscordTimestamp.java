@@ -11,31 +11,31 @@ public class DiscordTimestamp {
     }
 
     public static String toShortTime(long timestamp) {
-        return new DiscordTimestamp(timestamp / 1_000).toShortTime();
+        return new DiscordTimestamp(timestamp).toShortTime();
     }
 
     public static String toLongTime(long timestamp) {
-        return new DiscordTimestamp(timestamp / 1_000).toLongTime();
+        return new DiscordTimestamp(timestamp).toLongTime();
     }
 
     public static String toShortDate(long timestamp) {
-        return new DiscordTimestamp(timestamp / 1_000).toShortDate();
+        return new DiscordTimestamp(timestamp).toShortDate();
     }
 
     public static String toLongDate(long timestamp) {
-        return new DiscordTimestamp(timestamp / 1_000).toLongDate();
+        return new DiscordTimestamp(timestamp).toLongDate();
     }
 
     public static String toShortDateTime(long timestamp) {
-        return new DiscordTimestamp(timestamp / 1_000).toShortDateTime();
+        return new DiscordTimestamp(timestamp).toShortDateTime();
     }
 
     public static String toLongDateTime(long timestamp) {
-        return new DiscordTimestamp(timestamp / 1_000).toLongDateTime();
+        return new DiscordTimestamp(timestamp).toLongDateTime();
     }
 
     public static String toRelativeTimestamp(long timestamp) {
-        return new DiscordTimestamp(timestamp / 1_000).toRelativeTimestamp();
+        return new DiscordTimestamp(timestamp).toRelativeTimestamp();
     }
 
     public String toShortTime() {

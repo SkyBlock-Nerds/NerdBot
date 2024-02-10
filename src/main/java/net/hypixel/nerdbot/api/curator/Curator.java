@@ -2,8 +2,6 @@ package net.hypixel.nerdbot.api.curator;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.dv8tion.jda.api.JDA;
-import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 
 import java.util.List;
@@ -27,9 +25,5 @@ public abstract class Curator<T> {
             return 0;
         }
         return positiveReactions / (positiveReactions + negativeReactions) * 100;
-    }
-
-    public JDA getJDA() {
-        return NerdBotApp.getBot().getJDA();
     }
 }
