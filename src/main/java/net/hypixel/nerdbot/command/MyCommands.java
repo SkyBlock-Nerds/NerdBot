@@ -379,7 +379,7 @@ public class MyCommands extends ApplicationCommand {
         }
 
         Date birthday = discordUser.getBirthdayData().getBirthday();
-        TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.set", DateFormatUtils.format(birthday, "dd MMMM yyyy"));
+        TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.get", DateFormatUtils.format(birthday, "dd MMMM yyyy"));
     }
 
     @JDASlashCommand(name = "birthday", subcommand = "set", description = "Set your birthday.")
@@ -397,10 +397,11 @@ public class MyCommands extends ApplicationCommand {
                 birthdayData.getTimer().cancel();
             }
 
-            discordUser.setBirthday(DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"}));
+            Date date = DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"});
+            discordUser.setBirthday(date);
             birthdayData.setShouldAnnounceAge(announceAge != null && announceAge);
             discordUser.scheduleBirthdayReminder(birthdayData.getBirthdayThisYear());
-            TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.set", birthday);
+            TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.set", DateFormatUtils.format(date, "dd MMMM yyyy"));
         } catch (Exception exception) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.bad_date");
         }
