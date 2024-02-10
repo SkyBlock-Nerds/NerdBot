@@ -391,15 +391,17 @@ public class MyCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(member.getId());
 
         try {
-            if (discordUser.getBirthdayData().getTimer() != null) {
-                discordUser.getBirthdayData().getTimer().cancel();
+            BirthdayData birthdayData = discordUser.getBirthdayData();
+
+            if (birthdayData.getTimer() != null) {
+                birthdayData.getTimer().cancel();
             }
 
             discordUser.setBirthday(DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"}));
-            discordUser.getBirthdayData().setShouldAnnounceAge(announceAge != null && announceAge);
-            discordUser.scheduleBirthdayReminder(discordUser.getBirthdayData().getBirthdayThisYear());
+            birthdayData.setShouldAnnounceAge(announceAge != null && announceAge);
+            discordUser.scheduleBirthdayReminder(birthdayData.getBirthdayThisYear());
             TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.set", birthday);
-        } catch (Exception ex) {
+        } catch (Exception exception) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.bad_date");
         }
     }

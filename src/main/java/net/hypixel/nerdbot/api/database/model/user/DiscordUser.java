@@ -11,6 +11,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.util.Util;
 
+import java.time.DateTimeException;
 import java.util.*;
 
 @AllArgsConstructor
@@ -107,6 +108,15 @@ public class DiscordUser {
 
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(birthday);
+
+        if (calendar.get(Calendar.YEAR) > Calendar.getInstance().get(Calendar.YEAR)) {
+            throw new DateTimeException("Year cannot be in the future");
+        }
+
+        if (calendar.get(Calendar.YEAR) < 1900) {
+            throw new DateTimeException("Year cannot be before 1900");
+        }
+
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MINUTE, 0);
