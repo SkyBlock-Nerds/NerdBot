@@ -1,6 +1,5 @@
 package net.hypixel.nerdbot.util.skyblock;
 
-import lombok.Getter;
 import net.hypixel.nerdbot.generator.parser.StatColorParser;
 
 import java.util.function.BiFunction;
@@ -71,13 +70,9 @@ public enum Stat {
 
     public static final Stat[] VALUES = values();
 
-    @Getter
     private final String icon;
-    @Getter
     private final String stat;
-    @Getter
     private final String display;
-    @Getter
     private final MCColor color;
     private final BiFunction<Stat, String, String> statColorParser;
     private final Function<Stat, String> iconColorParser;
@@ -102,6 +97,22 @@ public enum Stat {
         this(icon, stat, color, null, statColorParser, null);
     }
 
+    public String getIcon() {
+        return icon;
+    }
+
+    public String getStat() {
+        return stat;
+    }
+
+    public String getDisplay() {
+        return display;
+    }
+
+    public MCColor getColor() {
+        return color;
+    }
+
     /**
      * Parses the string into its color and id components
      *
@@ -113,15 +124,12 @@ public enum Stat {
     public String getParsedStat(boolean isIcon, String extraData) {
         if (isIcon) {
             if (iconColorParser == null) {
-                System.out.println("iconColorParser is null, result: " + "%%" + getColor() + "%%" + getIcon());
                 return "%%" + getColor() + "%%" + getIcon();
             }
 
-            System.out.println("iconColorParser is not null, result: " + iconColorParser.apply(this));
             return iconColorParser.apply(this);
         }
 
-        System.out.println("statColorParser is not null, result: " + statColorParser.apply(this, extraData));
         return statColorParser.apply(this, extraData);
     }
 
@@ -133,10 +141,8 @@ public enum Stat {
      */
     public MCColor getSecondaryColor() {
         if (subColor != null) {
-            System.out.println("subColor = " + subColor);
             return subColor;
         } else {
-            System.out.println("color = " + color);
             return color;
         }
     }
