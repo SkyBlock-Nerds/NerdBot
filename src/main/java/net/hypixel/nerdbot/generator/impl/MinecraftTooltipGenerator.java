@@ -13,7 +13,7 @@ import net.hypixel.nerdbot.generator.parser.text.IconParser;
 import net.hypixel.nerdbot.generator.parser.text.StatParser;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.util.Range;
-import net.hypixel.nerdbot.util.skyblock.Rarity;
+import net.hypixel.nerdbot.generator.skyblock.Rarity;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;

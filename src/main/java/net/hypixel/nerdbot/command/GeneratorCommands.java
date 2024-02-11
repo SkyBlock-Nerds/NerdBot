@@ -23,7 +23,7 @@ import net.hypixel.nerdbot.generator.impl.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.skyblock.Rarity;
+import net.hypixel.nerdbot.generator.skyblock.Rarity;
 import net.hypixel.nerdbot.util.spritesheet.Spritesheet;
 
 import java.io.IOException;

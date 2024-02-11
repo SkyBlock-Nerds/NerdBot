@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util.skyblock;
+package net.hypixel.nerdbot.generator.skyblock;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

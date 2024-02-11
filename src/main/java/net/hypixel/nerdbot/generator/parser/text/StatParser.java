@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.generator.parser.text;
 import net.hypixel.nerdbot.generator.parser.StringParser;
 import net.hypixel.nerdbot.util.ChatFormat;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.skyblock.Stat;
+import net.hypixel.nerdbot.generator.skyblock.Stat;
 
 import java.util.regex.Matcher;
 
@@ -78,10 +78,10 @@ public class StatParser implements StringParser {
      */
     private String normalStatColorParser(Stat stat, String extraDetails) {
         if (extraDetails == null || extraDetails.isEmpty()) {
-            return "&" + stat.getColor().getColorCode() + stat.getDisplay();
+            return "&" + stat.getColor().getCode() + stat.getDisplay();
         }
 
-        return "&" + stat.getColor().getColorCode() + extraDetails + stat.getDisplay();
+        return "&" + stat.getColor().getCode() + extraDetails + stat.getDisplay();
     }
 
     /**
@@ -93,7 +93,7 @@ public class StatParser implements StringParser {
      * @return the color parsed replacement string
      */
     private String boldedIconColorParser(Stat stat, String extraDetails) {
-        return "&" + stat.getColor().getColorCode() + extraDetails + "&" + ChatFormat.BOLD.getCode() + stat.getIcon() + "&" + stat.getColor().getColorCode() + " " + stat.getStat();
+        return "&" + stat.getColor().getCode() + extraDetails + "&" + ChatFormat.BOLD.getCode() + stat.getIcon() + "&" + stat.getColor().getCode() + " " + stat.getStat();
     }
 
     /**
@@ -104,7 +104,7 @@ public class StatParser implements StringParser {
      * @return the color parsed replacement string
      */
     private String boldedIconParser(Stat stat) {
-        return "&" + stat.getColor().getColorCode() + "&" + ChatFormat.BOLD.getCode() + stat.getIcon();
+        return "&" + stat.getColor().getCode() + "&" + ChatFormat.BOLD.getCode() + stat.getIcon();
     }
 
     /**
@@ -120,7 +120,7 @@ public class StatParser implements StringParser {
             return normalStatColorParser(stat, extraDetails);
         }
 
-        return "&" + stat.getSecondaryColor().getColorCode() + extraDetails + "&" + stat.getColor().getColorCode() + stat.getDisplay();
+        return "&" + stat.getSecondaryColor().getCode() + extraDetails + "&" + stat.getColor().getCode() + stat.getDisplay();
     }
 
     /**
@@ -131,7 +131,7 @@ public class StatParser implements StringParser {
      * @return returns the color parsed replacement string
      */
     private String noParsing(Stat stat, String e) {
-        return "&" + stat.getColor().getColorCode() + stat.getStat();
+        return "&" + stat.getColor().getCode() + stat.getStat();
     }
 
 
@@ -143,7 +143,7 @@ public class StatParser implements StringParser {
      * @return the color parsed replacement string
      */
     private String soulboundColorParsing(Stat stat, String e) {
-        return "&" + stat.getColor().getColorCode() + "&" + ChatFormat.BOLD.getCode() + "* &" + stat.getColor().getColorCode() + stat.getStat() + " &" + stat.getColor().getColorCode() + "&" + ChatFormat.BOLD.getCode() + "*";
+        return "&" + stat.getColor().getCode() + "&" + ChatFormat.BOLD.getCode() + "* &" + stat.getColor().getCode() + stat.getStat() + " &" + stat.getColor().getCode() + "&" + ChatFormat.BOLD.getCode() + "*";
     }
 
     /**
@@ -155,7 +155,7 @@ public class StatParser implements StringParser {
      * @return returns the color parsed replacement string
      */
     private String postStatColorParser(Stat stat, String extraDetails) {
-        return "&" + stat.getColor().getColorCode() + stat.getDisplay() + " " + extraDetails;
+        return "&" + stat.getColor().getCode() + stat.getDisplay() + " " + extraDetails;
     }
 
     /**
@@ -167,7 +167,7 @@ public class StatParser implements StringParser {
      * @return the color parsed replacement string
      */
     private String postDualColorParser(Stat stat, String extraDetails) {
-        return "&" + stat.getColor().getColorCode() + stat.getStat() + " &" + stat.getSecondaryColor().getColorCode() + extraDetails;
+        return "&" + stat.getColor().getCode() + stat.getStat() + " &" + stat.getSecondaryColor().getCode() + extraDetails;
     }
 
     /**
@@ -191,7 +191,7 @@ public class StatParser implements StringParser {
         String itemStat = extraDetails.substring(0, separator);
         String amount = extraDetails.substring(separator + 1);
         
-        return "&" + ChatFormat.GRAY.getCode() + itemStat + ": &" + stat.getSecondaryColor().getColorCode() + amount;
+        return "&" + ChatFormat.GRAY.getCode() + itemStat + ": &" + stat.getSecondaryColor().getCode() + amount;
     }
 
     /**
@@ -215,6 +215,6 @@ public class StatParser implements StringParser {
         String abilityName = extraDetails.substring(0, separator);
         String abilityType = extraDetails.substring(separator + 1);
         
-        return "&" + stat.getColor().getColorCode() + stat.getStat() + ": " + abilityName + " &" + stat.getSecondaryColor().getColorCode() + "&" + ChatFormat.BOLD.getCode() + abilityType;
+        return "&" + stat.getColor().getCode() + stat.getStat() + ": " + abilityName + " &" + stat.getSecondaryColor().getCode() + "&" + ChatFormat.BOLD.getCode() + abilityType;
     }
 }
