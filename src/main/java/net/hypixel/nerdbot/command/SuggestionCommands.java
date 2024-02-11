@@ -126,6 +126,11 @@ public class SuggestionCommands extends ApplicationCommand {
             embedBuilder.addField("Filters", filters, false);
         }
 
+        long minutesSinceStart = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - NerdBotApp.getBot().getStartTime());
+        if (minutesSinceStart <= 60) {
+            embedBuilder.setFooter("Page: " + pageNum + "/" + totalPages + " (The bot recently started so results may be inaccurate!)");
+        }
+
         return embedBuilder;
     }
 

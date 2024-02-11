@@ -78,6 +78,7 @@ public class NerdBot implements Bot {
     private MessageCache messageCache;
     private JDA jda;
     private BotConfig config;
+    @Getter
     private long startTime;
 
     public NerdBot() {
