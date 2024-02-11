@@ -98,6 +98,13 @@ public class StringColorParser {
                     }
 
                     String selectedCommand = description.substring(charIndex + 2, closingIndex);
+
+                    // Checking if the extra data contains a % symbol and including it
+                    if (closingIndex + 2 < description.length() && description.charAt(closingIndex + 2) == '%') {
+                        selectedCommand += "%";
+                        closingIndex++;
+                    }
+
                     // checking if the command is a color code
                     MCColor mcColor = (MCColor) Util.findValue(colors, selectedCommand);
                     if (mcColor != null) {
@@ -131,6 +138,7 @@ public class StringColorParser {
                     // checking if the command has extra special flags
                     if (selectedCommand.indexOf(':') != -1) {
                         int specialFlagIndex = selectedCommand.indexOf(':');
+
                         extraData = selectedCommand.substring(specialFlagIndex + 1);
                         selectedCommand = selectedCommand.substring(0, specialFlagIndex);
                     }
@@ -144,8 +152,12 @@ public class StringColorParser {
                     Stat stat = (Stat) Util.findValue(stats, selectedCommand);
                     if (stat != null) {
                         // replacing the selected space with the stat's text
+                        System.out.println("Stat found: " + stat.getStat() + " with extra data: " + extraData);
                         String replacementText = stat.getParsedStat(isIcon, extraData) + currentColor;
+                        System.out.println("replacementText: " + replacementText);
                         description.replace(charIndex, closingIndex + 2, replacementText);
+                        System.out.println("Replacing from charIndex: " + charIndex + " to " + (closingIndex + 2) + " with: " + replacementText);
+                        System.out.println("description: " + description);
                         continue;
                     }
 
