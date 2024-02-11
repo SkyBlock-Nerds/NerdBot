@@ -121,7 +121,7 @@ public class SuggestionCache extends TimerTask {
             this.thread = thread;
             this.parentId = thread.getParentChannel().asForumChannel().getId();
             this.threadName = thread.getName();
-            this.greenlit = Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag());
+            this.greenlit = Util.hasTagByName(thread, suggestionConfig.getGreenlitTag());
             this.expired = false;
             this.alpha = thread.getParentChannel()
                 .getName()
