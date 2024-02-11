@@ -5,6 +5,6 @@ package net.hypixel.nerdbot.generator.parser;
  * <br>
  * Primarily used for translating text-based variables to a value.
  */
-public interface TextParser extends Parser<String> {
+public interface StringParser extends Parser<String> {
 
 }

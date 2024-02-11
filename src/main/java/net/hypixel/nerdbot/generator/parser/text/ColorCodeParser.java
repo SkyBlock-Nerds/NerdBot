@@ -1,11 +1,11 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
-import net.hypixel.nerdbot.generator.parser.TextParser;
+import net.hypixel.nerdbot.generator.parser.StringParser;
 import net.hypixel.nerdbot.util.ChatFormat;
 
 import java.util.regex.Pattern;
 
-public class ColorCodeParser implements TextParser {
+public class ColorCodeParser implements StringParser {
 
     @Override
     public String parse(String input) {

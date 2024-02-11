@@ -1,13 +1,13 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
-import net.hypixel.nerdbot.generator.parser.TextParser;
+import net.hypixel.nerdbot.generator.parser.StringParser;
 import net.hypixel.nerdbot.util.ChatFormat;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
 import java.util.regex.Matcher;
 
-public class StatParser implements TextParser {
+public class StatParser implements StringParser {
 
     @Override
     public String parse(String input) {

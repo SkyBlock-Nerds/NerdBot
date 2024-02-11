@@ -1,12 +1,12 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
-import net.hypixel.nerdbot.generator.parser.TextParser;
+import net.hypixel.nerdbot.generator.parser.StringParser;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.Icon;
 
 import java.util.regex.Matcher;
 
-public class IconParser implements TextParser {
+public class IconParser implements StringParser {
 
     @Override
     public String parse(String input) {
