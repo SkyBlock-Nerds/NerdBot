@@ -329,7 +329,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(userID, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            TranslationManager.edit(event.getHook(), "commands.suggestions.filtered_none_found");
+            TranslationManager.edit(event.getHook(), "cache.suggestions.filtered_none_found");
             return;
         }
 
@@ -358,7 +358,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(member.getIdLong(), tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            TranslationManager.edit(event.getHook(), "commands.suggestions.filtered_none_found");
+            TranslationManager.edit(event.getHook(), "cache.suggestions.filtered_none_found");
             return;
         }
 
@@ -386,7 +386,7 @@ public class SuggestionCommands extends ApplicationCommand {
         List<SuggestionCache.Suggestion> suggestions = getSuggestions(null, tags, title, isAlpha);
 
         if (suggestions.isEmpty()) {
-            TranslationManager.edit(event.getHook(), "commands.suggestions.filtered_none_found");
+            TranslationManager.edit(event.getHook(), "cache.suggestions.filtered_none_found");
             return;
         }
 
