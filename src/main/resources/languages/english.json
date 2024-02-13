@@ -30,7 +30,7 @@
   },
   "curator": {
     "no_greenlit_messages": "No suggestions were greenlit",
-    "greenlit_messages": "Greenlit %d suggestions in %d!",
+    "greenlit_messages": "Greenlit %d suggestions in %dms!",
     "already_greenlit": "This suggestion has already been greenlit!"
   },
   "commands": {
