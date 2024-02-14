@@ -3,7 +3,11 @@ package net.hypixel.nerdbot.util;
 import com.google.gson.JsonObject;
 import io.prometheus.client.Summary;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
@@ -11,6 +15,9 @@ import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
+import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -20,8 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
-import java.awt.Font;
-import java.awt.FontFormatException;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -33,7 +39,12 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -183,6 +194,39 @@ public class Util {
         }
 
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
+    }
+
+    public static Suggestion.Type getSuggestionType(ThreadChannel threadChannel) {
+        return getSuggestionType(threadChannel.getParentChannel().asForumChannel());
+    }
+
+    public static Suggestion.Type getSuggestionType(ForumChannel forumChannel) {
+        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+        AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
+        String parentChannelId = forumChannel.getId();
+
+        if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equals)) {
+            return Suggestion.Type.ALPHA;
+        } else if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equals)) {
+            return Suggestion.Type.PROJECT;
+        } else if (parentChannelId.equals(suggestionConfig.getForumChannelId())) {
+            return Suggestion.Type.NORMAL;
+        }
+
+        return Suggestion.Type.UNKNOWN;
+    }
+
+    // Only used for AlphaProjectConfig initialization and voice activity
+    public static Suggestion.Type getSuggestionType(String channelName) {
+        channelName = channelName.toLowerCase();
+
+        if (channelName.contains("alpha")) {
+            return Suggestion.Type.ALPHA;
+        } else if (channelName.contains("project") || channelName.contains("projəct") || channelName.contains("nerd-project")) {
+            return Suggestion.Type.PROJECT;
+        } else {
+            return Suggestion.Type.NORMAL;
+        }
     }
 
     public static JsonObject makeHttpRequest(String url) throws IOException, InterruptedException {
