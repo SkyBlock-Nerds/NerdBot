@@ -7,13 +7,18 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
@@ -25,7 +30,6 @@ import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.bot.Environment;
@@ -38,7 +42,8 @@ import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
-import net.hypixel.nerdbot.bot.config.SuggestionConfig;
+import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
@@ -50,9 +55,10 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.logging.log4j.Level;
 
-import java.awt.Color;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -168,6 +174,45 @@ public class AdminCommands extends ApplicationCommand {
         });
 
         TranslationManager.edit(event.getHook(), discordUser, "commands.invite.deleted", invites.size());
+    }
+
+    @JDASlashCommand(name = "flared", description = "Add the Flared tag to a suggestion and lock it", defaultLocked = true)
+    public void flareSuggestion(GuildSlashEvent event) {
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+
+        if (discordUser == null) {
+            TranslationManager.reply(event, "generic.not_found", "User");
+            return;
+        }
+
+        Channel channel = event.getChannel();
+        if (!(channel instanceof ThreadChannel threadChannel) || !(threadChannel.getParentChannel() instanceof ForumChannel forumChannel)) {
+            TranslationManager.reply(event, discordUser, "commands.only_available_in_threads");
+            return;
+        }
+
+        AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
+        if (!Util.hasTagByName(forumChannel, alphaProjectConfig.getFlaredTag())) {
+            TranslationManager.reply(event, discordUser, "commands.flared.no_tag", "Flared");
+            return;
+        }
+
+        ForumTag flaredTag = Util.getTagByName(forumChannel, alphaProjectConfig.getFlaredTag());
+        if (threadChannel.getAppliedTags().contains(flaredTag)) {
+            TranslationManager.reply(event, discordUser, "commands.flared.already_tagged");
+            return;
+        }
+
+        List<ForumTag> appliedTags = new ArrayList<>(threadChannel.getAppliedTags());
+        appliedTags.add(flaredTag);
+
+        threadChannel.getManager()
+            .setLocked(true)
+            .setAppliedTags(appliedTags)
+            .queue();
+
+        TranslationManager.reply(event, discordUser, "commands.flared.tagged", event.getUser().getAsMention(), flaredTag.getName());
     }
 
     @JDASlashCommand(name = "lock", description = "Locks the thread that the command is executed in", defaultLocked = true)
@@ -421,8 +466,8 @@ public class AdminCommands extends ApplicationCommand {
         bypassSocial = (bypassSocial == null || !bypassSocial);
 
         try {
-            MojangProfile mojangProfile = MyCommands.requestMojangProfile(member, username, bypassSocial);
-            MyCommands.updateMojangProfile(member, mojangProfile);
+            MojangProfile mojangProfile = ProfileCommands.requestMojangProfile(member, username, bypassSocial);
+            ProfileCommands.updateMojangProfile(member, mojangProfile);
             TranslationManager.edit(event.getHook(), discordUser, "commands.user.linked_by_admin", member.getAsMention(), mojangProfile.getUsername(), mojangProfile.getUniqueId());
 
             ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
@@ -503,27 +548,50 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).queue();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(member.getId());
-        Pair<EmbedBuilder, EmbedBuilder> activityEmbeds = MyCommands.getActivityEmbeds(member);
+        List<MessageEmbed> embeds = new ArrayList<>(ProfileCommands.getActivityEmbeds(member));
 
         String profile = discordUser.isProfileAssigned() ?
             discordUser.getMojangProfile().getUsername() + " (" + discordUser.getMojangProfile().getUniqueId().toString() + ")" :
             "*Missing Data*";
 
-        event.getHook().editOriginalEmbeds(
-            new EmbedBuilder()
-                .setAuthor(member.getEffectiveName())
-                .setThumbnail(member.getEffectiveAvatarUrl())
-                .addField("ID", member.getId(), false)
-                .addField("Mojang Profile", profile, false)
-                .build(),
-            activityEmbeds.getLeft().build(),
-            activityEmbeds.getRight().build()
-        ).queue();
+        embeds.add(0, new EmbedBuilder()
+            .setAuthor(member.getEffectiveName())
+            .setThumbnail(member.getEffectiveAvatarUrl())
+            .addField("ID", member.getId(), false)
+            .addField("Mojang Profile", profile, false)
+            .addField("Language", discordUser.getLanguage().getName(), false)
+            .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), false)
+            .build());
+
+        event.getHook().editOriginalEmbeds(embeds.toArray(new MessageEmbed[] {})).queue();
+    }
+
+    // TODO: Remove this after migration
+    @JDASlashCommand(
+        name = "user",
+        group = "migrate",
+        subcommand = "activity",
+        description = "Attempts to migrate all user activity to history dataset.",
+        defaultLocked = true
+    )
+    public void migrateActivity(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        discordUserRepository.getAll().forEach(discordUser -> {
+            try {
+                discordUser.getLastActivity().migrateToHistory();
+                discordUserRepository.cacheObject(discordUser);
+            } catch (Exception ex) {
+                log.error("Unable to cache '{}' (ID: {})", discordUser.getMember().map(Member::getEffectiveName).orElse(""), discordUser.getDiscordId());
+            }
+        });
+        event.getHook().editOriginal("Migrated all user activity to history tracking.").queue();
     }
 
     @JDASlashCommand(
         name = "user",
-        subcommand = "migrate",
+        group = "migrate",
+        subcommand = "names",
         description = "Attempts to migrate any user with no assigned Mojang Profile using their display name.",
         defaultLocked = true
     )
@@ -561,45 +629,6 @@ public class AdminCommands extends ApplicationCommand {
             });
 
         TranslationManager.edit(event.getHook(), discordUser, "commands.user.migrated_profiles", mojangProfiles.size());
-    }
-
-    @JDASlashCommand(name = "flared", description = "Add the Flared tag to a suggestion and lock it", defaultLocked = true)
-    public void flareSuggestion(GuildSlashEvent event) {
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
-
-        if (discordUser == null) {
-            TranslationManager.reply(event, "generic.not_found", "User");
-            return;
-        }
-
-        Channel channel = event.getChannel();
-        if (!(channel instanceof ThreadChannel threadChannel) || !(threadChannel.getParentChannel() instanceof ForumChannel forumChannel)) {
-            TranslationManager.reply(event, discordUser, "commands.only_available_in_threads");
-            return;
-        }
-
-        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
-        if (Util.hasTagByName(forumChannel, suggestionConfig.getFlaredTag())) {
-            TranslationManager.reply(event, discordUser, "commands.flared.no_tag", "Flared");
-            return;
-        }
-
-        ForumTag flaredTag = Util.getTagByName(forumChannel, suggestionConfig.getFlaredTag());
-        if (threadChannel.getAppliedTags().contains(flaredTag)) {
-            TranslationManager.reply(event, discordUser, "commands.flared.already_tagged");
-            return;
-        }
-
-        List<ForumTag> appliedTags = new ArrayList<>(threadChannel.getAppliedTags());
-        appliedTags.add(flaredTag);
-
-        threadChannel.getManager()
-            .setLocked(true)
-            .setAppliedTags(appliedTags)
-            .queue();
-
-        TranslationManager.reply(event, discordUser, "commands.flared.tagged", event.getUser().getAsMention(), flaredTag.getName());
     }
 
     @JDASlashCommand(name = "cache", subcommand = "force-save", description = "Force save the specified cache to the database", defaultLocked = true)
