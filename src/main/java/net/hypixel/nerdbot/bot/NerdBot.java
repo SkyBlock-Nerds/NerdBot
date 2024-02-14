@@ -33,6 +33,7 @@ import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.MessageCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.cache.suggestion.SuggestionCache;
+import net.hypixel.nerdbot.feature.ActivityPurgeFeature;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
@@ -70,7 +71,8 @@ public class NerdBot implements Bot {
         new HelloGoodbyeFeature(),
         new CurateFeature(),
         new UserGrabberFeature(),
-        new ProfileUpdateFeature()
+        new ProfileUpdateFeature(),
+        new ActivityPurgeFeature()
     );
 
     private final Database database = new Database(System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/"), "skyblock_nerds");
