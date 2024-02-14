@@ -2,8 +2,6 @@ package net.hypixel.nerdbot.api.database.model.user.stats;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.time.Duration;
@@ -59,7 +57,7 @@ public class LastActivity {
 
     private Map<String, Integer> channelActivity = new HashMap<>();
 
-    public void migrateToHistory(BotConfig botConfig) {
+    public void migrateToHistory() {
         if (this.lastSuggestionDate != -1)
             this.suggestionCreationHistory.add(this.lastSuggestionDate);
         if (this.suggestionVoteDate != -1)
@@ -80,7 +78,6 @@ public class LastActivity {
         this.lastAlphaSuggestionDate = -1;
         this.alphaSuggestionVoteDate = -1;
         this.alphaSuggestionCommentDate = -1;
-        NerdBotApp.getBot().writeConfig(botConfig);
     }
 
     public String toTotalPeriod(Function<LastActivity, List<Long>> function, Duration duration) {
