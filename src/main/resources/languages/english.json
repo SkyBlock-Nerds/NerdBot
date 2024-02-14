@@ -30,7 +30,7 @@
   },
   "curator": {
     "no_greenlit_messages": "No suggestions were greenlit",
-    "greenlit_messages": "Greenlit %d suggestions in %d!",
+    "greenlit_messages": "Greenlit %d suggestions in %dms!",
     "greenlit_import_instructions": "To import into google sheets, go to File -> Import, Upload the `.csv` document shown below.\nChange `Import Location` to `Append to current sheet` and `Separator Type` should be defaulted to Automatic detection if not, change it to tabs.)",
     "already_greenlit": "This suggestion has already been greenlit!"
   },
