@@ -5,6 +5,7 @@ import lombok.Setter;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -78,6 +79,21 @@ public class LastActivity {
         this.lastAlphaSuggestionDate = -1;
         this.alphaSuggestionVoteDate = -1;
         this.alphaSuggestionCommentDate = -1;
+    }
+
+    public boolean purgeOldHistory() {
+        long thirtyDays = Duration.of(30, ChronoUnit.DAYS).toMillis();
+        long currentTime = System.currentTimeMillis();
+
+        return this.suggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.suggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.suggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.alphaSuggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.alphaSuggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.alphaSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.projectSuggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.projectSuggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.projectSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays));
     }
 
     public String toTotalPeriod(Function<LastActivity, List<Long>> function, Duration duration) {
