@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
@@ -33,7 +34,10 @@ public class MetricsListener {
 
         if (event.getChannel() instanceof ThreadChannel threadChannel) {
             String forumChannelId = threadChannel.getParentChannel().getId();
-            if (Util.safeArrayStream(NerdBotApp.getBot().getConfig().getSuggestionConfig().getSuggestionForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            BotConfig botConfig = NerdBotApp.getBot().getConfig();
+
+            if (forumChannelId.equals(botConfig.getSuggestionConfig().getForumChannelId()) ||
+                Util.safeArrayStream(botConfig.getAlphaProjectConfig().getAlphaForumIds(), botConfig.getAlphaProjectConfig().getProjectForumIds()).anyMatch(forumChannelId::equals)) {
                 PrometheusMetrics.TOTAL_SUGGESTIONS_AMOUNT.inc();
             }
         }
