@@ -35,6 +35,7 @@ public class ProfileUpdateFeature extends BotFeature {
 
     @Override
     public void onFeatureStart() {
+        long oneHour = Duration.of(NerdBotApp.getBot().getConfig().getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis();
         this.timer.scheduleAtFixedRate(
             new TimerTask() {
                 @Override
@@ -51,7 +52,7 @@ public class ProfileUpdateFeature extends BotFeature {
                         }
                     });
                 }
-            }, 0L, Duration.of(NerdBotApp.getBot().getConfig().getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis());
+            }, oneHour, oneHour);
     }
 
     @Override
