@@ -110,7 +110,7 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel> {
 
             int index = 0;
             for (ThreadChannel thread : threads) {
-                log.info("[" + (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+                log.info("[" + (++index) + "/" + threads.size() + "] Exporting thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
                 List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
 
@@ -118,7 +118,7 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel> {
                     continue;
                 }
 
-                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does have the greenlit tag, adding to the list.");
+                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has the greenlit tag, adding to the list.");
 
                 MessageHistory history = thread.getHistoryFromBeginning(1).complete();
                 Message message = history.isEmpty() ? null : history.getRetrievedHistory().get(0);
