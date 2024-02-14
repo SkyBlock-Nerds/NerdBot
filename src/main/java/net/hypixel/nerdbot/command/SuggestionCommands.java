@@ -115,7 +115,7 @@ public class SuggestionCommands extends ApplicationCommand {
                 true
             );
 
-        if (showRatio) {
+        if (showRatio && type == Suggestion.Type.NORMAL) {
             blankFields--;
             embedBuilder.addField(
                 getEmojiFormat(EmojiConfig::getGreenlitEmojiId),
