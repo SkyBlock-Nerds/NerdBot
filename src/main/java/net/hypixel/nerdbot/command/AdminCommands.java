@@ -97,7 +97,7 @@ public class AdminCommands extends ApplicationCommand {
             if (output.isEmpty()) {
                 TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
             } else {
-                TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_messages", output.size());
+                TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_messages", output.size(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime());
             }
         });
     }
