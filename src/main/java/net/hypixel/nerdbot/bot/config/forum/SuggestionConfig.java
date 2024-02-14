@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.bot.config;
+package net.hypixel.nerdbot.bot.config.forum;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -7,11 +7,6 @@ import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.hypixel.nerdbot.NerdBotApp;
-
-import java.util.Objects;
-import java.util.function.Function;
 
 @Getter
 @Setter
@@ -21,58 +16,26 @@ public class SuggestionConfig {
     // Channels
 
     /**
-     * The {@link TextChannel} IDs for the suggestion forums
+     * The {@link TextChannel} IDs for the suggestion forum
      */
-    private String[] suggestionForumIds = {};
-
-    /**
-     * The {@link TextChannel} IDs for the alpha suggestion forums
-     */
-    private String[] alphaSuggestionForumIds = {};
+    private String forumChannelId = "";
 
     /**
      * The {@link TextChannel} ID for the suggestion review messages
      */
-    private String requestedReviewForumId = "";
+    private String requestedReviewChannelId = "";
 
     // Forum Tags
 
     /**
-     * The name of the flared {@link ForumTag tag} in an alpha {@link ForumChannel suggestion channel}.
-     */
-    private String flaredTag = "flared";
-
-    /**
      * The name of the greenlit {@link ForumTag tag} in a {@link ForumChannel forum channel}.
      */
-    private String greenlitTag = "greenlit";
+    private String greenlitTag = "Greenlit";
 
     /**
      * The name of the reviewed {@link ForumTag tag} in a {@link ForumChannel forum channel}.
      */
-    private String reviewedTag = "reviewed";
-
-    // Emojis
-
-    /**
-     * The ID of the reaction for the agree emoji
-     */
-    private String agreeEmojiId = "";
-
-    /**
-     * The ID of the reaction for the disagree emoji
-     */
-    private String disagreeEmojiId = "";
-
-    /**
-     * The ID of the reaction for the neutral emoji
-     */
-    private String neutralEmojiId = "";
-
-    /**
-     * The ID of the reaction for the greenlit emoji
-     */
-    private String greenlitEmojiId = "";
+    private String reviewedTag = "Reviewed";
 
     // Greenlit Settings
 
@@ -157,35 +120,4 @@ public class SuggestionConfig {
      * Set to 0 to disable
      */
     private long minimumSuggestionRequestAge = 1_000L * 60L * 60L * 24L * 7L; // 7 days
-
-    // Helper Methods
-
-    public boolean isReactionEquals(MessageReaction reaction, Function<SuggestionConfig, String> function) {
-        if (reaction.getEmoji().getType() != Emoji.Type.CUSTOM) {
-            return false;
-        }
-
-        return Objects.equals(reaction.getEmoji().asCustom().getId(), function.apply(this));
-    }
-
-    public void addNewAlphaSuggestionForumId(BotConfig botConfig, String id) {
-        String[] newIds = new String[alphaSuggestionForumIds.length + 1];
-        System.arraycopy(alphaSuggestionForumIds, 0, newIds, 0, alphaSuggestionForumIds.length);
-        newIds[alphaSuggestionForumIds.length] = id;
-        alphaSuggestionForumIds = newIds;
-        NerdBotApp.getBot().writeConfig(botConfig);
-    }
-
-    public void removeAlphaSuggestionForumId(BotConfig botConfig, String id) {
-        String[] newIds = new String[alphaSuggestionForumIds.length - 1];
-        int index = 0;
-        for (String alphaSuggestionForumId : alphaSuggestionForumIds) {
-            if (alphaSuggestionForumId.equals(id)) {
-                continue;
-            }
-            newIds[index++] = alphaSuggestionForumId;
-        }
-        alphaSuggestionForumIds = newIds;
-        NerdBotApp.getBot().writeConfig(botConfig);
-    }
 }
