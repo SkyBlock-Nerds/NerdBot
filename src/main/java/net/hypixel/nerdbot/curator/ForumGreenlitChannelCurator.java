@@ -75,7 +75,7 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel> {
             if (!database.isConnected()) {
                 setEndTime(System.currentTimeMillis());
                 timer.observeDuration();
-                log.error("Couldn't curate messages as the database is not connected!");
+                log.error("Couldn't export greenlit suggestions as the database is not connected!");
                 return output;
             }
 
@@ -96,13 +96,12 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel> {
                 return output;
             }
 
-            log.info("Curating Greenlit Suggestions for forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
+            log.info("Exporting greenlit suggestions for forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
             List<ThreadChannel> threads = Stream.concat(
                     forumChannel.getThreadChannels().stream(), // Unarchived Posts
                     forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
                 )
-                .filter(thread -> !thread.isLocked() && !thread.isArchived())
                 .distinct()
                 .toList();
 
@@ -112,6 +111,14 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel> {
             int index = 0;
             for (ThreadChannel thread : threads) {
                 log.info("[" + (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+
+                List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+
+                if (!tags.contains(greenlitTag)) {
+                    continue;
+                }
+
+                log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does have the greenlit tag, adding to the list.");
 
                 MessageHistory history = thread.getHistoryFromBeginning(1).complete();
                 Message message = history.isEmpty() ? null : history.getRetrievedHistory().get(0);
@@ -151,24 +158,17 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel> {
                     int agree = votes.get(suggestionConfig.getAgreeEmojiId());
                     int neutral = votes.get(suggestionConfig.getNeutralEmojiId());
                     int disagree = votes.get(suggestionConfig.getDisagreeEmojiId());
-                    List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
-
-                    if (!tags.contains(greenlitTag)) {
-                        log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does not have the greenlit tag, Skipping!");
-                        continue;
-                    }
-                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does have the greenlit tag, adding to the list.");
 
                     GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
                     output.add(greenlitMessage);
                 } catch (Exception exception) {
-                    log.error("Failed to curate thread '" + thread.getName() + "' (ID: " + thread.getId() + ")!", exception);
+                    log.error("Failed to export greenlit thread '" + thread.getName() + "' (ID: " + thread.getId() + ")!", exception);
                 }
             }
 
             setEndTime(System.currentTimeMillis());
             timer.observeDuration();
-            log.info("Curated Greenlit Suggestions for forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ") in " + (getEndTime() - getStartTime()) + "ms");
+            log.info("Finished exporting greenlit suggestions for forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ") in " + (getEndTime() - getStartTime()) + "ms");
             return output;
         }
     }

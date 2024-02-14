@@ -102,8 +102,8 @@ public class AdminCommands extends ApplicationCommand {
         });
     }
 
-    @JDASlashCommand(name = "greenlitcuration", description = "Manually run the Greenlit curation process", defaultLocked = true)
-    public void getGreenLitCSV(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Disregards any post before this UNIX timestamp, defaults to 0.") long suggestions_after) {
+    @JDASlashCommand(name = "export", subcommand = "greenlit", description = "Exports all Greenlit Forum posts into a CSV format for usage in Google Sheets", defaultLocked = true)
+    public void exportGreenlitThreads(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Disregards any post before this UNIX timestamp, defaults to 0.") long suggestionsAfter) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
@@ -131,18 +131,17 @@ public class AdminCommands extends ApplicationCommand {
             StringBuilder csvOutput = new StringBuilder();
             for (GreenlitMessage greenlitMessage : output) {
                 // If we manually limited the timestamps to before "x" time (defaults to 0 btw) it "removes" the greenlit suggestions from appearing in the linked CSV file.
-                if (greenlitMessage.getSuggestionTimestamp() >= suggestions_after) {
+                if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
                     // The Format is shown below, Tabs (\t) are the separators between values, as commas cannot be used, but It's still in the CSV file format due to Google Sheets Default Import only accepting CSV files.
                     // Timestamp Posted, Tags, Suggestion Title (Hyperlinked to the post), Reserved Location, Reserved Location, Reserved Location, Reserved Location, Reserved Location
                     csvOutput.append(greenlitMessage.getSuggestionTimestamp()).append("\t").append(String.join(", ", greenlitMessage.getTags())).append("\t=HYPERLINK(\"").append(greenlitMessage.getSuggestionUrl()).append("\", \"").append(greenlitMessage.getSuggestionTitle()).append("\")").append("\t\t\t\t\t\t").append("\n");
                 }
             }
 
-            String test = csvOutput.toString();
-            InputStream targetStream = new ByteArrayInputStream(test.getBytes());
+            String csvString = csvOutput.toString();
+            InputStream targetStream = new ByteArrayInputStream(csvString.getBytes());
+            event.getHook().sendFiles(FileUpload.fromData(targetStream, channel.getName() + ".csv")).complete();
             TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_import_instructions");
-            event.getHook().sendFiles(FileUpload.fromData(targetStream, channel.getName() + ".csv")).queue();
-
         });
     }
 
