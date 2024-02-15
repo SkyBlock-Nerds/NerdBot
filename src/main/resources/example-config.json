@@ -7,16 +7,10 @@
     "roleFormat": "BELOW"
   },
   "suggestionConfig": {
-    "suggestionForumIds": [],
-    "alphaSuggestionForumIds": [],
-    "requestedReviewForumId": "",
-    "flaredTag": "flared",
-    "greenlitTag": "greenlit",
-    "reviewedTag": "reviewed",
-    "agreeEmojiId": "",
-    "disagreeEmojiId": "",
-    "neutralEmojiId": "",
-    "greenlitEmojiId": "",
+    "forumChannelId": "",
+    "requestedReviewChannelId": "",
+    "greenlitTag": "Greenlit",
+    "reviewedTag": "Reviewed",
     "greenlitThreshold": 20,
     "greenlitRatio": 75.0,
     "archiveOnGreenlit": false,
@@ -27,6 +21,15 @@
     "autoArchiveThreshold": 168,
     "autoLockThreshold": -1,
     "minimumSuggestionRequestAge": 604800000
+  },
+  "alphaProjectConfig": {
+    "alphaForumIds": [],
+    "projectForumIds": [],
+    "flaredTag": "Flared",
+    "autoCreateTags": true,
+    "autoPinFirstMessage": false,
+    "autoArchiveThreshold": 168,
+    "autoLockThreshold": -1
   },
   "channelConfig": {
     "logChannelId": "",
@@ -49,6 +52,12 @@
   "metricsConfig": {
     "enabled": false,
     "port": 1234
+  },
+  "emojiConfig": {
+    "agreeEmojiId": "",
+    "disagreeEmojiId": "",
+    "neutralEmojiId": "",
+    "greenlitEmojiId": ""
   },
   "guildId": "",
   "ownerIds": [],
