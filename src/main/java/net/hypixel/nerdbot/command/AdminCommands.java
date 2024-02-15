@@ -143,8 +143,8 @@ public class AdminCommands extends ApplicationCommand {
 
             String csvString = csvOutput.toString();
             InputStream targetStream = new ByteArrayInputStream(csvString.getBytes());
-            String filename = String.format(channel.getName() + "-%s.csv", DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("ECT", ZoneId.SHORT_IDS)).format(Instant.now()));
-            event.getHook().sendFiles(FileUpload.fromData(targetStream,  filename)).complete();
+            String fileName = String.format(channel.getName() + "-%s.csv", DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("ECT", ZoneId.SHORT_IDS)).format(Instant.now()));
+            event.getHook().sendFiles(FileUpload.fromData(targetStream, fileName)).complete();
             TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_import_instructions");
         });
     }
