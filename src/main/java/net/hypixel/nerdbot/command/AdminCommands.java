@@ -171,7 +171,7 @@ public class AdminCommands extends ApplicationCommand {
                         }
 
                         event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
-                            + " in " + (System.currentTimeMillis() - forumChannelCurator.getStartTime()) + "ms"
+                            + " in " + TimeUtil.formatMsCompact(System.currentTimeMillis() - forumChannelCurator.getStartTime()) + "ms"
                             + "\nCurrently looking at " + forumChannelCurator.getCurrentObject().getJumpUrl()
                         ).queue();
                     });
