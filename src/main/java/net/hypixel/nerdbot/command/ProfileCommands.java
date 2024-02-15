@@ -228,7 +228,7 @@ public class ProfileCommands extends ApplicationCommand {
         @AppOption @Optional Integer page,
         @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
         @AppOption(description = "Words to filter title for.") @Optional String title,
-        @AppOption(description = "Show specific type.", autocomplete = "suggestion-types") @Optional Suggestion.Type type
+        @AppOption(description = "Show specific type.", autocomplete = "suggestion-types") @Optional Suggestion.ChannelType channelType
     ) {
         event.deferReply(true).complete();
 
@@ -237,9 +237,9 @@ public class ProfileCommands extends ApplicationCommand {
 
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
-        type = (type == null ? Suggestion.Type.NORMAL : type);
+        channelType = (channelType == null ? Suggestion.ChannelType.NORMAL : channelType);
 
-        List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember().getIdLong(), tags, title, type);
+        List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember().getIdLong(), tags, title, channelType);
 
         if (suggestions.isEmpty()) {
             TranslationManager.edit(event.getHook(), discordUser, "cache.suggestions.filtered_none_found");
@@ -247,7 +247,7 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(
-            SuggestionCommands.buildSuggestionsEmbed(suggestions, tags, title, type, pageNum, false, true)
+            SuggestionCommands.buildSuggestionsEmbed(suggestions, tags, title, channelType, pageNum, false, true)
                 .setAuthor(event.getMember().getEffectiveName())
                 .setThumbnail(event.getMember().getEffectiveAvatarUrl())
                 .build()

@@ -7,12 +7,15 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.util.Util;
 
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -20,10 +23,13 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 public class Suggestion {
 
-    private final ThreadChannel thread;
-    private final Optional<Message> firstMessage;
+    private final String threadId;
     private final String parentId;
     private final String threadName;
+    private final String ownerId;
+    private final long ownerIdLong;
+    private final String guildId;
+    private final OffsetDateTime timeCreated;
     private final int agrees;
     private final int disagrees;
     private final int neutrals;
@@ -31,20 +37,24 @@ public class Suggestion {
     private final boolean deleted;
     private final long lastUpdated = System.currentTimeMillis();
     private final long lastBump = System.currentTimeMillis();
-    private final Type type;
+    private final ChannelType channelType;
     private boolean expired;
 
     public Suggestion(ThreadChannel thread) {
         this(thread, null);
     }
 
-    public Suggestion(ThreadChannel thread, Type type) {
+    public Suggestion(ThreadChannel thread, ChannelType channelType) {
         BotConfig botConfig = NerdBotApp.getBot().getConfig();
-        this.thread = thread;
+        this.threadId = thread.getId();
         this.parentId = thread.getParentChannel().asForumChannel().getId();
         this.threadName = thread.getName();
-        this.greenlit = type == Type.NORMAL && Util.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
-        this.type = type == null ? Util.getSuggestionType(thread) : type;
+        this.ownerId = thread.getOwnerId();
+        this.ownerIdLong = thread.getOwnerIdLong();
+        this.guildId = thread.getGuild().getId();
+        this.timeCreated = thread.getTimeCreated();
+        this.greenlit = channelType == ChannelType.NORMAL && Util.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
+        this.channelType = channelType == null ? Util.getSuggestionType(thread) : channelType;
         this.expired = false;
 
         // Activity
@@ -55,8 +65,8 @@ public class Suggestion {
             long hoursAgo = TimeUnit.MILLISECONDS.toHours(currentTime - createdAt);
             ThreadChannelManager threadManager = thread.getManager();
             boolean changed = false;
-            long autoArchiveThreshold = type == Type.NORMAL ? botConfig.getSuggestionConfig().getAutoArchiveThreshold() : botConfig.getAlphaProjectConfig().getAutoArchiveThreshold();
-            long autoLockThreshold = type == Type.NORMAL ? botConfig.getSuggestionConfig().getAutoLockThreshold() : botConfig.getAlphaProjectConfig().getAutoLockThreshold();
+            long autoArchiveThreshold = channelType == ChannelType.NORMAL ? botConfig.getSuggestionConfig().getAutoArchiveThreshold() : botConfig.getAlphaProjectConfig().getAutoArchiveThreshold();
+            long autoLockThreshold = channelType == ChannelType.NORMAL ? botConfig.getSuggestionConfig().getAutoLockThreshold() : botConfig.getAlphaProjectConfig().getAutoLockThreshold();
 
             if (hoursAgo >= autoArchiveThreshold) {
                 log.debug("Auto-archiving suggestion '{}' (ID: {}) due to inactivity. (Hours: {}, Auto Archive Threshold: {})", thread.getName(), thread.getId(), hoursAgo, autoArchiveThreshold);
@@ -76,21 +86,39 @@ public class Suggestion {
         }
 
         // Message & Reactions
-        MessageHistory history = thread.getHistoryFromBeginning(1).complete();
-        if (history.isEmpty()) {
-            this.firstMessage = Optional.empty();
+        Optional<Message> firstMessage = this.getFirstMessage();
+        if (firstMessage.isEmpty()) {
             this.deleted = true;
             this.agrees = 0;
             this.disagrees = 0;
             this.neutrals = 0;
         } else {
-            Message message = history.getRetrievedHistory().get(0);
-            this.firstMessage = Optional.of(message);
+            Message message = firstMessage.get();
             this.deleted = message.getIdLong() != thread.getIdLong();
             this.agrees = getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getAgreeEmojiId());
             this.disagrees = getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
             this.neutrals = getReactionCount(message, NerdBotApp.getBot().getConfig().getEmojiConfig().getNeutralEmojiId());
         }
+    }
+
+    public List<ForumTag> getAppliedTags() {
+        ThreadChannel threadChannel = NerdBotApp.getBot().getJDA().getThreadChannelById(this.getThreadId());
+        return threadChannel == null ? List.of() : threadChannel.getAppliedTags();
+    }
+
+    public Optional<Message> getFirstMessage() {
+        ThreadChannel threadChannel = NerdBotApp.getBot().getJDA().getThreadChannelById(this.getThreadId());
+
+        if (threadChannel != null) {
+            MessageHistory history = threadChannel.getHistoryFromBeginning(1).complete();
+            return history.isEmpty() ? Optional.empty() : Optional.of(history.getRetrievedHistory().get(0));
+        }
+
+        return Optional.empty();
+    }
+
+    public String getJumpUrl() {
+        return String.format("https://discord.com/channels/%s/%s", this.getGuildId(), this.getThreadId());
     }
 
     public static int getReactionCount(Message message, String emojiId) {
@@ -121,21 +149,21 @@ public class Suggestion {
 
     @Getter
     @RequiredArgsConstructor
-    public enum Type {
+    public enum ChannelType {
 
         UNKNOWN("Unknown"),
         NORMAL("Normal"),
         ALPHA("Alpha"),
         PROJECT("Project");
 
-        public static final Type[] VALUES = new Type[] { NORMAL, ALPHA, PROJECT };
+        public static final ChannelType[] VALUES = new ChannelType[] { NORMAL, ALPHA, PROJECT };
 
         private final String name;
 
-        public static Type getType(String name) {
-            for (Type type : VALUES) {
-                if (type.name().equalsIgnoreCase(name)) {
-                    return type;
+        public static ChannelType getType(String name) {
+            for (ChannelType channelType : VALUES) {
+                if (channelType.name().equalsIgnoreCase(name)) {
+                    return channelType;
                 }
             }
 

@@ -196,36 +196,36 @@ public class Util {
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
     }
 
-    public static Suggestion.Type getSuggestionType(ThreadChannel threadChannel) {
+    public static Suggestion.ChannelType getSuggestionType(ThreadChannel threadChannel) {
         return getSuggestionType(threadChannel.getParentChannel().asForumChannel());
     }
 
-    public static Suggestion.Type getSuggestionType(ForumChannel forumChannel) {
+    public static Suggestion.ChannelType getSuggestionType(ForumChannel forumChannel) {
         SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
         AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
         String parentChannelId = forumChannel.getId();
 
         if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equals)) {
-            return Suggestion.Type.ALPHA;
+            return Suggestion.ChannelType.ALPHA;
         } else if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equals)) {
-            return Suggestion.Type.PROJECT;
+            return Suggestion.ChannelType.PROJECT;
         } else if (parentChannelId.equals(suggestionConfig.getForumChannelId())) {
-            return Suggestion.Type.NORMAL;
+            return Suggestion.ChannelType.NORMAL;
         }
 
-        return Suggestion.Type.UNKNOWN;
+        return Suggestion.ChannelType.UNKNOWN;
     }
 
     // Only used for AlphaProjectConfig initialization and voice activity
-    public static Suggestion.Type getSuggestionType(String channelName) {
+    public static Suggestion.ChannelType getSuggestionType(String channelName) {
         channelName = channelName.toLowerCase();
 
         if (channelName.contains("alpha")) {
-            return Suggestion.Type.ALPHA;
+            return Suggestion.ChannelType.ALPHA;
         } else if (channelName.contains("project") || channelName.contains("projəct") || channelName.contains("nerd-project")) {
-            return Suggestion.Type.PROJECT;
+            return Suggestion.ChannelType.PROJECT;
         } else {
-            return Suggestion.Type.NORMAL;
+            return Suggestion.ChannelType.NORMAL;
         }
     }
 

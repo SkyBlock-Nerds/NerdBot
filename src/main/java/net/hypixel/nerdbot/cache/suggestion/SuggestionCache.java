@@ -49,27 +49,27 @@ public class SuggestionCache extends TimerTask {
 
             // Suggestions
             Optional<ForumChannel> suggestionChannel = ChannelCache.getForumChannelById(suggestionConfig.getForumChannelId());
-            suggestionChannel.ifPresent(forumChannel -> this.loadSuggestions(forumChannel, Suggestion.Type.NORMAL));
+            suggestionChannel.ifPresent(forumChannel -> this.loadSuggestions(forumChannel, Suggestion.ChannelType.NORMAL));
 
             // Alpha Suggestions
             Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds())
                 .map(ChannelCache::getForumChannelById)
                 .flatMap(Optional::stream)
                 .filter(Objects::nonNull)
-                .forEach(forumChannel -> this.loadSuggestions(forumChannel, Suggestion.Type.ALPHA));
+                .forEach(forumChannel -> this.loadSuggestions(forumChannel, Suggestion.ChannelType.ALPHA));
 
             // Project Suggestions
             Util.safeArrayStream(alphaProjectConfig.getProjectForumIds())
                 .map(ChannelCache::getForumChannelById)
                 .flatMap(Optional::stream)
                 .filter(Objects::nonNull)
-                .forEach(forumChannel -> this.loadSuggestions(forumChannel, Suggestion.Type.PROJECT));
+                .forEach(forumChannel -> this.loadSuggestions(forumChannel, Suggestion.ChannelType.PROJECT));
 
             log.info("Removing expired suggestions.");
             new ArrayList<>(cache.values())
                 .stream()
                 .filter(Suggestion::isExpired)
-                .forEach(suggestion -> this.removeSuggestion(suggestion.getThread()));
+                .forEach(suggestion -> this.removeSuggestion(suggestion.getThreadName(), suggestion.getThreadId()));
 
             log.info("Finished caching suggestions.");
             this.initialized = true;
@@ -79,7 +79,7 @@ public class SuggestionCache extends TimerTask {
         }
     }
 
-    private void loadSuggestions(ForumChannel forumChannel, Suggestion.Type type) {
+    private void loadSuggestions(ForumChannel forumChannel, Suggestion.ChannelType channelType) {
         Stream<ThreadChannel> unarchivedPosts = forumChannel.getThreadChannels().stream().sorted(
             (o1, o2) -> Long.compare(o2.getTimeCreated().toEpochSecond(), o1.getTimeCreated().toEpochSecond())
         );
@@ -87,9 +87,9 @@ public class SuggestionCache extends TimerTask {
         Stream.concat(unarchivedPosts, archivedPosts)
             .distinct()
             .forEach(threadChannel -> {
-                Suggestion suggestion = new Suggestion(threadChannel, type);
+                Suggestion suggestion = new Suggestion(threadChannel, channelType);
                 this.cache.put(threadChannel.getId(), suggestion);
-                log.debug("Added existing {} suggestion: '{}' (ID: {}) to the suggestion cache.", type.getName().toLowerCase(), threadChannel.getName(), threadChannel.getId());
+                log.debug("Added existing {} suggestion: '{}' (ID: {}) to the suggestion cache.", channelType.getName().toLowerCase(), threadChannel.getName(), threadChannel.getId());
             });
     }
 
@@ -106,15 +106,19 @@ public class SuggestionCache extends TimerTask {
         return this.cache.values()
             .stream()
             .sorted((o1, o2) -> Long.compare( // Sort by most recent
-                o2.getThread().getTimeCreated().toInstant().toEpochMilli(),
-                o1.getThread().getTimeCreated().toInstant().toEpochMilli()
+                o2.getTimeCreated().toInstant().toEpochMilli(),
+                o1.getTimeCreated().toInstant().toEpochMilli()
             ))
             .toList();
     }
 
-    public void removeSuggestion(ThreadChannel thread) {
-        this.cache.remove(thread.getId());
-        log.debug("Removed suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") from the suggestion cache.");
+    public void removeSuggestion(ThreadChannel threadChannel) {
+        this.removeSuggestion(threadChannel.getName(), threadChannel.getId());
+    }
+
+    public void removeSuggestion(String threadName, String threadId) {
+        this.cache.remove(threadId);
+        log.debug("Removed suggestion '" + threadName + "' (ID: " + threadId + ") from the suggestion cache.");
     }
 
     public void updateSuggestion(ThreadChannel thread) {

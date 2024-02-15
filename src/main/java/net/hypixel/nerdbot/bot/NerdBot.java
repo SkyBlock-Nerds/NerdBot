@@ -193,7 +193,7 @@ public class NerdBot implements Bot {
                 .registerParameterResolver(new UserLanguageResolver())
                 .registerParameterResolver(new SuggestionTypeResolver())
                 .registerAutocompletionTransformer(UserLanguage.class, userLanguage -> new Command.Choice(userLanguage.getName(), userLanguage.name()))
-                .registerAutocompletionTransformer(Suggestion.Type.class, suggestionType -> new Command.Choice(suggestionType.getName(), suggestionType.name()))
+                .registerAutocompletionTransformer(Suggestion.ChannelType.class, suggestionType -> new Command.Choice(suggestionType.getName(), suggestionType.name()))
                 .registerAutocompletionTransformer(ForumChannel.class, forumChannel -> new Command.Choice(forumChannel.getName(), forumChannel.getId()))
                 .registerAutocompletionTransformer(ForumTag.class, forumTag -> new Command.Choice(forumTag.getName(), forumTag.getId()))
             );

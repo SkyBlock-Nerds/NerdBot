@@ -4,7 +4,6 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageType;
-import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -41,7 +40,7 @@ public class PinListener {
             return; // Ignore any other bot messages
         }
 
-        if (event.getChannelType() != ChannelType.GUILD_PUBLIC_THREAD) {
+        if (event.getChannelType() != net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
             return; // Ignore any channels that are not this type.
         }
 
@@ -56,7 +55,7 @@ public class PinListener {
         }
 
         // Ignore if feature is globally turned off.
-        if (suggestion.getType() == Suggestion.Type.NORMAL) {
+        if (suggestion.getChannelType() == Suggestion.ChannelType.NORMAL) {
             SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
             if (!suggestionConfig.isAutoPinFirstMessage()) {
                 return;

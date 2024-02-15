@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.listener;
 
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
@@ -35,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Log4j2
 public class SuggestionListener {
@@ -80,7 +81,8 @@ public class SuggestionListener {
                 return;
             }
 
-            if (suggestion.getFirstMessage().isEmpty()) {
+            Optional<Message> firstMessage = suggestion.getFirstMessage();
+            if (firstMessage.isEmpty()) {
                 TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "the first message in this thread");
                 return;
             }
@@ -97,7 +99,7 @@ public class SuggestionListener {
 
                     // Send Changes
                     threadManager.complete();
-                    GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(suggestion.getFirstMessage().get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
+                    GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(firstMessage.get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
                     NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
                     NerdBotApp.getBot().getSuggestionCache().updateSuggestion(thread); // Update Suggestion
                     thread.sendMessage(TranslationManager.translate("commands.request_review.accepted")).queue();
@@ -124,7 +126,7 @@ public class SuggestionListener {
                 ))
                 .queue();
 
-            PrometheusMetrics.REVIEW_REQUEST_STATISTICS.labels(suggestion.getFirstMessage().get().getId(), suggestion.getFirstMessage().get().getAuthor().getId(), suggestion.getThreadName(), action).inc();
+            PrometheusMetrics.REVIEW_REQUEST_STATISTICS.labels(firstMessage.get().getId(), firstMessage.get().getAuthor().getId(), suggestion.getThreadName(), action).inc();
         }
     }
 
@@ -153,13 +155,13 @@ public class SuggestionListener {
 
     @SubscribeEvent
     public void onChannelCreate(@NotNull ChannelCreateEvent event) {
-        if (event.getChannelType() == ChannelType.FORUM) {
-            Suggestion.Type type = Util.getSuggestionType(event.getChannel().asForumChannel());
+        if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
+            Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().asForumChannel());
 
-            if (type == Suggestion.Type.ALPHA || type == Suggestion.Type.PROJECT) {
+            if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
                 BotConfig botConfig = NerdBotApp.getBot().getConfig();
                 AlphaProjectConfig alphaProjectConfig = botConfig.getAlphaProjectConfig();
-                alphaProjectConfig.updateForumIds(botConfig, type == Suggestion.Type.ALPHA, type == Suggestion.Type.PROJECT);
+                alphaProjectConfig.updateForumIds(botConfig, channelType == Suggestion.ChannelType.ALPHA, channelType == Suggestion.ChannelType.PROJECT);
 
                 // Add Flared Tag
                 if (alphaProjectConfig.isAutoCreateTags()) {
@@ -172,7 +174,7 @@ public class SuggestionListener {
                     }
                 }
 
-                log.info("New {} suggestion forum created and added to bot config: {} (ID: {})", type.getName(), event.getChannel().getName(), event.getChannel().getId());
+                log.info("New {} suggestion forum created and added to bot config: {} (ID: {})", channelType.getName(), event.getChannel().getName(), event.getChannel().getId());
             }
         }
 
@@ -183,13 +185,13 @@ public class SuggestionListener {
 
     @SubscribeEvent
     public void onChannelDelete(ChannelDeleteEvent event) {
-        if (event.getChannelType() == ChannelType.FORUM) {
-            Suggestion.Type type = Util.getSuggestionType(event.getChannel().asForumChannel());
+        if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
+            Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().asForumChannel());
 
-            if (type == Suggestion.Type.ALPHA || type == Suggestion.Type.PROJECT) {
+            if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
                 BotConfig botConfig = NerdBotApp.getBot().getConfig();
-                botConfig.getAlphaProjectConfig().updateForumIds(botConfig, type == Suggestion.Type.ALPHA, type == Suggestion.Type.PROJECT);
-                log.info("Removed {} suggestion forum from bot config: {} (ID: {})", type.getName(), event.getChannel().getName(), event.getChannel().getId());
+                botConfig.getAlphaProjectConfig().updateForumIds(botConfig, channelType == Suggestion.ChannelType.ALPHA, channelType == Suggestion.ChannelType.PROJECT);
+                log.info("Removed {} suggestion forum from bot config: {} (ID: {})", channelType.getName(), event.getChannel().getName(), event.getChannel().getId());
             }
         }
 
@@ -199,7 +201,7 @@ public class SuggestionListener {
     }
 
     private boolean isInSuggestionChannel(GenericChannelEvent event) {
-        if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD) {
+        if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
             SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
             AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
             String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();

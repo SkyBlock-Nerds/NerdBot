@@ -4,7 +4,6 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.entities.channel.unions.GuildMessageChannelUnion;
@@ -61,7 +60,7 @@ public class ActivityListener {
 
     @SubscribeEvent
     public void onChannelCreate(@NotNull ChannelCreateEvent event) {
-        if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD) {
+        if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
             Member member = event.getChannel().asThreadChannel().getOwner();
             if (member == null || member.getUser().isBot()) {
                 return; // Ignore Empty Member
@@ -182,12 +181,12 @@ public class ActivityListener {
                 PrometheusMetrics.TOTAL_VOICE_TIME_SPENT_BY_USER.labels(member.getEffectiveName(), channelLeft.getName()).inc((TimeUnit.MILLISECONDS.toSeconds(timeSpent)));
 
                 if ((timeSpent / 1_000L) > NerdBotApp.getBot().getConfig().getVoiceThreshold()) {
-                    Suggestion.Type type = Util.getSuggestionType(channelLeft.getName());
+                    Suggestion.ChannelType channelType = Util.getSuggestionType(channelLeft.getName());
 
-                    if (type == Suggestion.Type.ALPHA) {
+                    if (channelType == Suggestion.ChannelType.ALPHA) {
                         discordUser.getLastActivity().setAlphaVoiceJoinDate(time);
                         log.info("Updating last alpha voice activity for {} to {}", member.getEffectiveName(), time);
-                    } else if (type == Suggestion.Type.PROJECT) {
+                    } else if (channelType == Suggestion.ChannelType.PROJECT) {
                         discordUser.getLastActivity().setProjectVoiceJoinDate(time);
                         log.info("Updating last project voice activity for {} to {}", member.getEffectiveName(), time);
                     } else {
@@ -224,7 +223,7 @@ public class ActivityListener {
             return; // Ignore Empty User
         }
 
-        if (event.getChannelType() != ChannelType.GUILD_PUBLIC_THREAD) {
+        if (event.getChannelType() != net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
             return; // Not A Thread
         }
 
