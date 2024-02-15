@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
@@ -109,14 +108,7 @@ public class Suggestion {
     }
 
     public Optional<Message> getFirstMessage() {
-        ThreadChannel threadChannel = NerdBotApp.getBot().getJDA().getThreadChannelById(this.getThreadId());
-
-        if (threadChannel != null) {
-            MessageHistory history = threadChannel.getHistoryFromBeginning(1).complete();
-            return history.isEmpty() ? Optional.empty() : Optional.of(history.getRetrievedHistory().get(0));
-        }
-
-        return Optional.empty();
+        return Util.getFirstMessage(this.getThreadId());
     }
 
     public static int getReactionCount(Message message, String emojiId) {

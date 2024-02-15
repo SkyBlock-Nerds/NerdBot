@@ -6,6 +6,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
@@ -173,6 +174,19 @@ public class Util {
         return threadChannel.getAppliedTags()
             .stream()
             .anyMatch(forumTag -> (ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name)));
+    }
+
+    public static Optional<Message> getFirstMessage(String threadId) {
+        return getFirstMessage(NerdBotApp.getBot().getJDA().getThreadChannelById(threadId));
+    }
+
+    public static Optional<Message> getFirstMessage(ThreadChannel threadChannel) {
+        if (threadChannel != null) {
+            MessageHistory history = threadChannel.getHistoryFromBeginning(1).complete();
+            return history.isEmpty() ? Optional.empty() : Optional.of(history.getRetrievedHistory().get(0));
+        }
+
+        return Optional.empty();
     }
 
     public static String formatSize(long size) {
