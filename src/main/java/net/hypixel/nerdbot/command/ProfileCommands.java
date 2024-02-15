@@ -76,46 +76,44 @@ public class ProfileCommands extends ApplicationCommand {
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
             TranslationManager.edit(event.getHook(), discordUser, "commands.verify.request_sent");
 
-            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> {
-                textChannel.sendMessageEmbeds(
-                        new EmbedBuilder()
-                            .setTitle("Mojang Profile Verification")
-                            .setDescription(event.getMember().getAsMention() + " has sent a Mojang verification request. This discord account matches the social set for this Mojang Profile.")
-                            .setColor(Color.PINK)
-                            .setThumbnail(event.getMember().getEffectiveAvatarUrl())
-                            .setFooter("This request expires in 1 day.")
-                            .addField("Username", mojangProfile.getUsername(), false)
-                            .addField(
-                                "UUID / SkyCrypt",
-                                String.format(
-                                    "[%s](https://sky.shiiyu.moe/stats/%s)",
-                                    mojangProfile.getUniqueId(),
-                                    mojangProfile.getUniqueId()
-                                ),
-                                false
-                            )
-                            .build()
-                    )
-                    .addActionRow(
-                        net.dv8tion.jda.api.interactions.components.buttons.Button.of(
-                            ButtonStyle.SUCCESS,
+            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessageEmbeds(
+                    new EmbedBuilder()
+                        .setTitle("Mojang Profile Verification")
+                        .setDescription(event.getMember().getAsMention() + " has sent a Mojang verification request. This discord account matches the social set for this Mojang Profile.")
+                        .setColor(Color.PINK)
+                        .setThumbnail(event.getMember().getEffectiveAvatarUrl())
+                        .setFooter("This request expires in 1 day.")
+                        .addField("Username", mojangProfile.getUsername(), false)
+                        .addField(
+                            "UUID / SkyCrypt",
                             String.format(
-                                "verification-accept-%s",
-                                event.getMember().getId()
+                                "[%s](https://sky.shiiyu.moe/stats/%s)",
+                                mojangProfile.getUniqueId(),
+                                mojangProfile.getUniqueId()
                             ),
-                            "Accept"
-                        ),
-                        Button.of(
-                            ButtonStyle.DANGER,
-                            String.format(
-                                "verification-deny-%s",
-                                event.getMember().getId()
-                            ),
-                            "Deny"
+                            false
                         )
+                        .build()
+                )
+                .addActionRow(
+                    Button.of(
+                        ButtonStyle.SUCCESS,
+                        String.format(
+                            "verification-accept-%s",
+                            event.getMember().getId()
+                        ),
+                        "Accept"
+                    ),
+                    Button.of(
+                        ButtonStyle.DANGER,
+                        String.format(
+                            "verification-deny-%s",
+                            event.getMember().getId()
+                        ),
+                        "Deny"
                     )
-                    .queue();
-            }, () -> {
+                )
+                .queue(), () -> {
                 log.warn("Profile verification log channel not found!");
             });
         } catch (HttpException | ProfileMismatchException exception) {
