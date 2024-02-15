@@ -19,17 +19,20 @@ import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
+import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.bot.Environment;
@@ -41,6 +44,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.bot.config.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
 import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
@@ -59,7 +63,7 @@ import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.logging.log4j.Level;
 
-import java.awt.Color;
+import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -70,6 +74,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -284,14 +289,63 @@ public class AdminCommands extends ApplicationCommand {
         boolean locked = threadChannel.isLocked();
         ThreadChannelManager threadManager = threadChannel.getManager();
 
-        // Add Reviewed Tag
         if (threadChannel.getParentChannel() instanceof ForumChannel forumChannel) { // Is thread inside a forum?
+            // Add Reviewed Tag
             if (Util.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) { // Does forum contain the reviewed tag?
                 if (!Util.hasTagByName(threadChannel, suggestionConfig.getReviewedTag())) { // Does thread not currently have reviewed tag?
                     List<ForumTag> forumTags = new ArrayList<>(threadChannel.getAppliedTags());
-                    forumTags.removeIf(forumTag -> forumTag.getName().equalsIgnoreCase(suggestionConfig.getGreenlitTag())); // Remove Greenlit just in-case
                     forumTags.add(Util.getTagByName(forumChannel, suggestionConfig.getReviewedTag()));
                     threadManager = threadManager.setAppliedTags(forumTags);
+                }
+            }
+
+            // Add Greenlit Tag
+            if (Util.hasTagByName(forumChannel, suggestionConfig.getGreenlitTag())) { // Does forum contain the greenlit tag?
+                if (!Util.hasTagByName(threadChannel, suggestionConfig.getGreenlitTag())) { // Does thread not currently have greenlit tag?
+                    List<ForumTag> forumTags = new ArrayList<>();
+
+                    Util.getFirstMessage(threadChannel).ifPresent(firstMessage -> {
+                        EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
+
+                        List<MessageReaction> reactions = firstMessage.getReactions()
+                            .stream()
+                            .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+                            .toList();
+
+                        Map<String, Integer> votes = Stream.of(
+                                emojiConfig.getAgreeEmojiId(),
+                                emojiConfig.getNeutralEmojiId(),
+                                emojiConfig.getDisagreeEmojiId()
+                            )
+                            .map(emojiId -> Pair.of(
+                                emojiId,
+                                reactions.stream()
+                                    .filter(reaction -> reaction.getEmoji()
+                                        .asCustom()
+                                        .getId()
+                                        .equalsIgnoreCase(emojiId)
+                                    )
+                                    .mapToInt(MessageReaction::getCount)
+                                    .findFirst()
+                                    .orElse(0)
+                            ))
+                            .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+
+                        int agree = votes.get(emojiConfig.getAgreeEmojiId());
+                        int disagree = votes.get(emojiConfig.getDisagreeEmojiId());
+                        double ratio = Curator.getRatio(agree, disagree);
+
+                        if ((agree < suggestionConfig.getGreenlitThreshold()) || (ratio < suggestionConfig.getGreenlitRatio())) {
+                            return;
+                        }
+
+                        forumTags.addAll(threadChannel.getAppliedTags());
+                        forumTags.add(Util.getTagByName(forumChannel, suggestionConfig.getGreenlitTag()));
+                    });
+
+                    if (!forumTags.isEmpty()) {
+                        threadManager = threadManager.setAppliedTags(forumTags);
+                    }
                 }
             }
         }
