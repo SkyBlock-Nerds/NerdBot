@@ -20,7 +20,7 @@ public class ActivityPurgeFeature extends BotFeature {
                 @Override
                 public void run() {
                     if (NerdBotApp.getBot().isReadOnly()) {
-                        log.error("Bot is in read-only mode, skipping profile update task!");
+                        log.warn("Bot is in read-only mode, skipping profile update task!");
                         return;
                     }
 
