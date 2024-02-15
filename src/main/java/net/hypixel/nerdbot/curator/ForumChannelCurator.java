@@ -161,7 +161,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     ThreadChannelManager threadManager = thread.getManager();
 
                     // Upsert into database if already greenlit
-                    if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
+                    if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag())) {
                         log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is already greenlit/reviewed!");
                         GreenlitMessage greenlitMessage = createGreenlitMessage(message, thread, agree, neutral, disagree);
                         database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
