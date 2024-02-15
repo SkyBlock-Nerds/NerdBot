@@ -30,6 +30,7 @@ public class Suggestion {
     private final long ownerIdLong;
     private final String guildId;
     private final OffsetDateTime timeCreated;
+    private final String jumpUrl;
     private final int agrees;
     private final int disagrees;
     private final int neutrals;
@@ -53,6 +54,7 @@ public class Suggestion {
         this.ownerIdLong = thread.getOwnerIdLong();
         this.guildId = thread.getGuild().getId();
         this.timeCreated = thread.getTimeCreated();
+        this.jumpUrl = String.format("https://discord.com/channels/%s/%s", this.getGuildId(), this.getThreadId());
         this.greenlit = channelType == ChannelType.NORMAL && Util.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
         this.channelType = channelType == null ? Util.getSuggestionType(thread) : channelType;
         this.expired = false;
@@ -115,10 +117,6 @@ public class Suggestion {
         }
 
         return Optional.empty();
-    }
-
-    public String getJumpUrl() {
-        return String.format("https://discord.com/channels/%s/%s", this.getGuildId(), this.getThreadId());
     }
 
     public static int getReactionCount(Message message, String emojiId) {
