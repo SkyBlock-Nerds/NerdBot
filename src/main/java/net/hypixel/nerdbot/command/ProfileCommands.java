@@ -226,7 +226,7 @@ public class ProfileCommands extends ApplicationCommand {
         @AppOption @Optional Integer page,
         @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
         @AppOption(description = "Words to filter title for.") @Optional String title,
-        @AppOption(description = "Show specific type.", autocomplete = "suggestion-types") @Optional Suggestion.ChannelType channelType
+        @AppOption(description = "Show suggestions from a specific category.", autocomplete = "suggestion-types") @Optional Suggestion.ChannelType channelType
     ) {
         event.deferReply(true).complete();
 
