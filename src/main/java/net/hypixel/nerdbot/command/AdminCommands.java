@@ -194,12 +194,14 @@ public class AdminCommands extends ApplicationCommand {
                 if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
                     // The Format is shown below, Tabs (\t) are the separators between values, as commas cannot be used, but It's still in the CSV file format due to Google Sheets Default Import only accepting CSV files.
                     // Timestamp Posted, Tags, Suggestion Title (Hyperlinked to the post), Reserved Location, Reserved Location, Reserved Location, Reserved Location, Reserved Location
+                    greenlitMessage.getTags().removeIf(tag -> tag.equalsIgnoreCase("greenlit"));
+
                     csvOutput.append("=EPOCHTODATE(").append(greenlitMessage.getSuggestionTimestamp() / 1_000L)
                         .append(")\t")
                         .append(String.join(", ", greenlitMessage.getTags()))
                         .append("\t=HYPERLINK(\"")
                         .append(greenlitMessage.getSuggestionUrl()).append("\", \"")
-                        .append(greenlitMessage.getSuggestionTitle()).append("\")")
+                        .append(greenlitMessage.getSuggestionTitle().replaceAll("\"", "\"\"")).append("\")")
                         .append("\t\t\t\t\t\t")
                         .append("\n");
                 }
