@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Log4j2
-public class ForumChannelCurator extends Curator<ForumChannel> {
+public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
@@ -115,10 +115,14 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
             log.info("Found " + threads.size() + " forum post(s) in " + (System.currentTimeMillis() - start) + "ms");
             PrometheusMetrics.CURATOR_MESSAGES_AMOUNT.labels(forumChannel.getName()).inc(threads.size());
+            setIndex(0);
+            setTotal(threads.size());
 
-            int index = 0;
             for (ThreadChannel thread : threads) {
-                log.info("[" + (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+                setIndex(getIndex() + 1);
+                setCurrentObject(thread);
+
+                log.info("[" + getIndex() + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
                 MessageHistory history = thread.getHistoryFromBeginning(1).complete();
                 Message message = history.isEmpty() ? null : history.getRetrievedHistory().get(0);
@@ -222,6 +226,10 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
             setEndTime(System.currentTimeMillis());
             timer.observeDuration();
             log.info("Curated forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ") in " + (getEndTime() - getStartTime()) + "ms");
+            setCompleted(true);
+            setCurrentObject(null);
+            setIndex(0);
+
             return output;
         }
     }

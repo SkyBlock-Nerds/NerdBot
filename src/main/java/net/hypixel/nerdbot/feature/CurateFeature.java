@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.feature;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
@@ -41,7 +42,7 @@ public class CurateFeature extends BotFeature {
             public void run() {
                 NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
                     Database database = NerdBotApp.getBot().getDatabase();
-                    Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(NerdBotApp.getBot().isReadOnly());
+                    Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumChannelCurator(NerdBotApp.getBot().isReadOnly());
                     ForumChannel channel = forumChannel.get();
                     log.info("Processing suggestion forum channel '" + channel.getName() + "' (ID: " + channel + ")");
 
