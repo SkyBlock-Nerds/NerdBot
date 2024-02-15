@@ -104,6 +104,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
 
             log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
+            long start = System.currentTimeMillis();
             List<ThreadChannel> threads = Stream.concat(
                     forumChannel.getThreadChannels().stream(), // Unarchived Posts
                     forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
@@ -112,7 +113,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 .distinct()
                 .toList();
 
-            log.info("Found " + threads.size() + " forum post(s)!");
+            log.info("Found " + threads.size() + " forum post(s) in " + (System.currentTimeMillis() - start) + "ms");
             PrometheusMetrics.CURATOR_MESSAGES_AMOUNT.labels(forumChannel.getName()).inc(threads.size());
 
             int index = 0;
