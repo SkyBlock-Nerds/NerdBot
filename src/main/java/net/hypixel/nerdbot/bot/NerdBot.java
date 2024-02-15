@@ -198,12 +198,11 @@ public class NerdBot implements Bot {
                 .registerAutocompletionTransformer(ForumTag.class, forumTag -> new Command.Choice(forumTag.getName(), forumTag.getId()))
             );
 
-        if (!"true".equalsIgnoreCase(System.getProperty("disable.cmdb"))) {
-            try {
-                commandsBuilder.setComponentManager(new DefaultComponentManager(new ComponentDatabaseConnection()::getConnection));
-            } catch (SQLException exception) {
-                log.error("Failed to connect to the SQL database! Components will not work correctly!", exception);
-            }
+        try {
+            commandsBuilder.setComponentManager(new DefaultComponentManager(new ComponentDatabaseConnection()::getConnection));
+        } catch (SQLException exception) {
+            log.error("Failed to connect to the SQL database! Components will not work correctly!");
+            log.debug("Debug exception logging.", exception);
         }
 
         try {
