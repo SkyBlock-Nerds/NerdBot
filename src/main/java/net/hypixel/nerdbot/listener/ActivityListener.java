@@ -233,9 +233,9 @@ public class ActivityListener {
 
         EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
 
-        if (emojiConfig.isReactionEquals(event.getReaction(), EmojiConfig::getAgreeEmojiId) ||
-            emojiConfig.isReactionEquals(event.getReaction(), EmojiConfig::getDisagreeEmojiId) ||
-            emojiConfig.isReactionEquals(event.getReaction(), EmojiConfig::getNeutralEmojiId)) {
+        if (emojiConfig.isReactionEquals(event.getReaction(), EmojiConfig::getAgreeEmojiId)
+            || emojiConfig.isReactionEquals(event.getReaction(), EmojiConfig::getDisagreeEmojiId)
+            || emojiConfig.isReactionEquals(event.getReaction(), EmojiConfig::getNeutralEmojiId)) {
 
             ThreadChannel threadChannel = event.getChannel().asThreadChannel();
             String forumChannelId = threadChannel.getParentChannel().getId();
