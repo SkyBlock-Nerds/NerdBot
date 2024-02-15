@@ -111,9 +111,13 @@ public class AdminCommands extends ApplicationCommand {
                             return;
                         }
 
+                        if (forumChannelCurator.getCurrentObject() == null) {
+                            return;
+                        }
+
                         event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
-                            + " in " + (System.currentTimeMillis() - forumChannelCurator.getStartTime()) + "ms"
-                            + "\nCurrently looking at " + forumChannelCurator.getCurrentObject().getJumpUrl()
+                            + " in " + TimeUtil.formatMsCompact(System.currentTimeMillis() - forumChannelCurator.getStartTime())
+                            + "\nCurrently looking at " + (forumChannelCurator.getCurrentObject().getJumpUrl())
                         ).queue();
                     });
                 }

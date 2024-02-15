@@ -29,4 +29,24 @@ public class TimeUtil {
         long seconds = TimeUnit.MILLISECONDS.toSeconds(ms);
         return String.format("%dd %dh %dm %ds", days, hours, minutes, seconds);
     }
+
+    public static String formatMsCompact(long ms) {
+        long days = TimeUnit.MILLISECONDS.toDays(ms);
+        ms -= TimeUnit.DAYS.toMillis(days);
+        long hours = TimeUnit.MILLISECONDS.toHours(ms);
+        ms -= TimeUnit.HOURS.toMillis(hours);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(ms);
+        ms -= TimeUnit.MINUTES.toMillis(minutes);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(ms);
+
+        if (days > 0) {
+            return String.format("%dd %dh %dm %ds", days, hours, minutes, seconds);
+        } else if (hours > 0) {
+            return String.format("%dh %dm %ds", hours, minutes, seconds);
+        } else if (minutes > 0) {
+            return String.format("%dm %ds", minutes, seconds);
+        } else {
+            return String.format("%ds", seconds);
+        }
+    }
 }
