@@ -20,7 +20,7 @@ public abstract class Curator<T> {
 
     public abstract List<GreenlitMessage> curate(T t);
 
-    public double getRatio(double positiveReactions, double negativeReactions) {
+    public static double getRatio(double positiveReactions, double negativeReactions) {
         if (positiveReactions == 0 && negativeReactions == 0) {
             return 0;
         }
