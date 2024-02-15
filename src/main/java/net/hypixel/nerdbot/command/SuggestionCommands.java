@@ -365,15 +365,15 @@ public class SuggestionCommands extends ApplicationCommand {
         @AppOption @Optional Integer page,
         @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
         @AppOption(description = "Words to filter title for.") @Optional String title,
-        @AppOption(description = "Show suggestions from a specific category.", autocomplete = "suggestion-types") @Optional Suggestion.ChannelType channelType
+        @AppOption(description = "Show suggestions from a specific category.", autocomplete = "suggestion-types") @Optional Suggestion.ChannelType type
     ) {
         event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
-        channelType = (channelType == null ? Suggestion.ChannelType.NORMAL : channelType);
+        type = (type == null ? Suggestion.ChannelType.NORMAL : type);
         boolean showRatio = member.getIdLong() == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
 
-        List<Suggestion> suggestions = getSuggestions(member.getIdLong(), tags, title, channelType);
+        List<Suggestion> suggestions = getSuggestions(member.getIdLong(), tags, title, type);
 
         if (suggestions.isEmpty()) {
             TranslationManager.edit(event.getHook(), "cache.suggestions.filtered_none_found");
@@ -381,7 +381,7 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(
-            buildSuggestionsEmbed(suggestions, tags, title, channelType, pageNum, false, showRatio)
+            buildSuggestionsEmbed(suggestions, tags, title, type, pageNum, false, showRatio)
                 .setAuthor(member.getEffectiveName())
                 .setThumbnail(member.getEffectiveAvatarUrl())
                 .build()
@@ -398,21 +398,21 @@ public class SuggestionCommands extends ApplicationCommand {
         @AppOption @Optional Integer page,
         @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
         @AppOption(description = "Words to filter title for.") @Optional String title,
-        @AppOption(description = "Show suggestions from a specific category.", autocomplete = "suggestion-types") @Optional Suggestion.ChannelType channelType
+        @AppOption(description = "Show suggestions from a specific category.", autocomplete = "suggestion-types") @Optional Suggestion.ChannelType type
     ) {
         event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
-        channelType = (channelType == null ? Suggestion.ChannelType.NORMAL : channelType);
+        type = (type == null ? Suggestion.ChannelType.NORMAL : type);
 
-        List<Suggestion> suggestions = getSuggestions(null, tags, title, channelType);
+        List<Suggestion> suggestions = getSuggestions(null, tags, title, type);
 
         if (suggestions.isEmpty()) {
             TranslationManager.edit(event.getHook(), "cache.suggestions.filtered_none_found");
             return;
         }
 
-        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, channelType, pageNum, true, true).build()).queue();
+        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, type, pageNum, true, true).build()).queue();
     }
 
     @AutocompletionHandler(name = "suggestion-types")
