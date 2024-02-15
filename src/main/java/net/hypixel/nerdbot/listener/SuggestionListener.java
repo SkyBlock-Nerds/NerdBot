@@ -207,8 +207,8 @@ public class SuggestionListener {
             String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
 
             return forumChannelId.equals(suggestionConfig.getForumChannelId()) ||
-                Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equals) ||
-                Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equals);
+                Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equals)
+                || Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equals);
         }
 
         return false;
