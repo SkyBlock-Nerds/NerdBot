@@ -7,19 +7,10 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.IMentionable;
-import net.dv8tion.jda.api.entities.Invite;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
@@ -63,19 +54,13 @@ import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.logging.log4j.Level;
 
-import java.awt.*;
-import java.io.ByteArrayInputStream;
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -103,9 +88,31 @@ public class AdminCommands extends ApplicationCommand {
             readOnly = false;
         }
 
-        Curator<ForumChannel> forumChannelCurator = new ForumChannelCurator(readOnly);
+        Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumChannelCurator(readOnly);
+
         NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
             event.deferReply(true).complete();
+
+            TimerTask task = new TimerTask() {
+                @Override
+                public void run() {
+                    NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
+                        if (forumChannelCurator.isCompleted()) {
+                            this.cancel();
+                            return;
+                        }
+
+                        event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
+                            + " in " + (System.currentTimeMillis() -  forumChannelCurator.getStartTime()) + "ms"
+                            + "\nCurrently looking at " + forumChannelCurator.getCurrentObject().getJumpUrl()
+                        ).queue();
+                    });
+                }
+            };
+
+            Timer timer = new Timer();
+            timer.scheduleAtFixedRate(task, 0, 1_000);
+
             List<GreenlitMessage> output = forumChannelCurator.curate(channel);
 
             if (output.isEmpty()) {
@@ -132,9 +139,30 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
-        Curator<ForumChannel> forumChannelCurator = new ForumGreenlitChannelCurator(true);
+        Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumGreenlitChannelCurator(true);
         NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
             event.deferReply(true).complete();
+
+            TimerTask task = new TimerTask() {
+                @Override
+                public void run() {
+                    NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
+                        if (forumChannelCurator.isCompleted()) {
+                            this.cancel();
+                            return;
+                        }
+
+                        event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
+                            + " in " + (System.currentTimeMillis() -  forumChannelCurator.getStartTime()) + "ms"
+                            + "\nCurrently looking at " + forumChannelCurator.getCurrentObject().getJumpUrl()
+                        ).queue();
+                    });
+                }
+            };
+
+            Timer timer = new Timer();
+            timer.scheduleAtFixedRate(task, 0, 1_000);
+
             List<GreenlitMessage> output = forumChannelCurator.curate(channel);
 
             if (output.isEmpty()) {
@@ -153,10 +181,15 @@ public class AdminCommands extends ApplicationCommand {
             }
 
             String csvString = csvOutput.toString();
-            InputStream targetStream = new ByteArrayInputStream(csvString.getBytes());
             String fileName = String.format(channel.getName() + "-%s.csv", DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("ECT", ZoneId.SHORT_IDS)).format(Instant.now()));
-            event.getHook().sendFiles(FileUpload.fromData(targetStream, fileName)).complete();
-            TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_import_instructions");
+
+            try {
+                event.getHook().sendMessage(TranslationManager.translate("curator.greenlit_import_instructions", discordUser)).setEphemeral(true).addFiles(FileUpload.fromData(Util.createTempFile(fileName, csvString))).queue();
+            } catch (IOException exception) {
+                TranslationManager.edit(event.getHook(), discordUser, "commands.temp_file_error", exception.getMessage());
+                log.error("Failed to create temp file!", exception);
+                log.error("File contents:\n" + csvString);
+            }
         });
     }
 
