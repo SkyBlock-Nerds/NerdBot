@@ -7,10 +7,19 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.IMentionable;
+import net.dv8tion.jda.api.entities.Invite;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
@@ -103,7 +112,7 @@ public class AdminCommands extends ApplicationCommand {
                         }
 
                         event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
-                            + " in " + (System.currentTimeMillis() -  forumChannelCurator.getStartTime()) + "ms"
+                            + " in " + (System.currentTimeMillis() - forumChannelCurator.getStartTime()) + "ms"
                             + "\nCurrently looking at " + forumChannelCurator.getCurrentObject().getJumpUrl()
                         ).queue();
                     });
@@ -153,7 +162,7 @@ public class AdminCommands extends ApplicationCommand {
                         }
 
                         event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
-                            + " in " + (System.currentTimeMillis() -  forumChannelCurator.getStartTime()) + "ms"
+                            + " in " + (System.currentTimeMillis() - forumChannelCurator.getStartTime()) + "ms"
                             + "\nCurrently looking at " + forumChannelCurator.getCurrentObject().getJumpUrl()
                         ).queue();
                     });
@@ -700,7 +709,7 @@ public class AdminCommands extends ApplicationCommand {
             .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), false)
             .build());
 
-        event.getHook().editOriginalEmbeds(embeds.toArray(new MessageEmbed[] {})).queue();
+        event.getHook().editOriginalEmbeds(embeds.toArray(new MessageEmbed[]{})).queue();
     }
 
     @JDASlashCommand(
