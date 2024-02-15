@@ -41,6 +41,7 @@ import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.bot.config.SuggestionConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
+import net.hypixel.nerdbot.curator.ForumGreenlitChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
@@ -53,8 +54,13 @@ import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.logging.log4j.Level;
 
 import java.awt.Color;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -96,6 +102,50 @@ public class AdminCommands extends ApplicationCommand {
             } else {
                 TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_messages", output.size(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime());
             }
+        });
+    }
+
+    @JDASlashCommand(name = "export", subcommand = "greenlit", description = "Exports all Greenlit Forum posts into a CSV format for usage in Google Sheets", defaultLocked = true)
+    public void exportGreenlitThreads(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Disregards any post before this UNIX timestamp, defaults to 0.") long suggestionsAfter) {
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+
+        if (discordUser == null) {
+            TranslationManager.reply(event, "generic.not_found", "User");
+            return;
+        }
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.reply(event, discordUser, "database.not_connected");
+            log.error("Couldn't connect to the database!");
+            return;
+        }
+
+        Curator<ForumChannel> forumChannelCurator = new ForumGreenlitChannelCurator(true);
+        NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
+            event.deferReply(true).complete();
+            List<GreenlitMessage> output = forumChannelCurator.curate(channel);
+
+            if (output.isEmpty()) {
+                TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
+                return;
+            }
+
+            StringBuilder csvOutput = new StringBuilder();
+            for (GreenlitMessage greenlitMessage : output) {
+                // If we manually limited the timestamps to before "x" time (defaults to 0 btw) it "removes" the greenlit suggestions from appearing in the linked CSV file.
+                if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
+                    // The Format is shown below, Tabs (\t) are the separators between values, as commas cannot be used, but It's still in the CSV file format due to Google Sheets Default Import only accepting CSV files.
+                    // Timestamp Posted, Tags, Suggestion Title (Hyperlinked to the post), Reserved Location, Reserved Location, Reserved Location, Reserved Location, Reserved Location
+                    csvOutput.append(greenlitMessage.getSuggestionTimestamp()).append("\t").append(String.join(", ", greenlitMessage.getTags())).append("\t=HYPERLINK(\"").append(greenlitMessage.getSuggestionUrl()).append("\", \"").append(greenlitMessage.getSuggestionTitle()).append("\")").append("\t\t\t\t\t\t").append("\n");
+                }
+            }
+
+            String csvString = csvOutput.toString();
+            InputStream targetStream = new ByteArrayInputStream(csvString.getBytes());
+            String fileName = String.format(channel.getName() + "-%s.csv", DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("ECT", ZoneId.SHORT_IDS)).format(Instant.now()));
+            event.getHook().sendFiles(FileUpload.fromData(targetStream, fileName)).complete();
+            TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_import_instructions");
         });
     }
 
