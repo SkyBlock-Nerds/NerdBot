@@ -206,8 +206,8 @@ public class SuggestionListener {
             AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
             String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
 
-            return forumChannelId.equals(suggestionConfig.getForumChannelId()) ||
-                Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equals)
+            return forumChannelId.equals(suggestionConfig.getForumChannelId())
+                || Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equals)
                 || Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equals);
         }
 
