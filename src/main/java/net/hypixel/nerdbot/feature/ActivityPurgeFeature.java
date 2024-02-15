@@ -14,6 +14,7 @@ public class ActivityPurgeFeature extends BotFeature {
 
     @Override
     public void onFeatureStart() {
+        long oneHour = Duration.of(NerdBotApp.getBot().getConfig().getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis();
         this.timer.scheduleAtFixedRate(
             new TimerTask() {
                 @Override
@@ -30,7 +31,7 @@ public class ActivityPurgeFeature extends BotFeature {
                         }
                     });
                 }
-            }, 0L, Duration.of(1, ChronoUnit.HOURS).toMillis());
+            }, oneHour, oneHour);
     }
 
     @Override
