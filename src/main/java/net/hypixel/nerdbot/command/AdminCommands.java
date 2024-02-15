@@ -616,28 +616,6 @@ public class AdminCommands extends ApplicationCommand {
         event.getHook().editOriginalEmbeds(embeds.toArray(new MessageEmbed[] {})).queue();
     }
 
-    // TODO: Remove this after migration
-    @JDASlashCommand(
-        name = "user",
-        group = "migrate",
-        subcommand = "activity",
-        description = "Attempts to migrate all user activity to history dataset.",
-        defaultLocked = true
-    )
-    public void migrateActivity(GuildSlashEvent event) {
-        event.deferReply(true).complete();
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        discordUserRepository.getAll().forEach(discordUser -> {
-            try {
-                discordUser.getLastActivity().migrateToHistory();
-                discordUserRepository.cacheObject(discordUser);
-            } catch (Exception ex) {
-                log.error("Unable to cache '{}' (ID: {})", discordUser.getMember().map(Member::getEffectiveName).orElse(""), discordUser.getDiscordId());
-            }
-        });
-        event.getHook().editOriginal("Migrated all user activity to history tracking.").queue();
-    }
-
     @JDASlashCommand(
         name = "user",
         group = "migrate",

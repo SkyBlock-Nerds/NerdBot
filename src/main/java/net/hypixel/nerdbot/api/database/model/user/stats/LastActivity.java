@@ -23,11 +23,6 @@ public class LastActivity {
     private long lastItemGenUsage = -1L;
     private long lastModMailUsage = -1L;
 
-    // TODO: Remove Old Suggestion Activity
-    private long lastSuggestionDate = -1L;
-    private long suggestionVoteDate = -1L;
-    private long suggestionCommentDate = -1L;
-
     // Suggestion Activity History
     private List<Long> suggestionCreationHistory = new ArrayList<>();
     private List<Long> suggestionVoteHistory = new ArrayList<>();
@@ -36,11 +31,6 @@ public class LastActivity {
     // Alpha Activity
     private long lastAlphaActivity = -1L;
     private long alphaVoiceJoinDate = -1L;
-
-    // TODO: Remove Old Alpha Suggestion Activity
-    private long lastAlphaSuggestionDate = -1L;
-    private long alphaSuggestionVoteDate = -1L;
-    private long alphaSuggestionCommentDate = -1L;
 
     // Alpha Suggestion Activity History
     private List<Long> alphaSuggestionCreationHistory = new ArrayList<>();
@@ -57,29 +47,6 @@ public class LastActivity {
     private List<Long> projectSuggestionCommentHistory = new ArrayList<>();
 
     private Map<String, Integer> channelActivity = new HashMap<>();
-
-    public void migrateToHistory() {
-        if (this.lastSuggestionDate != -1)
-            this.suggestionCreationHistory.add(this.lastSuggestionDate);
-        if (this.suggestionVoteDate != -1)
-            this.suggestionVoteHistory.add(this.suggestionVoteDate);
-        if (this.suggestionCommentDate != -1)
-            this.suggestionCommentHistory.add(this.suggestionCommentDate);
-
-        if (this.lastAlphaSuggestionDate != -1)
-            this.alphaSuggestionCreationHistory.add(this.lastAlphaSuggestionDate);
-        if (this.alphaSuggestionVoteDate != -1)
-            this.alphaSuggestionVoteHistory.add(this.alphaSuggestionVoteDate);
-        if (this.alphaSuggestionCommentDate != -1)
-            this.alphaSuggestionCommentHistory.add(this.alphaSuggestionCommentDate);
-
-        this.lastSuggestionDate = -1;
-        this.suggestionVoteDate = -1;
-        this.suggestionCommentDate = -1;
-        this.lastAlphaSuggestionDate = -1;
-        this.alphaSuggestionVoteDate = -1;
-        this.alphaSuggestionCommentDate = -1;
-    }
 
     public boolean purgeOldHistory() {
         long thirtyDays = Duration.of(30, ChronoUnit.DAYS).toMillis();
