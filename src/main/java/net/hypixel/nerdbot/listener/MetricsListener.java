@@ -36,8 +36,8 @@ public class MetricsListener {
             String forumChannelId = threadChannel.getParentChannel().getId();
             BotConfig botConfig = NerdBotApp.getBot().getConfig();
 
-            if (forumChannelId.equals(botConfig.getSuggestionConfig().getForumChannelId()) ||
-                Util.safeArrayStream(botConfig.getAlphaProjectConfig().getAlphaForumIds(), botConfig.getAlphaProjectConfig().getProjectForumIds()).anyMatch(forumChannelId::equals)) {
+            if (forumChannelId.equals(botConfig.getSuggestionConfig().getForumChannelId())
+                || Util.safeArrayStream(botConfig.getAlphaProjectConfig().getAlphaForumIds(), botConfig.getAlphaProjectConfig().getProjectForumIds()).anyMatch(forumChannelId::equals)) {
                 PrometheusMetrics.TOTAL_SUGGESTIONS_AMOUNT.inc();
             }
         }
