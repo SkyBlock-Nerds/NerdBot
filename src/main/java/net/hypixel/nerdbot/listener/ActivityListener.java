@@ -4,6 +4,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.entities.channel.unions.GuildMessageChannelUnion;
@@ -19,7 +20,6 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
-import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -117,32 +117,36 @@ public class ActivityListener {
 
         GuildMessageChannelUnion guildChannel = event.getGuildChannel();
         long time = System.currentTimeMillis();
-        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+        Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().getName());
 
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
-            String forumChannelId = guildChannel.asThreadChannel().getParentChannel().getId();
+            ForumChannel forumChannel = guildChannel.asThreadChannel().getParentChannel().asForumChannel();
+            channelType = Util.getSuggestionType(forumChannel);
 
             // New Suggestion Comments
-            if (forumChannelId.equals(suggestionConfig.getForumChannelId())) {
+            if (channelType == Suggestion.ChannelType.NORMAL) {
                 discordUser.getLastActivity().getSuggestionCommentHistory().add(0, time);
                 log.info("Updating suggestion comment activity date for {} to {}", member.getEffectiveName(), time);
             }
 
             // New Alpha Suggestion Comments
-            AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
-            if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            if (channelType == Suggestion.ChannelType.ALPHA) {
                 discordUser.getLastActivity().getAlphaSuggestionCommentHistory().add(0, time);
-                discordUser.getLastActivity().setLastAlphaActivity(time);
                 log.info("Updating alpha suggestion comment activity and last alpha activity date for {} to {}", member.getEffectiveName(), time);
             }
 
             // New Project Suggestion Comments
-            if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            if (channelType == Suggestion.ChannelType.PROJECT) {
                 discordUser.getLastActivity().getProjectSuggestionCommentHistory().add(0, time);
-                discordUser.getLastActivity().setLastProjectActivity(time);
                 log.info("Updating project suggestion comment activity and last project activity date for {} to {}", member.getEffectiveName(), time);
             }
+        }
+
+        if (channelType == Suggestion.ChannelType.ALPHA) {
+            discordUser.getLastActivity().setLastAlphaActivity(time);
+        } else if (channelType == Suggestion.ChannelType.PROJECT) {
+            discordUser.getLastActivity().setLastProjectActivity(time);
         }
 
         discordUser.getLastActivity().setLastGlobalActivity(time);
