@@ -58,6 +58,9 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -140,7 +143,8 @@ public class AdminCommands extends ApplicationCommand {
 
             String csvString = csvOutput.toString();
             InputStream targetStream = new ByteArrayInputStream(csvString.getBytes());
-            event.getHook().sendFiles(FileUpload.fromData(targetStream, channel.getName() + ".csv")).complete();
+            String filename = String.format(channel.getName() + "-%s.csv", DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("ECT", ZoneId.SHORT_IDS)).format(Instant.now()));
+            event.getHook().sendFiles(FileUpload.fromData(targetStream,  filename)).complete();
             TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_import_instructions");
         });
     }
