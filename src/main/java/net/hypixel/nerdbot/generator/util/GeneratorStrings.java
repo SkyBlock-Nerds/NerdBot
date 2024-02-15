@@ -18,7 +18,7 @@ public class GeneratorStrings {
     public static final String DESC_RARITY = "The rarity of the item";
     public static final String DESC_ITEM_LORE = "The lore of the item";
     public static final String DESC_TEXT = "The text to display";
-    public static final String DESC_TYPE = "The channelType of the item";
+    public static final String DESC_TYPE = "The type of the item";
     public static final String DESC_EXTRA_ITEM_MODIFIERS = "Any modifiers which can be applied to the item (color, variants, is_player_name)";
     public static final String DESC_DISABLE_RARITY_LINEBREAK = "If you will deal with the line break before the item's rarity";
     public static final String DESC_ALPHA = "Sets the background transparency level (0 = transparent, 255 = opaque)";
@@ -67,7 +67,7 @@ public class GeneratorStrings {
                                                      `item_lore`: Parses a description, including color codes, bold, italics, and newlines.
                                                      """;
     public static final String ITEM_INFO_OPTIONAL_ARGUMENTS = """
-                                                              `channelType`: The channelType of the item, such as a Sword or Wand. Can be left blank.
+                                                              `type`: The type of the item, such as a Sword or Wand. Can be left blank.
                                                               `disable_rarity_linebreak (true/false)`: To be used if you want to disable automatically adding the empty line between the item lore and rarity.
                                                               `alpha`: Sets the transparency of the background layer. 0 for transparent, 255 for opaque (default). 245 for overlay.
                                                               `padding`: Adds transparency around the entire image. Must be 0 (default) or higher.
@@ -90,7 +90,7 @@ public class GeneratorStrings {
                                                `/%1$s item item_name: Pancake Maker rarity: legendary item_lore: Creates pancakes! \\n\\n %%%%gold%%%%Item Ability: Batter Up! %%%%yellow%%%%%%%%bold%%%%RIGHT CLICK\\n%%%%gray%%%%Generates %%%%red%%%% 2 %%%%gray%%%%pancakes. When consumed, heal for %%%%health:+150%%%%%%%%gray%%%% and gain %%%%strength:20%%%% for 3 seconds.\\n%%%%dark_gray%%%%Mana Cost: %%%%dark_aqua%%%%75 hidden: true`
                                                                       
                                                **Creating a Aspect of the Pancake**
-                                               `/%1$s item item_name: Aspect of the Waffle rarity: EPIC item_lore: %%%%GEM_COMBAT%%%% %%%%GEM_COMBAT%%%%\\n&7Damage: &c+100\\n&7Strength: &c+100\\n &7Magic Find: &a+5\\n\\n%%%%ABILITY:Electro Waffle:RIGHT CLICK%%%%\\n&7Launch a &aWaffle &7at your enemies dealing &c50,000 &7damage and electrifiying them dealing &c1,000 &7damage per second.\\n%%%%MANA_COST:30%%%%\\n%%%%COOLDOWN:10s%%%%\\n\\n&8&oWait 'till the music begins.\\n\\n%%%%REFORGABLE%%%% channelType: SWORD disable_rarity_linebreak: true max_line_length: 37 hidden: true`
+                                               `/%1$s item item_name: Aspect of the Waffle rarity: EPIC item_lore: %%%%GEM_COMBAT%%%% %%%%GEM_COMBAT%%%%\\n&7Damage: &c+100\\n&7Strength: &c+100\\n &7Magic Find: &a+5\\n\\n%%%%ABILITY:Electro Waffle:RIGHT CLICK%%%%\\n&7Launch a &aWaffle &7at your enemies dealing &c50,000 &7damage and electrifiying them dealing &c1,000 &7damage per second.\\n%%%%MANA_COST:30%%%%\\n%%%%COOLDOWN:10s%%%%\\n\\n&8&oWait 'till the music begins.\\n\\n%%%%REFORGABLE%%%% type: SWORD disable_rarity_linebreak: true max_line_length: 37 hidden: true`
                                                """.formatted(COMMAND_PREFIX);
 
     // item gen text help messages
@@ -141,7 +141,7 @@ public class GeneratorStrings {
                                                                As mentioned previously the `display_item` command can render Player Heads as well! Firstly set the `item_id` to `player_skull` so that the command knows you want to display a player head. Inside the `extra_modifiers` parameters, you would need to supply how you want the skin to be retrieved, which are as follows.
 
                                                                **By Player Name**
-                                                               Simply channelType the Minecraft name of the player that you want the skin of.
+                                                               Simply type the Minecraft name of the player that you want the skin of.
                                                                Example: `%s` as the extra modifier will render your Minecraft skin as a head!
 
                                                                **By Skin ID**
@@ -200,7 +200,7 @@ public class GeneratorStrings {
     // item gen full error messages
     public static final String MISSING_FULL_GEN_ITEM = """
                                                        The parameters you have provided will not be enough to create an item generation.
-                                                       For each channelType of generation you want to display, include the following parameters:
+                                                       For each type of generation you want to display, include the following parameters:
                                                        ```java
                                                        item generation         ->  item_name, rarity, item_lore
                                                        item render generation  ->  item_id, extra_modifiers
