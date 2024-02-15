@@ -4,7 +4,6 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageType;
-import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -12,7 +11,9 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.bot.config.SuggestionConfig;
+import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
+import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 
 @Log4j2
 public class PinListener {
@@ -39,18 +40,31 @@ public class PinListener {
             return; // Ignore any other bot messages
         }
 
-        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
-
-        if (!suggestionConfig.isAutoPinFirstMessage()) {
-            return; // Ignore if feature is globally turned off.
-        }
-
-        if (event.getChannelType() != ChannelType.GUILD_PUBLIC_THREAD) {
+        if (event.getChannelType() != net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
             return; // Ignore any channels that are not this type.
         }
 
         if (!event.getChannel().getId().equals(event.getMessage().getId())) {
             return; // Ignore any message that the thread and message IDs do not match.
+        }
+
+        Suggestion suggestion = NerdBotApp.getBot().getSuggestionCache().getSuggestion(event.getChannel().getId());
+
+        if (suggestion == null) {
+            return; // Ignore uncached suggestions
+        }
+
+        // Ignore if feature is globally turned off.
+        if (suggestion.getChannelType() == Suggestion.ChannelType.NORMAL) {
+            SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+            if (!suggestionConfig.isAutoPinFirstMessage()) {
+                return;
+            }
+        } else {
+            AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
+            if (!alphaProjectConfig.isAutoPinFirstMessage()) {
+                return;
+            }
         }
 
         event.getMessage().pin().complete();

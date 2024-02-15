@@ -6,6 +6,8 @@ import lombok.ToString;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
+import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
 
 @Getter
 @Setter
@@ -18,9 +20,14 @@ public class BotConfig {
     private ModMailConfig modMailConfig = new ModMailConfig();
 
     /**
-     * Configuration for anything suggestions related
+     * Configuration for the suggestions channel
      */
     private SuggestionConfig suggestionConfig = new SuggestionConfig();
+
+    /**
+     * Configuration for alpha/project suggestion channels
+     */
+    private AlphaProjectConfig alphaProjectConfig = new AlphaProjectConfig();
 
     /**
      * Configuration for channels that the bot will be using
@@ -36,6 +43,11 @@ public class BotConfig {
      * Configuration for metrics that the bot will be grabbing
      */
     private MetricsConfig metricsConfig = new MetricsConfig();
+
+    /**
+     * Configuration for emoji IDs
+     */
+    private EmojiConfig emojiConfig = new EmojiConfig();
 
     /**
      * The {@link Guild} ID that the bot will be running in

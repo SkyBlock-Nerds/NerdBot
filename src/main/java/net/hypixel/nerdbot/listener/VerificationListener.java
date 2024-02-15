@@ -11,11 +11,11 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.command.MyCommands;
+import net.hypixel.nerdbot.command.ProfileCommands;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -86,7 +86,7 @@ public class VerificationListener {
                     buttonLabel = "Denied";
                     buttons.add(Button.of(ButtonStyle.DANGER, String.format("verification-kick-%s-3", memberId), "Kick (3)"));
                 } else if (action.equals("accept")) {
-                    MojangProfile mojangProfile = MyCommands.VERIFY_CACHE.getIfPresent(memberId);
+                    MojangProfile mojangProfile = ProfileCommands.VERIFY_CACHE.getIfPresent(memberId);
 
                     if (mojangProfile == null) {
                         buttonStyle = ButtonStyle.DANGER;
@@ -98,14 +98,14 @@ public class VerificationListener {
                         if (member == null) {
                             buttonLabel = "Left Server";
                         } else {
-                            MyCommands.updateMojangProfile(member, mojangProfile);
+                            ProfileCommands.updateMojangProfile(member, mojangProfile);
                             buttonStyle = ButtonStyle.SUCCESS;
                             buttonLabel = "Accepted";
                         }
                     }
                 }
 
-                MyCommands.VERIFY_CACHE.invalidate(memberId);
+                ProfileCommands.VERIFY_CACHE.invalidate(memberId);
             }
 
             if (updateButtons) {

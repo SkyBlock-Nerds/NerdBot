@@ -31,7 +31,9 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.MessageCache;
-import net.hypixel.nerdbot.cache.SuggestionCache;
+import net.hypixel.nerdbot.cache.suggestion.Suggestion;
+import net.hypixel.nerdbot.cache.suggestion.SuggestionCache;
+import net.hypixel.nerdbot.feature.ActivityPurgeFeature;
 import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
@@ -46,6 +48,7 @@ import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
+import net.hypixel.nerdbot.util.discord.resolver.SuggestionTypeResolver;
 import net.hypixel.nerdbot.util.discord.resolver.UserLanguageResolver;
 import org.jetbrains.annotations.NotNull;
 
@@ -68,18 +71,16 @@ public class NerdBot implements Bot {
         new HelloGoodbyeFeature(),
         new CurateFeature(),
         new UserGrabberFeature(),
-        new ProfileUpdateFeature()
+        new ProfileUpdateFeature(),
+        new ActivityPurgeFeature()
     );
 
     private final Database database = new Database(System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/"), "skyblock_nerds");
-    @Getter
-    private SuggestionCache suggestionCache;
-    @Getter
-    private MessageCache messageCache;
     private JDA jda;
     private BotConfig config;
-    @Getter
-    private long startTime;
+    @Getter private SuggestionCache suggestionCache;
+    @Getter private MessageCache messageCache;
+    @Getter private long startTime;
 
     public NerdBot() {
     }
@@ -181,6 +182,7 @@ public class NerdBot implements Bot {
             System.exit(-1);
         }
 
+        config.getAlphaProjectConfig().updateForumIds(config, true, true);
         messageCache = new MessageCache();
         suggestionCache = new SuggestionCache();
 
@@ -189,7 +191,9 @@ public class NerdBot implements Bot {
             .addOwners(config.getOwnerIds())
             .extensionsBuilder(extensionsBuilder -> extensionsBuilder
                 .registerParameterResolver(new UserLanguageResolver())
+                .registerParameterResolver(new SuggestionTypeResolver())
                 .registerAutocompletionTransformer(UserLanguage.class, userLanguage -> new Command.Choice(userLanguage.getName(), userLanguage.name()))
+                .registerAutocompletionTransformer(Suggestion.ChannelType.class, suggestionType -> new Command.Choice(suggestionType.getName(), suggestionType.name()))
                 .registerAutocompletionTransformer(ForumChannel.class, forumChannel -> new Command.Choice(forumChannel.getName(), forumChannel.getId()))
                 .registerAutocompletionTransformer(ForumTag.class, forumTag -> new Command.Choice(forumTag.getName(), forumTag.getId()))
             );
@@ -197,7 +201,8 @@ public class NerdBot implements Bot {
         try {
             commandsBuilder.setComponentManager(new DefaultComponentManager(new ComponentDatabaseConnection()::getConnection));
         } catch (SQLException exception) {
-            log.error("Failed to connect to the SQL database! Components will not work correctly!", exception);
+            log.error("Failed to connect to the SQL database! Components will not work correctly!");
+            log.debug("Debug exception logging.", exception);
         }
 
         try {

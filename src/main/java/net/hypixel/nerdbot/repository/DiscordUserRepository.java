@@ -35,6 +35,8 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
                 discordUser.setLastActivity(new LastActivity());
             }
 
+            discordUser.getLastActivity().purgeOldHistory();
+
             if (discordUser.getBirthdayData() == null) {
                 log.info("Birthday data for " + discordUser.getDiscordId() + " was null. Setting to default values!");
                 discordUser.setBirthdayData(new BirthdayData());

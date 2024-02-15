@@ -11,16 +11,15 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.bot.config.SuggestionConfig;
+import net.hypixel.nerdbot.bot.config.EmojiConfig;
+import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
@@ -36,24 +35,22 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel> {
         super(readOnly);
     }
 
-    public static GreenlitMessage createGreenlitMessage(ForumChannel forumChannel, Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
-        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
-
+    public static GreenlitMessage createGreenlitMessage(Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
         return GreenlitMessage.builder()
             .agrees(agree)
             .neutrals(neutral)
             .disagrees(disagree)
             .messageId(message.getId())
             .userId(message.getAuthor().getId())
-            .alpha(forumChannel.getName().toLowerCase().contains("alpha"))
             .suggestionUrl(message.getJumpUrl())
             .suggestionTitle(thread.getName())
             .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
             .suggestionContent(message.getContentRaw())
             .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
             .positiveVoterIds(
-                message.getReactions().stream()
-                    .filter(reaction -> suggestionConfig.isReactionEquals(reaction, SuggestionConfig::getAgreeEmojiId))
+                message.getReactions()
+                    .stream()
+                    .filter(reaction -> NerdBotApp.getBot().getConfig().getEmojiConfig().isReactionEquals(reaction, EmojiConfig::getAgreeEmojiId))
                     .flatMap(reaction -> reaction.retrieveUsers()
                         .complete()
                         .stream()
@@ -79,10 +76,17 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel> {
                 return output;
             }
 
-            BotConfig config = NerdBotApp.getBot().getConfig();
-            SuggestionConfig suggestionConfig = config.getSuggestionConfig();
+            BotConfig botConfig = NerdBotApp.getBot().getConfig();
+            SuggestionConfig suggestionConfig = botConfig.getSuggestionConfig();
 
             if (suggestionConfig == null) {
+                log.error("Couldn't find the emoji config from the bot config!");
+                timer.observeDuration();
+                return output;
+            }
+            EmojiConfig emojiConfig = botConfig.getEmojiConfig();
+
+            if (emojiConfig == null) {
                 log.error("Couldn't find the emoji config from the bot config!");
                 timer.observeDuration();
                 return output;
@@ -137,9 +141,9 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel> {
                         .toList();
 
                     Map<String, Integer> votes = Stream.of(
-                            suggestionConfig.getAgreeEmojiId(),
-                            suggestionConfig.getNeutralEmojiId(),
-                            suggestionConfig.getDisagreeEmojiId()
+                            emojiConfig.getAgreeEmojiId(),
+                            emojiConfig.getNeutralEmojiId(),
+                            emojiConfig.getDisagreeEmojiId()
                         )
                         .map(emojiId -> Pair.of(
                             emojiId,
@@ -155,11 +159,11 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel> {
                         ))
                         .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
 
-                    int agree = votes.get(suggestionConfig.getAgreeEmojiId());
-                    int neutral = votes.get(suggestionConfig.getNeutralEmojiId());
-                    int disagree = votes.get(suggestionConfig.getDisagreeEmojiId());
+                    int agree = votes.get(emojiConfig.getAgreeEmojiId());
+                    int neutral = votes.get(emojiConfig.getNeutralEmojiId());
+                    int disagree = votes.get(emojiConfig.getDisagreeEmojiId());
 
-                    GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
+                    GreenlitMessage greenlitMessage = createGreenlitMessage(message, thread, agree, neutral, disagree);
                     output.add(greenlitMessage);
                 } catch (Exception exception) {
                     log.error("Failed to export greenlit thread '" + thread.getName() + "' (ID: " + thread.getId() + ")!", exception);

@@ -40,42 +40,42 @@ public class ChannelCache {
 
     public static Optional<TextChannel> getTextChannelByName(String channelName) {
         return getChannelByName(channelName)
-            .map(channel -> (TextChannel) channel);
+            .map(TextChannel.class::cast);
     }
 
     public static Optional<TextChannel> getTextChannelById(String channelId) {
         return getChannelById(channelId)
-            .map(channel -> (TextChannel) channel);
+            .map(TextChannel.class::cast);
     }
 
     public static Optional<ForumChannel> getForumChannelByName(String channelName) {
         return getChannelByName(channelName)
-            .map(channel -> (ForumChannel) channel);
+            .map(ForumChannel.class::cast);
     }
 
     public static Optional<ForumChannel> getForumChannelById(String channelId) {
         return getChannelById(channelId)
-            .map(channel -> (ForumChannel) channel);
+            .map(ForumChannel.class::cast);
     }
 
     public static Optional<ForumChannel> getModMailChannel() {
         return getChannelById(NerdBotApp.getBot().getConfig().getModMailConfig().getChannelId())
-            .map(channel -> (ForumChannel) channel);
+            .map(ForumChannel.class::cast);
     }
 
     public static Optional<TextChannel> getLogChannel() {
         return getChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getLogChannelId())
-            .map(channel -> (TextChannel) channel);
+            .map(TextChannel.class::cast);
     }
 
     public static Optional<TextChannel> getVerifyLogChannel() {
         return getChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getVerifyLogChannelId())
-            .map(channel -> (TextChannel) channel);
+            .map(TextChannel.class::cast);
     }
 
     public static Optional<TextChannel> getRequestedReviewChannel() {
-        return getChannelById(NerdBotApp.getBot().getConfig().getSuggestionConfig().getRequestedReviewForumId())
-            .map(channel -> (TextChannel) channel);
+        return getChannelById(NerdBotApp.getBot().getConfig().getSuggestionConfig().getRequestedReviewChannelId())
+            .map(TextChannel.class::cast);
     }
 
     @SubscribeEvent
