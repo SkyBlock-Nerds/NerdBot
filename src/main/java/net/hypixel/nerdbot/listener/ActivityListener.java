@@ -116,6 +116,11 @@ public class ActivityListener {
         }
 
         GuildMessageChannelUnion guildChannel = event.getGuildChannel();
+        // Ignore channel if blacklisted for activity tracking
+        if (Arrays.stream(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).anyMatch(guildChannel.getId()::equalsIgnoreCase)) {
+            return;
+        }
+
         long time = System.currentTimeMillis();
         Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().getName());
 
@@ -151,11 +156,6 @@ public class ActivityListener {
 
         discordUser.getLastActivity().setLastGlobalActivity(time);
         log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
-
-        // Ignore channel if blacklisted for activity tracking
-        if (Arrays.stream(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).anyMatch(guildChannel.getId()::equalsIgnoreCase)) {
-            return;
-        }
 
         discordUser.getLastActivity().getChannelActivity().put(guildChannel.getId(), discordUser.getLastActivity().getChannelActivity().getOrDefault(guildChannel.getId(), 0) + 1);
     }
