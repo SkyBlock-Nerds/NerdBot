@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.channel.GenericChannelEvent;
+import net.dv8tion.jda.api.events.channel.update.ChannelUpdateNameEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -155,6 +156,36 @@ public class SuggestionListener {
 
     @SubscribeEvent
     public void onChannelCreate(@NotNull ChannelCreateEvent event) {
+        updateConfigForumIds(event);
+
+        if (isInSuggestionChannel(event)) {
+            NerdBotApp.getBot().getSuggestionCache().addSuggestion(event.getChannel().asThreadChannel());
+        }
+    }
+
+    @SubscribeEvent
+    public void onChannelUpdate(@NotNull ChannelUpdateNameEvent event) {
+        updateConfigForumIds(event);
+    }
+
+    @SubscribeEvent
+    public void onChannelDelete(ChannelDeleteEvent event) {
+        if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
+            Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().asForumChannel());
+
+            if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
+                BotConfig botConfig = NerdBotApp.getBot().getConfig();
+                botConfig.getAlphaProjectConfig().updateForumIds(botConfig, channelType == Suggestion.ChannelType.ALPHA, channelType == Suggestion.ChannelType.PROJECT);
+                log.info("Removed {} suggestion forum from bot config: {} (ID: {})", channelType.getName(), event.getChannel().getName(), event.getChannel().getId());
+            }
+        }
+
+        if (isInSuggestionChannel(event)) {
+            NerdBotApp.getBot().getSuggestionCache().removeSuggestion(event.getChannel().asThreadChannel());
+        }
+    }
+
+    private void updateConfigForumIds(GenericChannelEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
             Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().asForumChannel());
 
@@ -176,27 +207,6 @@ public class SuggestionListener {
 
                 log.info("New {} suggestion forum created and added to bot config: {} (ID: {})", channelType.getName(), event.getChannel().getName(), event.getChannel().getId());
             }
-        }
-
-        if (isInSuggestionChannel(event)) {
-            NerdBotApp.getBot().getSuggestionCache().addSuggestion(event.getChannel().asThreadChannel());
-        }
-    }
-
-    @SubscribeEvent
-    public void onChannelDelete(ChannelDeleteEvent event) {
-        if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().asForumChannel());
-
-            if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
-                BotConfig botConfig = NerdBotApp.getBot().getConfig();
-                botConfig.getAlphaProjectConfig().updateForumIds(botConfig, channelType == Suggestion.ChannelType.ALPHA, channelType == Suggestion.ChannelType.PROJECT);
-                log.info("Removed {} suggestion forum from bot config: {} (ID: {})", channelType.getName(), event.getChannel().getName(), event.getChannel().getId());
-            }
-        }
-
-        if (isInSuggestionChannel(event)) {
-            NerdBotApp.getBot().getSuggestionCache().removeSuggestion(event.getChannel().asThreadChannel());
         }
     }
 

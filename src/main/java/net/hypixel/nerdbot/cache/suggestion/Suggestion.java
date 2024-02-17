@@ -14,6 +14,7 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -151,14 +152,10 @@ public class Suggestion {
         private final String name;
 
         public static ChannelType getType(String name) {
-            for (ChannelType channelType : VALUES) {
-                if (channelType.name().equalsIgnoreCase(name)) {
-                    return channelType;
-                }
-            }
-
-            return UNKNOWN;
+            return Arrays.stream(VALUES)
+                .filter(channelType -> channelType.name().equalsIgnoreCase(name))
+                .findFirst()
+                .orElse(UNKNOWN);
         }
-
     }
 }
