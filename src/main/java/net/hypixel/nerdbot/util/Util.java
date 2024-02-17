@@ -65,6 +65,12 @@ public class Util {
     private static final String REGEX = "^[a-zA-Z0-9_]{2,16}";
     @Deprecated
     private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
+    public static final String[] PROJECT_CHANNEL_NAMES = {
+        "project",
+        "projəct",
+        "nerd-project",
+        "nerds-project"
+    };
 
     private Util() {
     }
@@ -236,7 +242,7 @@ public class Util {
 
         if (channelName.contains("alpha")) {
             return Suggestion.ChannelType.ALPHA;
-        } else if (channelName.contains("project") || channelName.contains("projəct") || channelName.contains("nerd-project")) {
+        } else if (Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channelName::contains)) {
             return Suggestion.ChannelType.PROJECT;
         } else {
             return Suggestion.ChannelType.NORMAL;
