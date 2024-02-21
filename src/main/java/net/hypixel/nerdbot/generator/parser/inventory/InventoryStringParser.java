@@ -33,7 +33,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
             String[] components = item.split(":", 2);
 
             if (components.length != 2) {
-                throw new GeneratorException("Unknown recipe item: `%s`", item);
+                throw new GeneratorException("Unknown inventory item: `%s`", item);
             }
 
             // getting the material data
@@ -84,7 +84,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
                 amounts[index] = Range.between(1, 64).fit(Integer.parseInt(targetSlot[1].trim()));
                 index++;
             } catch (NumberFormatException exception) {
-                throw new GeneratorException(String.format("Invalid slot or amount: `%s` in slot data: `%s` for material: `%s,%s`", pair.trim(), slotMap, material, data));
+                throw new GeneratorException("Invalid slot or amount: `%s` in slot data: `%s` for material: `%s,%s`", pair.trim(), slotMap, material, data);
             }
         }
         return new InventoryItem(slots, amounts, material, data);
