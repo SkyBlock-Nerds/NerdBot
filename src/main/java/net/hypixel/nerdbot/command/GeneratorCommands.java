@@ -16,7 +16,6 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.generator.builder.ItemBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.image.MinecraftInventoryImage;
 import net.hypixel.nerdbot.generator.impl.*;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.util.ImageUtil;
@@ -126,19 +125,15 @@ public class GeneratorCommands extends ApplicationCommand {
         renderBackground = renderBackground == null || renderBackground;
 
         try {
-            MinecraftInventoryGenerator inventoryGenerator = new MinecraftInventoryGenerator.Builder()
-                .withRows(3)
-                .withSlotsPerRow(3)
-                .drawTitle(false)
-                .drawBorder(false)
-                .drawBackground(renderBackground)
-                .build();
-
-            MinecraftInventoryImage inventory = inventoryGenerator.generate();
-            inventory.drawItems(recipeString);
-
             GeneratedObject generatedObject = new ItemBuilder()
-                .addGenerator(inventory).build();
+                .addGenerator(new MinecraftInventoryGenerator.Builder()
+                    .withRows(3)
+                    .withSlotsPerRow(3)
+                    .drawBorder(false)
+                    .drawBackground(renderBackground)
+                    .withInventoryString(recipeString)
+                    .build())
+                .build();
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
         } catch (GeneratorException exception) {
@@ -163,19 +158,16 @@ public class GeneratorCommands extends ApplicationCommand {
         drawBorder = drawBorder == null || drawBorder;
 
         try {
-            MinecraftInventoryGenerator inventoryGenerator = new MinecraftInventoryGenerator.Builder()
-                .withRows(rows)
-                .withSlotsPerRow(slotsPerRow)
-                .drawTitle(containerName != null)
-                .drawBorder(drawBorder)
-                .build();
-
-            MinecraftInventoryImage inventory = inventoryGenerator.generate();
-            inventory.drawItems(inventoryString);
-            inventory.setTitle(containerName);
-
             GeneratedObject generatedObject = new ItemBuilder()
-                .addGenerator(inventory).build();
+                .addGenerator(new MinecraftInventoryGenerator.Builder()
+                    .withRows(rows)
+                    .withSlotsPerRow(slotsPerRow)
+                    .drawBorder(drawBorder)
+                    .drawBackground(true)
+                    .withContainerTitle(containerName)
+                    .withInventoryString(inventoryString)
+                    .build())
+                .build();
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "inventory.png")).queue();
         } catch (GeneratorException exception) {
@@ -310,18 +302,13 @@ public class GeneratorCommands extends ApplicationCommand {
             }
 
             if (recipeString != null) {
-                MinecraftInventoryGenerator inventoryGenerator = new MinecraftInventoryGenerator.Builder()
-                    .withRows(3)
-                    .withSlotsPerRow(3)
-                    .drawTitle(false)
-                    .drawBorder(false)
-                    .drawBackground(true)
-                    .build();
-
-                MinecraftInventoryImage inventory = inventoryGenerator.generate();
-                inventory.drawItems(recipeString);
-
-                itemBuilder.addGenerator(0, inventory);
+                itemBuilder.addGenerator(0, new MinecraftInventoryGenerator.Builder()
+                        .withRows(3)
+                        .withSlotsPerRow(3)
+                        .drawBorder(false)
+                        .withInventoryString(recipeString)
+                        .build()
+                    ).build();
             }
 
             if (tooltipSide != null && MinecraftTooltipGenerator.TooltipSide.valueOf(tooltipSide.toUpperCase()) == MinecraftTooltipGenerator.TooltipSide.LEFT) {
