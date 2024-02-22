@@ -7,7 +7,6 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -50,10 +49,8 @@ import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
 import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
-import net.hypixel.nerdbot.curator.ForumGreenlitChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.LoggingUtil;
 import net.hypixel.nerdbot.util.TimeUtil;
@@ -67,9 +64,7 @@ import org.apache.logging.log4j.Level;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -133,87 +128,6 @@ public class AdminCommands extends ApplicationCommand {
                 TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
             } else {
                 TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_messages", output.size(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime());
-            }
-        });
-    }
-
-    @JDASlashCommand(name = "export", subcommand = "greenlit", description = "Exports all Greenlit Forum posts into a CSV format for usage in Google Sheets", defaultLocked = true)
-    public void exportGreenlitThreads(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Disregards any post before this UNIX timestamp, defaults to 0.") long suggestionsAfter) {
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
-
-        if (discordUser == null) {
-            TranslationManager.reply(event, "generic.not_found", "User");
-            return;
-        }
-
-        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.reply(event, discordUser, "database.not_connected");
-            log.error("Couldn't connect to the database!");
-            return;
-        }
-
-        Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumGreenlitChannelCurator(true);
-        NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
-            event.deferReply(true).complete();
-
-            TimerTask task = new TimerTask() {
-                @Override
-                public void run() {
-                    NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
-                        if (forumChannelCurator.isCompleted()) {
-                            this.cancel();
-                            return;
-                        }
-
-                        if (forumChannelCurator.getCurrentObject() == null) {
-                            return;
-                        }
-
-                        event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
-                            + " in " + TimeUtil.formatMsCompact(System.currentTimeMillis() - forumChannelCurator.getStartTime()) + "ms"
-                            + "\nCurrently looking at " + forumChannelCurator.getCurrentObject().getJumpUrl()
-                        ).queue();
-                    });
-                }
-            };
-
-            Timer timer = new Timer();
-            timer.scheduleAtFixedRate(task, 0, 1_000);
-
-            List<GreenlitMessage> output = forumChannelCurator.curate(channel);
-
-            if (output.isEmpty()) {
-                TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
-                return;
-            }
-
-            StringBuilder csvOutput = new StringBuilder();
-            for (GreenlitMessage greenlitMessage : output) {
-                // If we manually limited the timestamps to before "x" time (defaults to 0 btw) it "removes" the greenlit suggestions from appearing in the linked CSV file.
-                if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
-                    // The Format is shown below, Tabs (\t) are the separators between values, as commas cannot be used, but It's still in the CSV file format due to Google Sheets Default Import only accepting CSV files.
-                    // Timestamp Posted, Tags, Suggestion Title (Hyperlinked to the post), Reserved Location, Reserved Location, Reserved Location, Reserved Location, Reserved Location
-                    csvOutput.append("=EPOCHTODATE(").append(greenlitMessage.getSuggestionTimestamp() / 1_000L)
-                        .append(")\t")
-                        .append(String.join(", ", greenlitMessage.getTags()))
-                        .append("\t=HYPERLINK(\"")
-                        .append(greenlitMessage.getSuggestionUrl()).append("\", \"")
-                        .append(greenlitMessage.getSuggestionTitle()).append("\")")
-                        .append("\t\t\t\t\t\t")
-                        .append("\n");
-                }
-            }
-
-            String csvString = csvOutput.toString();
-            String fileName = String.format(channel.getName() + "-%s.csv", DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("ECT", ZoneId.SHORT_IDS)).format(Instant.now()));
-
-            try {
-                event.getHook().sendMessage(TranslationManager.translate("curator.greenlit_import_instructions", discordUser)).setEphemeral(true).addFiles(FileUpload.fromData(Util.createTempFile(fileName, csvString))).queue();
-            } catch (IOException exception) {
-                TranslationManager.edit(event.getHook(), discordUser, "commands.temp_file_error", exception.getMessage());
-                log.error("Failed to create temp file!", exception);
-                log.error("File contents:\n" + csvString);
             }
         });
     }
@@ -572,35 +486,6 @@ public class AdminCommands extends ApplicationCommand {
         PrometheusMetrics.setMetricsEnabled(metricsConfig.isEnabled());
 
         TranslationManager.reply(event, discordUser, "commands.metrics.toggle", metricsConfig.isEnabled());
-    }
-
-    @JDASlashCommand(
-        name = "user",
-        subcommand = "list",
-        description = "Get all assigned Minecraft Names/UUIDs from all specified roles (requires Member) in the server.",
-        defaultLocked = true
-    )
-    public void userList(GuildSlashEvent event, @Optional @AppOption(description = "Comma-separated role names to search for (default Member).") String roles) throws IOException {
-        event.deferReply(true).complete();
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        String[] roleArray = roles != null ? roles.split(", ?") : new String[]{"Member"};
-        JsonArray uuidArray = new JsonArray();
-
-        List<MojangProfile> profiles = event.getGuild()
-            .loadMembers()
-            .get()
-            .stream()
-            .filter(member -> !member.getUser().isBot())
-            .filter(member -> RoleManager.hasAnyRole(member, roleArray))
-            .map(member -> discordUserRepository.findById(member.getId()))
-            .filter(DiscordUser::isProfileAssigned)
-            .map(DiscordUser::getMojangProfile)
-            .toList();
-
-        log.info("Found " + profiles.size() + " members meeting requirements.");
-        profiles.forEach(profile -> uuidArray.add(profile.getUniqueId().toString()));
-        File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(uuidArray));
-        event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
 
     @JDASlashCommand(
