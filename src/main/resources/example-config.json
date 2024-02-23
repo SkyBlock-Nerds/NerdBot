@@ -39,6 +39,7 @@
     "alphaArchiveCategoryId": "",
     "announcementChannelId": "",
     "botSpamChannelId": "",
+    "pollChannelId": "",
     "genChannelIds": [],
     "reactionChannels": [],
     "blacklistedChannels": []
