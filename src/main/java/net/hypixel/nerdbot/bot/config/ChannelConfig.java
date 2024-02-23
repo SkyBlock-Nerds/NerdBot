@@ -50,6 +50,11 @@ public class ChannelConfig {
     private String botSpamChannelId = "";
 
     /**
+     * The {@link TextChannel} ID for the poll channel
+     */
+    private String pollChannelId = "";
+
+    /**
      * The {@link TextChannel} ID for the itemgen channel
      */
     private String[] genChannelIds = {};
