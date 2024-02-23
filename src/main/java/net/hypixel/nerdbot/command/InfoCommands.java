@@ -138,7 +138,7 @@ public class InfoCommands extends ApplicationCommand {
 
         builder.append("- Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n")
             .append("- Environment: ").append(Environment.getEnvironment()).append("\n")
-            .append("- Uptime: ").append(TimeUtil.formatMs(NerdBotApp.getBot().getUptime())).append("\n")
+            .append("- Uptime: ").append(TimeUtil.formatMsCompact(NerdBotApp.getBot().getUptime())).append("\n")
             .append("- Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
 
         event.reply(builder.toString()).setEphemeral(true).queue();
