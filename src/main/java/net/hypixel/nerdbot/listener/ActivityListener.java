@@ -41,7 +41,7 @@ public class ActivityListener {
         UpdateResult result = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).saveToDatabase(new DiscordUser(event.getMember()));
 
         if (!result.wasAcknowledged() || result.getModifiedCount() == 0) {
-            throw new RepositoryException("Failed to save new user '" + event.getUser().getName() + "' to database!");
+            throw new RepositoryException("Failed to save new user '" + event.getUser().getName() + "' to database! (" + result + ")");
         }
 
         log.info("User {} joined {}", event.getUser().getName(), event.getGuild().getName());
@@ -52,7 +52,7 @@ public class ActivityListener {
         DeleteResult result = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).deleteFromDatabase(event.getUser().getId());
 
         if (!result.wasAcknowledged() || result.getDeletedCount() == 0) {
-            throw new RepositoryException("Failed to delete user '" + event.getUser().getName() + "' from database!");
+            throw new RepositoryException("Failed to delete user '" + event.getUser().getName() + "' from database! (" + result + ")");
         }
 
         log.info("User {} left {}", event.getUser().getName(), event.getGuild().getName());
