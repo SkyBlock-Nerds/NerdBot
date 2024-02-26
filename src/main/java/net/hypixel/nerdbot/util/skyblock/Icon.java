@@ -13,7 +13,8 @@ public enum Icon {
     STAR("✪", "Star", IconParser::repeatingIconParser),
     STARRED("⚚", "Starred"),
     FRAGGED("⚚", "Starred"),
-    BINGO("Ⓑ", "Bingo");
+    BINGO("Ⓑ", "Bingo"),
+    ZONE("⏣", "Zone");
 
     public static final Icon[] VALUES = values();
 
