@@ -195,7 +195,7 @@ public class GeneratorCommands extends ApplicationCommand {
                                  @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
                                  @Optional @AppOption(description = DESC_PADDING) Integer padding,
                                  @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
-                                 @Optional @AppOption(description = DESC_ITEM_ID, name = "display_item_id") String itemID,
+                                 @Optional @AppOption(description = DESC_ITEM_ID) String itemId,
                                  @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraModifiers,
                                  @Optional @AppOption(description = DESC_RECIPE) String recipe,
                                  @Optional @AppOption(description = DESC_RENDER_INVENTORY) Boolean renderBackground,
@@ -207,7 +207,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply(hidden).complete();
 
         // checking that there are two or more different items to merge the images
-        if ((itemName == null || rarity == null || itemLore == null) && itemID == null && recipe == null) {
+        if ((itemName == null || rarity == null || itemLore == null) && itemId == null && recipe == null) {
             event.getHook().sendMessage(MISSING_FULL_GEN_ITEM).queue();
             return;
         }
@@ -226,8 +226,8 @@ public class GeneratorCommands extends ApplicationCommand {
 
         // building the item for the which is beside the description
         BufferedImage generatedItem = null;
-        if (itemID != null) {
-            generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, false);
+        if (itemId != null) {
+            generatedItem = builder.buildUnspecifiedItem(event, itemId, extraModifiers, false);
             if (generatedItem == null) {
                 return;
             }
