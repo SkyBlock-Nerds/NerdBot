@@ -299,25 +299,34 @@ public class Util {
     }
 
     public static MojangProfile getMojangProfile(String username) throws HttpException {
-        String url = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
+        String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
+        String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
         MojangProfile mojangProfile;
-        int statusCode;
 
-        try (Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer()) {
-            HttpResponse<String> httpResponse = getHttpResponse(url);
-            statusCode = httpResponse.statusCode();
-            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
-
-            requestTimer.observeDuration();
+        try {
+            String httpResponse = sendRequestWithFallback(mojangUrl, ashconUrl);
+            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse, MojangProfile.class);
         } catch (Exception exception) {
             throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + exception.getMessage(), exception);
         }
 
-        if (statusCode != 200) {
-            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + mojangProfile.getErrorMessage());
-        }
-
         return mojangProfile;
+    }
+
+    @Nullable
+    private static String sendRequestWithFallback(String primaryUrl, String fallbackUrl) {
+        try {
+            return getHttpResponse(primaryUrl).body();
+        } catch (IOException | InterruptedException exception) {
+            log.error("An error occurred while sending a request to primary URL!", exception);
+
+            try {
+                return getHttpResponse(fallbackUrl).body();
+            } catch (IOException | InterruptedException fallbackException) {
+                log.error("An error occurred while sending a request to fallback URL!", fallbackException);
+                return null;
+            }
+        }
     }
 
     @NotNull
@@ -335,8 +344,9 @@ public class Util {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
+
     public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws HttpException {
-        String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId.toString());
+        String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId);
         Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
 
         try {

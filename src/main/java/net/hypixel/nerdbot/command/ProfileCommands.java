@@ -34,12 +34,13 @@ import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.HttpException;
-import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
+import net.hypixel.nerdbot.util.exception.MojangProfileException;
+import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 
-import java.awt.*;
+import java.awt.Color;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -72,6 +73,10 @@ public class ProfileCommands extends ApplicationCommand {
 
         try {
             MojangProfile mojangProfile = requestMojangProfile(event.getMember(), username, true);
+
+            if (mojangProfile.getErrorMessage() != null) {
+                throw new MojangProfileException(mojangProfile.getErrorMessage());
+            }
 
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
             TranslationManager.edit(event.getHook(), discordUser, "commands.verify.request_sent");
@@ -116,7 +121,7 @@ public class ProfileCommands extends ApplicationCommand {
                 .queue(), () -> {
                 log.warn("Profile verification log channel not found!");
             });
-        } catch (HttpException | ProfileMismatchException exception) {
+        } catch (HttpException | MojangProfileException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
         } catch (Exception exception) {
             log.error("Encountered an error while requesting verification for " + event.getMember().getUser().getName() + " (ID: " + event.getMember().getId() + ") with username " + username + "!", exception);
@@ -170,7 +175,7 @@ public class ProfileCommands extends ApplicationCommand {
                     .queue();
             }, () -> log.warn("Log channel not found!"));
 
-        } catch (HttpException | ProfileMismatchException exception) {
+        } catch (HttpException | MojangProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
         } catch (Exception exception) {
             log.error("Encountered an error while linking " + member.getUser().getName() + " (ID: " + member.getId() + ") to " + username + "!", exception);
@@ -334,8 +339,14 @@ public class ProfileCommands extends ApplicationCommand {
         return List.of(UserLanguage.VALUES);
     }
 
-    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws ProfileMismatchException, HttpException {
+    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws MojangProfileMismatchException, HttpException, MojangProfileException {
         MojangProfile mojangProfile = Util.getMojangProfile(username);
+        System.out.println("Mojang profile: " + mojangProfile);
+
+        if (mojangProfile.getErrorMessage() != null) {
+            throw new MojangProfileException(mojangProfile.getErrorMessage());
+        }
+
         HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
 
         if (!hypixelPlayerResponse.isSuccess()) {
@@ -343,7 +354,7 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
-            throw new ProfileMismatchException("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
+            throw new MojangProfileMismatchException("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
         }
 
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
@@ -354,7 +365,7 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         if (enforceSocial && !discordName.equalsIgnoreCase(discord)) {
-            throw new ProfileMismatchException("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
+            throw new MojangProfileMismatchException("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
         }
 
         return mojangProfile;
