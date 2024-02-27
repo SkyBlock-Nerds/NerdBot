@@ -80,6 +80,23 @@ public class ReminderCommands extends ApplicationCommand {
         return Date.from(date);
     }
 
+    private Date parseAsLong(String time) {
+        return new Date(Long.parseLong(time));
+    }
+
+    private Date parseWithNatty(String time) {
+        try {
+            Parser parser = new Parser();
+            List<DateGroup> groups = parser.parse(time);
+            DateGroup group = groups.get(0);
+            List<Date> dates = group.getDates();
+            return dates.get(0);
+        } catch (IndexOutOfBoundsException e) {
+            // If Natty parsing fails, try custom format
+            return parseCustomFormat(time);
+        }
+    }
+
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
     public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description, @AppOption(description = "Send the reminder publicly in this channel") @Optional Boolean sendPublicly) {
         event.deferReply(true).complete();
@@ -113,27 +130,13 @@ public class ReminderCommands extends ApplicationCommand {
             return;
         }
 
-        Date date = null;
-        boolean parsed = false;
-
-        // Try parse the time using the Natty dependency
+        Date date;
         try {
-            Parser parser = new Parser();
-            List<DateGroup> groups = parser.parse(time);
-            DateGroup group = groups.get(0);
-
-            List<Date> dates = group.getDates();
-            date = dates.get(0);
-            parsed = true;
-        } catch (IndexOutOfBoundsException ignored) {
-            // Ignore this exception, it means that the provided time was not parsed
-        }
-
-        // Try parse the time using the regex if the above failed
-        if (!parsed) {
+            date = parseAsLong(time);
+        } catch (NumberFormatException numberFormatException) {
             try {
-                date = parseCustomFormat(time);
-            } catch (DateTimeParseException exception) {
+                date = parseWithNatty(time);
+            } catch (DateTimeParseException dateTimeParseException) {
                 TranslationManager.edit(event.getHook(), user, "commands.reminders.invalid_time_format");
                 return;
             }
