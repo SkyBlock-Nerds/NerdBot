@@ -303,6 +303,10 @@ public class Util {
         String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
         MojangProfile mojangProfile;
 
+        if (isUUID(username)) {
+            mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", username);
+        }
+
         try {
             String httpResponse = sendRequestWithFallback(mojangUrl, ashconUrl);
             mojangProfile = NerdBotApp.GSON.fromJson(httpResponse, MojangProfile.class);
