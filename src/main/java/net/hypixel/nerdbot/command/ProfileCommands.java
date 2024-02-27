@@ -341,7 +341,6 @@ public class ProfileCommands extends ApplicationCommand {
 
     public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws MojangProfileMismatchException, HttpException, MojangProfileException {
         MojangProfile mojangProfile = Util.getMojangProfile(username);
-        System.out.println("Mojang profile: " + mojangProfile);
 
         if (mojangProfile.getErrorMessage() != null) {
             throw new MojangProfileException(mojangProfile.getErrorMessage());
