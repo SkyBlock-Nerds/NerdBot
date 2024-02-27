@@ -164,7 +164,7 @@ public class GeneratorCommands extends ApplicationCommand {
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "display", description = "Draws a Minecraft item into a file")
     public void generateItemImage(GuildSlashEvent event,
                                   @AppOption(description = DESC_ITEM_ID, name = "item_id") String itemID,
-                                  @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraDetails,
+                                  @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraModifiers,
                                   @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
@@ -172,7 +172,7 @@ public class GeneratorCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).complete();
 
-        BufferedImage item = builder.buildUnspecifiedItem(event, itemID, extraDetails, true);
+        BufferedImage item = builder.buildUnspecifiedItem(event, itemID, extraModifiers, true);
         if (item != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(item))).setEphemeral(hidden).queue();
         }
