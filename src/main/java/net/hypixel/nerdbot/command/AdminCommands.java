@@ -56,7 +56,8 @@ import net.hypixel.nerdbot.util.LoggingUtil;
 import net.hypixel.nerdbot.util.TimeUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.HttpException;
-import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
+import net.hypixel.nerdbot.util.exception.MojangProfileException;
+import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.logging.log4j.Level;
@@ -541,8 +542,11 @@ public class AdminCommands extends ApplicationCommand {
         } catch (HttpException exception) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.user.username_not_found", username, exception.getMessage());
             log.error("Unable to locate Minecraft UUID for " + username + "!", exception);
-        } catch (ProfileMismatchException exception) {
+        } catch (MojangProfileMismatchException exception) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.user.profile_mismatch", username, exception.getMessage());
+        } catch (MojangProfileException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("An error occurred when fetching the Mojang profile for " + member.getId() + "!", exception);
         }
     }
 
