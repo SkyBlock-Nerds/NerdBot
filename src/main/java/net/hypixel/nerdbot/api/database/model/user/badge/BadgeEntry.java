@@ -2,30 +2,28 @@ package net.hypixel.nerdbot.api.database.model.user.badge;
 
 import lombok.Getter;
 
-import java.util.Date;
-
 @Getter
 public class BadgeEntry {
 
     private final String badgeId;
     private final int tier;
-    private final Date obtainedAt;
+    private final long obtainedAt;
 
-    public BadgeEntry(String badgeId, int tier, Date obtainedAt) {
+    public BadgeEntry(String badgeId, int tier, long obtainedAt) {
         this.badgeId = badgeId;
         this.tier = tier;
         this.obtainedAt = obtainedAt;
     }
 
-    public BadgeEntry(String badgeId, Date obtainedAt) {
+    public BadgeEntry(String badgeId, long obtainedAt) {
         this(badgeId, -1, obtainedAt);
     }
 
     public BadgeEntry(String badgeId) {
-        this(badgeId, new Date());
+        this(badgeId, System.currentTimeMillis());
     }
 
     public BadgeEntry(String badgeId, int tier) {
-        this(badgeId, tier, new Date());
+        this(badgeId, tier, System.currentTimeMillis());
     }
 }

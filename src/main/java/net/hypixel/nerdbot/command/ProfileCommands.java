@@ -367,7 +367,7 @@ public class ProfileCommands extends ApplicationCommand {
             .setColor(Color.PINK)
             .setDescription(discordUser.getBadges().stream().map(badgeEntry -> {
                 Badge badge = BadgeManager.getBadgeById(badgeEntry.getBadgeId());
-                DiscordTimestamp timestamp = new DiscordTimestamp(badgeEntry.getObtainedAt().getTime());
+                DiscordTimestamp timestamp = new DiscordTimestamp(badgeEntry.getObtainedAt());
 
                 if (badgeEntry.getTier() > 1) {
                     TieredBadge tieredBadge = BadgeManager.getTieredBadgeById(badgeEntry.getBadgeId());

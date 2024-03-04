@@ -116,7 +116,7 @@ public class BadgeCommands extends ApplicationCommand {
     public void badgeList(GuildSlashEvent event) {
         event.deferReply(true).complete();
 
-        StringBuilder sb = new StringBuilder("Badges (" + BadgeManager.getBadgeMap().size() + "):\n");
+        StringBuilder sb = new StringBuilder("Available Badges (" + BadgeManager.getBadgeMap().size() + "):\n");
 
         BadgeManager.getBadgeMap().forEach((key, value) -> {
             sb.append("- ");
