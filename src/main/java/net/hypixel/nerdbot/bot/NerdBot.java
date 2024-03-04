@@ -2,9 +2,6 @@ package net.hypixel.nerdbot.bot;
 
 import com.freya02.botcommands.api.CommandsBuilder;
 import com.freya02.botcommands.api.components.DefaultComponentManager;
-import com.github.ygimenez.exception.InvalidHandlerException;
-import com.github.ygimenez.method.Pages;
-import com.github.ygimenez.model.PaginatorBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.bulk.BulkWriteResult;
@@ -177,12 +174,6 @@ public class NerdBot implements Bot {
         }
 
         jda = builder.build();
-
-        try {
-            Pages.activate(PaginatorBuilder.createSimplePaginator(jda));
-        } catch (InvalidHandlerException exception) {
-            log.error("Failed to create paginator!", exception);
-        }
 
         try {
             jda.awaitReady();
