@@ -620,6 +620,25 @@ public class AdminCommands extends ApplicationCommand {
 
     @JDASlashCommand(
         name = "user",
+        subcommand = "badges",
+        description = "View the badges of a user",
+        defaultLocked = true
+    )
+    public void viewUserBadges(GuildSlashEvent event, @AppOption(description = "The user to search") Member member) {
+        event.deferReply(true).queue();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId());
+
+        if (discordUser == null) {
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
+            return;
+        }
+
+        event.getHook().editOriginalEmbeds(ProfileCommands.createBadgesEmbed(member, discordUser, event.getUser().getId().equals(member.getId()))).queue();
+    }
+
+    @JDASlashCommand(
+        name = "user",
         group = "migrate",
         subcommand = "names",
         description = "Attempts to migrate any user with no assigned Mojang Profile using their display name.",
