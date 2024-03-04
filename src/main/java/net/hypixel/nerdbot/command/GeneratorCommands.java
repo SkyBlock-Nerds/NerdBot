@@ -421,7 +421,7 @@ public class GeneratorCommands extends ApplicationCommand {
         itemText.replace(itemText.length() - 2, itemText.length(), "");
         // checking if there was supposed to be an item stack is displayed with the item
         if (includeItem) {
-            itemGenCommand.append(" display_item_id:").append(itemID).append(extraModifiers.length() != 0 ? " extra_modifiers:" + extraModifiers : "");
+            itemGenCommand.append(" item_id:").append(itemID).append(extraModifiers.length() != 0 ? " extra_modifiers:" + extraModifiers : "");
         }
 
         // creating the generated description
