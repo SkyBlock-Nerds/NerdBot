@@ -4,9 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.MongoException;
 import lombok.extern.log4j.Log4j2;
+import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.gson.adapter.BadgeTypeAdapter;
 import net.hypixel.nerdbot.util.gson.adapter.InstantTypeAdapter;
 import net.hypixel.nerdbot.util.gson.adapter.UUIDTypeAdapter;
 import sun.misc.Signal;
@@ -27,6 +29,7 @@ public class NerdBotApp {
         .setPrettyPrinting()
         .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
         .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
+        .registerTypeAdapter(Badge.class, new BadgeTypeAdapter())
         .create();
 
     private static Bot bot;

@@ -1,6 +1,6 @@
 {
   "generic": {
-    "not_found": "%s not found",
+    "user_not_found": "User not found",
     "could_not_find": "Could not find %s"
   },
   "permissions": {
@@ -22,6 +22,7 @@
     "member_removed_not_found": "Could not find member with ID %s who left the server!"
   },
   "repository": {
+    "not_found": "Could not find a repository with that name!",
     "saved_to_database": "Saved %d documents to the database!",
     "loaded_from_database": "Loaded %d documents from the database!",
     "save_error": "An error occurred while saving the repository: %s",
@@ -39,6 +40,23 @@
     "cannot_be_used_here": "This command cannot be used here!",
     "invalid_uuid": "Invalid UUID!",
     "temp_file_error": "Failed to create temporary file: %s",
+    "profile": {
+      "no_badges": "You do not have any badges!"
+    },
+    "badge": {
+      "invalid_badge": "%s is an invalid Badge ID!",
+      "invalid_tier": "%s is an invalid Badge Tier! It only has %d tiers.",
+      "gave_tier": "Gave Tier %d of the %s badge to %s!",
+      "gave_badge": "Gave badge %s to %s!",
+      "already_has_tier": "%s already has Tier %d of the %s badge!",
+      "already_has_badge": "%s already has the %s badge!",
+      "does_not_have_tier": "%s does not have Tier %d of the %s badge!",
+      "does_not_have_badge": "%s does not have the %s badge!",
+      "failed_to_give_badge": "Failed to give the %s badge to %s!",
+      "removed_tier": "Removed Tier %d of the %s badge from %s!",
+      "removed_badge": "Removed the %s badge from %s!",
+      "failed_to_list": "Failed to list all available badges! Please try again later!"
+    },
     "language": {
       "language_set": "You set your language to %s"
     },

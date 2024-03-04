@@ -2,6 +2,9 @@ package net.hypixel.nerdbot.bot;
 
 import com.freya02.botcommands.api.CommandsBuilder;
 import com.freya02.botcommands.api.components.DefaultComponentManager;
+import com.github.ygimenez.exception.InvalidHandlerException;
+import com.github.ygimenez.method.Pages;
+import com.github.ygimenez.model.PaginatorBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.bulk.BulkWriteResult;
@@ -19,10 +22,11 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
+import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.api.repository.Repository;
@@ -33,11 +37,7 @@ import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.MessageCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.cache.suggestion.SuggestionCache;
-import net.hypixel.nerdbot.feature.ActivityPurgeFeature;
-import net.hypixel.nerdbot.feature.CurateFeature;
-import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
-import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
-import net.hypixel.nerdbot.feature.UserGrabberFeature;
+import net.hypixel.nerdbot.feature.*;
 import net.hypixel.nerdbot.listener.*;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -78,15 +78,20 @@ public class NerdBot implements Bot {
     private final Database database = new Database(System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/"), "skyblock_nerds");
     private JDA jda;
     private BotConfig config;
-    @Getter private SuggestionCache suggestionCache;
-    @Getter private MessageCache messageCache;
-    @Getter private long startTime;
+    @Getter
+    private SuggestionCache suggestionCache;
+    @Getter
+    private MessageCache messageCache;
+    @Getter
+    private long startTime;
 
     public NerdBot() {
     }
 
     @Override
     public void onStart() {
+        BadgeManager.loadBadges();
+
         DiscordUserRepository discordUserRepository = database.getRepositoryManager().getRepository(DiscordUserRepository.class);
         if (discordUserRepository != null) {
             discordUserRepository.loadAllDocumentsIntoCache();
@@ -172,6 +177,12 @@ public class NerdBot implements Bot {
         }
 
         jda = builder.build();
+
+        try {
+            Pages.activate(PaginatorBuilder.createSimplePaginator(jda));
+        } catch (InvalidHandlerException exception) {
+            log.error("Failed to create paginator!", exception);
+        }
 
         try {
             jda.awaitReady();

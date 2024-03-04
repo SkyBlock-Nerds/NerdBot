@@ -22,9 +22,12 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.model.user.BirthdayData;
+import net.hypixel.nerdbot.api.badge.Badge;
+import net.hypixel.nerdbot.api.badge.BadgeManager;
+import net.hypixel.nerdbot.api.badge.TieredBadge;
+import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
+import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
@@ -33,6 +36,7 @@ import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.MojangProfileException;
 import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
@@ -209,16 +213,34 @@ public class ProfileCommands extends ApplicationCommand {
 
         event.getHook().editOriginalEmbeds(
             new EmbedBuilder()
-                .setAuthor(event.getMember().getEffectiveName() + " (" + event.getMember().getUser().getName() + ")")
+                .setAuthor(event.getMember().getEffectiveName() + " (ID: " + event.getMember().getId() + ")")
                 .setTitle("Your Profile")
                 .setThumbnail(event.getMember().getEffectiveAvatarUrl())
                 .setColor(event.getMember().getColor())
-                .addField("ID", event.getMember().getId(), false)
                 .addField("Mojang Profile", profile, false)
-                .addField("Language", discordUser.getLanguage().getName(), false)
-                .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), false)
+                .addField("Badges", discordUser.getBadges().isEmpty() ? "None" : String.valueOf(discordUser.getBadges().size()), true)
+                .addField("Language", discordUser.getLanguage().getName(), true)
+                .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), true)
                 .build()
         ).queue();
+    }
+
+    @JDASlashCommand(
+        name = "profile",
+        subcommand = "badges",
+        description = "View your badges."
+    )
+    public void myBadges(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+
+        if (discordUser.getBadges().isEmpty()) {
+            TranslationManager.edit(event.getHook(), discordUser, "commands.profile.no_badges");
+            return;
+        }
+
+        event.getHook().editOriginalEmbeds(createBadgesEmbed(event.getMember(), discordUser, true)).queue();
     }
 
     @JDASlashCommand(
@@ -326,7 +348,7 @@ public class ProfileCommands extends ApplicationCommand {
         DiscordUser user = repository.findById(event.getMember().getId());
 
         if (user == null) {
-            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
             return;
         }
 
@@ -339,7 +361,25 @@ public class ProfileCommands extends ApplicationCommand {
         return List.of(UserLanguage.VALUES);
     }
 
-    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws MojangProfileMismatchException, HttpException, MojangProfileException {
+    public static MessageEmbed createBadgesEmbed(Member member, DiscordUser discordUser, boolean viewingSelf) {
+        return new EmbedBuilder()
+            .setTitle(viewingSelf ? "Your Badges" : "Badges of " + member.getEffectiveName())
+            .setColor(Color.PINK)
+            .setDescription(discordUser.getBadges().stream().map(badgeEntry -> {
+                Badge badge = BadgeManager.getBadgeById(badgeEntry.getBadgeId());
+                DiscordTimestamp timestamp = new DiscordTimestamp(badgeEntry.getObtainedAt().getTime());
+
+                if (badgeEntry.getTier() > 1) {
+                    TieredBadge tieredBadge = BadgeManager.getTieredBadgeById(badgeEntry.getBadgeId());
+                    return tieredBadge.getTier(badgeEntry.getTier()).getFormattedName() + " " + tieredBadge.getFormattedName() + " (Obtained " + timestamp.toRelativeTimestamp() + ")";
+                } else {
+                    return badge.getFormattedName() + " (Obtained " + timestamp.toRelativeTimestamp() + ")";
+                }
+            }).reduce((s, s2) -> s + "\n" + s2).orElse("None"))
+            .build();
+    }
+
+    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws HttpException, MojangProfileException {
         MojangProfile mojangProfile = Util.getMojangProfile(username);
 
         if (mojangProfile.getErrorMessage() != null) {
@@ -443,27 +483,27 @@ public class ProfileCommands extends ApplicationCommand {
                 .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentHistory), true)
                 .addField("Create History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Vote History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Comment History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
@@ -477,27 +517,27 @@ public class ProfileCommands extends ApplicationCommand {
                 .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getProjectSuggestionCommentHistory), true)
                 .addField("Created History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Voted History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Commented History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
@@ -511,27 +551,27 @@ public class ProfileCommands extends ApplicationCommand {
                 .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentHistory), true)
                 .addField("Create History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Vote History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Comment History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))

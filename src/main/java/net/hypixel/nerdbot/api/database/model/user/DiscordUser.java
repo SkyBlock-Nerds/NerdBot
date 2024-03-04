@@ -6,6 +6,11 @@ import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
+import net.hypixel.nerdbot.api.badge.Badge;
+import net.hypixel.nerdbot.api.badge.TieredBadge;
+import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
+import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
+import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.ChannelCache;
@@ -21,6 +26,7 @@ import java.util.*;
 public class DiscordUser {
 
     private String discordId;
+    private List<BadgeEntry> badges;
     private UserLanguage language;
     private LastActivity lastActivity;
     private BirthdayData birthdayData;
@@ -30,11 +36,11 @@ public class DiscordUser {
     }
 
     public DiscordUser(String discordId) {
-        this(discordId, UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
+        this(discordId, new ArrayList<>(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
     }
 
     public DiscordUser(Member member) {
-        this(member.getId(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
+        this(member.getId(), new ArrayList<>(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
     }
 
     public int getTotalMessageCount() {
@@ -125,6 +131,37 @@ public class DiscordUser {
         log.info("Setting birthday for " + discordId + " to " + calendar.getTime());
 
         birthdayData.setBirthday(calendar.getTime());
+    }
+
+    public boolean addBadge(Badge badge) {
+        return badges.add(new BadgeEntry(badge.getId()));
+    }
+
+    public boolean addBadge(TieredBadge badge, int tier) {
+        badges.removeIf(badgeEntry -> badgeEntry.getBadgeId().equals(badge.getId()));
+        log.debug("Removed existing tiered badge for " + discordId + " with ID " + badge.getId() + " and tier " + tier);
+
+        if (tier > 0 && tier <= badge.getTiers().size()) {
+            return badges.add(new BadgeEntry(badge.getId(), tier));
+        } else {
+            throw new IllegalArgumentException("Invalid tier for tiered badge");
+        }
+    }
+
+    public boolean hasBadge(Badge badge) {
+        return badges.stream().map(BadgeEntry::getBadgeId).anyMatch(s -> s.equals(badge.getId()));
+    }
+
+    public boolean hasBadge(TieredBadge badge, int tier) {
+        return badges.stream().anyMatch(badgeEntry -> badgeEntry.getBadgeId().equals(badge.getId()) && badgeEntry.getTier() == tier);
+    }
+
+    public boolean removeBadge(Badge badge) {
+        return badges.removeIf(badgeEntry -> badgeEntry.getBadgeId().equals(badge.getId()));
+    }
+
+    public boolean removeBadge(TieredBadge badge, int tier) {
+        return badges.removeIf(badgeEntry -> badgeEntry.getBadgeId().equals(badge.getId()) && badgeEntry.getTier() == tier);
     }
 
     public Optional<Member> getMember() {

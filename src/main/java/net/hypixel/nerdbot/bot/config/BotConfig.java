@@ -50,6 +50,11 @@ public class BotConfig {
     private EmojiConfig emojiConfig = new EmojiConfig();
 
     /**
+     * Configuration for badges
+     */
+    private BadgeConfig badgeConfig = new BadgeConfig();
+
+    /**
      * The {@link Guild} ID that the bot will be running in
      */
     private String guildId = "";

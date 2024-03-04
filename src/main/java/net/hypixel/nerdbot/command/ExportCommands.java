@@ -137,7 +137,7 @@ public class ExportCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.reply(event, "generic.not_found", "User");
+            TranslationManager.reply(event, "generic.user_not_found");
             return;
         }
 
