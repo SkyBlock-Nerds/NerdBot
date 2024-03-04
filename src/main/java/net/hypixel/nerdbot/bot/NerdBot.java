@@ -87,7 +87,11 @@ public class NerdBot implements Bot {
 
     @Override
     public void onStart() {
-        BadgeManager.loadBadges();
+        if (config.getBadgeConfig().getBadges() != null) {
+            BadgeManager.loadBadges();
+        } else {
+            log.warn("No badges found in config file, so no badges will be loaded!");
+        }
 
         DiscordUserRepository discordUserRepository = database.getRepositoryManager().getRepository(DiscordUserRepository.class);
         if (discordUserRepository != null) {
