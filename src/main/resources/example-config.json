@@ -60,6 +60,7 @@
     "neutralEmojiId": "",
     "greenlitEmojiId": ""
   },
+  "badgeConfig": {},
   "guildId": "",
   "ownerIds": [],
   "messageLimit": 100,
