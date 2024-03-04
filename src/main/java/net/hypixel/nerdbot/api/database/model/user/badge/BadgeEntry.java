@@ -1,26 +1,24 @@
 package net.hypixel.nerdbot.api.database.model.user.badge;
 
 import lombok.Getter;
+import org.jetbrains.annotations.Nullable;
 
 @Getter
 public class BadgeEntry {
 
     private final String badgeId;
-    private final int tier;
+    @Nullable
+    private final Integer tier;
     private final long obtainedAt;
 
-    public BadgeEntry(String badgeId, int tier, long obtainedAt) {
+    public BadgeEntry(String badgeId, Integer tier, long obtainedAt) {
         this.badgeId = badgeId;
         this.tier = tier;
         this.obtainedAt = obtainedAt;
     }
 
-    public BadgeEntry(String badgeId, long obtainedAt) {
-        this(badgeId, -1, obtainedAt);
-    }
-
     public BadgeEntry(String badgeId) {
-        this(badgeId, System.currentTimeMillis());
+        this(badgeId, null, System.currentTimeMillis());
     }
 
     public BadgeEntry(String badgeId, int tier) {

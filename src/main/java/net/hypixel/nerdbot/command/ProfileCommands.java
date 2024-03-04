@@ -25,8 +25,8 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
-import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
@@ -36,7 +36,6 @@ import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.MojangProfileException;
 import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
@@ -363,19 +362,22 @@ public class ProfileCommands extends ApplicationCommand {
 
     public static MessageEmbed createBadgesEmbed(Member member, DiscordUser discordUser, boolean viewingSelf) {
         return new EmbedBuilder()
-            .setTitle(viewingSelf ? "Your Badges" : "Badges of " + member.getEffectiveName())
+            .setTitle(viewingSelf ? "Your Badges" : (member.getEffectiveName().endsWith("s") ? member.getEffectiveName() + "'" : member.getEffectiveName() + "'s") + " Badges")
             .setColor(Color.PINK)
             .setDescription(discordUser.getBadges().stream().map(badgeEntry -> {
                 Badge badge = BadgeManager.getBadgeById(badgeEntry.getBadgeId());
-                DiscordTimestamp timestamp = new DiscordTimestamp(badgeEntry.getObtainedAt());
+                StringBuilder stringBuilder = new StringBuilder("**");
 
-                if (badgeEntry.getTier() > 1) {
+                if (BadgeManager.isTieredBadge(badgeEntry.getBadgeId()) && badgeEntry.getTier() != null && badgeEntry.getTier() > 1) {
                     TieredBadge tieredBadge = BadgeManager.getTieredBadgeById(badgeEntry.getBadgeId());
-                    return tieredBadge.getTier(badgeEntry.getTier()).getFormattedName() + " " + tieredBadge.getFormattedName() + " (Obtained " + timestamp.toRelativeTimestamp() + ")";
+                    stringBuilder.append(tieredBadge.getTier(badgeEntry.getTier()).getFormattedName()).append(" ").append(tieredBadge.getFormattedName());
                 } else {
-                    return badge.getFormattedName() + " (Obtained " + timestamp.toRelativeTimestamp() + ")";
+                    stringBuilder.append(badge.getFormattedName());
                 }
-            }).reduce((s, s2) -> s + "\n" + s2).orElse("None"))
+
+                stringBuilder.append("**\nObtained on ").append(DateFormatUtils.format(badgeEntry.getObtainedAt(), "MMMM dd, yyyy"));
+                return stringBuilder.toString();
+            }).reduce((s, s2) -> s + "\n\n" + s2).orElse("None :("))
             .build();
     }
 

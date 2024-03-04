@@ -27,6 +27,10 @@ public class BadgeManager {
         return (TieredBadge) BADGE_MAP.get(badgeId);
     }
 
+    public static boolean isTieredBadge(String badgeId) {
+        return BADGE_MAP.get(badgeId) instanceof TieredBadge;
+    }
+
     public static Map<String, Badge> getBadgeMap() {
         return BADGE_MAP;
     }

@@ -348,7 +348,6 @@ public class Util {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-
     public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws HttpException {
         String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId);
         Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
