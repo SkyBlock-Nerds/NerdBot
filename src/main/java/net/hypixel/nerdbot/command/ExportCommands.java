@@ -87,7 +87,6 @@ public class ExportCommands extends ApplicationCommand {
             } catch (Exception exception) {
                 username = threadChannel.getOwnerId();
                 log.error("Failed to get username for thread owner " + threadChannel.getOwnerId(), exception);
-                continue;
             }
 
             int index = threadList.indexOf(threadChannel);
