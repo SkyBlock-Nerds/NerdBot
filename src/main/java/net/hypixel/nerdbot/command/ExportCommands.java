@@ -77,11 +77,17 @@ public class ExportCommands extends ApplicationCommand {
             DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(threadChannel.getOwnerId());
             String username;
 
-            if (discordUser == null || discordUser.noProfileAssigned()) {
-                ThreadMember threadOwner = threadChannel.getOwnerThreadMember() == null ? threadChannel.retrieveThreadMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS) : threadChannel.getOwnerThreadMember();
-                username = threadOwner.getMember().getEffectiveName();
-            } else {
-                username = discordUser.getMojangProfile().getUsername();
+            try {
+                if (discordUser != null && discordUser.isProfileAssigned()) {
+                    username = discordUser.getMojangProfile().getUsername();
+                } else {
+                    ThreadMember threadOwner = threadChannel.getOwnerThreadMember() == null ? threadChannel.retrieveThreadMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS) : threadChannel.getOwnerThreadMember();
+                    username = threadOwner.getMember().getEffectiveName();
+                }
+            } catch (Exception exception) {
+                username = threadChannel.getOwnerId();
+                log.error("Failed to get username for thread owner " + threadChannel.getOwnerId(), exception);
+                continue;
             }
 
             int index = threadList.indexOf(threadChannel);
