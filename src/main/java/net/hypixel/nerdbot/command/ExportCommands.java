@@ -34,7 +34,10 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -215,7 +218,7 @@ public class ExportCommands extends ApplicationCommand {
         });
     }
 
-    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "list", description = "Get all assigned Minecraft Names/UUIDs from all specified roles (requires Member) in the server.", defaultLocked = true)
+    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "uuids", description = "Get all assigned Minecraft Names/UUIDs from all specified roles (requires Member) in the server.", defaultLocked = true)
     public void userList(GuildSlashEvent event, @Optional @AppOption(description = "Comma-separated role names to search for (Default: Member)") String roles) throws IOException {
         event.deferReply(true).complete();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
