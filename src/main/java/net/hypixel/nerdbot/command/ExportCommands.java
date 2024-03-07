@@ -236,4 +236,43 @@ public class ExportCommands extends ApplicationCommand {
         File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(uuidArray));
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
+
+    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "roles", description = "Export a list of users with the given roles", defaultLocked = true)
+    public void exportRoles(GuildSlashEvent event, @AppOption(description = "Comma-separated list of role names (e.g. Role 1, Role 2, Role 3)") String roles) {
+        event.deferReply(true).complete();
+
+        String[] roleArray = roles.split(", ?");
+        Map<String, List<String>> members = new HashMap<>();
+
+        // Group roles as key to a list of members with that role
+        event.getGuild().loadMembers().get().forEach(member -> {
+            List<String> memberRoles = member.getRoles().stream().map(role -> role.getName().toLowerCase()).toList();
+            for (String role : roleArray) {
+                if (memberRoles.contains(role.toLowerCase())) {
+                    members.computeIfAbsent(role, k -> new ArrayList<>()).add(member.getEffectiveName());
+                }
+            }
+        });
+
+        if (members.values().stream().allMatch(List::isEmpty)) {
+            TranslationManager.edit(event.getHook(), "commands.export.none_found");
+            return;
+        }
+
+        try {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            for (Map.Entry<String, List<String>> entry : members.entrySet()) {
+                stringBuilder.append(entry.getKey()).append(":\n");
+                entry.getValue().forEach(member -> stringBuilder.append(member).append("\n"));
+                stringBuilder.append("\n");
+            }
+
+            File file = Util.createTempFile("roles.txt", stringBuilder.toString());
+            event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+        } catch (IOException exception) {
+            log.error("Failed to create temp file!", exception);
+            TranslationManager.reply(event, "commands.temp_file_error", exception.getMessage());
+        }
+    }
 }
