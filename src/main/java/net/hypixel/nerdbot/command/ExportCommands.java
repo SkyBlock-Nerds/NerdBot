@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
+import net.dv8tion.jda.api.exceptions.RateLimitedException;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -45,7 +46,7 @@ public class ExportCommands extends ApplicationCommand {
     private static final String PARENT_COMMAND = "export";
 
     @JDASlashCommand(name = PARENT_COMMAND, subcommand = "threads", description = "Export threads from a Forum Channel", defaultLocked = true)
-    public void exportShenThreads(GuildSlashEvent event, @AppOption ForumChannel forumChannel) {
+    public void exportForumThreads(GuildSlashEvent event, @AppOption ForumChannel forumChannel) {
         event.deferReply(true).queue();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -77,8 +78,14 @@ public class ExportCommands extends ApplicationCommand {
             String username;
 
             if (discordUser == null || discordUser.noProfileAssigned()) {
-                Member owner = threadChannel.getOwner() == null ? threadChannel.getGuild().retrieveMemberById(threadChannel.getOwnerId()).complete() : threadChannel.getOwner();
-                username = owner.getEffectiveName();
+                try {
+                    Member owner = threadChannel.getOwner() == null ? Util.getMainGuild().retrieveMemberById(threadChannel.getOwnerId()).complete(true) : threadChannel.getOwner();
+                    username = owner.getEffectiveName();
+                } catch (RateLimitedException e) {
+                    log.error("Rate limited while retrieving thread owner!", e);
+                    TranslationManager.edit(event.getHook(), commandSender, "commands.export.rate_limited", forumChannel.getName());
+                    continue;
+                }
             } else {
                 username = discordUser.getMojangProfile().getUsername();
             }

@@ -140,7 +140,8 @@
       "exporting_threads": "Exporting threads from %s...",
       "exporting_thread": "Exporting thread %d/%d: %s by %s",
       "exported_thread": "Finished exporting thread %d/%d: %s by %s",
-      "complete": "Finished exporting all threads from %s!"
+      "complete": "Finished exporting all threads from %s!",
+      "rate_limited": "Rate limited while exporting threads from %s! Please try again later!"
     },
     "translations": {
       "reloaded": "Reloaded translations for language %s",
