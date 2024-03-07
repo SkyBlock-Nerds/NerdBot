@@ -147,7 +147,7 @@ public class Suggestion {
         ALPHA("Alpha"),
         PROJECT("Project");
 
-        public static final ChannelType[] VALUES = new ChannelType[] { NORMAL, ALPHA, PROJECT };
+        public static final ChannelType[] VALUES = new ChannelType[]{NORMAL, ALPHA, PROJECT};
 
         private final String name;
 

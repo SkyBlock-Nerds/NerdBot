@@ -18,7 +18,7 @@ public class Item {
 
     /**
      * -- GETTER --
-     *  Gets the name of the sprite
+     * Gets the name of the sprite
      *
      * @return the sprite name
      */
@@ -26,7 +26,7 @@ public class Item {
     private String name;
     /**
      * -- GETTER --
-     *  Gets the x coordinate in the sprite sheet
+     * Gets the x coordinate in the sprite sheet
      *
      * @return the x coordinate of the sprite
      */
@@ -34,15 +34,13 @@ public class Item {
     private int x;
     /**
      * -- GETTER --
-     *  Gets the y coordinate in the sprite sheet
-     *
+     * Gets the y coordinate in the sprite sheet
      */
     @Getter
     private int y;
     /**
      * -- GETTER --
-     *  Gets the size of the image in the sprite sheet
-     *
+     * Gets the size of the image in the sprite sheet
      */
     @Getter
     private int size;

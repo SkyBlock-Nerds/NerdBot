@@ -70,11 +70,11 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
                     log.info("Found new sale data for item " + itemId + "!");
 
                     String stringBuilder = "Start Time: " + startTime.toLongDateTime() +
-                            " (" + startTime.toRelativeTimestamp() + ")" + "\n" +
-                            "End Time: " + endTime.toLongDateTime() +
-                            " (" + endTime.toRelativeTimestamp() + ")" + "\n" +
-                            "Amount: " + Util.COMMA_SEPARATED_FORMAT.format(amount) + "x\n" +
-                            "Price: " + Util.COMMA_SEPARATED_FORMAT.format(price) + " SkyBlock Gems";
+                        " (" + startTime.toRelativeTimestamp() + ")" + "\n" +
+                        "End Time: " + endTime.toLongDateTime() +
+                        " (" + endTime.toRelativeTimestamp() + ")" + "\n" +
+                        "Amount: " + Util.COMMA_SEPARATED_FORMAT.format(amount) + "x\n" +
+                        "Price: " + Util.COMMA_SEPARATED_FORMAT.format(price) + " SkyBlock Gems";
 
                     embedBuilder.addField(itemId, stringBuilder, false);
                 });
