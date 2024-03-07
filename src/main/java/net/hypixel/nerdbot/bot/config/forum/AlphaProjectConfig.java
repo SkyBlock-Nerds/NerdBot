@@ -84,7 +84,7 @@ public class AlphaProjectConfig {
                 .filter(forumChannel -> Util.getSuggestionType(forumChannel.getName()) == Suggestion.ChannelType.ALPHA)
                 .map(ISnowflake::getId)
                 .toList()
-                .toArray(new String[] { });
+                .toArray(new String[]{});
         }
 
         if (updateProject) {
@@ -93,7 +93,7 @@ public class AlphaProjectConfig {
                 .filter(forumChannel -> Util.getSuggestionType(forumChannel.getName()) == Suggestion.ChannelType.PROJECT)
                 .map(ISnowflake::getId)
                 .toList()
-                .toArray(new String[] { });
+                .toArray(new String[]{});
         }
 
         NerdBotApp.getBot().writeConfig(botConfig);

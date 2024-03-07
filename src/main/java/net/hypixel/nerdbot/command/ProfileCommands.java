@@ -383,6 +383,7 @@ public class ProfileCommands extends ApplicationCommand {
             .build();
     }
 
+
     public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws HttpException, MojangProfileException {
         MojangProfile mojangProfile = Util.getMojangProfile(username);
 

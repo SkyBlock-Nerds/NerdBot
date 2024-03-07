@@ -7,9 +7,9 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.google.gson.JsonArray;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.ThreadMember;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -34,9 +34,13 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -45,7 +49,7 @@ public class ExportCommands extends ApplicationCommand {
     private static final String PARENT_COMMAND = "export";
 
     @JDASlashCommand(name = PARENT_COMMAND, subcommand = "threads", description = "Export threads from a Forum Channel", defaultLocked = true)
-    public void exportShenThreads(GuildSlashEvent event, @AppOption ForumChannel forumChannel) {
+    public void exportForumThreads(GuildSlashEvent event, @AppOption ForumChannel forumChannel) {
         event.deferReply(true).queue();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -76,11 +80,16 @@ public class ExportCommands extends ApplicationCommand {
             DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(threadChannel.getOwnerId());
             String username;
 
-            if (discordUser == null || discordUser.noProfileAssigned()) {
-                Member owner = threadChannel.getOwner() == null ? threadChannel.getGuild().retrieveMemberById(threadChannel.getOwnerId()).complete() : threadChannel.getOwner();
-                username = owner.getEffectiveName();
-            } else {
-                username = discordUser.getMojangProfile().getUsername();
+            try {
+                if (discordUser != null && discordUser.isProfileAssigned()) {
+                    username = discordUser.getMojangProfile().getUsername();
+                } else {
+                    ThreadMember threadOwner = threadChannel.getOwnerThreadMember() == null ? threadChannel.retrieveThreadMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS) : threadChannel.getOwnerThreadMember();
+                    username = threadOwner.getMember().getEffectiveName();
+                }
+            } catch (Exception exception) {
+                username = threadChannel.getOwnerId();
+                log.error("Failed to get username for thread owner " + threadChannel.getOwnerId(), exception);
             }
 
             int index = threadList.indexOf(threadChannel);
@@ -209,7 +218,7 @@ public class ExportCommands extends ApplicationCommand {
         });
     }
 
-    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "list", description = "Get all assigned Minecraft Names/UUIDs from all specified roles (requires Member) in the server.", defaultLocked = true)
+    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "uuids", description = "Get all assigned Minecraft Names/UUIDs from all specified roles (requires Member) in the server.", defaultLocked = true)
     public void userList(GuildSlashEvent event, @Optional @AppOption(description = "Comma-separated role names to search for (Default: Member)") String roles) throws IOException {
         event.deferReply(true).complete();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -229,5 +238,44 @@ public class ExportCommands extends ApplicationCommand {
         profiles.forEach(profile -> uuidArray.add(profile.getUniqueId().toString()));
         File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(uuidArray));
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+    }
+
+    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "roles", description = "Export a list of users with the given roles", defaultLocked = true)
+    public void exportRoles(GuildSlashEvent event, @AppOption(description = "Comma-separated list of role names (e.g. Role 1, Role 2, Role 3)") String roles) {
+        event.deferReply(true).complete();
+
+        String[] roleArray = roles.split(", ?");
+        Map<String, List<String>> members = new HashMap<>();
+
+        // Group roles as key to a list of members with that role
+        event.getGuild().loadMembers().get().forEach(member -> {
+            List<String> memberRoles = member.getRoles().stream().map(role -> role.getName().toLowerCase()).toList();
+            for (String role : roleArray) {
+                if (memberRoles.contains(role.toLowerCase())) {
+                    members.computeIfAbsent(role, k -> new ArrayList<>()).add(member.getEffectiveName());
+                }
+            }
+        });
+
+        if (members.values().stream().allMatch(List::isEmpty)) {
+            TranslationManager.edit(event.getHook(), "commands.export.none_found");
+            return;
+        }
+
+        try {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            for (Map.Entry<String, List<String>> entry : members.entrySet()) {
+                stringBuilder.append(entry.getKey()).append(":\n");
+                entry.getValue().forEach(member -> stringBuilder.append(member).append("\n"));
+                stringBuilder.append("\n");
+            }
+
+            File file = Util.createTempFile("roles.txt", stringBuilder.toString());
+            event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+        } catch (IOException exception) {
+            log.error("Failed to create temp file!", exception);
+            TranslationManager.reply(event, "commands.temp_file_error", exception.getMessage());
+        }
     }
 }
