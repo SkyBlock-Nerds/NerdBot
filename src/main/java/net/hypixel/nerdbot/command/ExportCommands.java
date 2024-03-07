@@ -7,9 +7,9 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.google.gson.JsonArray;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.ThreadMember;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -78,8 +78,8 @@ public class ExportCommands extends ApplicationCommand {
             String username;
 
             if (discordUser == null || discordUser.noProfileAssigned()) {
-                Member owner = threadChannel.getOwner() == null ? Util.getMainGuild().retrieveMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS) : threadChannel.getOwner();
-                username = owner == null ? threadChannel.getOwnerId() : owner.getEffectiveName(); // Fallback to ID if user is still not found
+                ThreadMember threadOwner = threadChannel.getOwnerThreadMember() == null ? threadChannel.retrieveThreadMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS) : threadChannel.getOwnerThreadMember();
+                username = threadOwner.getMember().getEffectiveName();
             } else {
                 username = discordUser.getMojangProfile().getUsername();
             }
