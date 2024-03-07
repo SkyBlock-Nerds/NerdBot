@@ -38,7 +38,14 @@ import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
-import net.hypixel.nerdbot.listener.*;
+import net.hypixel.nerdbot.listener.ActivityListener;
+import net.hypixel.nerdbot.listener.MetricsListener;
+import net.hypixel.nerdbot.listener.ModLogListener;
+import net.hypixel.nerdbot.listener.ModMailListener;
+import net.hypixel.nerdbot.listener.PinListener;
+import net.hypixel.nerdbot.listener.ReactionChannelListener;
+import net.hypixel.nerdbot.listener.SuggestionListener;
+import net.hypixel.nerdbot.listener.VerificationListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
@@ -78,9 +85,12 @@ public class NerdBot implements Bot {
     private final Database database = new Database(System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/"), "skyblock_nerds");
     private JDA jda;
     private BotConfig config;
-    @Getter private SuggestionCache suggestionCache;
-    @Getter private MessageCache messageCache;
-    @Getter private long startTime;
+    @Getter
+    private SuggestionCache suggestionCache;
+    @Getter
+    private MessageCache messageCache;
+    @Getter
+    private long startTime;
 
     public NerdBot() {
     }

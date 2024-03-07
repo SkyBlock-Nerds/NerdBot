@@ -32,7 +32,7 @@ import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.apache.commons.lang.StringUtils;
 
-import java.awt.*;
+import java.awt.Color;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -331,7 +331,7 @@ public class SuggestionCommands extends ApplicationCommand {
         @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
         @AppOption(description = "Words to filter title for.") @Optional String title,
         @AppOption(description = "Show suggestions from a specific category.", autocomplete = "suggestion-types") @Optional Suggestion.ChannelType channelType
-        ) {
+    ) {
         event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);

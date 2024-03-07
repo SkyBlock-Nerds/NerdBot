@@ -339,7 +339,7 @@ public class ProfileCommands extends ApplicationCommand {
         return List.of(UserLanguage.VALUES);
     }
 
-    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws MojangProfileMismatchException, HttpException, MojangProfileException {
+    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws HttpException, MojangProfileException {
         MojangProfile mojangProfile = Util.getMojangProfile(username);
 
         if (mojangProfile.getErrorMessage() != null) {
@@ -443,27 +443,27 @@ public class ProfileCommands extends ApplicationCommand {
                 .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentHistory), true)
                 .addField("Create History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Vote History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Comment History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
@@ -477,27 +477,27 @@ public class ProfileCommands extends ApplicationCommand {
                 .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getProjectSuggestionCommentHistory), true)
                 .addField("Created History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Voted History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Commented History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
@@ -511,27 +511,27 @@ public class ProfileCommands extends ApplicationCommand {
                 .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentHistory), true)
                 .addField("Create History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Vote History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Comment History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
                     lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))

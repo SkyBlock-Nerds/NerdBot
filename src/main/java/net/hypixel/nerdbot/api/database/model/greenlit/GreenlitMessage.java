@@ -80,8 +80,8 @@ public class GreenlitMessage {
 
         if (isReviewed()) {
             color = new Color(51, 153, 255);
-        //} else if (isAlpha()) {
-        //    color = new Color(255, 255, 153);
+            //} else if (isAlpha()) {
+            //    color = new Color(255, 255, 153);
         } else {
             color = Color.GREEN;
         }

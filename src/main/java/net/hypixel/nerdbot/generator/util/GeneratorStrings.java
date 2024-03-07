@@ -1,7 +1,11 @@
 package net.hypixel.nerdbot.generator.util;
 
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
-import net.hypixel.nerdbot.util.skyblock.*;
+import net.hypixel.nerdbot.util.skyblock.Gemstone;
+import net.hypixel.nerdbot.util.skyblock.Icon;
+import net.hypixel.nerdbot.util.skyblock.MCColor;
+import net.hypixel.nerdbot.util.skyblock.Rarity;
+import net.hypixel.nerdbot.util.skyblock.Stat;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
