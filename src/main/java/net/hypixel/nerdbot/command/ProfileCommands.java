@@ -229,8 +229,10 @@ public class ProfileCommands extends ApplicationCommand {
         subcommand = "badges",
         description = "View your badges."
     )
-    public void myBadges(GuildSlashEvent event) {
-        event.deferReply(true).complete();
+    public void myBadges(GuildSlashEvent event, @AppOption @Optional Boolean showPublicly) {
+        showPublicly = (showPublicly == null || !showPublicly);
+        event.deferReply(showPublicly).complete();
+
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
