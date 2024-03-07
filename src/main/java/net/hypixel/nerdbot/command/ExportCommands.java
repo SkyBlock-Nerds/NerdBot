@@ -14,7 +14,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
-import net.dv8tion.jda.api.exceptions.RateLimitedException;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -38,6 +37,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -78,14 +78,8 @@ public class ExportCommands extends ApplicationCommand {
             String username;
 
             if (discordUser == null || discordUser.noProfileAssigned()) {
-                try {
-                    Member owner = threadChannel.getOwner() == null ? Util.getMainGuild().retrieveMemberById(threadChannel.getOwnerId()).complete(true) : threadChannel.getOwner();
-                    username = owner.getEffectiveName();
-                } catch (RateLimitedException e) {
-                    log.error("Rate limited while retrieving thread owner!", e);
-                    TranslationManager.edit(event.getHook(), commandSender, "commands.export.rate_limited", forumChannel.getName());
-                    continue;
-                }
+                Member owner = threadChannel.getOwner() == null ? Util.getMainGuild().retrieveMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS) : threadChannel.getOwner();
+                username = owner == null ? threadChannel.getOwnerId() : owner.getEffectiveName(); // Fallback to ID if user is still not found
             } else {
                 username = discordUser.getMojangProfile().getUsername();
             }
