@@ -130,7 +130,7 @@ public class BadgeCommands extends ApplicationCommand {
             sb.append("(").append(key).append(")\n");
 
             if (value instanceof TieredBadge tieredBadge) {
-                tieredBadge.getTiers().forEach(tier -> sb.append("  - ").append(tier.getFormattedName()).append(" (").append(tier.getTier()).append(")\n"));
+                tieredBadge.getTiers().forEach(tier -> sb.append("  - ").append(tier.getFormattedName()).append(" (tier: ").append(tier.getTier()).append(")\n"));
             }
         });
 

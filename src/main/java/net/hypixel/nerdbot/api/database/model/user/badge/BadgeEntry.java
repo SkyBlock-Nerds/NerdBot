@@ -11,7 +11,7 @@ public class BadgeEntry {
     private final Integer tier;
     private final long obtainedAt;
 
-    public BadgeEntry(String badgeId, Integer tier, long obtainedAt) {
+    public BadgeEntry(String badgeId, @Nullable Integer tier, long obtainedAt) {
         this.badgeId = badgeId;
         this.tier = tier;
         this.obtainedAt = obtainedAt;

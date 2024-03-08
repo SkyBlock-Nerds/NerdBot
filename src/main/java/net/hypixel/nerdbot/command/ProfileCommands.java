@@ -370,9 +370,9 @@ public class ProfileCommands extends ApplicationCommand {
                 Badge badge = BadgeManager.getBadgeById(badgeEntry.getBadgeId());
                 StringBuilder stringBuilder = new StringBuilder("**");
 
-                if (BadgeManager.isTieredBadge(badgeEntry.getBadgeId()) && badgeEntry.getTier() != null && badgeEntry.getTier() > 1) {
+                if (BadgeManager.isTieredBadge(badgeEntry.getBadgeId()) && badgeEntry.getTier() != null && badgeEntry.getTier() >= 1) {
                     TieredBadge tieredBadge = BadgeManager.getTieredBadgeById(badgeEntry.getBadgeId());
-                    stringBuilder.append(tieredBadge.getTier(badgeEntry.getTier()).getFormattedName()).append(" ").append(tieredBadge.getFormattedName());
+                    stringBuilder.append(tieredBadge.getTier(badgeEntry.getTier()).getFormattedName());
                 } else {
                     stringBuilder.append(badge.getFormattedName());
                 }
