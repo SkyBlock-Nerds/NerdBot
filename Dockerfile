@@ -7,7 +7,7 @@ WORKDIR /app
 # Arguments for Git repository information
 ARG GITHUB_USERNAME
 ARG GITHUB_TOKEN
-ENV REPO_USERNAME=TheMGRF
+ENV REPO_USERNAME=SkyBlock-Nerds
 ENV REPO_NAME=NerdBot
 ENV REPO_BRANCH=master
 ENV SOURCE_CODE_DIR=repository
