@@ -19,10 +19,11 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
+import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.api.repository.Repository;
@@ -97,6 +98,12 @@ public class NerdBot implements Bot {
 
     @Override
     public void onStart() {
+        if (config.getBadgeConfig().getBadges() != null) {
+            BadgeManager.loadBadges();
+        } else {
+            log.warn("No badges found in config file, so no badges will be loaded!");
+        }
+
         DiscordUserRepository discordUserRepository = database.getRepositoryManager().getRepository(DiscordUserRepository.class);
         if (discordUserRepository != null) {
             discordUserRepository.loadAllDocumentsIntoCache();

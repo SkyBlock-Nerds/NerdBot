@@ -22,9 +22,12 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.model.user.BirthdayData;
+import net.hypixel.nerdbot.api.badge.Badge;
+import net.hypixel.nerdbot.api.badge.BadgeManager;
+import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
+import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
+import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
@@ -209,16 +212,36 @@ public class ProfileCommands extends ApplicationCommand {
 
         event.getHook().editOriginalEmbeds(
             new EmbedBuilder()
-                .setAuthor(event.getMember().getEffectiveName() + " (" + event.getMember().getUser().getName() + ")")
+                .setAuthor(event.getMember().getEffectiveName() + " (ID: " + event.getMember().getId() + ")")
                 .setTitle("Your Profile")
                 .setThumbnail(event.getMember().getEffectiveAvatarUrl())
                 .setColor(event.getMember().getColor())
-                .addField("ID", event.getMember().getId(), false)
                 .addField("Mojang Profile", profile, false)
-                .addField("Language", discordUser.getLanguage().getName(), false)
-                .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), false)
+                .addField("Badges", discordUser.getBadges().isEmpty() ? "None" : String.valueOf(discordUser.getBadges().size()), true)
+                .addField("Language", discordUser.getLanguage().getName(), true)
+                .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), true)
                 .build()
         ).queue();
+    }
+
+    @JDASlashCommand(
+        name = "profile",
+        subcommand = "badges",
+        description = "View your badges."
+    )
+    public void myBadges(GuildSlashEvent event, @AppOption @Optional Boolean showPublicly) {
+        showPublicly = (showPublicly == null || !showPublicly);
+        event.deferReply(showPublicly).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+
+        if (discordUser.getBadges().isEmpty()) {
+            TranslationManager.edit(event.getHook(), discordUser, "commands.profile.no_badges");
+            return;
+        }
+
+        event.getHook().editOriginalEmbeds(createBadgesEmbed(event.getMember(), discordUser, true)).queue();
     }
 
     @JDASlashCommand(
@@ -326,7 +349,7 @@ public class ProfileCommands extends ApplicationCommand {
         DiscordUser user = repository.findById(event.getMember().getId());
 
         if (user == null) {
-            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
             return;
         }
 
@@ -338,6 +361,28 @@ public class ProfileCommands extends ApplicationCommand {
     public List<UserLanguage> getLanguages(CommandAutoCompleteInteractionEvent event) {
         return List.of(UserLanguage.VALUES);
     }
+
+    public static MessageEmbed createBadgesEmbed(Member member, DiscordUser discordUser, boolean viewingSelf) {
+        return new EmbedBuilder()
+            .setTitle(viewingSelf ? "Your Badges" : (member.getEffectiveName().endsWith("s") ? member.getEffectiveName() + "'" : member.getEffectiveName() + "'s") + " Badges")
+            .setColor(Color.PINK)
+            .setDescription(discordUser.getBadges().stream().map(badgeEntry -> {
+                Badge badge = BadgeManager.getBadgeById(badgeEntry.getBadgeId());
+                StringBuilder stringBuilder = new StringBuilder("**");
+
+                if (BadgeManager.isTieredBadge(badgeEntry.getBadgeId()) && badgeEntry.getTier() != null && badgeEntry.getTier() >= 1) {
+                    TieredBadge tieredBadge = BadgeManager.getTieredBadgeById(badgeEntry.getBadgeId());
+                    stringBuilder.append(tieredBadge.getTier(badgeEntry.getTier()).getFormattedName());
+                } else {
+                    stringBuilder.append(badge.getFormattedName());
+                }
+
+                stringBuilder.append("**\nObtained on ").append(DateFormatUtils.format(badgeEntry.getObtainedAt(), "MMMM dd, yyyy"));
+                return stringBuilder.toString();
+            }).reduce((s, s2) -> s + "\n\n" + s2).orElse("None :("))
+            .build();
+    }
+
 
     public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws HttpException, MojangProfileException {
         MojangProfile mojangProfile = Util.getMojangProfile(username);

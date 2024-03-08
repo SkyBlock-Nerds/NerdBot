@@ -35,6 +35,11 @@
             <version>0.8.2</version>
         </dependency>
         <dependency>
+            <groupId>io.github.freya022</groupId>
+            <artifactId>BotCommands</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
@@ -43,11 +48,6 @@
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
             <version>4.9.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.freya022</groupId>
-            <artifactId>BotCommands</artifactId>
-            <version>2.9.0</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

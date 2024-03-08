@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.api.database.model.user;
+package net.hypixel.nerdbot.api.database.model.user.language;
 
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;

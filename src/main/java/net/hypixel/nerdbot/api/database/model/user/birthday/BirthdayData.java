@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.api.database.model.user;
+package net.hypixel.nerdbot.api.database.model.user.birthday;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
