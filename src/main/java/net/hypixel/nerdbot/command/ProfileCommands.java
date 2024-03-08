@@ -250,7 +250,7 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(
-            SuggestionCommands.buildSuggestionsEmbed(suggestions, tags, title, type, pageNum, false, true)
+            SuggestionCommands.buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, type, pageNum, false, true)
                 .setAuthor(event.getMember().getEffectiveName())
                 .setThumbnail(event.getMember().getEffectiveAvatarUrl())
                 .build()
