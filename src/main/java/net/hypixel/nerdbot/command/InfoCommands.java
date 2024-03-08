@@ -90,7 +90,7 @@ public class InfoCommands extends ApplicationCommand {
         int fromIndex = (page - 1) * pageSize;
 
         if (sourceList.size() <= fromIndex) {
-            return getPage(sourceList, page - 1, pageSize); // Revert to last page
+            return new ArrayList<>();
         }
 
         return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));

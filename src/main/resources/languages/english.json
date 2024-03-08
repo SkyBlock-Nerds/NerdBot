@@ -38,6 +38,7 @@
     "only_available_in_threads": "This command is only available in threads!",
     "cannot_be_used_here": "This command cannot be used here!",
     "invalid_uuid": "Invalid UUID!",
+    "invalid_user_id": "Invalid user ID!",
     "temp_file_error": "Failed to create temporary file: %s",
     "language": {
       "language_set": "You set your language to %s"

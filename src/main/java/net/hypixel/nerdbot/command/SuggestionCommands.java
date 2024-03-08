@@ -29,8 +29,10 @@ import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.Color;
 import java.util.Arrays;
@@ -50,11 +52,22 @@ public class SuggestionCommands extends ApplicationCommand {
         .removalListener((o, o2, removalCause) -> log.info("Removed {} from last review request cache", o))
         .build();
 
-    public static List<Suggestion> getSuggestions(Long userID, String tags, String title, Suggestion.ChannelType channelType) {
-        final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", *") : new String[0]);
+    /**
+     * Get a list of suggestions based on the provided filters.
+     *
+     * @param member      The member looking for suggestions.
+     * @param userId      The user ID to filter by.
+     * @param tags        The tags to filter by.
+     * @param title       The title to filter by.
+     * @param channelType The {@link Suggestion.ChannelType} to filter by.
+     *
+     * @return A list of suggestions that match the provided filters.
+     */
+    public static List<Suggestion> getSuggestions(Member member, @Nullable Long userId, String tags, String title, Suggestion.ChannelType channelType) {
+        final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", ?") : new String[0]);
 
         if (NerdBotApp.getBot().getSuggestionCache().getSuggestions().isEmpty()) {
-            log.info("Suggestions cache is empty!");
+            log.warn("Suggestions cache is empty!");
             return Collections.emptyList();
         }
 
@@ -63,7 +76,13 @@ public class SuggestionCommands extends ApplicationCommand {
             .stream()
             .filter(suggestion -> suggestion.getChannelType() == channelType)
             .filter(Suggestion::notDeleted)
-            .filter(suggestion -> userID == null || suggestion.getOwnerIdLong() == userID)
+            .filter(suggestion -> {
+                if (userId != null) {
+                    Member user = Util.getMainGuild().retrieveMemberById(userId).complete();
+                    return user != null && suggestion.getOwnerIdLong() == userId && suggestion.canSee(member);
+                }
+                return true;
+            })
             .filter(suggestion -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> suggestion.getAppliedTags()
                 .stream()
                 .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
@@ -327,7 +346,7 @@ public class SuggestionCommands extends ApplicationCommand {
     )
     public void viewMemberSuggestions(
         GuildSlashEvent event,
-        @AppOption(description = "User ID to view.") Long userID,
+        @AppOption(description = "User ID to view.") String userId,
         @AppOption @Optional Integer page,
         @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
         @AppOption(description = "Words to filter title for.") @Optional String title,
@@ -335,24 +354,29 @@ public class SuggestionCommands extends ApplicationCommand {
     ) {
         event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
-        final int pageNum = Math.max(page, 1);
-        final User searchUser = NerdBotApp.getBot().getJDA().getUserById(userID);
+        int pageNum = Math.max(page, 1);
         channelType = (channelType == null ? Suggestion.ChannelType.NORMAL : channelType);
-        boolean showRatio = userID == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
 
-        List<Suggestion> suggestions = getSuggestions(userID, tags, title, channelType);
+        try {
+            long userIdLong = Long.parseLong(userId);
+            User searchUser = NerdBotApp.getBot().getJDA().getUserById(userIdLong);
+            boolean showRatio = userIdLong == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
+            List<Suggestion> suggestions = getSuggestions(event.getMember(), userIdLong, tags, title, channelType);
 
-        if (suggestions.isEmpty()) {
-            TranslationManager.edit(event.getHook(), "cache.suggestions.filtered_none_found");
-            return;
+            if (suggestions.isEmpty()) {
+                TranslationManager.edit(event.getHook(), "cache.suggestions.filtered_none_found");
+                return;
+            }
+
+            event.getHook().editOriginalEmbeds(
+                buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, channelType, pageNum, false, showRatio)
+                    .setAuthor(searchUser != null ? searchUser.getName() : userId)
+                    .setThumbnail(searchUser != null ? searchUser.getEffectiveAvatarUrl() : null)
+                    .build()
+            ).queue();
+        } catch (NumberFormatException exception) {
+            TranslationManager.edit(event.getHook(), "commands.invalid_user_id");
         }
-
-        event.getHook().editOriginalEmbeds(
-            buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, channelType, pageNum, false, showRatio)
-                .setAuthor(searchUser != null ? searchUser.getName() : String.valueOf(userID))
-                .setThumbnail(searchUser != null ? searchUser.getEffectiveAvatarUrl() : null)
-                .build()
-        ).queue();
     }
 
     @JDASlashCommand(
@@ -374,7 +398,7 @@ public class SuggestionCommands extends ApplicationCommand {
         type = (type == null ? Suggestion.ChannelType.NORMAL : type);
         boolean showRatio = member.getIdLong() == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
 
-        List<Suggestion> suggestions = getSuggestions(member.getIdLong(), tags, title, type);
+        List<Suggestion> suggestions = getSuggestions(event.getMember(), member.getIdLong(), tags, title, type);
 
         if (suggestions.isEmpty()) {
             TranslationManager.edit(event.getHook(), "cache.suggestions.filtered_none_found");
@@ -406,7 +430,7 @@ public class SuggestionCommands extends ApplicationCommand {
         final int pageNum = Math.max(page, 1);
         type = (type == null ? Suggestion.ChannelType.NORMAL : type);
 
-        List<Suggestion> suggestions = getSuggestions(null, tags, title, type);
+        List<Suggestion> suggestions = getSuggestions(event.getMember(), null, tags, title, type);
 
         if (suggestions.isEmpty()) {
             TranslationManager.edit(event.getHook(), "cache.suggestions.filtered_none_found");

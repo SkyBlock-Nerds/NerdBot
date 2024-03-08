@@ -242,7 +242,7 @@ public class ProfileCommands extends ApplicationCommand {
         final int pageNum = Math.max(page, 1);
         type = (type == null ? Suggestion.ChannelType.NORMAL : type);
 
-        List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember().getIdLong(), tags, title, type);
+        List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember(), event.getMember().getIdLong(), tags, title, type);
 
         if (suggestions.isEmpty()) {
             TranslationManager.edit(event.getHook(), discordUser, "cache.suggestions.filtered_none_found");
