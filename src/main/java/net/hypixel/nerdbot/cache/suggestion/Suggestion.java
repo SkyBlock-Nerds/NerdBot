@@ -3,6 +3,8 @@ package net.hypixel.nerdbot.cache.suggestion;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -136,6 +138,11 @@ public class Suggestion {
 
     void setExpired() {
         this.expired = true;
+    }
+
+    public boolean canSee(Member member) {
+        ThreadChannel threadChannel = NerdBotApp.getBot().getJDA().getThreadChannelById(this.getThreadId());
+        return threadChannel != null && member.hasPermission(threadChannel, Permission.VIEW_CHANNEL);
     }
 
     @Getter

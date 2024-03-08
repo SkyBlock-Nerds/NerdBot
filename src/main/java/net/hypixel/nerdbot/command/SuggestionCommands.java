@@ -75,16 +75,17 @@ public class SuggestionCommands extends ApplicationCommand {
             .toList();
     }
 
-    public static EmbedBuilder buildSuggestionsEmbed(List<Suggestion> suggestions, String tags, String title, Suggestion.ChannelType channelType, int pageNum, boolean showNames, boolean showRatio) {
-        List<Suggestion> pages = InfoCommands.getPage(suggestions, pageNum, 10);
+    public static EmbedBuilder buildSuggestionsEmbed(Member member, List<Suggestion> suggestions, String tags, String title, Suggestion.ChannelType channelType, int pageNum, boolean showNames, boolean showRatio) {
+        List<Suggestion> list = suggestions.stream().filter(suggestion -> suggestion.canSee(member)).toList();
+        List<Suggestion> pages = InfoCommands.getPage(list, pageNum, 10);
         int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
 
         StringJoiner links = new StringJoiner("\n");
-        double total = suggestions.size();
+        double total = list.size();
         double greenlit = suggestions.stream().filter(Suggestion::isGreenlit).count();
         String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`\n" : "") + (channelType != Suggestion.ChannelType.NORMAL ? "- Filtered by Type: `" + channelType.getName() + "`" : "");
 
-        for (Suggestion suggestion : pages) {
+        pages.forEach(suggestion -> {
             String link = "[" + suggestion.getThreadName().replaceAll("`", "") + "](" + suggestion.getJumpUrl() + ")";
             link += (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "") + "\n";
             link += suggestion.getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "\n";
@@ -99,7 +100,7 @@ public class SuggestionCommands extends ApplicationCommand {
 
             link += getEmojiFormat(EmojiConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + getEmojiFormat(EmojiConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
             links.add(link);
-        }
+        });
 
         EmbedBuilder embedBuilder = new EmbedBuilder();
         int blankFields = 2;
@@ -347,7 +348,7 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(
-            buildSuggestionsEmbed(suggestions, tags, title, channelType, pageNum, false, showRatio)
+            buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, channelType, pageNum, false, showRatio)
                 .setAuthor(searchUser != null ? searchUser.getName() : String.valueOf(userID))
                 .setThumbnail(searchUser != null ? searchUser.getEffectiveAvatarUrl() : null)
                 .build()
@@ -381,7 +382,7 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(
-            buildSuggestionsEmbed(suggestions, tags, title, type, pageNum, false, showRatio)
+            buildSuggestionsEmbed(member, suggestions, tags, title, type, pageNum, false, showRatio)
                 .setAuthor(member.getEffectiveName())
                 .setThumbnail(member.getEffectiveAvatarUrl())
                 .build()
@@ -412,7 +413,7 @@ public class SuggestionCommands extends ApplicationCommand {
             return;
         }
 
-        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(suggestions, tags, title, type, pageNum, true, true).build()).queue();
+        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, type, pageNum, true, true).build()).queue();
     }
 
     @AutocompletionHandler(name = "suggestion-types")
