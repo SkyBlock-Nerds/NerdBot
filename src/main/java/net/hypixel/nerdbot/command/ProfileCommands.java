@@ -381,8 +381,7 @@ public class ProfileCommands extends ApplicationCommand {
                 return Long.compare(o2.getObtainedAt(), o1.getObtainedAt());
             })
             .toList();
-
-
+        
         EmbedBuilder embedBuilder = new EmbedBuilder()
             .setTitle(viewingSelf ? "Your Badges" : (member.getEffectiveName().endsWith("s") ? member.getEffectiveName() + "'" : member.getEffectiveName() + "'s") + " Badges")
             .setColor(Color.PINK)
