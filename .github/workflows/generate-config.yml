@@ -1,8 +1,9 @@
 name: Generate Example Config JSON File
 
 on:
-  pull_request:
   push:
+    branches:
+      - 'master'
 
 jobs:
   build:
