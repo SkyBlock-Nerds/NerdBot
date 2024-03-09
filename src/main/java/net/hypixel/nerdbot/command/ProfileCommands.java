@@ -26,6 +26,7 @@ import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
 import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
@@ -358,10 +359,34 @@ public class ProfileCommands extends ApplicationCommand {
     }
 
     public static MessageEmbed createBadgesEmbed(Member member, DiscordUser discordUser, boolean viewingSelf) {
+        List<BadgeEntry> badges = discordUser.getBadges().stream()
+            .sorted((o1, o2) -> {
+                if (BadgeManager.isTieredBadge(o1.getBadgeId()) && BadgeManager.isTieredBadge(o2.getBadgeId())) {
+                    TieredBadge tieredBadge1 = BadgeManager.getTieredBadgeById(o1.getBadgeId());
+                    TieredBadge tieredBadge2 = BadgeManager.getTieredBadgeById(o2.getBadgeId());
+
+                    if (o1.getTier() != null && o2.getTier() != null) {
+                        return Integer.compare(tieredBadge2.getTier(o2.getTier()).getTier(), tieredBadge1.getTier(o1.getTier()).getTier());
+                    } else if (o1.getTier() != null) {
+                        return -1;
+                    } else if (o2.getTier() != null) {
+                        return 1;
+                    }
+                } else if (BadgeManager.isTieredBadge(o1.getBadgeId())) {
+                    return -1;
+                } else if (BadgeManager.isTieredBadge(o2.getBadgeId())) {
+                    return 1;
+                }
+
+                return Long.compare(o2.getObtainedAt(), o1.getObtainedAt());
+            })
+            .toList();
+
+
         EmbedBuilder embedBuilder = new EmbedBuilder()
             .setTitle(viewingSelf ? "Your Badges" : (member.getEffectiveName().endsWith("s") ? member.getEffectiveName() + "'" : member.getEffectiveName() + "'s") + " Badges")
             .setColor(Color.PINK)
-            .setDescription(discordUser.getBadges().stream().map(badgeEntry -> {
+            .setDescription(badges.stream().map(badgeEntry -> {
                 Badge badge = BadgeManager.getBadgeById(badgeEntry.getBadgeId());
                 StringBuilder stringBuilder = new StringBuilder("**");
 
