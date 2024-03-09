@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.util;
 
 import com.google.gson.JsonObject;
+import com.vdurmont.emoji.EmojiManager;
 import io.prometheus.client.Summary;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
@@ -12,12 +13,14 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
 import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
+import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
@@ -443,5 +446,22 @@ public class Util {
         }
 
         return null;
+    }
+
+    /**
+     * Finds a matching emoji based on the given string
+     * <br>
+     * It can be a unicode emoji or a custom emoji ID
+     *
+     * @param emoji The emoji to find
+     *
+     * @return The emoji object
+     */
+    public static Optional<Emoji> getEmoji(String emoji) {
+        if (EmojiManager.isEmoji(emoji)) {
+            return Optional.of(Emoji.fromUnicode(emoji));
+        }
+
+        return EmojiCache.getEmojiById(emoji);
     }
 }
