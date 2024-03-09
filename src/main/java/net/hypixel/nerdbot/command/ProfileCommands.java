@@ -236,11 +236,6 @@ public class ProfileCommands extends ApplicationCommand {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
-        if (discordUser.getBadges().isEmpty()) {
-            TranslationManager.edit(event.getHook(), discordUser, "commands.profile.no_badges");
-            return;
-        }
-
         event.getHook().editOriginalEmbeds(createBadgesEmbed(event.getMember(), discordUser, true)).queue();
     }
 
@@ -363,7 +358,7 @@ public class ProfileCommands extends ApplicationCommand {
     }
 
     public static MessageEmbed createBadgesEmbed(Member member, DiscordUser discordUser, boolean viewingSelf) {
-        return new EmbedBuilder()
+        EmbedBuilder embedBuilder = new EmbedBuilder()
             .setTitle(viewingSelf ? "Your Badges" : (member.getEffectiveName().endsWith("s") ? member.getEffectiveName() + "'" : member.getEffectiveName() + "'s") + " Badges")
             .setColor(Color.PINK)
             .setDescription(discordUser.getBadges().stream().map(badgeEntry -> {
@@ -379,8 +374,13 @@ public class ProfileCommands extends ApplicationCommand {
 
                 stringBuilder.append("**\nObtained on ").append(DateFormatUtils.format(badgeEntry.getObtainedAt(), "MMMM dd, yyyy"));
                 return stringBuilder.toString();
-            }).reduce((s, s2) -> s + "\n\n" + s2).orElse("None :("))
-            .build();
+            }).reduce((s, s2) -> s + "\n\n" + s2).orElse("No badges :("));
+
+        if (discordUser.getBadges().isEmpty()) {
+            embedBuilder.setImage("https://i.imgur.com/fs71kmJ.png");
+        }
+
+        return embedBuilder.build();
     }
 
 
