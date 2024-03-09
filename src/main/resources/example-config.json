@@ -111,6 +111,9 @@
       }
     ]
   },
+  "funConfig": {
+    "autoReactions": {}
+  },
   "guildId": "1234567890123456789",
   "ownerIds": [
     "1234567890123456789"
