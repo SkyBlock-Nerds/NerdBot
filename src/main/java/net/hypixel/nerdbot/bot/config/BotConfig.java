@@ -58,6 +58,11 @@ public class BotConfig {
     private BadgeConfig badgeConfig = new BadgeConfig();
 
     /**
+     * Configuration for fun and miscellaneous things
+     */
+    private FunConfig funConfig = new FunConfig();
+
+    /**
      * The {@link Guild} ID that the bot will be running in
      */
     private String guildId = "";

@@ -40,6 +40,7 @@ import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
 import net.hypixel.nerdbot.listener.ActivityListener;
+import net.hypixel.nerdbot.listener.FunListener;
 import net.hypixel.nerdbot.listener.MetricsListener;
 import net.hypixel.nerdbot.listener.ModLogListener;
 import net.hypixel.nerdbot.listener.ModMailListener;
@@ -178,7 +179,8 @@ public class NerdBot implements Bot {
                 new SuggestionListener(),
                 new VerificationListener(),
                 new PinListener(),
-                new MetricsListener()
+                new MetricsListener(),
+                new FunListener()
             )
             .setActivity(Activity.of(config.getActivityType(), config.getActivity()));
 
