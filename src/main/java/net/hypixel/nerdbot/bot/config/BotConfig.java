@@ -9,6 +9,9 @@ import net.dv8tion.jda.api.entities.Message;
 import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
 import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 @ToString
@@ -67,7 +70,7 @@ public class BotConfig {
     /**
      * A list of owner IDs for the bot
      */
-    private long[] ownerIds = {};
+    private List<String> ownerIds = new ArrayList<>();
 
     /**
      * The limit of {@link Message messages} that the bot will curate in one go

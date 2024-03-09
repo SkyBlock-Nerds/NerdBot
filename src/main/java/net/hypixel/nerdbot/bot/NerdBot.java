@@ -207,7 +207,7 @@ public class NerdBot implements Bot {
 
         CommandsBuilder commandsBuilder = CommandsBuilder
             .newBuilder()
-            .addOwners(config.getOwnerIds())
+            .addOwners(config.getOwnerIds().stream().mapToLong(Long::parseLong).toArray())
             .extensionsBuilder(extensionsBuilder -> extensionsBuilder
                 .registerParameterResolver(new UserLanguageResolver())
                 .registerParameterResolver(new SuggestionTypeResolver())
