@@ -95,6 +95,10 @@ public class TranslationManager {
             }
 
             if (element == null) {
+                if (language != DEFAULT_LANGUAGE) {
+                    return translate(key, args);
+                }
+
                 return ERROR_MESSAGE.formatted(key);
             }
         }
