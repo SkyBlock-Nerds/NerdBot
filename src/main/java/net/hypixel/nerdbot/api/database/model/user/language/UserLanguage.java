@@ -7,7 +7,8 @@ import org.jetbrains.annotations.Nullable;
 public enum UserLanguage {
     ENGLISH("English", "english.json"),
     DUTCH("Dutch", "dutch.json"),
-    GERMAN("German", "german.json");
+    GERMAN("German", "german.json"),
+    PIRATE_SPEAK("Pirate Speak", "pirate_speak.json");
 
     public static final UserLanguage[] VALUES = values();
 
