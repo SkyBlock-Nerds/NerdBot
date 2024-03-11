@@ -7,8 +7,14 @@
     "roleFormat": "BELOW"
   },
   "suggestionConfig": {
+    "reviewRequestConfig": {
+      "enabled": false,
+      "channelId": "1234567890123456789",
+      "threshold": 15,
+      "enforceGreenlitRatio": false,
+      "minimumSuggestionAge": 604800000
+    },
     "forumChannelId": "1234567890123456789",
-    "requestedReviewChannelId": "1234567890123456789",
     "greenlitTag": "Example Name",
     "reviewedTag": "Example Name",
     "greenlitThreshold": 20,
@@ -16,11 +22,8 @@
     "archiveOnGreenlit": false,
     "lockOnGreenlit": false,
     "autoPinFirstMessage": true,
-    "requestReviewThreshold": 15,
-    "enforcingGreenlitRatioForRequestReview": false,
     "autoArchiveThreshold": 168,
-    "autoLockThreshold": 168,
-    "minimumSuggestionRequestAge": 604800000
+    "autoLockThreshold": 168
   },
   "alphaProjectConfig": {
     "alphaForumIds": [
