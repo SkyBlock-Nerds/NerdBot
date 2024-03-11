@@ -6,8 +6,10 @@ import lombok.ToString;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
-import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
-import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
+import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.channel.ModMailConfig;
+import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -74,7 +74,7 @@ public class ChannelCache {
     }
 
     public static Optional<TextChannel> getRequestedReviewChannel() {
-        return getChannelById(NerdBotApp.getBot().getConfig().getSuggestionConfig().getRequestedReviewChannelId())
+        return getChannelById(NerdBotApp.getBot().getConfig().getSuggestionConfig().getReviewRequestConfig().getChannelId())
             .map(TextChannel.class::cast);
     }
 

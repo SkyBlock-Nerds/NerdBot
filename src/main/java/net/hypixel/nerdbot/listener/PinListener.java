@@ -11,8 +11,8 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
-import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
+import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 
 @Log4j2

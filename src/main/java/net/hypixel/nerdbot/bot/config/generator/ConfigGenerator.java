@@ -10,13 +10,13 @@ import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.bot.config.BadgeConfig;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.bot.config.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
-import net.hypixel.nerdbot.bot.config.ModMailConfig;
+import net.hypixel.nerdbot.bot.config.channel.ModMailConfig;
 import net.hypixel.nerdbot.bot.config.RoleConfig;
-import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
-import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
+import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 import net.hypixel.nerdbot.bot.config.objects.ReactionChannel;
 
@@ -100,7 +100,7 @@ public class ConfigGenerator {
 
         SuggestionConfig suggestionConfig = new SuggestionConfig();
         suggestionConfig.setForumChannelId(EXAMPLE_ID);
-        suggestionConfig.setRequestedReviewChannelId(EXAMPLE_ID);
+        suggestionConfig.getReviewRequestConfig().setChannelId(EXAMPLE_ID);
         suggestionConfig.setGreenlitTag(EXAMPLE_NAME);
         suggestionConfig.setReviewedTag(EXAMPLE_NAME);
         suggestionConfig.setGreenlitThreshold(20);
@@ -108,11 +108,11 @@ public class ConfigGenerator {
         suggestionConfig.setArchiveOnGreenlit(false);
         suggestionConfig.setLockOnGreenlit(false);
         suggestionConfig.setAutoPinFirstMessage(true);
-        suggestionConfig.setRequestReviewThreshold(15);
-        suggestionConfig.setEnforcingGreenlitRatioForRequestReview(false);
+        suggestionConfig.getReviewRequestConfig().setRequestReviewThreshold(15);
+        suggestionConfig.getReviewRequestConfig().setEnforceGreenlitRatio(false);
         suggestionConfig.setAutoArchiveThreshold(168);
         suggestionConfig.setAutoLockThreshold(168);
-        suggestionConfig.setMinimumSuggestionRequestAge(604_800_000);
+        suggestionConfig.getReviewRequestConfig().setMinimumSuggestionRequestAge(604_800_000);
         botConfig.setSuggestionConfig(suggestionConfig);
 
         AlphaProjectConfig alphaProjectConfig = new AlphaProjectConfig();

@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.urlwatcher.handler;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.bot.config.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser.HypixelThread;

@@ -117,6 +117,7 @@
       "set_level": "Set log level to %s"
     },
     "request_review": {
+      "disabled": "Review requests are currently disabled!",
       "not_suggestion_channel": "You cannot send threads in non-suggestion channels for review!",
       "too_soon": "You cannot request another review on this thread yet!",
       "not_own_thread": "You cannot request a review on a thread you did not create!",

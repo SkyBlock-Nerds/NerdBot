@@ -19,7 +19,7 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
-import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
