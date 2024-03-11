@@ -16,6 +16,7 @@ import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.bot.config.channel.ModMailConfig;
 import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.suggestion.ReviewRequestConfig;
 import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 import net.hypixel.nerdbot.bot.config.objects.ReactionChannel;
@@ -99,8 +100,14 @@ public class ConfigGenerator {
         botConfig.setRoleConfig(roleConfig);
 
         SuggestionConfig suggestionConfig = new SuggestionConfig();
+        ReviewRequestConfig reviewRequestConfig = new ReviewRequestConfig();
+        reviewRequestConfig.setChannelId(EXAMPLE_ID);
+        reviewRequestConfig.setThreshold(15);
+        reviewRequestConfig.setEnforceGreenlitRatio(false);
+        reviewRequestConfig.setMinimumSuggestionAge(604_800_000);
+        suggestionConfig.setReviewRequestConfig(reviewRequestConfig);
+
         suggestionConfig.setForumChannelId(EXAMPLE_ID);
-        suggestionConfig.getReviewRequestConfig().setChannelId(EXAMPLE_ID);
         suggestionConfig.setGreenlitTag(EXAMPLE_NAME);
         suggestionConfig.setReviewedTag(EXAMPLE_NAME);
         suggestionConfig.setGreenlitThreshold(20);
@@ -108,11 +115,8 @@ public class ConfigGenerator {
         suggestionConfig.setArchiveOnGreenlit(false);
         suggestionConfig.setLockOnGreenlit(false);
         suggestionConfig.setAutoPinFirstMessage(true);
-        suggestionConfig.getReviewRequestConfig().setThreshold(15);
-        suggestionConfig.getReviewRequestConfig().setEnforceGreenlitRatio(false);
         suggestionConfig.setAutoArchiveThreshold(168);
         suggestionConfig.setAutoLockThreshold(168);
-        suggestionConfig.getReviewRequestConfig().setMinimumSuggestionAge(604_800_000);
         botConfig.setSuggestionConfig(suggestionConfig);
 
         AlphaProjectConfig alphaProjectConfig = new AlphaProjectConfig();
