@@ -27,7 +27,7 @@ public class ReviewRequestConfig {
      * <br>
      * Set to -1 to disable
      */
-    private int requestReviewThreshold = 15;
+    private int threshold = 15;
 
     /**
      * Should greenlit threshold be enforced for requested reviews.
@@ -43,5 +43,5 @@ public class ReviewRequestConfig {
      * <br>
      * Set to 0 to disable
      */
-    private long minimumSuggestionRequestAge = 1_000L * 60L * 60L * 24L * 7L; // 7 days
+    private long minimumSuggestionAge = 1_000L * 60L * 60L * 24L * 7L; // 7 days
 }

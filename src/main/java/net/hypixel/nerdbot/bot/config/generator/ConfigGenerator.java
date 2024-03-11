@@ -108,11 +108,11 @@ public class ConfigGenerator {
         suggestionConfig.setArchiveOnGreenlit(false);
         suggestionConfig.setLockOnGreenlit(false);
         suggestionConfig.setAutoPinFirstMessage(true);
-        suggestionConfig.getReviewRequestConfig().setRequestReviewThreshold(15);
+        suggestionConfig.getReviewRequestConfig().setThreshold(15);
         suggestionConfig.getReviewRequestConfig().setEnforceGreenlitRatio(false);
         suggestionConfig.setAutoArchiveThreshold(168);
         suggestionConfig.setAutoLockThreshold(168);
-        suggestionConfig.getReviewRequestConfig().setMinimumSuggestionRequestAge(604_800_000);
+        suggestionConfig.getReviewRequestConfig().setMinimumSuggestionAge(604_800_000);
         botConfig.setSuggestionConfig(suggestionConfig);
 
         AlphaProjectConfig alphaProjectConfig = new AlphaProjectConfig();

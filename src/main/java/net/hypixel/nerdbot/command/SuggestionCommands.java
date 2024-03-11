@@ -225,13 +225,13 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         // Handle Minimum Agrees
-        if (suggestion.getAgrees() < suggestionConfig.getReviewRequestConfig().getRequestReviewThreshold()) {
-            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.not_enough_reactions", suggestionConfig.getReviewRequestConfig().getRequestReviewThreshold());
+        if (suggestion.getAgrees() < suggestionConfig.getReviewRequestConfig().getThreshold()) {
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.not_enough_reactions", suggestionConfig.getReviewRequestConfig().getThreshold());
             return;
         }
 
         // Make sure the suggestion is old enough
-        if (System.currentTimeMillis() - firstMessage.get().getTimeCreated().toInstant().toEpochMilli() < suggestionConfig.getReviewRequestConfig().getMinimumSuggestionRequestAge()) {
+        if (System.currentTimeMillis() - firstMessage.get().getTimeCreated().toInstant().toEpochMilli() < suggestionConfig.getReviewRequestConfig().getMinimumSuggestionAge()) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.too_new");
             return;
         }
