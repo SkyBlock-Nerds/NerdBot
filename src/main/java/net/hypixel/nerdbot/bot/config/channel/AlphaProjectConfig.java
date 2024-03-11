@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.bot.config.forum;
+package net.hypixel.nerdbot.bot.config.channel;
 
 import lombok.Getter;
 import lombok.Setter;

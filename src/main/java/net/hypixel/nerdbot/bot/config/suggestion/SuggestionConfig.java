@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.bot.config.forum;
+package net.hypixel.nerdbot.bot.config.suggestion;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -13,17 +13,17 @@ import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 @ToString
 public class SuggestionConfig {
 
+    /**
+     * Configuration for the review request feature
+     */
+    private ReviewRequestConfig reviewRequestConfig;
+
     // Channels
 
     /**
      * The {@link TextChannel} IDs for the suggestion forum
      */
     private String forumChannelId = "";
-
-    /**
-     * The {@link TextChannel} ID for the suggestion review messages
-     */
-    private String requestedReviewChannelId = "";
 
     // Forum Tags
 
@@ -77,22 +77,6 @@ public class SuggestionConfig {
     private boolean autoPinFirstMessage = false;
 
     /**
-     * The amount of agrees required to request a review.
-     * <br><br>
-     * Default is 15
-     * <br>
-     * Set to -1 to disable
-     */
-    private int requestReviewThreshold = 15;
-
-    /**
-     * Should greenlit threshold be enforced for requested reviews.
-     * <br><br>
-     * Default is disabled
-     */
-    private boolean enforcingGreenlitRatioForRequestReview = false;
-
-    /**
      * The amount of hours with no activity to archive a thread.
      * <br><br>
      * Default is 7 days
@@ -109,15 +93,4 @@ public class SuggestionConfig {
      * Set to -1 to disable
      */
     private int autoLockThreshold = -1;
-
-    // Review Settings
-
-    /**
-     * The minimum required age of a suggestion to be eligible for a review
-     * <br><br>
-     * Default is 7 days
-     * <br>
-     * Set to 0 to disable
-     */
-    private long minimumSuggestionRequestAge = 1_000L * 60L * 60L * 24L * 7L; // 7 days
 }

@@ -24,7 +24,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
-import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
+import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
@@ -169,6 +169,11 @@ public class SuggestionCommands extends ApplicationCommand {
     public void requestSuggestionReview(GuildSlashEvent event) {
         event.deferReply(true).complete();
 
+        if (!NerdBotApp.getBot().getConfig().getSuggestionConfig().getReviewRequestConfig().isEnabled()) {
+            TranslationManager.edit(event.getHook(), "commands.request_review.disabled");
+            return;
+        }
+
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = repository.findOrCreateById(event.getMember().getId());
 
@@ -220,19 +225,19 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         // Handle Minimum Agrees
-        if (suggestion.getAgrees() < suggestionConfig.getRequestReviewThreshold()) {
-            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.not_enough_reactions", suggestionConfig.getRequestReviewThreshold());
+        if (suggestion.getAgrees() < suggestionConfig.getReviewRequestConfig().getThreshold()) {
+            TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.not_enough_reactions", suggestionConfig.getReviewRequestConfig().getThreshold());
             return;
         }
 
         // Make sure the suggestion is old enough
-        if (System.currentTimeMillis() - firstMessage.get().getTimeCreated().toInstant().toEpochMilli() < suggestionConfig.getMinimumSuggestionRequestAge()) {
+        if (System.currentTimeMillis() - firstMessage.get().getTimeCreated().toInstant().toEpochMilli() < suggestionConfig.getReviewRequestConfig().getMinimumSuggestionAge()) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.too_new");
             return;
         }
 
         // Handle Greenlit Ratio
-        if (suggestionConfig.isEnforcingGreenlitRatioForRequestReview() && suggestion.getRatio() <= suggestionConfig.getGreenlitRatio()) {
+        if (suggestionConfig.getReviewRequestConfig().isEnforceGreenlitRatio() && suggestion.getRatio() <= suggestionConfig.getGreenlitRatio()) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.request_review.bad_reaction_ratio", suggestionConfig.getGreenlitRatio());
             return;
         }
