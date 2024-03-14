@@ -3,33 +3,26 @@ package net.hypixel.nerdbot.generator.item;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.hypixel.nerdbot.generator.image.ImageCoordinates;
-
-import java.awt.image.BufferedImage;
 
 @Getter
 @Setter
 @ToString
 public class InventoryItem extends GeneratedObject {
 
-    private int overallSlot;
-    private int slotInRow;
-    private int row;
-    private ImageCoordinates imageCoordinates;
+    private int[] slot;
+    private int[] amount;
+    private String itemName;
+    private String extraContent;
 
-    public InventoryItem(int overallSlot, int slotInRow, int row, ImageCoordinates imageCoordinates) {
-        super(null);
-        this.overallSlot = overallSlot;
-        this.slotInRow = slotInRow;
-        this.row = row;
-        this.imageCoordinates = imageCoordinates;
+    public InventoryItem(int slot, int amount, String itemName, String extraContent) {
+        this(new int[] {slot}, new int[] {amount}, itemName, extraContent);
     }
 
-    public InventoryItem(int overallSlot, int slotInRow, int row, ImageCoordinates imageCoordinates, BufferedImage image) {
-        super(image);
-        this.overallSlot = overallSlot;
-        this.slotInRow = slotInRow;
-        this.row = row;
-        this.imageCoordinates = imageCoordinates;
+    public InventoryItem(int[] slots, int[] amounts, String itemName, String extraContent) {
+        super(null);
+        this.slot = slots;
+        this.amount = amounts;
+        this.itemName = itemName != null ? itemName.toLowerCase() : null;
+        this.extraContent = extraContent != null ? extraContent.toLowerCase() : null;
     }
 }

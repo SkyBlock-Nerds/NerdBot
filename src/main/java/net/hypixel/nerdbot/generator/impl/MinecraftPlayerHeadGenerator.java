@@ -62,10 +62,10 @@ public class MinecraftPlayerHeadGenerator implements Generator {
             skin = ImageIO.read(target);
             System.out.println("Skin: " + target);
         } catch (MalformedURLException exception) {
-            throw new GeneratorException("Malformed URL: " + textureId);
+            throw new GeneratorException("Malformed URL: `%s`", textureId);
         } catch (IOException exception) {
             log.error("Could not find skin with ID: " + textureId, exception);
-            throw new GeneratorException("Could not find skin with ID: " + textureId);
+            throw new GeneratorException("Could not find skin with ID: `s`" + textureId);
         }
 
         return new MinecraftHead(skin).drawHead().getImage();
@@ -82,11 +82,11 @@ public class MinecraftPlayerHeadGenerator implements Generator {
             System.out.println("User UUID: " + userUUID);
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new GeneratorException("Could not find player with name: " + playerName);
+            throw new GeneratorException("Could not find player with name: `%s`", playerName);
         }
 
         if (userUUID == null || userUUID.get("id") == null) {
-            throw new GeneratorException("Could not find player with name: " + playerName);
+            throw new GeneratorException("Could not find player with name: `%s`", playerName);
         }
 
         JsonObject userProfile;
@@ -94,11 +94,11 @@ public class MinecraftPlayerHeadGenerator implements Generator {
             userProfile = Util.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new GeneratorException("Could not find player with name: " + playerName);
+            throw new GeneratorException("Could not find player with name: `%s`", playerName);
         }
 
         if (userProfile == null || userProfile.get("properties") == null) {
-            throw new GeneratorException("Could not find player with name: " + playerName);
+            throw new GeneratorException("Could not find player with name: `%s`", playerName);
         }
 
         String base64SkinData = userProfile.get("properties").getAsJsonArray().get(0).getAsJsonObject().get("value").getAsString();

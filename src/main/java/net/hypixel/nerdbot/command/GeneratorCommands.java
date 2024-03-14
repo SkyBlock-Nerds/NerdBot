@@ -16,10 +16,7 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.generator.builder.ItemBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
-import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
-import net.hypixel.nerdbot.generator.impl.MinecraftRecipeGenerator;
-import net.hypixel.nerdbot.generator.impl.MinecraftTooltipGenerator;
+import net.hypixel.nerdbot.generator.impl.*;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -35,6 +32,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
     private static final String BASE_COMMAND = "gen";
     private static final String ITEM_DESCRIPTION = "The ID of the item to display";
+    private static final String EXTRA_DATA_DESCRIPTION = "The extra modifiers to change the item";
     private static final String ENCHANTED_DESCRIPTION = "Whether or not the item should be enchanted";
     private static final String NAME_DESCRIPTION = "The name of the item";
     private static final String RARITY_DESCRIPTION = "The rarity of the item";
@@ -51,13 +49,19 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final String TEXT_DESCRIPTION = "The text to display";
     private static final String TEXTURE_DESCRIPTION = "The texture of the player head";
     private static final String RECIPE_STRING_DESCRIPTION = "The recipe string to display";
+    private static final String INVENTORY_ROWS_DESCRIPTION = "The number of rows in the inventory";
+    private static final String INVENTORY_COLUMNS_DESCRIPTION = "The number of slots per row in the inventory";
+    private static final String INVENTORY_CONTENTS_DESCRIPTION = "The inventory contents to display";
+    private static final String INVENTORY_NAME_DESCRIPTION = "The name of the inventory";
     private static final String RENDER_BACKGROUND_DESCRIPTION = "Whether or not the background should be rendered";
+    private static final String RENDER_BORDER_DESCRIPTION = "Whether the inventory's border should be rendered";
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
 
     @JDASlashCommand(name = BASE_COMMAND, group = "display", subcommand = "item", description = "Display an item")
     public void generateItem(
         GuildSlashEvent event,
         @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
+        @AppOption(description = EXTRA_DATA_DESCRIPTION) @Optional String data,
         @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue
     ) {
@@ -75,6 +79,7 @@ public class GeneratorCommands extends ApplicationCommand {
             } else {
                 item.addGenerator(new MinecraftItemGenerator.Builder()
                     .withItem(itemId)
+                    .withData(data)
                     .isEnchanted(enchanted)
                     .isBigImage()
                     .build()
@@ -121,11 +126,14 @@ public class GeneratorCommands extends ApplicationCommand {
 
         try {
             GeneratedObject generatedObject = new ItemBuilder()
-                .addGenerator(new MinecraftRecipeGenerator.Builder()
-                    .withRecipeString(recipeString)
-                    .renderBackground(renderBackground)
-                    .build()
-                ).build();
+                .addGenerator(new MinecraftInventoryGenerator.Builder()
+                    .withRows(3)
+                    .withSlotsPerRow(3)
+                    .drawBorder(false)
+                    .drawBackground(renderBackground)
+                    .withInventoryString(recipeString)
+                    .build())
+                .build();
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
         } catch (GeneratorException exception) {
@@ -133,6 +141,40 @@ public class GeneratorCommands extends ApplicationCommand {
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating that recipe!").queue();
             log.error("Encountered an error while generating a recipe", exception);
+        }
+    }
+
+    @JDASlashCommand(name = BASE_COMMAND, subcommand = "inventory", description = "Generate an inventory")
+    public void generateInventory(
+        GuildSlashEvent event,
+        @AppOption(description = INVENTORY_ROWS_DESCRIPTION) int rows,
+        @AppOption(description = INVENTORY_COLUMNS_DESCRIPTION) int slotsPerRow,
+        @AppOption(description = INVENTORY_CONTENTS_DESCRIPTION) String inventoryString,
+        @AppOption(description = INVENTORY_NAME_DESCRIPTION) @Optional String containerName,
+        @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean drawBorder
+    ) {
+        event.deferReply().complete();
+
+        drawBorder = drawBorder == null || drawBorder;
+
+        try {
+            GeneratedObject generatedObject = new ItemBuilder()
+                .addGenerator(new MinecraftInventoryGenerator.Builder()
+                    .withRows(rows)
+                    .withSlotsPerRow(slotsPerRow)
+                    .drawBorder(drawBorder)
+                    .drawBackground(true)
+                    .withContainerTitle(containerName)
+                    .withInventoryString(inventoryString)
+                    .build())
+                .build();
+
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "inventory.png")).queue();
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating that inventory!").queue();
+            log.error("Encountered an error while generating an inventory", exception);
         }
     }
 
@@ -260,11 +302,13 @@ public class GeneratorCommands extends ApplicationCommand {
             }
 
             if (recipeString != null) {
-                itemBuilder.addGenerator(0, new MinecraftRecipeGenerator.Builder()
-                    .withRecipeString(recipeString)
-                    .renderBackground(true)
-                    .build()
-                );
+                itemBuilder.addGenerator(0, new MinecraftInventoryGenerator.Builder()
+                        .withRows(3)
+                        .withSlotsPerRow(3)
+                        .drawBorder(false)
+                        .withInventoryString(recipeString)
+                        .build()
+                    ).build();
             }
 
             if (tooltipSide != null && MinecraftTooltipGenerator.TooltipSide.valueOf(tooltipSide.toUpperCase()) == MinecraftTooltipGenerator.TooltipSide.LEFT) {

@@ -1,0 +1,16 @@
+[
+    {"name": "leather_helmet", "x": 112, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "leather_armor"},
+    {"name": "leather_chestplate", "x": 96, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "leather_armor"},
+    {"name": "leather_leggings", "x": 128, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "leather_armor"},
+    {"name": "leather_boots", "x": 80, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "leather_armor"},
+    {"name": "helmet_trim", "x": 64, "y": 0, "type": "MAPPED", "isBig": false, "colorOptions": "armor_trim"},
+    {"name": "chestplate_trim", "x": 16, "y": 0, "type": "MAPPED", "isBig": false, "colorOptions": "armor_trim"},
+    {"name": "leggings_trim", "144": 64, "y": 0, "type": "MAPPED", "isBig": false, "colorOptions": "armor_trim"},
+    {"name": "boots_trim", "x": 0, "y": 0, "type": "MAPPED", "isBig": false, "colorOptions": "armor_trim"},
+    {"name": "potion", "x": 160, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "potion"},
+    {"name": "tipped_arrow", "x": 48, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "potion"},
+    {"name": "firework_star", "x": 48, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "firework"},
+    {"name": "spawn_egg", "x": 176, "y": 0, "type": "DUAL_LAYER", "isBig": false, "colorOptions": "spawn_egg"},
+    {"name": "enchant_glint_big", "x": 0, "y": 16, "isBig": true},
+    {"name": "enchant_glint_small", "x": 32, "y": 0, "isBig": false}
+]
