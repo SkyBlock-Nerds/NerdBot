@@ -67,6 +67,11 @@ public class ProfileCommands extends ApplicationCommand {
     public void requestLinkProfile(GuildSlashEvent event, @AppOption(description = "Your Minecraft IGN to link. Use the account you applied with.") String username) {
         event.deferReply(true).complete();
 
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
 
@@ -141,8 +146,13 @@ public class ProfileCommands extends ApplicationCommand {
     )
     public void linkProfile(GlobalSlashEvent event, @AppOption(description = "Your Minecraft IGN to link.") String username) {
         event.deferReply(true).complete();
-        Member member = Util.getMainGuild().retrieveMemberById(event.getUser().getId()).complete();
 
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
+        Member member = Util.getMainGuild().retrieveMemberById(event.getUser().getId()).complete();
         if (member == null) {
             event.getHook().editOriginal("You must be in SkyBlock Nerds to use this command!").queue();
             return;
@@ -193,6 +203,12 @@ public class ProfileCommands extends ApplicationCommand {
     )
     public void myActivity(GuildSlashEvent event) {
         event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
         List<MessageEmbed> activityEmbeds = getActivityEmbeds(event.getMember());
         event.getHook().editOriginalEmbeds(activityEmbeds.toArray(new MessageEmbed[]{})).queue();
     }
@@ -204,6 +220,12 @@ public class ProfileCommands extends ApplicationCommand {
     )
     public void myInfo(GuildSlashEvent event) {
         event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
@@ -231,6 +253,11 @@ public class ProfileCommands extends ApplicationCommand {
         description = "View your badges."
     )
     public void myBadges(GuildSlashEvent event, @AppOption @Optional Boolean showPublicly) {
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
         showPublicly = (showPublicly == null || !showPublicly);
         event.deferReply(showPublicly).complete();
 
@@ -253,6 +280,11 @@ public class ProfileCommands extends ApplicationCommand {
         @AppOption(description = "Show suggestions from a specific category.", autocomplete = "suggestion-types") @Optional Suggestion.ChannelType type
     ) {
         event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
@@ -285,6 +317,11 @@ public class ProfileCommands extends ApplicationCommand {
     public void removeBirthday(GuildSlashEvent event) {
         event.deferReply(true).complete();
 
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
@@ -306,6 +343,11 @@ public class ProfileCommands extends ApplicationCommand {
     )
     public void setBirthday(GuildSlashEvent event, @AppOption(description = "Your birthday in the format MM/DD/YYYY.") String birthday, @AppOption(description = "Whether to announce your age.") @Optional Boolean announceAge) {
         event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
 
         Member member = event.getMember();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);

@@ -34,7 +34,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Log4j2
@@ -94,44 +93,6 @@ public class InfoCommands extends ApplicationCommand {
         }
 
         return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
-    }
-
-    /**
-     * Returns a view (not a new list) of the source Map for the range based on page and pageSize.
-     *
-     * @param sourceMap the source map
-     * @param page      page number should start from 1
-     * @param pageSize  page size
-     * @param <K>       the type of keys in the map
-     * @param <V>       the type of values in the map
-     *
-     * @return a list view of map entries for the specified page
-     *
-     * @throws IllegalArgumentException if the sourceMap is null, page is invalid, or pageSize is non-positive
-     */
-    public static <K, V> List<Map.Entry<K, V>> getPage(Map<K, V> sourceMap, int page, int pageSize) {
-        if (sourceMap == null) {
-            throw new IllegalArgumentException("Invalid source map");
-        }
-
-        if (page < 1) {
-            throw new IllegalArgumentException("Invalid page number: " + page);
-        }
-
-        if (pageSize <= 0) {
-            throw new IllegalArgumentException("Invalid page size: " + pageSize);
-        }
-
-        int fromIndex = (page - 1) * pageSize;
-        int toIndex = fromIndex + pageSize;
-        List<Map.Entry<K, V>> entries = new ArrayList<>(sourceMap.entrySet());
-
-        if (fromIndex >= entries.size()) {
-            return new ArrayList<>();
-        }
-
-        toIndex = Math.min(toIndex, entries.size());
-        return entries.subList(fromIndex, toIndex);
     }
 
     @JDASlashCommand(name = "info", subcommand = "bot", description = "View information about the bot", defaultLocked = true)
