@@ -107,14 +107,22 @@ public class SuggestionCommands extends ApplicationCommand {
         pages.forEach(suggestion -> {
             String link = "[" + suggestion.getThreadName().replaceAll("`", "") + "](" + suggestion.getJumpUrl() + ")";
             link += (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "") + "\n";
-            link += suggestion.getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "\n";
+
+            if (!suggestion.getAppliedTags().isEmpty()) {
+                link += "Tags: `" + suggestion.getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "`\n";
+
+            }
+
+            link += "Created at " + DiscordTimestamp.toLongDateTime(suggestion.getTimeCreated().toEpochSecond() * 1_000);
             link = link.replaceAll("\n\n", "\n");
 
             if (showNames) {
                 User user = NerdBotApp.getBot().getJDA().getUserById(suggestion.getOwnerIdLong());
                 if (user != null) {
-                    link += "Created by " + user.getEffectiveName() + "\n";
+                    link += " by " + user.getAsMention() + "\n";
                 }
+            } else {
+                link += "\n";
             }
 
             link += getEmojiFormat(EmojiConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + getEmojiFormat(EmojiConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
@@ -123,6 +131,7 @@ public class SuggestionCommands extends ApplicationCommand {
 
         EmbedBuilder embedBuilder = new EmbedBuilder();
         int blankFields = 2;
+
         embedBuilder.setColor(Color.GREEN)
             .setTitle("Suggestions")
             .setDescription(links.toString())
