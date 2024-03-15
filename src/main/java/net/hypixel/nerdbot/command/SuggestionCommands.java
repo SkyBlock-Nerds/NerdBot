@@ -119,12 +119,11 @@ public class SuggestionCommands extends ApplicationCommand {
             if (showNames) {
                 User user = NerdBotApp.getBot().getJDA().getUserById(suggestion.getOwnerIdLong());
                 if (user != null) {
-                    link += " by " + user.getAsMention() + "\n";
+                    link += " by " + user.getAsMention();
                 }
-            } else {
-                link += "\n";
             }
 
+            link += "\n";
             link += getEmojiFormat(EmojiConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + getEmojiFormat(EmojiConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
             links.add(link);
         });
