@@ -49,7 +49,7 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
                         return;
                     }
 
-                    discordUser.getLastActivity().addChannelHistory(Util.getMainGuild().getTextChannelById(channelId), System.currentTimeMillis());
+                    discordUser.getLastActivity().addChannelHistory(Util.getMainGuild().getTextChannelById(channelId), messageCount);
                 });
                 discordUser.getLastActivity().getChannelActivity().clear();
                 discordUser.getLastActivity().setChannelActivity(null);

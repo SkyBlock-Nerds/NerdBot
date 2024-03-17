@@ -52,21 +52,25 @@ public class LastActivity {
     private Map<String, Integer> channelActivity = new HashMap<>();
 
     public void addChannelHistory(GuildChannel guildChannel, long lastMessageTimestamp) {
+        addChannelHistory(guildChannel, 1, lastMessageTimestamp);
+    }
+
+    public void addChannelHistory(GuildChannel guildChannel, int amount, long timestamp) {
         channelActivityHistory.stream()
             .filter(entry -> entry.getChannelId().equals(guildChannel.getId()))
             .findFirst()
             .ifPresentOrElse(entry -> {
-                entry.setMessageCount(entry.getMessageCount() + 1);
-                entry.setLastMessageTimestamp(lastMessageTimestamp);
+                entry.setMessageCount(entry.getMessageCount() + amount);
+                entry.setLastMessageTimestamp(timestamp);
 
                 if (entry.getLastKnownDisplayName() == null || !entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannel.getName())) {
                     entry.setLastKnownDisplayName(guildChannel.getName());
                 }
 
-                System.out.println("Added message to channel " + guildChannel.getId() + " with count " + entry.getMessageCount() + " and timestamp " + lastMessageTimestamp);
+                System.out.println("Added message to channel " + guildChannel.getId() + " with count " + entry.getMessageCount() + " and timestamp " + timestamp);
             }, () -> {
-                System.out.println("Created new channel entry for " + guildChannel.getId() + " with timestamp " + lastMessageTimestamp);
-                channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), 1, lastMessageTimestamp));
+                System.out.println("Created new channel entry for " + guildChannel.getId() + " with timestamp " + timestamp);
+                channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp));
             });
     }
 
