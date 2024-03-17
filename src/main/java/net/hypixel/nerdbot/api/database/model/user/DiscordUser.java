@@ -11,6 +11,7 @@ import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
 import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
+import net.hypixel.nerdbot.api.database.model.user.stats.ChannelActivityEntry;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.ChannelCache;
@@ -50,7 +51,7 @@ public class DiscordUser {
     }
 
     public int getTotalMessageCount() {
-        return lastActivity.getChannelActivity().values().stream().mapToInt(Integer::intValue).sum();
+        return lastActivity.getChannelActivityHistory().stream().mapToInt(ChannelActivityEntry::getMessageCount).sum();
     }
 
     public boolean isProfileAssigned() {

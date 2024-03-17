@@ -39,8 +39,20 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
             if (discordUser.getLastActivity().getChannelActivityHistory() == null) {
                 log.info("Channel activity history for " + discordUser.getDiscordId() + " was null. Setting to default values!");
                 discordUser.getLastActivity().setChannelActivityHistory(new ArrayList<>());
-            } else {
-                log.info("Channel activity history for " + discordUser.getDiscordId() + " was not null! (size: " + discordUser.getLastActivity().getChannelActivityHistory().size() + ")");
+            }
+
+            if (!discordUser.getLastActivity().getChannelActivity().isEmpty()) {
+                log.info("Old channel activity for " + discordUser.getDiscordId() + " was not empty! (size: " + discordUser.getLastActivity().getChannelActivity().size() + ")");
+                discordUser.getLastActivity().getChannelActivity().forEach((channelId, messageCount) -> {
+                    if (Util.getMainGuild().getTextChannelById(channelId) == null) {
+                        log.info("Channel " + channelId + " was not found in the guild! Skipping...");
+                        return;
+                    }
+
+                    discordUser.getLastActivity().addChannelHistory(Util.getMainGuild().getTextChannelById(channelId), System.currentTimeMillis());
+                });
+                discordUser.getLastActivity().getChannelActivity().clear();
+                discordUser.getLastActivity().setChannelActivity(null);
             }
 
             discordUser.getLastActivity().purgeOldHistory();
