@@ -198,7 +198,7 @@ public class ExportCommands extends ApplicationCommand {
                 // If we manually limited the timestamps to before "x" time (defaults to 0) it "removes" the greenlit suggestions from appearing in the linked CSV file.
                 if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
                     csvData.addRow(List.of(
-                        "=EPOCHTODATE(" + greenlitMessage.getSuggestionTimestamp() / 1_000L + ")",
+                        formatTimestamp(greenlitMessage.getSuggestionTimestamp() / 1_000L),
                         "\"" + String.join(", ", greenlitMessage.getTags()) + "\"",
                         "=HYPERLINK(\"" + greenlitMessage.getSuggestionUrl() + "\", \"" + greenlitMessage.getSuggestionTitle().replace("\"", "\"\"") + "\")"
                     ));
