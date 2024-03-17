@@ -81,7 +81,9 @@ public class ExportCommands extends ApplicationCommand {
                 if (discordUser != null && discordUser.isProfileAssigned()) {
                     username = discordUser.getMojangProfile().getUsername();
                 } else {
-                    ThreadMember threadOwner = threadChannel.getOwnerThreadMember() == null ? threadChannel.retrieveThreadMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS) : threadChannel.getOwnerThreadMember();
+                    ThreadMember threadOwner = threadChannel.getOwnerThreadMember() == null
+                        ? threadChannel.retrieveThreadMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS)
+                        : threadChannel.getOwnerThreadMember();
                     username = threadOwner.getMember().getEffectiveName();
                 }
             } catch (Exception exception) {
@@ -129,7 +131,7 @@ public class ExportCommands extends ApplicationCommand {
             // Check if all threads have been exported
             if ((index + 1) == threads.size()) {
                 try {
-                    File file = Util.createTempFile("threads-" + forumChannel.getName() + "-" + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now()) + ".csv", csvData.toCSV());
+                    File file = Util.createTempFile("export-threads-" + forumChannel.getName() + "-" + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now()) + ".csv", csvData.toCSV());
                     event.getHook().editOriginal(TranslationManager.translate("commands.export.complete", forumChannel.getAsMention())).setFiles(FileUpload.fromData(file)).queue();
                 } catch (IOException exception) {
                     log.error("Failed to create temp file!", exception);
@@ -206,7 +208,7 @@ public class ExportCommands extends ApplicationCommand {
             try {
                 event.getHook().sendMessage(TranslationManager.translate("curator.greenlit_import_instructions", discordUser))
                     .setEphemeral(true)
-                    .addFiles(FileUpload.fromData(Util.createTempFile(String.format("greenlit-" + channel.getName() + "-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
+                    .addFiles(FileUpload.fromData(Util.createTempFile(String.format("export-greenlit-" + channel.getName() + "-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
                     .queue();
             } catch (IOException exception) {
                 TranslationManager.edit(event.getHook(), discordUser, "commands.temp_file_error", exception.getMessage());
@@ -233,7 +235,7 @@ public class ExportCommands extends ApplicationCommand {
 
         log.info("Found " + profiles.size() + " members meeting requirements.");
         profiles.forEach(profile -> uuidArray.add(profile.getUniqueId().toString()));
-        File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(uuidArray));
+        File file = Util.createTempFile(String.format("export-uuids-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), NerdBotApp.GSON.toJson(uuidArray));
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
 
@@ -268,7 +270,7 @@ public class ExportCommands extends ApplicationCommand {
                 stringBuilder.append("\n");
             }
 
-            File file = Util.createTempFile("roles.txt", stringBuilder.toString());
+            File file = Util.createTempFile(String.format("export-roles-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), stringBuilder.toString());
             event.getHook().sendFiles(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             log.error("Failed to create temp file!", exception);
@@ -335,7 +337,7 @@ public class ExportCommands extends ApplicationCommand {
         });
 
         try {
-            File file = Util.createTempFile(String.format("member-activity-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
+            File file = Util.createTempFile(String.format("export-member-activity-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
             event.getHook().sendFiles(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             log.error("Failed to create temp file!", exception);
