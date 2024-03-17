@@ -299,6 +299,7 @@ public class ExportCommands extends ApplicationCommand {
             "Last Project Activity",
             "Last Alpha Activity",
             "Total Tracked Messages",
+            "Messages Sent Recently",
             "Reviewed",
             "Comments"
         ), ";");
@@ -320,7 +321,7 @@ public class ExportCommands extends ApplicationCommand {
             LastActivity lastActivity = discordUser.getLastActivity();
             return lastActivity.getChannelActivityHistory().stream()
                 .filter(channelActivityEntry -> !Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).contains(channelActivityEntry.getChannelId()))
-                .anyMatch(entry -> entry.getLastMessageTimestamp() > inactivityTimestamp || entry.getMessageCount() > NerdBotApp.getBot().getConfig().getInactivityMessages());
+                .anyMatch(entry -> entry.getLastMessageTimestamp() > inactivityTimestamp && entry.getMessageCount() > NerdBotApp.getBot().getConfig().getInactivityMessages());
         });
 
         discordUsers.forEach(discordUser -> {
