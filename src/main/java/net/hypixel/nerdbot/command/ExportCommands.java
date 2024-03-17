@@ -325,12 +325,12 @@ public class ExportCommands extends ApplicationCommand {
             return lastActivity.getLastGlobalActivity() < inactivityTimestamp
                 && lastActivity.getLastVoiceChannelJoinDate() < inactivityTimestamp
                 && lastActivity.getLastItemGenUsage() < inactivityTimestamp
-                && lastActivity.getSuggestionCreationHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
-                && lastActivity.getProjectSuggestionCreationHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
-                && lastActivity.getAlphaSuggestionCreationHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
-                && lastActivity.getSuggestionVoteHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
-                && lastActivity.getProjectSuggestionVoteHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
-                && lastActivity.getAlphaSuggestionVoteHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
+                && lastActivity.getSuggestionCreationHistory().get(0) < inactivityTimestamp
+                && lastActivity.getProjectSuggestionCreationHistory().get(0) < inactivityTimestamp
+                && lastActivity.getAlphaSuggestionCreationHistory().get(0) < inactivityTimestamp
+                && lastActivity.getSuggestionVoteHistory().get(0) < inactivityTimestamp
+                && lastActivity.getProjectSuggestionVoteHistory().get(0) < inactivityTimestamp
+                && lastActivity.getAlphaSuggestionVoteHistory().get(0) < inactivityTimestamp
                 && lastActivity.getLastProjectActivity() < inactivityTimestamp
                 && lastActivity.getLastAlphaActivity() < inactivityTimestamp;
         });
