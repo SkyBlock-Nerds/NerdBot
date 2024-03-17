@@ -7,6 +7,7 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.google.gson.JsonArray;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.ThreadMember;
@@ -20,6 +21,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.curator.ForumGreenlitChannelCurator;
@@ -191,7 +193,7 @@ public class ExportCommands extends ApplicationCommand {
             CSVData csvData = new CSVData(List.of("Creation Date", "Tags", "Title"), ";");
 
             for (GreenlitMessage greenlitMessage : output) {
-                // If we manually limited the timestamps to before "x" time (defaults to 0 btw) it "removes" the greenlit suggestions from appearing in the linked CSV file.
+                // If we manually limited the timestamps to before "x" time (defaults to 0) it "removes" the greenlit suggestions from appearing in the linked CSV file.
                 if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
                     csvData.addRow(List.of(
                         "=EPOCHTODATE(" + greenlitMessage.getSuggestionTimestamp() / 1_000L + ")",
@@ -201,18 +203,14 @@ public class ExportCommands extends ApplicationCommand {
                 }
             }
 
-            String csvString = csvData.toCSV();
-            String fileName = String.format(channel.getName() + "-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now()));
-
             try {
                 event.getHook().sendMessage(TranslationManager.translate("curator.greenlit_import_instructions", discordUser))
                     .setEphemeral(true)
-                    .addFiles(FileUpload.fromData(Util.createTempFile(fileName, csvString)))
+                    .addFiles(FileUpload.fromData(Util.createTempFile(String.format("greenlit-" + channel.getName() + "-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
                     .queue();
             } catch (IOException exception) {
                 TranslationManager.edit(event.getHook(), discordUser, "commands.temp_file_error", exception.getMessage());
                 log.error("Failed to create temp file!", exception);
-                log.error("File contents:\n" + csvString);
             }
         });
     }
@@ -276,5 +274,80 @@ public class ExportCommands extends ApplicationCommand {
             log.error("Failed to create temp file!", exception);
             TranslationManager.reply(event, "commands.temp_file_error", exception.getMessage());
         }
+    }
+
+    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", defaultLocked = true)
+    public void exportMemberActivity(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        CSVData csvData = new CSVData(List.of(
+            "Discord Username",
+            "Minecraft Username",
+            "Last Global Activity",
+            "Last VC Join",
+            "Last Item Generation",
+            "Last Suggestion Created",
+            "Last Project Suggestion Created",
+            "Last Alpha Suggestion Created",
+            "Last Suggestion Vote",
+            "Last Project Suggestion Vote",
+            "Last Alpha Suggestion Vote",
+            "Last Project Activity",
+            "Last Alpha Activity",
+            "Total Tracked Messages",
+            "Reviewed",
+            "Comments"
+        ), ";");
+
+        if (discordUserRepository.isEmpty()) {
+            TranslationManager.edit(event.getHook(), "commands.export.none_found");
+            return;
+        }
+
+        discordUserRepository.getAll().forEach(discordUser -> {
+            Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
+
+            if (member == null) {
+                log.warn("[Member Activity Export] Member not found for user: " + discordUser.getDiscordId());
+                return;
+            }
+
+            LastActivity lastActivity = discordUser.getLastActivity();
+
+            csvData.addRow(List.of(
+                member.getUser().getName(),
+                discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
+                formatTimestamp(lastActivity.getLastGlobalActivity()),
+                formatTimestamp(lastActivity.getLastVoiceChannelJoinDate()),
+                formatTimestamp(lastActivity.getLastItemGenUsage()),
+                lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionCreationHistory().get(0)),
+                lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionCreationHistory().get(0)),
+                lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
+                lastActivity.getSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionVoteHistory().get(0)),
+                lastActivity.getProjectSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionVoteHistory().get(0)),
+                lastActivity.getAlphaSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionVoteHistory().get(0)),
+                formatTimestamp(lastActivity.getLastProjectActivity()),
+                formatTimestamp(lastActivity.getLastAlphaActivity()),
+                String.valueOf(lastActivity.getChannelActivity().values().stream().mapToInt(Integer::intValue).sum()),
+                "FALSE"
+            ));
+        });
+
+        try {
+            File file = Util.createTempFile(String.format("member-activity-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
+            event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+        } catch (IOException exception) {
+            log.error("Failed to create temp file!", exception);
+            TranslationManager.reply(event, "commands.temp_file_error", exception.getMessage());
+        }
+    }
+
+    private String formatTimestamp(long timestamp) {
+        if (timestamp < 0) {
+            return "N/A";
+        }
+
+        return "=EPOCHTODATE(" + timestamp / 1_000 + ")";
     }
 }
