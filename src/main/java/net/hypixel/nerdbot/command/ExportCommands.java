@@ -355,7 +355,7 @@ public class ExportCommands extends ApplicationCommand {
                 lastActivity.getAlphaSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionVoteHistory().get(0)),
                 formatTimestamp(lastActivity.getLastProjectActivity()),
                 formatTimestamp(lastActivity.getLastAlphaActivity()),
-                String.valueOf(lastActivity.getChannelActivity().values().stream().mapToInt(Integer::intValue).sum()),
+                String.valueOf(lastActivity.getTotalMessageCount(NerdBotApp.getBot().getConfig().getInactivityDays())),
                 "\"" + channelActivity + "\"",
                 "FALSE"
             ));
