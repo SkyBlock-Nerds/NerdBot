@@ -37,6 +37,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -308,6 +309,7 @@ public class ExportCommands extends ApplicationCommand {
         }
 
         List<DiscordUser> discordUsers = discordUserRepository.getAll();
+        long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(NerdBotApp.getBot().getConfig().getInactivityDays());
 
         discordUsers.removeIf(discordUser -> {
             Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
@@ -316,18 +318,9 @@ public class ExportCommands extends ApplicationCommand {
 
         discordUsers.removeIf(discordUser -> {
             LastActivity lastActivity = discordUser.getLastActivity();
-            long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(NerdBotApp.getBot().getConfig().getInactivityDays());
-            return lastActivity.getLastGlobalActivity() < inactivityTimestamp
-                && lastActivity.getLastVoiceChannelJoinDate() < inactivityTimestamp
-                && lastActivity.getLastItemGenUsage() < inactivityTimestamp
-                && lastActivity.getSuggestionCreationHistory().get(0) < inactivityTimestamp
-                && lastActivity.getProjectSuggestionCreationHistory().get(0) < inactivityTimestamp
-                && lastActivity.getAlphaSuggestionCreationHistory().get(0) < inactivityTimestamp
-                && lastActivity.getSuggestionVoteHistory().get(0) < inactivityTimestamp
-                && lastActivity.getProjectSuggestionVoteHistory().get(0) < inactivityTimestamp
-                && lastActivity.getAlphaSuggestionVoteHistory().get(0) < inactivityTimestamp
-                && lastActivity.getLastProjectActivity() < inactivityTimestamp
-                && lastActivity.getLastAlphaActivity() < inactivityTimestamp;
+            return lastActivity.getChannelActivityHistory().stream()
+                .filter(channelActivityEntry -> !Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).contains(channelActivityEntry.getChannelId()))
+                .anyMatch(entry -> entry.getLastMessageTimestamp() > inactivityTimestamp || entry.getMessageCount() > NerdBotApp.getBot().getConfig().getInactivityMessages());
         });
 
         discordUsers.forEach(discordUser -> {

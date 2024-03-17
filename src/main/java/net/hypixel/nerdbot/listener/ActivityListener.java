@@ -157,7 +157,8 @@ public class ActivityListener {
         discordUser.getLastActivity().setLastGlobalActivity(time);
         log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
 
-        discordUser.getLastActivity().getChannelActivity().put(guildChannel.getId(), discordUser.getLastActivity().getChannelActivity().getOrDefault(guildChannel.getId(), 0) + 1);
+        discordUser.getLastActivity().addChannelHistory(guildChannel, time);
+        //discordUser.getLastActivity().getChannelActivity().put(guildChannel.getId(), discordUser.getLastActivity().getChannelActivity().getOrDefault(guildChannel.getId(), 0) + 1);
     }
 
     @SubscribeEvent

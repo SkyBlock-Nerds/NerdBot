@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.api.database.model.user.stats;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.time.Duration;
@@ -46,7 +47,27 @@ public class LastActivity {
     private List<Long> projectSuggestionVoteHistory = new ArrayList<>();
     private List<Long> projectSuggestionCommentHistory = new ArrayList<>();
 
+    private List<ChannelActivityEntry> channelActivityHistory = new ArrayList<>();
     private Map<String, Integer> channelActivity = new HashMap<>();
+
+    public void addChannelHistory(GuildChannel guildChannel, long lastMessageTimestamp) {
+        channelActivityHistory.stream()
+            .filter(entry -> entry.getChannelId().equals(guildChannel.getId()))
+            .findFirst()
+            .ifPresentOrElse(entry -> {
+                entry.setMessageCount(entry.getMessageCount() + 1);
+                entry.setLastMessageTimestamp(lastMessageTimestamp);
+
+                if (entry.getLastKnownDisplayName() == null || !entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannel.getName())) {
+                    entry.setLastKnownDisplayName(guildChannel.getName());
+                }
+
+                System.out.println("Added message to channel " + guildChannel.getId() + " with count " + entry.getMessageCount() + " and timestamp " + lastMessageTimestamp);
+            }, () -> {
+                System.out.println("Created new channel entry for " + guildChannel.getId() + " with timestamp " + lastMessageTimestamp);
+                channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), 1, lastMessageTimestamp));
+            });
+    }
 
     public boolean purgeOldHistory() {
         long thirtyDays = Duration.of(30, ChronoUnit.DAYS).toMillis();

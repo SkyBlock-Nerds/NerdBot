@@ -112,4 +112,9 @@ public class BotConfig {
      * The amount of days that a user must be inactive for to show up in the inactive user list
      */
     private int inactivityDays = 7;
+
+    /**
+     * The amount of messages that a user must have sent in the last inactivityDays to be considered active
+     */
+    private int inactivityMessages = 10;
 }
