@@ -307,7 +307,7 @@ public class ExportCommands extends ApplicationCommand {
             return;
         }
 
-        List<DiscordUser> discordUsers = discordUserRepository.getAll();
+        List<DiscordUser> discordUsers = new ArrayList<>(discordUserRepository.getAll());
 
         discordUsers.removeIf(discordUser -> {
             Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
