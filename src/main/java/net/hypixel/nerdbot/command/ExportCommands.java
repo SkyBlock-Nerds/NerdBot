@@ -7,6 +7,7 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.google.gson.JsonArray;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.ThreadMember;
@@ -20,6 +21,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.curator.ForumGreenlitChannelCurator;
@@ -27,12 +29,12 @@ import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.TimeUtil;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.csv.CSVData;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +43,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 @Log4j2
 public class ExportCommands extends ApplicationCommand {
@@ -57,26 +58,22 @@ public class ExportCommands extends ApplicationCommand {
 
         TranslationManager.edit(event.getHook(), commandSender, "commands.export.exporting_threads", forumChannel.getAsMention());
 
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Username;Item;Summary;Agree;Disagree");
-
-        Stream<ThreadChannel> threads = Util.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
+        CSVData csvData = new CSVData(List.of("Username", "Thread", "Content", "Agrees", "Disagrees"), ";");
+        List<ThreadChannel> threads = Util.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
             .map(ThreadChannel.class::cast)
             .distinct()
-            .sorted((o1, o2) -> (int) (o1.getTimeCreated().toEpochSecond() - o2.getTimeCreated().toEpochSecond()));
+            .sorted((o1, o2) -> (int) (o1.getTimeCreated().toEpochSecond() - o2.getTimeCreated().toEpochSecond()))
+            .filter(threadChannel -> {
+                try {
+                    Message startMessage = threadChannel.retrieveStartMessage().complete();
+                    return startMessage != null && !startMessage.getContentRaw().isBlank();
+                } catch (ErrorResponseException exception) {
+                    return exception.getErrorResponse() != ErrorResponse.UNKNOWN_MESSAGE;
+                }
+            })
+            .toList();
 
-        // Filter out threads that don't have a start message
-        threads = threads.filter(threadChannel -> {
-            try {
-                Message startMessage = threadChannel.retrieveStartMessage().complete();
-                return startMessage != null && !startMessage.getContentRaw().isBlank();
-            } catch (ErrorResponseException exception) {
-                return exception.getErrorResponse() != ErrorResponse.UNKNOWN_MESSAGE;
-            }
-        });
-
-        List<ThreadChannel> threadList = threads.toList();
-        for (ThreadChannel threadChannel : threadList) {
+        for (ThreadChannel threadChannel : threads) {
             DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(threadChannel.getOwnerId());
             String username;
 
@@ -84,7 +81,9 @@ public class ExportCommands extends ApplicationCommand {
                 if (discordUser != null && discordUser.isProfileAssigned()) {
                     username = discordUser.getMojangProfile().getUsername();
                 } else {
-                    ThreadMember threadOwner = threadChannel.getOwnerThreadMember() == null ? threadChannel.retrieveThreadMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS) : threadChannel.getOwnerThreadMember();
+                    ThreadMember threadOwner = threadChannel.getOwnerThreadMember() == null
+                        ? threadChannel.retrieveThreadMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS)
+                        : threadChannel.getOwnerThreadMember();
                     username = threadOwner.getMember().getEffectiveName();
                 }
             } catch (Exception exception) {
@@ -92,8 +91,8 @@ public class ExportCommands extends ApplicationCommand {
                 log.error("Failed to get username for thread owner " + threadChannel.getOwnerId(), exception);
             }
 
-            int index = threadList.indexOf(threadChannel);
-            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exporting_thread", index + 1, threadList.size(), threadChannel.getName(), username);
+            int index = threads.indexOf(threadChannel);
+            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exporting_thread", index + 1, threads.size(), threadChannel.getName(), username);
 
             Message startMessage = threadChannel.retrieveStartMessage().complete();
             List<MessageReaction> reactions = startMessage.getReactions().stream()
@@ -119,18 +118,20 @@ public class ExportCommands extends ApplicationCommand {
                     .getCount();
             }
 
-            stringBuilder.append("\n").append(username).append(";")
-                .append("=HYPERLINK(\"").append(threadChannel.getJumpUrl()).append("\", \"").append(threadChannel.getName()).append("\");")
-                .append("\"").append(startMessage.getContentRaw().replace("\"", "\"\"")).append("\"").append(";")
-                .append(agrees).append(";")
-                .append(disagrees);
+            csvData.addRow(List.of(
+                username,
+                "=HYPERLINK(\"" + threadChannel.getName().replace("\"", "\"\"") + "\")",
+                "\"" + startMessage.getContentRaw().replace("\"", "\"\"") + "\"",
+                String.valueOf(agrees),
+                String.valueOf(disagrees)
+            ));
 
-            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exported_thread", index + 1, threadList.size(), threadChannel.getName(), username);
+            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exported_thread", index + 1, threads.size(), threadChannel.getName(), username);
 
             // Check if all threads have been exported
-            if ((index + 1) == threadList.size()) {
+            if ((index + 1) == threads.size()) {
                 try {
-                    File file = Util.createTempFile("threads-" + forumChannel.getName() + "-" + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now()) + ".csv", stringBuilder.toString());
+                    File file = Util.createTempFile("export-threads-" + forumChannel.getName() + "-" + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now()) + ".csv", csvData.toCSV());
                     event.getHook().editOriginal(TranslationManager.translate("commands.export.complete", forumChannel.getAsMention())).setFiles(FileUpload.fromData(file)).queue();
                 } catch (IOException exception) {
                     log.error("Failed to create temp file!", exception);
@@ -191,29 +192,27 @@ public class ExportCommands extends ApplicationCommand {
                 return;
             }
 
-            StringBuilder csvOutput = new StringBuilder();
+            CSVData csvData = new CSVData(List.of("Creation Date", "Tags", "Title"), ";");
+
             for (GreenlitMessage greenlitMessage : output) {
-                // If we manually limited the timestamps to before "x" time (defaults to 0 btw) it "removes" the greenlit suggestions from appearing in the linked CSV file.
+                // If we manually limited the timestamps to before "x" time (defaults to 0) it "removes" the greenlit suggestions from appearing in the linked CSV file.
                 if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
-                    // The Format is shown below, Tabs (\t) are the separators between values, as commas cannot be used, but It's still in the CSV file format due to Google Sheets Default Import only accepting CSV files.
-                    // Timestamp Posted, Tags, Suggestion Title (Hyperlinked to the post), Reserved Location, Reserved Location, Reserved Location, Reserved Location, Reserved Location
-                    csvOutput.append("=EPOCHTODATE(").append(greenlitMessage.getSuggestionTimestamp() / 1_000L).append(")\t")
-                        .append(String.join(", ", greenlitMessage.getTags()))
-                        .append("\t=HYPERLINK(\"").append(greenlitMessage.getSuggestionUrl()).append("\", \"").append(greenlitMessage.getSuggestionTitle()).append("\")")
-                        .append("\t\t\t\t\t\t")
-                        .append("\n");
+                    csvData.addRow(List.of(
+                        formatTimestamp(greenlitMessage.getSuggestionTimestamp() / 1_000L),
+                        "\"" + String.join(", ", greenlitMessage.getTags()) + "\"",
+                        "=HYPERLINK(\"" + greenlitMessage.getSuggestionUrl() + "\", \"" + greenlitMessage.getSuggestionTitle().replace("\"", "\"\"") + "\")"
+                    ));
                 }
             }
 
-            String csvString = csvOutput.toString();
-            String fileName = String.format(channel.getName() + "-%s.csv", DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("ECT", ZoneId.SHORT_IDS)).format(Instant.now()));
-
             try {
-                event.getHook().sendMessage(TranslationManager.translate("curator.greenlit_import_instructions", discordUser)).setEphemeral(true).addFiles(FileUpload.fromData(Util.createTempFile(fileName, csvString))).queue();
+                event.getHook().sendMessage(TranslationManager.translate("curator.greenlit_import_instructions", discordUser))
+                    .setEphemeral(true)
+                    .addFiles(FileUpload.fromData(Util.createTempFile(String.format("export-greenlit-" + channel.getName() + "-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
+                    .queue();
             } catch (IOException exception) {
                 TranslationManager.edit(event.getHook(), discordUser, "commands.temp_file_error", exception.getMessage());
                 log.error("Failed to create temp file!", exception);
-                log.error("File contents:\n" + csvString);
             }
         });
     }
@@ -236,7 +235,7 @@ public class ExportCommands extends ApplicationCommand {
 
         log.info("Found " + profiles.size() + " members meeting requirements.");
         profiles.forEach(profile -> uuidArray.add(profile.getUniqueId().toString()));
-        File file = Util.createTempFile("uuids.txt", NerdBotApp.GSON.toJson(uuidArray));
+        File file = Util.createTempFile(String.format("export-uuids-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), NerdBotApp.GSON.toJson(uuidArray));
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
 
@@ -271,11 +270,86 @@ public class ExportCommands extends ApplicationCommand {
                 stringBuilder.append("\n");
             }
 
-            File file = Util.createTempFile("roles.txt", stringBuilder.toString());
+            File file = Util.createTempFile(String.format("export-roles-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), stringBuilder.toString());
             event.getHook().sendFiles(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             log.error("Failed to create temp file!", exception);
             TranslationManager.reply(event, "commands.temp_file_error", exception.getMessage());
         }
+    }
+
+    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", defaultLocked = true)
+    public void exportMemberActivity(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        CSVData csvData = new CSVData(List.of(
+            "Discord Username",
+            "Minecraft Username",
+            "Last Global Activity",
+            "Last VC Join",
+            "Last Item Generation",
+            "Last Suggestion Created",
+            "Last Project Suggestion Created",
+            "Last Alpha Suggestion Created",
+            "Last Suggestion Vote",
+            "Last Project Suggestion Vote",
+            "Last Alpha Suggestion Vote",
+            "Last Project Activity",
+            "Last Alpha Activity",
+            "Total Tracked Messages",
+            "Reviewed",
+            "Comments"
+        ), ";");
+
+        if (discordUserRepository.isEmpty()) {
+            TranslationManager.edit(event.getHook(), "commands.export.none_found");
+            return;
+        }
+
+        discordUserRepository.getAll().forEach(discordUser -> {
+            Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
+
+            if (member == null) {
+                log.warn("[Member Activity Export] Member not found for user: " + discordUser.getDiscordId());
+                return;
+            }
+
+            LastActivity lastActivity = discordUser.getLastActivity();
+
+            csvData.addRow(List.of(
+                member.getUser().getName(),
+                discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
+                formatTimestamp(lastActivity.getLastGlobalActivity()),
+                formatTimestamp(lastActivity.getLastVoiceChannelJoinDate()),
+                formatTimestamp(lastActivity.getLastItemGenUsage()),
+                lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionCreationHistory().get(0)),
+                lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionCreationHistory().get(0)),
+                lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
+                lastActivity.getSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionVoteHistory().get(0)),
+                lastActivity.getProjectSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionVoteHistory().get(0)),
+                lastActivity.getAlphaSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionVoteHistory().get(0)),
+                formatTimestamp(lastActivity.getLastProjectActivity()),
+                formatTimestamp(lastActivity.getLastAlphaActivity()),
+                String.valueOf(lastActivity.getChannelActivity().values().stream().mapToInt(Integer::intValue).sum()),
+                "FALSE"
+            ));
+        });
+
+        try {
+            File file = Util.createTempFile(String.format("export-member-activity-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
+            event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+        } catch (IOException exception) {
+            log.error("Failed to create temp file!", exception);
+            TranslationManager.reply(event, "commands.temp_file_error", exception.getMessage());
+        }
+    }
+
+    private String formatTimestamp(long timestamp) {
+        if (timestamp < 0) {
+            return "N/A";
+        }
+
+        return "=EPOCHTODATE(" + timestamp / 1_000 + ")";
     }
 }
