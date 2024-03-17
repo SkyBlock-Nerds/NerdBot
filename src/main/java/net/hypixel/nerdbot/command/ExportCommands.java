@@ -307,16 +307,11 @@ public class ExportCommands extends ApplicationCommand {
             return;
         }
 
-        List<DiscordUser> discordUsers = new ArrayList<>(discordUserRepository.getAll());
+        List<DiscordUser> discordUsers = discordUserRepository.getAll();
 
         discordUsers.removeIf(discordUser -> {
             Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
-            if (member == null) {
-                log.warn("[Member Activity Export] Member not found for user: " + discordUser.getDiscordId());
-                return true;
-            }
-
-            return RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
+            return member != null && RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
         });
 
         discordUsers.removeIf(discordUser -> {
