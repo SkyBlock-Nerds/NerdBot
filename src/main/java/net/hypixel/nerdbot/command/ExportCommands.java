@@ -330,7 +330,7 @@ public class ExportCommands extends ApplicationCommand {
                 && lastActivity.getLastAlphaActivity() < inactivityTimestamp;
         });
 
-        discordUserRepository.getAll().forEach(discordUser -> {
+        discordUsers.forEach(discordUser -> {
             Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
 
             if (member == null) {
