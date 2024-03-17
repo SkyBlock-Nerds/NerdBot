@@ -41,7 +41,6 @@ public class InfoCommands extends ApplicationCommand {
 
     private static final String GREENLIT_SELECTION_MENU_HANDLER_NAME = "greenlit";
     private static final int MAX_ENTRIES_PER_PAGE = 25;
-    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
 
     private final Database database = NerdBotApp.getBot().getDatabase();
 
@@ -56,7 +55,7 @@ public class InfoCommands extends ApplicationCommand {
             DiscordUser user = iterator.next();
 
             user.getMember().ifPresent(member -> {
-                if (member.getUser().isBot() || Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
+                if (member.getUser().isBot() || Arrays.stream(Util.SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
                     iterator.remove();
                     log.debug("Removed " + user.getDiscordId() + " from the list of users because they are a bot or have a special role");
                 }
@@ -171,7 +170,7 @@ public class InfoCommands extends ApplicationCommand {
         AtomicInteger staff = new AtomicInteger();
         AtomicInteger grapes = new AtomicInteger();
         AtomicInteger nerds = new AtomicInteger();
-        for (String roleName : SPECIAL_ROLES) {
+        for (String roleName : Util.SPECIAL_ROLES) {
             RoleManager.getRole(roleName).ifPresentOrElse(role -> staff.addAndGet(guild.getMembersWithRoles(role).size()),
                 () -> log.warn("Role {} not found", roleName)
             );

@@ -307,6 +307,34 @@ public class ExportCommands extends ApplicationCommand {
             return;
         }
 
+        List<DiscordUser> discordUsers = discordUserRepository.getAll();
+
+        discordUsers.removeIf(discordUser -> {
+            Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
+            if (member == null) {
+                log.warn("[Member Activity Export] Member not found for user: " + discordUser.getDiscordId());
+                return true;
+            }
+
+            return RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
+        });
+
+        discordUsers.removeIf(discordUser -> {
+            LastActivity lastActivity = discordUser.getLastActivity();
+            long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(NerdBotApp.getBot().getConfig().getInactivityDays());
+            return lastActivity.getLastGlobalActivity() < inactivityTimestamp
+                && lastActivity.getLastVoiceChannelJoinDate() < inactivityTimestamp
+                && lastActivity.getLastItemGenUsage() < inactivityTimestamp
+                && lastActivity.getSuggestionCreationHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
+                && lastActivity.getProjectSuggestionCreationHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
+                && lastActivity.getAlphaSuggestionCreationHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
+                && lastActivity.getSuggestionVoteHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
+                && lastActivity.getProjectSuggestionVoteHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
+                && lastActivity.getAlphaSuggestionVoteHistory().stream().anyMatch(timestamp -> timestamp < inactivityTimestamp)
+                && lastActivity.getLastProjectActivity() < inactivityTimestamp
+                && lastActivity.getLastAlphaActivity() < inactivityTimestamp;
+        });
+
         discordUserRepository.getAll().forEach(discordUser -> {
             Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
 
