@@ -310,7 +310,8 @@ public class ExportCommands extends ApplicationCommand {
         }
 
         List<DiscordUser> discordUsers = discordUserRepository.getAll();
-        long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(NerdBotApp.getBot().getConfig().getInactivityDays());
+        int inactivityDays = NerdBotApp.getBot().getConfig().getInactivityDays();
+        long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(inactivityDays);
 
         discordUsers.removeIf(discordUser -> {
             Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
@@ -321,7 +322,7 @@ public class ExportCommands extends ApplicationCommand {
             LastActivity lastActivity = discordUser.getLastActivity();
             return lastActivity.getChannelActivityHistory().stream()
                 .filter(channelActivityEntry -> !Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).contains(channelActivityEntry.getChannelId()))
-                .anyMatch(entry -> entry.getLastMessageTimestamp() > inactivityTimestamp && entry.getMessageCount() > NerdBotApp.getBot().getConfig().getInactivityMessages());
+                .anyMatch(entry -> entry.getLastMessageTimestamp() > inactivityTimestamp && discordUser.getLastActivity().getTotalMessageCount(inactivityDays) > NerdBotApp.getBot().getConfig().getInactivityMessages());
         });
 
         discordUsers.forEach(discordUser -> {
@@ -334,7 +335,7 @@ public class ExportCommands extends ApplicationCommand {
 
             LastActivity lastActivity = discordUser.getLastActivity();
 
-            String channelActivity = lastActivity.getChannelActivityHistory(NerdBotApp.getBot().getConfig().getInactivityDays())
+            String channelActivity = lastActivity.getChannelActivityHistory(inactivityDays)
                 .stream()
                 .filter(entry -> !Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).contains(entry.getChannelId()))
                 .map(entry -> "#" + entry.getLastKnownDisplayName() + ": " + entry.getMessageCount())
@@ -355,7 +356,7 @@ public class ExportCommands extends ApplicationCommand {
                 lastActivity.getAlphaSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionVoteHistory().get(0)),
                 formatTimestamp(lastActivity.getLastProjectActivity()),
                 formatTimestamp(lastActivity.getLastAlphaActivity()),
-                String.valueOf(lastActivity.getTotalMessageCount(NerdBotApp.getBot().getConfig().getInactivityDays())),
+                String.valueOf(lastActivity.getTotalMessageCount(inactivityDays)),
                 "\"" + channelActivity + "\"",
                 "FALSE"
             ));
