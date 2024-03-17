@@ -27,12 +27,12 @@ import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.TimeUtil;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.csv.CSVData;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 @Log4j2
 public class ExportCommands extends ApplicationCommand {
@@ -57,26 +56,22 @@ public class ExportCommands extends ApplicationCommand {
 
         TranslationManager.edit(event.getHook(), commandSender, "commands.export.exporting_threads", forumChannel.getAsMention());
 
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Username;Item;Summary;Agree;Disagree");
-
-        Stream<ThreadChannel> threads = Util.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
+        CSVData csvData = new CSVData(List.of("Username", "Thread", "Content", "Agrees", "Disagrees"), ";");
+        List<ThreadChannel> threads = Util.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
             .map(ThreadChannel.class::cast)
             .distinct()
-            .sorted((o1, o2) -> (int) (o1.getTimeCreated().toEpochSecond() - o2.getTimeCreated().toEpochSecond()));
+            .sorted((o1, o2) -> (int) (o1.getTimeCreated().toEpochSecond() - o2.getTimeCreated().toEpochSecond()))
+            .filter(threadChannel -> {
+                try {
+                    Message startMessage = threadChannel.retrieveStartMessage().complete();
+                    return startMessage != null && !startMessage.getContentRaw().isBlank();
+                } catch (ErrorResponseException exception) {
+                    return exception.getErrorResponse() != ErrorResponse.UNKNOWN_MESSAGE;
+                }
+            })
+            .toList();
 
-        // Filter out threads that don't have a start message
-        threads = threads.filter(threadChannel -> {
-            try {
-                Message startMessage = threadChannel.retrieveStartMessage().complete();
-                return startMessage != null && !startMessage.getContentRaw().isBlank();
-            } catch (ErrorResponseException exception) {
-                return exception.getErrorResponse() != ErrorResponse.UNKNOWN_MESSAGE;
-            }
-        });
-
-        List<ThreadChannel> threadList = threads.toList();
-        for (ThreadChannel threadChannel : threadList) {
+        for (ThreadChannel threadChannel : threads) {
             DiscordUser discordUser = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(threadChannel.getOwnerId());
             String username;
 
@@ -92,8 +87,8 @@ public class ExportCommands extends ApplicationCommand {
                 log.error("Failed to get username for thread owner " + threadChannel.getOwnerId(), exception);
             }
 
-            int index = threadList.indexOf(threadChannel);
-            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exporting_thread", index + 1, threadList.size(), threadChannel.getName(), username);
+            int index = threads.indexOf(threadChannel);
+            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exporting_thread", index + 1, threads.size(), threadChannel.getName(), username);
 
             Message startMessage = threadChannel.retrieveStartMessage().complete();
             List<MessageReaction> reactions = startMessage.getReactions().stream()
@@ -119,18 +114,20 @@ public class ExportCommands extends ApplicationCommand {
                     .getCount();
             }
 
-            stringBuilder.append("\n").append(username).append(";")
-                .append("=HYPERLINK(\"").append(threadChannel.getJumpUrl()).append("\", \"").append(threadChannel.getName()).append("\");")
-                .append("\"").append(startMessage.getContentRaw().replace("\"", "\"\"")).append("\"").append(";")
-                .append(agrees).append(";")
-                .append(disagrees);
+            csvData.addRow(List.of(
+                username,
+                "=HYPERLINK(\"" + threadChannel.getName().replace("\"", "\"\"") + "\")",
+                "\"" + startMessage.getContentRaw().replace("\"", "\"\"") + "\"",
+                String.valueOf(agrees),
+                String.valueOf(disagrees)
+            ));
 
-            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exported_thread", index + 1, threadList.size(), threadChannel.getName(), username);
+            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exported_thread", index + 1, threads.size(), threadChannel.getName(), username);
 
             // Check if all threads have been exported
-            if ((index + 1) == threadList.size()) {
+            if ((index + 1) == threads.size()) {
                 try {
-                    File file = Util.createTempFile("threads-" + forumChannel.getName() + "-" + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now()) + ".csv", stringBuilder.toString());
+                    File file = Util.createTempFile("threads-" + forumChannel.getName() + "-" + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now()) + ".csv", csvData.toCSV());
                     event.getHook().editOriginal(TranslationManager.translate("commands.export.complete", forumChannel.getAsMention())).setFiles(FileUpload.fromData(file)).queue();
                 } catch (IOException exception) {
                     log.error("Failed to create temp file!", exception);
@@ -191,25 +188,27 @@ public class ExportCommands extends ApplicationCommand {
                 return;
             }
 
-            StringBuilder csvOutput = new StringBuilder();
+            CSVData csvData = new CSVData(List.of("Creation Date", "Tags", "Title"), ";");
+
             for (GreenlitMessage greenlitMessage : output) {
                 // If we manually limited the timestamps to before "x" time (defaults to 0 btw) it "removes" the greenlit suggestions from appearing in the linked CSV file.
                 if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
-                    // The Format is shown below, Tabs (\t) are the separators between values, as commas cannot be used, but It's still in the CSV file format due to Google Sheets Default Import only accepting CSV files.
-                    // Timestamp Posted, Tags, Suggestion Title (Hyperlinked to the post), Reserved Location, Reserved Location, Reserved Location, Reserved Location, Reserved Location
-                    csvOutput.append("=EPOCHTODATE(").append(greenlitMessage.getSuggestionTimestamp() / 1_000L).append(")\t")
-                        .append(String.join(", ", greenlitMessage.getTags()))
-                        .append("\t=HYPERLINK(\"").append(greenlitMessage.getSuggestionUrl()).append("\", \"").append(greenlitMessage.getSuggestionTitle()).append("\")")
-                        .append("\t\t\t\t\t\t")
-                        .append("\n");
+                    csvData.addRow(List.of(
+                        "=EPOCHTODATE(" + greenlitMessage.getSuggestionTimestamp() / 1_000L + ")",
+                        "\"" + String.join(", ", greenlitMessage.getTags()) + "\"",
+                        "=HYPERLINK(\"" + greenlitMessage.getSuggestionUrl() + "\", \"" + greenlitMessage.getSuggestionTitle().replace("\"", "\"\"") + "\")"
+                    ));
                 }
             }
 
-            String csvString = csvOutput.toString();
-            String fileName = String.format(channel.getName() + "-%s.csv", DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("ECT", ZoneId.SHORT_IDS)).format(Instant.now()));
+            String csvString = csvData.toCSV();
+            String fileName = String.format(channel.getName() + "-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now()));
 
             try {
-                event.getHook().sendMessage(TranslationManager.translate("curator.greenlit_import_instructions", discordUser)).setEphemeral(true).addFiles(FileUpload.fromData(Util.createTempFile(fileName, csvString))).queue();
+                event.getHook().sendMessage(TranslationManager.translate("curator.greenlit_import_instructions", discordUser))
+                    .setEphemeral(true)
+                    .addFiles(FileUpload.fromData(Util.createTempFile(fileName, csvString)))
+                    .queue();
             } catch (IOException exception) {
                 TranslationManager.edit(event.getHook(), discordUser, "commands.temp_file_error", exception.getMessage());
                 log.error("Failed to create temp file!", exception);

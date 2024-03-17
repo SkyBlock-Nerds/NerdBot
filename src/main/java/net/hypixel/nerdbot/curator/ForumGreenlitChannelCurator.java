@@ -19,6 +19,7 @@ import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.util.Util;
 
@@ -96,6 +97,14 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel, ThreadCha
 
             if (greenlitTag == null) {
                 log.error("Couldn't find the greenlit tag for the forum channel " + forumChannel.getName() + " (ID: " + forumChannel.getId() + ")!");
+                timer.observeDuration();
+                return output;
+            }
+
+            if (emojiConfig.getGreenlitEmojiId() == null || emojiConfig.getAgreeEmojiId() == null || emojiConfig.getNeutralEmojiId() == null || emojiConfig.getDisagreeEmojiId() == null
+                || EmojiCache.getEmojiById(emojiConfig.getGreenlitEmojiId()).isEmpty() || EmojiCache.getEmojiById(emojiConfig.getAgreeEmojiId()).isEmpty()
+                || EmojiCache.getEmojiById(emojiConfig.getNeutralEmojiId()).isEmpty() || EmojiCache.getEmojiById(emojiConfig.getDisagreeEmojiId()).isEmpty()) {
+                log.error("Couldn't find the greenlit, agree, neutral, or disagree emoji in the channel " + forumChannel.getName() + " (ID: " + forumChannel.getId() + ")! Check the emojiConfig values!");
                 timer.observeDuration();
                 return output;
             }

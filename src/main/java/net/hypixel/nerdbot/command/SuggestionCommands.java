@@ -457,5 +457,4 @@ public class SuggestionCommands extends ApplicationCommand {
     public List<Suggestion.ChannelType> getSuggestionTypes(CommandAutoCompleteInteractionEvent event) {
         return List.of(Suggestion.ChannelType.VALUES);
     }
-
 }
