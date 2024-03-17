@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
 
@@ -82,6 +83,23 @@ public class LastActivity {
             this.projectSuggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
             this.projectSuggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
             this.projectSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays));
+    }
+
+    public int getTotalMessageCount() {
+        return getChannelActivityHistory().stream().mapToInt(ChannelActivityEntry::getMessageCount).sum();
+    }
+
+    public int getTotalMessageCount(int days) {
+        return getChannelActivityHistory().stream()
+            .filter(entry -> entry.getLastMessageTimestamp() > System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days))
+            .mapToInt(ChannelActivityEntry::getMessageCount)
+            .sum();
+    }
+
+    public List<ChannelActivityEntry> getChannelActivityHistory(int days) {
+        return getChannelActivityHistory().stream()
+            .filter(entry -> entry.getLastMessageTimestamp() > System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days))
+            .toList();
     }
 
     public String toTotalPeriod(Function<LastActivity, List<Long>> function, Duration duration) {

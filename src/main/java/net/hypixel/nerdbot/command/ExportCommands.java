@@ -334,7 +334,7 @@ public class ExportCommands extends ApplicationCommand {
 
             LastActivity lastActivity = discordUser.getLastActivity();
 
-            String channelActivity = lastActivity.getChannelActivityHistory()
+            String channelActivity = lastActivity.getChannelActivityHistory(NerdBotApp.getBot().getConfig().getInactivityDays())
                 .stream()
                 .filter(entry -> !Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).contains(entry.getChannelId()))
                 .map(entry -> "#" + entry.getLastKnownDisplayName() + ": " + entry.getMessageCount())

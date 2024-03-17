@@ -230,13 +230,13 @@ public class InfoCommands extends ApplicationCommand {
         }
 
         List<DiscordUser> users = getDiscordUsers(NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class));
-        users.sort(Comparator.comparingInt(DiscordUser::getTotalMessageCount));
+        users.sort(Comparator.comparingInt(value -> value.getLastActivity().getTotalMessageCount()));
 
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
         getPage(users, page, 10).forEach(discordUser -> {
             discordUser.getMember().ifPresentOrElse(member -> {
-                stringBuilder.append(" • ").append(member.getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getTotalMessageCount())).append(")").append("\n");
+                stringBuilder.append(" • ").append(member.getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount())).append(")").append("\n");
             }, () -> log.error("Couldn't find member " + discordUser.getDiscordId()));
         });
 
