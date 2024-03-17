@@ -309,7 +309,7 @@ public class ExportCommands extends ApplicationCommand {
             return;
         }
 
-        List<DiscordUser> discordUsers = new ArrayList<>(discordUserRepository.getAll());
+        List<DiscordUser> discordUsers = discordUserRepository.getAll();
 
         inactivityDays = inactivityDays != 0 ? inactivityDays : NerdBotApp.getBot().getConfig().getInactivityDays();
         inactivityMessages = inactivityMessages != 0 ? inactivityMessages : NerdBotApp.getBot().getConfig().getInactivityMessages();
