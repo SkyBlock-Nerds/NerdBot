@@ -39,6 +39,8 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
             if (discordUser.getLastActivity().getChannelActivityHistory() == null) {
                 log.info("Channel activity history for " + discordUser.getDiscordId() + " was null. Setting to default values!");
                 discordUser.getLastActivity().setChannelActivityHistory(new ArrayList<>());
+            } else {
+                log.info("Channel activity history for " + discordUser.getDiscordId() + " was not null! (size: " + discordUser.getLastActivity().getChannelActivityHistory().size() + ")");
             }
 
             discordUser.getLastActivity().purgeOldHistory();
