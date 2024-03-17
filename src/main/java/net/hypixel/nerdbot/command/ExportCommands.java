@@ -334,6 +334,13 @@ public class ExportCommands extends ApplicationCommand {
 
             LastActivity lastActivity = discordUser.getLastActivity();
 
+            String channelActivity = lastActivity.getChannelActivityHistory()
+                .stream()
+                .filter(entry -> !Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).contains(entry.getChannelId()))
+                .map(entry -> "#" + entry.getLastKnownDisplayName() + ": " + entry.getMessageCount())
+                .reduce((s1, s2) -> s1 + "\n" + s2)
+                .orElse("N/A");
+
             csvData.addRow(List.of(
                 member.getUser().getName(),
                 discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
@@ -349,6 +356,7 @@ public class ExportCommands extends ApplicationCommand {
                 formatTimestamp(lastActivity.getLastProjectActivity()),
                 formatTimestamp(lastActivity.getLastAlphaActivity()),
                 String.valueOf(lastActivity.getChannelActivity().values().stream().mapToInt(Integer::intValue).sum()),
+                "\"" + channelActivity + "\"",
                 "FALSE"
             ));
         });
