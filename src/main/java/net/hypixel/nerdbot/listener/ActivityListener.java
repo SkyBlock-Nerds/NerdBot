@@ -148,16 +148,22 @@ public class ActivityListener {
             }
         }
 
+        // Alpha/Project-specific Messages
         if (channelType == Suggestion.ChannelType.ALPHA) {
             discordUser.getLastActivity().setLastAlphaActivity(time);
         } else if (channelType == Suggestion.ChannelType.PROJECT) {
             discordUser.getLastActivity().setLastProjectActivity(time);
         }
 
+        // Global Messages
+        log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
+        discordUser.getLastActivity().setLastGlobalActivity(time);
+
+        // Update Channel Message History
         if (!(guildChannel instanceof ThreadChannel)) {
-            log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
-            discordUser.getLastActivity().setLastGlobalActivity(time);
             discordUser.getLastActivity().addChannelHistory(guildChannel, time);
+        } else {
+            discordUser.getLastActivity().addChannelHistory(guildChannel.asThreadChannel().getParentChannel(), time);
         }
     }
 

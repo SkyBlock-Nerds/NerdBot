@@ -66,12 +66,7 @@ public class LastActivity {
                 if (entry.getLastKnownDisplayName() == null || !entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannel.getName())) {
                     entry.setLastKnownDisplayName(guildChannel.getName());
                 }
-
-                System.out.println("Added message to channel " + guildChannel.getId() + " with count " + entry.getMessageCount() + " and timestamp " + timestamp);
-            }, () -> {
-                System.out.println("Created new channel entry for " + guildChannel.getId() + " with timestamp " + timestamp);
-                channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp));
-            });
+            }, () -> channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp)));
     }
 
     public boolean purgeOldHistory() {
