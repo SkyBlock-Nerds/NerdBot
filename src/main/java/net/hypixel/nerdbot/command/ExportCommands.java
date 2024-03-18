@@ -329,6 +329,8 @@ public class ExportCommands extends ApplicationCommand {
                 .anyMatch(entry -> entry.getLastMessageTimestamp() > inactivityTimestamp && discordUser.getLastActivity().getTotalMessageCount(finalInactivityDays) > finalInactivityMessages);
         });
 
+        log.info(event.getMember().getEffectiveName() + " is exporting member activity for " + discordUsers.size() + " members that meet the requirements (" + inactivityDays + " days of inactivity and " + inactivityMessages + " messages)");
+
         for (DiscordUser discordUser : discordUsers) {
             Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
 
@@ -364,6 +366,8 @@ public class ExportCommands extends ApplicationCommand {
                     "\"" + channelActivity + "\"",
                     "FALSE"
             ));
+
+            log.debug("Added member " + member.getUser().getName() + " to the activity export for " + event.getMember().getEffectiveName() + " (days required: " + inactivityDays + ", message count required: " + inactivityMessages + ")");
         }
 
         try {
