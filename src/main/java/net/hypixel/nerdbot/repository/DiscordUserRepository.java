@@ -12,6 +12,7 @@ import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 @Log4j2
@@ -39,9 +40,14 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
             if (discordUser.getLastActivity().getChannelActivityHistory() == null) {
                 log.info("Channel activity history for " + discordUser.getDiscordId() + " was null. Setting to default values!");
                 discordUser.getLastActivity().setChannelActivityHistory(new ArrayList<>());
-            } else {
-                log.info("Channel activity history for " + discordUser.getDiscordId() + " was not null! (size: " + discordUser.getLastActivity().getChannelActivityHistory().size() + ")");
             }
+
+            discordUser.getLastActivity().getChannelActivityHistory().forEach(channelActivityEntry -> {
+                if (channelActivityEntry.getMonthlyMessageCount() == null) {
+                    log.info("Monthly message count for " + discordUser.getDiscordId() + " was null. Setting to default values!");
+                    channelActivityEntry.setMonthlyMessageCount(new HashMap<>());
+                }
+            });
 
             if (!discordUser.getLastActivity().getChannelActivity().isEmpty()) {
                 log.info("Old channel activity for " + discordUser.getDiscordId() + " was not empty! (size: " + discordUser.getLastActivity().getChannelActivity().size() + ")");

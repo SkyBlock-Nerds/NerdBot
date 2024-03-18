@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
+import org.apache.commons.lang.time.DateFormatUtils;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -63,10 +64,13 @@ public class LastActivity {
                 entry.setMessageCount(entry.getMessageCount() + amount);
                 entry.setLastMessageTimestamp(timestamp);
 
+                String monthYear = DateFormatUtils.format(timestamp, "MM-yyyy");
+                entry.getMonthlyMessageCount().merge(monthYear, amount, Integer::sum);
+
                 if (entry.getLastKnownDisplayName() == null || !entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannel.getName())) {
                     entry.setLastKnownDisplayName(guildChannel.getName());
                 }
-            }, () -> channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp)));
+            }, () -> channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp, new HashMap<>(Map.of(DateFormatUtils.format(timestamp, "MMMM_yyyy"), amount)))));
     }
 
     public boolean purgeOldHistory() {
