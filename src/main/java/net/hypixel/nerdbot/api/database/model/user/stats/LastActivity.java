@@ -71,7 +71,7 @@ public class LastActivity {
                 if (entry.getLastKnownDisplayName() == null || !entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannel.getName())) {
                     entry.setLastKnownDisplayName(guildChannel.getName());
                 }
-            }, () -> channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp, new HashMap<>(Map.of(DateFormatUtils.format(timestamp, "MMMM_yyyy"), amount)))));
+            }, () -> channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp, new HashMap<>(Map.of(DateFormatUtils.format(timestamp, "MM-yyyy"), amount)))));
     }
 
     public boolean purgeOldHistory() {
