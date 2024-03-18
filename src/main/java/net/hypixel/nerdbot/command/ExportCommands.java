@@ -299,7 +299,7 @@ public class ExportCommands extends ApplicationCommand {
             "Last Project Activity",
             "Last Alpha Activity",
             "Total Recent Messages",
-            "Messages Sent Recently",
+            "Messages Sent (Last " + inactivityDays + "d)",
             "Reviewed",
             "Comments"
         ), ";");

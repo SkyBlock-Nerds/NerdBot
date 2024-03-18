@@ -4,14 +4,16 @@ import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
+import org.apache.commons.lang.time.DateFormatUtils;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
 
@@ -63,10 +65,13 @@ public class LastActivity {
                 entry.setMessageCount(entry.getMessageCount() + amount);
                 entry.setLastMessageTimestamp(timestamp);
 
+                String monthYear = DateFormatUtils.format(timestamp, "MM-yyyy");
+                entry.getMonthlyMessageCount().merge(monthYear, amount, Integer::sum);
+
                 if (entry.getLastKnownDisplayName() == null || !entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannel.getName())) {
                     entry.setLastKnownDisplayName(guildChannel.getName());
                 }
-            }, () -> channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp)));
+            }, () -> channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp, new HashMap<>(Map.of(DateFormatUtils.format(timestamp, "MM-yyyy"), amount)))));
     }
 
     public boolean purgeOldHistory() {
@@ -89,16 +94,27 @@ public class LastActivity {
     }
 
     public int getTotalMessageCount(int days) {
-        return getChannelActivityHistory().stream()
-            .filter(entry -> entry.getLastMessageTimestamp() > System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days))
-            .mapToInt(ChannelActivityEntry::getMessageCount)
-            .sum();
+        return getChannelActivityHistory(days).stream().mapToInt(ChannelActivityEntry::getMessageCount).sum();
     }
 
     public List<ChannelActivityEntry> getChannelActivityHistory(int days) {
-        return getChannelActivityHistory().stream()
-            .filter(entry -> entry.getLastMessageTimestamp() > System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days))
-            .toList();
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(days - 1);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-yyyy");
+
+        List<ChannelActivityEntry> entries = new ArrayList<>();
+        for (ChannelActivityEntry entry : channelActivityHistory) {
+            Map<String, Integer> monthlyMessageCountMap = entry.getMonthlyMessageCount();
+            for (LocalDate date = startDate; date.isBefore(endDate.plusDays(1)); date = date.plusDays(1)) {
+                String key = date.format(formatter);
+                if (monthlyMessageCountMap.containsKey(key)) {
+                    entries.add(new ChannelActivityEntry(entry.getChannelId(), entry.getLastKnownDisplayName(), monthlyMessageCountMap.get(key), entry.getLastMessageTimestamp(), monthlyMessageCountMap));
+                }
+            }
+        }
+
+        return entries;
     }
 
     public String toTotalPeriod(Function<LastActivity, List<Long>> function, Duration duration) {
