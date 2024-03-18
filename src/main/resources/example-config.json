@@ -127,5 +127,6 @@
   "interval": 43200000,
   "activityType": "WATCHING",
   "activity": "with an example message!",
-  "inactivityDays": 7
+  "inactivityDays": 7,
+  "inactivityMessages": 10
 }
