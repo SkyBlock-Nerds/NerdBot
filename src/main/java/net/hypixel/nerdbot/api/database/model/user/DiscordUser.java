@@ -49,10 +49,6 @@ public class DiscordUser {
         this(member.getId(), new ArrayList<>(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
     }
 
-    public int getTotalMessageCount() {
-        return lastActivity.getChannelActivity().values().stream().mapToInt(Integer::intValue).sum();
-    }
-
     public boolean isProfileAssigned() {
         return this.mojangProfile != null && this.mojangProfile.getUniqueId() != null;
     }

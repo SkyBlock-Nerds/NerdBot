@@ -37,6 +37,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -279,7 +280,7 @@ public class ExportCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", defaultLocked = true)
-    public void exportMemberActivity(GuildSlashEvent event) {
+    public void exportMemberActivity(GuildSlashEvent event, @AppOption(description = "The number of days of inactivity to consider") @Optional int inactivityDays, @AppOption(description = "The number of messages to consider as active") @Optional int inactivityMessages) {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -297,7 +298,8 @@ public class ExportCommands extends ApplicationCommand {
             "Last Alpha Suggestion Vote",
             "Last Project Activity",
             "Last Alpha Activity",
-            "Total Tracked Messages",
+            "Total Recent Messages",
+            "Messages Sent Recently",
             "Reviewed",
             "Comments"
         ), ";");
@@ -307,34 +309,66 @@ public class ExportCommands extends ApplicationCommand {
             return;
         }
 
-        discordUserRepository.getAll().forEach(discordUser -> {
+        List<DiscordUser> discordUsers = discordUserRepository.getAll();
+
+        inactivityDays = inactivityDays != 0 ? inactivityDays : NerdBotApp.getBot().getConfig().getInactivityDays();
+        inactivityMessages = inactivityMessages != 0 ? inactivityMessages : NerdBotApp.getBot().getConfig().getInactivityMessages();
+        long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(inactivityDays);
+
+        discordUsers.removeIf(discordUser -> {
+            Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
+            return member != null && RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
+        });
+
+        int finalInactivityDays = inactivityDays;
+        int finalInactivityMessages = inactivityMessages;
+        discordUsers.removeIf(discordUser -> {
+            LastActivity lastActivity = discordUser.getLastActivity();
+            return lastActivity.getChannelActivityHistory().stream()
+                .filter(channelActivityEntry -> !Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).contains(channelActivityEntry.getChannelId()))
+                .anyMatch(entry -> entry.getLastMessageTimestamp() > inactivityTimestamp && discordUser.getLastActivity().getTotalMessageCount(finalInactivityDays) > finalInactivityMessages);
+        });
+
+        log.info(event.getMember().getEffectiveName() + " is exporting member activity for " + discordUsers.size() + " members that meet the requirements (" + inactivityDays + " days of inactivity and " + inactivityMessages + " messages)");
+
+        for (DiscordUser discordUser : discordUsers) {
             Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
 
             if (member == null) {
                 log.warn("[Member Activity Export] Member not found for user: " + discordUser.getDiscordId());
-                return;
+                continue;
             }
 
             LastActivity lastActivity = discordUser.getLastActivity();
 
+            String channelActivity = lastActivity.getChannelActivityHistory(inactivityDays)
+                    .stream()
+                    .filter(entry -> !Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).contains(entry.getChannelId()))
+                    .map(entry -> "#" + entry.getLastKnownDisplayName() + ": " + entry.getMessageCount())
+                    .reduce((s1, s2) -> s1 + "\n" + s2)
+                    .orElse("N/A");
+
             csvData.addRow(List.of(
-                member.getUser().getName(),
-                discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
-                formatTimestamp(lastActivity.getLastGlobalActivity()),
-                formatTimestamp(lastActivity.getLastVoiceChannelJoinDate()),
-                formatTimestamp(lastActivity.getLastItemGenUsage()),
-                lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionCreationHistory().get(0)),
-                lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionCreationHistory().get(0)),
-                lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
-                lastActivity.getSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionVoteHistory().get(0)),
-                lastActivity.getProjectSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionVoteHistory().get(0)),
-                lastActivity.getAlphaSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionVoteHistory().get(0)),
-                formatTimestamp(lastActivity.getLastProjectActivity()),
-                formatTimestamp(lastActivity.getLastAlphaActivity()),
-                String.valueOf(lastActivity.getChannelActivity().values().stream().mapToInt(Integer::intValue).sum()),
-                "FALSE"
+                    member.getUser().getName(),
+                    discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
+                    formatTimestamp(lastActivity.getLastGlobalActivity()),
+                    formatTimestamp(lastActivity.getLastVoiceChannelJoinDate()),
+                    formatTimestamp(lastActivity.getLastItemGenUsage()),
+                    lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionCreationHistory().get(0)),
+                    lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionCreationHistory().get(0)),
+                    lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
+                    lastActivity.getSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionVoteHistory().get(0)),
+                    lastActivity.getProjectSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionVoteHistory().get(0)),
+                    lastActivity.getAlphaSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionVoteHistory().get(0)),
+                    formatTimestamp(lastActivity.getLastProjectActivity()),
+                    formatTimestamp(lastActivity.getLastAlphaActivity()),
+                    String.valueOf(lastActivity.getTotalMessageCount(finalInactivityDays)),
+                    "\"" + channelActivity + "\"",
+                    "FALSE"
             ));
-        });
+
+            log.debug("Added member " + member.getUser().getName() + " to the activity export for " + event.getMember().getEffectiveName() + " (days required: " + inactivityDays + ", message count required: " + inactivityMessages + ")");
+        }
 
         try {
             File file = Util.createTempFile(String.format("export-member-activity-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());

@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.api.database.model.user.stats;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.time.Duration;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
 
@@ -46,7 +48,31 @@ public class LastActivity {
     private List<Long> projectSuggestionVoteHistory = new ArrayList<>();
     private List<Long> projectSuggestionCommentHistory = new ArrayList<>();
 
+    private List<ChannelActivityEntry> channelActivityHistory = new ArrayList<>();
     private Map<String, Integer> channelActivity = new HashMap<>();
+
+    public void addChannelHistory(GuildChannel guildChannel, long lastMessageTimestamp) {
+        addChannelHistory(guildChannel, 1, lastMessageTimestamp);
+    }
+
+    public void addChannelHistory(GuildChannel guildChannel, int amount, long timestamp) {
+        channelActivityHistory.stream()
+            .filter(entry -> entry.getChannelId().equals(guildChannel.getId()))
+            .findFirst()
+            .ifPresentOrElse(entry -> {
+                entry.setMessageCount(entry.getMessageCount() + amount);
+                entry.setLastMessageTimestamp(timestamp);
+
+                if (entry.getLastKnownDisplayName() == null || !entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannel.getName())) {
+                    entry.setLastKnownDisplayName(guildChannel.getName());
+                }
+
+                System.out.println("Added message to channel " + guildChannel.getId() + " with count " + entry.getMessageCount() + " and timestamp " + timestamp);
+            }, () -> {
+                System.out.println("Created new channel entry for " + guildChannel.getId() + " with timestamp " + timestamp);
+                channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp));
+            });
+    }
 
     public boolean purgeOldHistory() {
         long thirtyDays = Duration.of(30, ChronoUnit.DAYS).toMillis();
@@ -61,6 +87,23 @@ public class LastActivity {
             this.projectSuggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
             this.projectSuggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
             this.projectSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays));
+    }
+
+    public int getTotalMessageCount() {
+        return getChannelActivityHistory().stream().mapToInt(ChannelActivityEntry::getMessageCount).sum();
+    }
+
+    public int getTotalMessageCount(int days) {
+        return getChannelActivityHistory().stream()
+            .filter(entry -> entry.getLastMessageTimestamp() > System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days))
+            .mapToInt(ChannelActivityEntry::getMessageCount)
+            .sum();
+    }
+
+    public List<ChannelActivityEntry> getChannelActivityHistory(int days) {
+        return getChannelActivityHistory().stream()
+            .filter(entry -> entry.getLastMessageTimestamp() > System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days))
+            .toList();
     }
 
     public String toTotalPeriod(Function<LastActivity, List<Long>> function, Duration duration) {
