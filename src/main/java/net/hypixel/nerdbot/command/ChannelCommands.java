@@ -85,12 +85,15 @@ public class ChannelCommands extends ApplicationCommand {
                 ));
             }
 
+            log.info("Archived message " + message.getId() + " from channel " + channel.getId() + "!");
+            event.getHook().editOriginal("Archived message " + message.getId() + " by " + message.getAuthor().getId() + " from channel " + channel.getAsMention() + "!").queue();
             return true;
         }).thenAccept(unused -> {
             try {
                 event.getHook().sendMessage("Archive of channel " + channel.getAsMention() + "available below!")
                     .addFiles(FileUpload.fromData(Util.createTempFile(String.format("archive-%s-%s-%s.csv", channel.getName(), channel.getId(), Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
                     .queue();
+                log.info("Finished archiving channel " + channel.getName() + "!");
             } catch (IOException exception) {
                 TranslationManager.reply(event, "commands.archive.error");
                 log.error("An error occurred when archiving the channel " + channel.getId() + "!", exception);
