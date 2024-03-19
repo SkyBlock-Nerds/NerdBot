@@ -90,8 +90,8 @@ public class ChannelCommands extends ApplicationCommand {
             return true;
         }).thenAccept(unused -> {
             try {
-                event.getHook().sendMessage("Archive of channel " + channel.getAsMention() + "available below!")
-                    .addFiles(FileUpload.fromData(Util.createTempFile(String.format("archive-%s-%s-%s.csv", channel.getName(), channel.getId(), Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
+                event.getHook().editOriginal("Finished archiving channel " + channel.getAsMention() + "!\nUploading file...")
+                    .setFiles(FileUpload.fromData(Util.createTempFile(String.format("archive-%s-%s-%s.csv", channel.getName(), channel.getId(), Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
                     .queue();
                 log.info("Finished archiving channel " + channel.getName() + "!");
             } catch (IOException exception) {
