@@ -27,11 +27,14 @@ import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.csv.CSVData;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,6 +45,16 @@ public class ChannelCommands extends ApplicationCommand {
     public void archive(GuildSlashEvent event, @AppOption TextChannel channel) {
         event.deferReply(true).complete();
         event.getHook().editOriginal("Archiving channel " + channel.getAsMention() + "...\nIf no file appears, ask a developer!").queue();
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (!event.getHook().isExpired()) {
+                    event.getHook().editOriginal("Archive interaction timeout").queue();
+                }
+            }
+        }, (14 * 60 * 1_000) + (59 * 1_000));
 
         CSVData csvData = new CSVData(List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Message Content"));
 
@@ -90,14 +103,19 @@ public class ChannelCommands extends ApplicationCommand {
             return true;
         }).thenAccept(unused -> {
             try {
-                event.getHook().editOriginal("Finished archiving channel " + channel.getAsMention() + "!\nUploading file...")
-                    .setFiles(FileUpload.fromData(Util.createTempFile(String.format("archive-%s-%s-%s.csv", channel.getName(), channel.getId(), Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
-                    .queue();
-                log.info("Finished archiving channel " + channel.getName() + "!");
+                File file = Util.createTempFile(String.format("archive-%s-%s-%s.csv", channel.getName(), channel.getId(), Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
+                log.info("Finished archiving channel " + channel.getName() + "! File located at: " + file.getAbsolutePath());
+
+                if (!event.getHook().isExpired()) {
+                    event.getHook().editOriginal("Finished archiving channel " + channel.getAsMention() + "!\nUploading file...")
+                        .setFiles(FileUpload.fromData(file))
+                        .queue();
+                }
             } catch (IOException exception) {
                 TranslationManager.reply(event, "commands.archive.error");
                 log.error("An error occurred when archiving the channel " + channel.getId() + "!", exception);
             }
+            timer.cancel();
         });
     }
 
