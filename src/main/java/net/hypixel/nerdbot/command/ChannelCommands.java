@@ -41,6 +41,7 @@ public class ChannelCommands extends ApplicationCommand {
     @JDASlashCommand(name = "archive", subcommand = "channel", description = "Archives a channel and exports its contents to a file", defaultLocked = true)
     public void archive(GuildSlashEvent event, @AppOption TextChannel channel) {
         event.deferReply(true).complete();
+        event.getHook().editOriginal("Archiving channel " + channel.getAsMention() + "...\nIf no file appears, ask a developer!").queue();
 
         CSVData csvData = new CSVData(List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Message Content"));
 
@@ -85,8 +86,7 @@ public class ChannelCommands extends ApplicationCommand {
                 ));
             }
 
-            log.info("Archived message " + message.getId() + " from channel " + channel.getId() + "!");
-            event.getHook().editOriginal("Archived message " + message.getId() + " by " + message.getAuthor().getId() + " from channel " + channel.getAsMention() + "!").queue();
+            log.debug("Archived message " + message.getId() + " from channel " + channel.getId() + "!");
             return true;
         }).thenAccept(unused -> {
             try {
