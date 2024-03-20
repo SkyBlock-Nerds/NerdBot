@@ -33,8 +33,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,21 +44,10 @@ public class ChannelCommands extends ApplicationCommand {
         event.deferReply(true).complete();
         event.getHook().editOriginal("Archiving channel " + channel.getAsMention() + "...\nIf no file appears, ask a developer!").queue();
 
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if (!event.getHook().isExpired()) {
-                    event.getHook().editOriginal("Archive interaction timeout").queue();
-                }
-            }
-        }, (14 * 60 * 1_000) + (59 * 1_000));
-
         CSVData csvData = new CSVData(List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Message Content"));
 
         channel.getIterableHistory().forEachAsync(message -> {
             String formattedTimestamp = message.getTimeCreated().format(Util.REGULAR_DATE_FORMAT);
-
             String messageContent = message.getContentRaw().replace("\"", "\"\"");
 
             if (!message.getAttachments().isEmpty()) {
@@ -115,7 +102,6 @@ public class ChannelCommands extends ApplicationCommand {
                 TranslationManager.reply(event, "commands.archive.error");
                 log.error("An error occurred when archiving the channel " + channel.getId() + "!", exception);
             }
-            timer.cancel();
         });
     }
 
