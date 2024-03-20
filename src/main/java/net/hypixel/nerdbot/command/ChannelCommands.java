@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,6 +47,7 @@ public class ChannelCommands extends ApplicationCommand {
 
         CSVData csvData = new CSVData(List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Message Content"));
 
+        AtomicInteger total = new AtomicInteger(0);
         channel.getIterableHistory().forEachAsync(message -> {
             String formattedTimestamp = message.getTimeCreated().format(Util.REGULAR_DATE_FORMAT);
             String messageContent = message.getContentRaw().replace("\"", "\"\"");
@@ -86,7 +88,10 @@ public class ChannelCommands extends ApplicationCommand {
                 ));
             }
 
-            log.debug("Archived message " + message.getId() + " from channel " + channel.getId() + "!");
+            if (total.getAndIncrement() % 100 == 0) {
+                log.info("Archived " + total.get() + " messages from channel " + channel.getId() + "...");
+            }
+
             return true;
         }).thenAccept(unused -> {
             try {
