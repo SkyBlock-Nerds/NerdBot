@@ -88,8 +88,8 @@ public class ChannelCommands extends ApplicationCommand {
                 ));
             }
 
-            if (total.getAndIncrement() % 100 == 0) {
-                log.info("Archived " + total.get() + " messages from channel " + channel.getId() + "...");
+            if (total.incrementAndGet() % (total.get() < 1000 ? 100 : (int) Math.pow(10, String.valueOf(total.get()).length() - 1)) == 0) {
+                log.info("Archiving channel " + channel.getId() + "... Processed " + total.get() + " messages");
             }
 
             return true;
