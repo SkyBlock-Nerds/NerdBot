@@ -29,6 +29,7 @@ public enum Stat {
     MINING_SPEED("⸕", "Mining Speed", MCColor.GOLD),
     BREAKING_POWER("Ⓟ", "Breaking Power", MCColor.DARK_GREEN),
     PRISTINE("✧", "Pristine", MCColor.DARK_PURPLE),
+    BONUS_PEST_CHANCE("ൠ", "Bonus Pest Chance", MCColor.DARK_GREEN),
     MINING_FORTUNE("☘", "Mining Fortune", MCColor.GOLD),
     FARMING_FORTUNE("☘", "Farming Fortune", MCColor.GOLD),
     FORAGING_FORTUNE("☘", "Foraging Fortune", MCColor.GOLD),
