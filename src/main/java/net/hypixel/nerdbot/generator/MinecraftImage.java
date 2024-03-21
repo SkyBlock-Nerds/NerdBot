@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.generator;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.generator.util.ColoredString;
 import net.hypixel.nerdbot.util.FontUtil;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
@@ -18,6 +19,7 @@ import java.util.List;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
 
+@Log4j2
 public class MinecraftImage {
 
     private static final int PIXEL_SIZE = 2;
@@ -25,27 +27,29 @@ public class MinecraftImage {
     private static final int Y_INCREMENT = PIXEL_SIZE * 10;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
+    private static final Font FALLBACK_FONT = initFont("/minecraft_assets/fonts/unifont-15.1.05.otf", 15.5f);
+    private static final Font[] MINECRAFT_FONTS = new Font[]{
+        initFont("/minecraft_assets/fonts/minecraft.otf", 15.5f),
+        initFont("/minecraft_assets/fonts/3_Minecraft-Bold.otf", 20.0f),
+        initFont("/minecraft_assets/fonts/2_Minecraft-Italic.otf", 20.5f),
+        initFont("/minecraft_assets/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
+    };
 
-    private static final Font[] minecraftFonts;
-    private static final Font sansSerif;
     private static boolean fontsRegisteredCorrectly = true;
 
     static {
-        sansSerif = initFont("/minecraft_assets/fonts/unifont-15.1.05.otf", 20.0f);
-        minecraftFonts = new Font[]{
-            initFont("/minecraft_assets/fonts/minecraft.otf", 15.5f),
-            initFont("/minecraft_assets/fonts/3_Minecraft-Bold.otf", 20.0f),
-            initFont("/minecraft_assets/fonts/2_Minecraft-Italic.otf", 20.5f),
-            initFont("/minecraft_assets/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
-        };
+        Font[] ALL_FONTS = new Font[MINECRAFT_FONTS.length + 1];
+        System.arraycopy(MINECRAFT_FONTS, 0, ALL_FONTS, 0, MINECRAFT_FONTS.length);
+        ALL_FONTS[MINECRAFT_FONTS.length] = FALLBACK_FONT;
 
         // Register Minecraft Fonts
-        for (Font font : minecraftFonts) {
+        for (Font font : ALL_FONTS) {
             if (font == null) {
                 fontsRegisteredCorrectly = false;
                 break;
             }
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            log.info("Registered Font: " + font.getFontName());
         }
     }
 
@@ -178,7 +182,7 @@ public class MinecraftImage {
         for (List<ColoredString> line : this.getLines()) {
             for (ColoredString segment : line) {
                 // setting the font if it is meant to be bold or italicised
-                currentFont = minecraftFonts[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
+                currentFont = MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
                 this.getGraphics().setFont(currentFont);
                 currentColor = segment.getCurrentColor();
 
@@ -254,7 +258,7 @@ public class MinecraftImage {
      * @param symbol The symbol to draw.
      */
     private void drawSymbol(char symbol, @NotNull ColoredString segment) {
-        Font font = FontUtil.canRenderCharacter(this.currentFont, symbol) ? this.currentFont : sansSerif;
+        Font font = FontUtil.canRenderCharacter(this.currentFont, symbol) ? this.currentFont : FALLBACK_FONT;
         this.drawString(Character.toString(symbol), segment, font);
     }
 

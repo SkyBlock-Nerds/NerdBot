@@ -18,7 +18,6 @@ public class FontUtil {
         FontRenderContext frc = new FontRenderContext(null, true, true);
         GlyphVector gv = font.createGlyphVector(frc, Character.toString(character));
 
-        System.out.println("Font: " + font.getFontName() + ", Glyphs: " + gv.getNumGlyphs() + ", Code: " + gv.getGlyphCode(0));
         return gv.getNumGlyphs() == 1 && gv.getGlyphCode(0) == 0x25A1; // Unicode for empty box character
     }
 }
