@@ -30,7 +30,7 @@ public class MinecraftImage {
     private static boolean fontsRegisteredCorrectly = true;
 
     static {
-        sansSerif = new Font("SansSerif", Font.PLAIN, 20);
+        sansSerif = initFont("/minecraft_assets/fonts/unifont-15.1.05.otf", 20.0f);
         minecraftFonts = new Font[]{
             initFont("/minecraft_assets/fonts/minecraft.otf", 15.5f),
             initFont("/minecraft_assets/fonts/3_Minecraft-Bold.otf", 20.0f),
@@ -188,7 +188,22 @@ public class MinecraftImage {
                 for (int charIndex = 0; charIndex < displayingLine.length(); charIndex++) {
                     char character = displayingLine.charAt(charIndex);
 
-                    if (!currentFont.canDisplay(character)) {
+                    //currentFont: java.awt.Font[family=My Font,name=My Font Regular,style=plain,size=16] ■
+                    System.out.println("currentFont: " + this.getGraphics().getFont() + " (" + segment + ")");
+                    System.out.println("character: " + character + " (" + segment + ")");
+
+                    // Check if the font is able to show this character
+                    System.out.println("can display (int): " + currentFont.canDisplay((int) character) + " " + character + " (" + segment + ")");
+                    System.out.println("can display (char): " + currentFont.canDisplay(character) + " " + character + " (" + segment + ")");
+                    System.out.println("can display (string): " + currentFont.canDisplayUpTo(displayingLine) + " " + character + " (" + segment + ")");
+                    System.out.println("can display (string): " + currentFont.canDisplayUpTo(displayingLine.toCharArray(), charIndex, charIndex + 1) + " " + character + " (" + segment + ")");
+
+                    boolean isSymbol = !Character.isLetterOrDigit(character)
+                        && !Character.isWhitespace(character)
+                        && !Character.isSpaceChar(character)
+                        && !Character.isISOControl(character);
+
+                    if (isSymbol || !currentFont.canDisplay((int) character)) {
                         this.drawString(subWord.toString(), segment);
                         subWord.setLength(0);
                         this.drawSymbol(character, segment);
@@ -199,6 +214,7 @@ public class MinecraftImage {
                     subWord.append(character);
                 }
 
+                System.out.println("drawString1: " + subWord + " (" + segment + ")");
                 this.drawString(subWord.toString(), segment);
             }
 
@@ -248,7 +264,8 @@ public class MinecraftImage {
      * @param symbol The symbol to draw.
      */
     private void drawSymbol(char symbol, @NotNull ColoredString segment) {
-        this.drawString(Character.toString(symbol), segment, sansSerif);
+        Font font = this.currentFont.canDisplay(symbol) ? this.currentFont : sansSerif;
+        this.drawString(Character.toString(symbol), segment, font);
     }
 
     /**
@@ -257,12 +274,14 @@ public class MinecraftImage {
      * @param value The value to draw.
      */
     private void drawString(@NotNull String value, @NotNull ColoredString segment) {
+        System.out.println("drawString2: " + value + " (" + segment + ")");
         this.drawString(value, segment, this.currentFont);
     }
 
     private void drawString(@NotNull String value, @NotNull ColoredString segment, @NotNull Font font) {
         // Change Font
         this.getGraphics().setFont(font);
+        System.out.println("Set font to: " + font + " (" + segment + ")");
 
         // Next Draw Position
         int nextBounds = (int) font.getStringBounds(value, this.getGraphics().getFontRenderContext()).getWidth();
@@ -284,6 +303,7 @@ public class MinecraftImage {
         // Draw Text
         this.getGraphics().setColor(this.currentColor.getColor());
         this.getGraphics().drawString(value, this.locationX, this.locationY);
+        System.out.println("Drawn: " + value + " (" + segment + ")");
 
         // Draw Strikethrough
         if (segment.isStrikethrough()) {
@@ -300,6 +320,7 @@ public class MinecraftImage {
 
         // Reset Font
         this.getGraphics().setFont(this.currentFont);
+        System.out.println("Reset font to: " + this.currentFont + " (" + segment + ")");
     }
 
     private void drawThickLine(int width, int xPosition, int yPosition, int xOffset, int yOffset, boolean dropShadow) {
