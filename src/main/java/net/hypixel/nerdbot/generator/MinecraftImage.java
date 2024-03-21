@@ -265,6 +265,8 @@ public class MinecraftImage {
      */
     private void drawSymbol(char symbol, @NotNull ColoredString segment) {
         Font font = this.currentFont.canDisplay(symbol) ? this.currentFont : sansSerif;
+        System.out.println("font = " + font);
+        System.out.println("canDisplay (symbol): " + font.canDisplay((int) symbol) + " " + symbol + " (" + segment + ")");
         this.drawString(Character.toString(symbol), segment, font);
     }
 
