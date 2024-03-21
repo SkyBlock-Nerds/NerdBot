@@ -11,10 +11,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
@@ -28,6 +30,12 @@ public class MinecraftImage {
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
     private static final Font FALLBACK_FONT = initFont("/minecraft_assets/fonts/unifont-15.1.05.otf", 15.5f);
+    private static final Font[] COMIC_SANS = new Font[]{
+        initFont("/minecraft_assets/fonts/COMICSANS.TTF", 20.0f),
+        initFont("/minecraft_assets/fonts/COMICSANSBOLD.TTF", 20.0f),
+        initFont("/minecraft_assets/fonts/COMICSANSITALIC.TTF", 20.0f),
+        initFont("/minecraft_assets/fonts/COMICSANSBOLDITALIC.TTF", 20.0f)
+    };
     private static final Font[] MINECRAFT_FONTS = new Font[]{
         initFont("/minecraft_assets/fonts/minecraft.otf", 15.5f),
         initFont("/minecraft_assets/fonts/3_Minecraft-Bold.otf", 20.0f),
@@ -38,12 +46,12 @@ public class MinecraftImage {
     private static boolean fontsRegisteredCorrectly = true;
 
     static {
-        Font[] ALL_FONTS = new Font[MINECRAFT_FONTS.length + 1];
-        System.arraycopy(MINECRAFT_FONTS, 0, ALL_FONTS, 0, MINECRAFT_FONTS.length);
-        ALL_FONTS[MINECRAFT_FONTS.length] = FALLBACK_FONT;
+        Font[] allFonts = new Font[MINECRAFT_FONTS.length + 1];
+        System.arraycopy(COMIC_SANS, 0, allFonts, 0, COMIC_SANS.length);
+        allFonts[MINECRAFT_FONTS.length] = FALLBACK_FONT;
 
-        // Register Minecraft Fonts
-        for (Font font : ALL_FONTS) {
+        // Register Fonts
+        for (Font font : allFonts) {
             if (font == null) {
                 fontsRegisteredCorrectly = false;
                 break;
@@ -181,15 +189,15 @@ public class MinecraftImage {
     public void drawLines() {
         for (List<ColoredString> line : this.getLines()) {
             for (ColoredString segment : line) {
-                // setting the font if it is meant to be bold or italicised
-                currentFont = MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
-                this.getGraphics().setFont(currentFont);
+                if (Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1) {
+                    currentFont = COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
+                }
+
                 currentColor = segment.getCurrentColor();
 
                 StringBuilder subWord = new StringBuilder();
                 String displayingLine = segment.toString();
 
-                // iterating through all the indexes of the current line until there is a character which cannot be displayed
                 for (int charIndex = 0; charIndex < displayingLine.length(); charIndex++) {
                     char character = displayingLine.charAt(charIndex);
 
@@ -198,7 +206,14 @@ public class MinecraftImage {
                         && !Character.isSpaceChar(character)
                         && !Character.isISOControl(character);
 
-                    if (isSymbol || !currentFont.canDisplay((int) character)) {
+                    if (!FontUtil.canRenderCharacter(MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], character)) {
+                        this.currentFont = FALLBACK_FONT;
+                    } else {
+                        this.currentFont = MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
+                    }
+                    this.getGraphics().setFont(this.currentFont);
+
+                    if (isSymbol) {
                         this.drawString(subWord.toString(), segment);
                         subWord.setLength(0);
                         this.drawSymbol(character, segment);
@@ -258,8 +273,7 @@ public class MinecraftImage {
      * @param symbol The symbol to draw.
      */
     private void drawSymbol(char symbol, @NotNull ColoredString segment) {
-        Font font = FontUtil.canRenderCharacter(this.currentFont, symbol) ? this.currentFont : FALLBACK_FONT;
-        this.drawString(Character.toString(symbol), segment, font);
+        this.drawString(Character.toString(symbol), segment);
     }
 
     /**
@@ -272,50 +286,84 @@ public class MinecraftImage {
     }
 
     private void drawString(@NotNull String value, @NotNull ColoredString segment, @NotNull Font font) {
-        // Change Font
-        this.getGraphics().setFont(font);
+        // Get the Graphics object
+        Graphics2D graphics = this.getGraphics();
+        graphics.setFont(font);
 
-        // Next Draw Position
-        int nextBounds = (int) font.getStringBounds(value, this.getGraphics().getFontRenderContext()).getWidth();
+        // Initialize position variables
+        int x = this.locationX;
+        int y = this.locationY;
 
         // Draw Strikethrough Drop Shadow
         if (segment.isStrikethrough()) {
-            this.drawThickLine(nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, true);
+            drawThickLine(graphics, x, y, -1, STRIKETHROUGH_OFFSET, true);
         }
 
         // Draw Underlined Drop Shadow
         if (segment.isUnderlined()) {
-            this.drawThickLine(nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, true);
+            drawThickLine(graphics, x - PIXEL_SIZE, y, 1, UNDERLINE_OFFSET, true);
         }
 
-        // Draw Drop Shadow Text
-        this.getGraphics().setColor(this.currentColor.getBackgroundColor());
-        this.getGraphics().drawString(value, this.locationX + PIXEL_SIZE, this.locationY + PIXEL_SIZE);
+        // Set colors for text drawing
+        graphics.setColor(this.currentColor.getBackgroundColor());
+        Color textColor = this.currentColor.getColor();
 
-        // Draw Text
-        this.getGraphics().setColor(this.currentColor.getColor());
-        this.getGraphics().drawString(value, this.locationX, this.locationY);
+        // Loop through each character and draw it individually
+        for (char c : value.toCharArray()) {
+            boolean canRender = FontUtil.canRenderCharacter(MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c);
+
+            if (Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1) {
+                if (FontUtil.canRenderCharacter(COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c)) {
+                    this.currentFont = COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
+                } else {
+                    this.currentFont = FALLBACK_FONT;
+                }
+            } else if (!canRender) {
+                this.currentFont = FALLBACK_FONT;
+            } else {
+                this.currentFont = MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
+            }
+
+            graphics.setFont(this.currentFont);
+
+            String character = String.valueOf(c);
+            FontMetrics metrics = graphics.getFontMetrics();
+            int charWidth = metrics.charWidth(c);
+
+            // Draw Drop Shadow Text
+            graphics.setColor(this.currentColor.getBackgroundColor());
+            graphics.drawString(character, x + PIXEL_SIZE, y + PIXEL_SIZE);
+
+            // Draw Text
+            graphics.setColor(textColor);
+            graphics.drawString(character, x, y);
+
+            // Update x position for the next character
+            x += charWidth;
+
+            // Reset font to Minecraft font
+            this.currentFont = MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
+            graphics.setFont(this.currentFont);
+        }
 
         // Draw Strikethrough
         if (segment.isStrikethrough()) {
-            this.drawThickLine(nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, false);
+            drawThickLine(graphics, x, y, -1, STRIKETHROUGH_OFFSET, false);
         }
 
         // Draw Underlined
         if (segment.isUnderlined()) {
-            this.drawThickLine(nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, false);
+            drawThickLine(graphics, x - PIXEL_SIZE, y, 1, UNDERLINE_OFFSET, false);
         }
 
         // Update Draw Pointer Location
-        this.locationX += nextBounds;
-
-        // Reset Font
-        this.getGraphics().setFont(this.currentFont);
+        this.locationX = x;
     }
 
-    private void drawThickLine(int width, int xPosition, int yPosition, int xOffset, int yOffset, boolean dropShadow) {
+
+    private void drawThickLine(Graphics2D graphics, int xPosition, int yPosition, int xOffset, int yOffset, boolean dropShadow) {
         int xPosition1 = xPosition;
-        int xPosition2 = xPosition + width + xOffset;
+        int xPosition2 = xPosition + xOffset;
         yPosition += yOffset;
 
         if (dropShadow) {
@@ -324,10 +372,11 @@ public class MinecraftImage {
             yPosition += PIXEL_SIZE;
         }
 
-        this.getGraphics().setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
-        this.getGraphics().drawLine(xPosition1, yPosition, xPosition2, yPosition);
-        this.getGraphics().drawLine(xPosition1, yPosition + 1, xPosition2, yPosition + 1);
+        graphics.setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
+        graphics.drawLine(xPosition1, yPosition, xPosition2, yPosition);
+        graphics.drawLine(xPosition1, yPosition + 1, xPosition2, yPosition + 1);
     }
+
 
     /**
      * Draws the Lines, Resizes the Image and Draws the Borders.
@@ -352,5 +401,4 @@ public class MinecraftImage {
         this.getLineWidths().add(this.locationX);
         this.locationX = START_XY;
     }
-
 }
