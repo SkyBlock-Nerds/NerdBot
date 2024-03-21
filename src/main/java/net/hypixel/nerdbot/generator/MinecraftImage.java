@@ -11,6 +11,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
+import java.awt.Shape;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -264,10 +267,17 @@ public class MinecraftImage {
      * @param symbol The symbol to draw.
      */
     private void drawSymbol(char symbol, @NotNull ColoredString segment) {
-        Font font = this.currentFont.canDisplay(symbol) ? this.currentFont : sansSerif;
+        Font font = canRenderCharacter(this.currentFont, symbol) ? this.currentFont : sansSerif;
         System.out.println("font = " + font);
         System.out.println("canDisplay (symbol): " + font.canDisplay((int) symbol) + " " + symbol + " (" + segment + ")");
         this.drawString(Character.toString(symbol), segment, font);
+    }
+
+    public static boolean canRenderCharacter(Font font, char character) {
+        FontRenderContext frc = new FontRenderContext(null, true, true);
+        GlyphVector gv = font.createGlyphVector(frc, Character.toString(character));
+        Shape shape = gv.getOutline();
+        return !shape.getBounds().isEmpty();
     }
 
     /**
