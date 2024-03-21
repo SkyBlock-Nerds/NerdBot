@@ -17,6 +17,8 @@ public class FontUtil {
         FontRenderContext frc = new FontRenderContext(null, true, true);
         GlyphVector gv = font.createGlyphVector(frc, Character.toString(character));
         Shape shape = gv.getOutline();
+
+        System.out.println("Font " + font.getName() + " can render " + character + ": " + !shape.getBounds().isEmpty());
         return !shape.getBounds().isEmpty();
     }
 }
