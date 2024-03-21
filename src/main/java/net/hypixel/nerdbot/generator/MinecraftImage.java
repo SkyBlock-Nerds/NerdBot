@@ -189,10 +189,6 @@ public class MinecraftImage {
     public void drawLines() {
         for (List<ColoredString> line : this.getLines()) {
             for (ColoredString segment : line) {
-                if (Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1) {
-                    currentFont = COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
-                }
-
                 currentColor = segment.getCurrentColor();
 
                 StringBuilder subWord = new StringBuilder();
