@@ -43,7 +43,7 @@ public class ChannelCommands extends ApplicationCommand {
     @JDASlashCommand(name = "archive", subcommand = "channel", description = "Archives a channel and exports its contents to a file", defaultLocked = true)
     public void archive(GuildSlashEvent event, @AppOption TextChannel channel) {
         event.deferReply(true).complete();
-        event.getHook().editOriginal("Archiving channel " + channel.getAsMention() + "...\nIf no file appears, ask a developer!").queue();
+        TranslationManager.edit(event.getHook(), "commands.archive.start", channel.getAsMention());
 
         CSVData csvData = new CSVData(List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Message Content"));
 
@@ -89,22 +89,22 @@ public class ChannelCommands extends ApplicationCommand {
             }
 
             if (total.incrementAndGet() % (total.get() < 1000 ? 100 : (int) Math.pow(10, String.valueOf(total.get()).length() - 1)) == 0) {
-                log.info("Archiving channel " + channel.getId() + "... Processed " + total.get() + " messages");
+                log.info("Archiving channel " + channel.getName() + " (ID: " + channel.getId() + ") - processed " + Util.COMMA_SEPARATED_FORMAT.format(total.get()) + " message" + (total.get() == 1 ? "" : "s") + " so far!");
             }
 
             return true;
         }).thenAccept(unused -> {
             try {
                 File file = Util.createTempFile(String.format("archive-%s-%s-%s.csv", channel.getName(), channel.getId(), Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
-                log.info("Finished archiving channel " + channel.getName() + "! File located at: " + file.getAbsolutePath());
+                log.info("Finished archiving channel " + channel.getName() + " (ID: " + channel.getId() + ")! File located at: " + file.getAbsolutePath());
 
                 if (!event.getHook().isExpired()) {
-                    event.getHook().editOriginal("Finished archiving channel " + channel.getAsMention() + "!\nUploading file...")
+                    event.getHook().editOriginal(TranslationManager.translate("commands.archive.complete", channel.getAsMention()))
                         .setFiles(FileUpload.fromData(file))
                         .queue();
                 }
             } catch (IOException exception) {
-                TranslationManager.reply(event, "commands.archive.error");
+                TranslationManager.reply(event, "commands.archive.error", channel.getAsMention());
                 log.error("An error occurred when archiving the channel " + channel.getId() + "!", exception);
             }
         });
