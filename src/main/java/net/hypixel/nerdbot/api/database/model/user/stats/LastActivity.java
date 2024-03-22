@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.api.database.model.user.stats;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.apache.commons.lang.time.DateFormatUtils;
@@ -20,6 +21,7 @@ import java.util.stream.Stream;
 
 @Getter
 @Setter
+@Log4j2
 public class LastActivity {
 
     // Global Activity
@@ -60,7 +62,7 @@ public class LastActivity {
 
     public void addChannelHistory(GuildChannel guildChannel, int amount, long timestamp) {
         channelActivityHistory.stream()
-            .filter(entry -> entry.getChannelId().equals(guildChannel.getId()))
+            .filter(entry -> entry.getChannelId().equals(guildChannel.getId()) || entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannel.getName()))
             .findFirst()
             .ifPresentOrElse(entry -> {
                 entry.setMessageCount(entry.getMessageCount() + amount);
@@ -70,9 +72,15 @@ public class LastActivity {
                 entry.getMonthlyMessageCount().merge(monthYear, amount, Integer::sum);
 
                 if (entry.getLastKnownDisplayName() == null || !entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannel.getName())) {
+                    log.debug("Updating channel activity entry for channel " + entry.getLastKnownDisplayName() + " (ID: " + guildChannel.getId() + ") with new display name: " + guildChannel.getName());
                     entry.setLastKnownDisplayName(guildChannel.getName());
                 }
-            }, () -> channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp, new HashMap<>(Map.of(DateFormatUtils.format(timestamp, "MM-yyyy"), amount)))));
+
+                log.debug("Updated channel activity entry for channel " + guildChannel.getName() + " (ID: " + guildChannel.getId() + "): " + entry.getMessageCount() + " messages");
+            }, () -> {
+                log.debug("Adding new channel activity entry for channel " + guildChannel.getName() + " (ID: " + guildChannel.getId() + ")");
+                channelActivityHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp, new HashMap<>(Map.of(DateFormatUtils.format(timestamp, "MM-yyyy"), amount))));
+            });
     }
 
     public boolean purgeOldHistory() {
