@@ -83,7 +83,9 @@
       "error": "An error occurred while locking %s!"
     },
     "archive": {
-      "channel_moved": "Moved %s to %s!"
+      "start": "Archiving channel %s! If no file appears here, please contact a bot developer.",
+      "error": "An error occurred while archiving channel %s! Please check the logs for more information.",
+      "complete": "Finished archiving channel %s! The file should appear below."
     },
     "config": {
       "read_error": "An error occurred while reading the config file! Please check the logs for more information.",
