@@ -116,6 +116,7 @@ public class ForumGreenlitChannelCurator extends Curator<ForumChannel, ThreadCha
                     forumChannel.getThreadChannels().stream(), // Unarchived Posts
                     forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
                 )
+                .filter(threadChannel -> threadChannel.getAppliedTags().contains(greenlitTag))
                 .distinct()
                 .toList();
 
