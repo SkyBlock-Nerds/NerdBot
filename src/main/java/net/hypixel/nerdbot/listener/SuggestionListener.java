@@ -193,7 +193,7 @@ public class SuggestionListener {
                 AlphaProjectConfig alphaProjectConfig = botConfig.getAlphaProjectConfig();
                 alphaProjectConfig.updateForumIds(botConfig, channelType == Suggestion.ChannelType.ALPHA, channelType == Suggestion.ChannelType.PROJECT);
 
-                // Add Flared Tag
+                // Auto-create tags
                 if (alphaProjectConfig.isAutoCreateTags()) {
                     ForumChannelManager forumChannelManager = event.getChannel().asForumChannel().getManager();
                     List<BaseForumTag> currentTags = new ArrayList<>(forumChannelManager.getChannel().getAvailableTags());
