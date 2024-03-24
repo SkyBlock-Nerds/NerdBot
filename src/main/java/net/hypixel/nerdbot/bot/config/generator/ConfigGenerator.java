@@ -124,7 +124,6 @@ public class ConfigGenerator {
         AlphaProjectConfig alphaProjectConfig = new AlphaProjectConfig();
         alphaProjectConfig.setAlphaForumIds(new String[]{EXAMPLE_ID});
         alphaProjectConfig.setProjectForumIds(new String[]{EXAMPLE_ID});
-        alphaProjectConfig.setFlaredTag(EXAMPLE_NAME);
         alphaProjectConfig.setAutoCreateTags(true);
         alphaProjectConfig.setAutoPinFirstMessage(true);
         alphaProjectConfig.setAutoArchiveThreshold(168);
