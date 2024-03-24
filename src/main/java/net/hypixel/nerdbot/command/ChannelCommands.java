@@ -6,22 +6,17 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageReaction;
-import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
-import net.hypixel.nerdbot.bot.config.EmojiConfig;
-import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
@@ -32,10 +27,9 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Log4j2
 public class ChannelCommands extends ApplicationCommand {
@@ -110,130 +104,70 @@ public class ChannelCommands extends ApplicationCommand {
         });
     }
 
-    @JDASlashCommand(name = "flared", description = "Add the Flared tag to a suggestion and lock it", defaultLocked = true)
-    public void flareSuggestion(GuildSlashEvent event) {
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
-
-        if (discordUser == null) {
-            TranslationManager.reply(event, "generic.user_not_found");
-            return;
-        }
-
-        Channel channel = event.getChannel();
-        if (!(channel instanceof ThreadChannel threadChannel) || !(threadChannel.getParentChannel() instanceof ForumChannel forumChannel)) {
-            TranslationManager.reply(event, discordUser, "commands.only_available_in_threads");
-            return;
-        }
-
-        AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
-        if (!Util.hasTagByName(forumChannel, alphaProjectConfig.getFlaredTag())) {
-            TranslationManager.reply(event, discordUser, "commands.flared.no_tag", "Flared");
-            return;
-        }
-
-        ForumTag flaredTag = Util.getTagByName(forumChannel, alphaProjectConfig.getFlaredTag());
-        if (threadChannel.getAppliedTags().contains(flaredTag)) {
-            TranslationManager.reply(event, discordUser, "commands.flared.already_tagged");
-            return;
-        }
-
-        List<ForumTag> appliedTags = new ArrayList<>(threadChannel.getAppliedTags());
-        appliedTags.add(flaredTag);
-
-        threadChannel.getManager()
-            .setLocked(true)
-            .setAppliedTags(appliedTags)
-            .queue();
-
-        TranslationManager.reply(event, discordUser, "commands.flared.tagged", event.getUser().getAsMention(), flaredTag.getName());
-    }
-
     @JDASlashCommand(name = "lock", description = "Locks the thread that the command is executed in", defaultLocked = true)
     public void lockThread(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+        InteractionHook hook = event.getHook();
+
+        TranslationManager.edit(hook, "commands.lock.start");
+
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.reply(event, "generic.user_not_found");
+            TranslationManager.edit(hook, "generic.user_not_found");
             return;
         }
 
-        if (!(event.getChannel() instanceof ThreadChannel threadChannel)) {
-            TranslationManager.reply(event, discordUser, "commands.only_available_in_threads");
+        if (!(event.getChannel() instanceof ThreadChannel threadChannel) || !(threadChannel.getParentChannel() instanceof ForumChannel)) {
+            TranslationManager.edit(hook, discordUser, "commands.only_available_in_threads");
             return;
         }
 
+        ForumChannel forumChannel = threadChannel.getParentChannel().asForumChannel();
         SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
-        boolean locked = threadChannel.isLocked();
-        ThreadChannelManager threadManager = threadChannel.getManager();
+        boolean isSuggestion = threadChannel.getParentChannel().getId().equalsIgnoreCase(suggestionConfig.getForumChannelId());
 
-        if (threadChannel.getParentChannel() instanceof ForumChannel forumChannel) { // Is thread inside a forum?
-            // Add Reviewed Tag
-            if (Util.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) { // Does forum contain the reviewed tag?
-                if (!Util.hasTagByName(threadChannel, suggestionConfig.getReviewedTag())) { // Does thread not currently have reviewed tag?
-                    List<ForumTag> forumTags = new ArrayList<>(threadChannel.getAppliedTags());
-                    forumTags.add(Util.getTagByName(forumChannel, suggestionConfig.getReviewedTag()));
-                    threadManager = threadManager.setAppliedTags(forumTags);
-                }
+        if (isSuggestion) {
+            if (!Util.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) {
+                TranslationManager.edit(hook, discordUser, "commands.lock.no_tag", suggestionConfig.getReviewedTag());
+                return;
             }
 
-            // Add Greenlit Tag
-            if (Util.hasTagByName(forumChannel, suggestionConfig.getGreenlitTag())) { // Does forum contain the greenlit tag?
-                if (!Util.hasTagByName(threadChannel, suggestionConfig.getGreenlitTag())) { // Does thread not currently have greenlit tag?
-                    List<ForumTag> forumTags = new ArrayList<>();
+            handleTagAndLock(event, discordUser, threadChannel, forumChannel, suggestionConfig.getReviewedTag());
+        } else {
+            Optional<CustomForumTag> customForumTag = NerdBotApp.getBot().getConfig().getChannelConfig().getCustomForumTags().stream()
+                .filter(tag -> tag.getOwnerId() != null && tag.getOwnerId().equals(discordUser.getDiscordId()))
+                .findFirst();
 
-                    Util.getFirstMessage(threadChannel).ifPresent(firstMessage -> {
-                        EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
-
-                        List<MessageReaction> reactions = firstMessage.getReactions()
-                            .stream()
-                            .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
-                            .toList();
-
-                        Map<String, Integer> votes = Stream.of(
-                                emojiConfig.getAgreeEmojiId(),
-                                emojiConfig.getNeutralEmojiId(),
-                                emojiConfig.getDisagreeEmojiId()
-                            )
-                            .map(emojiId -> Pair.of(
-                                emojiId,
-                                reactions.stream()
-                                    .filter(reaction -> reaction.getEmoji()
-                                        .asCustom()
-                                        .getId()
-                                        .equalsIgnoreCase(emojiId)
-                                    )
-                                    .mapToInt(MessageReaction::getCount)
-                                    .findFirst()
-                                    .orElse(0)
-                            ))
-                            .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
-
-                        int agree = votes.get(emojiConfig.getAgreeEmojiId());
-                        int disagree = votes.get(emojiConfig.getDisagreeEmojiId());
-                        double ratio = Curator.getRatio(agree, disagree);
-
-                        if ((agree < suggestionConfig.getGreenlitThreshold()) || (ratio < suggestionConfig.getGreenlitRatio())) {
-                            return;
-                        }
-
-                        forumTags.addAll(threadChannel.getAppliedTags());
-                        forumTags.add(Util.getTagByName(forumChannel, suggestionConfig.getGreenlitTag()));
-                    });
-
-                    if (!forumTags.isEmpty()) {
-                        threadManager = threadManager.setAppliedTags(forumTags);
-                    }
-                }
+            if (customForumTag.isPresent()) {
+                handleTagAndLock(event, discordUser, threadChannel, forumChannel, customForumTag.get().getName());
+            } else {
+                handleTagAndLock(event, discordUser, threadChannel, forumChannel, suggestionConfig.getReviewedTag());
             }
         }
+    }
 
-        threadManager.setLocked(!locked).queue(unused ->
-                event.reply("This thread is now " + (!locked ? "locked" : "unlocked") + "!").queue(),
-            throwable -> {
-                TranslationManager.reply(event, discordUser, "commands.lock.error");
-                log.error("An error occurred when locking the thread " + threadChannel.getId() + "!", throwable);
-            });
+    private void handleTagAndLock(GuildSlashEvent event, DiscordUser discordUser, ThreadChannel threadChannel, ForumChannel forumChannel, String tagName) {
+        InteractionHook hook = event.getHook();
+
+        if (!Util.hasTagByName(forumChannel, tagName)) {
+            TranslationManager.edit(hook, discordUser, "commands.lock.no_tag", tagName);
+            return;
+        }
+
+        ThreadChannelManager threadManager = threadChannel.getManager();
+        ForumTag tag = Util.getTagByName(forumChannel, tagName);
+
+        if (!threadChannel.getAppliedTags().contains(tag)) {
+            List<ForumTag> appliedTags = new ArrayList<>(threadChannel.getAppliedTags());
+            appliedTags.add(tag);
+            threadManager.setAppliedTags(appliedTags).complete();
+            threadManager.setLocked(true).complete();
+            event.getChannel().sendMessage(String.format("%s applied the %s tag and locked this suggestion!", event.getUser().getAsMention(), tag.getName())).queue();
+            TranslationManager.edit(hook, discordUser, "commands.lock.success");
+        } else {
+            TranslationManager.edit(hook, discordUser, "commands.lock.already_tagged");
+        }
     }
 }

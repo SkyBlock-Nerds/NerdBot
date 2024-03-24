@@ -79,8 +79,12 @@
       "reminder_deleted": "Deleted reminder %s!"
     },
     "lock": {
+      "start": "Locking...",
       "no_permission": "I do not have the correct permission to lock %s!",
-      "error": "An error occurred while locking %s!"
+      "error": "An error occurred while locking %s!",
+      "no_tag": "I could not find a tag with the name `%s`!",
+      "already_tagged": "This thread is already tagged!",
+      "success": "Successfully locked thread!"
     },
     "archive": {
       "start": "Archiving channel %s! If no file appears here, please contact a bot developer.",
@@ -102,11 +106,6 @@
       "profile_mismatch": "Profile mismatch error for %s: %s",
       "no_missing_profiles": "No missing profiles found!",
       "migrated_profiles": "Migrated %d profiles!"
-    },
-    "flared": {
-      "no_tag": "I could not find a tag with the name `%s`!",
-      "already_tagged": "This message is already tagged!",
-      "tagged": "%s applied the %s tag and locked this suggestion!"
     },
     "transfer_tag": {
       "invalid_tags": "You have entered invalid from/to tags, please try again!",

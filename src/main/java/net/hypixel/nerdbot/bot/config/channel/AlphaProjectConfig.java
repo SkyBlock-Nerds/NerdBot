@@ -6,7 +6,6 @@ import lombok.ToString;
 import net.dv8tion.jda.api.entities.ISnowflake;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
@@ -33,13 +32,6 @@ public class AlphaProjectConfig {
     private String[] projectForumIds = {};
 
     // Forum Tags
-
-    /**
-     * The name of the {@link ForumTag tag} used in an alpha/project {@link ForumChannel suggestion channel}
-     * when a suggestion has been reviewed by a staff member.
-     */
-    private String flaredTag = "Flared";
-
     /**
      * Automatically create the above tags on new forum channel creation.
      */

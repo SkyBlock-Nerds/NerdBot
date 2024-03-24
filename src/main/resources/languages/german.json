@@ -81,11 +81,6 @@
       "no_missing_profiles": "Keine fehlenden Profile gefunden!",
       "migrated_profiles": "%d Profile migriert!"
     },
-    "flared": {
-      "no_tag": "Ich konnte kein Tag mit dem Namen `%s` finden!",
-      "already_tagged": "Diese Nachricht wurde bereits gekennzeichnet!",
-      "tagged": "%s hat das %s-Tag angewand und diesen Vorschlag gesperrt!"
-    },
     "transfer_tag": {
       "invalid_tags": "Du hast ungültige von/zu Tags eingegeben, bitte versuche es erneut!",
       "no_threads_found": "Keine Threads wurden mit diesem Tag gefunden %s!",

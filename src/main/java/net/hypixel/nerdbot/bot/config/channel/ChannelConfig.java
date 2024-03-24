@@ -5,6 +5,7 @@ import lombok.Setter;
 import lombok.ToString;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.hypixel.nerdbot.bot.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.bot.config.objects.ReactionChannel;
 
 import java.util.List;
@@ -68,5 +69,12 @@ public class ChannelConfig {
      * The {@link TextChannel} IDs for the channels that the bot will ignore for activity tracking
      */
     private String[] blacklistedChannels = {};
+
+    /**
+     * The {@link CustomForumTag} list for custom forum tags
+     * that may be used by specific users
+     * @see CustomForumTag#getOwnerId() for the owner of the tag
+     */
+    private List<CustomForumTag> customForumTags = List.of();
 
 }
