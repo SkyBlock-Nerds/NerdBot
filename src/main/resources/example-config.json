@@ -60,6 +60,12 @@
     ],
     "blacklistedChannels": [
       "1234567890123456789"
+    ],
+    "customForumTags": [
+      {
+        "ownerId": "1234567890123456789",
+        "name": "Example Name"
+      }
     ]
   },
   "roleConfig": {
