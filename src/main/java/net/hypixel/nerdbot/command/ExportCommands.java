@@ -41,7 +41,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
@@ -183,9 +182,6 @@ public class ExportCommands extends ApplicationCommand {
                 }
             };
 
-            Timer timer = new Timer();
-            timer.scheduleAtFixedRate(task, 0, 1_000);
-
             List<GreenlitMessage> output = forumChannelCurator.curate(channel);
 
             if (output.isEmpty()) {
@@ -199,7 +195,7 @@ public class ExportCommands extends ApplicationCommand {
                 // If we manually limited the timestamps to before "x" time (defaults to 0) it "removes" the greenlit suggestions from appearing in the linked CSV file.
                 if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
                     csvData.addRow(List.of(
-                        formatTimestamp(greenlitMessage.getSuggestionTimestamp() / 1_000L),
+                        formatTimestamp(greenlitMessage.getSuggestionTimestamp()),
                         "\"" + String.join(", ", greenlitMessage.getTags()) + "\"",
                         "=HYPERLINK(\"" + greenlitMessage.getSuggestionUrl() + "\", \"" + greenlitMessage.getSuggestionTitle().replace("\"", "\"\"") + "\")"
                     ));
