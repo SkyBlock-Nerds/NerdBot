@@ -81,11 +81,6 @@
       "no_missing_profiles": "No missing profiles plundered!",
       "migrated_profiles": "Migrated %d profiles!"
     },
-    "flared": {
-      "no_tag": "I could nah find a tag wit' th' name `%s`!",
-      "already_tagged": "This message is already tagged!",
-      "tagged": "%s applied th' %s tag an' locked this suggestion!"
-    },
     "transfer_tag": {
       "invalid_tags": "Ye have entered invalid from/to tags, please try again!",
       "no_threads_found": "No threads were found wit' th' tag %s!",
