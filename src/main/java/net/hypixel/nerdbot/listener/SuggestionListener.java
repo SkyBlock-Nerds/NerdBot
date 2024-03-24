@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagData;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.channel.GenericChannelEvent;
@@ -199,8 +198,8 @@ public class SuggestionListener {
                     ForumChannelManager forumChannelManager = event.getChannel().asForumChannel().getManager();
                     List<BaseForumTag> currentTags = new ArrayList<>(forumChannelManager.getChannel().getAvailableTags());
 
-                    if (currentTags.stream().noneMatch(baseForumTag -> baseForumTag.getName().equalsIgnoreCase(alphaProjectConfig.getFlaredTag()))) {
-                        currentTags.add(new ForumTagData(alphaProjectConfig.getFlaredTag()).setModerated(true).setEmoji(Emoji.fromUnicode("\uD83D\uDD25")));
+                    if (currentTags.stream().noneMatch(baseForumTag -> baseForumTag.getName().equalsIgnoreCase(botConfig.getSuggestionConfig().getReviewedTag()))) {
+                        currentTags.add(new ForumTagData(botConfig.getSuggestionConfig().getReviewedTag()).setModerated(true));
                         forumChannelManager.setAvailableTags(currentTags).queue();
                     }
                 }
