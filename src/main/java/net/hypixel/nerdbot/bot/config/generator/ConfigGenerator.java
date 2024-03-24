@@ -10,16 +10,17 @@ import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.bot.config.BadgeConfig;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
-import net.hypixel.nerdbot.bot.config.channel.ModMailConfig;
 import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
-import net.hypixel.nerdbot.bot.config.suggestion.ReviewRequestConfig;
-import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.channel.ModMailConfig;
+import net.hypixel.nerdbot.bot.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 import net.hypixel.nerdbot.bot.config.objects.ReactionChannel;
+import net.hypixel.nerdbot.bot.config.suggestion.ReviewRequestConfig;
+import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -70,6 +71,7 @@ public class ConfigGenerator {
         channelConfig.setAlphaArchiveCategoryId(EXAMPLE_ID);
         channelConfig.setNerdArchiveCategoryId(EXAMPLE_ID);
         channelConfig.setReactionChannels(List.of(new ReactionChannel(EXAMPLE_NAME_ID, EXAMPLE_ID, List.of(EXAMPLE_ID))));
+        channelConfig.setCustomForumTags(List.of(new CustomForumTag(EXAMPLE_ID, EXAMPLE_NAME)));
         botConfig.setChannelConfig(channelConfig);
 
         EmojiConfig emojiConfig = new EmojiConfig();
