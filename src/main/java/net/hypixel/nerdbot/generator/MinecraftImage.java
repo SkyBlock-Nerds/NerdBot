@@ -290,16 +290,6 @@ public class MinecraftImage {
         int x = this.locationX;
         int y = this.locationY;
 
-        // Draw Strikethrough Drop Shadow
-        if (segment.isStrikethrough()) {
-            drawThickLine(graphics, x, y, -1, STRIKETHROUGH_OFFSET, true);
-        }
-
-        // Draw Underlined Drop Shadow
-        if (segment.isUnderlined()) {
-            drawThickLine(graphics, x - PIXEL_SIZE, y, 1, UNDERLINE_OFFSET, true);
-        }
-
         // Set colors for text drawing
         graphics.setColor(this.currentColor.getBackgroundColor());
         Color textColor = this.currentColor.getColor();
@@ -333,6 +323,16 @@ public class MinecraftImage {
             // Draw Text
             graphics.setColor(textColor);
             graphics.drawString(character, x, y);
+
+            // Draw underline
+            if (segment.isUnderlined()) {
+                drawThickLine(graphics, x, y, charWidth, UNDERLINE_OFFSET, false);
+            }
+
+            // Draw strikethrough
+            if (segment.isStrikethrough()) {
+                drawThickLine(graphics, x, y, charWidth, STRIKETHROUGH_OFFSET, false);
+            }
 
             // Update x position for the next character
             x += charWidth;
