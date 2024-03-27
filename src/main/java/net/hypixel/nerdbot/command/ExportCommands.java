@@ -294,6 +294,7 @@ public class ExportCommands extends ApplicationCommand {
             "Last Alpha Suggestion Vote",
             "Last Project Activity",
             "Last Alpha Activity",
+            "Last Mod Mail Activity",
             "Total Recent Messages",
             "Messages Sent (Last " + inactivityDays + "d)",
             "Reviewed",
@@ -358,6 +359,7 @@ public class ExportCommands extends ApplicationCommand {
                     lastActivity.getAlphaSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionVoteHistory().get(0)),
                     formatTimestamp(lastActivity.getLastProjectActivity()),
                     formatTimestamp(lastActivity.getLastAlphaActivity()),
+                    formatTimestamp(lastActivity.getLastModMailUsage()),
                     String.valueOf(lastActivity.getTotalMessageCount(finalInactivityDays)),
                     "\"" + channelActivity + "\"",
                     "FALSE"
