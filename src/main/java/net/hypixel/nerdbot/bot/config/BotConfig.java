@@ -87,6 +87,11 @@ public class BotConfig {
     private int mojangUsernameCacheTTL = 12;
 
     /**
+     * Whether the bot should forcefully update people's nicknames to their Minecraft username
+     */
+    private boolean mojangForceNicknameUpdate = false;
+
+    /**
      * How long someone must be in the same voice channel for it to count towards activity, in seconds.
      */
     private long voiceThreshold = 60;

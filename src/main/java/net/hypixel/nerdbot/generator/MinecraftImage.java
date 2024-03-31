@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.generator.util.ColoredString;
 import net.hypixel.nerdbot.util.FontUtil;
+import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,7 +17,6 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
@@ -298,7 +298,7 @@ public class MinecraftImage {
         for (char c : value.toCharArray()) {
             boolean canRender = FontUtil.canRenderCharacter(MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c);
 
-            if (Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1) {
+            if (Util.isAprilFirst()) {
                 if (FontUtil.canRenderCharacter(COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c)) {
                     this.currentFont = COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
                 } else {

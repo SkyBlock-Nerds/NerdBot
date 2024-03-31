@@ -40,7 +40,12 @@ public class ProfileUpdateFeature extends BotFeature {
                 @Override
                 public void run() {
                     if (NerdBotApp.getBot().isReadOnly()) {
-                        log.error("Bot is in read-only mode, skipping profile update task!");
+                        log.info("Bot is in read-only mode, skipping profile update task!");
+                        return;
+                    }
+
+                    if (!NerdBotApp.getBot().getConfig().isMojangForceNicknameUpdate()) {
+                        log.info("Forcefully updating nicknames is currently disabled!");
                         return;
                     }
 
