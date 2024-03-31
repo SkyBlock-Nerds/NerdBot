@@ -194,8 +194,7 @@ public class NerdBot implements Bot {
 
         try {
             jda.awaitReady();
-            jda.addEventListener(new EmojiCache());
-            jda.addEventListener(new ChannelCache());
+            jda.addEventListener(new EmojiCache(), new ChannelCache());
         } catch (InterruptedException exception) {
             log.error("Failed to create JDA instance!", exception);
             System.exit(-1);

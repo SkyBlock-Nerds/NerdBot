@@ -21,6 +21,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.ChannelActivityEntry;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
@@ -319,6 +320,7 @@ public class ExportCommands extends ApplicationCommand {
 
         int finalInactivityDays = inactivityDays;
         int finalInactivityMessages = inactivityMessages;
+
         discordUsers.removeIf(discordUser -> {
             LastActivity lastActivity = discordUser.getLastActivity();
             return lastActivity.getChannelActivityHistory().stream()
@@ -337,13 +339,21 @@ public class ExportCommands extends ApplicationCommand {
             }
 
             LastActivity lastActivity = discordUser.getLastActivity();
+            List<ChannelActivityEntry> history = new ArrayList<>(lastActivity.getChannelActivityHistory(inactivityDays));
+            StringBuilder channelActivity = new StringBuilder();
 
-            String channelActivity = lastActivity.getChannelActivityHistory(inactivityDays)
-                    .stream()
-                    .filter(entry -> !Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).contains(entry.getChannelId()))
-                    .map(entry -> "#" + entry.getLastKnownDisplayName() + ": " + entry.getMessageCount())
-                    .reduce((s1, s2) -> s1 + "\n" + s2)
-                    .orElse("N/A");
+            if (!history.isEmpty()) {
+                history.sort((o1, o2) -> o2.getMessageCount() - o1.getMessageCount());
+
+                for (ChannelActivityEntry entry : history) {
+                    channelActivity.append(entry.getLastKnownDisplayName()).append(": ").append(entry.getMessageCount());
+                    if (history.indexOf(entry) != history.size() - 1) {
+                        channelActivity.append("\n");
+                    }
+                }
+            } else {
+                channelActivity.append("N/A");
+            }
 
             csvData.addRow(List.of(
                     member.getUser().getName(),

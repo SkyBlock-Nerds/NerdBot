@@ -9,7 +9,9 @@ import org.apache.commons.lang.time.DateFormatUtils;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
-import java.util.stream.Stream;
 
 @Getter
 @Setter
@@ -109,16 +110,22 @@ public class LastActivity {
     public List<ChannelActivityEntry> getChannelActivityHistory(int days) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(days - 1);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-yyyy");
-
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-yyyy").withResolverStyle(ResolverStyle.SMART);
         List<ChannelActivityEntry> entries = new ArrayList<>();
+
         for (ChannelActivityEntry entry : channelActivityHistory) {
             Map<String, Integer> monthlyMessageCountMap = entry.getMonthlyMessageCount();
-            Stream.iterate(startDate, date -> date.isBefore(endDate.plusDays(1)), date -> date.plusDays(1))
-                .map(date -> date.format(formatter))
-                .filter(monthlyMessageCountMap::containsKey)
-                .map(key -> new ChannelActivityEntry(entry.getChannelId(), entry.getLastKnownDisplayName(), monthlyMessageCountMap.get(key), entry.getLastMessageTimestamp(), monthlyMessageCountMap))
-                .forEach(entries::add);
+
+            monthlyMessageCountMap.entrySet().removeIf(e -> {
+                YearMonth date = YearMonth.parse(e.getKey(), formatter);
+                return date.isBefore(YearMonth.from(startDate)) || date.isAfter(YearMonth.from(endDate));
+            });
+
+            int messageCount = monthlyMessageCountMap.values().stream().mapToInt(i -> i).sum();
+
+            if (messageCount > 0) {
+                entries.add(new ChannelActivityEntry(entry.getChannelId(), entry.getLastKnownDisplayName(), messageCount, entry.getLastMessageTimestamp(), monthlyMessageCountMap));
+            }
         }
 
         return entries;
