@@ -320,6 +320,7 @@ public class ExportCommands extends ApplicationCommand {
 
         int finalInactivityDays = inactivityDays;
         int finalInactivityMessages = inactivityMessages;
+
         discordUsers.removeIf(discordUser -> {
             LastActivity lastActivity = discordUser.getLastActivity();
             return lastActivity.getChannelActivityHistory().stream()
@@ -338,12 +339,17 @@ public class ExportCommands extends ApplicationCommand {
             }
 
             LastActivity lastActivity = discordUser.getLastActivity();
-            StringBuilder channelActivity = new StringBuilder("N/A");
+            List<ChannelActivityEntry> history = new ArrayList<>(lastActivity.getChannelActivityHistory(inactivityDays));
+            StringBuilder channelActivity = new StringBuilder();
 
-            if (!lastActivity.getChannelActivityHistory().isEmpty()) {
-                for (ChannelActivityEntry entry : lastActivity.getChannelActivityHistory(inactivityDays)) {
-                    channelActivity.append(entry.getLastKnownDisplayName()).append(": ").append(entry.getMessageCount()).append(" messages\n");
+            if (!history.isEmpty()) {
+                history.sort((o1, o2) -> o2.getMessageCount() - o1.getMessageCount());
+
+                for (ChannelActivityEntry entry : history) {
+                    channelActivity.append(entry.getLastKnownDisplayName()).append(": ").append(entry.getMessageCount()).append("\n");
                 }
+            } else {
+                channelActivity.append("N/A");
             }
 
             csvData.addRow(List.of(
