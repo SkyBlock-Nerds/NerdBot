@@ -21,6 +21,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.stats.ChannelActivityEntry;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
@@ -337,12 +338,13 @@ public class ExportCommands extends ApplicationCommand {
             }
 
             LastActivity lastActivity = discordUser.getLastActivity();
+            StringBuilder channelActivity = new StringBuilder("N/A");
 
-            String channelActivity = lastActivity.getChannelActivityHistory(inactivityDays)
-                .stream()
-                .map(entry -> "#" + entry.getLastKnownDisplayName() + ": " + entry.getMessageCount())
-                .reduce((s1, s2) -> s1 + "\n" + s2)
-                .orElse("N/A");
+            if (!lastActivity.getChannelActivityHistory().isEmpty()) {
+                for (ChannelActivityEntry entry : lastActivity.getChannelActivityHistory(inactivityDays)) {
+                    channelActivity.append(entry.getLastKnownDisplayName()).append(": ").append(entry.getMessageCount()).append(" messages\n");
+                }
+            }
 
             csvData.addRow(List.of(
                     member.getUser().getName(),

@@ -112,20 +112,23 @@ public class LastActivity {
         List<ChannelActivityEntry> entries = new ArrayList<>();
 
         for (ChannelActivityEntry entry : channelActivityHistory) {
+            log.info("Entry: " + entry.getLastKnownDisplayName() + " " + entry.getLastMessageTimestamp() + " " + entry.getMonthlyMessageCount());
+
             Map<String, Integer> monthlyMessageCountMap = entry.getMonthlyMessageCount();
 
-            int messageCount = monthlyMessageCountMap.entrySet().stream()
-                .filter(e -> {
-                    LocalDate date = formatter.parse(e.getKey(), LocalDate::from);
-                    return !date.isBefore(startDate) && !date.isAfter(endDate);
-                })
-                .mapToInt(Map.Entry::getValue)
-                .sum();
+            monthlyMessageCountMap.entrySet().removeIf(e -> {
+                LocalDate date = formatter.parse(e.getKey(), LocalDate::from);
+                return date.isBefore(startDate) || date.isAfter(endDate);
+            });
+
+            int messageCount = monthlyMessageCountMap.values().stream().mapToInt(i -> i).sum();
 
             if (messageCount > 0) {
                 entries.add(new ChannelActivityEntry(entry.getChannelId(), entry.getLastKnownDisplayName(), messageCount, entry.getLastMessageTimestamp(), monthlyMessageCountMap));
                 log.info("Added entry for channel " + entry.getLastKnownDisplayName() + " with " + messageCount + " messages, from " + startDate.format(formatter) + " to " + endDate.format(formatter));
                 log.info("Monthly message count map: " + monthlyMessageCountMap);
+            } else {
+                log.info("Skipping entry for channel " + entry.getLastKnownDisplayName() + " with 0 messages, from " + startDate.format(formatter) + " to " + endDate.format(formatter));
             }
         }
 
