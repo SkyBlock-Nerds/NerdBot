@@ -124,6 +124,8 @@ public class LastActivity {
 
             if (messageCount > 0) {
                 entries.add(new ChannelActivityEntry(entry.getChannelId(), entry.getLastKnownDisplayName(), messageCount, entry.getLastMessageTimestamp(), monthlyMessageCountMap));
+                log.info("Added entry for channel " + entry.getLastKnownDisplayName() + " with " + messageCount + " messages, from " + startDate.format(formatter) + " to " + endDate.format(formatter));
+                log.info("Monthly message count map: " + monthlyMessageCountMap);
             }
         }
 
