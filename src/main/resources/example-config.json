@@ -128,6 +128,7 @@
   ],
   "messageLimit": 100,
   "mojangUsernameCacheTTL": 12,
+  "mojangForceNicknameUpdate": false,
   "voiceThreshold": 60,
   "interval": 43200000,
   "activityType": "WATCHING",
