@@ -10,6 +10,7 @@ import org.apache.commons.lang.time.DateFormatUtils;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -108,7 +109,7 @@ public class LastActivity {
     public List<ChannelActivityEntry> getChannelActivityHistory(int days) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(days - 1);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-yyyy");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-yyyy").withResolverStyle(ResolverStyle.SMART);
         List<ChannelActivityEntry> entries = new ArrayList<>();
 
         for (ChannelActivityEntry entry : channelActivityHistory) {
