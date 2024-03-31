@@ -73,6 +73,7 @@ public class ChannelConfig {
     /**
      * The {@link CustomForumTag} list for custom forum tags
      * that may be used by specific users
+     *
      * @see CustomForumTag#getOwnerId() for the owner of the tag
      */
     private List<CustomForumTag> customForumTags = List.of();

@@ -6,6 +6,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.entities.channel.unions.GuildMessageChannelUnion;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -160,10 +161,13 @@ public class ActivityListener {
         discordUser.getLastActivity().setLastGlobalActivity(time);
 
         // Update Channel Message History
-        if (!(guildChannel instanceof ThreadChannel)) {
+        if (!(guildChannel instanceof ThreadChannel threadChannel)) {
+            log.debug("Updating channel message history for {} in channel '{}' (ID: {})", member.getEffectiveName(), guildChannel.getName(), guildChannel.getId());
             discordUser.getLastActivity().addChannelHistory(guildChannel, time);
         } else {
-            discordUser.getLastActivity().addChannelHistory(guildChannel.asThreadChannel().getParentChannel(), time);
+            GuildChannel parentChannel = threadChannel.getParentChannel();
+            log.debug("Updating channel message history for {} in thread '{}' (Parent Channel Name: {}, Parent Channel ID: {}, Thread Channel ID: {})", member.getEffectiveName(), threadChannel.getName(), parentChannel.getName(), parentChannel.getId(), threadChannel.getId());
+            discordUser.getLastActivity().addChannelHistory(parentChannel, time);
         }
     }
 
