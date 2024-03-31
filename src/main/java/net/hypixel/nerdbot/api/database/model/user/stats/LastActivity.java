@@ -117,7 +117,7 @@ public class LastActivity {
             Map<String, Integer> monthlyMessageCountMap = entry.getMonthlyMessageCount();
 
             monthlyMessageCountMap.entrySet().removeIf(e -> {
-                LocalDate date = formatter.parse(e.getKey(), LocalDate::from);
+                LocalDate date = LocalDate.parse(e.getKey(), formatter);
                 return date.isBefore(startDate) || date.isAfter(endDate);
             });
 
