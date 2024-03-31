@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
-import java.util.stream.Stream;
 
 @Getter
 @Setter
@@ -110,15 +109,22 @@ public class LastActivity {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(days - 1);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-yyyy");
-
         List<ChannelActivityEntry> entries = new ArrayList<>();
+
         for (ChannelActivityEntry entry : channelActivityHistory) {
             Map<String, Integer> monthlyMessageCountMap = entry.getMonthlyMessageCount();
-            Stream.iterate(startDate, date -> date.isBefore(endDate.plusDays(1)), date -> date.plusDays(1))
-                .map(date -> date.format(formatter))
-                .filter(monthlyMessageCountMap::containsKey)
-                .map(key -> new ChannelActivityEntry(entry.getChannelId(), entry.getLastKnownDisplayName(), monthlyMessageCountMap.get(key), entry.getLastMessageTimestamp(), monthlyMessageCountMap))
-                .forEach(entries::add);
+
+            int messageCount = monthlyMessageCountMap.entrySet().stream()
+                .filter(e -> {
+                    LocalDate date = formatter.parse(e.getKey(), LocalDate::from);
+                    return !date.isBefore(startDate) && !date.isAfter(endDate);
+                })
+                .mapToInt(Map.Entry::getValue)
+                .sum();
+
+            if (messageCount > 0) {
+                entries.add(new ChannelActivityEntry(entry.getChannelId(), entry.getLastKnownDisplayName(), messageCount, entry.getLastMessageTimestamp(), monthlyMessageCountMap));
+            }
         }
 
         return entries;
