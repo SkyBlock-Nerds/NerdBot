@@ -219,15 +219,10 @@ public class NerdBot implements Bot {
         try {
             commandsBuilder.setComponentManager(new DefaultComponentManager(new ComponentDatabaseConnection()::getConnection));
         } catch (SQLException exception) {
-            log.error("Failed to connect to the SQL database! Components will not work correctly!");
-            log.debug("Debug exception logging.", exception);
+            log.error("Failed to connect to the SQL database! Components will not work correctly!", exception);
         }
 
-        try {
-            commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
-        } catch (IOException exception) {
-            log.error("Failed to build the command builder!", exception);
-        }
+        commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
 
         NerdBotApp.getBot().onStart();
         log.info("Bot is ready!");
