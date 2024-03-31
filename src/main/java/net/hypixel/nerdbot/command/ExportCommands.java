@@ -343,6 +343,7 @@ public class ExportCommands extends ApplicationCommand {
             if (!lastActivity.getChannelActivityHistory().isEmpty()) {
                 for (ChannelActivityEntry entry : lastActivity.getChannelActivityHistory(inactivityDays)) {
                     channelActivity.append(entry.getLastKnownDisplayName()).append(": ").append(entry.getMessageCount()).append(" messages\n");
+                    log.info("Added channel activity for " + entry.getLastKnownDisplayName() + " (" + entry.getMessageCount() + " messages)");
                 }
             }
 
