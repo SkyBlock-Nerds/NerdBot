@@ -9,6 +9,7 @@ import org.apache.commons.lang.time.DateFormatUtils;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoUnit;
@@ -118,8 +119,8 @@ public class LastActivity {
             Map<String, Integer> monthlyMessageCountMap = entry.getMonthlyMessageCount();
 
             monthlyMessageCountMap.entrySet().removeIf(e -> {
-                LocalDate date = LocalDate.parse(e.getKey(), formatter);
-                return date.isBefore(startDate) || date.isAfter(endDate);
+                YearMonth date = YearMonth.parse(e.getKey(), formatter);
+                return date.isBefore(YearMonth.from(startDate)) || date.isAfter(YearMonth.from(endDate));
             });
 
             int messageCount = monthlyMessageCountMap.values().stream().mapToInt(i -> i).sum();
