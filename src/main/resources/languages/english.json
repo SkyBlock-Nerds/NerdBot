@@ -1,74 +1,74 @@
 {
   "generic": {
-    "user_not_found": "User not found",
+    "user_not_found": "Horse not found",
     "could_not_find": "Could not find %s"
   },
   "permissions": {
-    "cannot_send_messages": "I do not have the correct permission to send messages in this channel!",
-    "cannot_send_messages_in_threads": "I do not have the correct permission to send messages in threads!",
-    "cannot_create_invites": "I do not have the correct permission to create invites in %s!"
+    "cannot_send_messages": "Whinny the correct neighmission to send messages in this channel!",
+    "cannot_send_messages_in_threads": "Whinny the correct neighmission to send messages in clip-clops!",
+    "cannot_create_invites": "Whinny the correct neighmission to create invites in %s!"
   },
   "database": {
-    "no_connection": "Could not connect to database!"
+    "no_connection": "Whinny connect to trotbase!"
   },
   "cache": {
     "suggestions": {
-      "not_found": "Couldn't find that suggestion in the cache! Please try again later!",
-      "filtered_none_found": "No suggestions found matching that filter!",
-      "user_deleted_post": "The original message for this suggestion was deleted!"
+      "not_found": "Whinny find that equestrian in the cache! Please try again later!",
+      "filtered_none_found": "Whinny equestrians found matching that filter!",
+      "user_deleted_post": "The original message for this equestrian was deleted!"
     }
   },
   "bot_logs": {
-    "member_removed_not_found": "Could not find member with ID %s who left the server!"
+    "member_removed_not_found": "Whinny find member with ID %s who left the server!"
   },
   "repository": {
-    "not_found": "Could not find a repository with that name!",
-    "saved_to_database": "Saved %d documents to the database!",
-    "loaded_from_database": "Loaded %d documents from the database!",
-    "save_error": "An error occurred while saving the repository: %s",
-    "load_error": "An error occurred while loading the repository: %s",
-    "stats_error": "An error occurred while getting the statistics for that repository: %s"
+    "not_found": "Could not find a neighpository with that name!",
+    "saved_to_database": "Saved %d documents to the trotbase!",
+    "loaded_from_database": "Loaded %d documents from the trotbase!",
+    "save_error": "WHINNY while saving the neighpository: %s",
+    "load_error": "WHINNY while loading the neighpository: %s",
+    "stats_error": "WHINNY while getting the statistics for that neighpository: %s"
   },
   "curator": {
-    "no_greenlit_messages": "No suggestions were greenlit",
-    "greenlit_messages": "Greenlit %d suggestions in %dms!",
+    "no_greenlit_messages": "No equestrians were greenlit",
+    "greenlit_messages": "Greenlit %d equestrians in %dms!",
     "greenlit_import_instructions": "To import into Google Sheets, go to File -> Import, Upload the `.csv` document shown below.\nChange `Import Location` to `Append to current sheet` and `Separator Type` should be defaulted to Automatic detection if not, change it to tabs.)",
-    "already_greenlit": "This suggestion has already been greenlit!"
+    "already_greenlit": "This equestrian has already been greenlit!"
   },
   "commands": {
-    "only_available_in_threads": "This command is only available in threads!",
+    "only_available_in_threads": "This command is only available in clip-clops!",
     "cannot_be_used_here": "This command cannot be used here!",
     "invalid_uuid": "Invalid UUID!",
-    "invalid_user_id": "Invalid user ID!",
+    "invalid_user_id": "Invalid Horse ID!",
     "temp_file_error": "Failed to create temporary file: %s",
     "profile": {
-      "no_badges": "You do not have any badges!"
+      "no_badges": "You do not have any sugarcubes!"
     },
     "badge": {
-      "invalid_badge": "%s is an invalid Badge ID!",
-      "invalid_tier": "%s is an invalid Badge Tier! It only has %d tiers.",
-      "gave_tier": "Gave Tier %d of the %s badge to %s!",
-      "gave_badge": "Gave badge %s to %s!",
-      "already_has_tier": "%s already has Tier %d of the %s badge!",
-      "already_has_badge": "%s already has the %s badge!",
-      "does_not_have_tier": "%s does not have Tier %d of the %s badge!",
-      "does_not_have_badge": "%s does not have the %s badge!",
-      "failed_to_give_badge": "Failed to give the %s badge to %s!",
-      "removed_tier": "Removed Tier %d of the %s badge from %s!",
-      "removed_badge": "Removed the %s badge from %s!",
-      "failed_to_list": "Failed to list all available badges! Please try again later!"
+      "invalid_badge": "%s is an invalid Sugarcube ID!",
+      "invalid_tier": "%s is an invalid Sugarcube Tier! It only has %d tiers.",
+      "gave_tier": "Gave Tier %d of the %s sugarcube to %s!",
+      "gave_badge": "Gave sugarcube %s to %s!",
+      "already_has_tier": "%s already has Tier %d of the %s sugarcube!",
+      "already_has_badge": "%s already has the %s sugarcube!",
+      "does_not_have_tier": "%s does not have Tier %d of the %s sugarcube!",
+      "does_not_have_badge": "%s does not have the %s sugarcube!",
+      "failed_to_give_badge": "Failed to give the %s sugarcube to %s!",
+      "removed_tier": "Removed Tier %d of the %s sugarcube from %s!",
+      "removed_badge": "Removed the %s sugarcube from %s!",
+      "failed_to_list": "Failed to list all available sugarcube! Please try again later!"
     },
     "language": {
-      "language_set": "You set your language to %s"
+      "language_set": "You set your neighguage to %s"
     },
     "invite": {
       "header": "Created %d invites:",
       "deleted": "Deleted %d invites!"
     },
     "reminders": {
-      "no_description": "You need to provide a description for the reminder!",
-      "description_too_long": "Your description is too long! Please keep it under %d characters.",
-      "invalid_time_format": "I could not parse that date/time format, please try again!",
+      "no_description": "You need to provide a neighscription for the reminder!",
+      "description_too_long": "Your neighscription is too long! Please keep it under %d characters.",
+      "invalid_time_format": "I could not parse that neighdate/time format, please try again!",
       "time_in_past": "You cannot set a reminder in the past!",
       "save_error": "An error occurred while saving that reminder! Please try again!",
       "delete_error": "An error occurred while deleting that reminder! Please try again!",
@@ -76,15 +76,15 @@
       "delete_reminder": "You can delete reminders with `/remind delete <uuid>`",
       "reminder_not_found": "I could not find a reminder with that UUID!",
       "reminder_set": "I will remind you at %s about:",
-      "reminder_deleted": "Deleted reminder %s!"
+      "reminder_deleted": "Deleted whinnyinder %s!"
     },
     "lock": {
       "start": "Locking...",
-      "no_permission": "I do not have the correct permission to lock %s!",
+      "no_permission": "Whinny the correct neighmission to lock %s!",
       "error": "An error occurred while locking %s!",
       "no_tag": "I could not find a tag with the name `%s`!",
-      "already_tagged": "This thread is already tagged!",
-      "success": "Successfully locked thread!"
+      "already_tagged": "This clip-clop is already tagged!",
+      "success": "Successfully locked clip-clop!"
     },
     "archive": {
       "start": "Archiving channel %s! If no file appears here, please contact a bot developer.",
@@ -101,17 +101,17 @@
       "toggle": "Toggled metrics: %s"
     },
     "user": {
-      "linked_by_admin": "Updated profile for %s to %s (UUID: %s)",
-      "username_not_found": "Could not find player with username `%s`! (%s)",
-      "profile_mismatch": "Profile mismatch error for %s: %s",
-      "no_missing_profiles": "No missing profiles found!",
-      "migrated_profiles": "Migrated %d profiles!"
+      "linked_by_admin": "Updated rein for %s to %s (UUID: %s)",
+      "username_not_found": "Could not find player with horsename `%s`! (%s)",
+      "profile_mismatch": "Rein mismatch error for %s: %s",
+      "no_missing_profiles": "No missing reins found!",
+      "migrated_profiles": "Migrated %d reins!"
     },
     "transfer_tag": {
       "invalid_tags": "You have entered invalid from/to tags, please try again!",
-      "no_threads_found": "No threads were found with the tag %s!",
-      "updated_threads": "Updated %d/%d threads ...",
-      "updated_threads_complete": "Finished transferring %s to %s in %d threads!"
+      "no_threads_found": "No clip-clops were found with the tag %s!",
+      "updated_threads": "Updated %d/%d clip-clops ...",
+      "updated_threads_complete": "Finished transferring %s to %s in %d clip-clops!"
     },
     "log_level": {
       "invalid_level": "Invalid log level specified!",
@@ -119,17 +119,17 @@
     },
     "request_review": {
       "disabled": "Review requests are currently disabled!",
-      "not_suggestion_channel": "You cannot send threads in non-suggestion channels for review!",
-      "too_soon": "You cannot request another review on this thread yet!",
-      "not_own_thread": "You cannot request a review on a thread you did not create!",
-      "already_greenlit": "You can only request reviews on threads that are not greenlit!",
+      "not_suggestion_channel": "You cannot send clip-clops in non-equestrian channels for review!",
+      "too_soon": "You cannot request another review on this clip-clops yet!",
+      "not_own_thread": "You cannot request a review on a clip-clop you did not create!",
+      "already_greenlit": "You can only request reviews on clip-clops that are not greenlit!",
       "not_enough_reactions": "You need at least %d agrees to request a review!",
       "bad_reaction_ratio": "You need at least a %d%% agree ratio to request a review!",
-      "too_new": "This suggestion is too new to request a review!",
-      "success": "This suggestion has been sent for review!",
-      "accepted": "Your recent review request has been accepted! Thank you for your suggestion!",
-      "changes_requested": "Your recent review request has been denied. We recommend you review your suggestion and make any necessary changes before requesting another review. Thank you!",
-      "locked": "We have reviewed your recent request and have decided to lock this suggestion. If you believe this to be a mistake or would like more information, please contact us through Mod Mail."
+      "too_new": "This equestrian is too new to request a review!",
+      "success": "This equestrian has been sent for review!",
+      "accepted": "Your recent review request has been accepted! Thank you for your equestrian!",
+      "changes_requested": "Your recent review request has been denied. We recommend you review your equestrian and make any necessary changes before requesting another review. Thank you!",
+      "locked": "We have reviewed your recent request and have decided to lock this equestrian. If you believe this to be a mistake or would like more information, please contact us through Mod Mail."
     },
     "role": {
       "invalid_role": "Could not find a role with ID `%s`!",
@@ -138,36 +138,36 @@
       "list_roles": "**Assignable Roles:**\n%s\n\n**Use /role <name> to toggle the role!**"
     },
     "verify": {
-      "already_requested": "Your previous verification request has not been reviewed. You will be contacted via DM if any further information is required.",
-      "request_sent": "Your verification request has been sent. You will be contacted via DM if any further information is required.",
-      "error": "Encountered an error whilst attempting to verify you! If this persists, please contact us through Mod Mail",
-      "profile_updated": "Updated your Mojang profile to %s (`%s`)"
+      "already_requested": "Your previous neighrification request has not been reviewed. You will be contacted via DM if any further information is required.",
+      "request_sent": "Your neighrification request has been sent. You will be contacted via DM if any further information is required.",
+      "error": "Encountered an error whilst attempting to neighrify you! If this persists, please contact us through Mod Mail",
+      "profile_updated": "Updated your Mojang rein to %s (`%s`)"
     },
     "birthday": {
-      "removed": "Your birthday has been removed!",
-      "not_set_yet": "Your birthday has not been configured yet!",
-      "get": "Your birthday is currently set to %s",
-      "set": "Set your birthday to %s!",
-      "bad_date": "That doesn't seem to be a valid date. Please try again or contact a bot developer!"
+      "removed": "Your neighday has been removed!",
+      "not_set_yet": "Your neighday has not been configured yet!",
+      "get": "Your neighday is currently set to %s",
+      "set": "Set your neighday to %s!",
+      "bad_date": "That doesn't seem to be a valid neighdate. Please try again or contact a bot developer!"
     },
     "mod_mail": {
-      "created": "Created new Mod Mail thread for %s: %s",
+      "created": "Created new Mod Mail clip-clop for %s: %s",
       "channel_not_found": "Could not find the Mod Mail channel! Is there one configured?",
-      "thread_not_found": "Could not find a Mod Mail thread for %s!",
-      "already_exists": "A Mod Mail thread for %s already exists: %s",
-      "thread_found": "Found Mod Mail thread for %s: %s"
+      "thread_not_found": "Could not find a Mod Mail clip-clop for %s!",
+      "already_exists": "A Mod Mail clip-clop for %s already exists: %s",
+      "thread_found": "Found Mod Mail clip-clop for %s: %s"
     },
     "export": {
-      "exporting_threads": "Exporting threads from %s...",
-      "exporting_thread": "Exporting thread %d/%d: %s by %s",
-      "exported_thread": "Finished exporting thread %d/%d: %s by %s",
-      "complete": "Finished exporting all threads from %s!",
-      "rate_limited": "Rate limited while exporting threads from %s! Please try again later!",
+      "exporting_threads": "Exporting clip-clops from %s...",
+      "exporting_thread": "Exporting clip-clop %d/%d: %s by %s",
+      "exported_thread": "Finished exporting clip-clop %d/%d: %s by %s",
+      "complete": "Finished exporting all clip-clops from %s!",
+      "rate_limited": "Rate limited while exporting clip-clops from %s! Please try again later!",
       "none_found": "Nothing found to export!"
     },
     "translations": {
-      "reloaded": "Reloaded translations for language %s",
-      "reload_complete": "Reloaded translations for all languages!"
+      "reloaded": "Reloaded translations for neighguage %s",
+      "reload_complete": "Reloaded translations for all neighguage!"
     }
   }
 }
