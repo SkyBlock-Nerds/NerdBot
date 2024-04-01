@@ -107,8 +107,7 @@ public class FactCommands extends ApplicationCommand {
         "Horses drink at least 25 gallons of water a day on average. And, this number is even more in hotter climates!",
         "A zebroid is a cross between a zebra and any other member of the family Equidae (which, besides zebras, includes donkeys, ponies, and horses). A \"zonky\" is a cross between a zebra and a donkey. … A \"zony\" is a cross between a zebra and a pony. … A \"zorse\" is a cross between a zebra and a horse. You get the drift.",
         "If a horse has a red ribbon on its tail, it kicks. So... stay clear!",
-        "Horses are social animals and will get lonely if kept alone. And, they will mourn the passing of a companion.",
-        "He's coming."
+        "Horses are social animals and will get lonely if kept alone. And, they will mourn the passing of a companion."
     };
 
     @JDASlashCommand(name = "fact", description = "Get a random horse fact")
