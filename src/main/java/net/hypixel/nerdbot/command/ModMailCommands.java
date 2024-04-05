@@ -29,6 +29,11 @@ public class ModMailCommands extends ApplicationCommand {
     public void findModMailThread(GuildSlashEvent event, @AppOption Member member) {
         event.deferReply(true).complete();
 
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
 
@@ -46,6 +51,11 @@ public class ModMailCommands extends ApplicationCommand {
     @JDASlashCommand(name = "modmail", subcommand = "new", description = "Create a new Mod Mail thread for the specified member", defaultLocked = true)
     public void createNewModMail(GuildSlashEvent event, @AppOption Member member) {
         event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser commandSender = discordUserRepository.findOrCreateById(event.getMember().getId());
@@ -88,6 +98,7 @@ public class ModMailCommands extends ApplicationCommand {
 
     public Optional<ThreadChannel> getModMailThread(User user) {
         Optional<ForumChannel> optionalModMailChannel = ChannelCache.getModMailChannel();
+
         if (optionalModMailChannel.isEmpty()) {
             return Optional.empty();
         }
@@ -104,7 +115,6 @@ public class ModMailCommands extends ApplicationCommand {
         }
 
         Stream<ThreadChannel> activeThreads = modMailChannel.getThreadChannels().stream();
-        return activeThreads.filter(thread -> thread.getName().equalsIgnoreCase(expectedThreadName))
-            .findFirst();
+        return activeThreads.filter(thread -> thread.getName().equalsIgnoreCase(expectedThreadName)).findFirst();
     }
 }

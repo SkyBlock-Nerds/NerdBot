@@ -5,11 +5,11 @@
 </h1>
 
 <h1 align="center">
-  <img src="https://img.shields.io/github/license/TheMGRF/NerdBot?style=for-the-badge" alt="License"/>
-  <img src="https://img.shields.io/github/issues/TheMGRF/NerdBot?style=for-the-badge" alt="Issues"/>
-  <img src="https://img.shields.io/github/issues-pr/TheMGRF/NerdBot?style=for-the-badge" alt="Pull Requests"/>
-  <img src="https://img.shields.io/github/last-commit/TheMGRF/NerdBot?style=for-the-badge" alt="Last Commit"/>
-  <img src="https://img.shields.io/github/contributors/TheMGRF/NerdBot?style=for-the-badge" alt="Contributors"/>
+  <img src="https://img.shields.io/github/license/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="License"/>
+  <img src="https://img.shields.io/github/issues/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Issues"/>
+  <img src="https://img.shields.io/github/issues-pr/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Pull Requests"/>
+  <img src="https://img.shields.io/github/last-commit/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Last Commit"/>
+  <img src="https://img.shields.io/github/contributors/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Contributors"/>
 </h1>
 
 # Features
@@ -70,8 +70,8 @@ a dashboard of your choice that supports Prometheus.
 
 # Running the bot
 
-Please follow the instructions [here](https://github.com/TheMGRF/NerdBot/blob/master/CONTRIBUTING.md)
+Please follow the instructions [here](https://github.com/SkyBlock-Nerds/NerdBot/blob/master/CONTRIBUTING.md)
 
 # Commands
 
-See the [commands](https://github.com/TheMGRF/NerdBot/tree/master/src/main/java/net/hypixel/nerdbot/command) package.
+See the [commands](https://github.com/SkyBlock-Nerds/NerdBot/tree/master/src/main/java/net/hypixel/nerdbot/command) package.

@@ -7,12 +7,12 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.bot.config.ChannelConfig;
+import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
+import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Tuple;
-import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
@@ -69,15 +69,14 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
 
                     log.info("Found new sale data for item " + itemId + "!");
 
-                    StringBuilder stringBuilder = new StringBuilder();
-                    stringBuilder.append("Start Time: ").append(startTime.toLongDateTime())
-                        .append(" (").append(startTime.toRelativeTimestamp()).append(")").append("\n");
-                    stringBuilder.append("End Time: ").append(endTime.toLongDateTime())
-                        .append(" (").append(endTime.toRelativeTimestamp()).append(")").append("\n");
-                    stringBuilder.append("Amount: ").append(Util.COMMA_SEPARATED_FORMAT.format(amount)).append("x\n");
-                    stringBuilder.append("Price: ").append(Util.COMMA_SEPARATED_FORMAT.format(price)).append(" SkyBlock Gems");
+                    String stringBuilder = "Start Time: " + startTime.toLongDateTime() +
+                        " (" + startTime.toRelativeTimestamp() + ")" + "\n" +
+                        "End Time: " + endTime.toLongDateTime() +
+                        " (" + endTime.toRelativeTimestamp() + ")" + "\n" +
+                        "Amount: " + Util.COMMA_SEPARATED_FORMAT.format(amount) + "x\n" +
+                        "Price: " + Util.COMMA_SEPARATED_FORMAT.format(price) + " SkyBlock Gems";
 
-                    embedBuilder.addField(itemId, stringBuilder.toString(), false);
+                    embedBuilder.addField(itemId, stringBuilder, false);
                 });
 
             MessageCreateBuilder messageCreateBuilder = new MessageCreateBuilder().setEmbeds(embedBuilder.build());
@@ -87,7 +86,7 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
             });
 
             textChannel.sendMessage(messageCreateBuilder.build()).queue();
-        }, () -> log.error("Announcement channel not found!"));
+        }, () -> log.warn("Announcement channel not found!"));
     }
 
     private boolean isEqual(JsonObject oldObject, JsonObject newObject) {

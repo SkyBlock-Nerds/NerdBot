@@ -11,8 +11,8 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
+import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.role.PingableRole;
 import net.hypixel.nerdbot.role.RoleManager;
 
 import java.util.Arrays;
@@ -29,7 +29,7 @@ public class RoleCommands extends ApplicationCommand {
         DiscordUser user = repository.findOrCreateById(event.getUser().getId());
 
         RoleManager.getPingableRoleByName(role).ifPresentOrElse(pingableRole -> {
-            Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
+            Role discordRole = event.getGuild().getRoleById(pingableRole.getRoleId());
             if (discordRole == null) {
                 TranslationManager.edit(event.getHook(), user, "commands.role.invalid_role");
                 return;
@@ -48,7 +48,9 @@ public class RoleCommands extends ApplicationCommand {
 
     @AutocompletionHandler(name = "pingable-roles", showUserInput = false)
     public List<String> listPingableRoles(CommandAutoCompleteInteractionEvent event) {
-        return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles()).map(PingableRole::name).toList();
+        return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
+            .map(PingableRole::getName)
+            .toList();
     }
 
     @JDASlashCommand(name = "roles", description = "List all roles that can be assigned")
@@ -59,7 +61,7 @@ public class RoleCommands extends ApplicationCommand {
         DiscordUser user = repository.findById(event.getMember().getId());
 
         String roles = Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
-            .map(PingableRole::name)
+            .map(PingableRole::getName)
             .collect(Collectors.joining("\n"));
 
         TranslationManager.edit(event.getHook(), user, "commands.role.list_roles", roles);

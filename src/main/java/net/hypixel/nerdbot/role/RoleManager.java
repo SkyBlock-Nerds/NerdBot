@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.role;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,18 +18,18 @@ public class RoleManager {
 
     public static Optional<PingableRole> getPingableRoleByName(String name) {
         return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
-            .filter(pingableRole -> pingableRole.name().equalsIgnoreCase(name))
+            .filter(pingableRole -> pingableRole.getName().equalsIgnoreCase(name))
             .findFirst();
     }
 
     public static Optional<PingableRole> getPingableRoleById(String id) {
         return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
-            .filter(pingableRole -> pingableRole.roleId().equalsIgnoreCase(id))
+            .filter(pingableRole -> pingableRole.getRoleId().equalsIgnoreCase(id))
             .findFirst();
     }
 
     public static String formatPingableRoleAsMention(@NotNull PingableRole pingableRole) {
-        return "<@&" + pingableRole.roleId() + ">";
+        return "<@&" + pingableRole.getRoleId() + ">";
     }
 
     public static boolean hasRole(Member member, String name) {

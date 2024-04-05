@@ -6,6 +6,13 @@ import lombok.ToString;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
+import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.channel.ModMailConfig;
+import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -18,9 +25,14 @@ public class BotConfig {
     private ModMailConfig modMailConfig = new ModMailConfig();
 
     /**
-     * Configuration for anything suggestions related
+     * Configuration for the suggestions channel
      */
     private SuggestionConfig suggestionConfig = new SuggestionConfig();
+
+    /**
+     * Configuration for alpha/project suggestion channels
+     */
+    private AlphaProjectConfig alphaProjectConfig = new AlphaProjectConfig();
 
     /**
      * Configuration for channels that the bot will be using
@@ -38,6 +50,21 @@ public class BotConfig {
     private MetricsConfig metricsConfig = new MetricsConfig();
 
     /**
+     * Configuration for emoji IDs
+     */
+    private EmojiConfig emojiConfig = new EmojiConfig();
+
+    /**
+     * Configuration for badges
+     */
+    private BadgeConfig badgeConfig = new BadgeConfig();
+
+    /**
+     * Configuration for fun and miscellaneous things
+     */
+    private FunConfig funConfig = new FunConfig();
+
+    /**
      * The {@link Guild} ID that the bot will be running in
      */
     private String guildId = "";
@@ -45,7 +72,7 @@ public class BotConfig {
     /**
      * A list of owner IDs for the bot
      */
-    private long[] ownerIds = {};
+    private List<String> ownerIds = new ArrayList<>();
 
     /**
      * The limit of {@link Message messages} that the bot will curate in one go
@@ -58,6 +85,11 @@ public class BotConfig {
      * Default value is 12 hours
      */
     private int mojangUsernameCacheTTL = 12;
+
+    /**
+     * Whether the bot should forcefully update people's nicknames to their Minecraft username
+     */
+    private boolean mojangForceNicknameUpdate = false;
 
     /**
      * How long someone must be in the same voice channel for it to count towards activity, in seconds.
@@ -85,4 +117,9 @@ public class BotConfig {
      * The amount of days that a user must be inactive for to show up in the inactive user list
      */
     private int inactivityDays = 7;
+
+    /**
+     * The amount of messages that a user must have sent in the last inactivityDays to be considered active
+     */
+    private int inactivityMessages = 10;
 }

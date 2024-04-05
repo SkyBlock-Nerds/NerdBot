@@ -21,14 +21,14 @@ public class URLWatcher {
 
     @Getter
     private final String url;
+    private final Timer timer;
+    private final OkHttpClient client;
+    private final Map<String, String> headers;
     @Getter
     @Setter
     private String lastContent;
-    private final Timer timer;
     @Getter
     private boolean active;
-    private final OkHttpClient client;
-    private final Map<String, String> headers;
 
     public URLWatcher(String url) {
         this(url, null);

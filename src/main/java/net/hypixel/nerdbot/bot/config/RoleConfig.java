@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.dv8tion.jda.api.entities.Role;
-import net.hypixel.nerdbot.role.PingableRole;
+import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 
 @Getter
 @Setter

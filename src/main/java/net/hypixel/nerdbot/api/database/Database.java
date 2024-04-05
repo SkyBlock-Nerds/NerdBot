@@ -34,11 +34,10 @@ import java.util.List;
 public class Database implements ServerMonitorListener {
 
     private static final FindOneAndReplaceOptions REPLACE_OPTIONS = new FindOneAndReplaceOptions().upsert(true);
-
-    private MongoClient mongoClient = null;
     private final ConnectionString connectionString;
-    private boolean connected;
     private final RepositoryManager repositoryManager = new RepositoryManager();
+    private MongoClient mongoClient = null;
+    private boolean connected;
 
     public Database(String uri, String databaseName) {
         if (uri == null || uri.isBlank() || databaseName == null || databaseName.isBlank()) {
@@ -98,10 +97,7 @@ public class Database implements ServerMonitorListener {
     }
 
     public void disconnect() {
-        if (connected) {
-            mongoClient.close();
-        }
-
+        mongoClient.close();
         connected = false;
     }
 

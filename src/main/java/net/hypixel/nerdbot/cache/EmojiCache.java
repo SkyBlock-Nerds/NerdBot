@@ -26,6 +26,20 @@ public class EmojiCache {
         });
     }
 
+    public static Optional<Emoji> getEmojiById(String emojiId) {
+        return Optional.ofNullable(EMOJI_CACHE.get(emojiId));
+    }
+
+    public static Optional<Emoji> getEmojiByName(String emojiName) {
+        return EMOJI_CACHE.values().stream()
+            .filter(emoji -> emoji.getName().equals(emojiName))
+            .findFirst();
+    }
+
+    public static Map<String, Emoji> getEmojiCache() {
+        return EMOJI_CACHE;
+    }
+
     @SubscribeEvent
     public void onEmojiCreate(EmojiAddedEvent event) {
         EMOJI_CACHE.put(event.getEmoji().getId(), event.getEmoji());
@@ -42,19 +56,5 @@ public class EmojiCache {
     public void onEmojiUpdate(GenericEmojiUpdateEvent<?> event) {
         EMOJI_CACHE.put(event.getEmoji().getId(), event.getEmoji());
         log.debug("Cached emoji '" + event.getEmoji().getName() + "' (ID: " + event.getEmoji().getId() + ") because it was updated");
-    }
-
-    public static Optional<Emoji> getEmojiById(String emojiId) {
-        return Optional.ofNullable(EMOJI_CACHE.get(emojiId));
-    }
-
-    public static Optional<Emoji> getEmojiByName(String emojiName) {
-        return EMOJI_CACHE.values().stream()
-            .filter(emoji -> emoji.getName().equals(emojiName))
-            .findFirst();
-    }
-
-    public static Map<String, Emoji> getEmojiCache() {
-        return EMOJI_CACHE;
     }
 }

@@ -3,13 +3,15 @@ package net.hypixel.nerdbot.api.language;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
+import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.util.JsonUtil;
+import net.hypixel.nerdbot.util.exception.TranslationException;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
@@ -30,8 +32,10 @@ public class TranslationManager {
      * Load the language file based on the {@link UserLanguage} file name
      *
      * @param language The {@link UserLanguage} to load translations for
+     *
      * @return A {@link JsonObject} containing the file contents
      */
+    @SneakyThrows
     private static JsonObject loadTranslations(UserLanguage language) {
         if (TRANSLATION_CACHE.containsKey(language)) {
             return TRANSLATION_CACHE.get(language);
@@ -48,8 +52,7 @@ public class TranslationManager {
             log.info("Loaded translations for language " + language.name() + " from " + language.getFileName());
             return jsonObject;
         } catch (Exception e) {
-            log.error("Failed to load translations for language " + language.name(), e);
-            return null;
+            throw new TranslationException("Failed to load translations for language " + language.name(), e);
         }
     }
 
@@ -69,6 +72,7 @@ public class TranslationManager {
      * @param discordUser The {@link DiscordUser} to take the {@link UserLanguage} from
      * @param key         The key of the translation
      * @param args        Optional arguments to replace variables in the translation
+     *
      * @return A string with the translated key based on the {@link DiscordUser}'s {@link UserLanguage} and any optional arguments
      */
     public static String translate(@Nullable DiscordUser discordUser, String key, Object... args) {
@@ -91,6 +95,10 @@ public class TranslationManager {
             }
 
             if (element == null) {
+                if (language != DEFAULT_LANGUAGE) {
+                    return translate(key, args);
+                }
+
                 return ERROR_MESSAGE.formatted(key);
             }
         }
@@ -113,6 +121,7 @@ public class TranslationManager {
      *
      * @param key  The key of the translation
      * @param args Optional arguments to replace variables in the translation
+     *
      * @return A translated string using the default {@link UserLanguage} of the given key and optional arguments
      */
     public static String translate(String key, Object... args) {

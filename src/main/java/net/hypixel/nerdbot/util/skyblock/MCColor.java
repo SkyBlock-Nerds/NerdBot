@@ -1,7 +1,12 @@
 package net.hypixel.nerdbot.util.skyblock;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 import java.awt.Color;
 
+@Getter
+@AllArgsConstructor
 public enum MCColor {
     BLACK('0', new Color(0, 0, 0), new Color(0, 0, 0)),
     DARK_BLUE('1', new Color(0, 0, 170), new Color(0, 0, 42)),
@@ -31,12 +36,6 @@ public enum MCColor {
     private final char colorCode;
     private final Color color;
     private final Color backgroundColor;
-
-    MCColor(char colorCode, Color color, Color backgroundColor) {
-        this.colorCode = colorCode;
-        this.color = color;
-        this.backgroundColor = backgroundColor;
-    }
 
     public char getColorCode() {
         return colorCode;

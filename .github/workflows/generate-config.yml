@@ -3,17 +3,18 @@ name: Generate Example Config JSON File
 on:
   push:
     branches:
-      - '*'
+      - 'master'
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-
+      - uses: actions/checkout@v4.1.2
+        with:
+          ref: ${{ github.head_ref }}
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'adopt'
@@ -22,7 +23,7 @@ jobs:
         run: mvn clean package
 
       - name: Commit and push if changes detected
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: Automated config update
           file_pattern: '*.json'

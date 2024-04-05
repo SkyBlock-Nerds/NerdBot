@@ -18,7 +18,9 @@ import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.bot.config.SuggestionConfig;
+import net.hypixel.nerdbot.bot.config.EmojiConfig;
+import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.util.Util;
@@ -30,10 +32,35 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Log4j2
-public class ForumChannelCurator extends Curator<ForumChannel> {
+public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
 
     public ForumChannelCurator(boolean readOnly) {
         super(readOnly);
+    }
+
+    public static GreenlitMessage createGreenlitMessage(Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
+        return GreenlitMessage.builder()
+            .agrees(agree)
+            .neutrals(neutral)
+            .disagrees(disagree)
+            .messageId(message.getId())
+            .userId(message.getAuthor().getId())
+            .suggestionUrl(message.getJumpUrl())
+            .suggestionTitle(thread.getName())
+            .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
+            .suggestionContent(message.getContentRaw())
+            .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
+            .positiveVoterIds(
+                message.getReactions().stream()
+                    .filter(reaction -> NerdBotApp.getBot().getConfig().getEmojiConfig().isReactionEquals(reaction, EmojiConfig::getAgreeEmojiId))
+                    .flatMap(reaction -> reaction.retrieveUsers()
+                        .complete()
+                        .stream()
+                    )
+                    .map(User::getId)
+                    .toList()
+            )
+            .build();
     }
 
     @Override
@@ -51,10 +78,18 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 return output;
             }
 
-            BotConfig config = NerdBotApp.getBot().getConfig();
-            SuggestionConfig suggestionConfig = config.getSuggestionConfig();
+            BotConfig botConfig = NerdBotApp.getBot().getConfig();
+            SuggestionConfig suggestionConfig = botConfig.getSuggestionConfig();
 
             if (suggestionConfig == null) {
+                log.error("Couldn't find the suggestion config from the bot config!");
+                timer.observeDuration();
+                return output;
+            }
+
+            EmojiConfig emojiConfig = botConfig.getEmojiConfig();
+
+            if (emojiConfig == null) {
                 log.error("Couldn't find the emoji config from the bot config!");
                 timer.observeDuration();
                 return output;
@@ -68,8 +103,17 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 return output;
             }
 
+            if (emojiConfig.getGreenlitEmojiId() == null || emojiConfig.getAgreeEmojiId() == null || emojiConfig.getNeutralEmojiId() == null || emojiConfig.getDisagreeEmojiId() == null
+                || EmojiCache.getEmojiById(emojiConfig.getGreenlitEmojiId()).isEmpty() || EmojiCache.getEmojiById(emojiConfig.getAgreeEmojiId()).isEmpty()
+                || EmojiCache.getEmojiById(emojiConfig.getNeutralEmojiId()).isEmpty() || EmojiCache.getEmojiById(emojiConfig.getDisagreeEmojiId()).isEmpty()) {
+                log.error("Couldn't find the greenlit, agree, neutral, or disagree emoji in the channel " + forumChannel.getName() + " (ID: " + forumChannel.getId() + ")! Check the emojiConfig values!");
+                timer.observeDuration();
+                return output;
+            }
+
             log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
 
+            long start = System.currentTimeMillis();
             List<ThreadChannel> threads = Stream.concat(
                     forumChannel.getThreadChannels().stream(), // Unarchived Posts
                     forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
@@ -78,12 +122,16 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                 .distinct()
                 .toList();
 
-            log.info("Found " + threads.size() + " forum post(s)!");
+            log.info("Found " + threads.size() + " forum post(s) in " + (System.currentTimeMillis() - start) + "ms");
             PrometheusMetrics.CURATOR_MESSAGES_AMOUNT.labels(forumChannel.getName()).inc(threads.size());
+            setIndex(0);
+            setTotal(threads.size());
 
-            int index = 0;
             for (ThreadChannel thread : threads) {
-                log.info("[" + (++index) + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+                setIndex(getIndex() + 1);
+                setCurrentObject(thread);
+
+                log.info("[" + getIndex() + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
 
                 MessageHistory history = thread.getHistoryFromBeginning(1).complete();
                 Message message = history.isEmpty() ? null : history.getRetrievedHistory().get(0);
@@ -102,9 +150,9 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         .toList();
 
                     Map<String, Integer> votes = Stream.of(
-                            suggestionConfig.getAgreeEmojiId(),
-                            suggestionConfig.getNeutralEmojiId(),
-                            suggestionConfig.getDisagreeEmojiId()
+                            emojiConfig.getAgreeEmojiId(),
+                            emojiConfig.getNeutralEmojiId(),
+                            emojiConfig.getDisagreeEmojiId()
                         )
                         .map(emojiId -> Pair.of(
                             emojiId,
@@ -120,16 +168,16 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                         ))
                         .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
 
-                    int agree = votes.get(suggestionConfig.getAgreeEmojiId());
-                    int neutral = votes.get(suggestionConfig.getNeutralEmojiId());
-                    int disagree = votes.get(suggestionConfig.getDisagreeEmojiId());
+                    int agree = votes.get(emojiConfig.getAgreeEmojiId());
+                    int neutral = votes.get(emojiConfig.getNeutralEmojiId());
+                    int disagree = votes.get(emojiConfig.getDisagreeEmojiId());
                     List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
                     ThreadChannelManager threadManager = thread.getManager();
 
                     // Upsert into database if already greenlit
-                    if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
+                    if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag())) {
                         log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is already greenlit/reviewed!");
-                        GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
+                        GreenlitMessage greenlitMessage = createGreenlitMessage(message, thread, agree, neutral, disagree);
                         database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
                         continue;
                     }
@@ -176,7 +224,7 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
                     threadManager.queue();
 
                     log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has been greenlit!");
-                    GreenlitMessage greenlitMessage = createGreenlitMessage(forumChannel, message, thread, agree, neutral, disagree);
+                    GreenlitMessage greenlitMessage = createGreenlitMessage(message, thread, agree, neutral, disagree);
                     NerdBotApp.getBot().getSuggestionCache().updateSuggestion(thread); // Update Suggestion
                     output.add(greenlitMessage);
                 } catch (Exception exception) {
@@ -187,35 +235,11 @@ public class ForumChannelCurator extends Curator<ForumChannel> {
             setEndTime(System.currentTimeMillis());
             timer.observeDuration();
             log.info("Curated forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ") in " + (getEndTime() - getStartTime()) + "ms");
+            setCompleted(true);
+            setCurrentObject(null);
+            setIndex(0);
+
             return output;
         }
-    }
-
-    public static GreenlitMessage createGreenlitMessage(ForumChannel forumChannel, Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
-        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
-
-        return GreenlitMessage.builder()
-            .agrees(agree)
-            .neutrals(neutral)
-            .disagrees(disagree)
-            .messageId(message.getId())
-            .userId(message.getAuthor().getId())
-            .alpha(forumChannel.getName().toLowerCase().contains("alpha"))
-            .suggestionUrl(message.getJumpUrl())
-            .suggestionTitle(thread.getName())
-            .suggestionTimestamp(thread.getTimeCreated().toInstant().toEpochMilli())
-            .suggestionContent(message.getContentRaw())
-            .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
-            .positiveVoterIds(
-                message.getReactions().stream()
-                    .filter(reaction -> suggestionConfig.isReactionEquals(reaction, SuggestionConfig::getAgreeEmojiId))
-                    .flatMap(reaction -> reaction.retrieveUsers()
-                        .complete()
-                        .stream()
-                    )
-                    .map(User::getId)
-                    .toList()
-            )
-            .build();
     }
 }

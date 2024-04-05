@@ -21,7 +21,7 @@ public class IconParser implements StringParser {
             String icon = matcher.group(1);
             String extraData = matcher.group(2);
 
-            Icon iconEnum = (Icon) Util.findValueOrNull(Icon.VALUES, icon);
+            Icon iconEnum = (Icon) Util.findValue(Icon.VALUES, icon);
 
             if (iconEnum == null) {
                 continue;

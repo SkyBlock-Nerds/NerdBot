@@ -29,7 +29,7 @@ public class SkyBlockThreadParser {
             InputStream targetStream = new ByteArrayInputStream(xml.getBytes());
             saxParser.parse(targetStream, skyblockThreadHandler);
             return skyblockThreadHandler.getSkyBlockForum().getThreadList();
-        } catch (ParserConfigurationException | SAXException | IOException exception){
+        } catch (ParserConfigurationException | SAXException | IOException exception) {
             log.error("Failed to parse content from: " + xml, exception);
         }
 

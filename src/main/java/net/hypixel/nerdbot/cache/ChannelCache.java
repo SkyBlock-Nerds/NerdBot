@@ -28,6 +28,56 @@ public class ChannelCache {
         });
     }
 
+    public static Optional<GuildChannel> getChannelById(String channelId) {
+        return Optional.ofNullable(CHANNEL_CACHE.get(channelId));
+    }
+
+    public static Optional<GuildChannel> getChannelByName(String channelName) {
+        return CHANNEL_CACHE.values().stream()
+            .filter(guildChannel -> guildChannel.getName().equals(channelName))
+            .findFirst();
+    }
+
+    public static Optional<TextChannel> getTextChannelByName(String channelName) {
+        return getChannelByName(channelName)
+            .map(TextChannel.class::cast);
+    }
+
+    public static Optional<TextChannel> getTextChannelById(String channelId) {
+        return getChannelById(channelId)
+            .map(TextChannel.class::cast);
+    }
+
+    public static Optional<ForumChannel> getForumChannelByName(String channelName) {
+        return getChannelByName(channelName)
+            .map(ForumChannel.class::cast);
+    }
+
+    public static Optional<ForumChannel> getForumChannelById(String channelId) {
+        return getChannelById(channelId)
+            .map(ForumChannel.class::cast);
+    }
+
+    public static Optional<ForumChannel> getModMailChannel() {
+        return getChannelById(NerdBotApp.getBot().getConfig().getModMailConfig().getChannelId())
+            .map(ForumChannel.class::cast);
+    }
+
+    public static Optional<TextChannel> getLogChannel() {
+        return getChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getLogChannelId())
+            .map(TextChannel.class::cast);
+    }
+
+    public static Optional<TextChannel> getVerifyLogChannel() {
+        return getChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getVerifyLogChannelId())
+            .map(TextChannel.class::cast);
+    }
+
+    public static Optional<TextChannel> getRequestedReviewChannel() {
+        return getChannelById(NerdBotApp.getBot().getConfig().getSuggestionConfig().getReviewRequestConfig().getChannelId())
+            .map(TextChannel.class::cast);
+    }
+
     @SubscribeEvent
     public void onChannelCreate(ChannelCreateEvent event) {
         CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel().asGuildChannel());
@@ -50,55 +100,5 @@ public class ChannelCache {
     public void onForumChannelUpdate(GenericForumTagEvent event) {
         CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel());
         log.debug("Cached channel '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was updated");
-    }
-
-    public static Optional<GuildChannel> getChannelById(String channelId) {
-        return Optional.ofNullable(CHANNEL_CACHE.get(channelId));
-    }
-
-    public static Optional<GuildChannel> getChannelByName(String channelName) {
-        return CHANNEL_CACHE.values().stream()
-            .filter(guildChannel -> guildChannel.getName().equals(channelName))
-            .findFirst();
-    }
-
-    public static Optional<TextChannel> getTextChannelByName(String channelName) {
-        return getChannelByName(channelName)
-            .map(channel -> (TextChannel) channel);
-    }
-
-    public static Optional<TextChannel> getTextChannelById(String channelId) {
-        return getChannelById(channelId)
-            .map(channel -> (TextChannel) channel);
-    }
-
-    public static Optional<ForumChannel> getForumChannelByName(String channelName) {
-        return getChannelByName(channelName)
-            .map(channel -> (ForumChannel) channel);
-    }
-
-    public static Optional<ForumChannel> getForumChannelById(String channelId) {
-        return getChannelById(channelId)
-            .map(channel -> (ForumChannel) channel);
-    }
-
-    public static Optional<ForumChannel> getModMailChannel() {
-        return getChannelById(NerdBotApp.getBot().getConfig().getModMailConfig().getChannelId())
-            .map(channel -> (ForumChannel) channel);
-    }
-
-    public static Optional<TextChannel> getLogChannel() {
-        return getChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getLogChannelId())
-            .map(channel -> (TextChannel) channel);
-    }
-
-    public static Optional<TextChannel> getVerifyLogChannel() {
-        return getChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getVerifyLogChannelId())
-            .map(channel -> (TextChannel) channel);
-    }
-
-    public static Optional<TextChannel> getRequestedReviewChannel() {
-        return getChannelById(NerdBotApp.getBot().getConfig().getSuggestionConfig().getRequestedReviewForumId())
-            .map(channel -> (TextChannel) channel);
     }
 }

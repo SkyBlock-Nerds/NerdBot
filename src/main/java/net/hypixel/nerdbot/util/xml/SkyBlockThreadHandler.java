@@ -20,11 +20,10 @@ public class SkyBlockThreadHandler extends DefaultHandler {
     private static final String LINK = "link";
     private static final String GUID = "guid";
     private static final String CREATOR = "dc:creator";
-
+    private static String forum = null;
     @Getter
     private SkyBlockThreadParser.SkyBlockForum skyBlockForum;
     private StringBuilder elementValue;
-    private static String forum = null;
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) {

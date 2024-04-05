@@ -18,6 +18,21 @@ import java.util.TimerTask;
 @Log4j2
 public class ProfileUpdateFeature extends BotFeature {
 
+    public static void updateNickname(DiscordUser discordUser) {
+        MojangProfile mojangProfile = Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId());
+        discordUser.setMojangProfile(mojangProfile);
+        Guild guild = Util.getMainGuild();
+        Member member = guild.retrieveMemberById(discordUser.getDiscordId()).complete();
+
+        if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
+            try {
+                member.modifyNickname(mojangProfile.getUsername()).queue();
+            } catch (HierarchyException exception) {
+                log.error("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "]", exception);
+            }
+        }
+    }
+
     @Override
     public void onFeatureStart() {
         this.timer.scheduleAtFixedRate(
@@ -25,7 +40,12 @@ public class ProfileUpdateFeature extends BotFeature {
                 @Override
                 public void run() {
                     if (NerdBotApp.getBot().isReadOnly()) {
-                        log.error("Bot is in read-only mode, skipping profile update task!");
+                        log.info("Bot is in read-only mode, skipping profile update task!");
+                        return;
+                    }
+
+                    if (!NerdBotApp.getBot().getConfig().isMojangForceNicknameUpdate()) {
+                        log.info("Forcefully updating nicknames is currently disabled!");
                         return;
                     }
 
@@ -42,20 +62,5 @@ public class ProfileUpdateFeature extends BotFeature {
     @Override
     public void onFeatureEnd() {
         this.timer.cancel();
-    }
-
-    public static void updateNickname(DiscordUser discordUser) {
-        MojangProfile mojangProfile = Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId());
-        discordUser.setMojangProfile(mojangProfile);
-        Guild guild = Util.getMainGuild();
-        Member member = guild.retrieveMemberById(discordUser.getDiscordId()).complete();
-
-        if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
-            try {
-                member.modifyNickname(mojangProfile.getUsername()).queue();
-            } catch (HierarchyException exception) {
-                log.error("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "]", exception);
-            }
-        }
     }
 }

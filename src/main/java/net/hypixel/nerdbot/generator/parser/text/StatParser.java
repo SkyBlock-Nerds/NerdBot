@@ -21,7 +21,7 @@ public class StatParser implements StringParser {
             String match = matcher.group(0);
             String icon = matcher.group(1);
             String extraData = matcher.group(2);
-            Stat statEnum = (Stat) Util.findValueOrNull(Stat.VALUES, icon);
+            Stat statEnum = (Stat) Util.findValue(Stat.VALUES, icon);
 
             if (statEnum == null) {
                 continue;

@@ -3,13 +3,12 @@ package net.hypixel.nerdbot;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.MongoException;
-import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
+import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.cache.MessageCache;
-import net.hypixel.nerdbot.cache.SuggestionCache;
+import net.hypixel.nerdbot.util.gson.adapter.BadgeTypeAdapter;
 import net.hypixel.nerdbot.util.gson.adapter.InstantTypeAdapter;
 import net.hypixel.nerdbot.util.gson.adapter.UUIDTypeAdapter;
 import sun.misc.Signal;
@@ -17,7 +16,8 @@ import sun.misc.Signal;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,6 +29,7 @@ public class NerdBotApp {
         .setPrettyPrinting()
         .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
         .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
+        .registerTypeAdapter(Badge.class, new BadgeTypeAdapter())
         .create();
 
     private static Bot bot;
