@@ -19,7 +19,7 @@ public class GeneratorException extends RuntimeException {
     public static String formatMessage(String message, String... formatArgs) {
         for (int i = 0; i < formatArgs.length; i++) {
             String safeResponse = Objects.requireNonNullElse(formatArgs[i], "").replaceAll("`", "");
-            formatArgs[i] = safeResponse.length() != 0 ? safeResponse : " ";
+            formatArgs[i] = !safeResponse.isEmpty() ? safeResponse : " ";
         }
         return String.format(message, (Object[]) formatArgs);
     }
