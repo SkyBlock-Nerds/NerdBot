@@ -14,7 +14,7 @@ import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.hypixel.nerdbot.generator.builder.ItemBuilder;
+import net.hypixel.nerdbot.generator.builder.GeneratorImageBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
@@ -73,7 +73,7 @@ public class GeneratorCommands extends ApplicationCommand {
         enchanted = enchanted != null && enchanted;
 
         try {
-            ItemBuilder item = new ItemBuilder();
+            GeneratorImageBuilder item = new GeneratorImageBuilder();
 
             if (itemId.equalsIgnoreCase("player_head") && skinValue != null) {
                 item.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
@@ -104,7 +104,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply().complete();
 
         try {
-            GeneratedObject generatedObject = new ItemBuilder()
+            GeneratedObject generatedObject = new GeneratorImageBuilder()
                 .addGenerator(new MinecraftPlayerHeadGenerator.Builder().withSkin(texture).build())
                 .build();
 
@@ -128,7 +128,7 @@ public class GeneratorCommands extends ApplicationCommand {
         renderBackground = renderBackground == null || renderBackground;
 
         try {
-            GeneratedObject generatedObject = new ItemBuilder()
+            GeneratedObject generatedObject = new GeneratorImageBuilder()
                 .addGenerator(new MinecraftInventoryGenerator.Builder()
                     .withRows(3)
                     .withSlotsPerRow(3)
@@ -161,7 +161,7 @@ public class GeneratorCommands extends ApplicationCommand {
         drawBorder = drawBorder == null || drawBorder;
 
         try {
-            GeneratedObject generatedObject = new ItemBuilder()
+            GeneratedObject generatedObject = new GeneratorImageBuilder()
                 .addGenerator(new MinecraftInventoryGenerator.Builder()
                     .withRows(rows)
                     .withSlotsPerRow(slotsPerRow)
@@ -196,7 +196,7 @@ public class GeneratorCommands extends ApplicationCommand {
         try {
             JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
             JsonObject tagObject = jsonObject.get("tag").getAsJsonObject();
-            ItemBuilder itemBuilder = new ItemBuilder();
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
 
             if (jsonObject.get("id").getAsString().contains("skull")) {
                 String value = jsonObject.get("id").getAsString();
@@ -218,12 +218,12 @@ public class GeneratorCommands extends ApplicationCommand {
 
                 String base64 = textures.get(0).getAsJsonObject().get("Value").getAsString();
 
-                itemBuilder.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
+                generatorImageBuilder.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
                     .parseBase64String(base64)
                     .build()
                 );
             } else {
-                itemBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
                     .withItem(jsonObject.get("id").getAsString())
                     .isBigImage()
                     .build());
@@ -234,7 +234,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withAlpha(alpha)
                 .withPadding(padding);
 
-            GeneratedObject generatedObject = itemBuilder.addGenerator(tooltipGenerator.build()).build();
+            GeneratedObject generatedObject = generatorImageBuilder.addGenerator(tooltipGenerator.build()).build();
             // TODO output a command
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
         } catch (JsonParseException exception) {
@@ -275,7 +275,7 @@ public class GeneratorCommands extends ApplicationCommand {
         normalItem = normalItem != null && normalItem;
 
         try {
-            ItemBuilder itemBuilder = new ItemBuilder();
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withName(name)
                 .withRarity((Rarity) Util.findValue(Rarity.VALUES, rarity.toUpperCase()))
@@ -296,16 +296,16 @@ public class GeneratorCommands extends ApplicationCommand {
                     generator.withSkin(skinValue);
                 }
 
-                itemBuilder.addGenerator(generator.build());
+                generatorImageBuilder.addGenerator(generator.build());
             } else {
-                itemBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
                     .withItem(itemId)
                     .isBigImage()
                     .build());
             }
 
             if (recipeString != null) {
-                itemBuilder.addGenerator(0, new MinecraftInventoryGenerator.Builder()
+                generatorImageBuilder.addGenerator(0, new MinecraftInventoryGenerator.Builder()
                         .withRows(3)
                         .withSlotsPerRow(3)
                         .drawBorder(false)
@@ -315,12 +315,12 @@ public class GeneratorCommands extends ApplicationCommand {
             }
 
             if (tooltipSide != null && MinecraftTooltipGenerator.TooltipSide.valueOf(tooltipSide.toUpperCase()) == MinecraftTooltipGenerator.TooltipSide.LEFT) {
-                itemBuilder.addGenerator(0, tooltipGenerator);
+                generatorImageBuilder.addGenerator(0, tooltipGenerator);
             } else {
-                itemBuilder.addGenerator(tooltipGenerator);
+                generatorImageBuilder.addGenerator(tooltipGenerator);
             }
 
-            GeneratedObject generatedObject = itemBuilder.build();
+            GeneratedObject generatedObject = generatorImageBuilder.build();
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
         } catch (GeneratorException | IllegalArgumentException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
@@ -347,7 +347,7 @@ public class GeneratorCommands extends ApplicationCommand {
         maxLineLength = maxLineLength == null ? 30 : maxLineLength;
 
         try {
-            ItemBuilder itemBuilder = new ItemBuilder();
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withItemLore(text)
                 .withAlpha(alpha)
@@ -358,8 +358,8 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withEmptyLine(false)
                 .build();
 
-            itemBuilder.addGenerator(tooltipGenerator);
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(itemBuilder.build().getImage()), "text.png")).queue();
+            generatorImageBuilder.addGenerator(tooltipGenerator);
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatorImageBuilder.build().getImage()), "text.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {

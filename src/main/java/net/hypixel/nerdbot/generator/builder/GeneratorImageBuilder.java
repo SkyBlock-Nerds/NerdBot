@@ -9,22 +9,22 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ItemBuilder {
+public class GeneratorImageBuilder {
 
     private static final int IMAGE_PADDING_PX = 25;
 
     private final List<Generator> generators;
 
-    public ItemBuilder() {
+    public GeneratorImageBuilder() {
         this.generators = new ArrayList<>();
     }
 
-    public ItemBuilder addGenerator(Generator generator) {
+    public GeneratorImageBuilder addGenerator(Generator generator) {
         this.generators.add(generator);
         return this;
     }
 
-    public ItemBuilder addGenerator(int position, Generator generator) {
+    public GeneratorImageBuilder addGenerator(int position, Generator generator) {
         this.generators.add(position, generator);
         return this;
     }
