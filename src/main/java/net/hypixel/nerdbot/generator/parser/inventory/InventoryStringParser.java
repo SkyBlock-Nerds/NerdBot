@@ -120,7 +120,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         int index = 0;
         for (String slotIndex : values) {
             try {
-                slots[index] = Integer.parseInt(slotIndex.trim());
+                slots[index] = Range.between(1, this.totalSlots).fit(Integer.parseInt(slotIndex.trim()));
                 amounts[index] = amount;
                 index++;
             } catch (NumberFormatException exception) {
@@ -155,7 +155,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
 
         int slot;
         try {
-            slot = Integer.parseInt(slotData);
+            slot = Range.between(1, this.totalSlots).fit(Integer.parseInt(slotData));
         } catch (NumberFormatException exception) {
             throw new GeneratorException("Invalid slot or amount: `%s` for material: `%s,%s`", slotAmount, material, data);
         }
