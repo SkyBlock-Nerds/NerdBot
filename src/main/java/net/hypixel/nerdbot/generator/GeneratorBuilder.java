@@ -7,6 +7,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
+import net.hypixel.nerdbot.generator.skull.MinecraftHead;
 import net.hypixel.nerdbot.generator.util.Item;
 import net.hypixel.nerdbot.generator.util.overlay.DualLayerOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.EnchantGlintOverlay;
@@ -288,7 +289,7 @@ public class GeneratorBuilder {
         }
 
         // registering the image into the cache
-        return new MinecraftHead(skin).drawHead().getImage();
+        return new MinecraftHead(skin).generate().getImage();
     }
 
     /**
