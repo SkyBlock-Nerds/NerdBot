@@ -66,14 +66,9 @@ public class Util {
     public static final DateTimeFormatter REGULAR_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss ZZZ").withZone(ZoneId.systemDefault());
     public static final DateTimeFormatter FILE_NAME_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss").withZone(ZoneId.systemDefault());
 
-    // UUID Pattern Matching
     public static final Pattern UUID_REGEX = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}");
     public static final Pattern TRIMMED_UUID_REGEX = Pattern.compile("[a-f0-9]{12}4[a-f0-9]{3}[89aAbB][a-f0-9]{15}");
-    private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
-    @Deprecated
-    private static final String MINECRAFT_USERNAME_REGEX = "^[a-zA-Z0-9_]{2,16}";
-    @Deprecated
-    private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
+    public static final String SECTION_SYMBOL = "§";
     public static final String[] PROJECT_CHANNEL_NAMES = {
         "project",
         "projəct",
@@ -81,6 +76,13 @@ public class Util {
         "nerds-project"
     };
     public static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
+    private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
+    private static final String ALL_PATTERN = "[0-9A-FK-OR]";
+    public static final Pattern VANILLA_PATTERN = Pattern.compile(SECTION_SYMBOL + "+(" + ALL_PATTERN + ")", Pattern.CASE_INSENSITIVE);
+    @Deprecated
+    private static final String MINECRAFT_USERNAME_REGEX = "^[a-zA-Z0-9_]{2,16}";
+    @Deprecated
+    private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
 
     private Util() {
     }
