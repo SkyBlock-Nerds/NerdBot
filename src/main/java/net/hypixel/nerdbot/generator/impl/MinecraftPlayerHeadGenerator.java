@@ -68,7 +68,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
             throw new GeneratorException("Could not find skin with ID: `s`" + textureId);
         }
 
-        return new MinecraftHead(skin).drawHead().getImage();
+        return new MinecraftHead(skin).generate().getImage();
     }
 
     private String getPlayerHeadURL(String playerName) {

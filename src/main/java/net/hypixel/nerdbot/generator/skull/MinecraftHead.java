@@ -1,10 +1,12 @@
 package net.hypixel.nerdbot.generator.skull;
 
+import net.hypixel.nerdbot.generator.item.GeneratedObject;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
-public class MinecraftHead {
+public class MinecraftHead extends GeneratedObject {
     private static final int DEFAULT_WIDTH = 1250;
     private static final int DEFAULT_HEIGHT = 1250;
     private static final int DEFAULT_RENDER_SCALE = Math.round(Math.min(DEFAULT_WIDTH, DEFAULT_HEIGHT) / 4f);
@@ -15,7 +17,6 @@ public class MinecraftHead {
     private static final double[][] DEFAULT_VERTEX_COORDINATES;
     private static final double[][] DEFAULT_FACE_ORDER;
 
-    private final BufferedImage image;
     private final BufferedImage skin;
     private final Graphics2D g2d;
     private double xRotation;
@@ -34,8 +35,8 @@ public class MinecraftHead {
      * @param targetSkin the skin which is meant to be created
      */
     public MinecraftHead(BufferedImage targetSkin, int width, int height) {
-        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        this.g2d = this.image.createGraphics();
+        super(new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB));
+        this.g2d = this.getImage().createGraphics();
         this.skin = targetSkin;
 
         int invisibilityColor = this.skin.getRGB(32, 0);
@@ -261,6 +262,7 @@ public class MinecraftHead {
      *
      * @return the buffered image containing the head
      */
+    @Override
     public BufferedImage getImage() {
         return scaleHead();
     }
