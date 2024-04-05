@@ -6,9 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.util.ChatFormat;
 import net.hypixel.nerdbot.generator.text.segment.ColorSegment;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
+import net.hypixel.nerdbot.util.ChatFormat;
 import net.hypixel.nerdbot.util.Range;
 import net.hypixel.nerdbot.util.Util;
 import org.apache.commons.lang.SystemUtils;
@@ -20,7 +20,11 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,27 +42,6 @@ public class MinecraftTooltip {
     private static final @NotNull List<Font> MINECRAFT_FONTS = new ArrayList<>();
     private static final Font sansSerif;
 
-    @Getter
-    private final List<LineSegment> lines;
-    @Getter
-    private final int alpha;
-    @Getter
-    private final int padding;
-    @Getter
-    private final boolean paddingFirstLine;
-    @Getter(AccessLevel.PRIVATE)
-    private final Graphics2D graphics;
-    @Getter
-    private BufferedImage image;
-    @Getter
-    private ChatFormat currentColor;
-    private Font currentFont;
-
-    // Positioning & Size
-    private int locationX = START_XY;
-    private int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
-    private int largestWidth = 0;
-
     static {
         sansSerif = new Font("SansSerif", Font.PLAIN, 20);
 
@@ -74,6 +57,26 @@ public class MinecraftTooltip {
         // Register Minecraft Fonts
         MINECRAFT_FONTS.forEach(GraphicsEnvironment.getLocalGraphicsEnvironment()::registerFont);
     }
+
+    @Getter
+    private final List<LineSegment> lines;
+    @Getter
+    private final int alpha;
+    @Getter
+    private final int padding;
+    @Getter
+    private final boolean paddingFirstLine;
+    @Getter(AccessLevel.PRIVATE)
+    private final Graphics2D graphics;
+    @Getter
+    private BufferedImage image;
+    @Getter
+    private ChatFormat currentColor;
+    private Font currentFont;
+    // Positioning & Size
+    private int locationX = START_XY;
+    private int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
+    private int largestWidth = 0;
 
     private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean paddingFirstLine) {
         this.alpha = alpha;

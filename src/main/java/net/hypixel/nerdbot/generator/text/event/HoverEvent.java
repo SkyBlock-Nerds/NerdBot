@@ -12,17 +12,17 @@ public final class HoverEvent {
     private final @NotNull Action action;
     private final @NotNull String value;
 
+    public static @NotNull HoverEvent fromJson(JsonObject object) {
+        String action = object.getAsJsonPrimitive("action").getAsString();
+        String value = object.getAsJsonPrimitive("value").getAsString();
+        return new HoverEvent(Action.valueOf(action), value);
+    }
+
     public @NotNull JsonObject toJson() {
         JsonObject object = new JsonObject();
         object.addProperty("action", this.getAction().toString());
         object.addProperty("value", this.getValue());
         return object;
-    }
-
-    public static @NotNull HoverEvent fromJson(JsonObject object) {
-        String action = object.getAsJsonPrimitive("action").getAsString();
-        String value = object.getAsJsonPrimitive("value").getAsString();
-        return new HoverEvent(Action.valueOf(action), value);
     }
 
     public enum Action {

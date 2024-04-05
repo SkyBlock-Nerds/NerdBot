@@ -306,12 +306,12 @@ public class GeneratorCommands extends ApplicationCommand {
 
             if (recipeString != null) {
                 generatorImageBuilder.addGenerator(0, new MinecraftInventoryGenerator.Builder()
-                        .withRows(3)
-                        .withSlotsPerRow(3)
-                        .drawBorder(false)
-                        .withInventoryString(recipeString)
-                        .build()
-                    ).build();
+                    .withRows(3)
+                    .withSlotsPerRow(3)
+                    .drawBorder(false)
+                    .withInventoryString(recipeString)
+                    .build()
+                ).build();
             }
 
             if (tooltipSide != null && MinecraftTooltipGenerator.TooltipSide.valueOf(tooltipSide.toUpperCase()) == MinecraftTooltipGenerator.TooltipSide.LEFT) {

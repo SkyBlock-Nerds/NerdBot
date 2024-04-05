@@ -50,11 +50,9 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
             String slotData = components[1];
             if (slotData.contains("{")) {
                 result.add(itemFromMap(slotData, material, data));
-            }
-            else if (components[1].contains("[")) {
+            } else if (components[1].contains("[")) {
                 result.add(itemFromArray(slotData, material, data));
-            }
-            else {
+            } else {
                 result.add(itemFromAmount(slotData, material, data));
             }
         }
@@ -65,9 +63,11 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
     /**
      * Converts the key-value pairs into slot and amount data for a {@link InventoryItem}
      * <br>
-     * @param slotMap String-Dictionary with mapped slot index (key) and amount (value)
+     *
+     * @param slotMap  String-Dictionary with mapped slot index (key) and amount (value)
      * @param material Material of the item required
-     * @param data Extra information to alter the appearance of the material
+     * @param data     Extra information to alter the appearance of the material
+     *
      * @return A mapped {@link InventoryItem}
      */
     private InventoryItem itemFromMap(String slotMap, String material, String data) {
@@ -93,9 +93,11 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
     /**
      * Converts the array of slots into data for a {@link InventoryItem}
      * <br>
+     *
      * @param slotArray String-Array with slots with optional amount outside the array
-     * @param material Material of the item required
-     * @param data Extra information to alter the appearance of the material
+     * @param material  Material of the item required
+     * @param data      Extra information to alter the appearance of the material
+     *
      * @return A mapped {@link InventoryItem}
      */
     private InventoryItem itemFromArray(String slotArray, String material, String data) {
@@ -106,7 +108,8 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         if (endingBracket != -1) {
             try {
                 amount = Range.between(1, 64).fit(Integer.parseInt(slotData.substring(endingBracket).replaceAll("[^0-9]", "")));
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
             slotData = slotData.substring(0, endingBracket + 1);
         }
 
@@ -130,9 +133,11 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
     /**
      * Converts slot and amount into a {@link InventoryItem}
      * <br>
+     *
      * @param slotAmount String with selected slot with optional amount after comma
-     * @param material Material of the item required
-     * @param data Extra information to alter the appearance of the material
+     * @param material   Material of the item required
+     * @param data       Extra information to alter the appearance of the material
+     *
      * @return A mapped {@link InventoryItem}
      */
     private InventoryItem itemFromAmount(String slotAmount, String material, String data) {
@@ -143,7 +148,8 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
             int splitIndex = slotData.indexOf(",");
             try {
                 amount = Range.between(1, 64).fit(Integer.parseInt(slotData.substring(splitIndex)));
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
             slotData = slotData.substring(0, splitIndex);
         }
 

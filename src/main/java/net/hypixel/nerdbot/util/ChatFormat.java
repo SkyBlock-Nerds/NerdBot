@@ -38,10 +38,12 @@ public enum ChatFormat {
 
     @Getter
     private final char code;
-    @Getter private final boolean isFormat;
+    @Getter
+    private final boolean isFormat;
     private final @NotNull String toString;
     private final @Nullable Color color;
-    @Getter private final @NotNull Color backgroundColor;
+    @Getter
+    private final @NotNull Color backgroundColor;
 
     ChatFormat(char code, int rgb, int brgb) {
         this(code, false, rgb, brgb);
@@ -54,7 +56,7 @@ public enum ChatFormat {
     ChatFormat(char code, boolean isFormat, int rgb, int brgb) {
         this.code = code;
         this.isFormat = isFormat;
-        this.toString = new String(new char[]{ SECTION_SYMBOL, code });
+        this.toString = new String(new char[]{SECTION_SYMBOL, code});
         this.color = (this.isColor() ? new Color(rgb) : null);
         this.backgroundColor = new Color(brgb);
     }
@@ -63,6 +65,7 @@ public enum ChatFormat {
      * Get the color represented by the specified name.
      *
      * @param name The name to search for.
+     *
      * @return The mapped format, or null if none exists.
      */
     public static @Nullable ChatFormat of(@NotNull String name) {
@@ -76,6 +79,7 @@ public enum ChatFormat {
      * Get the color represented by the specified code.
      *
      * @param code The code to search for.
+     *
      * @return The mapped format, or null if none exists.
      */
     public static @Nullable ChatFormat of(char code) {
@@ -83,6 +87,21 @@ public enum ChatFormat {
             .filter(format -> Objects.equals(format.getCode(), code))
             .findFirst()
             .orElse(null);
+    }
+
+    public static boolean isValid(char code) {
+        return of(code) != null;
+    }
+
+    /**
+     * Strips the given message of all color and format codes
+     *
+     * @param value String to strip of color
+     *
+     * @return A copy of the input string, without any coloring
+     */
+    public static String stripColor(@NotNull String value) {
+        return Util.VANILLA_PATTERN.matcher(value).replaceAll("");
     }
 
     public Color getColor() {
@@ -109,10 +128,6 @@ public enum ChatFormat {
         return !this.isFormat() && this != RESET;
     }
 
-    public static boolean isValid(char code) {
-        return of(code) != null;
-    }
-
     public ChatFormat getNextFormat() {
         return this.getNextFormat(ordinal());
     }
@@ -126,16 +141,6 @@ public enum ChatFormat {
             return getNextFormat(nextColor);
 
         return values()[nextColor];
-    }
-
-    /**
-     * Strips the given message of all color and format codes
-     *
-     * @param value String to strip of color
-     * @return A copy of the input string, without any coloring
-     */
-    public static String stripColor(@NotNull String value) {
-        return Util.VANILLA_PATTERN.matcher(value).replaceAll("");
     }
 
     public String toLegacyString() {

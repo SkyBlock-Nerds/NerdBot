@@ -1,8 +1,8 @@
 package net.hypixel.nerdbot.generator.builder;
 
-import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
+import net.hypixel.nerdbot.generator.item.GeneratedObject;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;

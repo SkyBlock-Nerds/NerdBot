@@ -15,7 +15,7 @@ public class InventoryItem extends GeneratedObject {
     private String extraContent;
 
     public InventoryItem(int slot, int amount, String itemName, String extraContent) {
-        this(new int[] {slot}, new int[] {amount}, itemName, extraContent);
+        this(new int[]{slot}, new int[]{amount}, itemName, extraContent);
     }
 
     public InventoryItem(int[] slots, int[] amounts, String itemName, String extraContent) {

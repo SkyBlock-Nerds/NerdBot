@@ -356,23 +356,23 @@ public class ExportCommands extends ApplicationCommand {
             }
 
             csvData.addRow(List.of(
-                    member.getUser().getName(),
-                    discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
-                    formatTimestamp(lastActivity.getLastGlobalActivity()),
-                    formatTimestamp(lastActivity.getLastVoiceChannelJoinDate()),
-                    formatTimestamp(lastActivity.getLastItemGenUsage()),
-                    lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionCreationHistory().get(0)),
-                    lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionCreationHistory().get(0)),
-                    lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
-                    lastActivity.getSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionVoteHistory().get(0)),
-                    lastActivity.getProjectSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionVoteHistory().get(0)),
-                    lastActivity.getAlphaSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionVoteHistory().get(0)),
-                    formatTimestamp(lastActivity.getLastProjectActivity()),
-                    formatTimestamp(lastActivity.getLastAlphaActivity()),
-                    formatTimestamp(lastActivity.getLastModMailUsage()),
-                    String.valueOf(lastActivity.getTotalMessageCount(finalInactivityDays)),
-                    "\"" + channelActivity + "\"",
-                    "FALSE"
+                member.getUser().getName(),
+                discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
+                formatTimestamp(lastActivity.getLastGlobalActivity()),
+                formatTimestamp(lastActivity.getLastVoiceChannelJoinDate()),
+                formatTimestamp(lastActivity.getLastItemGenUsage()),
+                lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionCreationHistory().get(0)),
+                lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionCreationHistory().get(0)),
+                lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
+                lastActivity.getSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionVoteHistory().get(0)),
+                lastActivity.getProjectSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionVoteHistory().get(0)),
+                lastActivity.getAlphaSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionVoteHistory().get(0)),
+                formatTimestamp(lastActivity.getLastProjectActivity()),
+                formatTimestamp(lastActivity.getLastAlphaActivity()),
+                formatTimestamp(lastActivity.getLastModMailUsage()),
+                String.valueOf(lastActivity.getTotalMessageCount(finalInactivityDays)),
+                "\"" + channelActivity + "\"",
+                "FALSE"
             ));
 
             log.debug("Added member " + member.getUser().getName() + " to the activity export for " + event.getMember().getEffectiveName() + " (days required: " + inactivityDays + ", message count required: " + inactivityMessages + ")");

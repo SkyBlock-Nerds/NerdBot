@@ -17,9 +17,9 @@ import java.util.Map;
 
 public class Spritesheet {
 
-    private static BufferedImage textureAtlas;
     @Getter
     private static final Map<String, BufferedImage> items = new HashMap<>();
+    private static BufferedImage textureAtlas;
 
     static {
         try {

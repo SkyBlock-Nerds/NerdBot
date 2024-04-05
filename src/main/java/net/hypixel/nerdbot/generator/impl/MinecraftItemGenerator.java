@@ -51,44 +51,6 @@ public class MinecraftItemGenerator implements Generator {
         return new GeneratedObject(itemImage);
     }
 
-    public static class Builder implements ClassBuilder<MinecraftItemGenerator> {
-        private String itemId;
-        private String data;
-        private boolean enchanted;
-        private boolean bigImage;
-
-        public MinecraftItemGenerator.Builder withItem(String itemId) {
-            this.itemId = itemId
-                .replace("minecraft:", "")
-                .replace("skull", "player_head");
-            return this;
-        }
-
-        public MinecraftItemGenerator.Builder withData(String data) {
-            this.data = data;
-            return this;
-        }
-
-        public MinecraftItemGenerator.Builder isEnchanted(boolean enchanted) {
-            this.enchanted = enchanted;
-            return this;
-        }
-
-        public MinecraftItemGenerator.Builder isBigImage(boolean bigImage) {
-            this.bigImage = bigImage;
-            return this;
-        }
-
-        public MinecraftItemGenerator.Builder isBigImage() {
-            return isBigImage(true);
-        }
-
-        @Override
-        public MinecraftItemGenerator build() {
-            return new MinecraftItemGenerator(itemId, data, enchanted, bigImage);
-        }
-    }
-
     private BufferedImage applyOverlay(ItemOverlay[] itemOverlays) {
         BufferedImage overlaidItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = overlaidItem.createGraphics();
@@ -100,7 +62,7 @@ public class MinecraftItemGenerator implements Generator {
             ItemOverlay overlay = itemOverlays[i];
 
             switch (overlay.getType()) {
-                case NORMAL ->  {
+                case NORMAL -> {
                     int[] overlayColors = overlay.getOverlayColorOptions().getColorFromOption(options[i]);
                     if (overlayColors != null) {
                         OverlayType.normalOverlay(overlaidItem, overlay.getImage(), overlayColors[0]);
@@ -137,5 +99,43 @@ public class MinecraftItemGenerator implements Generator {
         g.dispose();
 
         return enchantedItem;
+    }
+
+    public static class Builder implements ClassBuilder<MinecraftItemGenerator> {
+        private String itemId;
+        private String data;
+        private boolean enchanted;
+        private boolean bigImage;
+
+        public MinecraftItemGenerator.Builder withItem(String itemId) {
+            this.itemId = itemId
+                .replace("minecraft:", "")
+                .replace("skull", "player_head");
+            return this;
+        }
+
+        public MinecraftItemGenerator.Builder withData(String data) {
+            this.data = data;
+            return this;
+        }
+
+        public MinecraftItemGenerator.Builder isEnchanted(boolean enchanted) {
+            this.enchanted = enchanted;
+            return this;
+        }
+
+        public MinecraftItemGenerator.Builder isBigImage(boolean bigImage) {
+            this.bigImage = bigImage;
+            return this;
+        }
+
+        public MinecraftItemGenerator.Builder isBigImage() {
+            return isBigImage(true);
+        }
+
+        @Override
+        public MinecraftItemGenerator build() {
+            return new MinecraftItemGenerator(itemId, data, enchanted, bigImage);
+        }
     }
 }

@@ -1,9 +1,9 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
 import net.hypixel.nerdbot.generator.parser.StringParser;
+import net.hypixel.nerdbot.generator.skyblock.Stat;
 import net.hypixel.nerdbot.util.ChatFormat;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.generator.skyblock.Stat;
 
 import java.util.regex.Matcher;
 
@@ -26,7 +26,7 @@ public class StatParser implements StringParser {
             if (statEnum == null) {
                 continue;
             }
-            
+
             switch (statEnum.getParseType()) {
                 case NORMAL:
                     input = input.replace(match, normalStatColorParser(statEnum, extraData));
@@ -190,7 +190,7 @@ public class StatParser implements StringParser {
 
         String itemStat = extraDetails.substring(0, separator);
         String amount = extraDetails.substring(separator + 1);
-        
+
         return "&" + ChatFormat.GRAY.getCode() + itemStat + ": &" + stat.getSecondaryColor().getCode() + amount;
     }
 
@@ -214,7 +214,7 @@ public class StatParser implements StringParser {
 
         String abilityName = extraDetails.substring(0, separator);
         String abilityType = extraDetails.substring(separator + 1);
-        
+
         return "&" + stat.getColor().getCode() + stat.getStat() + ": " + abilityName + " &" + stat.getSecondaryColor().getCode() + "&" + ChatFormat.BOLD.getCode() + abilityType;
     }
 }

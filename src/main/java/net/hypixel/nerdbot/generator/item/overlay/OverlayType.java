@@ -6,7 +6,8 @@ import java.util.HashMap;
 public enum OverlayType {
     NORMAL, MAPPED, DUAL_LAYER;
 
-    OverlayType() {}
+    OverlayType() {
+    }
 
     public static void normalOverlay(BufferedImage targetImage, BufferedImage sourceImage, int color) {
         HashMap<Integer, Integer> colorMap = new HashMap<>();

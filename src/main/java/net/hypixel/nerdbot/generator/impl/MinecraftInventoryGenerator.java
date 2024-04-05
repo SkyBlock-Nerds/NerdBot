@@ -10,7 +10,10 @@ import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Range;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -26,11 +29,11 @@ public class MinecraftInventoryGenerator implements Generator {
     public static final int PIXELS_PER_PIXEL = 2;
     public static final int PIXELS_PER_SLOT = 18;
     public static final int SLOT_DIMENSION = PIXELS_PER_SLOT * PIXELS_PER_PIXEL;
+    public static final BufferedImage SINGLE_SLOT_IMAGE = new BufferedImage(SLOT_DIMENSION, SLOT_DIMENSION, BufferedImage.TYPE_INT_ARGB);
     private static final Color NORMAL_TEXT_COLOR = new Color(255, 255, 255);
     private static final Color DROP_SHADOW_COLOR = new Color(63, 63, 63);
     private static final Color BORDER_COLOR = new Color(198, 198, 198);
     private static final Color DARK_BORDER_COLOR = new Color(85, 85, 85);
-    public static final BufferedImage SINGLE_SLOT_IMAGE = new BufferedImage(SLOT_DIMENSION, SLOT_DIMENSION, BufferedImage.TYPE_INT_ARGB);
     private static final Font MINECRAFT_FONT;
 
     static {

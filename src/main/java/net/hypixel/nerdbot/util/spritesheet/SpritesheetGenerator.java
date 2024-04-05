@@ -19,10 +19,9 @@ import java.util.List;
 
 public class SpritesheetGenerator {
 
-    private static final int ATLAS_WIDTH = 1_024 * 8;
     public static final int IMAGE_HEIGHT = 512;
     public static final int IMAGE_WIDTH = 512;
-
+    private static final int ATLAS_WIDTH = 1_024 * 8;
     private static final List<TextureInfo> textureInfo = new ArrayList<>();
 
     public static void main(String[] args) {

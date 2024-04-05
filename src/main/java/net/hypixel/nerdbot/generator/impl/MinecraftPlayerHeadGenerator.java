@@ -30,6 +30,19 @@ public class MinecraftPlayerHeadGenerator implements Generator {
 
     private final String textureId;
 
+    /**
+     * Gets the Skin ID from a Base64 String
+     *
+     * @param base64SkinData Base64 Skin Data
+     *
+     * @return the skin id
+     */
+    private static String base64ToSkinURL(String base64SkinData) {
+        JsonObject skinData = NerdBotApp.GSON.fromJson(new String(Base64.getDecoder().decode(base64SkinData)), JsonObject.class);
+        System.out.println("Skin Data: " + skinData);
+        return skinData.get("textures").getAsJsonObject().get("SKIN").getAsJsonObject().get("url").getAsString().replace("http://textures.minecraft.net/texture/", "");
+    }
+
     @Override
     public GeneratedObject generate() {
         return new GeneratedObject(createHead(textureId));
@@ -104,19 +117,6 @@ public class MinecraftPlayerHeadGenerator implements Generator {
         String base64SkinData = userProfile.get("properties").getAsJsonArray().get(0).getAsJsonObject().get("value").getAsString();
         System.out.println("Base64 Skin Data: " + base64SkinData);
         return base64ToSkinURL(base64SkinData);
-    }
-
-    /**
-     * Gets the Skin ID from a Base64 String
-     *
-     * @param base64SkinData Base64 Skin Data
-     *
-     * @return the skin id
-     */
-    private static String base64ToSkinURL(String base64SkinData) {
-        JsonObject skinData = NerdBotApp.GSON.fromJson(new String(Base64.getDecoder().decode(base64SkinData)), JsonObject.class);
-        System.out.println("Skin Data: " + skinData);
-        return skinData.get("textures").getAsJsonObject().get("SKIN").getAsJsonObject().get("url").getAsString().replace("http://textures.minecraft.net/texture/", "");
     }
 
     public static class Builder implements ClassBuilder<MinecraftPlayerHeadGenerator> {

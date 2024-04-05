@@ -1,6 +1,11 @@
 package net.hypixel.nerdbot.util.gson.adapter;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
 

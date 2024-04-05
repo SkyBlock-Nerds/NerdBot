@@ -43,8 +43,9 @@ public class ColorSegment {
      * to person. In case the string does not have a {@link ChatFormat#SECTION_SYMBOL}, the method also checks for the
      * {@param characterSubstitute}
      *
-     * @param legacyText The text to make into an object
+     * @param legacyText       The text to make into an object
      * @param symbolSubstitute The character substitute
+     *
      * @return A TextObject representing the legacy text.
      */
     public static @NotNull LineSegment fromLegacy(@NotNull String legacyText, char symbolSubstitute) {
@@ -160,6 +161,7 @@ public class ColorSegment {
      * Takes an {@link ColorSegment} and transforms it into a legacy string.
      *
      * @param substitute The substitute character to use if you do not want to use {@link ChatFormat#SECTION_SYMBOL}
+     *
      * @return A legacy string representation of a text object
      */
     public @NotNull String toLegacy(char substitute) {

@@ -119,9 +119,9 @@ public class HypixelPlayerResponse {
 
     public static class SocialMedia {
 
-        private boolean prompt;
         @Getter
         private final Map<Service, String> links = new HashMap<>();
+        private boolean prompt;
 
         public enum Service {
 

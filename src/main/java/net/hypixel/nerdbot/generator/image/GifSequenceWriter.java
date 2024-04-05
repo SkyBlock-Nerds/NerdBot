@@ -11,7 +11,12 @@
 //
 package net.hypixel.nerdbot.generator.image;
 
-import javax.imageio.*;
+import javax.imageio.IIOException;
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageOutputStream;
@@ -29,7 +34,7 @@ public class GifSequenceWriter {
     protected IIOMetadata imageMetaData;
     protected List<BufferedImage> frames;
 
-    public GifSequenceWriter(ImageOutputStream output, int imageType, int timeBetweenFramesMS, boolean loopContinuously) throws IIOException, IOException {
+    public GifSequenceWriter(ImageOutputStream output, int imageType, int timeBetweenFramesMS, boolean loopContinuously) throws IOException {
         gifWriter = getWriter();
         imageWriteParam = gifWriter.getDefaultWriteParam();
         ImageTypeSpecifier imageTypeSpecifier = ImageTypeSpecifier.createFromBufferedImageType(imageType);
@@ -55,7 +60,7 @@ public class GifSequenceWriter {
         child.setAttribute("authenticationCode", "2.0");
 
         int loop = loopContinuously ? 0 : 1;
-        child.setUserObject(new byte[]{0x1, (byte)(loop & 0xFF), (byte)((loop >> 8) & 0xFF)});
+        child.setUserObject(new byte[]{0x1, (byte) (loop & 0xFF), (byte) ((loop >> 8) & 0xFF)});
         appExtensionsNode.appendChild(child);
 
         imageMetaData.setFromTree(metaFormatName, root);
@@ -64,6 +69,27 @@ public class GifSequenceWriter {
 
         // Initialize the frames list
         frames = new ArrayList<>();
+    }
+
+    private static ImageWriter getWriter() throws IIOException {
+        Iterator<ImageWriter> iter = ImageIO.getImageWritersBySuffix("gif");
+        if (!iter.hasNext()) {
+            throw new IIOException("No GIF Image Writers Exist");
+        } else {
+            return iter.next();
+        }
+    }
+
+    private static IIOMetadataNode getNode(IIOMetadataNode rootNode, String nodeName) {
+        int nNodes = rootNode.getLength();
+        for (int i = 0; i < nNodes; i++) {
+            if (rootNode.item(i).getNodeName().compareToIgnoreCase(nodeName) == 0) {
+                return (IIOMetadataNode) rootNode.item(i);
+            }
+        }
+        IIOMetadataNode node = new IIOMetadataNode(nodeName);
+        rootNode.appendChild(node);
+        return node;
     }
 
     public void writeToSequence(RenderedImage img) throws IOException {
@@ -95,26 +121,5 @@ public class GifSequenceWriter {
 
     public void close() throws IOException {
         gifWriter.endWriteSequence();
-    }
-
-    private static ImageWriter getWriter() throws IIOException {
-        Iterator<ImageWriter> iter = ImageIO.getImageWritersBySuffix("gif");
-        if (!iter.hasNext()) {
-            throw new IIOException("No GIF Image Writers Exist");
-        } else {
-            return iter.next();
-        }
-    }
-
-    private static IIOMetadataNode getNode(IIOMetadataNode rootNode, String nodeName) {
-        int nNodes = rootNode.getLength();
-        for (int i = 0; i < nNodes; i++) {
-            if (rootNode.item(i).getNodeName().compareToIgnoreCase(nodeName) == 0) {
-                return (IIOMetadataNode) rootNode.item(i);
-            }
-        }
-        IIOMetadataNode node = new IIOMetadataNode(nodeName);
-        rootNode.appendChild(node);
-        return node;
     }
 }

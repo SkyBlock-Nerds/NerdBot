@@ -11,9 +11,9 @@ import net.hypixel.nerdbot.generator.parser.Parser;
 import net.hypixel.nerdbot.generator.parser.text.ColorCodeParser;
 import net.hypixel.nerdbot.generator.parser.text.IconParser;
 import net.hypixel.nerdbot.generator.parser.text.StatParser;
+import net.hypixel.nerdbot.generator.skyblock.Rarity;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.util.Range;
-import net.hypixel.nerdbot.generator.skyblock.Rarity;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
@@ -36,6 +36,61 @@ public class MinecraftTooltipGenerator implements Generator {
     @Override
     public GeneratedObject generate() {
         return new GeneratedObject(buildItem(name, itemLore, type, emptyLine, alpha, padding, maxLineLength, normalItem, centeredText));
+    }
+
+    /**
+     * Converts text into a rendered image
+     *
+     * @param name           the name of the item
+     * @param itemLoreString the lore of the item
+     * @param type           the type of the item
+     * @param addEmptyLine   if there should be an extra line added between the lore and the final type line
+     * @param alpha          the transparency of the generated image
+     * @param padding        if there is any extra padding around the edges to prevent Discord from rounding the corners
+     * @param maxLineLength  the maximum length before content overflows onto the next
+     * @param isNormalItem   if the item should add an extra line between the title and first line
+     *
+     * @return a Minecraft item tooltip as a rendered image
+     */
+    @Nullable
+    public BufferedImage buildItem(String name, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, int maxLineLength, boolean isNormalItem, boolean isCentered) {
+        MinecraftTooltip parsedLore = parseLore(name, itemLoreString, addEmptyLine, type, maxLineLength, alpha, padding);
+        return parsedLore.render().getImage();
+    }
+
+    public MinecraftTooltip parseLore(String name, String input, boolean emptyLine, String type, int maxLineLength, int alpha, int padding) {
+        MinecraftTooltip.Builder builder = MinecraftTooltip.builder()
+            .withPadding(padding)
+            .withAlpha(Range.between(0, 255).fit(alpha));
+
+        if (name != null && !name.isEmpty()) {
+            builder.withLines(LineSegment.fromLegacy(rarity.getColorCode() + name, '&'));
+        }
+
+        for (String line : input.split("\\\\n")) {
+            String parsed = Parser.parseString(line, List.of(
+                new ColorCodeParser(),
+                new IconParser(),
+                new StatParser()
+            ));
+
+            builder.withLines(LineSegment.fromLegacy(parsed, '&'));
+        }
+
+        if (rarity != null && rarity != Rarity.NONE) {
+            if (emptyLine) {
+                builder.withEmptyLine();
+            }
+
+            builder.withLines(LineSegment.fromLegacy(rarity.getFormattedDisplay() + " " + type, '&'));
+        }
+
+        return builder.build();
+    }
+
+    public enum TooltipSide {
+        LEFT,
+        RIGHT
     }
 
     public static class Builder implements ClassBuilder<MinecraftTooltipGenerator> {
@@ -123,60 +178,5 @@ public class MinecraftTooltipGenerator implements Generator {
         public MinecraftTooltipGenerator build() {
             return new MinecraftTooltipGenerator(name, rarity, itemLore, type, emptyLine, alpha, padding, maxLineLength, normalItem, centered);
         }
-    }
-
-    /**
-     * Converts text into a rendered image
-     *
-     * @param name           the name of the item
-     * @param itemLoreString the lore of the item
-     * @param type           the type of the item
-     * @param addEmptyLine   if there should be an extra line added between the lore and the final type line
-     * @param alpha          the transparency of the generated image
-     * @param padding        if there is any extra padding around the edges to prevent Discord from rounding the corners
-     * @param maxLineLength  the maximum length before content overflows onto the next
-     * @param isNormalItem   if the item should add an extra line between the title and first line
-     *
-     * @return a Minecraft item tooltip as a rendered image
-     */
-    @Nullable
-    public BufferedImage buildItem(String name, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, int maxLineLength, boolean isNormalItem, boolean isCentered) {
-        MinecraftTooltip parsedLore = parseLore(name, itemLoreString, addEmptyLine, type, maxLineLength, alpha, padding);
-        return parsedLore.render().getImage();
-    }
-
-    public MinecraftTooltip parseLore(String name, String input, boolean emptyLine, String type, int maxLineLength, int alpha, int padding) {
-        MinecraftTooltip.Builder builder = MinecraftTooltip.builder()
-            .withPadding(padding)
-            .withAlpha(Range.between(0, 255).fit(alpha));
-
-        if (name != null && !name.isEmpty()) {
-            builder.withLines(LineSegment.fromLegacy(rarity.getColorCode() + name, '&'));
-        }
-
-        for (String line : input.split("\\\\n")) {
-            String parsed = Parser.parseString(line, List.of(
-                new ColorCodeParser(),
-                new IconParser(),
-                new StatParser()
-            ));
-
-            builder.withLines(LineSegment.fromLegacy(parsed, '&'));
-        }
-
-        if (rarity != null && rarity != Rarity.NONE) {
-            if (emptyLine) {
-                builder.withEmptyLine();
-            }
-
-            builder.withLines(LineSegment.fromLegacy(rarity.getFormattedDisplay() + " " + type, '&'));
-        }
-
-        return builder.build();
-    }
-
-    public enum TooltipSide {
-        LEFT,
-        RIGHT
     }
 }

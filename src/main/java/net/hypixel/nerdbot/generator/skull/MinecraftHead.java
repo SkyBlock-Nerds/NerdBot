@@ -2,7 +2,9 @@ package net.hypixel.nerdbot.generator.skull;
 
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
@@ -17,17 +19,17 @@ public class MinecraftHead extends GeneratedObject {
     private static final double[][] DEFAULT_VERTEX_COORDINATES;
     private static final double[][] DEFAULT_FACE_ORDER;
 
+    static {
+        DEFAULT_VERTEX_COORDINATES = rotateVerticesAroundAxis(DEFAULT_X_ROTATION, DEFAULT_Y_ROTATION, DEFAULT_Z_ROTATION, DEFAULT_RENDER_SCALE, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        DEFAULT_FACE_ORDER = calculateRenderOrder(DEFAULT_VERTEX_COORDINATES);
+    }
+
     private final BufferedImage skin;
     private final Graphics2D g2d;
     private double xRotation;
     private double yRotation;
     private double zRotation;
     private int renderScaleFactor;
-
-    static {
-        DEFAULT_VERTEX_COORDINATES = rotateVerticesAroundAxis(DEFAULT_X_ROTATION, DEFAULT_Y_ROTATION, DEFAULT_Z_ROTATION, DEFAULT_RENDER_SCALE, DEFAULT_WIDTH, DEFAULT_HEIGHT);
-        DEFAULT_FACE_ORDER = calculateRenderOrder(DEFAULT_VERTEX_COORDINATES);
-    }
 
     /**
      * Creates a MinecraftHead renderer
@@ -70,17 +72,17 @@ public class MinecraftHead extends GeneratedObject {
     /**
      * Rotates the vertices of a shape around the x, y and z axis
      *
-     * @param xRotation the angle (in radians) around the up/down axis
-     * @param yRotation the angle (in radians) around the left/right axis
-     * @param zRotation the angle (in radians) around the into/away from camera axis
+     * @param xRotation   the angle (in radians) around the up/down axis
+     * @param yRotation   the angle (in radians) around the left/right axis
+     * @param zRotation   the angle (in radians) around the into/away from camera axis
      * @param renderScale the scale to enlarge the rendering of the image to
-     * @param imageWidth the width of the image
+     * @param imageWidth  the width of the image
      * @param imageHeight the height of the image
      *
      * @return an array of vertices for the rotated shape
      */
     private static double[][] rotateVerticesAroundAxis(double xRotation, double yRotation, double zRotation, int renderScale, int imageWidth, int imageHeight) {
-        double[][] zRotations =  {
+        double[][] zRotations = {
             {Math.cos(zRotation), -Math.sin(zRotation), 0, 0},
             {Math.sin(zRotation), Math.cos(zRotation), 0, 0},
             {0, 0, 1, 0},
@@ -98,13 +100,13 @@ public class MinecraftHead extends GeneratedObject {
             {0, Math.sin(xRotation), Math.cos(xRotation), 0},
             {0, 0, 0, 1}
         };
-        double[][] scaleFactor = new double[][] {
+        double[][] scaleFactor = new double[][]{
             {renderScale, 0, 0, 0},
             {0, renderScale, 0, 0},
             {0, 0, 1, 0},
             {0, 0, 0, 1}
         };
-        double[][] offset = new double[][] {
+        double[][] offset = new double[][]{
             {1, 0, 0, imageWidth / 2f},
             {0, 1, 0, imageHeight / 2f},
             {0, 0, 1, 0},
@@ -141,7 +143,7 @@ public class MinecraftHead extends GeneratedObject {
             for (int point : currentFace.getFaceVertices()) {
                 average += vertices[point][2];
             }
-            order[i] = new double[] {i, average / 4.0};
+            order[i] = new double[]{i, average / 4.0};
         }
 
         Arrays.sort(order, (face1, face2) -> {
@@ -155,7 +157,7 @@ public class MinecraftHead extends GeneratedObject {
     /**
      * Multiplies two coordinate matrices together
      *
-     * @param matrix 1x4 matrix to modify the position of a coordinate
+     * @param matrix    1x4 matrix to modify the position of a coordinate
      * @param vertexPos 1x4 matrix describing the points coordinates in space
      *
      * @return multiplied matrix
@@ -180,7 +182,7 @@ public class MinecraftHead extends GeneratedObject {
      * Renders the Minecraft Head
      *
      * @param vertexCoordinates an array of vertices of a shape in the format of [x, y, z, 1]
-     * @param faceOrder an ordered array of faces from faces furthest from camera to closest in the format of [faceIndex, distanceFromCamera]
+     * @param faceOrder         an ordered array of faces from faces furthest from camera to closest in the format of [faceIndex, distanceFromCamera]
      */
     private void drawHead(double[][] vertexCoordinates, double[][] faceOrder) {
         for (int face = 0; face < PlayerSkull.faces.length; face++) {
