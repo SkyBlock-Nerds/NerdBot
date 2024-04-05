@@ -231,7 +231,7 @@ public class GeneratorCommands extends ApplicationCommand {
         // building the item for the which is beside the description
         BufferedImage generatedItem = null;
         if (itemId != null) {
-            generatedItem = builder.buildUnspecifiedItem(event, itemId, extraModifiers, false);
+            generatedItem = builder.buildUnspecifiedItem(event, itemId, extraModifiers, true);
             if (generatedItem == null) {
                 return;
             }
