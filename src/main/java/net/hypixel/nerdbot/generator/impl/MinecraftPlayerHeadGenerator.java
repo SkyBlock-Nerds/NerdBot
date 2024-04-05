@@ -61,14 +61,14 @@ public class MinecraftPlayerHeadGenerator implements Generator {
             URL target = new URL("http://textures.minecraft.net/texture/" + textureId);
             skin = ImageIO.read(target);
             System.out.println("Skin: " + target);
+
+            return new MinecraftHead(skin).generate().getImage();
         } catch (MalformedURLException exception) {
             throw new GeneratorException("Malformed URL: `%s`", textureId);
         } catch (IOException exception) {
             log.error("Could not find skin with ID: " + textureId, exception);
             throw new GeneratorException("Could not find skin with ID: `s`" + textureId);
         }
-
-        return new MinecraftHead(skin).generate().getImage();
     }
 
     private String getPlayerHeadURL(String playerName) {

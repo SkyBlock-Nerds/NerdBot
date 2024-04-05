@@ -36,8 +36,8 @@ public class MinecraftHead extends GeneratedObject {
      */
     public MinecraftHead(BufferedImage targetSkin, int width, int height) {
         super(new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB));
-        this.g2d = this.getImage().createGraphics();
         this.skin = targetSkin;
+        this.g2d = super.getImage().createGraphics();
 
         int invisibilityColor = this.skin.getRGB(32, 0);
         int currentInvisibilityColor = invisibilityColor << 8;
@@ -264,7 +264,7 @@ public class MinecraftHead extends GeneratedObject {
      */
     @Override
     public BufferedImage getImage() {
-        return scaleHead();
+        return generate().scaleHead();
     }
 
     private BufferedImage scaleHead() {
