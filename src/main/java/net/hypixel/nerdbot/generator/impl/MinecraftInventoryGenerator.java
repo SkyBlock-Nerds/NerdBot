@@ -166,6 +166,16 @@ public class MinecraftInventoryGenerator implements Generator {
         InventoryStringParser parser = new InventoryStringParser(this.totalSlots);
         ArrayList<InventoryItem> items = parser.parse(inventoryData);
 
+        for (int i = 0; i < items.size(); i++) {
+            for (int j = i + 1; j < items.size(); j++) {
+                if (items.get(i).getSlot()[0] == items.get(j).getSlot()[0]) {
+                    items.remove(i);
+                    i--;
+                    break;
+                }
+            }
+        }
+
         for (InventoryItem parsedItem : items) {
             if (parsedItem.getItemName().contains("player_head")) {
                 MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder()
