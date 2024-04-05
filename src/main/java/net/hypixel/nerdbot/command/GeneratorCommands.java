@@ -16,16 +16,14 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.generator.builder.ItemBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
+import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
-import net.hypixel.nerdbot.generator.impl.MinecraftRecipeGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftTooltipGenerator;
-import net.hypixel.nerdbot.generator.item.GeneratedItem;
+import net.hypixel.nerdbot.generator.item.GeneratedObject;
+import net.hypixel.nerdbot.generator.skyblock.Rarity;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.skyblock.Rarity;
-import net.hypixel.nerdbot.util.spritesheet.Spritesheet;
-import net.hypixel.nerdbot.generator.skyblock.Rarity;
 import net.hypixel.nerdbot.util.spritesheet.Spritesheet;
 
 import java.io.IOException;

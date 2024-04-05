@@ -2,8 +2,8 @@ package net.hypixel.nerdbot.generator.impl;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.Generator;
+import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.item.overlay.ItemOverlay;
@@ -12,7 +12,6 @@ import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.spritesheet.OverlaySheet;
 import net.hypixel.nerdbot.util.spritesheet.Spritesheet;
 
-import javax.imageio.ImageIO;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
