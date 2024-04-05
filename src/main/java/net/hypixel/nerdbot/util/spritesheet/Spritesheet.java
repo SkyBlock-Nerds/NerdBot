@@ -32,7 +32,7 @@ public class Spritesheet {
         try {
             // Load the texture atlas coordinates
             Gson gson = new Gson();
-            JsonArray jsonCoordinates = gson.fromJson(new FileReader("src/main/resources/minecraft/spritesheets/atlas_coordinates.json"), JsonArray.class);
+            JsonArray jsonCoordinates = gson.fromJson(new FileReader("src/main/resources/minecraft/json/atlas_coordinates.json"), JsonArray.class);
 
             for (JsonElement jsonElement : jsonCoordinates) {
                 JsonObject itemData = jsonElement.getAsJsonObject();

@@ -42,7 +42,12 @@ public class ItemBuilder {
                 throw new GeneratorException("Could not generate that image!");
             }
 
-            totalWidth += generatedImage.getWidth() + IMAGE_PADDING_PX;
+            if (generatedObjects.size() > 1) {
+                totalWidth += generatedImage.getWidth() + IMAGE_PADDING_PX;
+            } else {
+                totalWidth += generatedImage.getWidth();
+            }
+
             maxHeight = Math.max(maxHeight, generatedImage.getHeight());
         }
 
