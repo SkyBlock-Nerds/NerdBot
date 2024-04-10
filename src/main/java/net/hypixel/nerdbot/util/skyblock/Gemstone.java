@@ -10,7 +10,7 @@ public enum Gemstone {
     GEM_AMBER("[⸕]"),
     GEM_TOPAZ("[✧]"),
     GEM_ONYX("[☠]"),
-    GEM_PERIODT("[☘]"),
+    GEM_PERIDOT("[☘]"),
     GEM_CITRINE("[☘]"),
     GEM_AQUAMARINE("[α]"),
     GEM_COMBAT("[⚔]"),
