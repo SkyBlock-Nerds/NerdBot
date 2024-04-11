@@ -14,6 +14,8 @@ import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -661,6 +663,13 @@ public class GeneratorCommands extends ApplicationCommand {
         if (itemGenChannelIds == null) {
             event.reply("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
             return true;
+        }
+
+        // If the command was used in a thread, check if the parent channel is an item gen channel
+        if (event.getChannel() instanceof ThreadChannel threadChannel) {
+            if (threadChannel.getParentChannel() instanceof TextChannel parentChannel) {
+                senderChannelId = parentChannel.getId();
+            }
         }
 
         if (Util.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
