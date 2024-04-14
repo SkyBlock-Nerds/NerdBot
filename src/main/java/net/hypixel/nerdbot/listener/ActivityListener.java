@@ -123,7 +123,7 @@ public class ActivityListener {
         }
 
         long time = System.currentTimeMillis();
-        Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().getName());
+        Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().asTextChannel());
 
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
@@ -196,7 +196,7 @@ public class ActivityListener {
                 PrometheusMetrics.TOTAL_VOICE_TIME_SPENT_BY_USER.labels(member.getEffectiveName(), channelLeft.getName()).inc((TimeUnit.MILLISECONDS.toSeconds(timeSpent)));
 
                 if ((timeSpent / 1_000L) > NerdBotApp.getBot().getConfig().getVoiceThreshold()) {
-                    Suggestion.ChannelType channelType = Util.getSuggestionType(channelLeft.getName());
+                    Suggestion.ChannelType channelType = Util.getSuggestionType(channelLeft.asVoiceChannel());
 
                     if (channelType == Suggestion.ChannelType.ALPHA) {
                         discordUser.getLastActivity().setAlphaVoiceJoinDate(time);

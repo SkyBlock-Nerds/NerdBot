@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -251,12 +252,11 @@ public class Util {
     }
 
     // Only used for AlphaProjectConfig initialization and voice activity
-    public static Suggestion.ChannelType getSuggestionType(String channelName) {
-        channelName = channelName.toLowerCase();
-
-        if (channelName.contains("alpha")) {
+    public static Suggestion.ChannelType getSuggestionType(StandardGuildChannel channel) {
+        if (channel.getName().contains("alpha")) {
             return Suggestion.ChannelType.ALPHA;
-        } else if (Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channelName::contains)) {
+        } else if (Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channel.getName()::contains)
+        || (channel.getParentCategory() != null && Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channel.getParentCategory().getName()::contains))) {
             return Suggestion.ChannelType.PROJECT;
         } else {
             return Suggestion.ChannelType.NORMAL;
