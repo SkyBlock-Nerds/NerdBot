@@ -123,7 +123,7 @@ public class ActivityListener {
         }
 
         long time = System.currentTimeMillis();
-        Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().asTextChannel());
+        Suggestion.ChannelType channelType = Suggestion.ChannelType.NORMAL;
 
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
@@ -152,8 +152,10 @@ public class ActivityListener {
         // Alpha/Project-specific Messages
         if (channelType == Suggestion.ChannelType.ALPHA) {
             discordUser.getLastActivity().setLastAlphaActivity(time);
+            log.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
         } else if (channelType == Suggestion.ChannelType.PROJECT) {
             discordUser.getLastActivity().setLastProjectActivity(time);
+            log.info("Updating last project activity date for " + member.getEffectiveName() + " to " + time);
         }
 
         // Global Messages
