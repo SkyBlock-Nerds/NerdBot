@@ -5,6 +5,7 @@ import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
@@ -123,7 +124,7 @@ public class ActivityListener {
         }
 
         long time = System.currentTimeMillis();
-        Suggestion.ChannelType channelType = Suggestion.ChannelType.NORMAL;
+        Suggestion.ChannelType channelType = guildChannel instanceof TextChannel ? Util.getSuggestionType(guildChannel.asTextChannel()) : Suggestion.ChannelType.NORMAL;
 
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
