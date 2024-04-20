@@ -46,9 +46,7 @@ public class GemstoneParser implements StringParser {
             return "&8[" + gemstone.getIcon() + "]&r";
         }
 
-        extra = extra.toLowerCase();
-
-        return switch (extra) {
+        return switch (extra.toLowerCase()) {
             case "unlocked" -> "&8[&7" + gemstone.getIcon() + "&8]&r";
             case "rough" -> "&f[" + gemstone.getFormattedIcon() + "&f]&r";
             case "flawed" -> "&a[" + gemstone.getFormattedIcon() + "&a]&r";
