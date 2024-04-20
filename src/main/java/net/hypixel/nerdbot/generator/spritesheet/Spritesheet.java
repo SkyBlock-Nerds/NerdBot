@@ -26,6 +26,7 @@ public class Spritesheet {
     static {
         try {
             // Load the texture atlas image
+            System.out.println("Loading texture atlas image");
             textureAtlas = ImageIO.read(new File(FOLDER_PATH + "/spritesheets/minecraft_texture_atlas.png"));
             log.info("Loaded texture atlas image");
         } catch (IOException exception) {

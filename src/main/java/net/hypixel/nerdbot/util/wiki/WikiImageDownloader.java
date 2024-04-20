@@ -50,7 +50,6 @@ public class WikiImageDownloader {
         {300, 468},
         {300, 505},
         {400, 680},
-        {600, 900},
         {800, 800}
     };
 
