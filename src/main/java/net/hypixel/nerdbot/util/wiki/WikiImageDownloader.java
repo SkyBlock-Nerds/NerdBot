@@ -51,7 +51,6 @@ public class WikiImageDownloader {
         {300, 505},
         {400, 680},
         {600, 900},
-        {600, 900},
         {800, 800}
     };
 
@@ -69,7 +68,7 @@ public class WikiImageDownloader {
         }
 
         String folderName = baseUrl.substring(baseUrl.indexOf("://") + 3, baseUrl.indexOf("/", baseUrl.indexOf("://") + 3)).replace(".", "_");
-        primaryFolderName = "./src/main/resources/wiki_image_export/" + folderName + "/";
+        primaryFolderName = "./src/main/resources/wiki-image-export/" + folderName + "/";
 
         if (debug) {
             System.out.println("Debug mode enabled");
