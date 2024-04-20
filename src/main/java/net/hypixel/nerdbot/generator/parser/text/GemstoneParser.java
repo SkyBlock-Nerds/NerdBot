@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.generator.parser.text;
 import net.hypixel.nerdbot.generator.parser.StringParser;
 import net.hypixel.nerdbot.generator.skyblock.Gemstone;
 import net.hypixel.nerdbot.util.Util;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.regex.Matcher;
 
@@ -32,13 +33,21 @@ public class GemstoneParser implements StringParser {
         return input;
     }
 
-    private String parseAsTier(Gemstone gemstone, String extra) {
+    /**
+     * Parses a gemstone into a formatted string.
+     *
+     * @param gemstone the {@link Gemstone} to parse
+     * @param extra    the type of {@link Gemstone} to parse
+     *
+     * @return the formatted string
+     */
+    private String parseAsTier(Gemstone gemstone, @Nullable String extra) {
         if (extra == null) {
             return "&8[" + gemstone.getIcon() + "]&r";
         }
 
         return switch (extra) {
-            case "unlocked" -> "&8[&7" + gemstone.getIcon() + "§8]&r";
+            case "unlocked" -> "&8[&7" + gemstone.getIcon() + "&8]&r";
             case "rough" -> "&f[" + gemstone.getFormattedIcon() + "&f]&r";
             case "flawed" -> "&a[" + gemstone.getFormattedIcon() + "&a]&r";
             case "fine" -> "&9[" + gemstone.getFormattedIcon() + "&9]&r";
