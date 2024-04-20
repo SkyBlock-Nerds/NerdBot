@@ -41,7 +41,7 @@ public class MinecraftItemGenerator implements Generator {
         }
 
         if (bigImage && itemImage.getHeight() <= 16 && itemImage.getWidth() <= 16) {
-            itemImage = ImageUtil.upscaleImage(itemImage, 20);
+            itemImage = ImageUtil.upscaleImage(itemImage, 10);
         }
 
         if (enchanted) {
