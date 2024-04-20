@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -15,24 +15,29 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+@Log4j2
 public class Spritesheet {
 
-    @Getter
-    private static final Map<String, BufferedImage> items = new HashMap<>();
+    private static final Map<String, BufferedImage> IMAGE_MAP = new HashMap<>();
+    private static final String FOLDER_PATH = "src/main/resources/minecraft";
+
     private static BufferedImage textureAtlas;
 
     static {
         try {
             // Load the texture atlas image
-            textureAtlas = ImageIO.read(new File("src/main/resources/minecraft/spritesheets/minecraft_texture_atlas.png"));
-        } catch (IOException e) {
-            e.printStackTrace();
+            textureAtlas = ImageIO.read(new File(FOLDER_PATH + "/spritesheets/minecraft_texture_atlas.png"));
+            log.info("Loaded texture atlas image");
+        } catch (IOException exception) {
+            log.error("Failed to load texture atlas image", exception);
         }
 
         try {
+            log.info("Loading texture atlas coordinates from JSON file");
+
             // Load the texture atlas coordinates
             Gson gson = new Gson();
-            JsonArray jsonCoordinates = gson.fromJson(new FileReader("src/main/resources/minecraft/json/atlas_coordinates.json"), JsonArray.class);
+            JsonArray jsonCoordinates = gson.fromJson(new FileReader(FOLDER_PATH + "/json/atlas_coordinates.json"), JsonArray.class);
 
             for (JsonElement jsonElement : jsonCoordinates) {
                 JsonObject itemData = jsonElement.getAsJsonObject();
@@ -42,10 +47,13 @@ public class Spritesheet {
                 int size = itemData.get("size").getAsInt();
                 BufferedImage image = textureAtlas.getSubimage(x, y, size, size);
 
-                items.put(name, image);
+                log.debug("Loaded texture: " + name + " at (" + x + ", " + y + ") with size " + size + "x" + size);
+                IMAGE_MAP.put(name, image);
             }
+
+            log.info("Finished loading texture atlas coordinates from JSON file (" + IMAGE_MAP.size() + " textures loaded)");
         } catch (FileNotFoundException exception) {
-            exception.printStackTrace();
+            log.error("Failed to load texture atlas coordinates", exception);
         }
     }
 
@@ -53,6 +61,10 @@ public class Spritesheet {
     }
 
     public static BufferedImage getTexture(String textureId) {
-        return items.get(textureId);
+        return IMAGE_MAP.get(textureId);
+    }
+
+    public static Map<String, BufferedImage> getImageMap() {
+        return IMAGE_MAP;
     }
 }

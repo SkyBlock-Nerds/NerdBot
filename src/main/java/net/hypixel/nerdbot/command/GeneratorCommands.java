@@ -370,7 +370,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
     @AutocompletionHandler(name = "item-names", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> itemNames(CommandAutoCompleteInteractionEvent event) {
-        return Spritesheet.getItems().keySet().stream().toList();
+        return Spritesheet.getImageMap().keySet().stream().toList();
     }
 
     @AutocompletionHandler(name = "item-rarities", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
