@@ -53,8 +53,8 @@ public class MinecraftItemGenerator implements Generator {
 
     private BufferedImage applyOverlay(ItemOverlay[] itemOverlays) {
         BufferedImage overlaidItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = overlaidItem.createGraphics();
-        g.drawImage(itemImage, 0, 0, null);
+        Graphics2D overlaidItemGraphics = overlaidItem.createGraphics();
+        overlaidItemGraphics.drawImage(itemImage, 0, 0, null);
 
         String[] options = Arrays.copyOf((data != null ? data : "").split(","), itemOverlays.length);
 
@@ -89,14 +89,14 @@ public class MinecraftItemGenerator implements Generator {
 
     private BufferedImage applyEnchantGlint() {
         BufferedImage enchantedItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = enchantedItem.createGraphics();
-        g.drawImage(itemImage, 0, 0, null);
+        Graphics2D enchantedItemGraphics = enchantedItem.createGraphics();
+        enchantedItemGraphics.drawImage(itemImage, 0, 0, null);
 
         BufferedImage glintImage = OverlaySheet.getEnchantGlint(itemImage.getWidth() == 16);
-        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, 0.33F));
-        g.drawImage(glintImage, 0, 0, null);
+        enchantedItemGraphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, 0.33F));
+        enchantedItemGraphics.drawImage(glintImage, 0, 0, null);
 
-        g.dispose();
+        enchantedItemGraphics.dispose();
 
         return enchantedItem;
     }

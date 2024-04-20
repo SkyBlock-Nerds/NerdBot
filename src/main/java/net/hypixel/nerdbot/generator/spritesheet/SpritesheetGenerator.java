@@ -3,6 +3,8 @@ package net.hypixel.nerdbot.generator.spritesheet;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.imageio.ImageIO;
 import java.awt.Graphics2D;
@@ -227,40 +229,19 @@ public class SpritesheetGenerator {
     /**
      * A class containing information about a texture
      */
+    @Getter
     static class TextureInfo {
         private final String name;
         private final BufferedImage image;
+        @Setter
         private int x;
+        @Setter
         private int y;
 
         public TextureInfo(String name, BufferedImage image, int x, int y) {
             this.name = name;
             this.image = image;
             this.x = x;
-            this.y = y;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public BufferedImage getImage() {
-            return image;
-        }
-
-        public int getX() {
-            return x;
-        }
-
-        public void setX(int x) {
-            this.x = x;
-        }
-
-        public int getY() {
-            return y;
-        }
-
-        public void setY(int y) {
             this.y = y;
         }
     }
