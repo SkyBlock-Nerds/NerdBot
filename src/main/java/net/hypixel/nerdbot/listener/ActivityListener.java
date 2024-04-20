@@ -5,6 +5,7 @@ import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
@@ -123,7 +124,7 @@ public class ActivityListener {
         }
 
         long time = System.currentTimeMillis();
-        Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().getName());
+        Suggestion.ChannelType channelType = guildChannel instanceof TextChannel ? Util.getSuggestionType(guildChannel.asTextChannel()) : Suggestion.ChannelType.NORMAL;
 
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
@@ -152,8 +153,10 @@ public class ActivityListener {
         // Alpha/Project-specific Messages
         if (channelType == Suggestion.ChannelType.ALPHA) {
             discordUser.getLastActivity().setLastAlphaActivity(time);
+            log.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
         } else if (channelType == Suggestion.ChannelType.PROJECT) {
             discordUser.getLastActivity().setLastProjectActivity(time);
+            log.info("Updating last project activity date for " + member.getEffectiveName() + " to " + time);
         }
 
         // Global Messages
@@ -196,7 +199,7 @@ public class ActivityListener {
                 PrometheusMetrics.TOTAL_VOICE_TIME_SPENT_BY_USER.labels(member.getEffectiveName(), channelLeft.getName()).inc((TimeUnit.MILLISECONDS.toSeconds(timeSpent)));
 
                 if ((timeSpent / 1_000L) > NerdBotApp.getBot().getConfig().getVoiceThreshold()) {
-                    Suggestion.ChannelType channelType = Util.getSuggestionType(channelLeft.getName());
+                    Suggestion.ChannelType channelType = Util.getSuggestionType(channelLeft.asVoiceChannel());
 
                     if (channelType == Suggestion.ChannelType.ALPHA) {
                         discordUser.getLastActivity().setAlphaVoiceJoinDate(time);
