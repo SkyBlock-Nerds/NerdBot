@@ -9,6 +9,7 @@ import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.parser.Parser;
 import net.hypixel.nerdbot.generator.parser.text.ColorCodeParser;
+import net.hypixel.nerdbot.generator.parser.text.GemstoneParser;
 import net.hypixel.nerdbot.generator.parser.text.IconParser;
 import net.hypixel.nerdbot.generator.parser.text.StatParser;
 import net.hypixel.nerdbot.generator.skyblock.Rarity;
@@ -71,7 +72,8 @@ public class MinecraftTooltipGenerator implements Generator {
             String parsed = Parser.parseString(line, List.of(
                 new ColorCodeParser(),
                 new IconParser(),
-                new StatParser()
+                new StatParser(),
+                new GemstoneParser()
             ));
 
             builder.withLines(LineSegment.fromLegacy(parsed, '&'));
