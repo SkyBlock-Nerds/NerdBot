@@ -177,7 +177,8 @@ public class SpritesheetGenerator {
             ImageIO.write(atlas, "png", outputFile);
             System.out.println("Texture atlas saved successfully!");
 
-            saveTextureCoordinatesJson(outputFolder, jsonFileName);
+            File jsonFolder = new File("./src/main/resources/minecraft/json");
+            saveTextureCoordinatesJson(jsonFolder, jsonFileName);
         } catch (IOException exception) {
             System.err.println("Failed to save texture atlas!");
             exception.printStackTrace();
@@ -198,6 +199,7 @@ public class SpritesheetGenerator {
             jsonObject.addProperty("name", info.name.split("\\.")[0]);
             jsonObject.addProperty("x", info.getX());
             jsonObject.addProperty("y", info.getY());
+            jsonObject.addProperty("size", IMAGE_WIDTH);
             jsonArray.add(jsonObject);
         }
 

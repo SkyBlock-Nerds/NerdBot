@@ -26,9 +26,9 @@ public class Spritesheet {
     static {
         try {
             // Load the texture atlas image
-            System.out.println("Loading texture atlas image");
+            log.info("Loading texture atlas image");
             textureAtlas = ImageIO.read(new File(FOLDER_PATH + "/spritesheets/minecraft_texture_atlas.png"));
-            log.info("Loaded texture atlas image");
+            log.info("Loaded texture atlas image (size: " + textureAtlas.getWidth() + "x" + textureAtlas.getHeight() + ")");
         } catch (IOException exception) {
             log.error("Failed to load texture atlas image", exception);
         }
@@ -48,7 +48,7 @@ public class Spritesheet {
                 int size = itemData.get("size").getAsInt();
                 BufferedImage image = textureAtlas.getSubimage(x, y, size, size);
 
-                log.debug("Loaded texture: " + name + " at (" + x + ", " + y + ") with size " + size + "x" + size);
+                log.info("Loaded texture: " + name + " at (" + x + ", " + y + ") with size " + size + "x" + size);
                 IMAGE_MAP.put(name, image);
             }
 

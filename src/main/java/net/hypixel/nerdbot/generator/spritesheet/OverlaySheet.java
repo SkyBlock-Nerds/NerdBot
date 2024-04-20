@@ -39,7 +39,7 @@ public class OverlaySheet {
             ItemOverlay[] itemOverlayCoordinates = gson.fromJson(new FileReader("src/main/resources/minecraft/json/overlay_coordinates.json"), ItemOverlay[].class);
             HashMap<String, ItemOverlay> foundOverlays = new HashMap<>();
             for (ItemOverlay itemOverlay : itemOverlayCoordinates) {
-                int imageDimensions = itemOverlay.isBig() ? 512 : 16;
+                int imageDimensions = itemOverlay.isBig() ? SpritesheetGenerator.IMAGE_WIDTH : 16;
                 itemOverlay.setImage(overlaySpriteSheet.getSubimage(itemOverlay.getX(), itemOverlay.getY(), imageDimensions, imageDimensions));
                 if (itemOverlay.getName().contains("enchant")) {
                     if (itemOverlay.getName().contains("big")) {
