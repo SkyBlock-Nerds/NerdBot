@@ -12,7 +12,9 @@ public enum Icon {
     STAR("✪", "Star"),
     STARRED("⚚", "Starred"),
     FRAGGED("⚚", "Starred"),
-    BINGO("Ⓑ", "Bingo");
+    BINGO("Ⓑ", "Bingo"),
+    ZONE("⏣", "Zone"),
+    ABIPHONE("✆", "Abiphone Call");
 
     public static final Icon[] VALUES = values();
 
