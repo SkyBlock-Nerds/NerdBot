@@ -59,7 +59,7 @@ public class GeneratorImageBuilder {
             BufferedImage generatedImage = generatedObject.getImage();
 
             if (generatedImage == null) {
-                throw new GeneratorException("Could not generate that image!");
+                throw new GeneratorException("Could not generate image for " + generatedObject.getClass().getSimpleName() + "!");
             }
 
             // Calculate the vertical offset to center the image vertically
