@@ -9,7 +9,7 @@ import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
-import net.hypixel.nerdbot.generator.skull.MinecraftHead;
+import net.hypixel.nerdbot.generator.skull.RenderedPlayerSkull;
 import net.hypixel.nerdbot.util.Util;
 
 import javax.imageio.ImageIO;
@@ -75,7 +75,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
             skin = ImageIO.read(target);
             System.out.println("Skin: " + target);
 
-            return new MinecraftHead(skin).generate().getImage();
+            return new RenderedPlayerSkull(skin).generate().getImage();
         } catch (MalformedURLException exception) {
             throw new GeneratorException("Malformed URL: `%s`", textureId);
         } catch (IOException exception) {

@@ -8,19 +8,20 @@ import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
-public class MinecraftHead extends GeneratedObject {
-    private static final int DEFAULT_WIDTH = 1250;
-    private static final int DEFAULT_HEIGHT = 1250;
-    private static final int DEFAULT_RENDER_SCALE = Math.round(Math.min(DEFAULT_WIDTH, DEFAULT_HEIGHT) / 4f);
-    private static final double DEFAULT_X_ROTATION = Math.PI / 6;
-    private static final double DEFAULT_Y_ROTATION = -Math.PI / 4;
-    private static final double DEFAULT_Z_ROTATION = 0f;
-    private static final int HEAD_SCALE_DOWN = 2;
+public class RenderedPlayerSkull extends GeneratedObject {
+
     private static final double[][] DEFAULT_VERTEX_COORDINATES;
     private static final double[][] DEFAULT_FACE_ORDER;
 
     static {
-        DEFAULT_VERTEX_COORDINATES = rotateVerticesAroundAxis(DEFAULT_X_ROTATION, DEFAULT_Y_ROTATION, DEFAULT_Z_ROTATION, DEFAULT_RENDER_SCALE, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        DEFAULT_VERTEX_COORDINATES = rotateVerticesAroundAxis(
+            PlayerSkullSettings.DEFAULT_X_ROTATION,
+            PlayerSkullSettings.DEFAULT_Y_ROTATION,
+            PlayerSkullSettings.DEFAULT_Z_ROTATION,
+            PlayerSkullSettings.DEFAULT_RENDER_SCALE,
+            PlayerSkullSettings.DEFAULT_WIDTH,
+            PlayerSkullSettings.DEFAULT_HEIGHT
+        );
         DEFAULT_FACE_ORDER = calculateRenderOrder(DEFAULT_VERTEX_COORDINATES);
     }
 
@@ -36,7 +37,7 @@ public class MinecraftHead extends GeneratedObject {
      *
      * @param targetSkin the skin which is meant to be created
      */
-    public MinecraftHead(BufferedImage targetSkin, int width, int height) {
+    public RenderedPlayerSkull(BufferedImage targetSkin, int width, int height) {
         super(new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB));
         this.skin = targetSkin;
         this.g2d = super.getImage().createGraphics();
@@ -55,11 +56,11 @@ public class MinecraftHead extends GeneratedObject {
         }
     }
 
-    public MinecraftHead(BufferedImage skin) {
-        this(skin, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    public RenderedPlayerSkull(BufferedImage skin) {
+        this(skin, PlayerSkullSettings.DEFAULT_WIDTH, PlayerSkullSettings.DEFAULT_HEIGHT);
     }
 
-    public MinecraftHead(BufferedImage skin, double xRotation, double yRotation, double zRotation, int width, int height, int renderScaleFactor) {
+    public RenderedPlayerSkull(BufferedImage skin, double xRotation, double yRotation, double zRotation, int width, int height, int renderScaleFactor) {
         this(skin, width, height);
 
         this.xRotation = xRotation;
@@ -113,7 +114,7 @@ public class MinecraftHead extends GeneratedObject {
             {0, 0, 0, 0}
         };
 
-        double[][] shapeVertices = PlayerSkull.coordinates;
+        double[][] shapeVertices = PlayerSkullSettings.COORDINATES;
         double[][] result = new double[shapeVertices.length][4];
         for (var i = 0; i < shapeVertices.length; i++) {
             result[i] = multiplyMatrix(zRotations, shapeVertices[i]);
@@ -134,7 +135,7 @@ public class MinecraftHead extends GeneratedObject {
      * @return returns an ordered array of faces from the furthest distance to camera to closest
      */
     private static double[][] calculateRenderOrder(double[][] vertices) {
-        Face[] faces = PlayerSkull.faces;
+        Face[] faces = PlayerSkullSettings.FACES;
         double[][] order = new double[faces.length][2];
 
         for (int i = 0; i < faces.length; i++) {
@@ -185,9 +186,9 @@ public class MinecraftHead extends GeneratedObject {
      * @param faceOrder         an ordered array of faces from faces furthest from camera to closest in the format of [faceIndex, distanceFromCamera]
      */
     private void drawHead(double[][] vertexCoordinates, double[][] faceOrder) {
-        for (int face = 0; face < PlayerSkull.faces.length; face++) {
+        for (int face = 0; face < PlayerSkullSettings.FACES.length; face++) {
             int faceIndex = (int) faceOrder[face][0];
-            Face currentFace = PlayerSkull.faces[faceIndex];
+            Face currentFace = PlayerSkullSettings.FACES[faceIndex];
 
             int[] facePoints = currentFace.getFaceVertices();
             double[] vertex1 = vertexCoordinates[facePoints[0]];
@@ -246,7 +247,7 @@ public class MinecraftHead extends GeneratedObject {
         }
     }
 
-    public MinecraftHead generate() {
+    public RenderedPlayerSkull generate() {
         if (renderScaleFactor == 0) {
             drawHead(DEFAULT_VERTEX_COORDINATES, DEFAULT_FACE_ORDER);
         } else {
@@ -270,7 +271,7 @@ public class MinecraftHead extends GeneratedObject {
     }
 
     private BufferedImage scaleHead() {
-        Image rescaledImage = image.getScaledInstance(image.getWidth() / HEAD_SCALE_DOWN, image.getHeight() / HEAD_SCALE_DOWN, Image.SCALE_AREA_AVERAGING);
+        Image rescaledImage = image.getScaledInstance(image.getWidth() / PlayerSkullSettings.HEAD_SCALE_DOWN, image.getHeight() / PlayerSkullSettings.HEAD_SCALE_DOWN, Image.SCALE_AREA_AVERAGING);
         BufferedImage finalHead = new BufferedImage(rescaledImage.getWidth(null), rescaledImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
 
         // Draw the image on to the buffered image
