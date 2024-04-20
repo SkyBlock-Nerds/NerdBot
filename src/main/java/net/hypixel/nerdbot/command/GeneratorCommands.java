@@ -24,7 +24,7 @@ import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.skyblock.Rarity;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.spritesheet.Spritesheet;
+import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 
 import java.io.IOException;
 import java.util.Arrays;

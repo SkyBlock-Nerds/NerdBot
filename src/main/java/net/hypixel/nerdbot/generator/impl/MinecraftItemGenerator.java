@@ -9,8 +9,8 @@ import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.item.overlay.ItemOverlay;
 import net.hypixel.nerdbot.generator.item.overlay.OverlayType;
 import net.hypixel.nerdbot.util.ImageUtil;
-import net.hypixel.nerdbot.util.spritesheet.OverlaySheet;
-import net.hypixel.nerdbot.util.spritesheet.Spritesheet;
+import net.hypixel.nerdbot.generator.spritesheet.OverlaySheet;
+import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;

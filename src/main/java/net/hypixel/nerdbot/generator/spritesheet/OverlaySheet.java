@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util.spritesheet;
+package net.hypixel.nerdbot.generator.spritesheet;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
