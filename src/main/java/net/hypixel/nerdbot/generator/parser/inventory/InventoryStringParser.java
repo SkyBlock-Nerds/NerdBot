@@ -77,8 +77,10 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         int[] slots = new int[keyValuePairs.length];
         int[] amounts = new int[keyValuePairs.length];
         int index = 0;
+
         for (String pair : keyValuePairs) {
             String[] targetSlot = pair.split(":");
+
             try {
                 slots[index] = Range.between(1, this.totalSlots).fit(Integer.parseInt(targetSlot[0].trim()));
                 amounts[index] = Range.between(1, 64).fit(Integer.parseInt(targetSlot[1].trim()));
@@ -87,6 +89,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
                 throw new GeneratorException("Invalid slot or amount: `%s` in slot data: `%s` for material: `%s,%s`", pair.trim(), slotMap, material, data);
             }
         }
+
         return new InventoryItem(slots, amounts, material, data);
     }
 
@@ -105,6 +108,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
 
         int endingBracket = slotData.indexOf("]");
         int amount = 1;
+
         if (endingBracket != -1) {
             try {
                 amount = Range.between(1, 64).fit(Integer.parseInt(slotData.substring(endingBracket).replaceAll("[^0-9]", "")));
@@ -118,6 +122,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         int[] slots = new int[values.length];
         int[] amounts = new int[values.length];
         int index = 0;
+
         for (String slotIndex : values) {
             try {
                 slots[index] = Range.between(1, this.totalSlots).fit(Integer.parseInt(slotIndex.trim()));
@@ -127,6 +132,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
                 throw new GeneratorException("Invalid slot: `%s` in slot data: `%s` for material: `%s,%s`", slotIndex.trim(), slotArray, material, data);
             }
         }
+
         return new InventoryItem(slots, amounts, material, data);
     }
 
@@ -144,6 +150,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         int amount = 1;
 
         String slotData = slotAmount;
+
         if (slotData.contains(",")) {
             int splitIndex = slotData.indexOf(",");
             try {
@@ -154,6 +161,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         }
 
         int slot;
+
         try {
             slot = Range.between(1, this.totalSlots).fit(Integer.parseInt(slotData));
         } catch (NumberFormatException exception) {
