@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
 import net.hypixel.nerdbot.generator.parser.StringParser;
-import net.hypixel.nerdbot.util.ChatFormat;
+import net.hypixel.nerdbot.generator.text.ChatFormat;
 
 import java.util.regex.Pattern;
 

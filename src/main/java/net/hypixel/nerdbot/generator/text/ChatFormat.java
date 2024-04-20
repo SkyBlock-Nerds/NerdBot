@@ -1,6 +1,7 @@
-package net.hypixel.nerdbot.util;
+package net.hypixel.nerdbot.generator.text;
 
 import lombok.Getter;
+import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.postgresql.shaded.com.ongres.scram.common.util.Preconditions;

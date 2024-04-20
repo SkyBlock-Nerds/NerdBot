@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.generator.skyblock;
 
 import lombok.Getter;
-import net.hypixel.nerdbot.util.ChatFormat;
+import net.hypixel.nerdbot.generator.text.ChatFormat;
 
 @Getter
 public enum Stat {

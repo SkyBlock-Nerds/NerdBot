@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.generator.parser.text;
 
 import net.hypixel.nerdbot.generator.parser.StringParser;
 import net.hypixel.nerdbot.generator.skyblock.Stat;
-import net.hypixel.nerdbot.util.ChatFormat;
+import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.regex.Matcher;
