@@ -203,6 +203,7 @@ public class MinecraftInventoryGenerator implements Generator {
         // getting the item and its offset
         BufferedImage itemToDraw = item.getImage();
         int offset = itemToDraw != null ? Math.abs(itemToDraw.getWidth() - itemToDraw.getHeight()) / 2 : PIXELS_PER_PIXEL;
+
         if (itemToDraw == null) {
             this.g2d.setColor(BORDER_COLOR);
         }
