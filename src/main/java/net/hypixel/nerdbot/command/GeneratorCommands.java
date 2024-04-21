@@ -375,6 +375,7 @@ public class GeneratorCommands extends ApplicationCommand {
         abiphone = abiphone != null && abiphone;
         event.deferReply(!showPublicly).complete();
 
+        // TODO add support for dialogue click options
         dialogue = "&e[NPC] " + npcName + "&r: " + (abiphone ? "&b%%ABIPHONE%%&r " : "") + dialogue.replace("\\n", "\n&e[NPC] " + npcName + "&r: " + (abiphone ? "&b%%ABIPHONE%%&r " : ""));
 
         MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
