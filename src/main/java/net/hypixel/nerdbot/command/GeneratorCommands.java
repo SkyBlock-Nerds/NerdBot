@@ -362,6 +362,49 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
+    @JDASlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "single", description = "Generate dialogue for a single NPC")
+    public void generateSingleDialogue(
+        GuildSlashEvent event,
+        @AppOption(description = "Name of your NPC") String npcName,
+        @AppOption(description = "NPC dialogue, lines separated by \n") String dialogue,
+        @AppOption(description = "If the Abiphone symbol should be shown") @Optional Boolean abiphone,
+        @AppOption(description = "Player head texture") @Optional String skinValue,
+        @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
+    ) {
+        showPublicly = showPublicly != null && showPublicly;
+        abiphone = abiphone != null && abiphone;
+        event.deferReply(!showPublicly).complete();
+
+        dialogue = "&e[NPC] " + npcName + "&r: " + (abiphone ? "&b%%ABIPHONE%%&r " : "") + dialogue.replace("\\n", "\n&e[NPC] " + npcName + "&r: " + (abiphone ? "&b%%ABIPHONE%%&r " : ""));
+
+        MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+            .withItemLore(dialogue)
+            .withAlpha(0)
+            .withPadding(0)
+            .isPaddingFirstLine(false)
+            .withEmptyLine(false);
+
+        try {
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
+                .addGenerator(tooltipGenerator.build());
+
+            if (skinValue != null) {
+                MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder()
+                    .withSkin(skinValue)
+                    .withScale(-2)
+                    .build();
+                generatorImageBuilder.addGenerator(0, playerHeadGenerator);
+            }
+
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatorImageBuilder.build().getImage()), "dialogue.png")).queue();
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating the dialogue!").queue();
+            log.error("Encountered an error while generating dialogue", exception);
+        }
+    }
+
     @AutocompletionHandler(name = "item-names", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> itemNames(CommandAutoCompleteInteractionEvent event) {
         return Spritesheet.getImageMap().keySet().stream().toList();
