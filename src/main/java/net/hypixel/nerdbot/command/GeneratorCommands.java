@@ -261,8 +261,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
         @AppOption(description = EMPTY_LINE_DESCRIPTION) @Optional Boolean emptyLine,
         @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
-        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
-        @AppOption(description = NORMAL_ITEM_DESCRIPTION) @Optional Boolean normalItem,
+        @AppOption(description = NORMAL_ITEM_DESCRIPTION) @Optional Boolean paddingFirstLine,
         @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide
     ) {
         event.deferReply().complete();
@@ -271,8 +270,7 @@ public class GeneratorCommands extends ApplicationCommand {
         padding = padding == null ? 0 : padding;
         emptyLine = emptyLine != null && emptyLine;
         centered = centered != null && centered;
-        maxLineLength = maxLineLength == null ? 30 : maxLineLength;
-        normalItem = normalItem != null && normalItem;
+        paddingFirstLine = paddingFirstLine != null && paddingFirstLine;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
@@ -285,8 +283,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withPadding(padding)
                 .withEmptyLine(emptyLine)
                 .isTextCentered(centered)
-                .withMaxLineLength(maxLineLength)
-                .isNormalItem(normalItem)
+                .isPaddingFirstLine(paddingFirstLine)
                 .build();
 
             if (itemId.equalsIgnoreCase("player_head")) {
@@ -336,15 +333,13 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = TEXT_DESCRIPTION) String text,
         @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
-        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
-        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength
+        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding
     ) {
         event.deferReply().complete();
 
         centered = centered != null && centered;
         alpha = alpha == null ? 245 : alpha;
         padding = padding == null ? 0 : padding;
-        maxLineLength = maxLineLength == null ? 30 : maxLineLength;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
@@ -353,8 +348,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withAlpha(alpha)
                 .withPadding(padding)
                 .isTextCentered(centered)
-                .withMaxLineLength(maxLineLength)
-                .isNormalItem(false)
+                .isPaddingFirstLine(false)
                 .withEmptyLine(false)
                 .build();
 
