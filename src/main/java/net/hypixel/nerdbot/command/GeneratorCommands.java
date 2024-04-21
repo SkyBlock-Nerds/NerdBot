@@ -367,16 +367,31 @@ public class GeneratorCommands extends ApplicationCommand {
         GuildSlashEvent event,
         @AppOption(description = "Name of your NPC") String npcName,
         @AppOption(description = "NPC dialogue, lines separated by \n") String dialogue,
-        @AppOption(description = "If the Abiphone symbol should be shown") @Optional Boolean abiphone,
-        @AppOption(description = "Player head texture") @Optional String skinValue,
+        @AppOption(description = "If the Abiphone symbol should be shown next to the dialogue") @Optional Boolean abiphone,
+        @AppOption(description = "Player head texture (username, URL, etc.)") @Optional String skinValue,
         @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
     ) {
         showPublicly = showPublicly != null && showPublicly;
         abiphone = abiphone != null && abiphone;
         event.deferReply(!showPublicly).complete();
 
-        // TODO add support for dialogue click options
-        dialogue = "&e[NPC] " + npcName + "&r: " + (abiphone ? "&b%%ABIPHONE%%&r " : "") + dialogue.replace("\\n", "\n&e[NPC] " + npcName + "&r: " + (abiphone ? "&b%%ABIPHONE%%&r " : ""));
+        String[] lines = dialogue.split("\\\\n");
+        for (int i = 0; i < lines.length; i++) {
+            lines[i] = "&e[NPC] " + npcName + "&r: " + (abiphone ? "&b%%ABIPHONE%%&r " : "") + lines[i];
+            String line = lines[i];
+
+            if (line.contains("{options:")) {
+                String[] split = line.split("\\{options: ");
+                lines[i] = split[0];
+                String[] options = split[1].replace("}", "").split(", ");
+                lines[i] += "\n&eSelect an option: &r";
+                for (String option : options) {
+                    lines[i] += "&a" + option + "&r ";
+                }
+            }
+        }
+
+        dialogue = String.join("\n", lines);
 
         MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
             .withItemLore(dialogue)
