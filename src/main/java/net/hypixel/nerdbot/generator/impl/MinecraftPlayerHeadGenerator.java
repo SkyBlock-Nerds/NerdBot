@@ -10,6 +10,7 @@ import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.skull.RenderedPlayerSkull;
+import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
 
 import javax.imageio.ImageIO;
@@ -29,13 +30,14 @@ public class MinecraftPlayerHeadGenerator implements Generator {
     private static final Pattern TEXTURE_URL = Pattern.compile("(?:https?://textures.minecraft.net/texture/)?([a-zA-Z0-9]+)");
 
     private final String textureId;
+    private final int scale;
 
     /**
      * Gets the Skin ID from a Base64 String
      *
      * @param base64SkinData Base64 Skin Data
      *
-     * @return the skin id
+     * @return the skin ID
      */
     private static String base64ToSkinURL(String base64SkinData) {
         JsonObject skinData = NerdBotApp.GSON.fromJson(new String(Base64.getDecoder().decode(base64SkinData)), JsonObject.class);
@@ -68,12 +70,19 @@ public class MinecraftPlayerHeadGenerator implements Generator {
         try {
             URL target = new URL("http://textures.minecraft.net/texture/" + textureId);
             skin = ImageIO.read(target);
+            BufferedImage head = new RenderedPlayerSkull(skin).generate().getImage();
 
-            return new RenderedPlayerSkull(skin).generate().getImage();
+            if (scale > 0) {
+                head = ImageUtil.upscaleImage(head, scale);
+            } else {
+                head = ImageUtil.downscaleImage(head, Math.abs(scale));
+            }
+
+            return head;
         } catch (MalformedURLException exception) {
             throw new GeneratorException("Malformed URL: `%s`", textureId);
         } catch (IOException exception) {
-            throw new GeneratorException("Could not find skin with ID: `s`" + textureId);
+            throw new GeneratorException("Could not find skin with ID: `%s`" + textureId);
         }
     }
 
@@ -110,6 +119,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
 
     public static class Builder implements ClassBuilder<MinecraftPlayerHeadGenerator> {
         private String texture;
+        private int scale;
 
         public Builder withSkin(String texture) {
             this.texture = texture;
@@ -121,9 +131,14 @@ public class MinecraftPlayerHeadGenerator implements Generator {
             return this;
         }
 
+        public Builder withScale(int scale) {
+            this.scale = scale;
+            return this;
+        }
+
         @Override
         public MinecraftPlayerHeadGenerator build() {
-            return new MinecraftPlayerHeadGenerator(texture);
+            return new MinecraftPlayerHeadGenerator(texture, scale);
         }
     }
 }
