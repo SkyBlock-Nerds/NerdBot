@@ -55,6 +55,8 @@ public enum Stat {
     MITHRIL_POWDER("᠅", "Mithril Powder", MCColor.DARK_GREEN),
     GEMSTONE_POWDER("᠅", "Gemstone Powder", MCColor.LIGHT_PURPLE),
     COLD_RESISTANCE("❄", "Cold Resistance", MCColor.AQUA),
+    COLD("❄", "Cold", MCColor.AQUA),
+    HEAT("♨", "Heat", MCColor.RED),
     REQUIRE("❣", "Requires", MCColor.RED, StatColorParser::postStatColorParser),
     RECIPE("", "Right-click to view recipes!", MCColor.YELLOW, StatColorParser::noParsing),
     COOP_SOULBOUND("", "Co-op Soulbound", MCColor.DARK_GRAY, StatColorParser::soulboundColorParsing),
