@@ -399,7 +399,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 // checking if the item is enchanted and applying the enchantment glint to the extra modifiers
                 JsonArray enchantJson = JsonUtil.isJsonArray(tagJSON, "ench");
                 if (enchantJson != null) {
-                    extraModifiers = extraModifiers.length() == 0 ? "enchant" : extraModifiers + ",enchant";
+                    extraModifiers = extraModifiers.isEmpty() ? "enchant" : extraModifiers + ",enchant";
                 }
             }
         }
@@ -426,7 +426,7 @@ public class GeneratorCommands extends ApplicationCommand {
         itemText.replace(itemText.length() - 2, itemText.length(), "");
         // checking if there was supposed to be an item stack is displayed with the item
         if (includeItem) {
-            itemGenCommand.append(" item_id:").append(itemID).append(extraModifiers.length() != 0 ? " extra_modifiers:" + extraModifiers : "");
+            itemGenCommand.append(" item_id:").append(itemID).append(!extraModifiers.isEmpty() ? " extra_modifiers:" + extraModifiers : "");
         }
 
         // creating the generated description
@@ -438,7 +438,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
         // checking if an item should be displayed alongside the description
         if (includeItem) {
-            BufferedImage generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, false);
+            BufferedImage generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, true);
             if (generatedItem == null) {
                 return;
             }
