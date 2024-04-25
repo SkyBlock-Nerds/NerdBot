@@ -80,7 +80,7 @@ public class ReminderCommands extends ApplicationCommand {
         return Date.from(date);
     }
 
-    private Date parseAsLong(String time) {
+    private Date parseLong(String time) throws NumberFormatException {
         return new Date(Long.parseLong(time));
     }
 
@@ -94,6 +94,8 @@ public class ReminderCommands extends ApplicationCommand {
         } catch (IndexOutOfBoundsException e) {
             // If Natty parsing fails, try custom format
             return parseCustomFormat(time);
+        } catch (NumberFormatException exception) {
+            throw new DateTimeParseException("Could not parse date: " + time, time, 0);
         }
     }
 
@@ -132,11 +134,11 @@ public class ReminderCommands extends ApplicationCommand {
 
         Date date;
         try {
-            date = parseAsLong(time);
+            date = parseLong(time);
         } catch (NumberFormatException numberFormatException) {
             try {
                 date = parseWithNatty(time);
-            } catch (DateTimeParseException dateTimeParseException) {
+            } catch (DateTimeParseException | NumberFormatException exception) {
                 TranslationManager.edit(event.getHook(), user, "commands.reminders.invalid_time_format");
                 return;
             }
