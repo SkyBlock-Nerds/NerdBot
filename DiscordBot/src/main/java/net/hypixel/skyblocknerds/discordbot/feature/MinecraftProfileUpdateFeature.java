@@ -2,8 +2,6 @@ package net.hypixel.skyblocknerds.discordbot.feature;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.exceptions.HierarchyException;
-import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.feature.Feature;
 import net.hypixel.skyblocknerds.api.http.mojang.sessionserver.MojangSessionServerUsernameResponse;
@@ -47,7 +45,7 @@ public class MinecraftProfileUpdateFeature extends Feature {
             }
 
             if (discordUser.get().getMinecraftProfile() == null) {
-                log.warn("MinecraftProfile not linked for " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()));
+                log.warn("MinecraftProfile not linked for " + StringUtilities.formatNameWithId(member.getUser().getName(), member.getId()));
                 return;
             }
 
@@ -63,10 +61,8 @@ public class MinecraftProfileUpdateFeature extends Feature {
                 try {
                     member.modifyNickname(discordUser.get().getMinecraftProfile().getUsername()).complete();
                     log.info("Updated nickname for " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " to " + discordUser.get().getMinecraftProfile().getUsername());
-                } catch (HierarchyException exception) {
-                    log.error("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " because they have a higher role");
-                } catch (InsufficientPermissionException exception) {
-                    log.error("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " because the bot doesn't have the required permissions", exception);
+                } catch (Exception exception) {
+                    log.error("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()), exception);
                 }
             }
         });
