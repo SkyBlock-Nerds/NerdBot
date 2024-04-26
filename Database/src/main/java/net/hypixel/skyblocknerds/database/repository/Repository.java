@@ -120,11 +120,6 @@ public abstract class Repository<T> {
                 return existingObject;
             }
 
-            List<Class<?>> constructorParameters = new ArrayList<>(List.of(parameters.getClass()));
-
-            log.info("Constructor parameters: " + constructorParameters);
-            log.info("Entity class constructors: " + Arrays.toString(entityClass.getConstructors()));
-
             Class<?>[] parameterTypes = Arrays.stream(parameters).map(Object::getClass).toArray(Class[]::new);
             T object = entityClass.getConstructor(parameterTypes).newInstance(parameters);
             log.debug("Created new instance of " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
