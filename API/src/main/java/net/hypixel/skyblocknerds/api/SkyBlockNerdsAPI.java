@@ -15,8 +15,8 @@ import java.util.UUID;
 public class SkyBlockNerdsAPI {
 
     public static final Options CLI_OPTIONS = new Options()
-            .addOption("env", "environment", true, "The environment the bot is running in")
-            .addOption("discordToken", true, "The Discord bot token")
+            .addRequiredOption("env", "environment", true, "The environment the bot is running in")
+            .addRequiredOption("token", "discordToken", true, "The Discord bot token")
             .addOption("mongoUri", true, "The MongoDB connection string")
             .addOption("sqlUri", true, "The PostgreSQL connection string")
             .addOption("hypixelApiKey", true, "The Production Hypixel API key")
