@@ -1,4 +1,4 @@
-package net.hypixel.skyblocknerds.api.http.mojang;
+package net.hypixel.skyblocknerds.api.http.mojang.api;
 
 import feign.FeignException;
 import feign.codec.ErrorDecoder;

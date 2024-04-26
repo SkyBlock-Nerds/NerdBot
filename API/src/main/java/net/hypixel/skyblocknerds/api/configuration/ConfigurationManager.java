@@ -1,31 +1,41 @@
-package net.hypixel.skyblocknerds.discordbot.configuration;
+package net.hypixel.skyblocknerds.api.configuration;
 
-import lombok.SneakyThrows;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
-import org.jetbrains.annotations.NotNull;
+import net.hypixel.skyblocknerds.utilities.Utilities;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ConfigurationManager {
 
-    private static final File CONFIG_PATH = new File(getCurrentDirectory(), "config");
+    private static final File CONFIG_PATH = new File(Utilities.getCurrentDirectory(), "config");
 
-    public static <T> T loadConfig(Class<T> configClass) throws IOException {
-        String fileName = CONFIG_PATH.getAbsolutePath() + File.separator + convertClassName(configClass.getSimpleName()).toLowerCase() + ".json";
+    public static <T> T loadConfig(Class<T> configClass) {
+        String fileName = CONFIG_PATH.getAbsolutePath() + File.separator + convertClassToFileName(configClass.getSimpleName()).toLowerCase() + ".json";
         File configFile = new File(fileName);
 
         if (!configFile.exists()) {
-            configFile.getParentFile().mkdirs();
-
+            try {
+                configFile.getParentFile().mkdirs();
+                configFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return createDefaultConfig(configClass, configFile);
         }
 
         try (FileReader reader = new FileReader(configFile)) {
-            return SkyBlockNerdsAPI.GSON.fromJson(reader, configClass);
-        } catch (Exception e) {
+            T config = SkyBlockNerdsAPI.GSON.fromJson(reader, configClass);
+            updateConfig(config, configClass); // Update config if outdated
+            return config;
+        } catch (JsonIOException | JsonSyntaxException | IOException e) {
             e.printStackTrace();
         }
 
@@ -44,7 +54,7 @@ public class ConfigurationManager {
     }
 
     public static <T> void saveConfig(T configClass) {
-        String fileName = CONFIG_PATH + convertClassName(configClass.getClass().getSimpleName()).toLowerCase() + ".json";
+        String fileName = CONFIG_PATH + convertClassToFileName(configClass.getClass().getSimpleName()).toLowerCase() + ".json";
         File configFile = new File(fileName);
 
         try (FileWriter writer = new FileWriter(configFile)) {
@@ -54,12 +64,41 @@ public class ConfigurationManager {
         }
     }
 
-    @SneakyThrows
-    public static @NotNull File getCurrentDirectory() {
-        return new File(ConfigurationManager.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile();
+    private static String convertClassToFileName(String className) {
+        return className.replaceAll("([a-z])([A-Z]+)", "$1-$2").toLowerCase();
     }
 
-    private static String convertClassName(String className) {
-        return className.replaceAll("([a-z])([A-Z]+)", "$1-$2").toLowerCase();
+    private static <T> void updateConfig(T config, Class<T> configClass) {
+        try {
+            T defaultConfig = configClass.getDeclaredConstructor().newInstance();
+            Map<String, Object> defaultValues = getConfigValues(defaultConfig);
+            Map<String, Object> currentValues = getConfigValues(config);
+
+            for (Map.Entry<String, Object> entry : defaultValues.entrySet()) {
+                System.out.println("Checking config value: " + entry.getKey() + " with value: " + entry.getValue());
+
+                if (!currentValues.containsKey(entry.getKey())) {
+                    Field field = configClass.getDeclaredField(entry.getKey());
+                    field.setAccessible(true);
+                    field.set(config, entry.getValue());
+                    System.out.println("Updated config value: " + entry.getKey() + " to " + entry.getValue());
+                }
+            }
+
+            System.out.println("Saving updated config...");
+            saveConfig(config); // Save updated config
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static <T> Map<String, Object> getConfigValues(T config) throws IllegalAccessException {
+        Map<String, Object> values = new HashMap<>();
+        Field[] fields = config.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            field.setAccessible(true);
+            values.put(field.getName(), field.get(config));
+        }
+        return values;
     }
 }

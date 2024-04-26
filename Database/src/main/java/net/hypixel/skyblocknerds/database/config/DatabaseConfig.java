@@ -1,2 +1,6 @@
-package net.hypixel.skyblocknerds.database.config;public class DatabaseConfig {
+package net.hypixel.skyblocknerds.database.config;
+
+public class DatabaseConfig {
+
+
 }

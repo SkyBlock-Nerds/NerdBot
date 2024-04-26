@@ -1,4 +1,4 @@
-package net.hypixel.skyblocknerds.api.http.mojang;
+package net.hypixel.skyblocknerds.api.http.mojang.api;
 
 import feign.Param;
 import feign.RequestLine;
@@ -11,6 +11,6 @@ public interface IMojangAPIRequest extends IRequest {
 
     @RequestLine("GET /users/profiles/minecraft/{username}")
     @Nonnull
-    MojangUsernameResponse getUniqueId(@NonNull @Param("username") String username);
+    MojangUUIDResponse getUniqueId(@NonNull @Param("username") String username);
 
 }

@@ -1,12 +1,14 @@
-package net.hypixel.skyblocknerds.api.http.mojang;
+package net.hypixel.skyblocknerds.api.http.mojang.api;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.UUID;
 
 @Getter
-public class MojangUsernameResponse {
+@ToString
+public class MojangUUIDResponse {
 
     @SerializedName("name")
     private String username;

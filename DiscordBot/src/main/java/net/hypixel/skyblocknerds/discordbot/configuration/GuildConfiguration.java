@@ -1,2 +1,4 @@
-package net.hypixel.skyblocknerds.discordbot.configuration;public class GuildConfiguration {
+package net.hypixel.skyblocknerds.discordbot.configuration;
+
+public class GuildConfiguration {
 }

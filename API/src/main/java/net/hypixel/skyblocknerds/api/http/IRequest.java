@@ -1,2 +1,4 @@
-package net.hypixel.skyblocknerds.api.http;public interface IRequest {
+package net.hypixel.skyblocknerds.api.http;
+
+public interface IRequest {
 }
