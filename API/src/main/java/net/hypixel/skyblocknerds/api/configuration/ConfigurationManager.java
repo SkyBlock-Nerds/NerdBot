@@ -33,7 +33,7 @@ public class ConfigurationManager {
 
         try (FileReader reader = new FileReader(configFile)) {
             T config = SkyBlockNerdsAPI.GSON.fromJson(reader, configClass);
-            updateConfig(config, configClass); // Update config if outdated
+            updateConfig(config, configClass);
             return config;
         } catch (JsonIOException | JsonSyntaxException | IOException e) {
             e.printStackTrace();
@@ -75,18 +75,14 @@ public class ConfigurationManager {
             Map<String, Object> currentValues = getConfigValues(config);
 
             for (Map.Entry<String, Object> entry : defaultValues.entrySet()) {
-                System.out.println("Checking config value: " + entry.getKey() + " with value: " + entry.getValue());
-
                 if (!currentValues.containsKey(entry.getKey())) {
                     Field field = configClass.getDeclaredField(entry.getKey());
                     field.setAccessible(true);
                     field.set(config, entry.getValue());
-                    System.out.println("Updated config value: " + entry.getKey() + " to " + entry.getValue());
                 }
             }
 
-            System.out.println("Saving updated config...");
-            saveConfig(config); // Save updated config
+            saveConfig(config);
         } catch (Exception e) {
             e.printStackTrace();
         }
