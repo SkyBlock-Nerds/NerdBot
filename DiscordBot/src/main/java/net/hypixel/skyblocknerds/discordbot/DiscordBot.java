@@ -20,6 +20,7 @@ import net.hypixel.skyblocknerds.database.repository.impl.DiscordUserRepository;
 import net.hypixel.skyblocknerds.database.sql.DiscordComponentDatabase;
 import net.hypixel.skyblocknerds.discordbot.configuration.BotConfiguration;
 import net.hypixel.skyblocknerds.discordbot.feature.MinecraftProfileUpdateFeature;
+import net.hypixel.skyblocknerds.discordbot.listener.MemberListener;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -63,7 +64,8 @@ public class DiscordBot {
                 .setEventManager(new AnnotatedEventManager())
                 .setEnabledIntents(EnumSet.allOf(GatewayIntent.class))
                 .setDisabledIntents(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_TYPING)
-                .setMemberCachePolicy(MemberCachePolicy.ALL);
+                .setMemberCachePolicy(MemberCachePolicy.ALL)
+                .addEventListeners(new MemberListener());
 
         jda = jdaBuilder.build();
         jda.awaitReady();
