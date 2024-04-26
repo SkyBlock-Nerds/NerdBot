@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.skyblocknerds.database.repository.exception.RepositoryException;
-import net.hypixel.skyblocknerds.utilities.ClassUtilities;
+import net.hypixel.skyblocknerds.utilities.ClassUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -57,7 +57,7 @@ public class RepositoryManager {
         log.info("Registering repositories from package: " + packageName);
 
         try {
-            Set<Class<?>> classes = ClassUtilities.findClasses(packageName, Repository.class);
+            Set<Class<?>> classes = ClassUtils.findClasses(packageName, Repository.class);
 
             for (Class<?> clazz : classes) {
                 log.debug("Found class: " + clazz.getName());

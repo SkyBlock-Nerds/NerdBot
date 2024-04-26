@@ -21,13 +21,11 @@ public class SkyBlockNerdsAPI {
             .addOption("sqlUri", true, "The PostgreSQL connection string")
             .addOption("hypixelApiKey", true, "The Production Hypixel API key")
             .addOption("readOnly", false, "Whether the bot should run in read-only mode");
-
     public static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .registerTypeAdapterFactory(new SerializedPathTypeAdapterFactory())
             .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
             .create();
-
     public static final IMojangAPIRequest MOJANG_REQUEST = new MojangAPIClient().build(IMojangAPIRequest.class);
     public static final IMojangSessionServerRequest MOJANG_SESSION_SERVER_REQUEST = new MojangSessionServerClient().build(IMojangSessionServerRequest.class);
 }

@@ -3,7 +3,7 @@ package net.hypixel.skyblocknerds.api.gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import net.hypixel.skyblocknerds.utilities.StringUtilities;
+import net.hypixel.skyblocknerds.utilities.StringUtils;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -17,6 +17,6 @@ public class UUIDTypeAdapter extends TypeAdapter<UUID> {
 
     @Override
     public UUID read(JsonReader in) throws IOException {
-        return StringUtilities.toUUID(in.nextString());
+        return StringUtils.toUUID(in.nextString());
     }
 }

@@ -6,7 +6,7 @@ import org.reflections.scanners.SubTypesScanner;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ClassUtilities {
+public class ClassUtils {
 
     /**
      * Find all classes in a package that extend a specific class.

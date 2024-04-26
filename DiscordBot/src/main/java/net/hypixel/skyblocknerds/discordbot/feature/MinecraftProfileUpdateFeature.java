@@ -12,7 +12,7 @@ import net.hypixel.skyblocknerds.database.repository.RepositoryManager;
 import net.hypixel.skyblocknerds.database.repository.impl.DiscordUserRepository;
 import net.hypixel.skyblocknerds.discordbot.Entrypoint;
 import net.hypixel.skyblocknerds.discordbot.configuration.GuildConfiguration;
-import net.hypixel.skyblocknerds.utilities.StringUtilities;
+import net.hypixel.skyblocknerds.utilities.StringUtils;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -43,12 +43,12 @@ public class MinecraftProfileUpdateFeature extends Feature {
             Optional<DiscordUser> discordUser = discordUserRepository.findOrCreateById(member.getId(), member.getId());
 
             if (discordUser.isEmpty()) {
-                log.warn("DiscordUser not found for " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()));
+                log.warn("DiscordUser not found for " + StringUtils.formatNameWithId(member.getEffectiveName(), member.getId()));
                 return;
             }
 
             if (discordUser.get().getMinecraftProfile() == null) {
-                log.warn("MinecraftProfile not linked for " + StringUtilities.formatNameWithId(member.getUser().getName(), member.getId()));
+                log.warn("MinecraftProfile not linked for " + StringUtils.formatNameWithId(member.getUser().getName(), member.getId()));
                 return;
             }
 
@@ -63,11 +63,11 @@ public class MinecraftProfileUpdateFeature extends Feature {
             if (!member.getEffectiveName().toLowerCase().contains(member.getUser().getName().toLowerCase())) {
                 try {
                     member.modifyNickname(discordUser.get().getMinecraftProfile().getUsername()).complete();
-                    log.info("Updated nickname for " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " to " + discordUser.get().getMinecraftProfile().getUsername());
+                    log.info("Updated nickname for " + StringUtils.formatNameWithId(member.getEffectiveName(), member.getId()) + " to " + discordUser.get().getMinecraftProfile().getUsername());
                 } catch (HierarchyException exception) {
-                    log.warn("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " since they have a higher role than the bot");
+                    log.warn("Unable to modify the nickname of " + StringUtils.formatNameWithId(member.getEffectiveName(), member.getId()) + " since they have a higher role than the bot");
                 } catch (Exception exception) {
-                    log.error("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()), exception);
+                    log.error("Unable to modify the nickname of " + StringUtils.formatNameWithId(member.getEffectiveName(), member.getId()), exception);
                 }
             }
         });

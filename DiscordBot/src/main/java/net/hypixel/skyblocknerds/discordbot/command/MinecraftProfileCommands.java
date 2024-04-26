@@ -8,7 +8,7 @@ import com.mongodb.client.result.UpdateResult;
 import net.hypixel.skyblocknerds.database.objects.user.minecraft.MinecraftProfile;
 import net.hypixel.skyblocknerds.database.repository.RepositoryManager;
 import net.hypixel.skyblocknerds.database.repository.impl.DiscordUserRepository;
-import net.hypixel.skyblocknerds.utilities.StringUtilities;
+import net.hypixel.skyblocknerds.utilities.StringUtils;
 
 public class MinecraftProfileCommands extends ApplicationCommand {
 
@@ -24,7 +24,7 @@ public class MinecraftProfileCommands extends ApplicationCommand {
             if (discordUser.hasMinecraftProfile()) {
                 MinecraftProfile minecraftProfile = discordUser.getMinecraftProfile();
 
-                event.reply("Your linked Minecraft profile is: " + StringUtilities.formatNameWithId(minecraftProfile.getUsername(), minecraftProfile.getUniqueId().toString())).queue();
+                event.reply("Your linked Minecraft profile is: " + StringUtils.formatNameWithId(minecraftProfile.getUsername(), minecraftProfile.getUniqueId().toString())).queue();
             } else {
                 event.reply("You have not linked your Minecraft profile yet!").queue();
             }

@@ -9,7 +9,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.skyblocknerds.database.repository.RepositoryManager;
 import net.hypixel.skyblocknerds.database.repository.impl.DiscordUserRepository;
-import net.hypixel.skyblocknerds.utilities.StringUtilities;
+import net.hypixel.skyblocknerds.utilities.StringUtils;
 
 @Log4j2
 public class MemberListener extends ListenerAdapter {
@@ -42,11 +42,11 @@ public class MemberListener extends ListenerAdapter {
             if (shouldUpdate) {
                 try {
                     member.modifyNickname(discordUser.getMinecraftProfile().getUsername()).complete();
-                    log.info("Updated nickname for user " + StringUtilities.formatNameWithId(event.getUser().getName(), member.getId()) + " to " + discordUser.getMinecraftProfile().getUsername());
+                    log.info("Updated nickname for user " + StringUtils.formatNameWithId(event.getUser().getName(), member.getId()) + " to " + discordUser.getMinecraftProfile().getUsername());
                 } catch (HierarchyException exception) {
-                    log.warn("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " since they have a higher role than the bot");
+                    log.warn("Unable to modify the nickname of " + StringUtils.formatNameWithId(member.getEffectiveName(), member.getId()) + " since they have a higher role than the bot");
                 } catch (Exception exception) {
-                    log.error("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()), exception);
+                    log.error("Unable to modify the nickname of " + StringUtils.formatNameWithId(member.getEffectiveName(), member.getId()), exception);
                 }
             }
         });
