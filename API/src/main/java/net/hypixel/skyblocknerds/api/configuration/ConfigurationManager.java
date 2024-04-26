@@ -54,7 +54,7 @@ public class ConfigurationManager {
     }
 
     public static <T> void saveConfig(T configClass) {
-        String fileName = CONFIG_PATH + convertClassToFileName(configClass.getClass().getSimpleName()).toLowerCase() + ".json";
+        String fileName = CONFIG_PATH + File.separator + convertClassToFileName(configClass.getClass().getSimpleName()).toLowerCase() + ".json";
         File configFile = new File(fileName);
 
         try (FileWriter writer = new FileWriter(configFile)) {
