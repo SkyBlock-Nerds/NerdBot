@@ -46,7 +46,7 @@ public class MemberListener extends ListenerAdapter {
                 } catch (HierarchyException exception) {
                     log.warn("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " since they have a higher role than the bot");
                 } catch (Exception exception) {
-                    log.error("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " since they have a higher role than the bot");
+                    log.error("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()), exception);
                 }
             }
         });
