@@ -2,6 +2,7 @@ package net.hypixel.skyblocknerds.discordbot.feature;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.configuration.ConfigurationManager;
 import net.hypixel.skyblocknerds.api.feature.Feature;
@@ -63,6 +64,8 @@ public class MinecraftProfileUpdateFeature extends Feature {
                 try {
                     member.modifyNickname(discordUser.get().getMinecraftProfile().getUsername()).complete();
                     log.info("Updated nickname for " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " to " + discordUser.get().getMinecraftProfile().getUsername());
+                } catch (HierarchyException exception) {
+                    log.warn("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " since they have a higher role than the bot");
                 } catch (Exception exception) {
                     log.error("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()), exception);
                 }

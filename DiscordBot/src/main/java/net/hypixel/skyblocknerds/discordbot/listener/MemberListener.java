@@ -1,6 +1,7 @@
 package net.hypixel.skyblocknerds.discordbot.listener;
 
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateNicknameEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateNameEvent;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
@@ -29,7 +30,9 @@ public class MemberListener extends ListenerAdapter {
 
     @SubscribeEvent
     public void onUserUpdateNicknameEvent(GuildMemberUpdateNicknameEvent event) {
-        discordUserRepository.findById(event.getMember().getId()).ifPresent(discordUser -> {
+        Member member = event.getMember();
+
+        discordUserRepository.findById(member.getId()).ifPresent(discordUser -> {
             if (!discordUser.hasMinecraftProfile()) {
                 return;
             }
@@ -38,12 +41,12 @@ public class MemberListener extends ListenerAdapter {
 
             if (shouldUpdate) {
                 try {
-                    event.getMember().modifyNickname(discordUser.getMinecraftProfile().getUsername()).complete();
-                    log.info("Updated nickname for user " + StringUtilities.formatNameWithId(event.getUser().getName(), event.getMember().getId()) + " to " + discordUser.getMinecraftProfile().getUsername());
+                    member.modifyNickname(discordUser.getMinecraftProfile().getUsername()).complete();
+                    log.info("Updated nickname for user " + StringUtilities.formatNameWithId(event.getUser().getName(), member.getId()) + " to " + discordUser.getMinecraftProfile().getUsername());
                 } catch (HierarchyException exception) {
-                    log.error("Failed to update nickname for user " + StringUtilities.formatNameWithId(event.getUser().getName(), event.getMember().getId()) + " since they have a higher role than the bot");
+                    log.warn("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " since they have a higher role than the bot");
                 } catch (Exception exception) {
-                    log.error("Failed to update nickname for user " + StringUtilities.formatNameWithId(event.getUser().getName(), event.getMember().getId()), exception);
+                    log.error("Unable to modify the nickname of " + StringUtilities.formatNameWithId(member.getEffectiveName(), member.getId()) + " since they have a higher role than the bot");
                 }
             }
         });
