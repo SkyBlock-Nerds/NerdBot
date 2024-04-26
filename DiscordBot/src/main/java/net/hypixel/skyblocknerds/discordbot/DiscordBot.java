@@ -19,6 +19,7 @@ import net.hypixel.skyblocknerds.database.repository.RepositoryManager;
 import net.hypixel.skyblocknerds.database.repository.impl.DiscordUserRepository;
 import net.hypixel.skyblocknerds.database.sql.DiscordComponentDatabase;
 import net.hypixel.skyblocknerds.discordbot.configuration.BotConfiguration;
+import net.hypixel.skyblocknerds.discordbot.configuration.GuildConfiguration;
 import net.hypixel.skyblocknerds.discordbot.feature.MinecraftProfileUpdateFeature;
 import net.hypixel.skyblocknerds.discordbot.listener.MemberListener;
 import org.apache.commons.cli.CommandLine;
@@ -50,7 +51,8 @@ public class DiscordBot {
         environment = Environment.valueOf(commandLine.getOptionValue("env"));
         log.info("Loading bot in environment: " + environment);
 
-        checkForRequiredConfigurationValues(botConfiguration = ConfigurationManager.loadConfig(BotConfiguration.class));
+        botConfiguration = ConfigurationManager.loadConfig(BotConfiguration.class);
+        checkForRequiredConfigurationValues(ConfigurationManager.loadConfig(GuildConfiguration.class));
 
         if (commandLine.hasOption("mongoUri")) {
             RepositoryManager.getInstance().registerRepository(DiscordUserRepository.class, MongoDB.createMongoClient(commandLine.getOptionValue("mongoUri")), "skyblock_nerds_2");
@@ -106,7 +108,7 @@ public class DiscordBot {
      *
      * @param configuration The {@link BotConfiguration} class to check
      */
-    private void checkForRequiredConfigurationValues(BotConfiguration configuration) {
+    private void checkForRequiredConfigurationValues(GuildConfiguration configuration) {
         if (botConfiguration == null) {
             throw new IllegalArgumentException("Bot configuration cannot be found");
         }

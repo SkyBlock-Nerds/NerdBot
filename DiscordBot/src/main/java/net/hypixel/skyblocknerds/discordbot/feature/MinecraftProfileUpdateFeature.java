@@ -3,12 +3,14 @@ package net.hypixel.skyblocknerds.discordbot.feature;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
+import net.hypixel.skyblocknerds.api.configuration.ConfigurationManager;
 import net.hypixel.skyblocknerds.api.feature.Feature;
 import net.hypixel.skyblocknerds.api.http.mojang.sessionserver.MojangSessionServerUsernameResponse;
 import net.hypixel.skyblocknerds.database.objects.user.DiscordUser;
 import net.hypixel.skyblocknerds.database.repository.RepositoryManager;
 import net.hypixel.skyblocknerds.database.repository.impl.DiscordUserRepository;
 import net.hypixel.skyblocknerds.discordbot.Entrypoint;
+import net.hypixel.skyblocknerds.discordbot.configuration.GuildConfiguration;
 import net.hypixel.skyblocknerds.utilities.StringUtilities;
 
 import java.util.Optional;
@@ -24,8 +26,8 @@ public class MinecraftProfileUpdateFeature extends Feature {
     @Override
     public void onFeatureStart() {
         DiscordUserRepository discordUserRepository = RepositoryManager.getInstance().getRepository(DiscordUserRepository.class);
-
-        Guild guild = Entrypoint.INSTANCE.getJda().getGuildById(Entrypoint.INSTANCE.getBotConfiguration().getPrimaryGuildId());
+        GuildConfiguration guildConfiguration = ConfigurationManager.loadConfig(GuildConfiguration.class);
+        Guild guild = Entrypoint.INSTANCE.getJda().getGuildById(guildConfiguration.getPrimaryGuildId());
 
         if (guild == null) {
             log.error("Primary guild not found");
