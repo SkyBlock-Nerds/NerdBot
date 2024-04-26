@@ -3,6 +3,7 @@ package net.hypixel.skyblocknerds.discordbot.listener;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateNicknameEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateNameEvent;
+import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.skyblocknerds.database.repository.RepositoryManager;
@@ -28,24 +29,22 @@ public class MemberListener extends ListenerAdapter {
 
     @SubscribeEvent
     public void onUserUpdateNicknameEvent(GuildMemberUpdateNicknameEvent event) {
-        if (event.getNewNickname() == null) {
-            return;
-        }
-
         discordUserRepository.findById(event.getMember().getId()).ifPresent(discordUser -> {
             if (!discordUser.hasMinecraftProfile()) {
                 return;
             }
 
-            if (discordUser.getMinecraftProfile().getUsername().contains(event.getNewNickname())) {
-                return;
-            }
+            boolean shouldUpdate = event.getNewNickname() == null || !event.getNewNickname().contains(discordUser.getMinecraftProfile().getUsername());
 
-            try {
-                event.getMember().modifyNickname(discordUser.getMinecraftProfile().getUsername()).complete();
-                log.info("Updated nickname for user " + StringUtilities.formatNameWithId(event.getUser().getName(), event.getMember().getId()) + " to " + discordUser.getMinecraftProfile().getUsername());
-            } catch (Exception exception) {
-                log.error("Failed to update nickname for user " + StringUtilities.formatNameWithId(event.getUser().getName(), event.getMember().getId()), exception);
+            if (shouldUpdate) {
+                try {
+                    event.getMember().modifyNickname(discordUser.getMinecraftProfile().getUsername()).complete();
+                    log.info("Updated nickname for user " + StringUtilities.formatNameWithId(event.getUser().getName(), event.getMember().getId()) + " to " + discordUser.getMinecraftProfile().getUsername());
+                } catch (HierarchyException exception) {
+                    log.error("Failed to update nickname for user " + StringUtilities.formatNameWithId(event.getUser().getName(), event.getMember().getId()) + " since they have a higher role than the bot");
+                } catch (Exception exception) {
+                    log.error("Failed to update nickname for user " + StringUtilities.formatNameWithId(event.getUser().getName(), event.getMember().getId()), exception);
+                }
             }
         });
     }
