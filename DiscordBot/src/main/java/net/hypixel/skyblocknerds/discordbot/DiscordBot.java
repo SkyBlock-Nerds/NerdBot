@@ -18,6 +18,7 @@ import net.hypixel.skyblocknerds.database.mongodb.MongoDB;
 import net.hypixel.skyblocknerds.database.repository.RepositoryManager;
 import net.hypixel.skyblocknerds.database.repository.impl.DiscordUserRepository;
 import net.hypixel.skyblocknerds.database.sql.DiscordComponentDatabase;
+import net.hypixel.skyblocknerds.discordbot.cache.EmojiCache;
 import net.hypixel.skyblocknerds.discordbot.configuration.BotConfiguration;
 import net.hypixel.skyblocknerds.discordbot.configuration.GuildConfiguration;
 import net.hypixel.skyblocknerds.discordbot.feature.AutomaticCuratorFeature;
@@ -74,6 +75,8 @@ public class DiscordBot {
 
         jda = jdaBuilder.build();
         jda.awaitReady();
+
+        EmojiCache.initialize();
 
         if (botConfiguration.getCommandPackage() != null) {
             registerCommands();
