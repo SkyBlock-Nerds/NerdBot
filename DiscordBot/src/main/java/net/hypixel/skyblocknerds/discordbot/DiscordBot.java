@@ -20,6 +20,7 @@ import net.hypixel.skyblocknerds.database.repository.impl.DiscordUserRepository;
 import net.hypixel.skyblocknerds.database.sql.DiscordComponentDatabase;
 import net.hypixel.skyblocknerds.discordbot.configuration.BotConfiguration;
 import net.hypixel.skyblocknerds.discordbot.configuration.GuildConfiguration;
+import net.hypixel.skyblocknerds.discordbot.feature.AutomaticCuratorFeature;
 import net.hypixel.skyblocknerds.discordbot.feature.MinecraftProfileUpdateFeature;
 import net.hypixel.skyblocknerds.discordbot.listener.MemberListener;
 import org.apache.commons.cli.CommandLine;
@@ -38,10 +39,12 @@ import java.util.List;
 public class DiscordBot {
 
     private final List<Feature> features = new ArrayList<>();
-    private JDA jda;
+    @Getter
+    private static JDA jda;
     private BotConfiguration botConfiguration;
     private Environment environment;
-    private CommandLine commandLine;
+    @Getter
+    private static CommandLine commandLine;
 
     public void start(String[] args) throws ParseException, InterruptedException {
         CommandLineParser commandParser = new DefaultParser();
@@ -57,7 +60,7 @@ public class DiscordBot {
         if (commandLine.hasOption("mongoUri")) {
             RepositoryManager.getInstance().registerRepository(DiscordUserRepository.class, MongoDB.createMongoClient(commandLine.getOptionValue("mongoUri")), "skyblock_nerds_2");
             BadgeManager.loadBadges();
-            features.add(new MinecraftProfileUpdateFeature());
+            features.addAll(List.of(new MinecraftProfileUpdateFeature(), new AutomaticCuratorFeature()));
         } else {
             log.warn("MongoDB URI not provided, so no MongoDB repositories will be available!");
         }
@@ -113,7 +116,7 @@ public class DiscordBot {
             throw new IllegalArgumentException("Bot configuration cannot be found");
         }
 
-        if (configuration.getPrimaryGuildId() == null || configuration.getPrimaryGuildId().isEmpty()) {
+        if (configuration.getPrimaryGuildId().isEmpty()) {
             throw new IllegalArgumentException("Primary guild ID must be specified");
         }
     }

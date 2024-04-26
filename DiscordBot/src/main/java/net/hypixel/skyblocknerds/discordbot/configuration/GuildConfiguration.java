@@ -5,6 +5,9 @@ import lombok.Setter;
 import net.hypixel.skyblocknerds.api.configuration.IConfiguration;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 public class GuildConfiguration implements IConfiguration {
@@ -14,4 +17,10 @@ public class GuildConfiguration implements IConfiguration {
      */
     @NotNull
     private String primaryGuildId = "";
+
+    /**
+     * A {@link List} of all {@link net.dv8tion.jda.api.entities.channel.concrete.ForumChannel} IDs
+     * that the bot should use to curate suggestions
+     */
+    private List<String> suggestionForumIds = new ArrayList<>();
 }
