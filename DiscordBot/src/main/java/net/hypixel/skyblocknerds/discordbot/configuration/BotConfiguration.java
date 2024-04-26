@@ -3,18 +3,14 @@ package net.hypixel.skyblocknerds.discordbot.configuration;
 import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.entities.Activity;
+import net.hypixel.skyblocknerds.api.configuration.IConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
-public class BotConfiguration {
-
-    /**
-     * The {@link net.dv8tion.jda.api.entities.Guild} ID of the primary guild
-     */
-    private String primaryGuildId = "";
+public class BotConfiguration implements IConfiguration {
 
     /**
      * An array of {@link String} owner IDs for the bot

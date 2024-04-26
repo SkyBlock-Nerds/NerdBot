@@ -1,6 +1,12 @@
 package net.hypixel.skyblocknerds.discordbot.configuration;
 
-public class ModMailConfiguration {
+import lombok.Getter;
+import lombok.Setter;
+import net.hypixel.skyblocknerds.api.configuration.IConfiguration;
+
+@Getter
+@Setter
+public class ModMailConfiguration implements IConfiguration {
 
     private String modMailChannelId;
 
