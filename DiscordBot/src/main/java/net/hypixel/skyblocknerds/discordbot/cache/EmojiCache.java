@@ -48,19 +48,19 @@ public class EmojiCache {
     @SubscribeEvent
     public void onEmojiCreate(EmojiAddedEvent event) {
         EMOJI_CACHE.put(event.getEmoji().getId(), event.getEmoji());
-        log.debug("Cached emoji '" + StringUtils.formatNameWithId(event.getEmoji().getName(), event.getEmoji().getId()));
+        log.debug("Cached emoji " + StringUtils.formatNameWithId(event.getEmoji().getName(), event.getEmoji().getId()));
     }
 
     @SubscribeEvent
     public void onEmojiDelete(EmojiRemovedEvent event) {
         EMOJI_CACHE.remove(event.getEmoji().getId());
-        log.debug("Removed emoji from cache '" + StringUtils.formatNameWithId(event.getEmoji().getName(), event.getEmoji().getId()));
+        log.debug("Removed emoji from cache " + StringUtils.formatNameWithId(event.getEmoji().getName(), event.getEmoji().getId()));
     }
 
     @SubscribeEvent
     public void onEmojiUpdate(GenericEmojiUpdateEvent<?> event) {
         EMOJI_CACHE.put(event.getEmoji().getId(), event.getEmoji());
-        log.debug("Cached emoji '" + StringUtils.formatNameWithId(event.getEmoji().getName(), event.getEmoji().getId()));
+        log.debug("Cached emoji " + StringUtils.formatNameWithId(event.getEmoji().getName(), event.getEmoji().getId()));
     }
 }
 

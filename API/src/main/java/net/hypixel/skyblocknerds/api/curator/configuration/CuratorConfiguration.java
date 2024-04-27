@@ -19,9 +19,10 @@ public class CuratorConfiguration implements IConfiguration {
     private int minimumReactionsRequired = 15;
 
     /**
-     * The minimum age of a suggestion required for it to be considered
+     * The maximum age of a suggestion for it to be considered
+     * Default is 6 months
      */
-    private long minimumTimeRequired = 1000 * 60 * 60 * 24 * 7;
+    private long maximumAgeConsidered = 1000L * 60L * 60L * 24L * 30L * 6L;
 
     /**
      * The minimum percentage of positive->negative reactions required for a suggestion to be considered

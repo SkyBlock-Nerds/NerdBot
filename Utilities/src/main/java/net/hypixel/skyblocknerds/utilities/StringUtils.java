@@ -59,4 +59,28 @@ public class StringUtils {
     public static String formatNumberWithCommas(Number number) {
         return COMMA_SEPARATED_DECIMAL_FORMAT.format(number);
     }
+
+    /**
+     * Format a millisecond duration into a human-readable format (e.g. 1y 2mo 3w 4d 5h 6m 7s)
+     *
+     * @param duration The duration in milliseconds.
+     * @return The formatted duration.
+     */
+    public static String formatDuration(long duration) {
+        long seconds = duration / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+        long weeks = days / 7;
+        long months = weeks / 4;
+        long years = months / 12;
+
+        return (years > 0 ? years + "y " : "") +
+                (months > 0 ? months % 12 + "mo " : "") +
+                (weeks > 0 ? weeks % 4 + "w " : "") +
+                (days > 0 ? days % 7 + "d " : "") +
+                (hours > 0 ? hours % 24 + "h " : "") +
+                (minutes > 0 ? minutes % 60 + "m " : "") +
+                (seconds % 60) + "s";
+    }
 }
