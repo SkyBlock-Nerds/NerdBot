@@ -24,9 +24,6 @@ import net.hypixel.skyblocknerds.discordbot.configuration.GuildConfiguration;
 import net.hypixel.skyblocknerds.discordbot.feature.AutomaticCuratorFeature;
 import net.hypixel.skyblocknerds.discordbot.feature.MinecraftProfileUpdateFeature;
 import net.hypixel.skyblocknerds.discordbot.listener.MemberListener;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
 import sun.misc.Signal;
 
@@ -44,29 +41,25 @@ public class DiscordBot {
     private static JDA jda;
     private BotConfiguration botConfiguration;
     private Environment environment;
-    @Getter
-    private static CommandLine commandLine;
 
     public void start(String[] args) throws ParseException, InterruptedException {
-        CommandLineParser commandParser = new DefaultParser();
-        commandLine = commandParser.parse(SkyBlockNerdsAPI.CLI_OPTIONS, args);
-        checkForRequiredOptions(commandLine, "env", "discordToken");
+        SkyBlockNerdsAPI.parseProgramArguments(args);
 
-        environment = Environment.valueOf(commandLine.getOptionValue("env"));
+        environment = Environment.valueOf(SkyBlockNerdsAPI.getCommandLine().getOptionValue("env"));
         log.info("Loading bot in environment: " + environment);
 
         botConfiguration = ConfigurationManager.loadConfig(BotConfiguration.class);
         checkForRequiredConfigurationValues(ConfigurationManager.loadConfig(GuildConfiguration.class));
 
-        if (commandLine.hasOption("mongoUri")) {
-            RepositoryManager.getInstance().registerRepository(DiscordUserRepository.class, MongoDB.createMongoClient(commandLine.getOptionValue("mongoUri")), "skyblock_nerds_2");
+        if (SkyBlockNerdsAPI.getCommandLine().hasOption("mongoUri")) {
+            RepositoryManager.getInstance().registerRepository(DiscordUserRepository.class, MongoDB.createMongoClient(SkyBlockNerdsAPI.getCommandLine().getOptionValue("mongoUri")), "skyblock_nerds_2");
             BadgeManager.loadBadges();
             features.addAll(List.of(new MinecraftProfileUpdateFeature(), new AutomaticCuratorFeature()));
         } else {
             log.warn("MongoDB URI not provided, so no MongoDB repositories will be available!");
         }
 
-        JDABuilder jdaBuilder = JDABuilder.createDefault(commandLine.getOptionValue("discordToken"))
+        JDABuilder jdaBuilder = JDABuilder.createDefault(SkyBlockNerdsAPI.getCommandLine().getOptionValue("discordToken"))
                 .setEventManager(new AnnotatedEventManager())
                 .setEnabledIntents(EnumSet.allOf(GatewayIntent.class))
                 .setDisabledIntents(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_TYPING)
@@ -96,20 +89,6 @@ public class DiscordBot {
     }
 
     /**
-     * Checks for required options, throwing an exception if they are not found
-     *
-     * @param cmd     The {@link CommandLine} object to check
-     * @param options The required options to check for
-     */
-    private void checkForRequiredOptions(CommandLine cmd, String... options) {
-        for (String option : options) {
-            if (!cmd.hasOption(option)) {
-                throw new IllegalArgumentException("Missing required option: " + option);
-            }
-        }
-    }
-
-    /**
      * Checks for required configuration values, throwing an exception if they are not found
      *
      * @param configuration The {@link BotConfiguration} class to check
@@ -128,7 +107,7 @@ public class DiscordBot {
 
         log.info("Registering commands from package: " + botConfiguration.getCommandPackage());
 
-        if (commandLine.hasOption("sqlUri")) {
+        if (SkyBlockNerdsAPI.getCommandLine().hasOption("sqlUri")) {
             builder.setComponentManager(new DefaultComponentManager(() -> {
                 try {
                     return new DiscordComponentDatabase().getConnection();

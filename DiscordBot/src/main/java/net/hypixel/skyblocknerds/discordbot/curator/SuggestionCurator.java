@@ -8,11 +8,11 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.internal.entities.ForumTagImpl;
+import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.configuration.ConfigurationManager;
 import net.hypixel.skyblocknerds.api.curator.Curator;
 import net.hypixel.skyblocknerds.api.curator.configuration.CuratorConfiguration;
 import net.hypixel.skyblocknerds.database.objects.suggestion.GreenlitSuggestion;
-import net.hypixel.skyblocknerds.discordbot.DiscordBot;
 import net.hypixel.skyblocknerds.discordbot.cache.EmojiCache;
 import net.hypixel.skyblocknerds.utilities.StreamUtils;
 import net.hypixel.skyblocknerds.utilities.StringUtils;
@@ -29,7 +29,7 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
     private final Map<ThreadChannel, Message> threadStarterMessages = new HashMap<>();
 
     public SuggestionCurator() {
-        super(DiscordBot.getCommandLine().hasOption("readOnly"));
+        super(SkyBlockNerdsAPI.getCommandLine().hasOption("readOnly"));
         this.curatorConfiguration = ConfigurationManager.loadConfig(CuratorConfiguration.class);
     }
 
