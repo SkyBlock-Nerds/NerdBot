@@ -31,7 +31,6 @@ public class HypixelPlayerDataResponse {
         public static class SocialMedia {
 
             private Links links;
-            private boolean prompt;
 
             @Getter
             @ToString
