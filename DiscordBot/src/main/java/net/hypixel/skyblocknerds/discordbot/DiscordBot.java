@@ -78,7 +78,7 @@ public class DiscordBot {
 
         EmojiCache.initialize();
 
-        if (botConfiguration.getCommandPackage() != null) {
+        if (!botConfiguration.getCommandPackage().isEmpty()) {
             registerCommands();
         }
 

@@ -16,7 +16,7 @@ public class CuratorConfiguration implements IConfiguration {
     /**
      * The minimum number of reactions required for a suggestion to be considered
      */
-    private int minimumReactionsRequired = 15;
+    private int minimumReactionsRequired = 25;
 
     /**
      * The maximum age of a suggestion for it to be considered

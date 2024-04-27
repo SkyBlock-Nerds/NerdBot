@@ -47,8 +47,8 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
                         return false;
                     }
 
-                    boolean alreadyAcknowledged = threadChannel.getAppliedTags().stream().noneMatch(tag -> {
-                        return !tag.getName().equalsIgnoreCase("Greenlit") || tag.getName().equalsIgnoreCase("Reviewed");
+                    boolean alreadyAcknowledged = threadChannel.getAppliedTags().stream().anyMatch(tag -> {
+                        return tag.getName().equalsIgnoreCase("Greenlit") || tag.getName().equalsIgnoreCase("Reviewed");
                     });
 
                     if (alreadyAcknowledged) {
@@ -63,14 +63,14 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
 
                         threadStarterMessages.put(threadChannel, message);
 
-                        return agrees >= curatorConfiguration.getMinimumReactionsRequired() || getRatio(agrees, disagrees) >= curatorConfiguration.getMinimumReactionRatio();
+                        return agrees >= curatorConfiguration.getMinimumReactionsRequired() && getRatio(agrees, disagrees) >= curatorConfiguration.getMinimumReactionRatio();
                     } catch (Exception exception) {
-                        log.error("Failed to retrieve data for thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()));
                         return false;
                     }
                 })
                 .forEach(threadChannels::add);
 
+        setTotal(threadChannels.size());
         long end = System.currentTimeMillis();
 
         log.info("Found " + StringUtils.formatNumberWithCommas(threadChannels.size()) + " threads in forum channel "
@@ -78,7 +78,6 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
 
         threadChannels.forEach(threadChannel -> {
             setIndex(threadChannels.indexOf(threadChannel) + 1);
-            setTotal(threadChannels.size());
 
             String index = "[Thread " + getIndex() + "/" + getTotal() + "] ";
 
