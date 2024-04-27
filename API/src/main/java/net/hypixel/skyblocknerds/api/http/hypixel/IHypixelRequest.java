@@ -1,7 +1,13 @@
 package net.hypixel.skyblocknerds.api.http.hypixel;
 
-public interface IHypixelRequest {
+import feign.Headers;
+import feign.Param;
+import feign.RequestLine;
+import net.hypixel.skyblocknerds.api.http.IRequest;
 
-    // TODO Add methods for Hypixel API requests
+public interface IHypixelRequest extends IRequest {
 
+    @RequestLine("GET /v2/player?uuid={uuid}")
+    @Headers("Content-Type: application/json")
+    HypixelPlayerDataResponse getPlayerData(@Param("uuid") String uuid);
 }

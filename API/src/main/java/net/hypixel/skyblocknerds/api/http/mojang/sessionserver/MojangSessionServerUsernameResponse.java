@@ -22,8 +22,8 @@ public class MojangSessionServerUsernameResponse {
     private UUID uniqueId;
     @SerializedName("name")
     private String username;
-    private List<Property> properties = new ArrayList<>();
-    private List<String> profileActions = new ArrayList<>();
+    private final List<Property> properties = new ArrayList<>();
+    private final List<String> profileActions = new ArrayList<>();
 
     public @NonNull Property getProperty() {
         return this.getProperties().get(0);

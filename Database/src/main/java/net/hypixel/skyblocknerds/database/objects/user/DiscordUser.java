@@ -9,6 +9,7 @@ import net.hypixel.skyblocknerds.database.objects.user.minecraft.MinecraftProfil
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -37,5 +38,9 @@ public class DiscordUser {
 
     public void linkMinecraftProfile(String username) {
         this.minecraftProfile = new MinecraftProfile(SkyBlockNerdsAPI.MOJANG_REQUEST.getUniqueId(username));
+    }
+
+    public void linkMinecraftProfile(UUID uuid, String username) {
+        this.minecraftProfile = new MinecraftProfile(uuid, username);
     }
 }
