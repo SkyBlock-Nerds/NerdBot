@@ -115,10 +115,6 @@ public class DiscordBot {
      * @param configuration The {@link BotConfiguration} class to check
      */
     private void checkForRequiredConfigurationValues(GuildConfiguration configuration) {
-        if (botConfiguration == null) {
-            throw new IllegalArgumentException("Bot configuration cannot be found");
-        }
-
         if (configuration.getPrimaryGuildId().isEmpty()) {
             throw new IllegalArgumentException("Primary guild ID must be specified");
         }
