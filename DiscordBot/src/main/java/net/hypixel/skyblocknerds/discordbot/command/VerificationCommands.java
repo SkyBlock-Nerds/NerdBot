@@ -33,46 +33,43 @@ public class VerificationCommands extends ApplicationCommand {
         Member member = event.getMember();
         Optional<DiscordUser> discordUser = discordUserRepository.findOrCreateById(member.getId(), member.getId());
 
-        if (discordUser.isEmpty()) {
-            event.getHook().editOriginal("An error occurred while trying to verify your account, please try again later!").queue();
-            return;
-        }
+        discordUser.ifPresentOrElse(user -> {
+            try {
+                MojangUUIDResponse uuidResponse = SkyBlockNerdsAPI.MOJANG_REQUEST.getUniqueId(username);
+                HypixelPlayerDataResponse response = SkyBlockNerdsAPI.HYPIXEL_REQUEST.getPlayerData(uuidResponse.getUniqueId().toString());
+                HypixelPlayerDataResponse.Player player = response.getPlayer();
 
-        try {
-            MojangUUIDResponse uuidResponse = SkyBlockNerdsAPI.MOJANG_REQUEST.getUniqueId(username);
-            HypixelPlayerDataResponse response = SkyBlockNerdsAPI.HYPIXEL_REQUEST.getPlayerData(uuidResponse.getUniqueId().toString());
-            HypixelPlayerDataResponse.Player player = response.getPlayer();
+                if (player == null) {
+                    event.getHook().editOriginal("That Minecraft account has never logged on to the Hypixel Network!").queue();
+                    return;
+                }
 
-            if (player == null) {
-                event.getHook().editOriginal("That Minecraft account has never logged on to the Hypixel Network!").queue();
-                return;
+                if (player.getSocialMedia() == null) {
+                    event.getHook().editOriginal("Your Hypixel Profile does not have any social media linked to it!").queue();
+                    return;
+                }
+
+                String discordUsername = player.getSocialMedia().getLinks().getDiscordUsername();
+
+                if (discordUsername == null) {
+                    event.getHook().editOriginal("Your Hypixel Profile is not linked to a Discord account!").queue();
+                    return;
+                }
+
+                if (!discordUsername.equalsIgnoreCase(member.getUser().getName())) {
+                    event.getHook().editOriginal("That Hypixel Profile is currently linked to the Discord account `" + discordUsername + "`! It must match your current username for you to be verified.").queue();
+                    return;
+                }
+
+                user.linkMinecraftProfile(uuidResponse.getUniqueId(), uuidResponse.getUsername());
+                event.getHook().editOriginal("Your SkyBlock Nerds Profile is now linked to the Minecraft account `" + uuidResponse.getUsername() + "`!").queue();
+                log.info("Successfully verified the account of " + StringUtils.formatNameWithId(member.getUser().getName(), member.getId()) + " with the Minecraft account " + StringUtils.formatNameWithId(uuidResponse.getUsername(), uuidResponse.getUniqueId().toString()));
+            } catch (MojangAPIException exception) {
+                event.getHook().editOriginal(exception.getResponse().getReason()).complete();
+            } catch (Exception exception) {
+                event.getHook().editOriginal("An error occurred while trying to verify your account! Please try again later or contact us via Mod Mail").queue();
+                log.error("An error occurred while trying to verify the account of " + StringUtils.formatNameWithId(member.getUser().getName(), member.getId()), exception);
             }
-
-            if (player.getSocialMedia() == null) {
-                event.getHook().editOriginal("Your Hypixel Profile does not have any social media linked to it!").queue();
-                return;
-            }
-
-            String discordUsername = player.getSocialMedia().getLinks().getDiscordUsername();
-
-            if (discordUsername == null) {
-                event.getHook().editOriginal("Your Hypixel Profile is not linked to a Discord account!").queue();
-                return;
-            }
-
-            if (!discordUsername.equalsIgnoreCase(member.getUser().getName())) {
-                event.getHook().editOriginal("That Hypixel Profile is currently linked to the Discord account `" + discordUsername + "`! It must match your current username for you to be verified.").queue();
-                return;
-            }
-
-            discordUser.get().linkMinecraftProfile(uuidResponse.getUniqueId(), uuidResponse.getUsername());
-            event.getHook().editOriginal("Your SkyBlock Nerds Profile is now linked to the Minecraft account `" + uuidResponse.getUsername() + "`!").queue();
-            log.info("Successfully verified the account of " + StringUtils.formatNameWithId(member.getUser().getName(), member.getId()) + " with the Minecraft account " + StringUtils.formatNameWithId(uuidResponse.getUsername(), uuidResponse.getUniqueId().toString()));
-        } catch (MojangAPIException exception) {
-            event.getHook().editOriginal(exception.getResponse().getReason()).complete();
-        } catch (Exception exception) {
-            event.getHook().editOriginal("An error occurred while trying to verify your account! Please try again later or contact us via Mod Mail").queue();
-            log.error("An error occurred while trying to verify the account of " + StringUtils.formatNameWithId(member.getUser().getName(), member.getId()), exception);
-        }
+        }, () -> event.getHook().editOriginal("An error occurred while trying to verify your account, please try again later!").queue());
     }
 }
