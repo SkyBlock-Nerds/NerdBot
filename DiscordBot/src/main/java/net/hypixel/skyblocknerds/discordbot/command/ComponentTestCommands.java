@@ -28,7 +28,7 @@ import java.util.List;
 
 public class ComponentTestCommands extends ApplicationCommand {
 
-    @JDASlashCommand(name = "button", description = "Test button components")
+    @JDASlashCommand(name = "button", description = "Test button components", defaultLocked = true)
     public void buttonTest(GuildSlashEvent event) {
         Button button = Button.primary("test-button", "Click me!");
         Button button2 = Button.danger("test-button2", "Click me!");
@@ -45,7 +45,7 @@ public class ComponentTestCommands extends ApplicationCommand {
 
     private static final String SELECTION_HANDLER_NAME = "selectionHandler";
 
-    @JDASlashCommand(scope = CommandScope.GLOBAL, name = "selectionmenutest", description = "Shows how menus works")
+    @JDASlashCommand(scope = CommandScope.GLOBAL, name = "selectionmenutest", description = "Shows how menus works", defaultLocked = true)
     public void selectionMenuTest(GlobalSlashEvent event) {
         event.reply("Selection menu test")
                 //A persistent selection menu, still works after a bot restarts
@@ -59,7 +59,7 @@ public class ComponentTestCommands extends ApplicationCommand {
         event.reply("Selected a value in a persistent selection menu: " + event.getValues()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = "choicemenutest")
+    @JDASlashCommand(name = "choicemenutest", defaultLocked = true)
     public void choiceMenuTest(GuildSlashEvent event) {
         final List<Guild> entries = new ArrayList<>(event.getJDA().getGuilds());
 
@@ -97,7 +97,7 @@ public class ComponentTestCommands extends ApplicationCommand {
     }
 
     // TODO figure out why this throws an exception
-    @JDASlashCommand(name = "paginatedmenutest")
+    @JDASlashCommand(name = "paginatedmenutest", defaultLocked = true)
     public void menuTest(GuildSlashEvent event) {
         final List<Guild> entries = new ArrayList<>(event.getJDA().getGuilds());
 
@@ -124,7 +124,7 @@ public class ComponentTestCommands extends ApplicationCommand {
                 .queue();
     }
 
-    @JDASlashCommand(name = "paginatormenutest2")
+    @JDASlashCommand(name = "paginatormenutest2", defaultLocked = true)
     public void run(GuildSlashEvent event) {
         final List<EmbedBuilder> embedBuilders = new ArrayList<>();
 

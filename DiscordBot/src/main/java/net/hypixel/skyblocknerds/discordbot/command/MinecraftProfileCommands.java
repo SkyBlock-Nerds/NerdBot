@@ -18,7 +18,7 @@ public class MinecraftProfileCommands extends ApplicationCommand {
        discordUserRepository = RepositoryManager.getInstance().getRepository(DiscordUserRepository.class);
    }
 
-    @JDASlashCommand(name = "profiletest", description = "View your linked Minecraft profile")
+    @JDASlashCommand(name = "profiletest", description = "View your linked Minecraft profile", defaultLocked = true)
     public void profileTest(GuildSlashEvent event) {
         discordUserRepository.findById(event.getMember().getId()).ifPresentOrElse(discordUser -> {
             if (discordUser.hasMinecraftProfile()) {
@@ -33,7 +33,7 @@ public class MinecraftProfileCommands extends ApplicationCommand {
         });
     }
 
-    @JDASlashCommand(name = "profilelinktest", description = "Link your Minecraft profile")
+    @JDASlashCommand(name = "profilelinktest", description = "Link your Minecraft profile", defaultLocked = true)
     public void profileLinkTest(GuildSlashEvent event, @AppOption(name = "username", description = "Your Minecraft username") String username) {
         discordUserRepository.findById(event.getMember().getId()).ifPresentOrElse(discordUser -> {
             if (discordUser.hasMinecraftProfile()) {
