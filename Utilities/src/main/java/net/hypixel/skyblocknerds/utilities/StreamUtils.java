@@ -8,6 +8,12 @@ import java.util.stream.Stream;
 
 public class StreamUtils {
 
+    /**
+     * Combines multiple streams into a single {@link Stream}
+     * @param streams streams to combine.
+     * @return combined {@link Stream}.
+     * @param <T> type of the stream.
+     */
     @SafeVarargs
     public static <T> Stream<T> combineStreams(Stream<T>... streams) {
         List<Stream<T>> streamList = new ArrayList<>(Arrays.asList(streams));
