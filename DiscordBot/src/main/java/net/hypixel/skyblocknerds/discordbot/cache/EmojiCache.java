@@ -26,7 +26,7 @@ public class EmojiCache {
         DiscordBot.getJda().getGuilds().forEach(guild -> {
             guild.retrieveEmojis().complete().forEach(richCustomEmoji -> {
                 EMOJI_CACHE.put(richCustomEmoji.getId(), richCustomEmoji);
-                log.info("Cached emoji '" + StringUtils.formatNameWithId(richCustomEmoji.getName(), richCustomEmoji.getId()));
+                log.info("Cached emoji " + StringUtils.formatNameWithId(richCustomEmoji.getName(), richCustomEmoji.getId()));
             });
         });
     }

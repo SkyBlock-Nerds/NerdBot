@@ -10,7 +10,7 @@ import net.hypixel.skyblocknerds.api.http.mojang.sessionserver.MojangSessionServ
 import net.hypixel.skyblocknerds.database.objects.user.DiscordUser;
 import net.hypixel.skyblocknerds.database.repository.RepositoryManager;
 import net.hypixel.skyblocknerds.database.repository.impl.DiscordUserRepository;
-import net.hypixel.skyblocknerds.discordbot.Entrypoint;
+import net.hypixel.skyblocknerds.discordbot.DiscordBot;
 import net.hypixel.skyblocknerds.discordbot.configuration.GuildConfiguration;
 import net.hypixel.skyblocknerds.utilities.StringUtils;
 
@@ -28,10 +28,10 @@ public class MinecraftProfileUpdateFeature extends Feature {
     public void onFeatureStart() {
         DiscordUserRepository discordUserRepository = RepositoryManager.getInstance().getRepository(DiscordUserRepository.class);
         GuildConfiguration guildConfiguration = ConfigurationManager.loadConfig(GuildConfiguration.class);
-        Guild guild = Entrypoint.INSTANCE.getJda().getGuildById(guildConfiguration.getPrimaryGuildId());
+        Guild guild = DiscordBot.getJda().getGuildById(guildConfiguration.getPrimaryGuildId());
 
         if (guild == null) {
-            log.error("Primary guild not found");
+            log.error("Primary guild " + guildConfiguration.getPrimaryGuildId() + " not found");
             return;
         }
 
