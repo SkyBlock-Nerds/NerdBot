@@ -1,4 +1,4 @@
-package net.hypixel.skyblocknerds.api.http.hypixel;
+package net.hypixel.skyblocknerds.api.http.hypixel.response;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Getter;

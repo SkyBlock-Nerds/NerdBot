@@ -1,4 +1,4 @@
-package net.hypixel.skyblocknerds.api.http.hypixel;
+package net.hypixel.skyblocknerds.api.http.hypixel.exception;
 
 import lombok.AccessLevel;
 import lombok.Getter;

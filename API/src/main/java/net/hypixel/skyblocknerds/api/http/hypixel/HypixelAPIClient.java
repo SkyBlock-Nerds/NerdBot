@@ -4,6 +4,7 @@ import feign.FeignException;
 import feign.codec.ErrorDecoder;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.http.HTTPClient;
+import net.hypixel.skyblocknerds.api.http.hypixel.exception.HypixelAPIException;
 
 import java.util.Map;
 

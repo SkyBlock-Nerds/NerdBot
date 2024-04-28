@@ -4,6 +4,7 @@ import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
 import net.hypixel.skyblocknerds.api.http.IRequest;
+import net.hypixel.skyblocknerds.api.http.hypixel.response.HypixelPlayerDataResponse;
 
 public interface IHypixelRequest extends IRequest {
 

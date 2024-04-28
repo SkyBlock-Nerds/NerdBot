@@ -7,7 +7,7 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
-import net.hypixel.skyblocknerds.api.http.hypixel.HypixelPlayerDataResponse;
+import net.hypixel.skyblocknerds.api.http.hypixel.response.HypixelPlayerDataResponse;
 import net.hypixel.skyblocknerds.api.http.mojang.api.MojangUUIDResponse;
 import net.hypixel.skyblocknerds.api.http.mojang.exception.MojangAPIException;
 import net.hypixel.skyblocknerds.database.objects.user.DiscordUser;

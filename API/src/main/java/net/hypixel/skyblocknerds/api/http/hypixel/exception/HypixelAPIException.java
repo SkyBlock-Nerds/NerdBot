@@ -1,4 +1,4 @@
-package net.hypixel.skyblocknerds.api.http.hypixel;
+package net.hypixel.skyblocknerds.api.http.hypixel.exception;
 
 import feign.FeignException;
 import lombok.Getter;
