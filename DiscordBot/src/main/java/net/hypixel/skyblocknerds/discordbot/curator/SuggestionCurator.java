@@ -13,6 +13,8 @@ import net.hypixel.skyblocknerds.api.configuration.ConfigurationManager;
 import net.hypixel.skyblocknerds.api.curator.Curator;
 import net.hypixel.skyblocknerds.api.curator.configuration.CuratorConfiguration;
 import net.hypixel.skyblocknerds.database.objects.suggestion.GreenlitSuggestion;
+import net.hypixel.skyblocknerds.database.repository.RepositoryManager;
+import net.hypixel.skyblocknerds.database.repository.impl.GreenlitSuggestionRepository;
 import net.hypixel.skyblocknerds.discordbot.cache.EmojiCache;
 import net.hypixel.skyblocknerds.utilities.StreamUtils;
 import net.hypixel.skyblocknerds.utilities.StringUtils;
@@ -137,7 +139,8 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
                     .tags(threadChannel.getAppliedTags().stream().map(BaseForumTag::getName).toList())
                     .build();
 
-                // TODO: Add to database repository
+                GreenlitSuggestionRepository greenlitSuggestionRepository = RepositoryManager.getInstance().getRepository(GreenlitSuggestionRepository.class);
+                greenlitSuggestionRepository.cacheObject(greenlitSuggestion);
                 log.info(prefix + "Greenlit thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()));
             } catch (InsufficientPermissionException exception) {
                 log.warn(prefix + "Failed to greenlight thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()) + " due to insufficient permissions");
