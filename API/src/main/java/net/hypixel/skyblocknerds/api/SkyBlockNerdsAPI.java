@@ -40,6 +40,13 @@ public class SkyBlockNerdsAPI {
     @Getter
     private static CommandLine commandLine;
 
+    /**
+     * Parses a list of program arguments
+     *
+     * @param args The program arguments
+     *
+     * @throws ParseException If there are any issues parsing the arguments
+     */
     public static void parseProgramArguments(String[] args) throws ParseException {
         CommandLineParser commandParser = new DefaultParser();
         commandLine = commandParser.parse(SkyBlockNerdsAPI.CLI_OPTIONS, args);

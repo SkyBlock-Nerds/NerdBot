@@ -48,6 +48,6 @@ public class AutomaticCuratorFeature extends Feature {
 
     @Override
     public void onFeatureEnd() {
-
+        // Nothing to do here
     }
 }

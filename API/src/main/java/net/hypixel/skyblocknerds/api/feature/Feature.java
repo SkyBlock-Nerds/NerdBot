@@ -24,6 +24,9 @@ public abstract class Feature extends Timer {
         this(0, null);
     }
 
+    /**
+     * Schedules the feature to run every timeLength in {@link TimeUnit}
+     */
     public void schedule() {
         if (timeLength == 0 || timeUnit == null) {
             // Not all features will be recurring
@@ -38,7 +41,13 @@ public abstract class Feature extends Timer {
         }, 0, timeUnit.toMillis(timeLength));
     }
 
+    /**
+     * Called when the feature is started
+     */
     public abstract void onFeatureStart();
 
+    /**
+     * Called when the feature is ended
+     */
     public abstract void onFeatureEnd();
 }

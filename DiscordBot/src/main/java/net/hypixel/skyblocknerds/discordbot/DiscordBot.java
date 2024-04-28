@@ -100,7 +100,7 @@ public class DiscordBot {
     }
 
     /**
-     * Registers the commands for the bot
+     * Registers the commands for the bot from the package specified in the configuration
      */
     private void registerCommands() {
         CommandsBuilder builder = CommandsBuilder.newBuilder().addOwners(botConfiguration.getOwnerIds().stream().mapToLong(Long::parseLong).toArray());
