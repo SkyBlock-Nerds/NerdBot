@@ -56,7 +56,6 @@ public class MinecraftProfileUpdateFeature extends Feature {
 
             if (!discordUser.get().getMinecraftProfile().getUsername().equals(response.getUsername())) {
                 discordUser.get().getMinecraftProfile().setUsername(response.getUsername());
-                discordUserRepository.saveToDatabase(discordUser.get());
                 log.info("Updated MinecraftProfile username for " + discordUser.get().getDiscordId() + " to " + response.getUsername());
             }
 
