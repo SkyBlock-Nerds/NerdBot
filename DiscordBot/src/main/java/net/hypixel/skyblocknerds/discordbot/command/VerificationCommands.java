@@ -26,7 +26,7 @@ public class VerificationCommands extends ApplicationCommand {
         this.discordUserRepository = RepositoryManager.getInstance().getRepository(DiscordUserRepository.class);
     }
 
-    @JDASlashCommand(name = "verify", description = "Verify your Minecraft account to access the server")
+    @JDASlashCommand(name = "verify", description = "Verify your Minecraft account to access the server", defaultLocked = true)
     public void verifyUser(GuildSlashEvent event, @AppOption(description = "Your Minecraft account's current username") String username) {
         event.deferReply(true).complete();
 
