@@ -36,9 +36,9 @@ import java.util.List;
 @Log4j2
 public class DiscordBot {
 
-    private final List<Feature> features = new ArrayList<>();
     @Getter
     private static JDA jda;
+    private final List<Feature> features = new ArrayList<>();
     private BotConfiguration botConfiguration;
     private Environment environment;
 
@@ -60,11 +60,11 @@ public class DiscordBot {
         }
 
         JDABuilder jdaBuilder = JDABuilder.createDefault(SkyBlockNerdsAPI.getCommandLine().getOptionValue("discordToken"))
-                .setEventManager(new AnnotatedEventManager())
-                .setEnabledIntents(EnumSet.allOf(GatewayIntent.class))
-                .setDisabledIntents(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_TYPING)
-                .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .addEventListeners(new MemberListener());
+            .setEventManager(new AnnotatedEventManager())
+            .setEnabledIntents(EnumSet.allOf(GatewayIntent.class))
+            .setDisabledIntents(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_TYPING)
+            .setMemberCachePolicy(MemberCachePolicy.ALL)
+            .addEventListeners(new MemberListener());
 
         jda = jdaBuilder.build();
         jda.awaitReady();

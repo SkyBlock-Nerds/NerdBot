@@ -16,8 +16,8 @@ public final class HypixelAPIException extends RuntimeException {
         super(exception);
 
         this.response = exception.responseBody()
-                .map(byteBuffer -> new String(byteBuffer.array(), StandardCharsets.UTF_8))
-                .map(json -> SkyBlockNerdsAPI.GSON.fromJson(json, HypixelErrorResponse.class))
-                .orElse(new HypixelErrorResponse.Unknown());
+            .map(byteBuffer -> new String(byteBuffer.array(), StandardCharsets.UTF_8))
+            .map(json -> SkyBlockNerdsAPI.GSON.fromJson(json, HypixelErrorResponse.class))
+            .orElse(new HypixelErrorResponse.Unknown());
     }
 }

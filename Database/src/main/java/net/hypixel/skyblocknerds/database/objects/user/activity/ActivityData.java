@@ -58,25 +58,25 @@ public class ActivityData {
 
     public void addChannelHistory(String guildChannelName, String guildChannelId, int amount, long timestamp) {
         channelActivityHistory.stream()
-                .filter(entry -> entry.getChannelId().equals(guildChannelId) || entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannelName))
-                .findFirst()
-                .ifPresentOrElse(entry -> {
-                    entry.setMessageCount(entry.getMessageCount() + amount);
-                    entry.setLastMessageTimestamp(timestamp);
+            .filter(entry -> entry.getChannelId().equals(guildChannelId) || entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannelName))
+            .findFirst()
+            .ifPresentOrElse(entry -> {
+                entry.setMessageCount(entry.getMessageCount() + amount);
+                entry.setLastMessageTimestamp(timestamp);
 
-                    String monthYear = DateFormatUtils.format(timestamp, "MM-yyyy");
-                    entry.getMonthlyMessageCount().merge(monthYear, amount, Integer::sum);
+                String monthYear = DateFormatUtils.format(timestamp, "MM-yyyy");
+                entry.getMonthlyMessageCount().merge(monthYear, amount, Integer::sum);
 
-                    if (entry.getLastKnownDisplayName() == null || !entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannelName)) {
-                        log.debug("Updating channel activity entry for channel " + entry.getLastKnownDisplayName() + " (ID: " + guildChannelId + ") with new display name: " + guildChannelName);
-                        entry.setLastKnownDisplayName(guildChannelName);
-                    }
+                if (entry.getLastKnownDisplayName() == null || !entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannelName)) {
+                    log.debug("Updating channel activity entry for channel " + entry.getLastKnownDisplayName() + " (ID: " + guildChannelId + ") with new display name: " + guildChannelName);
+                    entry.setLastKnownDisplayName(guildChannelName);
+                }
 
-                    log.debug("Updated channel activity entry for channel " + guildChannelName + " (ID: " + guildChannelId + "): " + entry.getMessageCount() + " messages");
-                }, () -> {
-                    log.debug("Adding new channel activity entry for channel " + guildChannelName + " (ID: " + guildChannelId + ")");
-                    channelActivityHistory.add(new ChannelActivityEntry(guildChannelId, guildChannelName, amount, timestamp, new HashMap<>(Map.of(DateFormatUtils.format(timestamp, "MM-yyyy"), amount))));
-                });
+                log.debug("Updated channel activity entry for channel " + guildChannelName + " (ID: " + guildChannelId + "): " + entry.getMessageCount() + " messages");
+            }, () -> {
+                log.debug("Adding new channel activity entry for channel " + guildChannelName + " (ID: " + guildChannelId + ")");
+                channelActivityHistory.add(new ChannelActivityEntry(guildChannelId, guildChannelName, amount, timestamp, new HashMap<>(Map.of(DateFormatUtils.format(timestamp, "MM-yyyy"), amount))));
+            });
     }
 
     public boolean purgeOldHistory() {
@@ -84,14 +84,14 @@ public class ActivityData {
         long currentTime = System.currentTimeMillis();
 
         return this.suggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-                this.suggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-                this.suggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-                this.alphaSuggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-                this.alphaSuggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-                this.alphaSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-                this.projectSuggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-                this.projectSuggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-                this.projectSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays));
+            this.suggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.suggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.alphaSuggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.alphaSuggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.alphaSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.projectSuggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.projectSuggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.projectSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays));
     }
 
     public int getTotalMessageCount() {
@@ -130,8 +130,8 @@ public class ActivityData {
         List<Long> history = function.apply(this);
 
         long total = history.stream()
-                .filter(time -> time >= System.currentTimeMillis() - duration.toMillis())
-                .count();
+            .filter(time -> time >= System.currentTimeMillis() - duration.toMillis())
+            .count();
 
         return String.valueOf(total);
     }

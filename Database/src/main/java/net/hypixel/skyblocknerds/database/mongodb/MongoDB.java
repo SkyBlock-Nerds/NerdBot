@@ -15,6 +15,7 @@ public class MongoDB {
      * Creates a {@link MongoClient} instance using the provided URI
      *
      * @param uri The URI to use
+     *
      * @return The {@link MongoClient} instance
      */
     public static MongoClient createMongoClient(String uri) {
@@ -27,10 +28,10 @@ public class MongoDB {
         CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build());
         CodecRegistry codecRegistry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
         MongoClientSettings clientSettings = MongoClientSettings.builder()
-                .applyConnectionString(connectionString)
-                .uuidRepresentation(UuidRepresentation.STANDARD)
-                .codecRegistry(codecRegistry)
-                .build();
+            .applyConnectionString(connectionString)
+            .uuidRepresentation(UuidRepresentation.STANDARD)
+            .codecRegistry(codecRegistry)
+            .build();
 
         return MongoClients.create(clientSettings);
     }

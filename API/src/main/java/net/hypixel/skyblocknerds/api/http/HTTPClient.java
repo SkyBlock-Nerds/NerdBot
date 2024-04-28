@@ -20,19 +20,19 @@ public class HTTPClient<R extends IRequest> {
 
     public final <T extends R> @NonNull T build(@NonNull Class<T> tClass) {
         return Feign.builder()
-                .client(new ApacheHttpClient())
-                .encoder(new GsonEncoder(SkyBlockNerdsAPI.GSON))
-                .decoder(new GsonDecoder(SkyBlockNerdsAPI.GSON))
-                .errorDecoder(this.getErrorDecoder())
-                .requestInterceptor(context -> this.getRequestHeaders().forEach(context::header))
-                .options(new feign.Request.Options(
-                        5,
-                        TimeUnit.SECONDS,
-                        10,
-                        TimeUnit.SECONDS,
-                        true
-                ))
-                .target(tClass, this.getUrl());
+            .client(new ApacheHttpClient())
+            .encoder(new GsonEncoder(SkyBlockNerdsAPI.GSON))
+            .decoder(new GsonDecoder(SkyBlockNerdsAPI.GSON))
+            .errorDecoder(this.getErrorDecoder())
+            .requestInterceptor(context -> this.getRequestHeaders().forEach(context::header))
+            .options(new feign.Request.Options(
+                5,
+                TimeUnit.SECONDS,
+                10,
+                TimeUnit.SECONDS,
+                true
+            ))
+            .target(tClass, this.getUrl());
     }
 
     protected ErrorDecoder getErrorDecoder() {

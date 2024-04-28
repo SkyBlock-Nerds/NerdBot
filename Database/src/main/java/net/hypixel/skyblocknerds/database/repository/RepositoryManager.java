@@ -17,9 +17,9 @@ import java.util.Set;
 @Log4j2
 public class RepositoryManager {
 
-    private final Map<Class<?>, Object> repositories = new HashMap<>();
     @Getter
     private static final RepositoryManager instance = new RepositoryManager();
+    private final Map<Class<?>, Object> repositories = new HashMap<>();
 
     @SneakyThrows
     public <T> T getRepository(Class<T> repositoryClass) {
@@ -32,9 +32,9 @@ public class RepositoryManager {
 
     public Repository<?> getRepository(String repositoryName) throws RepositoryException {
         Map.Entry<Class<?>, Object> entry = repositories.entrySet().stream()
-                .filter(e -> e.getKey().getSimpleName().equalsIgnoreCase(repositoryName))
-                .findFirst()
-                .orElseThrow(() -> new RepositoryException("Repository not registered: " + repositoryName));
+            .filter(e -> e.getKey().getSimpleName().equalsIgnoreCase(repositoryName))
+            .findFirst()
+            .orElseThrow(() -> new RepositoryException("Repository not registered: " + repositoryName));
 
         return (Repository<?>) entry.getValue();
     }

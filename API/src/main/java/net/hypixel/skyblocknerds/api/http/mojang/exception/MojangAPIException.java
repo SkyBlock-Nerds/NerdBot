@@ -16,8 +16,8 @@ public final class MojangAPIException extends RuntimeException {
         super(exception);
 
         this.response = exception.responseBody()
-                .map(byteBuffer -> new String(byteBuffer.array(), StandardCharsets.UTF_8))
-                .map(json -> SkyBlockNerdsAPI.GSON.fromJson(json, MojangErrorResponse.class))
-                .orElse(new MojangErrorResponse.Unknown());
+            .map(byteBuffer -> new String(byteBuffer.array(), StandardCharsets.UTF_8))
+            .map(json -> SkyBlockNerdsAPI.GSON.fromJson(json, MojangErrorResponse.class))
+            .orElse(new MojangErrorResponse.Unknown());
     }
 }

@@ -60,20 +60,20 @@ public abstract class Repository<T> {
         if (expireAfterAccess > 0 && timeUnit != null) {
             log("Documents in this repository will expire after " + expireAfterAccess + " " + timeUnit.toString().toLowerCase());
             builder.expireAfterAccess(expireAfterAccess, timeUnit)
-                    .scheduler(Scheduler.systemScheduler());
+                .scheduler(Scheduler.systemScheduler());
         } else {
             log("Documents in this repository will not expire");
         }
 
         this.cache = builder
-                .removalListener((String key, T value, RemovalCause cause) -> {
-                    debug("Removing document with ID " + key + " from cache for reason " + cause.toString());
+            .removalListener((String key, T value, RemovalCause cause) -> {
+                debug("Removing document with ID " + key + " from cache for reason " + cause.toString());
 
-                    if (cause != RemovalCause.EXPLICIT && cause != RemovalCause.REPLACED) {
-                        saveToDatabase(value);
-                    }
-                })
-                .build();
+                if (cause != RemovalCause.EXPLICIT && cause != RemovalCause.REPLACED) {
+                    saveToDatabase(value);
+                }
+            })
+            .build();
 
         this.identifierFieldName = identifierFieldName;
     }
@@ -139,10 +139,10 @@ public abstract class Repository<T> {
 
     public Optional<T> getByIndex(int index) {
         return getAll()
-                .stream()
-                .skip(index)
-                .limit(1)
-                .findFirst();
+            .stream()
+            .skip(index)
+            .limit(1)
+            .findFirst();
     }
 
     public void cacheObject(String id, T object) {
@@ -224,8 +224,8 @@ public abstract class Repository<T> {
 
     public Collection<T> filter(Predicate<T> filter) {
         return getAll().stream()
-                .filter(filter)
-                .toList();
+            .filter(filter)
+            .toList();
     }
 
     public void forEach(Consumer<T> consumer) {

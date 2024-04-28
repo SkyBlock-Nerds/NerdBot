@@ -14,9 +14,9 @@ public class MinecraftProfileCommands extends ApplicationCommand {
 
     private final DiscordUserRepository discordUserRepository;
 
-   public MinecraftProfileCommands() {
-       discordUserRepository = RepositoryManager.getInstance().getRepository(DiscordUserRepository.class);
-   }
+    public MinecraftProfileCommands() {
+        discordUserRepository = RepositoryManager.getInstance().getRepository(DiscordUserRepository.class);
+    }
 
     @JDASlashCommand(name = "profiletest", description = "View your linked Minecraft profile", defaultLocked = true)
     public void profileTest(GuildSlashEvent event) {

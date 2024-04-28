@@ -9,6 +9,7 @@ public class Utilities {
 
     /**
      * Get the current directory of the running jar
+     *
      * @return {@link File} of the current directory
      */
     @SneakyThrows

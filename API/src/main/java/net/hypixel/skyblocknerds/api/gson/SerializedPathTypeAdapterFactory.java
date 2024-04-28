@@ -32,8 +32,8 @@ public final class SerializedPathTypeAdapterFactory implements TypeAdapterFactor
         // If no such fields found, then just return the delegated type adapter
         // Otherwise wrap the type adapter in order to make some annotation processing
         return fieldInfos.isEmpty()
-                ? delegateAdapter
-                : new JsonPathTypeAdapter<>(gson, delegateAdapter, gson.getAdapter(JsonElement.class), fieldInfos);
+            ? delegateAdapter
+            : new JsonPathTypeAdapter<>(gson, delegateAdapter, gson.getAdapter(JsonElement.class), fieldInfos);
     }
 
     @Getter

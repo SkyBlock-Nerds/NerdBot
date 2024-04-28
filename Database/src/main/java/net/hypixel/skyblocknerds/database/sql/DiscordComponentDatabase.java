@@ -10,7 +10,7 @@ public class DiscordComponentDatabase {
     private final HikariDataSource source;
 
     public DiscordComponentDatabase() throws SQLException {
-        //DatabaseConfig databaseConfig = ConfigurationManager.loadConfig(DatabaseConfig.class);
+        // DatabaseConfig databaseConfig = ConfigurationManager.loadConfig(DatabaseConfig.class);
 
         final PGSimpleDataSource pgSource = new PGSimpleDataSource();
         pgSource.setServerNames(new String[]{"localhost"});

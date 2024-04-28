@@ -10,9 +10,11 @@ public class StreamUtils {
 
     /**
      * Combines multiple streams into a single {@link Stream}
+     *
      * @param streams streams to combine.
+     * @param <T>     type of the stream.
+     *
      * @return combined {@link Stream}.
-     * @param <T> type of the stream.
      */
     @SafeVarargs
     public static <T> Stream<T> combineStreams(Stream<T>... streams) {

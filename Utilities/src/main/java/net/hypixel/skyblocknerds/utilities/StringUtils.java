@@ -15,6 +15,7 @@ public class StringUtils {
      * Checks if the input is a valid {@link UUID}.
      *
      * @param input input to check.
+     *
      * @return true if the input is a valid UUID.
      */
     public static boolean isUUID(String input) {
@@ -25,6 +26,7 @@ public class StringUtils {
      * Converts a string representation (with or without dashes) of a {@link UUID} to the {@link UUID} class.
      *
      * @param input unique id to convert.
+     *
      * @return converted unique id.
      */
     public static UUID toUUID(String input) {
@@ -44,6 +46,7 @@ public class StringUtils {
      *
      * @param name The name.
      * @param id   The ID.
+     *
      * @return The formatted name with ID in parentheses.
      */
     public static String formatNameWithId(String name, String id) {
@@ -54,6 +57,7 @@ public class StringUtils {
      * Formats a number with commas.
      *
      * @param number The {@link Number} to format.
+     *
      * @return The formatted number with commas.
      */
     public static String formatNumberWithCommas(Number number) {
@@ -64,6 +68,7 @@ public class StringUtils {
      * Format a millisecond duration into a human-readable format (e.g. 1y 2mo 3w 4d 5h 6m 7s)
      *
      * @param duration The duration in milliseconds.
+     *
      * @return The formatted duration.
      */
     public static String formatDuration(long duration) {
@@ -76,11 +81,11 @@ public class StringUtils {
         long years = months / 12;
 
         return (years > 0 ? years + "y " : "") +
-                (months > 0 ? months % 12 + "mo " : "") +
-                (weeks > 0 ? weeks % 4 + "w " : "") +
-                (days > 0 ? days % 7 + "d " : "") +
-                (hours > 0 ? hours % 24 + "h " : "") +
-                (minutes > 0 ? minutes % 60 + "m " : "") +
-                (seconds % 60) + "s";
+            (months > 0 ? months % 12 + "mo " : "") +
+            (weeks > 0 ? weeks % 4 + "w " : "") +
+            (days > 0 ? days % 7 + "d " : "") +
+            (hours > 0 ? hours % 24 + "h " : "") +
+            (minutes > 0 ? minutes % 60 + "m " : "") +
+            (seconds % 60) + "s";
     }
 }

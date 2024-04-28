@@ -37,8 +37,8 @@ public class EmojiCache {
 
     public static Optional<Emoji> getEmojiByName(String emojiName) {
         return EMOJI_CACHE.values().stream()
-                .filter(emoji -> emoji.getName().equals(emojiName))
-                .findFirst();
+            .filter(emoji -> emoji.getName().equals(emojiName))
+            .findFirst();
     }
 
     public static Map<String, Emoji> getEmojiCache() {

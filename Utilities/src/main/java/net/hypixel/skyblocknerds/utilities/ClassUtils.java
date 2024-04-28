@@ -13,6 +13,7 @@ public class ClassUtils {
      *
      * @param packageName package to search in
      * @param clazz       class to search for
+     *
      * @return set of classes that extend the specified class
      */
     public static Set<Class<?>> findClasses(String packageName, Class<?> clazz) {

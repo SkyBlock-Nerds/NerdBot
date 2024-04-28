@@ -18,12 +18,12 @@ import java.util.UUID;
 @ToString
 public class MojangSessionServerUsernameResponse {
 
+    private final List<Property> properties = new ArrayList<>();
+    private final List<String> profileActions = new ArrayList<>();
     @SerializedName("id")
     private UUID uniqueId;
     @SerializedName("name")
     private String username;
-    private final List<Property> properties = new ArrayList<>();
-    private final List<String> profileActions = new ArrayList<>();
 
     public @NonNull Property getProperty() {
         return this.getProperties().get(0);

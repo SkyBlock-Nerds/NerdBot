@@ -19,13 +19,13 @@ public class TieredBadge extends Badge {
 
     public Tier getTier(int tier) {
         return tiers.stream()
-                .filter(t -> t.tier == tier)
-                .findFirst()
-                .map(t -> {
-                    t.setBadge(this);
-                    return t;
-                })
-                .orElse(null);
+            .filter(t -> t.tier == tier)
+            .findFirst()
+            .map(t -> {
+                t.setBadge(this);
+                return t;
+            })
+            .orElse(null);
     }
 
     @Override

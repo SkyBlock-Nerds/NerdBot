@@ -19,8 +19,6 @@ public abstract class Curator<T, O> {
         this.readOnly = readOnly;
     }
 
-    public abstract void execute(T t);
-
     public static double getRatio(double positiveReactions, double negativeReactions) {
         if (positiveReactions == 0 && negativeReactions == 0) {
             return 0;
@@ -28,4 +26,6 @@ public abstract class Curator<T, O> {
 
         return positiveReactions / (positiveReactions + negativeReactions) * 100;
     }
+
+    public abstract void execute(T t);
 }

@@ -16,11 +16,11 @@ public class BadgeManager {
             throw new IllegalStateException("Badge configuration is null!");
         }
 
-        //log.info("Loading badges from config file...");
+        // log.info("Loading badges from config file...");
         System.out.println("Loading badges from config file...");
 
         if (badgeConfiguration.getBadges() == null || badgeConfiguration.getBadges().isEmpty()) {
-            //log.error("No badges found in config file!");
+            // log.error("No badges found in config file!");
             System.out.println("No badges found in config file!");
             return;
         }
@@ -28,7 +28,7 @@ public class BadgeManager {
         badgeConfiguration.getBadges().forEach(badge -> {
             BADGE_MAP.put(badge.getId(), badge);
             System.out.println("Loaded badge: " + badge);
-            //log.info("Loaded badge: " + badge);
+            // log.info("Loaded badge: " + badge);
         });
     }
 
