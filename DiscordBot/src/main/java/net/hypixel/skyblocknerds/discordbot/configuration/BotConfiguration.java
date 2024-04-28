@@ -19,18 +19,22 @@ public class BotConfiguration implements IConfiguration {
 
     /**
      * The {@link Activity.ActivityType} that the bot will display
+     * <p>
+     * Default is {@link Activity.ActivityType#WATCHING}
      */
     private Activity.ActivityType activityType = Activity.ActivityType.WATCHING;
 
     /**
      * The message that the bot will display with the {@link Activity.ActivityType}
+     * <p>
+     * Default is "with a default message"
      */
     private String activityMessage = "with a default message";
 
     /**
      * The package containing the commands for the bot
      * <p>
-     * Default: "net.hypixel.skyblocknerds.discordbot.command"
+     * Default is "net.hypixel.skyblocknerds.discordbot.command"
      */
     private String commandPackage = "net.hypixel.skyblocknerds.discordbot.command";
 }
