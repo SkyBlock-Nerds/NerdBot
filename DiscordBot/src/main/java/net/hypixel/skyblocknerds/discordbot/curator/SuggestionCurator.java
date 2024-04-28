@@ -7,7 +7,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
-import net.dv8tion.jda.internal.entities.ForumTagImpl;
+import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.configuration.ConfigurationManager;
 import net.hypixel.skyblocknerds.api.curator.Curator;
@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @Log4j2
 public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion> {
@@ -38,58 +39,92 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
         log.info("Curating forum channel: " + StringUtils.formatNameWithId(forumChannel.getName(), forumChannel.getId()));
 
         long start = System.currentTimeMillis();
+        setStartTime(start);
+
+        ForumTag greenlitTag = forumChannel.getAvailableTagsByName("awawa", true).stream()
+            .findFirst()
+            .orElseThrow(() -> new NoSuchElementException("Greenlit tag not found in forum channel " + StringUtils.formatNameWithId(forumChannel.getName(), forumChannel.getId())));
+
         List<ThreadChannel> threadChannels = new ArrayList<>();
 
         StreamUtils.combineStreams(forumChannel.getThreadChannels().stream().parallel(), forumChannel.retrieveArchivedPublicThreadChannels().stream().parallel())
-                .filter(threadChannel -> {
-                    long suggestionAge = System.currentTimeMillis() - threadChannel.getTimeCreated().toInstant().toEpochMilli();
-                    if (suggestionAge > curatorConfiguration.getMaximumAgeConsidered()) {
-                        return false;
-                    }
+            .filter(threadChannel -> {
+                long suggestionAge = System.currentTimeMillis() - threadChannel.getTimeCreated().toInstant().toEpochMilli();
+                if (suggestionAge > curatorConfiguration.getMaximumAgeConsidered()) {
+                    return false;
+                }
 
-                    boolean alreadyAcknowledged = threadChannel.getAppliedTags().stream().anyMatch(tag -> {
-                        return tag.getName().equalsIgnoreCase("Greenlit") || tag.getName().equalsIgnoreCase("Reviewed");
-                    });
+                boolean alreadyAcknowledged = threadChannel.getAppliedTags().stream().anyMatch(tag -> {
+                    return tag.getName().equalsIgnoreCase("Greenlit") || tag.getName().equalsIgnoreCase("Reviewed");
+                });
 
-                    if (alreadyAcknowledged) {
-                        return false;
-                    }
+                if (alreadyAcknowledged) {
+                    return false;
+                }
 
-                    try {
-                        Message message = threadChannel.retrieveStartMessage().complete();
-                        List<MessageReaction> reactions = message.getReactions();
-                        int agrees = reactions.stream().filter(messageReaction -> messageReaction.getEmoji().equals(EmojiCache.getEmojiByName("agree").orElse(null))).findFirst().map(MessageReaction::getCount).orElse(0);
-                        int disagrees = reactions.stream().filter(messageReaction -> messageReaction.getEmoji().equals(EmojiCache.getEmojiByName("disagree").orElse(null))).findFirst().map(MessageReaction::getCount).orElse(0);
+                try {
+                    Message message = threadChannel.retrieveStartMessage().complete();
+                    List<MessageReaction> reactions = message.getReactions();
+                    int agrees = reactions.stream().filter(messageReaction -> messageReaction.getEmoji().equals(EmojiCache.getEmojiByName("agree").orElse(null))).findFirst().map(MessageReaction::getCount).orElse(0);
+                    int disagrees = reactions.stream().filter(messageReaction -> messageReaction.getEmoji().equals(EmojiCache.getEmojiByName("disagree").orElse(null))).findFirst().map(MessageReaction::getCount).orElse(0);
 
-                        threadStarterMessages.put(threadChannel, message);
+                    threadStarterMessages.put(threadChannel, message);
 
-                        return agrees >= curatorConfiguration.getMinimumReactionsRequired() && getRatio(agrees, disagrees) >= curatorConfiguration.getMinimumReactionRatio();
-                    } catch (Exception exception) {
-                        return false;
-                    }
-                })
-                .forEach(threadChannels::add);
+                    return agrees >= curatorConfiguration.getMinimumReactionsRequired() && getRatio(agrees, disagrees) >= curatorConfiguration.getMinimumReactionRatio();
+                } catch (Exception exception) {
+                    return false;
+                }
+            })
+            .forEach(threadChannels::add);
 
         setTotal(threadChannels.size());
         long end = System.currentTimeMillis();
 
         log.info("Found " + StringUtils.formatNumberWithCommas(threadChannels.size()) + " threads in forum channel "
-                + StringUtils.formatNameWithId(forumChannel.getName(), forumChannel.getId()) + " in " + (end - start) + "ms");
+            + StringUtils.formatNameWithId(forumChannel.getName(), forumChannel.getId()) + " in " + (end - start) + "ms");
 
         threadChannels.forEach(threadChannel -> {
             setIndex(threadChannels.indexOf(threadChannel) + 1);
 
-            String index = "[Thread " + getIndex() + "/" + getTotal() + "] ";
+            String prefix = "[Thread " + getIndex() + "/" + getTotal() + "] ";
 
             if (isReadOnly()) {
-                log.info(index + "Skipping greenlighting thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()) + " because the bot is in read-only mode");
+                log.info(prefix + "Skipping greenlighting thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()) + " because the bot is in read-only mode");
                 return;
             }
 
-            log.info(index + "Greenlighting thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()));
+            log.info(prefix + "Greenlighting thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()));
 
-            Message message = threadStarterMessages.get(threadChannel);
-            GreenlitSuggestion greenlitSuggestion = GreenlitSuggestion.builder()
+            List<ForumTag> tags = new ArrayList<>(threadChannel.getAppliedTags());
+
+            if (tags.size() >= 5) {
+                ForumTag removedTag = tags.remove(tags.size() - 1);
+                threadChannel.sendMessage("This thread has reached the maximum number of allowed tags, so the `" + removedTag.getName() + "` tag has been removed to make room for the `Greenlit` tag.").complete();
+                log.debug(prefix + "Removed tag " + removedTag.getName() + " from thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()) + " to make room for the Greenlit tag");
+            }
+
+            tags.add(0, greenlitTag);
+
+            try {
+                if (threadChannel.isArchived()) {
+                    threadChannel.getManager().setArchived(false).complete();
+                    log.debug(prefix + "Unarchived thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()) + " before greenlighting");
+                }
+
+                threadChannel.getManager().setAppliedTags(tags).complete();
+
+                if (curatorConfiguration.isArchiveGreenlitThreads()) {
+                    threadChannel.getManager().setArchived(true).complete();
+                    log.debug(prefix + "Archived thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()) + " after greenlighting due to configuration setting");
+                }
+
+                if (curatorConfiguration.isLockGreenlitThreads()) {
+                    threadChannel.getManager().setLocked(true).complete();
+                    log.debug("Locked thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()) + " after greenlighting due to configuration setting");
+                }
+
+                Message message = threadStarterMessages.get(threadChannel);
+                GreenlitSuggestion greenlitSuggestion = GreenlitSuggestion.builder()
                     .userId(threadChannel.getOwnerId())
                     .messageId(threadChannel.getId())
                     .greenlitMessageId(message.getId())
@@ -102,11 +137,13 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
                     .tags(threadChannel.getAppliedTags().stream().map(BaseForumTag::getName).toList())
                     .build();
 
-            // Add the Greenlit tag if < 5 tags present, otherwise remove a tag and add it
-            List<ForumTag> tags = new ArrayList<>(threadChannel.getAppliedTags());
-            tags.add(new ForumTagImpl(123L));
-            threadChannel.getManager().setAppliedTags(tags).complete();
-            log.info("Greenlit thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()));
+                // TODO: Add to database repository
+                log.info(prefix + "Greenlit thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()));
+            } catch (InsufficientPermissionException exception) {
+                log.warn(prefix + "Failed to greenlight thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()) + " due to insufficient permissions");
+            } catch (Exception exception) {
+                log.error(prefix + "Failed to greenlight thread " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()), exception);
+            }
         });
 
         threadStarterMessages.clear();

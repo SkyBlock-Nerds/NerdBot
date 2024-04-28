@@ -28,4 +28,14 @@ public class CuratorConfiguration implements IConfiguration {
      * The minimum percentage of positive->negative reactions required for a suggestion to be considered
      */
     private double minimumReactionRatio = 75.0D;
+
+    /**
+     * Whether threads should be archived after being greenlit
+     */
+    private boolean archiveGreenlitThreads = true;
+
+    /**
+     * Whether greenlit threads should be locked after being greenlit
+     */
+    private boolean lockGreenlitThreads = false;
 }
