@@ -309,26 +309,31 @@ public class ExportCommands extends ApplicationCommand {
 
         List<DiscordUser> discordUsers = discordUserRepository.getAll();
 
-        inactivityDays = inactivityDays != 0 ? inactivityDays : NerdBotApp.getBot().getConfig().getInactivityDays();
-        inactivityMessages = inactivityMessages != 0 ? inactivityMessages : NerdBotApp.getBot().getConfig().getInactivityMessages();
-        long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(inactivityDays);
+        if (inactivityDays == -1 && inactivityMessages == -1) {
+            log.info(event.getMember().getEffectiveName() + " is exporting member activity for all members");
+        } else {
+            inactivityDays = inactivityDays != 0 ? inactivityDays : NerdBotApp.getBot().getConfig().getInactivityDays();
+            inactivityMessages = inactivityMessages != 0 ? inactivityMessages : NerdBotApp.getBot().getConfig().getInactivityMessages();
+            long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(inactivityDays);
 
-        discordUsers.removeIf(discordUser -> {
-            Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
-            return member != null && RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
-        });
+            discordUsers.removeIf(discordUser -> {
+                Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
+                return member != null && RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
+            });
 
-        int finalInactivityDays = inactivityDays;
-        int finalInactivityMessages = inactivityMessages;
+            int finalInactivityDays = inactivityDays;
+            int finalInactivityMessages = inactivityMessages;
 
-        discordUsers.removeIf(discordUser -> {
-            LastActivity lastActivity = discordUser.getLastActivity();
-            return lastActivity.getChannelActivityHistory().stream()
-                .filter(channelActivityEntry -> !Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).contains(channelActivityEntry.getChannelId()))
-                .anyMatch(entry -> entry.getLastMessageTimestamp() > inactivityTimestamp && discordUser.getLastActivity().getTotalMessageCount(finalInactivityDays) > finalInactivityMessages);
-        });
+            discordUsers.removeIf(discordUser -> {
+                LastActivity lastActivity = discordUser.getLastActivity();
+                return lastActivity.getChannelActivityHistory().stream()
+                    .filter(channelActivityEntry -> !Arrays.asList(NerdBotApp.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).contains(channelActivityEntry.getChannelId()))
+                    .anyMatch(entry -> entry.getLastMessageTimestamp() > inactivityTimestamp && discordUser.getLastActivity().getTotalMessageCount(finalInactivityDays) > finalInactivityMessages);
+            });
 
-        log.info(event.getMember().getEffectiveName() + " is exporting member activity for " + discordUsers.size() + " members that meet the requirements (" + inactivityDays + " days of inactivity and " + inactivityMessages + " messages)");
+            log.info(event.getMember().getEffectiveName() + " is exporting member activity for " + discordUsers.size() + " members that meet the requirements (" + inactivityDays + " days of inactivity and " + inactivityMessages + " messages)");
+        }
+
 
         for (DiscordUser discordUser : discordUsers) {
             Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
@@ -370,7 +375,7 @@ public class ExportCommands extends ApplicationCommand {
                     formatTimestamp(lastActivity.getLastProjectActivity()),
                     formatTimestamp(lastActivity.getLastAlphaActivity()),
                     formatTimestamp(lastActivity.getLastModMailUsage()),
-                    String.valueOf(lastActivity.getTotalMessageCount(finalInactivityDays)),
+                    String.valueOf(lastActivity.getTotalMessageCount(inactivityDays)),
                     "\"" + channelActivity + "\"",
                     "FALSE"
             ));
