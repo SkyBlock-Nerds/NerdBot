@@ -17,6 +17,11 @@ public class RoleConfig {
     private String botManagerRoleId = "";
 
     /**
+     * The {@link Role} ID of the Moderator role
+     */
+    private String moderatorRoleId = "";
+
+    /**
      * The {@link Role} ID of the New Member role
      */
     private String newMemberRoleId = "";
