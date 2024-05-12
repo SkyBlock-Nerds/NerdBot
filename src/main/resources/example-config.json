@@ -70,6 +70,7 @@
   },
   "roleConfig": {
     "botManagerRoleId": "1234567890123456789",
+    "moderatorRoleId": "",
     "newMemberRoleId": "1234567890123456789",
     "limboRoleId": "1234567890123456789",
     "pingableRoles": [
