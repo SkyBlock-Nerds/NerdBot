@@ -96,21 +96,21 @@ public class LastActivity {
     }
 
     public boolean purgeOldHistory() {
-        long thirtyDays = Duration.of(30, ChronoUnit.DAYS).toMillis();
+        long configuredDays = Duration.of(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory(), ChronoUnit.DAYS).toMillis();
         long currentTime = System.currentTimeMillis();
 
-        return this.suggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.suggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.suggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.alphaSuggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.alphaSuggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.alphaSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.projectSuggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.projectSuggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.projectSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.getSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.getAlphaSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.getProjectSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - thirtyDays));
+        return this.suggestionCreationHistory.removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.suggestionVoteHistory.removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.suggestionCommentHistory.removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.alphaSuggestionCreationHistory.removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.alphaSuggestionVoteHistory.removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.alphaSuggestionCommentHistory.removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.projectSuggestionCreationHistory.removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.projectSuggestionVoteHistory.removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.projectSuggestionCommentHistory.removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.getSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.getAlphaSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.getProjectSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - configuredDays));
     }
 
     public int getTotalMessageCount() {
