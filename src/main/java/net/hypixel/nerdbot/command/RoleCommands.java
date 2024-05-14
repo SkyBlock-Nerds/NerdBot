@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
+import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
@@ -72,7 +73,8 @@ public class RoleCommands extends ApplicationCommand {
     public void checkForPromotionEligibility(GuildSlashEvent event) {
         event.deferReply(true).complete();
 
-        if (!NerdBotApp.getBot().getConfig().getRoleConfig().isCurrentlyPromotingUsers()) {
+        RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
+        if (!roleConfig.isCurrentlyPromotingUsers()) {
             TranslationManager.edit(event.getHook(), "commands.role.not_currently_accepting_promotions");
             return;
         }
@@ -80,7 +82,7 @@ public class RoleCommands extends ApplicationCommand {
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser user = repository.findById(event.getMember().getId());
 
-        if (RoleManager.hasRole(event.getMember(), NerdBotApp.getBot().getConfig().getRoleConfig().getOrangeRoleId())) {
+        if (!RoleManager.getHighestRole(event.getMember()).equals(RoleManager.getRoleById(roleConfig.getMemberRoleId()).orElseThrow())) {
             TranslationManager.edit(event.getHook(), user, "commands.role.cannot_progress_further");
             return;
         }
