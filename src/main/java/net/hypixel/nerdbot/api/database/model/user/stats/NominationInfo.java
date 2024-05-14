@@ -25,6 +25,6 @@ public class NominationInfo {
             return "Never";
         }
 
-        return DiscordTimestamp.toShortDate(lastNominationDate.getTime() / 1_000L);
+        return DiscordTimestamp.toShortDate(lastNominationDate.getTime());
     }
 }
