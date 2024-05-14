@@ -35,6 +35,7 @@ public class LastActivity {
 
     // Suggestion Activity History
     private List<Long> suggestionCreationHistory = new ArrayList<>();
+    @Deprecated(forRemoval = true)
     private List<Long> suggestionVoteHistory = new ArrayList<>();
     private List<Long> suggestionCommentHistory = new ArrayList<>();
 
@@ -44,6 +45,7 @@ public class LastActivity {
 
     // Alpha Suggestion Activity History
     private List<Long> alphaSuggestionCreationHistory = new ArrayList<>();
+    @Deprecated(forRemoval = true)
     private List<Long> alphaSuggestionVoteHistory = new ArrayList<>();
     private List<Long> alphaSuggestionCommentHistory = new ArrayList<>();
 
@@ -53,6 +55,7 @@ public class LastActivity {
 
     // Project Suggestion Activity History
     private List<Long> projectSuggestionCreationHistory = new ArrayList<>();
+    @Deprecated(forRemoval = true)
     private List<Long> projectSuggestionVoteHistory = new ArrayList<>();
     private List<Long> projectSuggestionCommentHistory = new ArrayList<>();
 
@@ -142,14 +145,15 @@ public class LastActivity {
 
     public int getTotalVotes() {
         Instant instant = Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()));
-        int totalSuggestionVotes = toTotalPeriodNumber(LastActivity::getSuggestionVoteHistory, instant).intValue();
-        int totalAlphaSuggestionVotes = toTotalPeriodNumber(LastActivity::getAlphaSuggestionVoteHistory, instant).intValue();
-        int totalProjectSuggestionVotes = toTotalPeriodNumber(LastActivity::getProjectSuggestionVoteHistory, instant).intValue();
+        Duration duration = Duration.between(instant, Instant.now());
+        int totalSuggestionVotes = (int) toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, duration);
+        int totalAlphaSuggestionVotes = (int) toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, duration);
+        int totalProjectSuggestionVotes = (int) toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, duration);
 
         return totalSuggestionVotes + totalAlphaSuggestionVotes + totalProjectSuggestionVotes;
     }
 
-    public String toTotalPeriod(Function<LastActivity, List<Long>> function, Duration duration) {
+    public String toTotalPeriodList(Function<LastActivity, List<Long>> function, Duration duration) {
         List<Long> history = function.apply(this);
 
         long total = history.stream()
@@ -159,15 +163,23 @@ public class LastActivity {
         return String.valueOf(total);
     }
 
-    public Number toTotalPeriodNumber(Function<LastActivity, List<Long>> function, Instant duration) {
-        List<Long> history = function.apply(this);
+    public long toTotalPeriodMap(Function<LastActivity, Map<String, Long>> function, Duration duration) {
+        Map<String, Long> history = function.apply(this);
 
-        return history.stream()
-            .filter(time -> time >= System.currentTimeMillis() - duration.toEpochMilli())
+        return history.values().stream()
+            .filter(time -> time >= System.currentTimeMillis() - duration.toMillis())
             .count();
     }
 
-    public String toRelativeTimestamp(Function<LastActivity, List<Long>> function) {
+    public Number toTotalPeriodNumber(Function<LastActivity, List<Long>> function, Duration duration) {
+        List<Long> history = function.apply(this);
+
+        return history.stream()
+            .filter(time -> time >= System.currentTimeMillis() - duration.toMillis())
+            .count();
+    }
+
+    public String toRelativeTimestampList(Function<LastActivity, List<Long>> function) {
         List<Long> history = function.apply(this);
         long time = history.isEmpty() ? -1L : history.get(0);
 
@@ -176,6 +188,17 @@ public class LastActivity {
         }
 
         return this.toTimestamp(__ -> time).toRelativeTimestamp();
+    }
+
+    public String toRelativeTimestampMap(Function<LastActivity, Map<String, Long>> function) {
+        Map<String, Long> history = function.apply(this);
+        long newestEntry = getNewestEntry(history);
+
+        if (newestEntry <= 0) {
+            return "Never";
+        }
+
+        return this.toTimestamp(__ -> newestEntry).toRelativeTimestamp();
     }
 
     public String toRelativeTimestamp(ToLongFunction<LastActivity> function) {
@@ -188,5 +211,13 @@ public class LastActivity {
 
     private DiscordTimestamp toTimestamp(ToLongFunction<LastActivity> function) {
         return new DiscordTimestamp(function.applyAsLong(this));
+    }
+
+    public Long getNewestEntry(Map<String, Long> map) {
+        return map.entrySet().stream()
+            .max(Map.Entry.comparingByValue())
+            .stream().findFirst()
+            .map(Map.Entry::getValue)
+            .orElse(-1L);
     }
 }
