@@ -4,10 +4,12 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.apache.commons.lang.time.DateFormatUtils;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -54,6 +56,10 @@ public class LastActivity {
     private List<Long> projectSuggestionVoteHistory = new ArrayList<>();
     private List<Long> projectSuggestionCommentHistory = new ArrayList<>();
 
+    private Map<String, Long> suggestionVoteHistoryMap = new HashMap<>();
+    private Map<String, Long> alphaSuggestionVoteHistoryMap = new HashMap<>();
+    private Map<String, Long> projectSuggestionVoteHistoryMap = new HashMap<>();
+
     private List<ChannelActivityEntry> channelActivityHistory = new ArrayList<>();
     private Map<String, Integer> channelActivity = new HashMap<>();
 
@@ -96,7 +102,10 @@ public class LastActivity {
             this.alphaSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
             this.projectSuggestionCreationHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
             this.projectSuggestionVoteHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
-            this.projectSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays));
+            this.projectSuggestionCommentHistory.removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.getSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.getAlphaSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - thirtyDays)) ||
+            this.getProjectSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - thirtyDays));
     }
 
     public int getTotalMessageCount() {
@@ -131,6 +140,15 @@ public class LastActivity {
         return entries;
     }
 
+    public int getTotalVotes() {
+        Instant instant = Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()));
+        int totalSuggestionVotes = toTotalPeriodNumber(LastActivity::getSuggestionVoteHistory, instant).intValue();
+        int totalAlphaSuggestionVotes = toTotalPeriodNumber(LastActivity::getAlphaSuggestionVoteHistory, instant).intValue();
+        int totalProjectSuggestionVotes = toTotalPeriodNumber(LastActivity::getProjectSuggestionVoteHistory, instant).intValue();
+
+        return totalSuggestionVotes + totalAlphaSuggestionVotes + totalProjectSuggestionVotes;
+    }
+
     public String toTotalPeriod(Function<LastActivity, List<Long>> function, Duration duration) {
         List<Long> history = function.apply(this);
 
@@ -139,6 +157,14 @@ public class LastActivity {
             .count();
 
         return String.valueOf(total);
+    }
+
+    public Number toTotalPeriodNumber(Function<LastActivity, List<Long>> function, Instant duration) {
+        List<Long> history = function.apply(this);
+
+        return history.stream()
+            .filter(time -> time >= System.currentTimeMillis() - duration.toEpochMilli())
+            .count();
     }
 
     public String toRelativeTimestamp(Function<LastActivity, List<Long>> function) {

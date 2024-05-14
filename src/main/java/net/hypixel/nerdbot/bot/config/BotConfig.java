@@ -110,16 +110,19 @@ public class BotConfig {
 
     /**
      * The message being displayed as the bots {@link Activity} on its profile
+     * Default is "with a default message!"
      */
     private String activity = "with a default message!";
 
     /**
      * The amount of days that a user must be inactive for to show up in the inactive user list
+     * Default value is 7
      */
     private int inactivityDays = 7;
 
     /**
      * The amount of messages that a user must have sent in the last inactivityDays to be considered active
+     * Default value is 10
      */
     private int inactivityMessages = 10;
 }

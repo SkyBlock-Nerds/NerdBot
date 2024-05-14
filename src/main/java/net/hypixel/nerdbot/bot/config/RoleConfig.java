@@ -22,6 +22,11 @@ public class RoleConfig {
     private String moderatorRoleId = "";
 
     /**
+     * The {@link Role} ID of the Orange role
+     */
+    private String orangeRoleId = "";
+
+    /**
      * The {@link Role} ID of the New Member role
      */
     private String newMemberRoleId = "";
@@ -30,6 +35,24 @@ public class RoleConfig {
      * The {@link Role} ID of the Limbo role
      */
     private String limboRoleId = "";
+
+    /**
+     * If we are currently in the process of promoting users who have met the requirements
+     * Default value is false
+     */
+    private boolean currentlyPromotingUsers = false;
+
+    /**
+     * The amount of votes a user must have to be considered active enough to be promoted to the next stage
+     * Default value is 100
+     */
+    private int minimumVotesRequiredForPromotion = 100;
+
+    /**
+     * The amount of days that the bot will pull voting history for a user
+     * Default value is 90
+     */
+    private int daysRequiredForVoteHistory = 90;
 
     /**
      * A list of {@link PingableRole PingableRoles} used for announcements etc.

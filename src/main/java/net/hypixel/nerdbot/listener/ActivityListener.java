@@ -224,7 +224,7 @@ public class ActivityListener {
     }
 
     @SubscribeEvent
-    public void onReactionReceived(MessageReactionAddEvent event) {
+    public void onActivityReactionAdd(MessageReactionAddEvent event) {
         if (!event.isFromGuild() || event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
             return; // Ignore non-guild and native emojis
         }
@@ -261,7 +261,7 @@ public class ActivityListener {
 
             // New Suggestion Voting
             if (forumChannelId.equals(NerdBotApp.getBot().getConfig().getSuggestionConfig().getForumChannelId())) {
-                discordUser.getLastActivity().getSuggestionVoteHistory().add(0, time);
+                discordUser.getLastActivity().getSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                 log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }
@@ -269,14 +269,14 @@ public class ActivityListener {
             // New Alpha Suggestion Voting
             AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
             if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
-                discordUser.getLastActivity().getAlphaSuggestionVoteHistory().add(0, time);
+                discordUser.getLastActivity().getAlphaSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                 log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }
 
             // New Project Suggestion Voting
             if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
-                discordUser.getLastActivity().getProjectSuggestionVoteHistory().add(0, time);
+                discordUser.getLastActivity().getProjectSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                 log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }

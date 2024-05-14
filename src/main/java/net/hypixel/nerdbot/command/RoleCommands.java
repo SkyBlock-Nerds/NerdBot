@@ -14,6 +14,7 @@ import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
+import net.hypixel.nerdbot.util.Util;
 
 import java.util.Arrays;
 import java.util.List;
@@ -65,5 +66,36 @@ public class RoleCommands extends ApplicationCommand {
             .collect(Collectors.joining("\n"));
 
         TranslationManager.edit(event.getHook(), user, "commands.role.list_roles", roles);
+    }
+
+    @JDASlashCommand(name = "promotion", description = "Check if you are eligible for a promotion to a higher role")
+    public void checkForPromotionEligibility(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getConfig().getRoleConfig().isCurrentlyPromotingUsers()) {
+            TranslationManager.edit(event.getHook(), "commands.role.not_currently_accepting_promotions");
+            return;
+        }
+
+        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser user = repository.findById(event.getMember().getId());
+
+        if (RoleManager.hasRole(event.getMember(), NerdBotApp.getBot().getConfig().getRoleConfig().getOrangeRoleId())) {
+            TranslationManager.edit(event.getHook(), user, "commands.role.cannot_progress_further");
+            return;
+        }
+
+        if (isEligibleForPromotion(user)) {
+            TranslationManager.edit(event.getHook(), user, "commands.role.eligible_promotion");
+        } else {
+            TranslationManager.edit(event.getHook(), user, "commands.role.not_eligible_promotion",
+                Util.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalVotes()),
+                Util.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion())
+            );
+        }
+    }
+
+    private boolean isEligibleForPromotion(DiscordUser user) {
+        return user.getLastActivity().getTotalVotes() >= NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
     }
 }
