@@ -138,7 +138,7 @@
       "list_roles": "**Assignable Roles:**\n%s\n\n**Use /role <name> to toggle the role!**",
       "cannot_progress_further": "You are already at the highest role!",
       "eligible_promotion": "You are currently eligible for a promotion! This is not a guarantee that you will be promoted. Thanks for contributing to SkyBlock Nerds!",
-      "not_eligible_promotion": "You have %d/%d required suggestion votes to be nominated for the Orange role!",
+      "not_eligible_promotion": "You have %s/%s required suggestion votes to be nominated for the Orange role!",
       "not_currently_accepting_promotions": "We are not currently assessing promotion eligibility, please check back later!"
     },
     "verify": {
