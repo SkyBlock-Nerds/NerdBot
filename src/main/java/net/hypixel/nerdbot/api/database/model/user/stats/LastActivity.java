@@ -155,6 +155,16 @@ public class LastActivity {
         return totalSuggestionVotes + totalAlphaSuggestionVotes + totalProjectSuggestionVotes;
     }
 
+    public int getTotalComments() {
+        Instant instant = Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()));
+        Duration duration = Duration.between(instant, Instant.now());
+        int totalSuggestionComments = toTotalPeriodNumber(LastActivity::getSuggestionCommentHistory, duration).intValue();
+        int totalAlphaSuggestionComments = toTotalPeriodNumber(LastActivity::getAlphaSuggestionCommentHistory, duration).intValue();
+        int totalProjectSuggestionComments = toTotalPeriodNumber(LastActivity::getProjectSuggestionCommentHistory, duration).intValue();
+
+        return totalSuggestionComments + totalAlphaSuggestionComments + totalProjectSuggestionComments;
+    }
+
     public String toTotalPeriodList(Function<LastActivity, List<Long>> function, Duration duration) {
         List<Long> history = function.apply(this);
 
