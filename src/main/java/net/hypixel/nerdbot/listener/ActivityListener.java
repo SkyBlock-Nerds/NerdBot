@@ -287,11 +287,17 @@ public class ActivityListener {
                 log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }
 
+            if (!NerdBotApp.getBot().getConfig().getRoleConfig().isCurrentlyPromotingUsers()) {
+                log.info("Currently not promoting users, skipping promotion check for " + member.getEffectiveName());
+                return;
+            }
+
             RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
             ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
 
             if (RoleManager.getHighestRole(member).equals(RoleManager.getRoleById(roleConfig.getMemberRoleId()).orElseThrow())) {
                 if (member.hasTimeJoined() && member.getTimeJoined().plusMonths(1).isAfter(member.getTimeCreated())) {
+                    log.debug("User " + member.getEffectiveName() + " has not been in the server for at least a month, skipping promotion check");
                     return;
                 }
 
@@ -307,6 +313,7 @@ public class ActivityListener {
                             + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDateString()
                             + ")").queue();
                         discordUser.getLastActivity().getNominationInfo().increaseNominations();
+                        log.info("Sent promotion nomination message for " + member.getEffectiveName() + " in voting channel (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
                     }, () -> {
                         throw new IllegalStateException("Cannot find voting channel to send nomination message into!");
                     });
