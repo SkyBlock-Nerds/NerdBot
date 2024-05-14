@@ -21,7 +21,9 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
+import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -279,6 +281,17 @@ public class ActivityListener {
                 discordUser.getLastActivity().getProjectSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                 log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
+            }
+
+            RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
+            ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
+            if (member.getRoles().stream().noneMatch(role -> role.getId().equals(roleConfig.getOrangeRoleId()))) {
+                if (discordUser.getLastActivity().getTotalVotes() == roleConfig.getMinimumVotesRequiredForPromotion()) {
+                    TextChannel votingChannel = Util.getMainGuild().getTextChannelById(channelConfig.getMemberVotingChannelId());
+                    if (votingChannel != null) {
+                        votingChannel.sendMessage(member.getAsMention() + " for Nerd").queue();
+                    }
+                }
             }
         }
     }

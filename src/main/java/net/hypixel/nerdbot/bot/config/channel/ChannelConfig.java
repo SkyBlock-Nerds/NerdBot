@@ -56,6 +56,11 @@ public class ChannelConfig {
     private String pollChannelId = "";
 
     /**
+     * The {@link TextChannel} ID for the member voting channel
+     */
+    private String memberVotingChannelId = "";
+
+    /**
      * The {@link TextChannel} ID for the itemgen channel
      */
     private String[] genChannelIds = {};
