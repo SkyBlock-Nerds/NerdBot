@@ -24,6 +24,7 @@ import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
+import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -32,6 +33,8 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -288,16 +291,25 @@ public class ActivityListener {
             ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
 
             if (RoleManager.getHighestRole(member).equals(RoleManager.getRoleById(roleConfig.getMemberRoleId()).orElseThrow())) {
-                if (discordUser.getLastActivity().getTotalVotes() == roleConfig.getMinimumVotesRequiredForPromotion()) {
-                    TextChannel votingChannel = Util.getMainGuild().getTextChannelById(channelConfig.getMemberVotingChannelId());
-                    if (votingChannel != null) {
-                        votingChannel.sendMessage("Promote " + member.getAsMention() + " to Nerd?"
-                            + "\n(Total Nominations: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalNominations())
+                if (member.hasTimeJoined() && member.getTimeJoined().plusMonths(1).isAfter(member.getTimeCreated())) {
+                    return;
+                }
+
+                OffsetDateTime lastNomination = discordUser.getLastActivity().getNominationInfo().getLastNominationDate()
+                    .map(date -> date.toInstant().atOffset(ZoneOffset.UTC))
+                    .orElse(member.getTimeJoined());
+
+                if (lastNomination.plusMonths(1).isBefore(OffsetDateTime.now()) && discordUser.getLastActivity().getTotalVotes() >= roleConfig.getMinimumVotesRequiredForPromotion()) {
+                    ChannelCache.getTextChannelById(channelConfig.getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
+                        textChannel.sendMessage("Promote " + member.getAsMention() + " to Nerd?\n("
+                            + "Total Nominations: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalNominations())
                             + " / Total Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments())
-                            + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDate()
+                            + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDateString()
                             + ")").queue();
                         discordUser.getLastActivity().getNominationInfo().increaseNominations();
-                    }
+                    }, () -> {
+                        throw new IllegalStateException("Cannot find voting channel to send nomination message into!");
+                    });
                 }
             }
         }
