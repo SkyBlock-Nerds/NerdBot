@@ -27,6 +27,11 @@ public class RoleConfig {
     private String orangeRoleId = "";
 
     /**
+     * The {@link Role} ID of the Member role
+     */
+    private String memberRoleId = "";
+
+    /**
      * The {@link Role} ID of the New Member role
      */
     private String newMemberRoleId = "";

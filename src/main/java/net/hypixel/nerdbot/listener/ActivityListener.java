@@ -27,6 +27,7 @@ import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.jetbrains.annotations.NotNull;
@@ -285,11 +286,13 @@ public class ActivityListener {
 
             RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
             ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
-            if (member.getRoles().stream().noneMatch(role -> role.getId().equals(roleConfig.getOrangeRoleId()))) {
+
+            if (RoleManager.getHighestRole(member).equals(RoleManager.getRoleById(roleConfig.getMemberRoleId()).orElseThrow())) {
                 if (discordUser.getLastActivity().getTotalVotes() == roleConfig.getMinimumVotesRequiredForPromotion()) {
                     TextChannel votingChannel = Util.getMainGuild().getTextChannelById(channelConfig.getMemberVotingChannelId());
                     if (votingChannel != null) {
-                        votingChannel.sendMessage(member.getAsMention() + " for Nerd").queue();
+                        votingChannel.sendMessage(member.getAsMention() + " for Nerd\n (total nominations: " + discordUser.getLastActivity().getNominationInfo().getTotalNominations() + ", last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDate() + ")").queue();
+                        discordUser.getLastActivity().getNominationInfo().increaseNominations();
                     }
                 }
             }

@@ -66,6 +66,8 @@ public class LastActivity {
     private List<ChannelActivityEntry> channelActivityHistory = new ArrayList<>();
     private Map<String, Integer> channelActivity = new HashMap<>();
 
+    private NominationInfo nominationInfo = new NominationInfo();
+
     public void addChannelHistory(GuildChannel guildChannel, long lastMessageTimestamp) {
         addChannelHistory(guildChannel, 1, lastMessageTimestamp);
     }
