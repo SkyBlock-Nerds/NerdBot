@@ -291,7 +291,7 @@ public class ActivityListener {
                 if (discordUser.getLastActivity().getTotalVotes() == roleConfig.getMinimumVotesRequiredForPromotion()) {
                     TextChannel votingChannel = Util.getMainGuild().getTextChannelById(channelConfig.getMemberVotingChannelId());
                     if (votingChannel != null) {
-                        votingChannel.sendMessage(member.getAsMention() + " for Nerd\n (total nominations: " + discordUser.getLastActivity().getNominationInfo().getTotalNominations() + ", last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDate() + ")").queue();
+                        votingChannel.sendMessage("Promote " + member.getAsMention() + " to Nerd\n (total nominations: " + discordUser.getLastActivity().getNominationInfo().getTotalNominations() + ", last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDate() + ")").queue();
                         discordUser.getLastActivity().getNominationInfo().increaseNominations();
                     }
                 }
