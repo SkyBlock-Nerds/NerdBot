@@ -38,7 +38,7 @@ public class RoleCommands extends ApplicationCommand {
             }
 
             Member member = event.getMember();
-            if (RoleManager.hasRole(member, role)) {
+            if (RoleManager.hasRoleByName(member, role)) {
                 event.getGuild().removeRoleFromMember(member, discordRole).queue();
                 TranslationManager.edit(event.getHook(), user, "commands.role.removed_role", discordRole.getAsMention());
             } else {

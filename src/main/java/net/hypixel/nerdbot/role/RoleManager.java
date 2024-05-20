@@ -32,8 +32,12 @@ public class RoleManager {
         return "<@&" + pingableRole.getRoleId() + ">";
     }
 
-    public static boolean hasRole(Member member, String name) {
+    public static boolean hasRoleByName(Member member, String name) {
         return member.getRoles().stream().anyMatch(role -> role.getName().equalsIgnoreCase(name));
+    }
+
+    public static boolean hasRoleById(Member member, String id) {
+        return member.getRoles().stream().anyMatch(role -> role.getId().equals(id));
     }
 
     public static boolean hasAnyRole(Member member, String... names) {

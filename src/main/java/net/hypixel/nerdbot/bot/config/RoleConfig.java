@@ -54,6 +54,12 @@ public class RoleConfig {
     private int minimumVotesRequiredForPromotion = 100;
 
     /**
+     * The amount of comments a user must have to be considered active enough to be promoted to the next stage
+     * Default value is 100
+     */
+    private int minimumCommentsRequiredForPromotion = 100;
+
+    /**
      * The amount of days that the bot will pull voting history for a user
      * Default value is 90
      */
