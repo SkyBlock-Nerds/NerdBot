@@ -55,7 +55,8 @@ public class UserNominationFeature extends BotFeature {
                 return;
             }
 
-            if (RoleManager.hasRoleById(member, NerdBotApp.getBot().getConfig().getRoleConfig().getOrangeRoleId())) {
+            if (!RoleManager.getHighestRole(member).getId().equalsIgnoreCase(NerdBotApp.getBot().getConfig().getRoleConfig().getMemberRoleId())) {
+                log.info("Skipping nomination for " + member.getEffectiveName() + " as their highest role is not 'Member'!");
                 return;
             }
 
@@ -69,13 +70,17 @@ public class UserNominationFeature extends BotFeature {
                 if (lastNominationMonth != Calendar.getInstance().get(Calendar.MONTH) && (totalComments >= requiredComments && totalVotes >= requiredVotes)) {
                     sendNominationMessage(member, discordUser);
                 }
-            }, () -> sendNominationMessage(member, discordUser));
+            }, () -> {
+                if (totalComments >= requiredComments && totalVotes >= requiredVotes) {
+                    sendNominationMessage(member, discordUser);
+                }
+            });
         });
     }
 
     private static void sendNominationMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-            textChannel.sendMessage("Promote " + member.getAsMention() + " to Nerd?\n("
+            textChannel.sendMessage("Promote " + member.getEffectiveName() + " to Nerd?\n("
                 + "Total Nominations: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalNominations())
                 + " / Total Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments())
                 + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDateString()
