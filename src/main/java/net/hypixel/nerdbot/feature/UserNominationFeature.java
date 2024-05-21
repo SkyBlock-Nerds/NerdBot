@@ -66,6 +66,8 @@ public class UserNominationFeature extends BotFeature {
             int totalComments = lastActivity.getTotalComments();
             int totalVotes = lastActivity.getTotalVotes();
 
+            log.info("Checking if " + member.getEffectiveName() + " should be nominated for promotion (total comments: " + totalComments + ", total votes: " + totalVotes + ")");
+
             lastActivity.getNominationInfo().getLastNominationDate().ifPresentOrElse(date -> {
                 int lastNominationMonth = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getMonthValue();
 
