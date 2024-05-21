@@ -62,7 +62,8 @@ public class RoleManager {
     }
 
     public static Role getHighestRole(Member member) {
-        return member.getRoles().get(0);
+        List<Role> roles = member.getRoles();
+        return roles.isEmpty() ? null : roles.get(0);
     }
 
     public static Optional<Role> getRoleById(String id) {
