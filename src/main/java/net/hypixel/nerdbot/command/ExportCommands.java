@@ -31,6 +31,7 @@ import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.TimeUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.csv.CSVData;
+import org.apache.commons.lang.ArrayUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -277,7 +278,12 @@ public class ExportCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", defaultLocked = true)
-    public void exportMemberActivity(GuildSlashEvent event, @AppOption(description = "The number of days of inactivity to consider") @Optional int inactivityDays, @AppOption(description = "The number of messages to consider as active") @Optional int inactivityMessages) {
+    public void exportMemberActivity(
+        GuildSlashEvent event,
+        @AppOption(description = "The number of days of inactivity to consider") @Optional int inactivityDays,
+        @AppOption(description = "The number of messages to consider as active") @Optional int inactivityMessages,
+        @AppOption(description = "Comma-separated list of roles to consider when exporting") @Optional String roles
+    ) {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -316,9 +322,15 @@ public class ExportCommands extends ApplicationCommand {
             inactivityMessages = inactivityMessages != 0 ? inactivityMessages : NerdBotApp.getBot().getConfig().getInactivityMessages();
             long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(inactivityDays);
 
+            String[] allRoles = roles != null && !roles.isEmpty() ? (String[]) ArrayUtils.addAll(Util.SPECIAL_ROLES, roles.split(", ?")) : Util.SPECIAL_ROLES;
             discordUsers.removeIf(discordUser -> {
                 Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
-                return member != null && RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
+
+                if (member == null) {
+                    return true;
+                }
+
+                return RoleManager.hasAnyRole(member, allRoles);
             });
 
             int finalInactivityDays = inactivityDays;
