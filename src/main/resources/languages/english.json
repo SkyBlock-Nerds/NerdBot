@@ -172,6 +172,9 @@
     "translations": {
       "reloaded": "Reloaded translations for language %s",
       "reload_complete": "Reloaded translations for all languages!"
+    },
+    "force_nominations": {
+      "success": "Forced nominations!"
     }
   }
 }

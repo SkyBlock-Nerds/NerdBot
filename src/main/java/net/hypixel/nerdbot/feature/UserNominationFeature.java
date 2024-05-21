@@ -26,35 +26,7 @@ public class UserNominationFeature extends BotFeature {
             @Override
             public void run() {
                 if (isFirstDayOfMonth()) {
-                    Guild guild = Util.getMainGuild();
-                    DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-                    int requiredVotes = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
-                    int requiredComments = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion();
-
-                    discordUserRepository.getAll().forEach(discordUser -> {
-                        Member member = guild.getMemberById(discordUser.getDiscordId());
-
-                        if (member == null) {
-                            log.error("Member not found for user " + discordUser.getDiscordId());
-                            return;
-                        }
-
-                        if (RoleManager.hasRoleById(member, NerdBotApp.getBot().getConfig().getRoleConfig().getOrangeRoleId())) {
-                            return;
-                        }
-
-                        LastActivity lastActivity = discordUser.getLastActivity();
-                        int totalComments = lastActivity.getTotalComments();
-                        int totalVotes = lastActivity.getTotalVotes();
-
-                        lastActivity.getNominationInfo().getLastNominationDate().ifPresentOrElse(date -> {
-                            int lastNominationMonth = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getMonthValue();
-
-                            if (lastNominationMonth != Calendar.getInstance().get(Calendar.MONTH) && (totalComments >= requiredComments && totalVotes >= requiredVotes)) {
-                                nominateUser(discordUser, member);
-                            }
-                        }, () -> nominateUser(discordUser, member));
-                    });
+                    nominateUsers();
                 }
             }
         }, 0, Duration.ofDays(1).toMillis());
@@ -69,7 +41,39 @@ public class UserNominationFeature extends BotFeature {
         return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
     }
 
-    private void nominateUser(DiscordUser discordUser, Member member) {
+    public static void nominateUsers() {
+        Guild guild = Util.getMainGuild();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        int requiredVotes = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
+        int requiredComments = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion();
+
+        discordUserRepository.getAll().forEach(discordUser -> {
+            Member member = guild.getMemberById(discordUser.getDiscordId());
+
+            if (member == null) {
+                log.error("Member not found for user " + discordUser.getDiscordId());
+                return;
+            }
+
+            if (RoleManager.hasRoleById(member, NerdBotApp.getBot().getConfig().getRoleConfig().getOrangeRoleId())) {
+                return;
+            }
+
+            LastActivity lastActivity = discordUser.getLastActivity();
+            int totalComments = lastActivity.getTotalComments();
+            int totalVotes = lastActivity.getTotalVotes();
+
+            lastActivity.getNominationInfo().getLastNominationDate().ifPresentOrElse(date -> {
+                int lastNominationMonth = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getMonthValue();
+
+                if (lastNominationMonth != Calendar.getInstance().get(Calendar.MONTH) && (totalComments >= requiredComments && totalVotes >= requiredVotes)) {
+                    sendNominationMessage(member, discordUser);
+                }
+            }, () -> sendNominationMessage(member, discordUser));
+        });
+    }
+
+    private static void sendNominationMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             textChannel.sendMessage("Promote " + member.getAsMention() + " to Nerd?\n("
                 + "Total Nominations: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalNominations())
