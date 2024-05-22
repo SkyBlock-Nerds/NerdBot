@@ -31,7 +31,6 @@ import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.TimeUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.csv.CSVData;
-import org.apache.commons.lang.ArrayUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -282,7 +281,7 @@ public class ExportCommands extends ApplicationCommand {
         GuildSlashEvent event,
         @AppOption(description = "The number of days of inactivity to consider") @Optional int inactivityDays,
         @AppOption(description = "The number of messages to consider as active") @Optional int inactivityMessages,
-        @AppOption(description = "Comma-separated list of roles to consider when exporting") @Optional String roles
+        @AppOption(description = "Role to consider when exporting") @Optional String role
     ) {
         event.deferReply(true).complete();
 
@@ -322,7 +321,6 @@ public class ExportCommands extends ApplicationCommand {
             inactivityMessages = inactivityMessages != 0 ? inactivityMessages : NerdBotApp.getBot().getConfig().getInactivityMessages();
             long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(inactivityDays);
 
-            String[] allRoles = roles != null && !roles.isEmpty() ? (String[]) ArrayUtils.addAll(Util.SPECIAL_ROLES, roles.split(", ?")) : Util.SPECIAL_ROLES;
             discordUsers.removeIf(discordUser -> {
                 Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
 
@@ -330,7 +328,11 @@ public class ExportCommands extends ApplicationCommand {
                     return true;
                 }
 
-                return RoleManager.hasAnyRole(member, allRoles);
+                if (role != null) {
+                    return RoleManager.getHighestRole(member) != null && !RoleManager.getHighestRole(member).getName().equalsIgnoreCase(role);
+                }
+
+                return RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
             });
 
             int finalInactivityDays = inactivityDays;
