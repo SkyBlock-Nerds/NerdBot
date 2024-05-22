@@ -10,6 +10,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.ThreadMember;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -321,20 +322,6 @@ public class ExportCommands extends ApplicationCommand {
             inactivityMessages = inactivityMessages != 0 ? inactivityMessages : NerdBotApp.getBot().getConfig().getInactivityMessages();
             long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(inactivityDays);
 
-            discordUsers.removeIf(discordUser -> {
-                Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
-
-                if (member == null) {
-                    return true;
-                }
-
-                if (role != null) {
-                    return RoleManager.getHighestRole(member) != null && !RoleManager.getHighestRole(member).getName().equalsIgnoreCase(role);
-                }
-
-                return RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
-            });
-
             int finalInactivityDays = inactivityDays;
             int finalInactivityMessages = inactivityMessages;
 
@@ -347,6 +334,21 @@ public class ExportCommands extends ApplicationCommand {
 
             log.info(event.getMember().getEffectiveName() + " is exporting member activity for " + discordUsers.size() + " members that meet the requirements (" + inactivityDays + " days of inactivity and " + inactivityMessages + " messages)");
         }
+
+        discordUsers.removeIf(discordUser -> {
+            Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
+
+            if (member == null) {
+                return true;
+            }
+
+            Role highestRole = RoleManager.getHighestRole(member);
+            if (role != null && highestRole != null) {
+                return !highestRole.getName().equalsIgnoreCase(role);
+            }
+
+            return RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
+        });
 
 
         for (DiscordUser discordUser : discordUsers) {
