@@ -49,4 +49,18 @@ public class CuratorConfiguration implements IConfiguration {
      * Default is false
      */
     private boolean lockGreenlitThreads = false;
+
+    /**
+     * The tag name that indicates a suggestion has been greenlit
+     * <p>
+     * Default is "Greenlit"
+     */
+    private String greenlitTagName = "Greenlit";
+
+    /**
+     * The tag name that indicates a suggestion has been reviewed
+     * <p>
+     * Default is "Reviewed"
+     */
+    private String reviewedTagName = "Reviewed";
 }

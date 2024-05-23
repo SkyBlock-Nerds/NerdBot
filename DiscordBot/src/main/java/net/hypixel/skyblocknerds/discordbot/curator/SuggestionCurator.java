@@ -40,10 +40,9 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
     public void execute(ForumChannel forumChannel) {
         log.info("Curating forum channel: " + StringUtils.formatNameWithId(forumChannel.getName(), forumChannel.getId()));
 
-        long start = System.currentTimeMillis();
-        setStartTime(start);
+        setStartTime(System.currentTimeMillis());
 
-        ForumTag greenlitTag = forumChannel.getAvailableTagsByName("awawa", true).stream()
+        ForumTag greenlitTag = forumChannel.getAvailableTagsByName(curatorConfiguration.getGreenlitTagName(), true).stream()
             .findFirst()
             .orElseThrow(() -> new NoSuchElementException("Greenlit tag not found in forum channel " + StringUtils.formatNameWithId(forumChannel.getName(), forumChannel.getId())));
 
@@ -52,12 +51,13 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
         StreamUtils.combineStreams(forumChannel.getThreadChannels().stream().parallel(), forumChannel.retrieveArchivedPublicThreadChannels().stream().parallel())
             .filter(threadChannel -> {
                 long suggestionAge = System.currentTimeMillis() - threadChannel.getTimeCreated().toInstant().toEpochMilli();
-                if (suggestionAge > curatorConfiguration.getMaximumAgeConsidered()) {
+
+                if (curatorConfiguration.getMaximumAgeConsidered() > 0 && suggestionAge > curatorConfiguration.getMaximumAgeConsidered()) {
                     return false;
                 }
 
                 boolean alreadyAcknowledged = threadChannel.getAppliedTags().stream().anyMatch(tag -> {
-                    return tag.getName().equalsIgnoreCase("Greenlit") || tag.getName().equalsIgnoreCase("Reviewed");
+                    return tag.getName().equalsIgnoreCase(curatorConfiguration.getGreenlitTagName()) || tag.getName().equalsIgnoreCase(curatorConfiguration.getReviewedTagName());
                 });
 
                 if (alreadyAcknowledged) {
@@ -66,13 +66,15 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
 
                 try {
                     Message message = threadChannel.retrieveStartMessage().complete();
-                    List<MessageReaction> reactions = message.getReactions();
-                    int agrees = reactions.stream().filter(messageReaction -> messageReaction.getEmoji().equals(EmojiCache.getEmojiByName("agree").orElse(null))).findFirst().map(MessageReaction::getCount).orElse(0);
-                    int disagrees = reactions.stream().filter(messageReaction -> messageReaction.getEmoji().equals(EmojiCache.getEmojiByName("disagree").orElse(null))).findFirst().map(MessageReaction::getCount).orElse(0);
+                    int agrees = getReactionCount(message, "agree");
+                    int disagrees = getReactionCount(message, "disagree");
 
-                    threadStarterMessages.put(threadChannel, message);
+                    if (agrees >= curatorConfiguration.getMinimumReactionsRequired() && getRatio(agrees, disagrees) >= curatorConfiguration.getMinimumReactionRatio()) {
+                        threadStarterMessages.put(threadChannel, message);
+                        return true;
+                    }
 
-                    return agrees >= curatorConfiguration.getMinimumReactionsRequired() && getRatio(agrees, disagrees) >= curatorConfiguration.getMinimumReactionRatio();
+                    return false;
                 } catch (Exception exception) {
                     return false;
                 }
@@ -80,10 +82,9 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
             .forEach(threadChannels::add);
 
         setTotal(threadChannels.size());
-        long end = System.currentTimeMillis();
 
         log.info("Found " + StringUtils.formatNumberWithCommas(threadChannels.size()) + " threads in forum channel "
-            + StringUtils.formatNameWithId(forumChannel.getName(), forumChannel.getId()) + " in " + (end - start) + "ms");
+            + StringUtils.formatNameWithId(forumChannel.getName(), forumChannel.getId()));
 
         threadChannels.forEach(threadChannel -> {
             setIndex(threadChannels.indexOf(threadChannel) + 1);
@@ -134,8 +135,8 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
                     .suggestionContent(message.getContentRaw())
                     .suggestionUrl(threadChannel.getJumpUrl())
                     .suggestionTimestamp(threadChannel.getTimeCreated().toInstant().toEpochMilli())
-                    .agrees(message.getReactions().stream().filter(messageReaction -> messageReaction.getEmoji().equals(EmojiCache.getEmojiByName("agree").orElse(null))).findFirst().map(MessageReaction::getCount).orElse(0))
-                    .disagrees(message.getReactions().stream().filter(messageReaction -> messageReaction.getEmoji().equals(EmojiCache.getEmojiByName("disagree").orElse(null))).findFirst().map(MessageReaction::getCount).orElse(0))
+                    .agrees(getReactionCount(message, "agree"))
+                    .disagrees(getReactionCount(message, "disagree"))
                     .tags(threadChannel.getAppliedTags().stream().map(BaseForumTag::getName).toList())
                     .build();
 
@@ -149,6 +150,16 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
             }
         });
 
+        setEndTime(System.currentTimeMillis());
         threadStarterMessages.clear();
+        log.info("Finished curating forum channel " + StringUtils.formatNameWithId(forumChannel.getName(), forumChannel.getId()) + " in " + (getEndTime() - getStartTime()) + "ms");
+    }
+
+    private int getReactionCount(Message message, String reactionName) {
+        return message.getReactions().stream()
+            .filter(messageReaction -> messageReaction.getEmoji().equals(EmojiCache.getEmojiByName(reactionName).orElse(null)))
+            .findFirst()
+            .map(MessageReaction::getCount)
+            .orElse(0);
     }
 }
