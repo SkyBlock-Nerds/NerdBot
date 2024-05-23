@@ -18,10 +18,12 @@ public class PersonalCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = COMMAND_NAME, subcommand = "profile", description = "View your profile")
     public void viewPersonalProfile(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
         discordUserRepository.findById(event.getMember().getId()).ifPresentOrElse(user -> {
-            event.reply("Your profile: " + user).queue();
+            event.getHook().editOriginal("Your profile: " + user).queue();
         }, () -> {
-            event.reply("Couldn't find your profile!").queue();
+            event.getHook().editOriginal("Couldn't find your profile!").queue();
         });
     }
 }

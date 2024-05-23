@@ -2,6 +2,7 @@ package net.hypixel.skyblocknerds.database.objects.user;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.translation.UserLanguage;
 import net.hypixel.skyblocknerds.database.objects.user.badge.BadgeEntry;
@@ -13,6 +14,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
+@ToString
 public class DiscordUser {
 
     private String discordId;

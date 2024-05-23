@@ -3,12 +3,14 @@ package net.hypixel.skyblocknerds.database.objects.user.minecraft;
 import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import net.hypixel.skyblocknerds.api.http.mojang.api.MojangUUIDResponse;
 
 import java.util.UUID;
 
 @Getter
 @Setter
+@ToString
 public class MinecraftProfile {
 
     @SerializedName(value = "uuid", alternate = {"id"})

@@ -1,8 +1,10 @@
 package net.hypixel.skyblocknerds.database.objects.user.badge;
 
 import lombok.Getter;
+import lombok.ToString;
 
 @Getter
+@ToString
 public class BadgeEntry {
 
     private final String badgeId;
