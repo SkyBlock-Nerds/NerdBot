@@ -32,12 +32,6 @@ public class GreenlitSuggestion {
     private int neutrals;
 
     /**
-     * Default constructor for MongoDB
-     */
-    public GreenlitSuggestion() {
-    }
-
-    /**
      * Overridden lombok method that initializes the tags list if it is null
      *
      * @return a {@link List} of tags

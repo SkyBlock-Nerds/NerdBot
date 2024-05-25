@@ -13,7 +13,7 @@ public class GreenlitSuggestionRepository extends Repository<GreenlitSuggestion>
     }
 
     @Override
-    protected String getId(GreenlitSuggestion entity) {
-        return entity.getMessageId();
+    protected String getId(GreenlitSuggestion object) {
+        return object.getMessageId();
     }
 }

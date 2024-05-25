@@ -21,6 +21,14 @@ public class RepositoryManager {
     private static final RepositoryManager instance = new RepositoryManager();
     private final Map<Class<?>, Object> repositories = new HashMap<>();
 
+    /**
+     * Get a {@link Repository} by its class
+     *
+     * @param repositoryClass The class of the {@link Repository}
+     * @param <T>             The type of the {@link Repository}
+     *
+     * @return The {@link Repository} instance
+     */
     @SneakyThrows
     public <T> T getRepository(Class<T> repositoryClass) {
         if (!repositories.containsKey(repositoryClass)) {
@@ -30,6 +38,15 @@ public class RepositoryManager {
         return repositoryClass.cast(repositories.get(repositoryClass));
     }
 
+    /**
+     * Get a {@link Repository} by its name
+     *
+     * @param repositoryName The name of the {@link Repository}
+     *
+     * @return The {@link Repository} instance
+     *
+     * @throws RepositoryException If the {@link Repository} is not registered
+     */
     public Repository<?> getRepository(String repositoryName) throws RepositoryException {
         Map.Entry<Class<?>, Object> entry = repositories.entrySet().stream()
             .filter(e -> e.getKey().getSimpleName().equalsIgnoreCase(repositoryName))
@@ -39,6 +56,15 @@ public class RepositoryManager {
         return (Repository<?>) entry.getValue();
     }
 
+    /**
+     * Register a {@link Repository} by its class with the given {@link MongoClient} and database name
+     *
+     * @param repositoryClass The class of the {@link Repository}
+     * @param mongoClient     The {@link MongoClient} instance to use
+     * @param databaseName    The name of the database
+     *
+     * @throws RepositoryException If the {@link Repository} is already registered
+     */
     public void registerRepository(Class<? extends Repository<?>> repositoryClass, MongoClient mongoClient, String databaseName) throws RepositoryException {
         log.info("Registering repository: " + repositoryClass.getName());
 
@@ -53,6 +79,15 @@ public class RepositoryManager {
         }
     }
 
+    /**
+     * Register all {@link Repository} classes in the given package with the given {@link MongoClient} and database name
+     *
+     * @param packageName  The package name to scan for {@link Repository} classes
+     * @param mongoClient  The {@link MongoClient} instance to use
+     * @param databaseName The name of the database
+     *
+     * @throws RepositoryException If an error occurs while registering the {@link Repository} classes
+     */
     public void registerRepositoriesFromPackage(String packageName, MongoClient mongoClient, String databaseName) throws RepositoryException {
         log.info("Registering repositories from package: " + packageName);
 
@@ -73,10 +108,29 @@ public class RepositoryManager {
         }
     }
 
+    /**
+     * Check if the given class is a {@link Repository}
+     *
+     * @param clazz The class to check
+     *
+     * @return {@code true} if the class is a {@link Repository}, otherwise {@code false}
+     */
     private boolean isRepository(Class<?> clazz) {
         return Repository.class.isAssignableFrom(clazz);
     }
 
+    /**
+     * Create a new instance of the given {@link Repository} class with the given {@link MongoClient} and database name
+     *
+     * @param repositoryClass The class of the {@link Repository}
+     * @param mongoClient     The {@link MongoClient} instance to use
+     * @param databaseName    The name of the database
+     * @param <T>             The type of the {@link Repository}
+     *
+     * @return The new instance of the {@link Repository}
+     *
+     * @throws RepositoryException If an error occurs while creating the instance
+     */
     private <T> T createRepositoryInstance(Class<T> repositoryClass, MongoClient mongoClient, String databaseName) throws RepositoryException {
         try {
             Constructor<T> constructor = repositoryClass.getDeclaredConstructor(MongoClient.class, String.class);

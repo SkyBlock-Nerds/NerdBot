@@ -13,8 +13,8 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
     }
 
     @Override
-    protected String getId(DiscordUser entity) {
-        return entity.getDiscordId();
+    protected String getId(DiscordUser object) {
+        return object.getDiscordId();
     }
 
     @Override
