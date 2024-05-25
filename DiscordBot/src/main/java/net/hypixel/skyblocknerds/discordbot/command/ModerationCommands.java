@@ -27,7 +27,7 @@ public class ModerationCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         discordUserRepository.findById(member.getId()).ifPresentOrElse(discordUser -> {
-            discordUser.getWarnings().add(new WarningEntry(reason, System.currentTimeMillis(), event.getMember().getId()));
+            discordUser.issueWarning(event.getMember().getId(), reason);
             event.getHook().editOriginal("Warned " + member.getAsMention() + " for `" + reason + "`").queue();
             // TODO log the warning in a channel
         }, () -> event.reply("Couldn't find that member in the database!").queue());

@@ -81,6 +81,14 @@ public class DiscordUser {
         this.minecraftProfile = new MinecraftProfile(uuid, username);
     }
 
+    public void issueWarning(String issuerId, String reason) {
+        if (this.warnings == null) {
+            this.warnings = new ArrayList<>();
+        }
+
+        this.warnings.add(new WarningEntry(reason, System.currentTimeMillis(), issuerId));
+    }
+
     /**
      * Checks if this {@link DiscordUser} has any {@link WarningEntry warnings}
      *
