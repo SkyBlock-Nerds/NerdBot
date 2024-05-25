@@ -7,10 +7,12 @@ import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.translation.UserLanguage;
 import net.hypixel.skyblocknerds.database.objects.user.badge.BadgeEntry;
 import net.hypixel.skyblocknerds.database.objects.user.minecraft.MinecraftProfile;
+import net.hypixel.skyblocknerds.database.objects.user.warning.WarningEntry;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Getter
 @Setter
@@ -21,6 +23,7 @@ public class DiscordUser {
     private String lastKnownUsername;
     private UserLanguage language;
     private List<BadgeEntry> badges;
+    private List<WarningEntry> warnings;
     private MinecraftProfile minecraftProfile;
 
     /**
@@ -34,15 +37,6 @@ public class DiscordUser {
      * by default
      * <br>
      * The {@link String lastKnownUsername} will be {@code null}
-     * by default
-     * <br>
-     * The {@link UserLanguage language} will be set to {@link UserLanguage#ENGLISH}
-     * by default
-     * <br>
-     * The {@link List} of {@link BadgeEntry badges} will be empty
-     * by default
-     * <br>
-     * The {@link MinecraftProfile minecraftProfile} will be {@code null}
      * by default
      *
      * @param discordId The {@link String Discord ID} of the {@link DiscordUser}
@@ -81,5 +75,34 @@ public class DiscordUser {
      */
     public void linkMinecraftProfile(UUID uuid, String username) {
         this.minecraftProfile = new MinecraftProfile(uuid, username);
+    }
+
+    /**
+     * Checks if this {@link DiscordUser} has any {@link WarningEntry warnings}
+     *
+     * @return {@code true} if the {@link DiscordUser} has any {@link WarningEntry warnings}, otherwise {@code false}
+     */
+    public boolean hasWarnings() {
+        return this.warnings != null && !this.warnings.isEmpty();
+    }
+
+    /**
+     * Checks if this {@link DiscordUser} has any {@link WarningEntry warnings} from the last given amount of days
+     *
+     * @param days The amount of days to check for recent warnings
+     *
+     * @return {@code true} if the {@link DiscordUser} has any {@link WarningEntry warnings} from the last given amount of days, otherwise {@code false}
+     */
+    public boolean hasRecentWarnings(int days) {
+        return !getRecentWarnings(days).isEmpty();
+    }
+
+    /**
+     * Return all applicable {@link WarningEntry warnings} for this {@link DiscordUser} from the last given amount of days
+     *
+     * @return a {@link List} of {@link WarningEntry warnings} from the last given amount of days
+     */
+    public List<WarningEntry> getRecentWarnings(int days) {
+        return warnings.stream().filter(warning -> System.currentTimeMillis() - warning.getTimestamp() <= TimeUnit.DAYS.toMillis(days)).toList();
     }
 }
