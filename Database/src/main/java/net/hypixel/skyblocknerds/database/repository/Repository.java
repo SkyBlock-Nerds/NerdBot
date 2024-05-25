@@ -260,7 +260,9 @@ public abstract class Repository<T> {
         debug("Prepared " + updates.size() + " update operations");
 
         if (!updates.isEmpty()) {
-            return mongoCollection.bulkWrite(updates);
+            BulkWriteResult result = mongoCollection.bulkWrite(updates);
+            log.info("Result: " + result);
+            return result;
         }
 
         return null;

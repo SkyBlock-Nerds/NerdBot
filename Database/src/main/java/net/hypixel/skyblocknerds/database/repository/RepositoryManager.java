@@ -19,7 +19,7 @@ public class RepositoryManager {
 
     @Getter
     private static final RepositoryManager instance = new RepositoryManager();
-    private final Map<Class<?>, Object> repositories = new HashMap<>();
+    private final Map<Class<? extends Repository<?>>, Object> repositories = new HashMap<>();
 
     /**
      * Get a {@link Repository} by its class
@@ -48,7 +48,7 @@ public class RepositoryManager {
      * @throws RepositoryException If the {@link Repository} is not registered
      */
     public Repository<?> getRepository(String repositoryName) throws RepositoryException {
-        Map.Entry<Class<?>, Object> entry = repositories.entrySet().stream()
+        Map.Entry<Class<? extends Repository<?>>, Object> entry = repositories.entrySet().stream()
             .filter(e -> e.getKey().getSimpleName().equalsIgnoreCase(repositoryName))
             .findFirst()
             .orElseThrow(() -> new RepositoryException("Repository not registered: " + repositoryName));
@@ -99,8 +99,9 @@ public class RepositoryManager {
 
                 if (isRepository(clazz) && !repositories.containsKey(clazz)) {
                     Object repositoryInstance = createRepositoryInstance(clazz, mongoClient, databaseName);
-                    repositories.put(clazz, repositoryInstance);
-                    log.info("Registered repository: " + clazz.getName());
+                    Class<? extends Repository<?>> repositoryClass = (Class<? extends Repository<?>>) clazz;
+                    repositories.put(repositoryClass, repositoryInstance);
+                    log.info("Registered repository: " + repositoryClass.getName());
                 }
             }
         } catch (Exception exception) {

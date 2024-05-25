@@ -1,6 +1,8 @@
 package net.hypixel.skyblocknerds.database.objects.user;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
@@ -17,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 @Getter
 @Setter
 @ToString
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class DiscordUser {
 
     private String discordId;
@@ -46,6 +49,7 @@ public class DiscordUser {
         this.lastKnownUsername = null;
         this.language = UserLanguage.ENGLISH;
         this.badges = new ArrayList<>();
+        this.warnings = new ArrayList<>();
         this.minecraftProfile = null;
     }
 

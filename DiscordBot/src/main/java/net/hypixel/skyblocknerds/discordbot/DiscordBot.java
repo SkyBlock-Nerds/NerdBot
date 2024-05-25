@@ -80,9 +80,20 @@ public class DiscordBot {
         for (String signal : new String[]{"INT", "TERM"}) {
             Signal.handle(new Signal(signal), sig -> {
                 log.info("Shutting down bot...");
+
                 for (Feature feature : features) {
                     feature.onFeatureEnd();
                 }
+
+                RepositoryManager.getInstance().getRepositories().keySet().forEach(aClass -> {
+                    try {
+                        log.info("Saving repository: " + aClass.getName());
+                        RepositoryManager.getInstance().getRepository(aClass).saveAllToDatabase();
+                    } catch (Exception e) {
+                        log.error("Failed to close repository: " + aClass.getName(), e);
+                    }
+                });
+
                 System.exit(0);
             });
         }
