@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
@@ -111,8 +112,6 @@ public class InfoCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "info", subcommand = "greenlit", description = "Get a list of all unreviewed greenlit messages. May not be 100% accurate!", defaultLocked = true)
     public void greenlitInfo(GuildSlashEvent event) {
-        event.deferReply(true).complete();
-
         if (!database.isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
             return;
@@ -151,7 +150,9 @@ public class InfoCommands extends ApplicationCommand {
             .setMaxPages(embeds.size() / MAX_ENTRIES_PER_PAGE)
             .build();
 
-        event.getHook().editOriginal(paginator.get()).queue();
+        event.reply(MessageCreateData.fromEditData(paginator.get()))
+            .setEphemeral(true)
+            .queue();
     }
 
     @JDASelectionMenuListener(name = GREENLIT_SELECTION_MENU_HANDLER_NAME)
