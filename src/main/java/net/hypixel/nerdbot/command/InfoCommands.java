@@ -121,8 +121,11 @@ public class InfoCommands extends ApplicationCommand {
         List<EmbedBuilder> embeds = new ArrayList<>();
 
         if (repository.isEmpty()) {
-            event.reply("There are no greenlit messages!").setEphemeral(true).queue();
-            return;
+            repository.loadAllDocumentsIntoCache();
+            if (repository.isEmpty()) {
+                event.reply("No greenlit messages found!").setEphemeral(true).queue();
+                return;
+            }
         }
 
         repository.getAll().forEach(greenlitMessage -> embeds.add(greenlitMessage.createEmbed()));
