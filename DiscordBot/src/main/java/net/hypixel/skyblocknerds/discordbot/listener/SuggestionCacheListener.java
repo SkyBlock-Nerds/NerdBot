@@ -7,8 +7,11 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
+import net.dv8tion.jda.api.events.channel.update.ChannelUpdateAppliedTagsEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.skyblocknerds.api.cache.suggestion.Suggestion;
@@ -32,7 +35,6 @@ public class SuggestionCacheListener extends ListenerAdapter {
         if (event.isFromType(ChannelType.GUILD_PUBLIC_THREAD)) {
             ThreadChannel threadChannel = event.getGuildChannel().asThreadChannel();
             insertSuggestion(threadChannel, message);
-            log.info("Received new suggestion in channel " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()) + " by " + StringUtils.formatNameWithId(message.getAuthor().getName(), message.getAuthor().getId()) + ": " + threadChannel.getName());
         }
     }
 
@@ -43,7 +45,36 @@ public class SuggestionCacheListener extends ListenerAdapter {
         if (event.isFromType(ChannelType.GUILD_PUBLIC_THREAD)) {
             ThreadChannel threadChannel = event.getGuildChannel().asThreadChannel();
             insertSuggestion(threadChannel, message);
-            log.info("Updated suggestion " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()) + " by " + StringUtils.formatNameWithId(message.getAuthor().getName(), message.getAuthor().getId()) + ": " + threadChannel.getName());
+        }
+    }
+
+    @SubscribeEvent
+    public void onMessageReactionAdd(MessageReactionAddEvent event) {
+        Message message = event.retrieveMessage().complete();
+
+        if (event.isFromType(ChannelType.GUILD_PUBLIC_THREAD)) {
+            ThreadChannel threadChannel = event.getGuildChannel().asThreadChannel();
+            insertSuggestion(threadChannel, message);
+        }
+    }
+
+    @SubscribeEvent
+    public void onMessageReactionRemove(MessageReactionRemoveEvent event) {
+        Message message = event.retrieveMessage().complete();
+
+        if (event.isFromType(ChannelType.GUILD_PUBLIC_THREAD)) {
+            ThreadChannel threadChannel = event.getGuildChannel().asThreadChannel();
+            insertSuggestion(threadChannel, message);
+        }
+    }
+
+    @SubscribeEvent
+    public void onChannelUpdateAppliedTags(ChannelUpdateAppliedTagsEvent event) {
+        ThreadChannel threadChannel = event.getChannel().asThreadChannel();
+        Message startMessage = threadChannel.retrieveStartMessage().complete();
+
+        if (startMessage != null) {
+            insertSuggestion(threadChannel, startMessage);
         }
     }
 
@@ -79,6 +110,7 @@ public class SuggestionCacheListener extends ListenerAdapter {
             }
 
             DiscordBot.getSuggestionCache().insertSuggestion(message.getId(), createSuggestionObject(message, threadChannel));
+            log.debug("Inserted suggestion from channel " + StringUtils.formatNameWithId(threadChannel.getName(), threadChannel.getId()) + " by " + StringUtils.formatNameWithId(message.getAuthor().getName(), message.getAuthor().getId()) + ": " + threadChannel.getName() + " into Redis");
         }
     }
 }
