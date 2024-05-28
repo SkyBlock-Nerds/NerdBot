@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
+import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.cache.suggestion.Suggestion;
 import net.hypixel.skyblocknerds.api.cache.suggestion.SuggestionCache;
 import net.hypixel.skyblocknerds.api.configuration.ConfigurationManager;
@@ -99,6 +100,10 @@ public class SuggestionCacheListener extends ListenerAdapter {
      * @param message       The {@link Message} that was created.
      */
     private void insertSuggestion(ThreadChannel threadChannel, Message message) {
+        if (!SkyBlockNerdsAPI.getCommandLine().hasOption("redisUri")) {
+            return;
+        }
+
         GuildConfiguration guildConfiguration = ConfigurationManager.loadConfig(GuildConfiguration.class);
         ForumChannel parentChannel = threadChannel.getParentChannel().asForumChannel();
 
