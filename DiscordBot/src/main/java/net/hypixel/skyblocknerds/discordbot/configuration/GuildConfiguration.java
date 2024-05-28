@@ -3,6 +3,7 @@ package net.hypixel.skyblocknerds.discordbot.configuration;
 import lombok.Getter;
 import lombok.Setter;
 import net.hypixel.skyblocknerds.api.configuration.IConfiguration;
+import net.hypixel.skyblocknerds.discordbot.auditlog.AuditLog;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -23,4 +24,9 @@ public class GuildConfiguration implements IConfiguration {
      * that the bot should use to curate suggestions
      */
     private List<String> suggestionForumIds = new ArrayList<>();
+
+    /**
+     * The {@link net.dv8tion.jda.api.entities.channel.concrete.TextChannel} ID of the channel that the bot should use to log {@link AuditLog} events
+     */
+    private String auditLogChannelId = "";
 }

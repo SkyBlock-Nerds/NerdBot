@@ -25,6 +25,7 @@ import net.hypixel.skyblocknerds.discordbot.configuration.GuildConfiguration;
 import net.hypixel.skyblocknerds.discordbot.feature.AutomaticCuratorFeature;
 import net.hypixel.skyblocknerds.discordbot.feature.MinecraftProfileUpdateFeature;
 import net.hypixel.skyblocknerds.discordbot.listener.ActivityListener;
+import net.hypixel.skyblocknerds.discordbot.listener.AuditLogListener;
 import net.hypixel.skyblocknerds.discordbot.listener.MemberListener;
 import net.hypixel.skyblocknerds.discordbot.listener.SuggestionCacheListener;
 import org.apache.commons.cli.ParseException;
@@ -80,7 +81,8 @@ public class DiscordBot {
             .addEventListeners(
                 new MemberListener(),
                 new SuggestionCacheListener(),
-                new ActivityListener()
+                new ActivityListener(),
+                new AuditLogListener()
             );
 
         jda = jdaBuilder.build();
