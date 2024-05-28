@@ -90,7 +90,16 @@ public class SuggestionCacheListener extends ListenerAdapter {
     private Suggestion createSuggestionObject(Message message, ThreadChannel threadChannel) {
         List<String> postTags = threadChannel.getAppliedTags().stream().map(BaseForumTag::getName).toList();
         Map<String, Integer> reactions = message.getReactions().stream().collect(Collectors.toMap(reaction -> reaction.getEmoji().getName(), MessageReaction::getCount));
-        return new Suggestion(message.getId(), message.getContentRaw(), message.getAuthor().getId(), threadChannel.retrieveStartMessage().complete().getId(), new Suggestion.Channel(threadChannel.getOwnerId(), threadChannel.getName()), reactions, postTags, message.getTimeCreated());
+
+        return new Suggestion(
+            message.getId(),
+            message.getContentRaw(),
+            message.getAuthor().getId(),
+            threadChannel.retrieveStartMessage().complete().getId(),
+            new Suggestion.Channel(threadChannel.getOwnerId(), threadChannel.getName()),
+            reactions, postTags,
+            message.getTimeCreated()
+        );
     }
 
     /**
