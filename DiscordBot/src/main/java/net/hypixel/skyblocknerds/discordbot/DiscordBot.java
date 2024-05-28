@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.badge.BadgeManager;
+import net.hypixel.skyblocknerds.api.cache.suggestion.SuggestionCache;
 import net.hypixel.skyblocknerds.api.configuration.ConfigurationManager;
 import net.hypixel.skyblocknerds.api.environment.Environment;
 import net.hypixel.skyblocknerds.api.feature.Feature;
@@ -23,7 +24,9 @@ import net.hypixel.skyblocknerds.discordbot.configuration.BotConfiguration;
 import net.hypixel.skyblocknerds.discordbot.configuration.GuildConfiguration;
 import net.hypixel.skyblocknerds.discordbot.feature.AutomaticCuratorFeature;
 import net.hypixel.skyblocknerds.discordbot.feature.MinecraftProfileUpdateFeature;
+import net.hypixel.skyblocknerds.discordbot.listener.ActivityListener;
 import net.hypixel.skyblocknerds.discordbot.listener.MemberListener;
+import net.hypixel.skyblocknerds.discordbot.listener.SuggestionCacheListener;
 import org.apache.commons.cli.ParseException;
 import sun.misc.Signal;
 
@@ -38,8 +41,10 @@ public class DiscordBot {
 
     @Getter
     private static JDA jda;
-    private final List<Feature> features = new ArrayList<>();
     private BotConfiguration botConfiguration;
+    @Getter
+    private static SuggestionCache suggestionCache;
+    private final List<Feature> features = new ArrayList<>();
     private Environment environment;
 
     public void start(String[] args) throws ParseException, InterruptedException {
@@ -52,6 +57,7 @@ public class DiscordBot {
         checkForRequiredConfigurationValues(ConfigurationManager.loadConfig(GuildConfiguration.class));
 
         if (SkyBlockNerdsAPI.getCommandLine().hasOption("mongoUri")) {
+            log.info("Initializing MongoDB connection...");
             RepositoryManager.getInstance().registerRepository(DiscordUserRepository.class, MongoDB.createMongoClient(SkyBlockNerdsAPI.getCommandLine().getOptionValue("mongoUri")), "skyblock_nerds_2");
             BadgeManager.loadBadges();
             features.addAll(List.of(new MinecraftProfileUpdateFeature(), new AutomaticCuratorFeature()));
@@ -59,12 +65,23 @@ public class DiscordBot {
             log.warn("MongoDB URI not provided, so no MongoDB repositories will be available!");
         }
 
+        if (SkyBlockNerdsAPI.getCommandLine().hasOption("redisUri")) {
+            log.info("Initializing Redis connection...");
+            suggestionCache = new SuggestionCache(SkyBlockNerdsAPI.getCommandLine().getOptionValue("redisUri"));
+        } else {
+            log.warn("Redis URI not provided, so no Redis functionality will be available!");
+        }
+
         JDABuilder jdaBuilder = JDABuilder.createDefault(SkyBlockNerdsAPI.getCommandLine().getOptionValue("discordToken"))
             .setEventManager(new AnnotatedEventManager())
             .setEnabledIntents(EnumSet.allOf(GatewayIntent.class))
             .setDisabledIntents(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_TYPING)
             .setMemberCachePolicy(MemberCachePolicy.ALL)
-            .addEventListeners(new MemberListener());
+            .addEventListeners(
+                new MemberListener(),
+                new SuggestionCacheListener(),
+                new ActivityListener()
+            );
 
         jda = jdaBuilder.build();
         jda.awaitReady();

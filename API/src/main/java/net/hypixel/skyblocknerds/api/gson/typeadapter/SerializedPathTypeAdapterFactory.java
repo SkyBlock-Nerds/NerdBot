@@ -1,4 +1,4 @@
-package net.hypixel.skyblocknerds.api.gson;
+package net.hypixel.skyblocknerds.api.gson.typeadapter;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -11,6 +11,7 @@ import com.google.gson.stream.JsonWriter;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import net.hypixel.skyblocknerds.api.gson.SerializedPath;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
