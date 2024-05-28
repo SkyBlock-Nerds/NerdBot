@@ -66,13 +66,6 @@ public class DiscordBot {
             log.warn("MongoDB URI not provided, so no MongoDB repositories will be available!");
         }
 
-        if (SkyBlockNerdsAPI.getCommandLine().hasOption("redisUri")) {
-            log.info("Initializing Redis connection...");
-            suggestionCache = new SuggestionCache(SkyBlockNerdsAPI.getCommandLine().getOptionValue("redisUri"));
-        } else {
-            log.warn("Redis URI not provided, so no Redis functionality will be available!");
-        }
-
         JDABuilder jdaBuilder = JDABuilder.createDefault(SkyBlockNerdsAPI.getCommandLine().getOptionValue("discordToken"))
             .setEventManager(new AnnotatedEventManager())
             .setEnabledIntents(EnumSet.allOf(GatewayIntent.class))
@@ -84,6 +77,14 @@ public class DiscordBot {
                 new ActivityListener(),
                 new AuditLogListener()
             );
+
+        if (SkyBlockNerdsAPI.getCommandLine().hasOption("redisUri")) {
+            log.info("Initializing Redis connection...");
+            suggestionCache = new SuggestionCache(SkyBlockNerdsAPI.getCommandLine().getOptionValue("redisUri"));
+            jdaBuilder.addEventListeners(new SuggestionCacheListener());
+        } else {
+            log.warn("Redis URI not provided, so no Redis functionality will be available!");
+        }
 
         jda = jdaBuilder.build();
         jda.awaitReady();
