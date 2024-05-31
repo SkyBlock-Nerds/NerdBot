@@ -27,9 +27,9 @@ public class ModMailConfiguration implements IConfiguration {
     private String notificationRoleId;
 
     /**
-     * The amount of time in seconds between pings to the Mod Mail team when a new Mod Mail message is received
+     * The amount of time in seconds that must pass between the last Mod Mail message and a ping
      * <p>
      * Default is 60 seconds
      */
-    private int timeBetweenPingsSeconds = 60;
+    private int pingCooldownSeconds = 60;
 }
