@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.configuration.ConfigurationManager;
@@ -15,6 +16,7 @@ import net.hypixel.skyblocknerds.api.curator.configuration.CuratorConfiguration;
 import net.hypixel.skyblocknerds.database.objects.suggestion.GreenlitSuggestion;
 import net.hypixel.skyblocknerds.database.repository.RepositoryManager;
 import net.hypixel.skyblocknerds.database.repository.impl.GreenlitSuggestionRepository;
+import net.hypixel.skyblocknerds.discordbot.DiscordBot;
 import net.hypixel.skyblocknerds.utilities.StreamUtils;
 import net.hypixel.skyblocknerds.utilities.StringUtils;
 
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Log4j2
 public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion> {
@@ -156,9 +159,13 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
 
     private int getReactionCount(Message message, String reactionName) {
         return message.getReactions().stream()
-            .filter(messageReaction -> messageReaction.getEmoji().equals(EmojiMapper.getEmojiByName(reactionName).orElse(null)))
+            .filter(messageReaction -> messageReaction.getEmoji().equals(getEmojiByName(reactionName).orElse(null)))
             .findFirst()
             .map(MessageReaction::getCount)
             .orElse(0);
+    }
+
+    private Optional<RichCustomEmoji> getEmojiByName(String name) {
+        return DiscordBot.getPrimaryGuild().getEmojisByName(name, true).stream().findFirst();
     }
 }

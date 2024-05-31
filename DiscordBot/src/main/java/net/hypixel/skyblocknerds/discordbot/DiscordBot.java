@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -149,5 +150,14 @@ public class DiscordBot {
         }
 
         builder.build(jda, botConfiguration.getCommandPackage());
+    }
+
+    /**
+     * Gets the primary {@link Guild} from the configured ID in the {@link GuildConfiguration}
+     *
+     * @return The primary {@link Guild}
+     */
+    public static Guild getPrimaryGuild() {
+        return jda.getGuildById(ConfigurationManager.loadConfig(GuildConfiguration.class).getPrimaryGuildId());
     }
 }
