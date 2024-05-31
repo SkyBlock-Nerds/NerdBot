@@ -15,7 +15,6 @@ import net.hypixel.skyblocknerds.api.curator.configuration.CuratorConfiguration;
 import net.hypixel.skyblocknerds.database.objects.suggestion.GreenlitSuggestion;
 import net.hypixel.skyblocknerds.database.repository.RepositoryManager;
 import net.hypixel.skyblocknerds.database.repository.impl.GreenlitSuggestionRepository;
-import net.hypixel.skyblocknerds.discordbot.cache.EmojiCache;
 import net.hypixel.skyblocknerds.utilities.StreamUtils;
 import net.hypixel.skyblocknerds.utilities.StringUtils;
 
@@ -157,7 +156,7 @@ public class SuggestionCurator extends Curator<ForumChannel, GreenlitSuggestion>
 
     private int getReactionCount(Message message, String reactionName) {
         return message.getReactions().stream()
-            .filter(messageReaction -> messageReaction.getEmoji().equals(EmojiCache.getEmojiByName(reactionName).orElse(null)))
+            .filter(messageReaction -> messageReaction.getEmoji().equals(EmojiMapper.getEmojiByName(reactionName).orElse(null)))
             .findFirst()
             .map(MessageReaction::getCount)
             .orElse(0);
