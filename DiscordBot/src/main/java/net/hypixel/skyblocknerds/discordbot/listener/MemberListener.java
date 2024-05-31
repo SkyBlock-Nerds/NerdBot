@@ -37,7 +37,7 @@ public class MemberListener extends ListenerAdapter {
                 return;
             }
 
-            boolean shouldUpdate = event.getNewNickname() == null || !event.getNewNickname().contains(discordUser.getMinecraftProfile().getUsername());
+            boolean shouldUpdate = event.getNewNickname() == null || !event.getNewNickname().toLowerCase().contains(discordUser.getMinecraftProfile().getUsername().toLowerCase());
 
             if (shouldUpdate) {
                 try {
