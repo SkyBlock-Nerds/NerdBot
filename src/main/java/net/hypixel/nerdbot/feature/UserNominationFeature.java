@@ -76,10 +76,15 @@ public class UserNominationFeature extends BotFeature {
             lastActivity.getNominationInfo().getLastNominationDate().ifPresentOrElse(date -> {
                 int lastNominationMonth = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getMonthValue();
 
+                log.info("Last nomination month: " + lastNominationMonth + ", current month: " + Calendar.getInstance().get(Calendar.MONTH));
+
                 if (lastNominationMonth != Calendar.getInstance().get(Calendar.MONTH) && (totalComments >= requiredComments && totalVotes >= requiredVotes)) {
+                    log.info("Last nomination was not this month, sending nomination message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
                     sendNominationMessage(member, discordUser);
                 }
             }, () -> {
+                log.info("No last nomination date found for " + member.getEffectiveName() + ", sending nomination message (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
+
                 if (totalComments >= requiredComments && totalVotes >= requiredVotes) {
                     sendNominationMessage(member, discordUser);
                 }
