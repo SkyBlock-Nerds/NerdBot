@@ -48,6 +48,8 @@ public class UserNominationFeature extends BotFeature {
         int requiredVotes = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
         int requiredComments = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion();
 
+        log.info("Checking for users to nominate for promotion (required votes: " + requiredVotes + ", required comments: " + requiredComments + ")");
+
         discordUserRepository.getAll().forEach(discordUser -> {
             Member member = guild.getMemberById(discordUser.getDiscordId());
 
@@ -66,7 +68,10 @@ public class UserNominationFeature extends BotFeature {
             int totalComments = lastActivity.getTotalComments();
             int totalVotes = lastActivity.getTotalVotes();
 
-            log.info("Checking if " + member.getEffectiveName() + " should be nominated for promotion (total comments: " + totalComments + ", total votes: " + totalVotes + ", required min. comments: " + requiredComments + ", required min. votes: " + requiredVotes + ")");
+            boolean hasRequiredVotes = totalVotes >= requiredVotes;
+            boolean hasRequiredComments = totalComments >= requiredComments;
+
+            log.info("Checking if " + member.getEffectiveName() + " should be nominated for promotion (total comments: " + totalComments + ", total votes: " + totalVotes + ") (comments: " + hasRequiredComments + ", votes: " + hasRequiredVotes +")");
 
             lastActivity.getNominationInfo().getLastNominationDate().ifPresentOrElse(date -> {
                 int lastNominationMonth = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getMonthValue();
