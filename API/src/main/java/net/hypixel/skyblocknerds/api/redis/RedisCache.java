@@ -34,26 +34,6 @@ public class RedisCache extends RedisClient {
         return super.get(KEY_FORMAT.formatted(prefix, key));
     }
 
-    @Override
-    public KeyValuePair getObjectContainingValue(String searchValue, String keyPattern) {
-        return super.getObjectContainingValue(searchValue, KEY_FORMAT.formatted(prefix, keyPattern));
-    }
-
-    @Override
-    public KeyValuePair getObjectContainingValue(String searchValue) {
-        return super.getObjectContainingValue(searchValue, KEY_FORMAT.formatted(prefix, "*"));
-    }
-
-    @Override
-    public KeyValuePair getJsonObjectContainingValue(String searchValue, String keyPattern) {
-        return super.getJsonObjectContainingValue(searchValue, KEY_FORMAT.formatted(prefix, keyPattern));
-    }
-
-    @Override
-    public KeyValuePair getJsonObjectContainingValue(String searchValue) {
-        return super.getJsonObjectContainingValue(searchValue, KEY_FORMAT.formatted(prefix, "*"));
-    }
-
     public Map<String, String> getAll(String key) {
         return jedis.hgetAll(KEY_FORMAT.formatted(prefix, key));
     }

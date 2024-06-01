@@ -2,11 +2,11 @@ package net.hypixel.skyblocknerds.discordbot.listener;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.channel.update.ChannelUpdateAppliedTagsEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
@@ -23,8 +23,6 @@ import net.hypixel.skyblocknerds.discordbot.configuration.GuildConfiguration;
 import net.hypixel.skyblocknerds.utilities.StringUtils;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Log4j2
 public class SuggestionCacheListener extends ListenerAdapter {
@@ -88,16 +86,27 @@ public class SuggestionCacheListener extends ListenerAdapter {
      * @return The created {@link Suggestion} object.
      */
     private Suggestion createSuggestionObject(Message message, ThreadChannel threadChannel) {
-        List<String> postTags = threadChannel.getAppliedTags().stream().map(BaseForumTag::getName).toList();
-        Map<String, Integer> reactions = message.getReactions().stream().collect(Collectors.toMap(reaction -> reaction.getEmoji().getName(), MessageReaction::getCount));
+        List<String> postTags = threadChannel.getAppliedTags().stream()
+            .map(BaseForumTag::getName)
+            .toList();
+        List<Suggestion.Reaction> reactions = message.getReactions().stream()
+            .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+            .map(reaction -> new Suggestion.Reaction(
+                reaction.getEmoji().asCustom().getId(),
+                reaction.getEmoji().asCustom().getName(),
+                reaction.getCount()
+            ))
+            .toList();
 
         return new Suggestion(
             message.getId(),
+            threadChannel.getName(),
             message.getContentRaw(),
             message.getAuthor().getId(),
             threadChannel.retrieveStartMessage().complete().getId(),
             new Suggestion.Channel(threadChannel.getOwnerId(), threadChannel.getName()),
-            reactions, postTags,
+            reactions,
+            postTags,
             message.getTimeCreated()
         );
     }

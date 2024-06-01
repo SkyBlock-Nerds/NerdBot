@@ -1,7 +1,11 @@
 package net.hypixel.skyblocknerds.api.cache.suggestion;
 
+import com.google.gson.JsonObject;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.redis.RedisCache;
+
+import java.util.List;
+import java.util.Optional;
 
 public class SuggestionCache extends RedisCache {
 
@@ -37,5 +41,20 @@ public class SuggestionCache extends RedisCache {
      */
     public void deleteSuggestion(String suggestionId) {
         delete(suggestionId);
+    }
+
+    /**
+     * Get a {@link List} of {@link Suggestion suggestions} by a User ID.
+     *
+     * @param authorId The User ID of the author.
+     *
+     * @return A {@link Optional} containing the {@link List} of {@link Suggestion suggestions}.
+     */
+    public Optional<List<Suggestion>> getSuggestionsByAuthor(String authorId) {
+        List<JsonObject> suggestions = scanForValue("authorId", authorId);
+
+        return Optional.of(suggestions.stream()
+            .map(json -> SkyBlockNerdsAPI.GSON.fromJson(json, Suggestion.class))
+            .toList());
     }
 }

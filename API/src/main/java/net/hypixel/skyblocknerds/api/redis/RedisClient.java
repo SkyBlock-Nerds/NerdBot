@@ -1,15 +1,15 @@
 package net.hypixel.skyblocknerds.api.redis;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import lombok.Getter;
 import lombok.ToString;
+import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,50 +55,41 @@ public class RedisClient {
         }
     }
 
-    public KeyValuePair getObjectContainingValue(String searchValue, String keyPattern) {
-        return scanForValue(searchValue, keyPattern, false);
-    }
-
-    public KeyValuePair getJsonObjectContainingValue(String searchValue, String keyPattern) {
-        return scanForValue(searchValue, keyPattern, true);
-    }
-
-    private KeyValuePair scanForValue(String searchValue, String keyPattern, boolean isJson) {
+    /**
+     * Scan the Redis database for a key-value pair.
+     *
+     * @param key   The key to scan for.
+     * @param value The value to scan for.
+     *
+     * @return A list of {@link JsonObject} objects that match the key-value pair.
+     */
+    public List<JsonObject> scanForValue(String key, String value) {
         openConnection();
-        ScanParams scanParams = new ScanParams().match(keyPattern);
-        String cursor = ScanParams.SCAN_POINTER_START;
 
-        do {
-            ScanResult<String> scanResult = jedis.scan(cursor, scanParams);
-            for (String key : scanResult.getResult()) {
-                String value = jedis.get(key);
-                if (value != null) {
-                    if (isJson) {
-                        JsonObject jsonObject = JsonParser.parseString(value).getAsJsonObject();
-                        for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
-                            if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsString().equalsIgnoreCase(searchValue)) {
-                                return new KeyValuePair(key, value);
-                            }
-                        }
-                    } else {
-                        if (value.contains(searchValue)) {
-                            return new KeyValuePair(key, value);
-                        }
+        String cursor = ScanParams.SCAN_POINTER_START;
+        List<JsonObject> resultKeys = new ArrayList<>();
+
+        try {
+            do {
+                ScanResult<String> scanResult = jedis.scan(cursor, new ScanParams().match("*"));
+                List<String> keys = scanResult.getResult();
+
+                for (String k : keys) {
+                    String jsonValue = jedis.get(k);
+                    JsonObject jsonObject = SkyBlockNerdsAPI.GSON.fromJson(jsonValue, JsonObject.class);
+
+                    if (jsonObject != null && jsonObject.has(key) && jsonObject.get(key).getAsString().equals(value)) {
+                        resultKeys.add(jsonObject);
                     }
                 }
-            }
-            cursor = scanResult.getCursor();
-        } while (!cursor.equals(ScanParams.SCAN_POINTER_START));
 
-        return null;
-    }
+                cursor = scanResult.getCursor();
+            } while (!cursor.equals(ScanParams.SCAN_POINTER_START));
+        } finally {
+            closeConnection();
+        }
 
-    public KeyValuePair getJsonObjectContainingValue(String searchValue) {
-        return getJsonObjectContainingValue(searchValue, "*");
-    }
-
-    public KeyValuePair getObjectContainingValue(String searchValue) {
-        return getObjectContainingValue(searchValue, "*");
+        return resultKeys;
     }
 
     public void delete(String key) {
@@ -196,6 +187,7 @@ public class RedisClient {
 
     private void handleException(Exception e) {
         e.printStackTrace();
+        closeConnection();
     }
 
     public interface TransactionCommand {

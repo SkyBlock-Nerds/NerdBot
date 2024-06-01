@@ -29,6 +29,7 @@ public class DiscordComponentDatabase {
         try {
             return source.getConnection();
         } catch (SQLException e) {
+            source.close();
             throw new RuntimeException("Unable to get an SQL connection", e);
         }
     }
