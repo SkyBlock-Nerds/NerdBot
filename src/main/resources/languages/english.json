@@ -135,7 +135,11 @@
       "invalid_role": "Could not find a role with ID `%s`!",
       "removed_role": "Removed role %s from you! Use the same command to add it back.",
       "added_role": "Added role %s to you! Use the same command to remove it.",
-      "list_roles": "**Assignable Roles:**\n%s\n\n**Use /role <name> to toggle the role!**"
+      "list_roles": "**Assignable Roles:**\n%s\n\n**Use /role <name> to toggle the role!**",
+      "cannot_progress_further": "You are already at the highest role!",
+      "eligible_promotion": "You are currently eligible for a promotion! This is not a guarantee that you will be promoted. Thanks for contributing to SkyBlock Nerds!",
+      "not_eligible_promotion": "You have %s/%s required suggestion votes to be nominated for the Orange role!",
+      "not_currently_accepting_promotions": "We are not currently assessing promotion eligibility, please check back later!"
     },
     "verify": {
       "already_requested": "Your previous verification request has not been reviewed. You will be contacted via DM if any further information is required.",
@@ -168,6 +172,9 @@
     "translations": {
       "reloaded": "Reloaded translations for language %s",
       "reload_complete": "Reloaded translations for all languages!"
+    },
+    "force_nominations": {
+      "success": "Forced nominations!"
     }
   }
 }

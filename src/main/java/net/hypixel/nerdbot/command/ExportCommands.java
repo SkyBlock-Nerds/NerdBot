@@ -10,6 +10,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.ThreadMember;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -277,7 +278,12 @@ public class ExportCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", defaultLocked = true)
-    public void exportMemberActivity(GuildSlashEvent event, @AppOption(description = "The number of days of inactivity to consider") @Optional int inactivityDays, @AppOption(description = "The number of messages to consider as active") @Optional int inactivityMessages) {
+    public void exportMemberActivity(
+        GuildSlashEvent event,
+        @AppOption(description = "The number of days of inactivity to consider") @Optional int inactivityDays,
+        @AppOption(description = "The number of messages to consider as active") @Optional int inactivityMessages,
+        @AppOption(description = "Role to consider when exporting") @Optional String role
+    ) {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -316,11 +322,6 @@ public class ExportCommands extends ApplicationCommand {
             inactivityMessages = inactivityMessages != 0 ? inactivityMessages : NerdBotApp.getBot().getConfig().getInactivityMessages();
             long inactivityTimestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(inactivityDays);
 
-            discordUsers.removeIf(discordUser -> {
-                Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
-                return member != null && RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
-            });
-
             int finalInactivityDays = inactivityDays;
             int finalInactivityMessages = inactivityMessages;
 
@@ -333,6 +334,21 @@ public class ExportCommands extends ApplicationCommand {
 
             log.info(event.getMember().getEffectiveName() + " is exporting member activity for " + discordUsers.size() + " members that meet the requirements (" + inactivityDays + " days of inactivity and " + inactivityMessages + " messages)");
         }
+
+        discordUsers.removeIf(discordUser -> {
+            Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
+
+            if (member == null) {
+                return true;
+            }
+
+            Role highestRole = RoleManager.getHighestRole(member);
+            if (role != null && highestRole != null) {
+                return !highestRole.getName().equalsIgnoreCase(role);
+            }
+
+            return RoleManager.hasAnyRole(member, Util.SPECIAL_ROLES);
+        });
 
 
         for (DiscordUser discordUser : discordUsers) {
@@ -369,9 +385,9 @@ public class ExportCommands extends ApplicationCommand {
                     lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionCreationHistory().get(0)),
                     lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionCreationHistory().get(0)),
                     lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
-                    lastActivity.getSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionVoteHistory().get(0)),
-                    lastActivity.getProjectSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionVoteHistory().get(0)),
-                    lastActivity.getAlphaSuggestionVoteHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionVoteHistory().get(0)),
+                    lastActivity.getSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getSuggestionVoteHistoryMap())),
+                    lastActivity.getProjectSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getProjectSuggestionVoteHistoryMap())),
+                    lastActivity.getAlphaSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getAlphaSuggestionVoteHistoryMap())),
                     formatTimestamp(lastActivity.getLastProjectActivity()),
                     formatTimestamp(lastActivity.getLastAlphaActivity()),
                     formatTimestamp(lastActivity.getLastModMailUsage()),

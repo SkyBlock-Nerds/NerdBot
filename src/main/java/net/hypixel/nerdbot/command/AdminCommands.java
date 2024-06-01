@@ -39,6 +39,7 @@ import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
+import net.hypixel.nerdbot.feature.UserNominationFeature;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.JsonUtil;
@@ -707,5 +708,11 @@ public class AdminCommands extends ApplicationCommand {
     @AutocompletionHandler(name = "loglevels", mode = AutocompletionMode.FUZZY, showUserInput = false)
     public List<String> listLogLevels(CommandAutoCompleteInteractionEvent event) {
         return Arrays.stream(Level.values()).map(Level::toString).toList();
+    }
+
+    @JDASlashCommand(name = "force", subcommand = "nominations", description = "Forcefully run the nomination process", defaultLocked = true)
+    public void forceNominations(GuildSlashEvent event) {
+        UserNominationFeature.nominateUsers();
+        TranslationManager.reply(event, "commands.force_nominations.success");
     }
 }

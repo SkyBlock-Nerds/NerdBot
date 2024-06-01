@@ -549,103 +549,103 @@ public class ProfileCommands extends ApplicationCommand {
             // Suggestions
             new EmbedBuilder().setColor(Color.YELLOW)
                 .setTitle("Suggestion Activity")
-                .addField("Last Created", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCreationHistory), true)
-                .addField("Last Voted", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionVoteHistory), true)
-                .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentHistory), true)
+                .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getSuggestionCreationHistory), true)
+                .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getSuggestionVoteHistoryMap), true)
+                .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getSuggestionCommentHistory), true)
                 .addField("Create History", String.format(
                     """
                     24 Hours: %s
                     7 Days: %s
                     30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Vote History", String.format(
                     """
                     24 Hours: %s
                     7 Days: %s
                     30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
+                    lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Comment History", String.format(
                     """
                     24 Hours: %s
                     7 Days: %s
                     30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .build(),
             // Project Suggestion Activity
             new EmbedBuilder().setColor(Color.ORANGE)
                 .setTitle("Project Suggestion Activity")
-                .addField("Last Created", lastActivity.toRelativeTimestamp(LastActivity::getProjectSuggestionCreationHistory), true)
-                .addField("Last Voted", lastActivity.toRelativeTimestamp(LastActivity::getProjectSuggestionVoteHistory), true)
-                .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getProjectSuggestionCommentHistory), true)
+                .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getProjectSuggestionCreationHistory), true)
+                .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getProjectSuggestionVoteHistoryMap), true)
+                .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getProjectSuggestionCommentHistory), true)
                 .addField("Created History", String.format(
                     """
                     24 Hours: %s
                     7 Days: %s
                     30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Voted History", String.format(
                     """
                     24 Hours: %s
                     7 Days: %s
                     30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
+                    lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Commented History", String.format(
                     """
                     24 Hours: %s
                     7 Days: %s
                     30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .build(),
             // Alpha Suggestion Activity
             new EmbedBuilder().setColor(Color.RED)
                 .setTitle("Alpha Suggestion Activity")
-                .addField("Last Created", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCreationHistory), true)
-                .addField("Last Voted", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionVoteHistory), true)
-                .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentHistory), true)
+                .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getAlphaSuggestionCreationHistory), true)
+                .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getAlphaSuggestionVoteHistoryMap), true)
+                .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getAlphaSuggestionCommentHistory), true)
                 .addField("Create History", String.format(
                     """
                     24 Hours: %s
                     7 Days: %s
                     30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Vote History", String.format(
                     """
                     24 Hours: %s
                     7 Days: %s
                     30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
+                    lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Comment History", String.format(
                     """
                     24 Hours: %s
                     7 Days: %s
                     30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .build()
         );
