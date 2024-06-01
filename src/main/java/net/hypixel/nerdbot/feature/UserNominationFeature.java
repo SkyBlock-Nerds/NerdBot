@@ -30,7 +30,7 @@ public class UserNominationFeature extends BotFeature {
                     nominateUsers();
                 }
             }
-        }, 0, Duration.ofDays(1).toMillis());
+        }, 0, Duration.ofHours(1).toMillis());
     }
 
     @Override
@@ -39,7 +39,7 @@ public class UserNominationFeature extends BotFeature {
     }
 
     private boolean isFirstDayOfMonth() {
-        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
+        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 2;
     }
 
     public static void nominateUsers() {
