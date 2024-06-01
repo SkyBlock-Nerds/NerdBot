@@ -39,7 +39,7 @@ public class UserNominationFeature extends BotFeature {
     }
 
     private boolean isFirstDayOfMonth() {
-        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 2;
+        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
     }
 
     public static void nominateUsers() {
@@ -75,8 +75,6 @@ public class UserNominationFeature extends BotFeature {
 
             lastActivity.getNominationInfo().getLastNominationDate().ifPresentOrElse(date -> {
                 int lastNominationMonth = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getMonthValue();
-
-                log.info("Last nomination month: " + lastNominationMonth + ", current month: " + Calendar.getInstance().get(Calendar.MONTH));
 
                 if (lastNominationMonth != Calendar.getInstance().get(Calendar.MONTH) && (totalComments >= requiredComments && totalVotes >= requiredVotes)) {
                     log.info("Last nomination was not this month, sending nomination message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
