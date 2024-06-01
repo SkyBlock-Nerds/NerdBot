@@ -42,11 +42,20 @@ public class DiscordBot {
 
     @Getter
     private static JDA jda;
-    private BotConfiguration botConfiguration;
     @Getter
     private static SuggestionCache suggestionCache;
     private final List<Feature> features = new ArrayList<>();
+    private BotConfiguration botConfiguration;
     private Environment environment;
+
+    /**
+     * Gets the primary {@link Guild} from the configured ID in the {@link GuildConfiguration}
+     *
+     * @return The primary {@link Guild}
+     */
+    public static Guild getPrimaryGuild() {
+        return jda.getGuildById(ConfigurationManager.loadConfig(GuildConfiguration.class).getPrimaryGuildId());
+    }
 
     public void start(String[] args) throws ParseException, InterruptedException {
         SkyBlockNerdsAPI.parseProgramArguments(args);
@@ -150,14 +159,5 @@ public class DiscordBot {
         }
 
         builder.build(jda, botConfiguration.getCommandPackage());
-    }
-
-    /**
-     * Gets the primary {@link Guild} from the configured ID in the {@link GuildConfiguration}
-     *
-     * @return The primary {@link Guild}
-     */
-    public static Guild getPrimaryGuild() {
-        return jda.getGuildById(ConfigurationManager.loadConfig(GuildConfiguration.class).getPrimaryGuildId());
     }
 }
