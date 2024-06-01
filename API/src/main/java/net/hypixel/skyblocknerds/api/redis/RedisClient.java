@@ -19,23 +19,40 @@ public class RedisClient {
     private final String uri;
     protected Jedis jedis;
 
+    /**
+     * Create a new Redis client instance with the given URI.
+     *
+     * @param uri The URI of the Redis server.
+     */
     public RedisClient(String uri) {
         this.uri = uri;
         openConnection();
     }
 
+    /**
+     * Open a connection to the Redis server.
+     */
     public void openConnection() {
         if (this.jedis == null || !this.jedis.isConnected()) {
             this.jedis = new Jedis(uri);
         }
     }
 
+    /**
+     * Close the connection to the Redis server.
+     */
     public void closeConnection() {
         if (this.jedis != null) {
             this.jedis.close();
         }
     }
 
+    /**
+     * Set a key-value pair in the Redis database.
+     *
+     * @param key   The key to set.
+     * @param value The value to set.
+     */
     public void set(String key, String value) {
         try {
             openConnection();
@@ -45,6 +62,13 @@ public class RedisClient {
         }
     }
 
+    /**
+     * Get a value from the Redis database.
+     *
+     * @param key The key to get.
+     *
+     * @return The value of the key.
+     */
     public String get(String key) {
         try {
             openConnection();
@@ -53,6 +77,17 @@ public class RedisClient {
             handleException(e);
             return null;
         }
+    }
+
+    /**
+     * Get all values with the given key from the Redis database.
+     *
+     * @param key The key to get.
+     *
+     * @return A {@link Map} of all values with the given key.
+     */
+    public Map<String, String> getAll(String key) {
+        return jedis.hgetAll(key);
     }
 
     /**
@@ -92,6 +127,11 @@ public class RedisClient {
         return resultKeys;
     }
 
+    /**
+     * Delete a key from the Redis database.
+     *
+     * @param key The key to delete.
+     */
     public void delete(String key) {
         try {
             openConnection();
@@ -101,7 +141,12 @@ public class RedisClient {
         }
     }
 
-    // Set operations
+    /**
+     * Add a value to a set in the Redis database.
+     *
+     * @param setName The name of the set.
+     * @param members The members to add to the set.
+     */
     public void addToSet(String setName, String... members) {
         try {
             openConnection();
@@ -111,6 +156,13 @@ public class RedisClient {
         }
     }
 
+    /**
+     * Get all members of a set in the Redis database.
+     *
+     * @param setName The name of the set.
+     *
+     * @return A set of all members in the set.
+     */
     public Set<String> getSetMembers(String setName) {
         try {
             openConnection();
@@ -121,7 +173,12 @@ public class RedisClient {
         }
     }
 
-    // List operations
+    /**
+     * Add a value to a list in the Redis database.
+     *
+     * @param listName The name of the list.
+     * @param values   The values to add to the list.
+     */
     public void pushToList(String listName, String... values) {
         try {
             openConnection();
@@ -131,6 +188,15 @@ public class RedisClient {
         }
     }
 
+    /**
+     * Get a range of values from a list in the Redis database.
+     *
+     * @param listName The name of the list.
+     * @param start    The start index of the range.
+     * @param end      The end index of the range.
+     *
+     * @return A {@link List} of values in the range.
+     */
     public List<String> getListRange(String listName, long start, long end) {
         try {
             openConnection();
@@ -141,7 +207,13 @@ public class RedisClient {
         }
     }
 
-    // Hash operations
+    /**
+     * Set a hash field in the Redis database with the given value.
+     *
+     * @param hashName The name of the hash.
+     * @param field    The field to set.
+     * @param value    The value to set.
+     */
     public void setHashField(String hashName, String field, String value) {
         try {
             openConnection();
@@ -151,6 +223,14 @@ public class RedisClient {
         }
     }
 
+    /**
+     * Get a hash field from the Redis database.
+     *
+     * @param hashName The name of the hash.
+     * @param field    The field to get.
+     *
+     * @return The value of the field.
+     */
     public String getHashField(String hashName, String field) {
         try {
             openConnection();
@@ -161,6 +241,13 @@ public class RedisClient {
         }
     }
 
+    /**
+     * Get all hash fields by the given hash name.
+     *
+     * @param hashName The name.
+     *
+     * @return A {@link Map} of all fields and their values.
+     */
     public Map<String, String> getHashAll(String hashName) {
         try {
             openConnection();
@@ -171,7 +258,11 @@ public class RedisClient {
         }
     }
 
-    // Transactions
+    /**
+     * Execute a transaction with the given commands.
+     *
+     * @param commands The commands to execute.
+     */
     public void executeTransaction(List<TransactionCommand> commands) {
         try {
             openConnection();
@@ -185,12 +276,22 @@ public class RedisClient {
         }
     }
 
+    /**
+     * Prints the stack trace of the exception and closes the connection.
+     *
+     * @param e The exception to handle.
+     */
     private void handleException(Exception e) {
         e.printStackTrace();
         closeConnection();
     }
 
     public interface TransactionCommand {
+        /**
+         * Execute the command with the given transaction.
+         *
+         * @param transaction The transaction to execute the command with.
+         */
         void execute(Transaction transaction);
     }
 
@@ -200,6 +301,12 @@ public class RedisClient {
         private final String key;
         private final String value;
 
+        /**
+         * Create a new key-value pair.
+         *
+         * @param key   The key.
+         * @param value The value.
+         */
         public KeyValuePair(String key, String value) {
             this.key = key;
             this.value = value;
