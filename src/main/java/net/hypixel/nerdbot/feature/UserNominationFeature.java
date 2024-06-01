@@ -95,8 +95,9 @@ public class UserNominationFeature extends BotFeature {
     private static void sendNominationMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             textChannel.sendMessage("Promote " + member.getEffectiveName() + " to Nerd?\n("
-                + "Total Nominations: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalNominations())
+                + "Total Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes())
                 + " / Total Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments())
+                + " / Total Nominations: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalNominations())
                 + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDateString()
                 + ")").queue();
             discordUser.getLastActivity().getNominationInfo().increaseNominations();
