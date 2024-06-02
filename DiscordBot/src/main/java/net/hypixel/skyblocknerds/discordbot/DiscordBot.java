@@ -31,6 +31,7 @@ import net.hypixel.skyblocknerds.discordbot.listener.SuggestionCacheListener;
 import org.apache.commons.cli.ParseException;
 import sun.misc.Signal;
 
+import java.net.URI;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -89,7 +90,7 @@ public class DiscordBot {
 
         if (SkyBlockNerdsAPI.getCommandLine().hasOption("redisUri")) {
             log.info("Initializing Redis connection...");
-            suggestionCache = new SuggestionCache(SkyBlockNerdsAPI.getCommandLine().getOptionValue("redisUri"));
+            suggestionCache = new SuggestionCache(URI.create(SkyBlockNerdsAPI.getCommandLine().getOptionValue("redisUri")));
             jdaBuilder.addEventListeners(new SuggestionCacheListener());
         } else {
             log.warn("Redis URI not provided, so no Redis functionality will be available!");

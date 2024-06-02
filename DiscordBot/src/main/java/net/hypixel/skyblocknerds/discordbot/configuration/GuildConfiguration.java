@@ -3,7 +3,7 @@ package net.hypixel.skyblocknerds.discordbot.configuration;
 import lombok.Getter;
 import lombok.Setter;
 import net.hypixel.skyblocknerds.api.configuration.IConfiguration;
-import net.hypixel.skyblocknerds.discordbot.auditlog.AuditLog;
+import net.hypixel.skyblocknerds.discordbot.embed.auditlog.AuditLog;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

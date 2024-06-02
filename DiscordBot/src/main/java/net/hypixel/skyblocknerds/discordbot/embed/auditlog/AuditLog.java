@@ -1,4 +1,4 @@
-package net.hypixel.skyblocknerds.discordbot.auditlog;
+package net.hypixel.skyblocknerds.discordbot.embed.auditlog;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 
