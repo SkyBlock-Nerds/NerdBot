@@ -50,7 +50,7 @@ public class PersonalCommands extends ApplicationCommand {
         });
     }
 
-    @JDASlashCommand(name = COMMAND_NAME, subcommand = "suggestions", description = "View statistics on your suggestions")
+    @JDASlashCommand(name = COMMAND_NAME, subcommand = "suggestions", description = "View your suggestions")
     public void viewPersonalSuggestions(GuildSlashEvent event) {
         SuggestionCache suggestionCache = DiscordBot.getSuggestionCache();
         suggestionCache.getSuggestionsByAuthor(event.getMember().getId()).ifPresentOrElse(suggestions -> {
