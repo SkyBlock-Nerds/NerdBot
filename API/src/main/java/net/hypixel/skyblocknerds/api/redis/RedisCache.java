@@ -1,5 +1,6 @@
 package net.hypixel.skyblocknerds.api.redis;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -14,7 +15,7 @@ public class RedisCache extends RedisClient {
      * @param uri    The URI of the Redis server.
      * @param prefix The prefix for the cache keys.
      */
-    public RedisCache(String uri, String prefix) {
+    public RedisCache(URI uri, String prefix) {
         super(uri);
         this.prefix = prefix;
     }

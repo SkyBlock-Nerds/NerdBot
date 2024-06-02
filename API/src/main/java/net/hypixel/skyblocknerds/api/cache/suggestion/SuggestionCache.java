@@ -4,12 +4,13 @@ import com.google.gson.JsonObject;
 import net.hypixel.skyblocknerds.api.SkyBlockNerdsAPI;
 import net.hypixel.skyblocknerds.api.redis.RedisCache;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
 public class SuggestionCache extends RedisCache {
 
-    public SuggestionCache(String uri) {
+    public SuggestionCache(URI uri) {
         super(uri, "suggestion");
     }
 

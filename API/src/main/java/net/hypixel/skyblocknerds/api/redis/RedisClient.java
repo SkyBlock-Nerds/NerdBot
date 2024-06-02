@@ -9,6 +9,7 @@ import redis.clients.jedis.Transaction;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,7 @@ import java.util.Set;
 
 public class RedisClient {
 
-    private final String uri;
+    private final URI uri;
     protected Jedis jedis;
 
     /**
@@ -24,7 +25,7 @@ public class RedisClient {
      *
      * @param uri The URI of the Redis server.
      */
-    public RedisClient(String uri) {
+    public RedisClient(URI uri) {
         this.uri = uri;
         openConnection();
     }
