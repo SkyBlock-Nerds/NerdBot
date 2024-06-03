@@ -22,7 +22,7 @@ import java.util.List;
 
 public class PersonalCommands extends ApplicationCommand {
 
-    private static final String COMMAND_NAME = "my";
+    private static final String COMMAND_NAME = "profile";
 
     private final DiscordUserRepository discordUserRepository;
 
@@ -30,7 +30,7 @@ public class PersonalCommands extends ApplicationCommand {
         this.discordUserRepository = RepositoryManager.getInstance().getRepository(DiscordUserRepository.class);
     }
 
-    @JDASlashCommand(name = COMMAND_NAME, subcommand = "profile", description = "View your profile")
+    @JDASlashCommand(name = COMMAND_NAME, subcommand = "view", description = "View your profile")
     public void viewPersonalProfile(GuildSlashEvent event) {
         discordUserRepository.findById(event.getMember().getId()).ifPresentOrElse(user -> {
             event.replyEmbeds(new MemberDiscordProfileEmbed(user).create().build())
