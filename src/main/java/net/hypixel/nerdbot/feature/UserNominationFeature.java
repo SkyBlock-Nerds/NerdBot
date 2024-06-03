@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.feature.BotFeature;
@@ -26,7 +27,7 @@ public class UserNominationFeature extends BotFeature {
         this.timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                if (isFirstDayOfMonth()) {
+                if (Util.isFirstDayOfMonth()) {
                     nominateUsers();
                 }
             }
@@ -36,10 +37,6 @@ public class UserNominationFeature extends BotFeature {
     @Override
     public void onFeatureEnd() {
 
-    }
-
-    private boolean isFirstDayOfMonth() {
-        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
     }
 
     public static void nominateUsers() {
@@ -81,7 +78,7 @@ public class UserNominationFeature extends BotFeature {
                     sendNominationMessage(member, discordUser);
                 }
             }, () -> {
-                log.info("No last nomination date found for " + member.getEffectiveName() + ", sending nomination message (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
+                log.info("No last nomination date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
 
                 if (totalComments >= requiredComments && totalVotes >= requiredVotes) {
                     sendNominationMessage(member, discordUser);
