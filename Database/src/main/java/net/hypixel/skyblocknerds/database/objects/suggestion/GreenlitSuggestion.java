@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import net.hypixel.skyblocknerds.api.configuration.ConfigurationManager;
+import net.hypixel.skyblocknerds.api.curator.configuration.CuratorConfiguration;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
@@ -49,7 +51,7 @@ public class GreenlitSuggestion {
      * @return true if the suggestion is greenlit
      */
     public boolean isGreenlit() {
-        return getTag("Greenlit").findAny().isPresent();
+        return getTag(ConfigurationManager.loadConfig(CuratorConfiguration.class).getGreenlitTagName()).findAny().isPresent();
     }
 
     /**
@@ -58,7 +60,7 @@ public class GreenlitSuggestion {
      * @return true if the suggestion is reviewed
      */
     public boolean isReviewed() {
-        return getTag("Reviewed").findAny().isPresent();
+        return getTag(ConfigurationManager.loadConfig(CuratorConfiguration.class).getReviewedTagName()).findAny().isPresent();
     }
 
     /**
