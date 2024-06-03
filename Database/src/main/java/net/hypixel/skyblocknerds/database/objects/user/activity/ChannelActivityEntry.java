@@ -22,14 +22,19 @@ public class ChannelActivityEntry {
     private String lastKnownDisplayName;
 
     /**
+     * The category of the activity, e.g. REGULAR, ALPHA, PROJECT
+     */
+    private ActivityType activityType;
+
+    /**
      * The amount of messages sent in the channel
      */
     private int messageCount;
 
     /**
-     * The {@link Long timestamp} of the last message sent in the channel
+     * The {@link Long timestamp} of the message sent in the channel
      */
-    private long lastMessageTimestamp;
+    private long timestamp;
 
     /**
      * The amount of messages sent in the channel per month
