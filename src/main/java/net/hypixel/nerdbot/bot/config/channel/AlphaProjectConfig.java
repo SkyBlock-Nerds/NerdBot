@@ -73,7 +73,7 @@ public class AlphaProjectConfig {
         if (updateAlpha) {
             // Update Alpha Forum IDs (Alpha Takes Priority)
             this.alphaForumIds = forumChannels.stream()
-                .filter(forumChannel -> Util.getSuggestionType(forumChannel) == Suggestion.ChannelType.ALPHA)
+                .filter(forumChannel -> Util.getChannelSuggestionType(forumChannel) == Suggestion.ChannelType.ALPHA)
                 .map(ISnowflake::getId)
                 .toList()
                 .toArray(new String[]{});
@@ -82,7 +82,7 @@ public class AlphaProjectConfig {
         if (updateProject) {
             // Update Project Forum IDs
             this.projectForumIds = forumChannels.stream()
-                .filter(forumChannel -> Util.getSuggestionType(forumChannel) == Suggestion.ChannelType.PROJECT)
+                .filter(forumChannel -> Util.getChannelSuggestionType(forumChannel) == Suggestion.ChannelType.PROJECT)
                 .map(ISnowflake::getId)
                 .toList()
                 .toArray(new String[]{});

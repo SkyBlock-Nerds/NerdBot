@@ -58,7 +58,7 @@ public class Suggestion {
         this.timeCreated = thread.getTimeCreated();
         this.jumpUrl = String.format("https://discord.com/channels/%s/%s", this.getGuildId(), this.getThreadId());
         this.greenlit = channelType == ChannelType.NORMAL && Util.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
-        this.channelType = channelType == null ? Util.getSuggestionType(thread) : channelType;
+        this.channelType = channelType == null ? Util.getThreadSuggestionType(thread) : channelType;
         this.expired = false;
 
         // Activity

@@ -170,7 +170,7 @@ public class SuggestionListener {
     @SubscribeEvent
     public void onChannelDelete(ChannelDeleteEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().asForumChannel());
+            Suggestion.ChannelType channelType = Util.getForumSuggestionType(event.getChannel().asForumChannel());
 
             if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
                 BotConfig botConfig = NerdBotApp.getBot().getConfig();
@@ -186,7 +186,7 @@ public class SuggestionListener {
 
     private void updateConfigForumIds(GenericChannelEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().asForumChannel());
+            Suggestion.ChannelType channelType = Util.getForumSuggestionType(event.getChannel().asForumChannel());
 
             if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
                 BotConfig botConfig = NerdBotApp.getBot().getConfig();

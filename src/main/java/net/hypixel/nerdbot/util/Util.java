@@ -240,11 +240,11 @@ public class Util {
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
     }
 
-    public static Suggestion.ChannelType getSuggestionType(ThreadChannel threadChannel) {
-        return getSuggestionType(threadChannel.getParentChannel().asForumChannel());
+    public static Suggestion.ChannelType getThreadSuggestionType(ThreadChannel threadChannel) {
+        return getForumSuggestionType(threadChannel.getParentChannel().asForumChannel());
     }
 
-    public static Suggestion.ChannelType getSuggestionType(ForumChannel forumChannel) {
+    public static Suggestion.ChannelType getForumSuggestionType(ForumChannel forumChannel) {
         SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
         AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
         String parentChannelId = forumChannel.getId();
@@ -261,7 +261,7 @@ public class Util {
     }
 
     // Only used for AlphaProjectConfig initialization and voice activity
-    public static Suggestion.ChannelType getSuggestionType(StandardGuildChannel channel) {
+    public static Suggestion.ChannelType getChannelSuggestionType(StandardGuildChannel channel) {
         if (channel.getName().contains("alpha")) {
             return Suggestion.ChannelType.ALPHA;
         } else if (Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channel.getName()::contains)
