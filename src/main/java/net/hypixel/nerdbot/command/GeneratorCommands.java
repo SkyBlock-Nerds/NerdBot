@@ -634,7 +634,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "colors", description = "Show a list of all other icons")
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "colors", description = "Show a list of all colors")
     public void showAllColors(GuildSlashEvent event) {
         EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Colors").setColor(EMBED_COLORS[0]);
         StringBuilder idBuilder = new StringBuilder();
