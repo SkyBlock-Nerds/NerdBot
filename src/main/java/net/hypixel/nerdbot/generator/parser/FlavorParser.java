@@ -9,31 +9,31 @@ public class FlavorParser {
     /**
      * Displays the selected flavor text without the extra data
      *
-     * @param flavor    the selected flavor
-     * @param extraData the extra arguments provided
+     * @param flavor       the flavor selected
+     * @param extraDetails the extra arguments provided
      *
      * @return the flavor text without the extra data
      */
-    public static String defaultFlavorParser(Flavor flavor, String extraData) {
+    public static String defaultFlavorParser(Flavor flavor, String extraDetails) {
         return "%%" + flavor.getColor() + "%%" + flavor.getText();
     }
 
     /**
      * Displays the selected flavor text with extra data after the id.
      *
-     * @param flavor       the stat selected
+     * @param flavor       the flavor selected
      * @param extraDetails the extra arguments provided
      *
      * @return returns the color parsed replacement string
      */
-    public static String postStatColorParser(Flavor flavor, String extraDetails) {
+    public static String postFlavorColorParser(Flavor flavor, String extraDetails) {
         return "%%" + flavor.getColor() + "%%" + flavor.getText() + " " + extraDetails;
     }
 
     /**
      * Displays the selected flavor text after it changed color
      *
-     * @param flavor       the stat selected
+     * @param flavor       the flavor selected
      * @param extraDetails the extra arguments provided
      *
      * @return the color parsed replacement string
@@ -45,7 +45,7 @@ public class FlavorParser {
     /**
      * Displays the selected flavor text with an Ability name and amount
      *
-     * @param flavor       the stat selected (ABILITY)
+     * @param flavor       the flavor selected (ABILITY)
      * @param extraDetails the extra arguments provided
      *
      * @return the color parsed replacements string
@@ -69,11 +69,11 @@ public class FlavorParser {
     /**
      * Displays the flavor text with bolded asterisk around it
      *
-     * @param flavor the stat selected
+     * @param flavor the flavor selected
      *
      * @return the color parsed replacement string
      */
-    public static String soulboundColorParsing(Flavor flavor, String e) {
+    public static String soulboundColorParsing(Flavor flavor, String extraDetails) {
         return "%%" + flavor.getColor() + "%%%%BOLD%%* %%" + flavor.getColor() + "%%" + flavor.getText() + " %%BOLD%%*";
     }
 }
