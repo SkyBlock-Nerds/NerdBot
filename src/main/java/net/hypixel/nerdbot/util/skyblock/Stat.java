@@ -25,6 +25,7 @@ public enum Stat {
     PET_LUCK("♣", "Pet Luck", MCColor.LIGHT_PURPLE, MCColor.WHITE, StatColorParser::normalStatColorParser, null),
     SEA_CREATURE_CHANCE("α", "Sea Creature Chance", MCColor.DARK_AQUA, null, StatColorParser::boldedIconColorParser, StatColorParser::boldedIconParser),
     FISHING_SPEED("☂", "Fishing Speed", MCColor.AQUA),
+    DOUBLE_HOOK_CHANCE("⚓", "Double Hook Chance", MCColor.BLUE),
     ABILITY_DAMAGE("๑", "Ability Damage", MCColor.RED),
     MINING_SPEED("⸕", "Mining Speed", MCColor.GOLD),
     BREAKING_POWER("Ⓟ", "Breaking Power", MCColor.DARK_GREEN),
@@ -84,10 +85,6 @@ public enum Stat {
 
     Stat(String icon, String stat, MCColor color) {
         this(icon, stat, color, null, StatColorParser::normalStatColorParser, null);
-    }
-
-    Stat(String icon, String stat, MCColor color, BiFunction<Stat, String, String> statColorParser) {
-        this(icon, stat, color, null, statColorParser, null);
     }
 
     public String getIcon() {
