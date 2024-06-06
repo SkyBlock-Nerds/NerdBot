@@ -26,6 +26,7 @@ import net.hypixel.nerdbot.generator.parser.StringColorParser;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.skyblock.Flavor;
 import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
@@ -646,6 +647,23 @@ public class GeneratorCommands extends ApplicationCommand {
 
         embedBuilder.addField("IDs", idBuilder.toString(), true);
         embedBuilder.addField("Color", colorBuilder.toString(), true);
+
+        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
+    }
+
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "flavor", description = "Show a list of all flavor texts")
+    public void showAllFlavorTexts(GuildSlashEvent event) {
+        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Flavor texts").setColor(EMBED_COLORS[0]);
+        StringBuilder idBuilder = new StringBuilder();
+        StringBuilder textBuilder = new StringBuilder();
+
+        for (Flavor flavor : Flavor.VALUES) {
+            idBuilder.append("%%").append(flavor.name()).append("%%").append("\n");
+            textBuilder.append(flavor.getText()).append("\n");
+        }
+
+        embedBuilder.addField("IDs", idBuilder.toString(), true);
+        embedBuilder.addField("Flavor texts", textBuilder.toString(), true);
 
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
