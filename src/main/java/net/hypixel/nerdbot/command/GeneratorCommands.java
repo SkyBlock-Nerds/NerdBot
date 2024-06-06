@@ -651,7 +651,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "flavor", description = "Show a list of all flavor texts")
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "flavors", description = "Show a list of all flavor texts")
     public void showAllFlavorTexts(GuildSlashEvent event) {
         EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Flavor texts").setColor(EMBED_COLORS[0]);
         StringBuilder idBuilder = new StringBuilder();
