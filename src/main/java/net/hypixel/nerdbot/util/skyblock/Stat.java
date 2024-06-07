@@ -25,6 +25,7 @@ public enum Stat {
     PET_LUCK("♣", "Pet Luck", MCColor.LIGHT_PURPLE, MCColor.WHITE, StatColorParser::normalStatColorParser, null),
     SEA_CREATURE_CHANCE("α", "Sea Creature Chance", MCColor.DARK_AQUA, null, StatColorParser::boldedIconColorParser, StatColorParser::boldedIconParser),
     FISHING_SPEED("☂", "Fishing Speed", MCColor.AQUA),
+    DOUBLE_HOOK_CHANCE("⚓", "Double Hook Chance", MCColor.BLUE),
     ABILITY_DAMAGE("๑", "Ability Damage", MCColor.RED),
     MINING_SPEED("⸕", "Mining Speed", MCColor.GOLD),
     BREAKING_POWER("Ⓟ", "Breaking Power", MCColor.DARK_GREEN),
@@ -57,20 +58,9 @@ public enum Stat {
     COLD_RESISTANCE("❄", "Cold Resistance", MCColor.AQUA),
     COLD("❄", "Cold", MCColor.AQUA),
     HEAT("♨", "Heat", MCColor.RED),
-    REQUIRE("❣", "Requires", MCColor.RED, StatColorParser::postStatColorParser),
-    RECIPE("", "Right-click to view recipes!", MCColor.YELLOW, StatColorParser::noParsing),
-    COOP_SOULBOUND("", "Co-op Soulbound", MCColor.DARK_GRAY, StatColorParser::soulboundColorParsing),
-    SOULBOUND("", "Soulbound", MCColor.DARK_GRAY, StatColorParser::soulboundColorParsing),
-    REFORGABLE("", "This item can be reforged!", MCColor.DARK_GRAY, StatColorParser::noParsing),
     ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser, null),
     ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser, null),
-    ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, StatColorParser::itemStatColorParser, null),
-    MANA_COST("", "Mana Cost:", MCColor.DARK_GRAY, MCColor.DARK_AQUA, StatColorParser::postDualColorParser, null),
-    COOLDOWN("", "Cooldown:", MCColor.DARK_GRAY, MCColor.GREEN, StatColorParser::postDualColorParser, null),
-    HEALTH_COST("", "Health Cost:", MCColor.DARK_GRAY, MCColor.RED, StatColorParser::postDualColorParser, null),
-    ABILITY("", "Ability", MCColor.GOLD, MCColor.YELLOW, StatColorParser::abilityColorParser, null),
-    RIFT_TRANSFERABLE("", "Rift-Transferable", MCColor.DARK_PURPLE, StatColorParser::noParsing),
-    UNDEAD("༕", "This armor piece is undead ༕!", MCColor.DARK_GREEN, StatColorParser::noParsing);
+    ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, StatColorParser::itemStatColorParser, null);
 
     public static final Stat[] VALUES = values();
 
@@ -95,10 +85,6 @@ public enum Stat {
 
     Stat(String icon, String stat, MCColor color) {
         this(icon, stat, color, null, StatColorParser::normalStatColorParser, null);
-    }
-
-    Stat(String icon, String stat, MCColor color, BiFunction<Stat, String, String> statColorParser) {
-        this(icon, stat, color, null, statColorParser, null);
     }
 
     public String getIcon() {
