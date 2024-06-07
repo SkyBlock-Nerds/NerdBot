@@ -53,6 +53,4 @@ public enum Flavor {
     public String getParsedFlavorText(String extraData) {
         return flavorColorParser.apply(this, extraData);
     }
-
-
 }
