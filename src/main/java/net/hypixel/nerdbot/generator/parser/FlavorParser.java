@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.generator.parser;
 import net.hypixel.nerdbot.util.skyblock.Flavor;
 
 public class FlavorParser {
+
     private FlavorParser() {
     }
 
