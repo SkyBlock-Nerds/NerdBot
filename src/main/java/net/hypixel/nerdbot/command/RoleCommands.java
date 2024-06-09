@@ -92,7 +92,9 @@ public class RoleCommands extends ApplicationCommand {
         } else {
             TranslationManager.edit(event.getHook(), user, "commands.role.not_eligible_promotion",
                 Util.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalVotes()),
-                Util.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion())
+                Util.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion()),
+                Util.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalComments()),
+                Util.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion())
             );
         }
     }
