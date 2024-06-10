@@ -127,12 +127,17 @@ public class ActivityListener {
         Suggestion.ChannelType channelType;
 
         if (guildChannel instanceof ThreadChannel threadChannel) {
+            log.info("getThreadSuggestionType for threadChannel: " + threadChannel.getName() + " (" + threadChannel.getId() + ")");
             channelType = Util.getThreadSuggestionType(threadChannel);
         } else if (guildChannel instanceof TextChannel) {
+            log.info("getChannelSuggestionType for TextChannel: " + guildChannel.getName() + " (" + guildChannel.getId() + ")");
             channelType = Util.getChannelSuggestionType(guildChannel.asTextChannel());
         } else {
+            log.info("getChannelSuggestionTypeFromName for GuildChannel: " + guildChannel.getName() + " (" + guildChannel.getId() + ")");
             channelType = Util.getChannelSuggestionTypeFromName(guildChannel.getName());
         }
+
+        log.info("Found ChannelType: " + channelType + " for channel: " + guildChannel.getName() + " (" + guildChannel.getId() + ")");
 
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
