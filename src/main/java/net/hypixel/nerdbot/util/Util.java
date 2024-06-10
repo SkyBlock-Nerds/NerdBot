@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
@@ -250,12 +251,22 @@ public class Util {
         AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
         String parentChannelId = forumChannel.getId();
 
-        if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equals)) {
+        if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
             return Suggestion.ChannelType.ALPHA;
-        } else if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equals)) {
+        } else if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
             return Suggestion.ChannelType.PROJECT;
         } else if (parentChannelId.equals(suggestionConfig.getForumChannelId())) {
             return Suggestion.ChannelType.NORMAL;
+        }
+
+        Category parentCategory = forumChannel.getParentCategory();
+
+        if (parentCategory != null) {
+            return getChannelSuggestionTypeFromName(parentCategory.getName());
+        }
+
+        if (forumChannel.getName().toLowerCase().contains("alpha") || Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(forumChannel.getName().toLowerCase()::contains)) {
+            return getChannelSuggestionTypeFromName(forumChannel.getName());
         }
 
         return Suggestion.ChannelType.UNKNOWN;
