@@ -78,6 +78,7 @@ public class Util {
     private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
     public static final String[] PROJECT_CHANNEL_NAMES = {
         "project",
+        "projects",
         "projəct",
         "nerd-project",
         "nerds-project"
@@ -262,10 +263,10 @@ public class Util {
 
     // Only used for AlphaProjectConfig initialization and voice activity
     public static Suggestion.ChannelType getChannelSuggestionType(StandardGuildChannel channel) {
-        if (channel.getName().contains("alpha")) {
+        if (channel.getName().toLowerCase().contains("alpha")) {
             return Suggestion.ChannelType.ALPHA;
-        } else if (Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channel.getName()::contains)
-        || (channel.getParentCategory() != null && Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channel.getParentCategory().getName()::contains))) {
+        } else if (Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channel.getName().toLowerCase()::contains)
+        || (channel.getParentCategory() != null && Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channel.getParentCategory().getName().toLowerCase()::contains))) {
             return Suggestion.ChannelType.PROJECT;
         } else {
             return Suggestion.ChannelType.NORMAL;
