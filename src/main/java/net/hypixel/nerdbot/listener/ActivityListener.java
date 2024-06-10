@@ -124,7 +124,15 @@ public class ActivityListener {
         }
 
         long time = System.currentTimeMillis();
-        Suggestion.ChannelType channelType = guildChannel instanceof TextChannel ? Util.getChannelSuggestionType(guildChannel.asTextChannel()) : Suggestion.ChannelType.NORMAL;
+        Suggestion.ChannelType channelType;
+
+        if (guildChannel instanceof ThreadChannel threadChannel) {
+            channelType = Util.getThreadSuggestionType(threadChannel);
+        } else if (guildChannel instanceof TextChannel) {
+            channelType = Util.getChannelSuggestionType(guildChannel.asTextChannel());
+        } else {
+            channelType = Util.getChannelSuggestionTypeFromName(guildChannel.getName());
+        }
 
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
