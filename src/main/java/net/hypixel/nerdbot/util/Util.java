@@ -250,9 +250,9 @@ public class Util {
         AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
         String parentChannelId = forumChannel.getId();
 
-        if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equals)) {
+        if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
             return Suggestion.ChannelType.ALPHA;
-        } else if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equals)) {
+        } else if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
             return Suggestion.ChannelType.PROJECT;
         } else if (parentChannelId.equals(suggestionConfig.getForumChannelId())) {
             return Suggestion.ChannelType.NORMAL;
