@@ -1,4 +1,4 @@
-package net.hypixel.skyblocknerds.discordbot.feature;
+package net.hypixel.skyblocknerds.discordbot.feature.discorduser;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
@@ -47,22 +47,24 @@ public class MinecraftProfileUpdateFeature extends Feature {
                 return;
             }
 
-            if (discordUser.get().getMinecraftProfile() == null) {
+            DiscordUser user = discordUser.get();
+
+            if (user.getMinecraftProfile() == null) {
                 log.warn("MinecraftProfile not linked for " + StringUtils.formatNameWithId(member.getUser().getName(), member.getId()));
                 return;
             }
 
-            MojangSessionServerUsernameResponse response = SkyBlockNerdsAPI.MOJANG_SESSION_SERVER_REQUEST.getUsername(discordUser.get().getMinecraftProfile().getUniqueId());
+            MojangSessionServerUsernameResponse response = SkyBlockNerdsAPI.MOJANG_SESSION_SERVER_REQUEST.getUsername(user.getMinecraftProfile().getUniqueId());
 
-            if (!discordUser.get().getMinecraftProfile().getUsername().equals(response.getUsername())) {
-                discordUser.get().getMinecraftProfile().setUsername(response.getUsername());
-                log.info("Updated MinecraftProfile username for " + discordUser.get().getDiscordId() + " to " + response.getUsername());
+            if (!user.getMinecraftProfile().getUsername().equals(response.getUsername())) {
+                user.getMinecraftProfile().setUsername(response.getUsername());
+                log.info("Updated MinecraftProfile username for " + user.getDiscordId() + " to " + response.getUsername());
             }
 
             if (!member.getEffectiveName().toLowerCase().contains(member.getUser().getName().toLowerCase())) {
                 try {
-                    member.modifyNickname(discordUser.get().getMinecraftProfile().getUsername()).complete();
-                    log.info("Updated nickname for " + StringUtils.formatNameWithId(member.getEffectiveName(), member.getId()) + " to " + discordUser.get().getMinecraftProfile().getUsername());
+                    member.modifyNickname(user.getMinecraftProfile().getUsername()).complete();
+                    log.info("Updated nickname for " + StringUtils.formatNameWithId(member.getEffectiveName(), member.getId()) + " to " + user.getMinecraftProfile().getUsername());
                 } catch (HierarchyException exception) {
                     log.warn("Unable to modify the nickname of " + StringUtils.formatNameWithId(member.getEffectiveName(), member.getId()) + " since they have a higher role than the bot");
                 } catch (Exception exception) {

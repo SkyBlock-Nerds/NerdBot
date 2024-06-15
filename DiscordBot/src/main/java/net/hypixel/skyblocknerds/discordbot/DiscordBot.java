@@ -23,7 +23,9 @@ import net.hypixel.skyblocknerds.database.sql.DiscordComponentDatabase;
 import net.hypixel.skyblocknerds.discordbot.configuration.BotConfiguration;
 import net.hypixel.skyblocknerds.discordbot.configuration.GuildConfiguration;
 import net.hypixel.skyblocknerds.discordbot.feature.AutomaticCuratorFeature;
-import net.hypixel.skyblocknerds.discordbot.feature.MinecraftProfileUpdateFeature;
+import net.hypixel.skyblocknerds.discordbot.feature.discorduser.DiscordUserLastKnownNameUpdateFeature;
+import net.hypixel.skyblocknerds.discordbot.feature.discorduser.DiscordUserRoleUpdateFeature;
+import net.hypixel.skyblocknerds.discordbot.feature.discorduser.MinecraftProfileUpdateFeature;
 import net.hypixel.skyblocknerds.discordbot.listener.ActivityListener;
 import net.hypixel.skyblocknerds.discordbot.listener.AuditLogListener;
 import net.hypixel.skyblocknerds.discordbot.listener.MemberListener;
@@ -71,7 +73,14 @@ public class DiscordBot {
             log.info("Initializing MongoDB connection...");
             RepositoryManager.getInstance().registerRepository(DiscordUserRepository.class, MongoDB.createMongoClient(SkyBlockNerdsAPI.getCommandLine().getOptionValue("mongoUri")), "skyblock_nerds_2");
             BadgeManager.loadBadges();
-            features.addAll(List.of(new MinecraftProfileUpdateFeature(), new AutomaticCuratorFeature()));
+            features.addAll(
+                List.of(
+                    new MinecraftProfileUpdateFeature(),
+                    new AutomaticCuratorFeature(),
+                    new DiscordUserRoleUpdateFeature(),
+                    new DiscordUserLastKnownNameUpdateFeature()
+                )
+            );
         } else {
             log.warn("MongoDB URI not provided, so no MongoDB repositories will be available!");
         }

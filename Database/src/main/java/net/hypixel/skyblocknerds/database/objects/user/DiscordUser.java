@@ -22,11 +22,39 @@ import java.util.concurrent.TimeUnit;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class DiscordUser {
 
+    /**
+     * The user's Discord ID
+     */
     private String discordId;
+
+    /**
+     * The last known username of the user, possibly null
+     */
     private String lastKnownUsername;
+
+    /**
+     * The user's set language, default is {@link UserLanguage#ENGLISH}
+     */
     private UserLanguage language;
+
+    /**
+     * The user's {@link BadgeEntry badges}
+     */
     private List<BadgeEntry> badges;
+
+    /**
+     * The user's {@link WarningEntry warnings}
+     */
     private List<WarningEntry> warnings;
+
+    /**
+     * The user's roles
+     */
+    private List<String> roles;
+
+    /**
+     * The user's linked {@link MinecraftProfile}, possibly null
+     */
     private MinecraftProfile minecraftProfile;
 
     /**
@@ -50,6 +78,7 @@ public class DiscordUser {
         this.language = UserLanguage.ENGLISH;
         this.badges = new ArrayList<>();
         this.warnings = new ArrayList<>();
+        this.roles = new ArrayList<>();
         this.minecraftProfile = null;
     }
 
@@ -115,6 +144,10 @@ public class DiscordUser {
      * @return a {@link List} of {@link WarningEntry warnings} from the last given amount of days
      */
     public List<WarningEntry> getRecentWarnings(int days) {
-        return warnings.stream().filter(warning -> System.currentTimeMillis() - warning.getTimestamp() <= TimeUnit.DAYS.toMillis(days)).toList();
+        return warnings.stream()
+            .filter(warning -> {
+                return System.currentTimeMillis() - warning.getTimestamp() <= TimeUnit.DAYS.toMillis(days);
+            })
+            .toList();
     }
 }
