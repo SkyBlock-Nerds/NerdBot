@@ -1,8 +1,9 @@
-package net.hypixel.skyblocknerds.database.objects.user.activity;
+package net.hypixel.skyblocknerds.database.objects.user.activity.entry;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import net.hypixel.skyblocknerds.database.objects.user.activity.ActivityType;
 
 import java.util.Map;
 

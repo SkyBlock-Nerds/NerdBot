@@ -1,4 +1,6 @@
-package net.hypixel.skyblocknerds.database.objects.user.activity;
+package net.hypixel.skyblocknerds.database.objects.user.activity.entry;
+
+import net.hypixel.skyblocknerds.database.objects.user.activity.ActivityType;
 
 public class VoteActivityEntry {
 
