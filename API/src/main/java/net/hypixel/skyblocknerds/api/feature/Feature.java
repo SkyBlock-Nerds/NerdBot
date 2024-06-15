@@ -30,6 +30,7 @@ public abstract class Feature extends Timer {
     public void schedule() {
         if (timeLength == 0 || timeUnit == null) {
             // Not all features will be recurring
+            onFeatureStart();
             return;
         }
 
