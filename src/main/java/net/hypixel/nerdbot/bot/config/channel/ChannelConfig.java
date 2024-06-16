@@ -61,6 +61,11 @@ public class ChannelConfig {
     private String memberVotingChannelId = "";
 
     /**
+     * The {@link TextChannel} ID for birthday notifications to be sent to
+     */
+    private String birthdayNotificationChannelId = "";
+
+    /**
      * The {@link TextChannel} ID for the itemgen channel
      */
     private String[] genChannelIds = {};
