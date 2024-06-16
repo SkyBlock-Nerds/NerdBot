@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
@@ -94,7 +95,7 @@ public class DiscordUser {
                 log.info("Sending birthday message for " + discordId + " at " + finalDate);
                 String finalMessage = message;
 
-                ChannelCache.getTextChannelByName("general").ifPresentOrElse(channel -> {
+                ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getBirthdayNotificationChannelId()).ifPresentOrElse(channel -> {
                     channel.sendMessage(String.format(finalMessage, discordId, birthdayData.getAge())).queue();
                     log.info("Sent birthday message for " + discordId + " at " + finalDate);
                 }, () -> log.warn("Cannot find channel to send birthday message into!"));
