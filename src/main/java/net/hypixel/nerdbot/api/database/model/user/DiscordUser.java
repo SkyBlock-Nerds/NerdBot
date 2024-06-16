@@ -95,7 +95,8 @@ public class DiscordUser {
                 log.info("Sending birthday message for " + discordId + " at " + finalDate);
                 String finalMessage = message;
 
-                ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getBirthdayNotificationChannelId()).ifPresentOrElse(channel -> {
+                int channelId = NerdBotApp.getBot().getConfig().getChannelConfig().getBirthdayNotificationChannelId();
+                ChannelCache.getTextChannelById(channelId).ifPresentOrElse(channel -> {
                     channel.sendMessage(String.format(finalMessage, discordId, birthdayData.getAge())).queue();
                     log.info("Sent birthday message for " + discordId + " at " + finalDate);
                 }, () -> log.warn("Cannot find channel to send birthday message into!"));
