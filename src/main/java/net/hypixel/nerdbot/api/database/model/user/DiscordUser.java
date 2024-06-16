@@ -95,7 +95,7 @@ public class DiscordUser {
                 log.info("Sending birthday message for " + discordId + " at " + finalDate);
                 String finalMessage = message;
 
-                int channelId = NerdBotApp.getBot().getConfig().getChannelConfig().getBirthdayNotificationChannelId();
+                String channelId = NerdBotApp.getBot().getConfig().getChannelConfig().getBirthdayNotificationChannelId();
                 ChannelCache.getTextChannelById(channelId).ifPresentOrElse(channel -> {
                     channel.sendMessage(String.format(finalMessage, discordId, birthdayData.getAge())).queue();
                     log.info("Sent birthday message for " + discordId + " at " + finalDate);
