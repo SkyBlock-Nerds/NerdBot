@@ -122,6 +122,8 @@ public class GeneratorBuilder {
             overlaysHashMap.put(leatherLeggings.getName(), leatherLeggings);
             Overlay leatherBoots = new NormalOverlay("LEATHER_BOOTS", overlayImage.getSubimage(80, 0, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
             overlaysHashMap.put(leatherBoots.getName(), leatherBoots);
+            Overlay leatherHorseArmor = new NormalOverlay("LEATHER_HORSE_ARMOR", overlayImage.getSubimage(208,0, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
+            overlaysHashMap.put(leatherHorseArmor.getName(), leatherHorseArmor);
 
             // armor trims
             int[] defaultTrimColors = new int[]{-2039584, -4144960, -6250336, -8355712, -10461088, -12566464, -14671840, -16777216};
