@@ -67,7 +67,7 @@
         "name": "Example Name"
       }
     ],
-    "autoPinFirstMessage": false,
+    "autoPinFirstMessage": true,
     "autoPinBlacklistedChannels": [
       "1234567890123456789"
     ]

@@ -92,9 +92,9 @@ public class ChannelConfig {
     /**
      * Automatically pin the first message in threads.
      * <br><br>
-     * Default is false
+     * Default is true
      */
-    private boolean autoPinFirstMessage = false;
+    private boolean autoPinFirstMessage = true;
 
     /**
      * The {@link ForumChannel} IDs for the channels ignored by the autopinning feature.
