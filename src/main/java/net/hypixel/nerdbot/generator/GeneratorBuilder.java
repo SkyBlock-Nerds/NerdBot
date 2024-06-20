@@ -66,7 +66,7 @@ public class GeneratorBuilder {
         // loading all sprites for Minecraft Items
         try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/minecraft_texture_atlas.png")) {
             if (itemStackStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/spritesheets/minecraft_texture_atlas.png\"");
+                throw new FileNotFoundException("Could not find find the file called \"/minecraft_assets/spritesheets/minecraft_texture_atlas\"");
             }
 
             itemSpriteSheet = ImageIO.read(itemStackStream);
@@ -78,7 +78,7 @@ public class GeneratorBuilder {
         // loading the items position in the sprite sheet
         try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/atlas_coordinates.json")) {
             if (itemStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/spritesheets/atlas_coordinates.json\"");
+                throw new FileNotFoundException("Could not find find the file called \"/minecraft_assets/spritesheets/atlas_coordinates.json\"");
             }
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(itemStream));
@@ -106,7 +106,7 @@ public class GeneratorBuilder {
         // loading the overlays for some Minecraft Items
         try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/textures/overlays.png")) {
             if (overlayStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/overlays.png\"");
+                throw new FileNotFoundException("Could not find find the file called \"/minecraft_assets/textures/overlays.png\"");
             }
 
             HashMap<String, Overlay> overlaysHashMap = new HashMap<>();
@@ -122,6 +122,8 @@ public class GeneratorBuilder {
             overlaysHashMap.put(leatherLeggings.getName(), leatherLeggings);
             Overlay leatherBoots = new NormalOverlay("LEATHER_BOOTS", overlayImage.getSubimage(80, 0, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
             overlaysHashMap.put(leatherBoots.getName(), leatherBoots);
+            Overlay leatherHorseArmor = new NormalOverlay("LEATHER_HORSE_ARMOR", overlayImage.getSubimage(208,0, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
+            overlaysHashMap.put(leatherHorseArmor.getName(), leatherHorseArmor);
 
             // armor trims
             int[] defaultTrimColors = new int[]{-2039584, -4144960, -6250336, -8355712, -10461088, -12566464, -14671840, -16777216};

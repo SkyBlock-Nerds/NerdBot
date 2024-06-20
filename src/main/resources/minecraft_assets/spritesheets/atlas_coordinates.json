@@ -388,7 +388,7 @@
     {"name": "leather_boots", "x": 6176, "y": 0, "size": 16, "overlays": ["LEATHER_BOOTS", "BOOTS_TRIM"]},
     {"name": "leather_chestplate", "x": 6192, "y": 0, "size": 16, "overlays": ["LEATHER_CHESTPLATE", "CHESTPLATE_TRIM"]},
     {"name": "leather_helmet", "x": 6208, "y": 0, "size": 16, "overlays": ["LEATHER_HELMET", "HELMET_TRIM"]},
-    {"name": "leather_horse_armor", "x": 6224, "y": 0, "size": 16},
+    {"name": "leather_horse_armor", "x": 6224, "y": 0, "size": 16, "overlays": ["LEATHER_HORSE_ARMOR"]},
     {"name": "leather_leggings", "x": 6240, "y": 0, "size": 16, "overlays": ["LEATHER_LEGGINGS", "LEGGINGS_TRIM"]},
     {"name": "lever", "x": 6256, "y": 0, "size": 16},
     {"name": "light", "x": 6272, "y": 0, "size": 16},
