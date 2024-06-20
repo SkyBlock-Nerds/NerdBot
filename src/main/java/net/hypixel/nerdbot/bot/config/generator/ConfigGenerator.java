@@ -72,6 +72,8 @@ public class ConfigGenerator {
         channelConfig.setNerdArchiveCategoryId(EXAMPLE_ID);
         channelConfig.setReactionChannels(List.of(new ReactionChannel(EXAMPLE_NAME_ID, EXAMPLE_ID, List.of(EXAMPLE_ID))));
         channelConfig.setCustomForumTags(List.of(new CustomForumTag(EXAMPLE_ID, EXAMPLE_NAME)));
+        channelConfig.setAutoPinFirstMessage(true);
+        channelConfig.setAutoPinBlacklistedChannels(new String[]{EXAMPLE_ID});
         botConfig.setChannelConfig(channelConfig);
 
         EmojiConfig emojiConfig = new EmojiConfig();
@@ -116,7 +118,6 @@ public class ConfigGenerator {
         suggestionConfig.setGreenlitRatio(75);
         suggestionConfig.setArchiveOnGreenlit(false);
         suggestionConfig.setLockOnGreenlit(false);
-        suggestionConfig.setAutoPinFirstMessage(true);
         suggestionConfig.setAutoArchiveThreshold(168);
         suggestionConfig.setAutoLockThreshold(168);
         botConfig.setSuggestionConfig(suggestionConfig);
@@ -125,7 +126,6 @@ public class ConfigGenerator {
         alphaProjectConfig.setAlphaForumIds(new String[]{EXAMPLE_ID});
         alphaProjectConfig.setProjectForumIds(new String[]{EXAMPLE_ID});
         alphaProjectConfig.setAutoCreateTags(true);
-        alphaProjectConfig.setAutoPinFirstMessage(true);
         alphaProjectConfig.setAutoArchiveThreshold(168);
         alphaProjectConfig.setAutoLockThreshold(168);
         botConfig.setAlphaProjectConfig(alphaProjectConfig);
