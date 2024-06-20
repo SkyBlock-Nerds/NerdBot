@@ -55,8 +55,8 @@ public class PinListener {
 
         // Ignore channel if blacklisted.
         String[] autoPinBlacklistedChannels = channelConfig.getAutoPinBlacklistedChannels();
-        String forumChannelID = event.getChannel().asThreadChannel().getParentChannel().asForumChannel().getId();
-        if (Util.safeArrayStream(autoPinBlacklistedChannels).anyMatch(forumChannelID::equalsIgnoreCase)) {
+        String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().asForumChannel().getId();
+        if (Util.safeArrayStream(autoPinBlacklistedChannels).anyMatch(forumChannelId::equalsIgnoreCase)) {
             return;
         }
 
