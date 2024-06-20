@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.bot.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.bot.config.objects.ReactionChannel;
@@ -87,5 +88,17 @@ public class ChannelConfig {
      * @see CustomForumTag#getOwnerId() for the owner of the tag
      */
     private List<CustomForumTag> customForumTags = List.of();
+
+    /**
+     * Automatically pin the first message in threads.
+     * <br><br>
+     * Default is false
+     */
+    private boolean autoPinFirstMessage = false;
+
+    /**
+     * The {@link ForumChannel} IDs for the channels ignored by the autopinning feature.
+     */
+    private String[] autoPinBlacklistedChannels = {};
 
 }

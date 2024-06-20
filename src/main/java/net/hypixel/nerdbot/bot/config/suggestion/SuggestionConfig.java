@@ -70,13 +70,6 @@ public class SuggestionConfig {
     // Features
 
     /**
-     * Automatically pin the first message in threads.
-     * <br><br>
-     * Default is false
-     */
-    private boolean autoPinFirstMessage = false;
-
-    /**
      * The amount of hours with no activity to archive a thread.
      * <br><br>
      * Default is 7 days
