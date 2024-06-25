@@ -15,7 +15,9 @@ public enum Icon {
     FRAGGED("⚚", "Starred"),
     BINGO("Ⓑ", "Bingo"),
     ZONE("⏣", "Zone"),
-    ABIPHONE("✆", "Abiphone Call");
+    ABIPHONE("✆", "Abiphone Call"),
+    CHECKMARK("✔", "Checkmark"),
+    CROSS("✖", "Cross");
 
     public static final Icon[] VALUES = values();
 
