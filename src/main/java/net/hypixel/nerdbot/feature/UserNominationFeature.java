@@ -5,7 +5,6 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.feature.BotFeature;
@@ -57,7 +56,13 @@ public class UserNominationFeature extends BotFeature {
             }
 
             Role highestRole = RoleManager.getHighestRole(member);
-            if (highestRole != null && !highestRole.getId().equalsIgnoreCase(NerdBotApp.getBot().getConfig().getRoleConfig().getMemberRoleId())) {
+
+            if (highestRole == null) {
+                log.info("Skipping nomination for " + member.getEffectiveName() + " as they have no roles");
+                return;
+            }
+
+            if (!highestRole.getId().equalsIgnoreCase(NerdBotApp.getBot().getConfig().getRoleConfig().getMemberRoleId())) {
                 log.info("Skipping nomination for " + member.getEffectiveName() + " as their highest role is: " + highestRole.getName());
                 return;
             }
