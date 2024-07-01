@@ -15,6 +15,7 @@ import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
 
 import java.time.Duration;
+import java.time.Month;
 import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.TimerTask;
@@ -71,10 +72,11 @@ public class UserNominationFeature extends BotFeature {
             log.info("Checking if " + member.getEffectiveName() + " should be nominated for promotion (total comments: " + totalComments + ", total votes: " + totalVotes + ") (comments: " + hasRequiredComments + ", votes: " + hasRequiredVotes +")");
 
             lastActivity.getNominationInfo().getLastNominationDate().ifPresentOrElse(date -> {
-                int lastNominationMonth = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getMonthValue();
+                Month lastNominationMonth = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
+                Month now = Calendar.getInstance().toInstant().atZone(ZoneId.systemDefault()).getMonth();
 
-                if (lastNominationMonth != Calendar.getInstance().get(Calendar.MONTH) && (totalComments >= requiredComments && totalVotes >= requiredVotes)) {
-                    log.info("Last nomination was not this month, sending nomination message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
+                if (lastNominationMonth != now && (totalComments >= requiredComments && totalVotes >= requiredVotes)) {
+                    log.info("Last nomination was not this month (last: " + lastNominationMonth + ", now: " + now + "), sending nomination message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
                     sendNominationMessage(member, discordUser);
                 }
             }, () -> {
