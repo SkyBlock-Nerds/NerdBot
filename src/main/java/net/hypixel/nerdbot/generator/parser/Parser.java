@@ -8,7 +8,7 @@ public interface Parser<T> {
     /**
      * The pattern used to match most, if not all variables.
      */
-    Pattern VARIABLE_PATTERN = Pattern.compile("%%([a-zA-Z_]+):?([a-zA-Z0-9]+)?%%");
+    Pattern VARIABLE_PATTERN = Pattern.compile("%%([a-zA-Z_]+):?(.*)?%%");
 
     /**
      * Parses a string using a list of parsers.
