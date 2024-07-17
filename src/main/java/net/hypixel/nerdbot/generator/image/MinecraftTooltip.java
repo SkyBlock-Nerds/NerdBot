@@ -38,7 +38,7 @@ public class MinecraftTooltip {
     private static final int Y_INCREMENT = PIXEL_SIZE * 10;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
-    private static final Range<Integer> LINE_LENGTH = Range.between(38, 80);
+    public static final Range<Integer> LINE_LENGTH = Range.between(16, 128);
     private static final @NotNull List<Font> MINECRAFT_FONTS = new ArrayList<>();
     private static final Font sansSerif;
 

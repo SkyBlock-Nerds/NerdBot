@@ -195,7 +195,7 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         public MinecraftTooltipGenerator.Builder withMaxLineLength(int maxLineLength) {
-            this.maxLineLength = maxLineLength;
+            this.maxLineLength = MinecraftTooltip.LINE_LENGTH.fit(maxLineLength);
             return this;
         }
 
