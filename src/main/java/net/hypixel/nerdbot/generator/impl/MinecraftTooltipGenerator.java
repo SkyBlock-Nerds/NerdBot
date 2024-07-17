@@ -20,11 +20,14 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftTooltipGenerator implements Generator {
 
     private static final int MAX_LINE_LENGTH = 32;
+    private static final Pattern COLOR_CODE_PATTERN = Pattern.compile("&[0-9a-fk-or]");
 
     private final String name;
     private final Rarity rarity;
@@ -82,18 +85,23 @@ public class MinecraftTooltipGenerator implements Generator {
             segments.add(parsed);
         }
 
-        for (String string : segments) {
-            String[] words = string.split(" ");
+        for (String segment : segments) {
+            String[] words = segment.split(" ");
             StringBuilder currentLine = new StringBuilder();
+            String lastColorCode = "";
+
             for (String word : words) {
+                lastColorCode = findLastColorCode(word, lastColorCode);
+
                 while (word.length() > MAX_LINE_LENGTH) {
-                    builder.withLines(LineSegment.fromLegacy(word.substring(0, MAX_LINE_LENGTH), '&'));
-                    word = word.substring(MAX_LINE_LENGTH);
+                    String part = word.substring(0, MAX_LINE_LENGTH);
+                    builder.withLines(LineSegment.fromLegacy(part, '&'));
+                    word = lastColorCode + word.substring(MAX_LINE_LENGTH);
                 }
 
                 if (currentLine.length() + word.length() > MAX_LINE_LENGTH) {
                     builder.withLines(LineSegment.fromLegacy(currentLine.toString().trim(), '&'));
-                    currentLine = new StringBuilder();
+                    currentLine = new StringBuilder(lastColorCode);
                 }
 
                 currentLine.append(word).append(" ");
@@ -104,7 +112,6 @@ public class MinecraftTooltipGenerator implements Generator {
             }
         }
 
-
         if (rarity != null && rarity != Rarity.NONE) {
             if (emptyLine) {
                 builder.withEmptyLine();
@@ -114,6 +121,14 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         return builder.build();
+    }
+
+    private static String findLastColorCode(String word, String lastColorCode) {
+        Matcher matcher = COLOR_CODE_PATTERN.matcher(word);
+        while (matcher.find()) {
+            lastColorCode = matcher.group();
+        }
+        return lastColorCode;
     }
 
     public enum TooltipSide {
