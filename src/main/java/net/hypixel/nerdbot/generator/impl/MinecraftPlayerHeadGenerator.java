@@ -74,7 +74,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
 
             if (scale > 0) {
                 head = ImageUtil.upscaleImage(head, scale);
-            } else {
+            } else if (scale < 0) {
                 head = ImageUtil.downscaleImage(head, Math.abs(scale));
             }
 
