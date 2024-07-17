@@ -18,10 +18,13 @@ import net.hypixel.nerdbot.util.Range;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftTooltipGenerator implements Generator {
+
+    private static final int MAX_LINE_LENGTH = 32;
 
     private final String name;
     private final Rarity rarity;
@@ -41,13 +44,13 @@ public class MinecraftTooltipGenerator implements Generator {
     /**
      * Converts text into a rendered image
      *
-     * @param name           the name of the item
-     * @param itemLoreString the lore of the item
-     * @param type           the type of the item
-     * @param addEmptyLine   if there should be an extra line added between the lore and the final type line
-     * @param alpha          the transparency of the generated image
-     * @param padding        if there is any extra padding around the edges to prevent Discord from rounding the corners
-     * @param paddingFirstLine   if the item should add an extra line between the title and first line
+     * @param name             the name of the item
+     * @param itemLoreString   the lore of the item
+     * @param type             the type of the item
+     * @param addEmptyLine     if there should be an extra line added between the lore and the final type line
+     * @param alpha            the transparency of the generated image
+     * @param padding          if there is any extra padding around the edges to prevent Discord from rounding the corners
+     * @param paddingFirstLine if the item should add an extra line between the title and first line
      *
      * @return a Minecraft item tooltip as a rendered image
      */
@@ -67,6 +70,7 @@ public class MinecraftTooltipGenerator implements Generator {
             builder.withLines(LineSegment.fromLegacy(rarity.getColorCode() + name, '&'));
         }
 
+        List<String> segments = new ArrayList<>();
         for (String line : input.split("\\\\n")) {
             String parsed = Parser.parseString(line, List.of(
                 new ColorCodeParser(),
@@ -75,8 +79,31 @@ public class MinecraftTooltipGenerator implements Generator {
                 new GemstoneParser()
             ));
 
-            builder.withLines(LineSegment.fromLegacy(parsed, '&'));
+            segments.add(parsed);
         }
+
+        for (String string : segments) {
+            String[] words = string.split(" ");
+            StringBuilder currentLine = new StringBuilder();
+            for (String word : words) {
+                while (word.length() > MAX_LINE_LENGTH) {
+                    builder.withLines(LineSegment.fromLegacy(word.substring(0, MAX_LINE_LENGTH), '&'));
+                    word = word.substring(MAX_LINE_LENGTH);
+                }
+
+                if (currentLine.length() + word.length() > MAX_LINE_LENGTH) {
+                    builder.withLines(LineSegment.fromLegacy(currentLine.toString().trim(), '&'));
+                    currentLine = new StringBuilder();
+                }
+
+                currentLine.append(word).append(" ");
+            }
+
+            if (!currentLine.isEmpty()) {
+                builder.withLines(LineSegment.fromLegacy(currentLine.toString().trim(), '&'));
+            }
+        }
+
 
         if (rarity != null && rarity != Rarity.NONE) {
             if (emptyLine) {
