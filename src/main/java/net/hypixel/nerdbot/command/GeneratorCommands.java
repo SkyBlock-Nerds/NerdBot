@@ -66,9 +66,11 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
         @AppOption(description = EXTRA_DATA_DESCRIPTION) @Optional String data,
         @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
-        @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue
+        @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
+        @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
     ) {
-        event.deferReply().complete();
+        showPublicly = showPublicly != null && showPublicly;
+        event.deferReply(!showPublicly).complete();
 
         enchanted = enchanted != null && enchanted;
 
@@ -100,8 +102,13 @@ public class GeneratorCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = BASE_COMMAND, subcommand = "head", description = "Generate a player head")
-    public void generateHead(GuildSlashEvent event, @AppOption(description = TEXTURE_DESCRIPTION) String texture) {
-        event.deferReply().complete();
+    public void generateHead(
+        GuildSlashEvent event,
+        @AppOption(description = TEXTURE_DESCRIPTION) String texture,
+        @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
+    ) {
+        showPublicly = showPublicly != null && showPublicly;
+        event.deferReply(!showPublicly).complete();
 
         try {
             GeneratedObject generatedObject = new GeneratorImageBuilder()
@@ -121,9 +128,11 @@ public class GeneratorCommands extends ApplicationCommand {
     public void generateRecipe(
         GuildSlashEvent event,
         @AppOption(description = RECIPE_STRING_DESCRIPTION) String recipeString,
-        @AppOption(description = RENDER_BACKGROUND_DESCRIPTION) @Optional Boolean renderBackground
+        @AppOption(description = RENDER_BACKGROUND_DESCRIPTION) @Optional Boolean renderBackground,
+        @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
     ) {
-        event.deferReply().complete();
+        showPublicly = showPublicly != null && showPublicly;
+        event.deferReply(!showPublicly).complete();
 
         renderBackground = renderBackground == null || renderBackground;
 
@@ -154,9 +163,11 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = INVENTORY_COLUMNS_DESCRIPTION) int slotsPerRow,
         @AppOption(description = INVENTORY_CONTENTS_DESCRIPTION) String inventoryString,
         @AppOption(description = INVENTORY_NAME_DESCRIPTION) @Optional String containerName,
-        @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean drawBorder
+        @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean drawBorder,
+        @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
     ) {
-        event.deferReply().complete();
+        showPublicly = showPublicly != null && showPublicly;
+        event.deferReply(!showPublicly).complete();
 
         drawBorder = drawBorder == null || drawBorder;
 
@@ -186,9 +197,11 @@ public class GeneratorCommands extends ApplicationCommand {
         GuildSlashEvent event,
         @AppOption(description = NBT_DESCRIPTION) String nbt,
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
-        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding
+        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
+        @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
     ) {
-        event.deferReply().complete();
+        showPublicly = showPublicly != null && showPublicly;
+        event.deferReply(!showPublicly).complete();
 
         alpha = alpha == null ? 245 : alpha;
         padding = padding == null ? 0 : padding;
@@ -262,9 +275,11 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = EMPTY_LINE_DESCRIPTION) @Optional Boolean emptyLine,
         @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
         @AppOption(description = NORMAL_ITEM_DESCRIPTION) @Optional Boolean paddingFirstLine,
-        @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide
+        @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide,
+        @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
     ) {
-        event.deferReply().complete();
+        showPublicly = showPublicly != null && showPublicly;
+        event.deferReply(!showPublicly).complete();
 
         alpha = alpha == null ? 245 : alpha;
         padding = padding == null ? 0 : padding;
@@ -333,9 +348,11 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = TEXT_DESCRIPTION) String text,
         @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
-        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding
+        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
+        @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
     ) {
-        event.deferReply().complete();
+        showPublicly = showPublicly != null && showPublicly;
+        event.deferReply(!showPublicly).complete();
 
         centered = centered != null && centered;
         alpha = alpha == null ? 245 : alpha;
@@ -366,7 +383,7 @@ public class GeneratorCommands extends ApplicationCommand {
     public void generateSingleDialogue(
         GuildSlashEvent event,
         @AppOption(description = "Name of your NPC") String npcName,
-        @AppOption(description = "NPC dialogue, lines separated by \n") String dialogue,
+        @AppOption(description = "NPC dialogue, lines separated by \\n") String dialogue,
         @AppOption(description = "If the Abiphone symbol should be shown next to the dialogue") @Optional Boolean abiphone,
         @AppOption(description = "Player head texture (username, URL, etc.)") @Optional String skinValue,
         @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
