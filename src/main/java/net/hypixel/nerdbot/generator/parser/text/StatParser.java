@@ -58,9 +58,6 @@ public class StatParser implements StringParser {
                 case DIFFERENT_ICON_COLOR:
                     input = input.replace(match, differentIconColorParser(statEnum, extraData));
                     break;
-                case PERCENT_SYMBOL:
-                    input = input.replace(match, percentSymbolColorParser(statEnum, extraData));
-                    break;
                 default:
                     input = input.replace(match, parseStat(statEnum, extraData));
                     break;
@@ -203,16 +200,6 @@ public class StatParser implements StringParser {
         String amount = extraDetails.substring(separator + 1);
 
         return "&" + ChatFormat.GRAY.getCode() + itemStat + ": &" + stat.getSecondaryColor().getCode() + amount;
-    }
-
-    private String percentSymbolColorParser(Stat stat, String extraDetails) {
-        String output = "&" + stat.getColor().getCode() + "% " + stat.getStat();
-
-        if (extraDetails == null) {
-            return output;
-        }
-
-        return output + " " + extraDetails;
     }
 
     /**
