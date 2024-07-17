@@ -8,10 +8,9 @@ import lombok.extern.log4j.Log4j2;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,26 +18,33 @@ import java.util.Map;
 public class Spritesheet {
 
     private static final Map<String, BufferedImage> IMAGE_MAP = new HashMap<>();
-    private static final String FOLDER_PATH = "src/main/resources/minecraft";
+    private static final String ATLAS_PATH = "/minecraft/spritesheets/minecraft_texture_atlas.png";
+    private static final String COORDINATES_PATH = "/minecraft/json/atlas_coordinates.json";
 
     private static BufferedImage textureAtlas;
 
     static {
-        try {
+        try (InputStream atlasStream = Spritesheet.class.getResourceAsStream(ATLAS_PATH)) {
+            if (atlasStream == null) {
+                throw new IOException("Texture atlas image not found: " + ATLAS_PATH);
+            }
             // Load the texture atlas image
             log.info("Loading texture atlas image");
-            textureAtlas = ImageIO.read(new File(FOLDER_PATH + "/spritesheets/minecraft_texture_atlas.png"));
+            textureAtlas = ImageIO.read(atlasStream);
             log.info("Loaded texture atlas image (size: " + textureAtlas.getWidth() + "x" + textureAtlas.getHeight() + ")");
         } catch (IOException exception) {
             log.error("Failed to load texture atlas image", exception);
         }
 
-        try {
+        try (InputStream coordinatesStream = Spritesheet.class.getResourceAsStream(COORDINATES_PATH)) {
+            if (coordinatesStream == null) {
+                throw new IOException("Texture atlas coordinates file not found: " + COORDINATES_PATH);
+            }
             log.info("Loading texture atlas coordinates from JSON file");
 
             // Load the texture atlas coordinates
             Gson gson = new Gson();
-            JsonArray jsonCoordinates = gson.fromJson(new FileReader(FOLDER_PATH + "/json/atlas_coordinates.json"), JsonArray.class);
+            JsonArray jsonCoordinates = gson.fromJson(new InputStreamReader(coordinatesStream), JsonArray.class);
 
             for (JsonElement jsonElement : jsonCoordinates) {
                 JsonObject itemData = jsonElement.getAsJsonObject();
@@ -53,7 +59,7 @@ public class Spritesheet {
             }
 
             log.info("Finished loading texture atlas coordinates from JSON file (" + IMAGE_MAP.size() + " textures loaded)");
-        } catch (FileNotFoundException exception) {
+        } catch (IOException exception) {
             log.error("Failed to load texture atlas coordinates", exception);
         }
     }
