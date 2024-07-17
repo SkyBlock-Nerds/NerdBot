@@ -319,6 +319,7 @@ public class MinecraftTooltip {
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static class Builder implements ClassBuilder<MinecraftTooltip> {
 
+        @Getter
         private final List<LineSegment> lines = new ArrayList<>();
         private ChatFormat defaultColor = ChatFormat.GRAY;
         private int alpha = 255;

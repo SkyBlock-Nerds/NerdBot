@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 public class ColorSegment {
 
     protected @NotNull String text;
-    protected ChatFormat color = ChatFormat.WHITE;
+    protected ChatFormat color = ChatFormat.GRAY;
     protected boolean italic, bold, underlined, obfuscated, strikethrough;
 
     public ColorSegment(@NotNull String text) {
@@ -96,7 +96,7 @@ public class ColorSegment {
                             break;
                         case RESET:
                             // Reset everything.
-                            currentObject.setColor(ChatFormat.WHITE);
+                            currentObject.setColor(ChatFormat.GRAY);
                             currentObject.setObfuscated(false);
                             currentObject.setBold(false);
                             currentObject.setItalic(false);
@@ -199,7 +199,7 @@ public class ColorSegment {
 
     public static class Builder implements ClassBuilder<ColorSegment> {
         protected String text = "";
-        protected ChatFormat color = ChatFormat.WHITE;
+        protected ChatFormat color = ChatFormat.GRAY;
         protected boolean italic, bold, underlined, obfuscated, strikethrough;
 
         public Builder isBold() {
