@@ -33,7 +33,7 @@ import java.util.List;
 @Log4j2
 public class GeneratorCommands extends ApplicationCommand {
 
-    private static final String BASE_COMMAND = "gen";
+    private static final String BASE_COMMAND = "gen2"; // TODO change this back to "gen" when released
     private static final String ITEM_DESCRIPTION = "The ID of the item to display";
     private static final String EXTRA_DATA_DESCRIPTION = "The extra modifiers to change the item";
     private static final String ENCHANTED_DESCRIPTION = "Whether or not the item should be enchanted";
