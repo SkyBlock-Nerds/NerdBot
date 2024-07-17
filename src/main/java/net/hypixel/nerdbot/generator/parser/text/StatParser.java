@@ -155,6 +155,11 @@ public class StatParser implements StringParser {
      * @return returns the color parsed replacement string
      */
     private String postStatColorParser(Stat stat, String extraDetails) {
+        // TODO expand to other methods
+        if (extraDetails == null) {
+            return "&" + stat.getColor().getCode() + stat.getDisplay();
+        }
+
         return "&" + stat.getColor().getCode() + stat.getDisplay() + " " + extraDetails;
     }
 
