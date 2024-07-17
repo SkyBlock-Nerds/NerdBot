@@ -15,8 +15,8 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,8 +37,11 @@ public class MinecraftInventoryGenerator implements Generator {
     private static final Font MINECRAFT_FONT;
 
     static {
-        try {
-            BufferedImage singleSlotImage = ImageUtil.resizeImage(ImageIO.read(new File("src/main/resources/minecraft/spritesheets/slot.png")), SLOT_DIMENSION, SLOT_DIMENSION);
+        try (InputStream slotImageStream = MinecraftInventoryGenerator.class.getResourceAsStream("/minecraft/spritesheets/slot.png")) {
+            if (slotImageStream == null) {
+                throw new IOException("Slot image not found: /minecraft/spritesheets/slot.png");
+            }
+            BufferedImage singleSlotImage = ImageUtil.resizeImage(ImageIO.read(slotImageStream), SLOT_DIMENSION, SLOT_DIMENSION);
             SINGLE_SLOT_IMAGE.getGraphics().drawImage(singleSlotImage, 0, 0, null);
         } catch (IOException e) {
             throw new RuntimeException(e);
