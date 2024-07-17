@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftTooltipGenerator implements Generator {
 
-    private static final int MAX_LINE_LENGTH = 32;
+    public static final int DEFAULT_MAX_LINE_LENGTH = 32;
     private static final Pattern COLOR_CODE_PATTERN = Pattern.compile("&[0-9a-fk-or]");
 
     private final String name;
@@ -38,10 +38,11 @@ public class MinecraftTooltipGenerator implements Generator {
     private final int padding;
     private final boolean normalItem;
     private final boolean centeredText;
+    private final int maxLineLength;
 
     @Override
     public GeneratedObject generate() {
-        return new GeneratedObject(buildItem(name, itemLore, type, emptyLine, alpha, padding, normalItem, centeredText));
+        return new GeneratedObject(buildItem(name, itemLore, type, emptyLine, alpha, padding, normalItem, maxLineLength));
     }
 
     /**
@@ -58,12 +59,12 @@ public class MinecraftTooltipGenerator implements Generator {
      * @return a Minecraft item tooltip as a rendered image
      */
     @Nullable
-    public BufferedImage buildItem(String name, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, boolean paddingFirstLine, boolean isCentered) {
-        MinecraftTooltip parsedLore = parseLore(name, itemLoreString, addEmptyLine, type, alpha, padding, paddingFirstLine);
+    public BufferedImage buildItem(String name, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, boolean paddingFirstLine, int maxLineLength) {
+        MinecraftTooltip parsedLore = parseLore(name, itemLoreString, addEmptyLine, type, alpha, padding, paddingFirstLine, maxLineLength);
         return parsedLore.render().getImage();
     }
 
-    public MinecraftTooltip parseLore(String name, String input, boolean emptyLine, String type, int alpha, int padding, boolean paddingFirstLine) {
+    public MinecraftTooltip parseLore(String name, String input, boolean emptyLine, String type, int alpha, int padding, boolean paddingFirstLine, int maxLineLength) {
         MinecraftTooltip.Builder builder = MinecraftTooltip.builder()
             .withPadding(padding)
             .isPaddingFirstLine(paddingFirstLine)
@@ -93,13 +94,13 @@ public class MinecraftTooltipGenerator implements Generator {
             for (String word : words) {
                 lastColorCode = findLastColorCode(word, lastColorCode);
 
-                while (word.length() > MAX_LINE_LENGTH) {
-                    String part = word.substring(0, MAX_LINE_LENGTH);
+                while (word.length() > maxLineLength) {
+                    String part = word.substring(0, maxLineLength);
                     builder.withLines(LineSegment.fromLegacy(part, '&'));
-                    word = lastColorCode + word.substring(MAX_LINE_LENGTH);
+                    word = lastColorCode + word.substring(maxLineLength);
                 }
 
-                if (currentLine.length() + word.length() > MAX_LINE_LENGTH) {
+                if (currentLine.length() + word.length() > maxLineLength) {
                     builder.withLines(LineSegment.fromLegacy(currentLine.toString().trim(), '&'));
                     currentLine = new StringBuilder(lastColorCode);
                 }
@@ -145,6 +146,7 @@ public class MinecraftTooltipGenerator implements Generator {
         private Integer alpha;
         private Integer padding;
         private boolean paddingFirstLine;
+        private int maxLineLength;
         private boolean centered;
 
         public MinecraftTooltipGenerator.Builder withName(String name) {
@@ -192,6 +194,12 @@ public class MinecraftTooltipGenerator implements Generator {
             return this;
         }
 
+        public MinecraftTooltipGenerator.Builder withMaxLineLength(int maxLineLength) {
+            this.maxLineLength = maxLineLength;
+            return this;
+        }
+
+        // TODO support components
         public MinecraftTooltipGenerator.Builder parseNbtJson(JsonObject nbtJson) {
             this.emptyLine = false;
             this.paddingFirstLine = false;
@@ -212,7 +220,7 @@ public class MinecraftTooltipGenerator implements Generator {
 
         @Override
         public MinecraftTooltipGenerator build() {
-            return new MinecraftTooltipGenerator(name, rarity, itemLore, type, emptyLine, alpha, padding, paddingFirstLine, centered);
+            return new MinecraftTooltipGenerator(name, rarity, itemLore, type, emptyLine, alpha, padding, paddingFirstLine, centered, maxLineLength);
         }
     }
 }

@@ -242,6 +242,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     .build());
             }
 
+            // TODO set max line length to longest line
             MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .parseNbtJson(jsonObject)
                 .withAlpha(alpha)
@@ -275,6 +276,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = EMPTY_LINE_DESCRIPTION) @Optional Boolean emptyLine,
         @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
         @AppOption(description = NORMAL_ITEM_DESCRIPTION) @Optional Boolean paddingFirstLine,
+        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
         @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide,
         @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
     ) {
@@ -286,6 +288,7 @@ public class GeneratorCommands extends ApplicationCommand {
         emptyLine = emptyLine != null && emptyLine;
         centered = centered != null && centered;
         paddingFirstLine = paddingFirstLine != null && paddingFirstLine;
+        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
@@ -297,6 +300,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withAlpha(alpha)
                 .withPadding(padding)
                 .withEmptyLine(emptyLine)
+                .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
                 .isPaddingFirstLine(paddingFirstLine)
                 .build();
@@ -349,6 +353,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
+        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
         @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
     ) {
         showPublicly = showPublicly != null && showPublicly;
@@ -357,6 +362,7 @@ public class GeneratorCommands extends ApplicationCommand {
         centered = centered != null && centered;
         alpha = alpha == null ? 245 : alpha;
         padding = padding == null ? 0 : padding;
+        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
@@ -364,6 +370,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withItemLore(text)
                 .withAlpha(alpha)
                 .withPadding(padding)
+                .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
                 .isPaddingFirstLine(false)
                 .withEmptyLine(false)
@@ -384,12 +391,14 @@ public class GeneratorCommands extends ApplicationCommand {
         GuildSlashEvent event,
         @AppOption(description = "Name of your NPC") String npcName,
         @AppOption(description = "NPC dialogue, lines separated by \\n") String dialogue,
+        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
         @AppOption(description = "If the Abiphone symbol should be shown next to the dialogue") @Optional Boolean abiphone,
         @AppOption(description = "Player head texture (username, URL, etc.)") @Optional String skinValue,
         @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
     ) {
         showPublicly = showPublicly != null && showPublicly;
         abiphone = abiphone != null && abiphone;
+        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         event.deferReply(!showPublicly).complete();
 
         String[] lines = dialogue.split("\\\\n");
@@ -415,7 +424,8 @@ public class GeneratorCommands extends ApplicationCommand {
             .withAlpha(0)
             .withPadding(0)
             .isPaddingFirstLine(false)
-            .withEmptyLine(false);
+            .withEmptyLine(false)
+            .withMaxLineLength(maxLineLength);
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
