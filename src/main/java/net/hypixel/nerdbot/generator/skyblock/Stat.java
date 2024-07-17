@@ -36,7 +36,7 @@ public enum Stat {
     FUEL("♢", "Fuel", ChatFormat.DARK_GREEN),
     MITHRIL_POWDER("᠅", "Mithril Powder", ChatFormat.DARK_GREEN),
     GEMSTONE_POWDER("᠅", "Gemstone Powder", ChatFormat.LIGHT_PURPLE),
-    REQUIRE("❣", "Requires", ChatFormat.RED, ParseType.POST),
+    REQUIRES("❣", "Requires", ChatFormat.DARK_RED, ChatFormat.RED, ParseType.DIFFERENT_ICON_COLOR),
     RECIPE("", "Right-click to view recipes!", ChatFormat.YELLOW, ParseType.NONE),
     COOP_SOULBOUND("", "Co-op Soulbound", ChatFormat.DARK_GRAY, ParseType.SOULBOUND),
     SOULBOUND("", "Soulbound", ChatFormat.DARK_GRAY, ParseType.SOULBOUND),
@@ -115,6 +115,7 @@ public enum Stat {
         POST,
         POST_DUAL,
         ITEM_STAT,
-        ABILITY
+        ABILITY,
+        DIFFERENT_ICON_COLOR
     }
 }

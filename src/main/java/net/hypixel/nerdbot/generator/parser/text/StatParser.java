@@ -55,6 +55,9 @@ public class StatParser implements StringParser {
                 case ABILITY:
                     input = input.replace(match, abilityColorParser(statEnum, extraData));
                     break;
+                case DIFFERENT_ICON_COLOR:
+                    input = input.replace(match, differentIconColorParser(statEnum, extraData));
+                    break;
                 default:
                     input = input.replace(match, parseStat(statEnum, extraData));
                     break;
@@ -221,5 +224,21 @@ public class StatParser implements StringParser {
         String abilityType = extraDetails.substring(separator + 1);
 
         return "&" + stat.getColor().getCode() + stat.getStat() + ": " + abilityName + " &" + stat.getSecondaryColor().getCode() + "&" + ChatFormat.BOLD.getCode() + abilityType;
+    }
+
+    /**
+     * Displays the selected stat with the icon in the primary color and the text in the secondary color
+     *
+     * @param stat         the stat selected
+     * @param extraDetails the extra arguments provided
+     *
+     * @return the color parsed replacement string
+     */
+    private String differentIconColorParser(Stat stat, String extraDetails) {
+        if (extraDetails == null) {
+            return "&" + stat.getColor().getCode() + stat.getIcon() + " &" + stat.getSecondaryColor().getCode() + stat.getStat();
+        }
+
+        return "&" + stat.getColor().getCode() + stat.getIcon() + " &" + stat.getSecondaryColor().getCode() + stat.getStat() + " " + extraDetails;
     }
 }
