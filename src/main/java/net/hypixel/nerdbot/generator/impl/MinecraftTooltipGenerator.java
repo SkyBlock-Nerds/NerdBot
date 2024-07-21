@@ -20,14 +20,13 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftTooltipGenerator implements Generator {
 
     public static final int DEFAULT_MAX_LINE_LENGTH = 32;
-    private static final Pattern COLOR_CODE_PATTERN = Pattern.compile("&[0-9a-fk-or]");
 
     private final String name;
     private final Rarity rarity;
@@ -86,31 +85,9 @@ public class MinecraftTooltipGenerator implements Generator {
             segments.add(parsed);
         }
 
-        for (String segment : segments) {
-            String[] words = segment.split(" ");
-            StringBuilder currentLine = new StringBuilder();
-            String lastColorCode = "";
-
-            for (String word : words) {
-                lastColorCode = findLastColorCode(word, lastColorCode);
-
-                while (word.length() > maxLineLength) {
-                    String part = word.substring(0, maxLineLength);
-                    builder.withLines(LineSegment.fromLegacy(part, '&'));
-                    word = lastColorCode + word.substring(maxLineLength);
-                }
-
-                if (currentLine.length() + word.length() > maxLineLength) {
-                    builder.withLines(LineSegment.fromLegacy(currentLine.toString().trim(), '&'));
-                    currentLine = new StringBuilder(lastColorCode);
-                }
-
-                currentLine.append(word).append(" ");
-            }
-
-            if (!currentLine.isEmpty()) {
-                builder.withLines(LineSegment.fromLegacy(currentLine.toString().trim(), '&'));
-            }
+        List<List<LineSegment>> lines = splitLines(segments);
+        for (List<LineSegment> line : lines) {
+            builder.withLines(line);
         }
 
         if (rarity != null && rarity != Rarity.NONE) {
@@ -124,12 +101,82 @@ public class MinecraftTooltipGenerator implements Generator {
         return builder.build();
     }
 
-    private static String findLastColorCode(String word, String lastColorCode) {
-        Matcher matcher = COLOR_CODE_PATTERN.matcher(word);
-        while (matcher.find()) {
-            lastColorCode = matcher.group();
+    private List<List<LineSegment>> splitLines(List<String> lines) {
+        List<List<LineSegment>> output = new CopyOnWriteArrayList<>();
+
+        for (String line : lines) {
+            if (line == null || line.isBlank()) {
+                return output;
+            }
+
+            // split text into segments based on newline characters
+            String[] segments = line.split("\\n");
+            for (String segment : segments) {
+                output.addAll(wrapSegment(segment, maxLineLength));
+            }
         }
-        return lastColorCode;
+
+        return output;
+    }
+
+    private List<List<LineSegment>> wrapSegment(String text, int maxLineLength) {
+        List<List<LineSegment>> lines = new CopyOnWriteArrayList<>();
+        StringBuilder currentLine = new StringBuilder();
+        String lastColorCode = "";
+
+        String[] words = text.split("\\s+"); // split text by whitespace characters
+
+        for (String word : words) {
+            if (currentLine.length() + word.length() + 1 > maxLineLength) {
+                // If adding the next word exceeds max length, add currentLine to the list
+                String lineToAdd = currentLine.toString().trim();
+                if (!lineToAdd.startsWith("&")) {
+                    lineToAdd = lastColorCode + lineToAdd;
+                }
+                lines.add(LineSegment.fromLegacy(lineToAdd, '&'));
+                lastColorCode = getLastColorCode(lineToAdd);
+                currentLine.setLength(0); // reset the current line
+            }
+
+            // Add next word to the current line
+            if (!currentLine.isEmpty()) {
+                currentLine.append(" ");
+            }
+            currentLine.append(word);
+        }
+
+        // Add the last line if it's not empty
+        if (!currentLine.isEmpty()) {
+            String lastLine = currentLine.toString().trim();
+            if (!lastLine.startsWith("&")) {
+                lastLine = lastColorCode + lastLine;
+            }
+            lines.add(LineSegment.fromLegacy(lastLine, '&'));
+        } else if (!text.contains(" ")) { // Handle case with no spaces
+            for (int i = 0; i < text.length(); i += maxLineLength) {
+                String part = text.substring(i, Math.min(i + maxLineLength, text.length()));
+                if (!part.startsWith("&")) {
+                    part = lastColorCode + part;
+                }
+                lines.add(LineSegment.fromLegacy(part, '&'));
+                lastColorCode = getLastColorCode(part);
+            }
+        }
+
+        return lines;
+    }
+
+    private static String getLastColorCode(String text) {
+        String colorCode = "";
+
+        for (int i = text.length() - 2; i >= 0; i--) {
+            if (text.charAt(i) == '&') {
+                colorCode = text.substring(i, i + 2);
+                break;
+            }
+        }
+
+        return colorCode;
     }
 
     public enum TooltipSide {
@@ -147,6 +194,7 @@ public class MinecraftTooltipGenerator implements Generator {
         private Integer padding;
         private boolean paddingFirstLine;
         private int maxLineLength;
+        private boolean bypassMaxLineLength;
         private boolean centered;
 
         public MinecraftTooltipGenerator.Builder withName(String name) {
@@ -195,7 +243,16 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         public MinecraftTooltipGenerator.Builder withMaxLineLength(int maxLineLength) {
-            this.maxLineLength = MinecraftTooltip.LINE_LENGTH.fit(maxLineLength);
+            if (bypassMaxLineLength) {
+                this.maxLineLength = maxLineLength;
+            } else {
+                this.maxLineLength = MinecraftTooltip.LINE_LENGTH.fit(maxLineLength);
+            }
+            return this;
+        }
+
+        public MinecraftTooltipGenerator.Builder bypassMaxLineLength(boolean bypassMaxLineLength) {
+            this.bypassMaxLineLength = bypassMaxLineLength;
             return this;
         }
 

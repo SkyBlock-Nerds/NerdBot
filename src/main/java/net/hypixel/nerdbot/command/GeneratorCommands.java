@@ -425,7 +425,8 @@ public class GeneratorCommands extends ApplicationCommand {
             .withPadding(0)
             .isPaddingFirstLine(false)
             .withEmptyLine(false)
-            .withMaxLineLength(maxLineLength);
+            .withMaxLineLength(maxLineLength)
+            .bypassMaxLineLength(true);
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
