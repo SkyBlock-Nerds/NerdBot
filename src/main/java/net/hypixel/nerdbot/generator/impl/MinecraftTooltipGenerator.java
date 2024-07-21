@@ -132,6 +132,7 @@ public class MinecraftTooltipGenerator implements Generator {
         List<List<LineSegment>> lines = new CopyOnWriteArrayList<>();
         StringBuilder currentLine = new StringBuilder();
         String lastColorCode = "";
+        String lastFormattingCodes = "";
 
         String[] words = text.split("\\s+"); // split text by whitespace characters
 
@@ -140,10 +141,11 @@ public class MinecraftTooltipGenerator implements Generator {
                 // If adding the next word exceeds max length, add currentLine to the list
                 String lineToAdd = currentLine.toString().trim();
                 if (!lineToAdd.startsWith("&")) {
-                    lineToAdd = lastColorCode + lineToAdd;
+                    lineToAdd = lastColorCode + lastFormattingCodes + lineToAdd;
                 }
                 lines.add(LineSegment.fromLegacy(lineToAdd, '&'));
                 lastColorCode = getLastColorCode(lineToAdd);
+                lastFormattingCodes = getLastFormattingCodes(lineToAdd);
                 currentLine.setLength(0); // reset the current line
             }
 
@@ -158,34 +160,51 @@ public class MinecraftTooltipGenerator implements Generator {
         if (!currentLine.isEmpty()) {
             String lastLine = currentLine.toString().trim();
             if (!lastLine.startsWith("&")) {
-                lastLine = lastColorCode + lastLine;
+                lastLine = lastColorCode + lastFormattingCodes + lastLine;
             }
             lines.add(LineSegment.fromLegacy(lastLine, '&'));
         } else if (!text.contains(" ")) { // Handle case with no spaces
             for (int i = 0; i < text.length(); i += maxLineLength) {
                 String part = text.substring(i, Math.min(i + maxLineLength, text.length()));
                 if (!part.startsWith("&")) {
-                    part = lastColorCode + part;
+                    part = lastColorCode + lastFormattingCodes + part;
                 }
                 lines.add(LineSegment.fromLegacy(part, '&'));
                 lastColorCode = getLastColorCode(part);
+                lastFormattingCodes = getLastFormattingCodes(part);
             }
         }
 
         return lines;
     }
 
-    private static String getLastColorCode(String text) {
+    private String getLastColorCode(String text) {
         String colorCode = "";
-
         for (int i = text.length() - 2; i >= 0; i--) {
-            if (text.charAt(i) == '&') {
-                colorCode = text.substring(i, i + 2);
-                break;
+            if (text.charAt(i) == '&' && (i + 1 < text.length())) {
+                char code = text.charAt(i + 1);
+                if (Character.isLetterOrDigit(code)) {
+                    colorCode = text.substring(i, i + 2);
+                    if ("0123456789abcdef".indexOf(code) != -1) {
+                        break;
+                    }
+                }
             }
         }
-
         return colorCode;
+    }
+
+    private String getLastFormattingCodes(String text) {
+        StringBuilder formattingCodes = new StringBuilder();
+        for (int i = 0; i < text.length() - 1; i++) {
+            if (text.charAt(i) == '&' && (i + 1 < text.length())) {
+                char code = text.charAt(i + 1);
+                if ("klmnor".indexOf(code) != -1) {
+                    formattingCodes.append(text, i, i + 2);
+                }
+            }
+        }
+        return formattingCodes.toString();
     }
 
     public enum TooltipSide {
