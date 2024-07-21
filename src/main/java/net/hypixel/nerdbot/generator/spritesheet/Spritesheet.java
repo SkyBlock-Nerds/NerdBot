@@ -1,10 +1,10 @@
 package net.hypixel.nerdbot.generator.spritesheet;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
+import net.hypixel.nerdbot.NerdBotApp;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -43,8 +43,7 @@ public class Spritesheet {
             log.info("Loading texture atlas coordinates from JSON file");
 
             // Load the texture atlas coordinates
-            Gson gson = new Gson();
-            JsonArray jsonCoordinates = gson.fromJson(new InputStreamReader(coordinatesStream), JsonArray.class);
+            JsonArray jsonCoordinates = NerdBotApp.GSON.fromJson(new InputStreamReader(coordinatesStream), JsonArray.class);
 
             for (JsonElement jsonElement : jsonCoordinates) {
                 JsonObject itemData = jsonElement.getAsJsonObject();

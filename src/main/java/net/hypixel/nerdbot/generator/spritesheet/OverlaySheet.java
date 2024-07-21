@@ -1,9 +1,9 @@
 package net.hypixel.nerdbot.generator.spritesheet;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.item.overlay.ItemOverlay;
 import net.hypixel.nerdbot.generator.item.overlay.OverlayColorOptions;
 
@@ -30,13 +30,12 @@ public class OverlaySheet {
             // Load the overlay sprite sheet image
             BufferedImage overlaySpriteSheet = ImageIO.read(overlayStream);
 
-            Gson gson = new Gson();
             // loading color choices for overlays into memory
             try (InputStream colorOptionsStream = OverlaySheet.class.getResourceAsStream("/minecraft/json/overlay_colors.json")) {
                 if (colorOptionsStream == null) {
                     throw new IOException("Overlay colors JSON file not found: /minecraft/json/overlay_colors.json");
                 }
-                OverlayColorOptions[] overlayColorOptionsOptions = gson.fromJson(new InputStreamReader(colorOptionsStream), OverlayColorOptions[].class);
+                OverlayColorOptions[] overlayColorOptionsOptions = NerdBotApp.GSON.fromJson(new InputStreamReader(colorOptionsStream), OverlayColorOptions[].class);
                 HashMap<String, OverlayColorOptions> foundOverlayColors = new HashMap<>();
                 for (OverlayColorOptions overlayColorOptions : overlayColorOptionsOptions) {
                     foundOverlayColors.put(overlayColorOptions.getName(), overlayColorOptions);
@@ -47,7 +46,7 @@ public class OverlaySheet {
                     if (overlayCoordinatesStream == null) {
                         throw new IOException("Overlay coordinates JSON file not found: /minecraft/json/overlay_coordinates.json");
                     }
-                    ItemOverlay[] itemOverlayCoordinates = gson.fromJson(new InputStreamReader(overlayCoordinatesStream), ItemOverlay[].class);
+                    ItemOverlay[] itemOverlayCoordinates = NerdBotApp.GSON.fromJson(new InputStreamReader(overlayCoordinatesStream), ItemOverlay[].class);
                     HashMap<String, ItemOverlay> foundOverlays = new HashMap<>();
                     for (ItemOverlay itemOverlay : itemOverlayCoordinates) {
                         int imageDimensions = itemOverlay.isBig() ? SpritesheetGenerator.IMAGE_WIDTH : 16;
@@ -70,7 +69,7 @@ public class OverlaySheet {
                         if (itemOverlayBindingStream == null) {
                             throw new IOException("Item overlay binding JSON file not found: /minecraft/json/item_overlay_binding.json");
                         }
-                        JsonArray jsonBindings = gson.fromJson(new InputStreamReader(itemOverlayBindingStream), JsonArray.class);
+                        JsonArray jsonBindings = NerdBotApp.GSON.fromJson(new InputStreamReader(itemOverlayBindingStream), JsonArray.class);
                         for (JsonElement jsonElement : jsonBindings) {
                             JsonObject itemData = jsonElement.getAsJsonObject();
                             String itemName = itemData.get("name").getAsString();

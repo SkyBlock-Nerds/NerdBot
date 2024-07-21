@@ -1,10 +1,10 @@
 package net.hypixel.nerdbot.generator.spritesheet;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import lombok.Getter;
 import lombok.Setter;
+import net.hypixel.nerdbot.NerdBotApp;
 
 import javax.imageio.ImageIO;
 import java.awt.Graphics2D;
@@ -208,8 +208,7 @@ public class SpritesheetGenerator {
         File jsonFile = new File(outputFolder, jsonFileName);
 
         try (FileWriter fileWriter = new FileWriter(jsonFile)) {
-            Gson gson = new Gson();
-            gson.toJson(jsonArray, fileWriter);
+            NerdBotApp.GSON.toJson(jsonArray, fileWriter);
             System.out.println("Texture coordinates JSON file saved successfully!");
         } catch (IOException exception) {
             exception.printStackTrace();
