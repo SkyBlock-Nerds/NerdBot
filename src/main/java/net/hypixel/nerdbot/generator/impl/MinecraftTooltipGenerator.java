@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
+import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.parser.Parser;
@@ -117,6 +118,11 @@ public class MinecraftTooltipGenerator implements Generator {
             for (String segment : segments) {
                 output.addAll(wrapSegment(segment, maxLineLength));
             }
+        }
+
+        // throw an exception if every line is empty
+        if (output.stream().allMatch(List::isEmpty)) {
+            throw new GeneratorException("You cannot generate an empty tooltip!");
         }
 
         return output;
