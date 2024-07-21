@@ -362,7 +362,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply(!showPublicly).complete();
 
         centered = centered != null && centered;
-        alpha = alpha == null ? 245 : alpha;
+        alpha = alpha == null ? 0 : alpha;
         padding = padding == null ? 0 : padding;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
