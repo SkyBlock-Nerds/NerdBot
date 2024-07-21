@@ -398,21 +398,21 @@ public class GeneratorCommands extends ApplicationCommand {
     ) {
         showPublicly = showPublicly != null && showPublicly;
         abiphone = abiphone != null && abiphone;
-        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
+        maxLineLength = maxLineLength == null ? 91 : maxLineLength;
         event.deferReply(!showPublicly).complete();
 
         String[] lines = dialogue.split("\\\\n");
         for (int i = 0; i < lines.length; i++) {
-            lines[i] = "&e[NPC] " + npcName + "&r: " + (abiphone ? "&b%%ABIPHONE%%&r " : "") + lines[i];
+            lines[i] = "&e[NPC] " + npcName + "&f: " + (abiphone ? "&b%%ABIPHONE%%&f " : "") + lines[i];
             String line = lines[i];
 
             if (line.contains("{options:")) {
-                String[] split = line.split("\\{options: ");
+                String[] split = line.split("\\{options: ?");
                 lines[i] = split[0];
                 String[] options = split[1].replace("}", "").split(", ");
-                lines[i] += "\n&eSelect an option: &r";
+                lines[i] += "\n&eSelect an option: &f";
                 for (String option : options) {
-                    lines[i] += "&a" + option + "&r ";
+                    lines[i] += "&a" + option + "&f ";
                 }
             }
         }
