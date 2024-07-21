@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
@@ -17,6 +18,7 @@ import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
@@ -72,6 +74,7 @@ public class Util {
     public static final String SECTION_SYMBOL = "§";
     public static final String[] PROJECT_CHANNEL_NAMES = {
         "project",
+        "projects",
         "projəct",
         "nerd-project",
         "nerds-project"
@@ -90,6 +93,14 @@ public class Util {
 
     public static boolean isAprilFirst() {
         return Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
+    }
+
+    public static boolean isFirstDayOfMonth() {
+        if (Environment.isDev()) {
+            return true;
+        }
+
+        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
     }
 
     public static List<String> splitString(String text, int size) {
@@ -233,32 +244,45 @@ public class Util {
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
     }
 
-    public static Suggestion.ChannelType getSuggestionType(ThreadChannel threadChannel) {
-        return getSuggestionType(threadChannel.getParentChannel().asForumChannel());
+    public static Suggestion.ChannelType getThreadSuggestionType(ThreadChannel threadChannel) {
+        return getForumSuggestionType(threadChannel.getParentChannel().asForumChannel());
     }
 
-    public static Suggestion.ChannelType getSuggestionType(ForumChannel forumChannel) {
+    public static Suggestion.ChannelType getForumSuggestionType(ForumChannel forumChannel) {
         SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
         AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
         String parentChannelId = forumChannel.getId();
 
-        if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equals)) {
+        if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
             return Suggestion.ChannelType.ALPHA;
-        } else if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equals)) {
+        } else if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
             return Suggestion.ChannelType.PROJECT;
         } else if (parentChannelId.equals(suggestionConfig.getForumChannelId())) {
             return Suggestion.ChannelType.NORMAL;
+        }
+
+        Category parentCategory = forumChannel.getParentCategory();
+
+        if (parentCategory != null) {
+            return getChannelSuggestionTypeFromName(parentCategory.getName());
+        }
+
+        if (forumChannel.getName().toLowerCase().contains("alpha") || Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(forumChannel.getName().toLowerCase()::contains)) {
+            return getChannelSuggestionTypeFromName(forumChannel.getName());
         }
 
         return Suggestion.ChannelType.UNKNOWN;
     }
 
     // Only used for AlphaProjectConfig initialization and voice activity
-    public static Suggestion.ChannelType getSuggestionType(StandardGuildChannel channel) {
-        if (channel.getName().contains("alpha")) {
+    public static Suggestion.ChannelType getChannelSuggestionType(StandardGuildChannel channel) {
+        return getChannelSuggestionTypeFromName(channel.getName());
+    }
+
+    public static Suggestion.ChannelType getChannelSuggestionTypeFromName(String name) {
+        if (name.toLowerCase().contains("alpha")) {
             return Suggestion.ChannelType.ALPHA;
-        } else if (Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channel.getName()::contains)
-        || (channel.getParentCategory() != null && Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channel.getParentCategory().getName()::contains))) {
+        } else if (Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(name.toLowerCase()::contains)) {
             return Suggestion.ChannelType.PROJECT;
         } else {
             return Suggestion.ChannelType.NORMAL;

@@ -11,9 +11,8 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
-import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
-import net.hypixel.nerdbot.cache.suggestion.Suggestion;
+import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
+import net.hypixel.nerdbot.util.Util;
 
 @Log4j2
 public class PinListener {
@@ -48,23 +47,17 @@ public class PinListener {
             return; // Ignore any message that the thread and message IDs do not match.
         }
 
-        Suggestion suggestion = NerdBotApp.getBot().getSuggestionCache().getSuggestion(event.getChannel().getId());
-
-        if (suggestion == null) {
-            return; // Ignore uncached suggestions
+        // Ignore if feature is globally turned off.
+        ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
+        if (!channelConfig.isAutoPinFirstMessage()) {
+            return;
         }
 
-        // Ignore if feature is globally turned off.
-        if (suggestion.getChannelType() == Suggestion.ChannelType.NORMAL) {
-            SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
-            if (!suggestionConfig.isAutoPinFirstMessage()) {
-                return;
-            }
-        } else {
-            AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
-            if (!alphaProjectConfig.isAutoPinFirstMessage()) {
-                return;
-            }
+        // Ignore channel if blacklisted.
+        String[] autoPinBlacklistedChannels = channelConfig.getAutoPinBlacklistedChannels();
+        String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().asForumChannel().getId();
+        if (Util.safeArrayStream(autoPinBlacklistedChannels).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            return;
         }
 
         event.getMessage().pin().complete();

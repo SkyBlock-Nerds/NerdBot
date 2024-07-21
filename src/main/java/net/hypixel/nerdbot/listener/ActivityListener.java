@@ -124,12 +124,20 @@ public class ActivityListener {
         }
 
         long time = System.currentTimeMillis();
-        Suggestion.ChannelType channelType = guildChannel instanceof TextChannel ? Util.getSuggestionType(guildChannel.asTextChannel()) : Suggestion.ChannelType.NORMAL;
+        Suggestion.ChannelType channelType;
+
+        if (guildChannel instanceof ThreadChannel threadChannel) {
+            channelType = Util.getThreadSuggestionType(threadChannel);
+        } else if (guildChannel instanceof TextChannel) {
+            channelType = Util.getChannelSuggestionType(guildChannel.asTextChannel());
+        } else {
+            channelType = Util.getChannelSuggestionTypeFromName(guildChannel.getName());
+        }
 
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
             ForumChannel forumChannel = guildChannel.asThreadChannel().getParentChannel().asForumChannel();
-            channelType = Util.getSuggestionType(forumChannel);
+            channelType = Util.getForumSuggestionType(forumChannel);
 
             // New Suggestion Comments
             if (channelType == Suggestion.ChannelType.NORMAL) {
@@ -199,7 +207,7 @@ public class ActivityListener {
                 PrometheusMetrics.TOTAL_VOICE_TIME_SPENT_BY_USER.labels(member.getEffectiveName(), channelLeft.getName()).inc((TimeUnit.MILLISECONDS.toSeconds(timeSpent)));
 
                 if ((timeSpent / 1_000L) > NerdBotApp.getBot().getConfig().getVoiceThreshold()) {
-                    Suggestion.ChannelType channelType = Util.getSuggestionType(channelLeft.asVoiceChannel());
+                    Suggestion.ChannelType channelType = Util.getChannelSuggestionType(channelLeft.asVoiceChannel());
 
                     if (channelType == Suggestion.ChannelType.ALPHA) {
                         discordUser.getLastActivity().setAlphaVoiceJoinDate(time);
@@ -224,7 +232,7 @@ public class ActivityListener {
     }
 
     @SubscribeEvent
-    public void onReactionReceived(MessageReactionAddEvent event) {
+    public void onActivityReactionAdd(MessageReactionAddEvent event) {
         if (!event.isFromGuild() || event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
             return; // Ignore non-guild and native emojis
         }
@@ -261,7 +269,7 @@ public class ActivityListener {
 
             // New Suggestion Voting
             if (forumChannelId.equals(NerdBotApp.getBot().getConfig().getSuggestionConfig().getForumChannelId())) {
-                discordUser.getLastActivity().getSuggestionVoteHistory().add(0, time);
+                discordUser.getLastActivity().getSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                 log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }
@@ -269,14 +277,14 @@ public class ActivityListener {
             // New Alpha Suggestion Voting
             AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
             if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
-                discordUser.getLastActivity().getAlphaSuggestionVoteHistory().add(0, time);
+                discordUser.getLastActivity().getAlphaSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                 log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }
 
             // New Project Suggestion Voting
             if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
-                discordUser.getLastActivity().getProjectSuggestionVoteHistory().add(0, time);
+                discordUser.getLastActivity().getProjectSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                 log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }

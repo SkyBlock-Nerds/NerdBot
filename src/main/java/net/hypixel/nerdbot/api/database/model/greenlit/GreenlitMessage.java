@@ -68,8 +68,8 @@ public class GreenlitMessage {
     public EmbedBuilder createEmbed() {
         Color color;
         EmbedBuilder embedBuilder = new EmbedBuilder()
-            .setTitle(suggestionTitle)
-            .setDescription(suggestionContent)
+            .setTitle(suggestionTitle == null || suggestionTitle.isEmpty() ? "No Title" : suggestionTitle)
+            .setDescription(suggestionContent == null || suggestionContent.isEmpty() ? "No Content" : suggestionContent)
             .setFooter("Suggestion ID: " + messageId)
             .setTimestamp(Instant.ofEpochMilli(suggestionTimestamp))
             .addField("Agrees", String.valueOf(agrees), true)

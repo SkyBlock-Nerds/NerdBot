@@ -21,7 +21,6 @@
     "greenlitRatio": 75.0,
     "archiveOnGreenlit": false,
     "lockOnGreenlit": false,
-    "autoPinFirstMessage": true,
     "autoArchiveThreshold": 168,
     "autoLockThreshold": 168
   },
@@ -33,7 +32,6 @@
       "1234567890123456789"
     ],
     "autoCreateTags": true,
-    "autoPinFirstMessage": true,
     "autoArchiveThreshold": 168,
     "autoLockThreshold": 168
   },
@@ -46,6 +44,8 @@
     "announcementChannelId": "1234567890123456789",
     "botSpamChannelId": "1234567890123456789",
     "pollChannelId": "1234567890123456789",
+    "memberVotingChannelId": "",
+    "birthdayNotificationChannelId": "",
     "genChannelIds": [
       "1234567890123456789"
     ],
@@ -66,12 +66,23 @@
         "ownerId": "1234567890123456789",
         "name": "Example Name"
       }
+    ],
+    "autoPinFirstMessage": true,
+    "autoPinBlacklistedChannels": [
+      "1234567890123456789"
     ]
   },
   "roleConfig": {
     "botManagerRoleId": "1234567890123456789",
+    "moderatorRoleId": "",
+    "orangeRoleId": "",
+    "memberRoleId": "",
     "newMemberRoleId": "1234567890123456789",
     "limboRoleId": "1234567890123456789",
+    "currentlyPromotingUsers": false,
+    "minimumVotesRequiredForPromotion": 100,
+    "minimumCommentsRequiredForPromotion": 100,
+    "daysRequiredForVoteHistory": 90,
     "pingableRoles": [
       {
         "name": "Example Name",
