@@ -264,11 +264,11 @@ public class GeneratorCommands extends ApplicationCommand {
     @JDASlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a full item image. Supports displaying items, recipes, and tooltips")
     public void generateTooltip(
         GuildSlashEvent event,
-        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
         @AppOption(description = NAME_DESCRIPTION) String name,
         @AppOption(autocomplete = "item-rarities", description = RARITY_DESCRIPTION) String rarity,
         @AppOption(description = TYPE_DESCRIPTION) String type,
         @AppOption(description = LORE_DESCRIPTION) String itemLore,
+        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
         @AppOption(description = RECIPE_STRING_DESCRIPTION) @Optional String recipeString,
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
@@ -305,19 +305,21 @@ public class GeneratorCommands extends ApplicationCommand {
                 .isPaddingFirstLine(paddingFirstLine)
                 .build();
 
-            if (itemId.equalsIgnoreCase("player_head")) {
-                MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder();
+            if (itemId != null) {
+                if (itemId.equalsIgnoreCase("player_head")) {
+                    MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder();
 
-                if (skinValue != null) {
-                    generator.withSkin(skinValue);
+                    if (skinValue != null) {
+                        generator.withSkin(skinValue);
+                    }
+
+                    generatorImageBuilder.addGenerator(generator.build());
+                } else {
+                    generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                        .withItem(itemId)
+                        .isBigImage()
+                        .build());
                 }
-
-                generatorImageBuilder.addGenerator(generator.build());
-            } else {
-                generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
-                    .withItem(itemId)
-                    .isBigImage()
-                    .build());
             }
 
             if (recipeString != null) {
