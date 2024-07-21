@@ -356,6 +356,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
         @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
+        @AppOption(description = "Whether the border should be rendered (default: true)") @Optional Boolean renderBorder,
         @AppOption(description = "Whether the result should be shown publicly (default: false)") @Optional Boolean showPublicly
     ) {
         showPublicly = showPublicly != null && showPublicly;
@@ -365,6 +366,7 @@ public class GeneratorCommands extends ApplicationCommand {
         alpha = alpha == null ? 0 : alpha;
         padding = padding == null ? 0 : padding;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
+        renderBorder = renderBorder == null || renderBorder;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
@@ -376,6 +378,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .isTextCentered(centered)
                 .isPaddingFirstLine(false)
                 .withEmptyLine(false)
+                .withRenderBorder(renderBorder)
                 .build();
 
             generatorImageBuilder.addGenerator(tooltipGenerator);

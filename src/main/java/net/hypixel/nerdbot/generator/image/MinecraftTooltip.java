@@ -66,6 +66,8 @@ public class MinecraftTooltip {
     private final int padding;
     @Getter
     private final boolean paddingFirstLine;
+    @Getter
+    private final boolean renderBorder;
     @Getter(AccessLevel.PRIVATE)
     private final Graphics2D graphics;
     @Getter
@@ -78,7 +80,7 @@ public class MinecraftTooltip {
     private int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
     private int largestWidth = 0;
 
-    private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean paddingFirstLine) {
+    private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean paddingFirstLine, boolean renderBorder) {
         this.alpha = alpha;
         this.padding = padding;
         this.paddingFirstLine = paddingFirstLine;
@@ -89,6 +91,7 @@ public class MinecraftTooltip {
             .orElse(LINE_LENGTH.getMaximum());
         this.graphics = this.initG2D(LINE_LENGTH.fit(lineLength) * 25, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4);
         this.currentColor = defaultColor;
+        this.renderBorder = renderBorder;
     }
 
     public static Builder builder() {
@@ -281,7 +284,11 @@ public class MinecraftTooltip {
     public MinecraftTooltip render() {
         this.drawLines();
         this.cropImage();
-        this.drawBorders();
+
+        if (this.renderBorder) {
+            this.drawBorders();
+        }
+
         this.addPadding();
         return this;
     }
@@ -325,6 +332,7 @@ public class MinecraftTooltip {
         private int alpha = 255;
         private int padding = 0;
         private boolean paddingFirstLine = true;
+        private boolean renderBorder = true;
 
         public Builder isPaddingFirstLine() {
             return this.isPaddingFirstLine(true);
@@ -332,6 +340,11 @@ public class MinecraftTooltip {
 
         public Builder isPaddingFirstLine(boolean value) {
             this.paddingFirstLine = value;
+            return this;
+        }
+
+        public Builder setRenderBorder(boolean renderBorder) {
+            this.renderBorder = renderBorder;
             return this;
         }
 
@@ -379,7 +392,8 @@ public class MinecraftTooltip {
                 this.defaultColor,
                 this.alpha,
                 this.padding,
-                this.paddingFirstLine
+                this.paddingFirstLine,
+                this.renderBorder
             );
         }
     }

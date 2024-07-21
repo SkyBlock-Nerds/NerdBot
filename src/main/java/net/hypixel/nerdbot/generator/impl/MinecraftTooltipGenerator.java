@@ -21,7 +21,6 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.regex.Pattern;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftTooltipGenerator implements Generator {
@@ -38,10 +37,11 @@ public class MinecraftTooltipGenerator implements Generator {
     private final boolean normalItem;
     private final boolean centeredText;
     private final int maxLineLength;
+    private final boolean renderBorder;
 
     @Override
     public GeneratedObject generate() {
-        return new GeneratedObject(buildItem(name, itemLore, type, emptyLine, alpha, padding, normalItem, maxLineLength));
+        return new GeneratedObject(buildItem(name, itemLore, type, emptyLine, alpha, padding, normalItem, maxLineLength, renderBorder));
     }
 
     /**
@@ -58,15 +58,16 @@ public class MinecraftTooltipGenerator implements Generator {
      * @return a Minecraft item tooltip as a rendered image
      */
     @Nullable
-    public BufferedImage buildItem(String name, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, boolean paddingFirstLine, int maxLineLength) {
-        MinecraftTooltip parsedLore = parseLore(name, itemLoreString, addEmptyLine, type, alpha, padding, paddingFirstLine, maxLineLength);
+    public BufferedImage buildItem(String name, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, boolean paddingFirstLine, int maxLineLength, boolean renderBorder) {
+        MinecraftTooltip parsedLore = parseLore(name, itemLoreString, addEmptyLine, type, alpha, padding, paddingFirstLine, maxLineLength, renderBorder);
         return parsedLore.render().getImage();
     }
 
-    public MinecraftTooltip parseLore(String name, String input, boolean emptyLine, String type, int alpha, int padding, boolean paddingFirstLine, int maxLineLength) {
+    public MinecraftTooltip parseLore(String name, String input, boolean emptyLine, String type, int alpha, int padding, boolean paddingFirstLine, int maxLineLength, boolean renderBorder) {
         MinecraftTooltip.Builder builder = MinecraftTooltip.builder()
             .withPadding(padding)
             .isPaddingFirstLine(paddingFirstLine)
+            .setRenderBorder(renderBorder)
             .withAlpha(Range.between(0, 255).fit(alpha));
 
         if (name != null && !name.isEmpty()) {
@@ -85,7 +86,7 @@ public class MinecraftTooltipGenerator implements Generator {
             segments.add(parsed);
         }
 
-        List<List<LineSegment>> lines = splitLines(segments);
+        List<List<LineSegment>> lines = splitLines(segments, maxLineLength);
         for (List<LineSegment> line : lines) {
             builder.withLines(line);
         }
@@ -101,7 +102,7 @@ public class MinecraftTooltipGenerator implements Generator {
         return builder.build();
     }
 
-    private List<List<LineSegment>> splitLines(List<String> lines) {
+    private List<List<LineSegment>> splitLines(List<String> lines, int maxLineLength) {
         List<List<LineSegment>> output = new CopyOnWriteArrayList<>();
 
         for (String line : lines) {
@@ -196,6 +197,7 @@ public class MinecraftTooltipGenerator implements Generator {
         private int maxLineLength;
         private boolean bypassMaxLineLength;
         private boolean centered;
+        private boolean renderBorder;
 
         public MinecraftTooltipGenerator.Builder withName(String name) {
             this.name = name;
@@ -256,6 +258,11 @@ public class MinecraftTooltipGenerator implements Generator {
             return this;
         }
 
+        public MinecraftTooltipGenerator.Builder withRenderBorder(boolean renderBorder) {
+            this.renderBorder = renderBorder;
+            return this;
+        }
+
         // TODO support components
         public MinecraftTooltipGenerator.Builder parseNbtJson(JsonObject nbtJson) {
             this.emptyLine = false;
@@ -277,7 +284,7 @@ public class MinecraftTooltipGenerator implements Generator {
 
         @Override
         public MinecraftTooltipGenerator build() {
-            return new MinecraftTooltipGenerator(name, rarity, itemLore, type, emptyLine, alpha, padding, paddingFirstLine, centered, maxLineLength);
+            return new MinecraftTooltipGenerator(name, rarity, itemLore, type, emptyLine, alpha, padding, paddingFirstLine, centered, maxLineLength, renderBorder);
         }
     }
 }
