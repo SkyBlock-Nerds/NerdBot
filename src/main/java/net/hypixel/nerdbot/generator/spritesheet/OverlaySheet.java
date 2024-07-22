@@ -49,10 +49,10 @@ public class OverlaySheet {
                     ItemOverlay[] itemOverlayCoordinates = NerdBotApp.GSON.fromJson(new InputStreamReader(overlayCoordinatesStream), ItemOverlay[].class);
                     HashMap<String, ItemOverlay> foundOverlays = new HashMap<>();
                     for (ItemOverlay itemOverlay : itemOverlayCoordinates) {
-                        int imageDimensions = itemOverlay.isBig() ? SpritesheetGenerator.IMAGE_WIDTH : 16;
+                        int imageDimensions = itemOverlay.isBig() ? SpritesheetGenerator.LARGE_IMAGE_WIDTH : 16;
                         itemOverlay.setImage(overlaySpriteSheet.getSubimage(itemOverlay.getX(), itemOverlay.getY(), imageDimensions, imageDimensions));
                         if (itemOverlay.getName().contains("enchant")) {
-                            if (itemOverlay.getName().contains("big")) {
+                            if (itemOverlay.getName().contains("large")) {
                                 largeEnchantGlint = itemOverlay.getImage();
                             } else if (itemOverlay.getName().contains("small")) {
                                 smallEnchantGlint = itemOverlay.getImage();
@@ -76,7 +76,6 @@ public class OverlaySheet {
                             String overlays = itemData.get("overlays").getAsString();
 
                             itemOverlays.put(itemName, foundOverlays.get(overlays));
-                            System.out.println(itemName + " " + itemOverlays.get(itemName));
                         }
                     }
                 }
