@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator.impl;
+package net.hypixel.nerdbot.generator.impl.tooltip;
 
 import com.google.gson.JsonObject;
 import lombok.AccessLevel;
@@ -15,6 +15,7 @@ import net.hypixel.nerdbot.generator.parser.text.IconParser;
 import net.hypixel.nerdbot.generator.parser.text.StatParser;
 import net.hypixel.nerdbot.generator.skyblock.Rarity;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
+import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
 import net.hypixel.nerdbot.util.Range;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,62 +43,66 @@ public class MinecraftTooltipGenerator implements Generator {
 
     @Override
     public GeneratedObject generate() {
-        return new GeneratedObject(buildItem(name, itemLore, type, emptyLine, alpha, padding, normalItem, maxLineLength, renderBorder));
+        TooltipSettings settings = new TooltipSettings(
+            name,           // Name of the item
+            emptyLine,      // Whether to add an empty line
+            type,           // Type of the item
+            alpha,          // Alpha value
+            padding,        // Padding value
+            normalItem,     // Whether to pad the first line
+            maxLineLength,  // Maximum line length
+            renderBorder    // Whether to render a border around the tooltip
+        );
+
+        return new GeneratedObject(buildItem(itemLore, settings));
     }
 
     /**
-     * Converts text into a rendered image
+     * Builds an item tooltip image from a string of lore.
      *
-     * @param name             the name of the item
-     * @param itemLoreString   the lore of the item
-     * @param type             the type of the item
-     * @param addEmptyLine     if there should be an extra line added between the lore and the final type line
-     * @param alpha            the transparency of the generated image
-     * @param padding          if there is any extra padding around the edges to prevent Discord from rounding the corners
-     * @param paddingFirstLine if the item should add an extra line between the title and first line
+     * @param itemLoreString The lore string to parse
+     * @param settings       The {@link TooltipSettings settings} to use for the generated tooltip image
      *
-     * @return a Minecraft item tooltip as a rendered image
+     * @return The generated tooltip image
      */
     @Nullable
-    public BufferedImage buildItem(String name, String itemLoreString, String type, boolean addEmptyLine, int alpha, int padding, boolean paddingFirstLine, int maxLineLength, boolean renderBorder) {
-        MinecraftTooltip parsedLore = parseLore(name, itemLoreString, addEmptyLine, type, alpha, padding, paddingFirstLine, maxLineLength, renderBorder);
+    public BufferedImage buildItem(String itemLoreString, TooltipSettings settings) {
+        MinecraftTooltip parsedLore = parseLore(itemLoreString, settings);
         return parsedLore.render().getImage();
     }
 
-    public MinecraftTooltip parseLore(String name, String input, boolean emptyLine, String type, int alpha, int padding, boolean paddingFirstLine, int maxLineLength, boolean renderBorder) {
+    public MinecraftTooltip parseLore(String input, TooltipSettings settings) {
         MinecraftTooltip.Builder builder = MinecraftTooltip.builder()
-            .withPadding(padding)
-            .isPaddingFirstLine(paddingFirstLine)
-            .setRenderBorder(renderBorder)
-            .withAlpha(Range.between(0, 255).fit(alpha));
+            .withPadding(settings.getPadding())
+            .isPaddingFirstLine(settings.isPaddingFirstLine())
+            .setRenderBorder(settings.isRenderBorder())
+            .withAlpha(Range.between(0, 255).fit(settings.getAlpha()));
 
-        if (name != null && !name.isEmpty()) {
-            builder.withLines(LineSegment.fromLegacy(rarity.getColorCode() + name, '&'));
+        if (settings.getName() != null && !settings.getName().isEmpty()) {
+            builder.withLines(LineSegment.fromLegacy(rarity.getColorCode() + settings.getName(), '&'));
         }
 
         List<String> segments = new ArrayList<>();
-        for (String line : input.split("\\\\n")) {
+        for (String line : input.split("\n")) {
             String parsed = Parser.parseString(line, List.of(
                 new ColorCodeParser(),
                 new IconParser(),
                 new StatParser(),
                 new GemstoneParser()
             ));
-
             segments.add(parsed);
         }
 
-        List<List<LineSegment>> lines = splitLines(segments, maxLineLength);
+        List<List<LineSegment>> lines = splitLines(segments, settings.getMaxLineLength());
         for (List<LineSegment> line : lines) {
             builder.withLines(line);
         }
 
         if (rarity != null && rarity != Rarity.NONE) {
-            if (emptyLine) {
+            if (settings.isEmptyLine()) {
                 builder.withEmptyLine();
             }
-
-            builder.withLines(LineSegment.fromLegacy(rarity.getFormattedDisplay() + " " + type, '&'));
+            builder.withLines(LineSegment.fromLegacy(rarity.getFormattedDisplay() + " " + settings.getType(), '&'));
         }
 
         return builder.build();
@@ -114,7 +119,8 @@ public class MinecraftTooltipGenerator implements Generator {
             }
 
             // split text into segments based on newline characters
-            String[] segments = line.split("\\n");
+            String[] segments = line.split("\n");
+
             for (String segment : segments) {
                 output.addAll(wrapSegment(segment, maxLineLength));
             }
@@ -129,82 +135,7 @@ public class MinecraftTooltipGenerator implements Generator {
     }
 
     private List<List<LineSegment>> wrapSegment(String text, int maxLineLength) {
-        List<List<LineSegment>> lines = new CopyOnWriteArrayList<>();
-        StringBuilder currentLine = new StringBuilder();
-        String lastColorCode = "";
-        String lastFormattingCodes = "";
-
-        String[] words = text.split("\\s+"); // split text by whitespace characters
-
-        for (String word : words) {
-            if (currentLine.length() + word.length() + 1 > maxLineLength) {
-                // If adding the next word exceeds max length, add currentLine to the list
-                String lineToAdd = currentLine.toString().trim();
-                if (!lineToAdd.startsWith("&")) {
-                    lineToAdd = lastColorCode + lastFormattingCodes + lineToAdd;
-                }
-                lines.add(LineSegment.fromLegacy(lineToAdd, '&'));
-                lastColorCode = getLastColorCode(lineToAdd);
-                lastFormattingCodes = getLastFormattingCodes(lineToAdd);
-                currentLine.setLength(0); // reset the current line
-            }
-
-            // Add next word to the current line
-            if (!currentLine.isEmpty()) {
-                currentLine.append(" ");
-            }
-            currentLine.append(word);
-        }
-
-        // Add the last line if it's not empty
-        if (!currentLine.isEmpty()) {
-            String lastLine = currentLine.toString().trim();
-            if (!lastLine.startsWith("&")) {
-                lastLine = lastColorCode + lastFormattingCodes + lastLine;
-            }
-            lines.add(LineSegment.fromLegacy(lastLine, '&'));
-        } else if (!text.contains(" ")) { // Handle case with no spaces
-            for (int i = 0; i < text.length(); i += maxLineLength) {
-                String part = text.substring(i, Math.min(i + maxLineLength, text.length()));
-                if (!part.startsWith("&")) {
-                    part = lastColorCode + lastFormattingCodes + part;
-                }
-                lines.add(LineSegment.fromLegacy(part, '&'));
-                lastColorCode = getLastColorCode(part);
-                lastFormattingCodes = getLastFormattingCodes(part);
-            }
-        }
-
-        return lines;
-    }
-
-    private String getLastColorCode(String text) {
-        String colorCode = "";
-        for (int i = text.length() - 2; i >= 0; i--) {
-            if (text.charAt(i) == '&' && (i + 1 < text.length())) {
-                char code = text.charAt(i + 1);
-                if (Character.isLetterOrDigit(code)) {
-                    colorCode = text.substring(i, i + 2);
-                    if ("0123456789abcdef".indexOf(code) != -1) {
-                        break;
-                    }
-                }
-            }
-        }
-        return colorCode;
-    }
-
-    private String getLastFormattingCodes(String text) {
-        StringBuilder formattingCodes = new StringBuilder();
-        for (int i = 0; i < text.length() - 1; i++) {
-            if (text.charAt(i) == '&' && (i + 1 < text.length())) {
-                char code = text.charAt(i + 1);
-                if ("klmnor".indexOf(code) != -1) {
-                    formattingCodes.append(text, i, i + 2);
-                }
-            }
-        }
-        return formattingCodes.toString();
+        return new TextWrapper().wrapSegment(text, maxLineLength);
     }
 
     public enum TooltipSide {
