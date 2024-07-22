@@ -66,7 +66,7 @@ public class GeneratorBuilder {
         // loading all sprites for Minecraft Items
         try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/spritesheets/minecraft_texture_atlas.png")) {
             if (itemStackStream == null) {
-                throw new FileNotFoundException("Could not find find minecraft_texture_atlas.png file");
+                throw new FileNotFoundException("Could not find minecraft_texture_atlas.png file");
             }
 
             itemSpriteSheet = ImageIO.read(itemStackStream);
@@ -78,7 +78,7 @@ public class GeneratorBuilder {
         // loading the items position in the sprite sheet
         try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/spritesheets/atlas_coordinates.json")) {
             if (itemStream == null) {
-                throw new FileNotFoundException("Could not find find atlas_coordinates.json file");
+                throw new FileNotFoundException("Could not find atlas_coordinates.json file");
             }
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(itemStream));
