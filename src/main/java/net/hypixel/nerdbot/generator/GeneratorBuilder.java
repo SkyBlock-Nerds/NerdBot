@@ -64,9 +64,9 @@ public class GeneratorBuilder {
         this.items = new HashMap<>();
 
         // loading all sprites for Minecraft Items
-        try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/minecraft_texture_atlas.png")) {
+        try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/spritesheets/minecraft_texture_atlas.png")) {
             if (itemStackStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/minecraft_assets/spritesheets/minecraft_texture_atlas\"");
+                throw new FileNotFoundException("Could not find find minecraft_texture_atlas.png file");
             }
 
             itemSpriteSheet = ImageIO.read(itemStackStream);
@@ -76,9 +76,9 @@ public class GeneratorBuilder {
         }
 
         // loading the items position in the sprite sheet
-        try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/atlas_coordinates.json")) {
+        try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/spritesheets/atlas_coordinates.json")) {
             if (itemStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/minecraft_assets/spritesheets/atlas_coordinates.json\"");
+                throw new FileNotFoundException("Could not find find atlas_coordinates.json file");
             }
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(itemStream));
@@ -104,9 +104,9 @@ public class GeneratorBuilder {
         }
 
         // loading the overlays for some Minecraft Items
-        try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/textures/overlays.png")) {
+        try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/textures/overlays.png")) {
             if (overlayStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/minecraft_assets/textures/overlays.png\"");
+                throw new FileNotFoundException("Could not find overlays.png file");
             }
 
             HashMap<String, Overlay> overlaysHashMap = new HashMap<>();

@@ -29,18 +29,18 @@ public class MinecraftImage {
     private static final int Y_INCREMENT = PIXEL_SIZE * 10;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
-    private static final Font FALLBACK_FONT = initFont("/minecraft_assets/fonts/unifont-15.1.05.otf", 15.5f);
+    private static final Font FALLBACK_FONT = initFont("/minecraft/assets/fonts/unifont-15.1.05.otf", 15.5f);
     private static final Font[] COMIC_SANS = new Font[]{
-        initFont("/minecraft_assets/fonts/COMICSANS.TTF", 20.0f),
-        initFont("/minecraft_assets/fonts/COMICSANSBOLD.TTF", 20.0f),
-        initFont("/minecraft_assets/fonts/COMICSANSITALIC.TTF", 20.0f),
-        initFont("/minecraft_assets/fonts/COMICSANSBOLDITALIC.TTF", 20.0f)
+        initFont("/minecraft/assets/fonts/COMICSANS.TTF", 20.0f),
+        initFont("/minecraft/assets/fonts/COMICSANSBOLD.TTF", 20.0f),
+        initFont("/minecraft/assets/fonts/COMICSANSITALIC.TTF", 20.0f),
+        initFont("/minecraft/assets/fonts/COMICSANSBOLDITALIC.TTF", 20.0f)
     };
     private static final Font[] MINECRAFT_FONTS = new Font[]{
-        initFont("/minecraft_assets/fonts/minecraft.otf", 15.5f),
-        initFont("/minecraft_assets/fonts/3_Minecraft-Bold.otf", 20.0f),
-        initFont("/minecraft_assets/fonts/2_Minecraft-Italic.otf", 20.5f),
-        initFont("/minecraft_assets/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
+        initFont("/minecraft/assets/fonts/minecraft.otf", 15.5f),
+        initFont("/minecraft/assets/fonts/3_Minecraft-Bold.otf", 20.0f),
+        initFont("/minecraft/assets/fonts/2_Minecraft-Italic.otf", 20.5f),
+        initFont("/minecraft/assets/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
     };
 
     private static boolean fontsRegisteredCorrectly = true;

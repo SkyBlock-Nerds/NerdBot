@@ -2,7 +2,7 @@
 .idea/
 out/
 dev.config.json
-/src/main/resources/minecraft_assets/textures/items/
+/src/main/resources/minecraft/assets/textures/items/
 
 
 # mpeltonen/sbt-idea plugin

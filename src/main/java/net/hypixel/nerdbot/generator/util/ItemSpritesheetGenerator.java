@@ -25,8 +25,8 @@ public class ItemSpritesheetGenerator {
     private static final List<TextureInfo> textureInfo = new ArrayList<>();
 
     public static void main(String[] args) {
-        String path = "./src/main/resources/minecraft_assets/textures/items";
-        String outputDir = "./src/main/resources/minecraft_assets/spritesheets";
+        String path = "./src/main/resources/minecraft/assets/textures/items";
+        String outputDir = "./src/main/resources/minecraft/assets/spritesheets";
         String atlasName = "minecraft_texture_atlas.png";
         String jsonFileName = "atlas_coordinates.json";
 
