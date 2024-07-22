@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@ToString
 public final class LineSegment {
 
     private final @NotNull List<ColorSegment> segments;

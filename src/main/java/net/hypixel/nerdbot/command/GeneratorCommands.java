@@ -19,7 +19,7 @@ import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
-import net.hypixel.nerdbot.generator.impl.MinecraftTooltipGenerator;
+import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.skyblock.Rarity;
 import net.hypixel.nerdbot.util.ImageUtil;
