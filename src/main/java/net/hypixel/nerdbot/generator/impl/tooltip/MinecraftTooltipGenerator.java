@@ -5,7 +5,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.parser.Parser;
@@ -22,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftTooltipGenerator implements Generator {
@@ -93,7 +91,7 @@ public class MinecraftTooltipGenerator implements Generator {
             segments.add(parsed);
         }
 
-        List<List<LineSegment>> lines = splitLines(segments, settings.getMaxLineLength());
+        List<List<LineSegment>> lines = TextWrapper.splitLines(segments, settings.getMaxLineLength());
         for (List<LineSegment> line : lines) {
             builder.withLines(line);
         }
@@ -106,36 +104,6 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         return builder.build();
-    }
-
-    private List<List<LineSegment>> splitLines(List<String> lines, int maxLineLength) {
-        List<List<LineSegment>> output = new CopyOnWriteArrayList<>();
-
-        for (String line : lines) {
-            // adds blank line if the line is empty, since this seems to only trigger when using two newline characters in a row
-            if (line == null || line.isBlank()) {
-                output.add(LineSegment.fromLegacy(" ", '&'));
-                continue;
-            }
-
-            // split text into segments based on newline characters
-            String[] segments = line.split("\n");
-
-            for (String segment : segments) {
-                output.addAll(wrapSegment(segment, maxLineLength));
-            }
-        }
-
-        // throw an exception if every line is empty
-        if (output.stream().allMatch(List::isEmpty)) {
-            throw new GeneratorException("You cannot generate an empty tooltip!");
-        }
-
-        return output;
-    }
-
-    private List<List<LineSegment>> wrapSegment(String text, int maxLineLength) {
-        return new TextWrapper().wrapSegment(text, maxLineLength);
     }
 
     public enum TooltipSide {
