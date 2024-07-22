@@ -63,19 +63,19 @@ public class MinecraftItemGenerator implements Generator {
 
             switch (overlay.getType()) {
                 case NORMAL -> {
-                    int[] overlayColors = overlay.getOverlayColorOptions().getColorFromOption(options[i]);
+                    int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options[i]);
                     if (overlayColors != null) {
                         OverlayType.normalOverlay(overlaidItem, overlay.getImage(), overlayColors[0]);
                     }
                 }
                 case MAPPED -> {
-                    int[] overlayColors = overlay.getOverlayColorOptions().getColorFromOption(options[i]);
+                    int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options[i]);
                     if (overlayColors != null) {
                         OverlayType.mappedOverlay(overlaidItem, overlay.getImage(), overlay.getOverlayColorOptions().getMap(), overlayColors);
                     }
                 }
                 case DUAL_LAYER -> {
-                    int[] overlayColors = overlay.getOverlayColorOptions().getColorFromOption(options[i]);
+                    int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options[i]);
                     if (overlayColors != null) {
                         OverlayType.normalOverlay(overlaidItem, overlaidItem, overlayColors[1]);
                         OverlayType.normalOverlay(overlaidItem, overlay.getImage(), overlayColors[0]);
