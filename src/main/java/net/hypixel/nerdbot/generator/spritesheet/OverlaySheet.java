@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class OverlaySheet {
 
-    private static final Map<String, ItemOverlay[]> itemOverlays = new HashMap<>();
+    private static final Map<String, ItemOverlay> itemOverlays = new HashMap<>();
 
     private static BufferedImage smallEnchantGlint;
     private static BufferedImage largeEnchantGlint;
@@ -73,14 +73,10 @@ public class OverlaySheet {
                         for (JsonElement jsonElement : jsonBindings) {
                             JsonObject itemData = jsonElement.getAsJsonObject();
                             String itemName = itemData.get("name").getAsString();
-                            JsonArray overlays = itemData.get("overlays").getAsJsonArray();
+                            String overlays = itemData.get("overlays").getAsString();
 
-                            ItemOverlay[] boundItemOverlays = new ItemOverlay[overlays.size()];
-                            for (int i = 0; i < overlays.size(); i++) {
-                                boundItemOverlays[i] = foundOverlays.get(overlays.get(i).getAsString());
-                            }
-
-                            itemOverlays.put(itemName, boundItemOverlays);
+                            itemOverlays.put(itemName, foundOverlays.get(overlays));
+                            System.out.println(itemName + " " + itemOverlays.get(itemName));
                         }
                     }
                 }
@@ -90,7 +86,7 @@ public class OverlaySheet {
         }
     }
 
-    public static ItemOverlay[] getOverlay(String overlayId) {
+    public static ItemOverlay getOverlay(String overlayId) {
         return itemOverlays.get(overlayId);
     }
 
