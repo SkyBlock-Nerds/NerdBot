@@ -23,6 +23,11 @@ public enum OverlayType {
                     continue;
                 }
 
+                int targetRGB = targetImage.getRGB(x, y);
+                if (((targetRGB >> 24) & 0xff) > 0) {
+                    continue;
+                }
+
                 // shifting the color based on the color supplied
                 int newColor = colorMap.computeIfAbsent(rgb, value -> {
                     int selectedAlpha = (rgb >> 24) & 0xff;

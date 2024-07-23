@@ -15,7 +15,6 @@ import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftItemGenerator implements Generator {
@@ -35,7 +34,7 @@ public class MinecraftItemGenerator implements Generator {
             throw new GeneratorException("Item with ID `%s` not found", itemId);
         }
 
-        ItemOverlay[] itemOverlays = OverlaySheet.getOverlay(itemId.toLowerCase());
+        ItemOverlay itemOverlays = OverlaySheet.getOverlay(itemId.toLowerCase());
         if (itemOverlays != null) {
             itemImage = applyOverlay(itemOverlays);
         }
@@ -51,35 +50,30 @@ public class MinecraftItemGenerator implements Generator {
         return new GeneratedObject(itemImage);
     }
 
-    private BufferedImage applyOverlay(ItemOverlay[] itemOverlays) {
+    private BufferedImage applyOverlay(ItemOverlay overlay) {
         BufferedImage overlaidItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics2D overlaidItemGraphics = overlaidItem.createGraphics();
         overlaidItemGraphics.drawImage(itemImage, 0, 0, null);
 
-        String[] options = Arrays.copyOf((data != null ? data : "").split(","), itemOverlays.length);
-
-        for (int i = 0; i < itemOverlays.length; i++) {
-            ItemOverlay overlay = itemOverlays[i];
-
-            switch (overlay.getType()) {
-                case NORMAL -> {
-                    int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options[i]);
-                    if (overlayColors != null) {
-                        OverlayType.normalOverlay(overlaidItem, overlay.getImage(), overlayColors[0]);
-                    }
+        String options = (data != null ? data : "");
+        switch (overlay.getType()) {
+            case NORMAL -> {
+                int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
+                if (overlayColors != null) {
+                    OverlayType.normalOverlay(overlaidItem, overlay.getImage(), overlayColors[0]);
                 }
-                case MAPPED -> {
-                    int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options[i]);
-                    if (overlayColors != null) {
-                        OverlayType.mappedOverlay(overlaidItem, overlay.getImage(), overlay.getOverlayColorOptions().getMap(), overlayColors);
-                    }
+            }
+            case MAPPED -> {
+                int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
+                if (overlayColors != null) {
+                    OverlayType.mappedOverlay(overlaidItem, overlay.getImage(), overlay.getOverlayColorOptions().getMap(), overlayColors);
                 }
-                case DUAL_LAYER -> {
-                    int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options[i]);
-                    if (overlayColors != null) {
-                        OverlayType.normalOverlay(overlaidItem, overlaidItem, overlayColors[1]);
-                        OverlayType.normalOverlay(overlaidItem, overlay.getImage(), overlayColors[0]);
-                    }
+            }
+            case DUAL_LAYER -> {
+                int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
+                if (overlayColors != null) {
+                    OverlayType.normalOverlay(overlaidItem, overlaidItem, overlayColors[1]);
+                    OverlayType.normalOverlay(overlaidItem, overlay.getImage(), overlayColors[0]);
                 }
             }
         }

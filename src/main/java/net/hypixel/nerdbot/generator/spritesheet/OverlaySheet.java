@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class OverlaySheet {
 
-    private static final Map<String, ItemOverlay[]> itemOverlays = new HashMap<>();
+    private static final Map<String, ItemOverlay> itemOverlays = new HashMap<>();
 
     private static BufferedImage smallEnchantGlint;
     private static BufferedImage largeEnchantGlint;
@@ -49,10 +49,10 @@ public class OverlaySheet {
                     ItemOverlay[] itemOverlayCoordinates = NerdBotApp.GSON.fromJson(new InputStreamReader(overlayCoordinatesStream), ItemOverlay[].class);
                     HashMap<String, ItemOverlay> foundOverlays = new HashMap<>();
                     for (ItemOverlay itemOverlay : itemOverlayCoordinates) {
-                        int imageDimensions = itemOverlay.isBig() ? SpritesheetGenerator.IMAGE_WIDTH : 16;
+                        int imageDimensions = itemOverlay.isBig() ? SpritesheetGenerator.LARGE_IMAGE_WIDTH : 16;
                         itemOverlay.setImage(overlaySpriteSheet.getSubimage(itemOverlay.getX(), itemOverlay.getY(), imageDimensions, imageDimensions));
                         if (itemOverlay.getName().contains("enchant")) {
-                            if (itemOverlay.getName().contains("big")) {
+                            if (itemOverlay.getName().contains("large")) {
                                 largeEnchantGlint = itemOverlay.getImage();
                             } else if (itemOverlay.getName().contains("small")) {
                                 smallEnchantGlint = itemOverlay.getImage();
@@ -73,14 +73,9 @@ public class OverlaySheet {
                         for (JsonElement jsonElement : jsonBindings) {
                             JsonObject itemData = jsonElement.getAsJsonObject();
                             String itemName = itemData.get("name").getAsString();
-                            JsonArray overlays = itemData.get("overlays").getAsJsonArray();
+                            String overlays = itemData.get("overlays").getAsString();
 
-                            ItemOverlay[] boundItemOverlays = new ItemOverlay[overlays.size()];
-                            for (int i = 0; i < overlays.size(); i++) {
-                                boundItemOverlays[i] = foundOverlays.get(overlays.get(i).getAsString());
-                            }
-
-                            itemOverlays.put(itemName, boundItemOverlays);
+                            itemOverlays.put(itemName, foundOverlays.get(overlays));
                         }
                     }
                 }
@@ -90,7 +85,7 @@ public class OverlaySheet {
         }
     }
 
-    public static ItemOverlay[] getOverlay(String overlayId) {
+    public static ItemOverlay getOverlay(String overlayId) {
         return itemOverlays.get(overlayId);
     }
 
