@@ -303,6 +303,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
                 .isPaddingFirstLine(paddingFirstLine)
+                .withRenderBorder(true)
                 .build();
 
             if (itemId != null) {
