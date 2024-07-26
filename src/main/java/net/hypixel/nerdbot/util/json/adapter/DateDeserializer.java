@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util.gson.adapter;
+package net.hypixel.nerdbot.util.json.adapter;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;

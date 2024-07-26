@@ -8,9 +8,9 @@ import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.gson.adapter.BadgeTypeAdapter;
-import net.hypixel.nerdbot.util.gson.adapter.InstantTypeAdapter;
-import net.hypixel.nerdbot.util.gson.adapter.UUIDTypeAdapter;
+import net.hypixel.nerdbot.util.json.adapter.BadgeTypeAdapter;
+import net.hypixel.nerdbot.util.json.adapter.InstantTypeAdapter;
+import net.hypixel.nerdbot.util.json.adapter.UUIDTypeAdapter;
 import sun.misc.Signal;
 
 import javax.security.auth.login.LoginException;

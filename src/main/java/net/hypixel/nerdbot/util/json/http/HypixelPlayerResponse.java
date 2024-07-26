@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.util.gson;
+package net.hypixel.nerdbot.util.json.http;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Getter;

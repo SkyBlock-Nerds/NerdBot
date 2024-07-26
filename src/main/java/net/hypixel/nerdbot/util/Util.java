@@ -29,7 +29,7 @@ import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.exception.HttpException;
-import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
+import net.hypixel.nerdbot.util.json.http.HypixelPlayerResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

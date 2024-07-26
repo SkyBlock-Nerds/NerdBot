@@ -38,7 +38,7 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.MojangProfileException;
 import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
-import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
+import net.hypixel.nerdbot.util.json.http.HypixelPlayerResponse;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 
