@@ -24,8 +24,8 @@ import static net.hypixel.nerdbot.util.Util.initFont;
 
 public class MinecraftInventoryGenerator implements Generator {
 
-    public static final int MAX_ROWS_GENERATED = 18;
-    public static final int MAX_COLUMNS_GENERATED = 18;
+    public static final int MAX_ROWS_GENERATED = 100;
+    public static final int MAX_COLUMNS_GENERATED = 100;
     public static final int PIXELS_PER_PIXEL = 2;
     public static final int PIXELS_PER_SLOT = 18;
     public static final int SLOT_DIMENSION = PIXELS_PER_SLOT * PIXELS_PER_PIXEL;
