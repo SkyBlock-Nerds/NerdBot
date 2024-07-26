@@ -4,7 +4,7 @@ import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,16 +19,39 @@ public class GeneratorImageBuilder {
         this.generators = new ArrayList<>();
     }
 
+    /**
+     * Add a {@link Generator} to the list of {@link Generator generators}.
+     * The {@link Generator} will be added to the end of the list, and thus will be drawn last
+     * or wherever the generator is positioned in the list.
+     *
+     * @param generator The {@link Generator generator} to add.
+     *
+     * @return The {@link GeneratorImageBuilder builder} instance.
+     */
     public GeneratorImageBuilder addGenerator(Generator generator) {
         this.generators.add(generator);
         return this;
     }
 
+    /**
+     * Add a {@link Generator} at a specific position in the list of {@link Generator generators}.
+     * The list is 0-indexed.
+     *
+     * @param position  The position to add the {@link Generator generator} at. 0-indexed.
+     * @param generator The {@link Generator generator} to add.
+     *
+     * @return The {@link GeneratorImageBuilder builder} instance.
+     */
     public GeneratorImageBuilder addGenerator(int position, Generator generator) {
         this.generators.add(position, generator);
         return this;
     }
 
+    /**
+     * Build the final image from the list of {@link Generator generators}.
+     *
+     * @return The final {@link GeneratedObject image}.
+     */
     public GeneratedObject build() {
         int totalWidth = 0;
         int maxHeight = 0;
