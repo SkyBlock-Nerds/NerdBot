@@ -12,7 +12,7 @@ import net.hypixel.nerdbot.generator.parser.text.ColorCodeParser;
 import net.hypixel.nerdbot.generator.parser.text.GemstoneParser;
 import net.hypixel.nerdbot.generator.parser.text.IconParser;
 import net.hypixel.nerdbot.generator.parser.text.StatParser;
-import net.hypixel.nerdbot.generator.skyblock.Rarity;
+import net.hypixel.nerdbot.generator.placeholder.Rarity;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
 import net.hypixel.nerdbot.util.Range;

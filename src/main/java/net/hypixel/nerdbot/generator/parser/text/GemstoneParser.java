@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
 import net.hypixel.nerdbot.generator.parser.StringParser;
-import net.hypixel.nerdbot.generator.skyblock.Gemstone;
+import net.hypixel.nerdbot.generator.placeholder.Gemstone;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.Nullable;
 

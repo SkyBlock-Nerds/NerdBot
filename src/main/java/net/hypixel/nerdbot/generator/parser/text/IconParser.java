@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
 import net.hypixel.nerdbot.generator.parser.StringParser;
-import net.hypixel.nerdbot.generator.skyblock.Icon;
+import net.hypixel.nerdbot.generator.placeholder.Icon;
 import net.hypixel.nerdbot.util.Util;
 
 import java.util.regex.Matcher;

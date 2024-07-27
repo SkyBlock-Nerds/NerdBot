@@ -21,7 +21,7 @@ import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
-import net.hypixel.nerdbot.generator.skyblock.Rarity;
+import net.hypixel.nerdbot.generator.placeholder.Rarity;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
