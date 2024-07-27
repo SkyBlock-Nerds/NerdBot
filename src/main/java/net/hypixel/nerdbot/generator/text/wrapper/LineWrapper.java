@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LineWrapper {
+
     private final int maxLineLength;
     private final List<List<LineSegment>> lines;
     private final StringBuilder currentLine;
@@ -27,7 +28,11 @@ public class LineWrapper {
             addWord(word);
         }
 
-        addRemainingLine();
+        // Process remaining text in currentLine
+        if (!currentLine.isEmpty()) {
+            addCurrentLineToLines();
+        }
+
         handleNoSpaces(text);
         return lines;
     }
@@ -56,14 +61,8 @@ public class LineWrapper {
         currentLine.setLength(0);
     }
 
-    private void addRemainingLine() {
-        if (!currentLine.isEmpty()) {
-            addCurrentLineToLines();
-        }
-    }
-
     private void handleNoSpaces(String text) {
-        if (currentLine.isEmpty() && !text.contains(" ")) {
+        if (lines.isEmpty() && !text.contains(" ")) {
             for (int i = 0; i < text.length(); i += maxLineLength) {
                 String part = text.substring(i, Math.min(i + maxLineLength, text.length()));
 

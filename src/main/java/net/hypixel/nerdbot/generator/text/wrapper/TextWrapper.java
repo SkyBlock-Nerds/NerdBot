@@ -17,7 +17,8 @@ public class TextWrapper {
         List<List<LineSegment>> output = new CopyOnWriteArrayList<>();
 
         for (String line : lines) {
-            // adds blank line if the line is empty, since this seems to only trigger when using two newline characters in a row
+            // adds blank line if the line is empty
+            // since this seems to only trigger when using two newline characters in a row
             if (line == null || line.isBlank()) {
                 output.add(LineSegment.fromLegacy(" ", '&'));
                 continue;
