@@ -38,7 +38,7 @@ public class LineWrapper {
     }
 
     private void addWord(String word) {
-        if (currentLine.length() + word.length() + 1 > maxLineLength) {
+        if (!currentLine.isEmpty() && currentLine.length() + word.length() + 1 > maxLineLength) {
             addCurrentLineToLines();
         }
 
