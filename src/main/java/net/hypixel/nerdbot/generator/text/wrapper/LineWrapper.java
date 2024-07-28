@@ -22,7 +22,7 @@ public class LineWrapper {
     }
 
     public List<List<LineSegment>> wrapText(String text) {
-        String[] words = text.split("\\s+");
+        String[] words = text.split("\n");
 
         for (String word : words) {
             addWord(word);
@@ -38,15 +38,25 @@ public class LineWrapper {
     }
 
     private void addWord(String word) {
+        System.out.println("currentLine: " + currentLine + " (len: " + currentLine.length() + ")");
+        System.out.println("word: " + word + " (len: " + word.length() + ")");
+        System.out.println("maxLineLength: " + maxLineLength);
+        System.out.println("currentLine.length() + word.length() + 1: " + (currentLine.length() + word.length() + 1));
+        System.out.println("currentLine.length() + word.length() + 1 > maxLineLength: " + (currentLine.length() + word.length() + 1 > maxLineLength));
+
         if (currentLine.length() + word.length() + 1 > maxLineLength) {
             addCurrentLineToLines();
+            System.out.println("currentLine: " + currentLine + " (len: " + currentLine.length() + ")");
+            System.out.println("currentLine plus word: " + currentLine + " " + word + " (len: " + (currentLine.length() + word.length()) + ")");
         }
 
         if (!currentLine.isEmpty()) {
             currentLine.append(" ");
+            System.out.println("appending space to currentLine: " + currentLine + " (len: " + currentLine.length() + ")");
         }
 
         currentLine.append(word);
+        System.out.println("appended word '" + word + "' to currentLine: " + currentLine + " (len: " + currentLine.length() + ")");
     }
 
     private void addCurrentLineToLines() {
