@@ -18,6 +18,8 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
@@ -142,17 +144,19 @@ public class ExportCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = PARENT_COMMAND, subcommand = "greenlit", description = "Exports all greenlit forum posts into a CSV file", defaultLocked = true)
     public void exportGreenlitThreads(GuildSlashEvent event, @Optional @AppOption(description = "Disregards any post before this UNIX timestamp (Default: 0)") long suggestionsAfter) {
+        event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            log.error("Couldn't connect to the database!");
+            return;
+        }
+
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.reply(event, "generic.user_not_found");
-            return;
-        }
-
-        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.reply(event, discordUser, "database.not_connected");
-            log.error("Couldn't connect to the database!");
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
             return;
         }
 
@@ -189,10 +193,11 @@ public class ExportCommands extends ApplicationCommand {
         }
 
         try {
-            event.getHook().sendMessage(TranslationManager.translate("curator.greenlit_import_instructions", discordUser))
-                .setEphemeral(true)
-                .addFiles(FileUpload.fromData(Util.createTempFile(String.format("export-greenlit-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
-                .queue();
+            MessageEditData data = MessageEditBuilder.from(MessageEditData.fromContent(TranslationManager.translate("curator.greenlit_import_instructions", discordUser)))
+                .setFiles(FileUpload.fromData(Util.createTempFile(String.format("export-greenlit-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
+                .build();
+
+            event.getHook().editOriginal(data).queue();
         } catch (IOException exception) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.temp_file_error", exception.getMessage());
             log.error("Failed to create temp file!", exception);
