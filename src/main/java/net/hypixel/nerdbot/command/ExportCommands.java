@@ -141,7 +141,7 @@ public class ExportCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = PARENT_COMMAND, subcommand = "greenlit", description = "Exports all greenlit forum posts into a CSV file", defaultLocked = true)
-    public void exportGreenlitThreads(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Disregards any post before this UNIX timestamp (Default: 0)") long suggestionsAfter) {
+    public void exportGreenlitThreads(GuildSlashEvent event, @Optional @AppOption(description = "Disregards any post before this UNIX timestamp (Default: 0)") long suggestionsAfter) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
@@ -177,15 +177,21 @@ public class ExportCommands extends ApplicationCommand {
                     "\"" + String.join(", ", greenlitMessage.getTags()) + "\"",
                     "=HYPERLINK(\"" + greenlitMessage.getSuggestionUrl() + "\", \"" + greenlitMessage.getSuggestionTitle().replace("\"", "\"\"") + "\")"
                 ));
+                log.info("Added greenlit suggestion '" + greenlitMessage.getSuggestionTitle() + "' to the greenlit suggestion export for " + event.getMember().getEffectiveName() + " (suggestions after: " + suggestionsAfter + ")");
             } else {
                 log.debug("Skipping greenlit suggestion " + greenlitMessage.getSuggestionTitle() + " because it was created before the specified timestamp (after: " + suggestionsAfter + ", suggestion timestamp: " + greenlitMessage.getSuggestionTimestamp() + ")");
             }
         }
 
+        if (csvData.isEmpty()) {
+            TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
+            return;
+        }
+
         try {
             event.getHook().sendMessage(TranslationManager.translate("curator.greenlit_import_instructions", discordUser))
                 .setEphemeral(true)
-                .addFiles(FileUpload.fromData(Util.createTempFile(String.format("export-greenlit-" + channel.getName() + "-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
+                .addFiles(FileUpload.fromData(Util.createTempFile(String.format("export-greenlit-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
                 .queue();
         } catch (IOException exception) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.temp_file_error", exception.getMessage());
