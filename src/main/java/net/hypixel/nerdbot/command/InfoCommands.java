@@ -194,8 +194,8 @@ public class InfoCommands extends ApplicationCommand {
         RoleManager.getRoleById(roleConfig.getModeratorRoleId()).ifPresentOrElse(role -> grapes.set(guild.getMembersWithRoles(role).size()),
             () -> log.warn("Role {} not found", "Grape"));
 
-        RoleManager.getRole(roleConfig.getOrangeRoleId()).ifPresentOrElse(role -> nerds.set(guild.getMembersWithRoles(role).size()),
-            () -> log.warn("Role {} not found", "Nerd"));
+        RoleManager.getRoleById(roleConfig.getOrangeRoleId()).ifPresentOrElse(role -> nerds.set(guild.getMembersWithRoles(role).size()),
+            () -> log.warn("Role {} not found", "Orange"));
 
         builder.append("- Grapes: ").append(grapes.get()).append("\n")
             .append("- Nerds: ").append(nerds.get());
