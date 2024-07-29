@@ -160,7 +160,7 @@ public class ExportCommands extends ApplicationCommand {
         // Force a save before exporting because some might still be cached
         greenlitMessageRepository.saveAllToDatabase();
 
-        List<GreenlitMessage> output = greenlitMessageRepository.getAll();
+        List<GreenlitMessage> output = greenlitMessageRepository.getAllDocuments();
 
         if (output.isEmpty()) {
             TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
