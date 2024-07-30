@@ -3,9 +3,13 @@ package net.hypixel.nerdbot.generator.text.wrapper;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class LineWrapper {
+
+    private static final String DELIMITER = "\0"; // Null character
 
     private final int maxLineLength;
     private final List<List<LineSegment>> lines;
@@ -22,7 +26,7 @@ public class LineWrapper {
     }
 
     public List<List<LineSegment>> wrapText(String text) {
-        String[] words = text.split("\n");
+        String[] words = splitArray(text.lines().flatMap(line -> Arrays.stream(line.split(" "))).toArray(String[]::new));
 
         for (String word : words) {
             addWord(word);
@@ -37,7 +41,44 @@ public class LineWrapper {
         return lines;
     }
 
+    /**
+     * Splits the input array of strings by newline characters represented as \\n
+     * and then by spaces, returning the result as an array of strings.
+     * <p>
+     * It is done this way to preserve empty strings when splitting by user input.
+     *
+     * @param inputArray the input array of {@link String strings}
+     *
+     * @return a {@link String} array containing the split results
+     */
+    public static String[] splitArray(String[] inputArray) {
+        List<String> result = new ArrayList<>();
+
+        for (String str : inputArray) {
+            str = str.replace("\\n", DELIMITER);
+
+            // Preserve empty strings when splitting
+            String[] parts = str.split("(?<=\0)|(?=\0)", -1);
+
+            for (String part : parts) {
+                if (part.equals(DELIMITER)) {
+                    result.add("");
+                } else {
+                    String[] words = part.split(" ");
+                    Collections.addAll(result, words);
+                }
+            }
+        }
+
+        return result.toArray(new String[0]);
+    }
+
     private void addWord(String word) {
+        if (word.isBlank()) {
+            addCurrentLineToLines();
+            return;
+        }
+
         if (!currentLine.isEmpty() && currentLine.length() + word.length() + 1 > maxLineLength) {
             addCurrentLineToLines();
         }
