@@ -80,17 +80,21 @@ public class SuggestionCache extends TimerTask {
     }
 
     private void loadSuggestions(ForumChannel forumChannel, Suggestion.ChannelType channelType) {
-        Stream<ThreadChannel> unarchivedPosts = forumChannel.getThreadChannels().stream().sorted(
-            (o1, o2) -> Long.compare(o2.getTimeCreated().toEpochSecond(), o1.getTimeCreated().toEpochSecond())
-        );
-        Stream<ThreadChannel> archivedPosts = forumChannel.retrieveArchivedPublicThreadChannels().stream();
-        Stream.concat(unarchivedPosts, archivedPosts)
-            .distinct()
-            .forEach(threadChannel -> {
-                Suggestion suggestion = new Suggestion(threadChannel, channelType);
-                this.cache.put(threadChannel.getId(), suggestion);
-                log.debug("Added existing {} suggestion: '{}' (ID: {}) to the suggestion cache.", channelType.getName().toLowerCase(), threadChannel.getName(), threadChannel.getId());
-            });
+        try {
+            Stream<ThreadChannel> unarchivedPosts = forumChannel.getThreadChannels().stream().sorted(
+                (o1, o2) -> Long.compare(o2.getTimeCreated().toEpochSecond(), o1.getTimeCreated().toEpochSecond())
+            );
+            Stream<ThreadChannel> archivedPosts = forumChannel.retrieveArchivedPublicThreadChannels().stream();
+            Stream.concat(unarchivedPosts, archivedPosts)
+                .distinct()
+                .forEach(threadChannel -> {
+                    Suggestion suggestion = new Suggestion(threadChannel, channelType);
+                    this.cache.put(threadChannel.getId(), suggestion);
+                    log.debug("Added existing {} suggestion: '{}' (ID: {}) to the suggestion cache.", channelType.getName().toLowerCase(), threadChannel.getName(), threadChannel.getId());
+                });
+        } catch (Exception exception) {
+            log.error("Failed to load suggestions from forum channel: " + forumChannel.getName(), exception);
+        }
     }
 
     public void addSuggestion(ThreadChannel thread) {
