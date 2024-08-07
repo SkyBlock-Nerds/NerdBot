@@ -39,6 +39,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
             // getting the material data
             String material = components[0];
             String data = null;
+
             if (material.contains(",")) {
                 String[] dataSplit = material.split(",", 2);
                 material = dataSplit[0];
@@ -154,9 +155,10 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         if (slotData.contains(",")) {
             int splitIndex = slotData.indexOf(",");
             try {
-                amount = Range.between(1, 64).fit(Integer.parseInt(slotData.substring(splitIndex)));
+                amount = Range.between(1, 64).fit(Integer.parseInt(slotData.substring(splitIndex + 1)));
             } catch (NumberFormatException ignored) {
             }
+
             slotData = slotData.substring(0, splitIndex);
         }
 

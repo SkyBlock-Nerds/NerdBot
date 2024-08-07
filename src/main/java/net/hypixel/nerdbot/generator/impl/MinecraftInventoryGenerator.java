@@ -188,14 +188,15 @@ public class MinecraftInventoryGenerator implements Generator {
 
                 parsedItem.setImage(playerHeadImage);
             } else if (!parsedItem.getItemName().equalsIgnoreCase("null")) {
-                MinecraftItemGenerator itemGenerator = new MinecraftItemGenerator.Builder()
+                BufferedImage generatedItem = new MinecraftItemGenerator.Builder()
                     .withItem(parsedItem.getItemName())
                     .isEnchanted(parsedItem.getExtraContent() != null && parsedItem.getExtraContent().contains("enchant"))
                     .withData(parsedItem.getExtraContent())
-                    .build();
+                    .build()
+                    .generate()
+                    .getImage();
 
-                BufferedImage itemImage = itemGenerator.generate().getImage();
-                parsedItem.setImage(itemImage);
+                parsedItem.setImage(generatedItem);
             }
 
             this.drawItem(parsedItem);
