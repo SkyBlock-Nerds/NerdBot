@@ -285,7 +285,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
         alpha = alpha == null ? 245 : alpha;
         padding = padding == null ? 0 : padding;
-        emptyLine = emptyLine != null && emptyLine;
+        emptyLine = emptyLine == null || emptyLine;
         centered = centered != null && centered;
         paddingFirstLine = paddingFirstLine != null && paddingFirstLine;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
