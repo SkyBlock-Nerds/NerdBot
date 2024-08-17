@@ -15,7 +15,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 @Setter
-@ToString
 public final class TextSegment extends ColorSegment {
 
     private ClickEvent clickEvent;
@@ -167,5 +166,20 @@ public final class TextSegment extends ColorSegment {
             textSegment.setStrikethrough(this.strikethrough);
             return textSegment;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "TextSegment{" +
+            "clickEvent=" + clickEvent +
+            ", hoverEvent=" + hoverEvent +
+            ", text='" + text + '\'' +
+            ", color=" + color +
+            ", italic=" + italic +
+            ", bold=" + bold +
+            ", underlined=" + underlined +
+            ", obfuscated=" + obfuscated +
+            ", strikethrough=" + strikethrough +
+            '}';
     }
 }

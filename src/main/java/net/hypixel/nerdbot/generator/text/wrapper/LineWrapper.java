@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.generator.text.wrapper;
 
+import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 
 import java.util.ArrayList;
@@ -7,6 +8,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+@Log4j2
 public class LineWrapper {
 
     private static final String DELIMITER = "\0"; // Null character
@@ -26,7 +28,10 @@ public class LineWrapper {
     }
 
     public List<List<LineSegment>> wrapText(String text) {
+        // TODO preserve extra spaces from user input
         String[] words = splitArray(text.lines().flatMap(line -> Arrays.stream(line.split(" "))).toArray(String[]::new));
+
+        log.debug("Split words: {}", Arrays.toString(words));
 
         for (String word : words) {
             addWord(word);
@@ -38,6 +43,8 @@ public class LineWrapper {
         }
 
         handleNoSpaces(text);
+
+        log.debug("Returning lines: {}", lines);
         return lines;
     }
 
@@ -54,64 +61,96 @@ public class LineWrapper {
     public static String[] splitArray(String[] inputArray) {
         List<String> result = new ArrayList<>();
 
+        log.debug("Splitting input array: {}", Arrays.toString(inputArray));
+
         for (String str : inputArray) {
+            log.debug("Processing string: '{}'", str);
+
             str = str.replace("\\n", DELIMITER);
 
+            log.debug("Replaced \\n with delimiter: '{}'", str);
+
             // Preserve empty strings when splitting
-            String[] parts = str.split("(?<=\0)|(?=\0)", -1);
+            String[] parts = str.split("(?<=\0)|(?=\0)");
+
+            log.debug("Split parts: '{}'", Arrays.toString(parts));
 
             for (String part : parts) {
+                log.debug("Processing part: '{}'", part);
+
                 if (part.equals(DELIMITER)) {
+                    log.debug("Part equals delimiter, adding empty string to result");
                     result.add("");
                 } else {
                     String[] words = part.split(" ");
                     Collections.addAll(result, words);
+                    log.debug("Added words to result: '{}'", Arrays.toString(words));
                 }
             }
         }
 
+        log.debug("Returning result: '{}'", result);
         return result.toArray(new String[0]);
     }
 
     private void addWord(String word) {
+        log.debug("Adding word: {}", word);
+
         if (word.isBlank()) {
+            log.debug("Skipping blank word");
             addCurrentLineToLines();
             return;
         }
 
         if (!currentLine.isEmpty() && currentLine.length() + word.length() + 1 > maxLineLength) {
+            log.debug("Current line length + word length + 1 ({}) is greater than maxLineLength ({}), adding current line to lines", currentLine.length() + word.length() + 1, maxLineLength);
             addCurrentLineToLines();
         }
 
         if (!currentLine.isEmpty()) {
+            log.debug("Current line is not empty, appending space to current line");
             currentLine.append(" ");
         }
 
+        log.debug("Appending word: {} to current line: {}", word, currentLine);
         currentLine.append(word);
     }
 
     private void addCurrentLineToLines() {
         String lineToAdd = currentLine.toString().trim();
 
+        log.debug("lineToAdd: {}", lineToAdd);
+
         if (!lineToAdd.startsWith("&")) {
             lineToAdd = lastColorCode + lastFormattingCodes + lineToAdd;
+            log.debug("lineToAdd with color code: {}", lineToAdd);
         }
 
         lines.add(LineSegment.fromLegacy(lineToAdd, '&'));
+        log.debug("Added lineToAdd {} to lines: {}", LineSegment.fromLegacy(lineToAdd, '&'), lines);
         updateFormattingCodes(lineToAdd);
         currentLine.setLength(0);
+        log.debug("Current line length set to 0");
     }
 
     private void handleNoSpaces(String text) {
+        log.debug("Handling no spaces in text: {}", text);
+
         if (lines.isEmpty() && !text.contains(" ")) {
+            log.debug("No spaces found in text, adding text to lines");
+
             for (int i = 0; i < text.length(); i += maxLineLength) {
                 String part = text.substring(i, Math.min(i + maxLineLength, text.length()));
 
+                log.debug("Part: {}", part);
+
                 if (!part.startsWith("&")) {
                     part = lastColorCode + lastFormattingCodes + part;
+                    log.debug("Part does not start with color code, adding it: {}", part);
                 }
 
                 lines.add(LineSegment.fromLegacy(part, '&'));
+                log.debug("Added part {} to lines: {}", LineSegment.fromLegacy(part, '&'), lines);
                 updateFormattingCodes(part);
             }
         }
@@ -120,6 +159,8 @@ public class LineWrapper {
     private void updateFormattingCodes(String line) {
         lastColorCode = getLastColorCode(line);
         lastFormattingCodes = getLastFormattingCodes(line);
+
+        log.debug("Updated lastColorCode: {} and lastFormattingCodes: {}", lastColorCode, lastFormattingCodes);
     }
 
     private String getLastColorCode(String text) {
@@ -128,15 +169,20 @@ public class LineWrapper {
             if (text.charAt(i) == '&' && (i + 1 < text.length())) {
                 char code = text.charAt(i + 1);
 
+                log.debug("Checking code: {}", code);
+
                 if (Character.isLetterOrDigit(code)) {
                     colorCode = text.substring(i, i + 2);
 
                     if ("0123456789abcdef".indexOf(code) != -1) {
+                        log.debug("Found color code: {}", colorCode);
                         break;
                     }
                 }
             }
         }
+
+        log.debug("Returning color code: {}", colorCode);
         return colorCode;
     }
 
@@ -146,11 +192,16 @@ public class LineWrapper {
             if (text.charAt(i) == '&' && (i + 1 < text.length())) {
                 char code = text.charAt(i + 1);
 
+                log.debug("Checking code: {}", code);
+
                 if ("klmnor".indexOf(code) != -1) {
+                    log.debug("Found formatting code: {}", code);
                     formattingCodes.append(text, i, i + 2);
                 }
             }
         }
+
+        log.debug("Returning formatting codes: {}", formattingCodes.toString());
         return formattingCodes.toString();
     }
 }
