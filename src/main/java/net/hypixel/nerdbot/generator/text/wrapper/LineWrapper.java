@@ -12,6 +12,10 @@ import java.util.List;
 public class LineWrapper {
 
     private static final String DELIMITER = "\0"; // Null character
+    private static final String DELIMITER_REGEX = "(?<=" + DELIMITER + ")|(?=" + DELIMITER + ")";
+    private static final String SPLIT_REGEX = "(?<=\\n)|(?=\\n)|(?<=\\s)|(?=\\s)";
+    private static final String VALID_COLOR_CODES = "0123456789abcdef";
+    private static final String VALID_FORMATTING_CODES = "klmnor";
 
     private final int maxLineLength;
     private final List<List<LineSegment>> lines;
@@ -28,8 +32,7 @@ public class LineWrapper {
     }
 
     public List<List<LineSegment>> wrapText(String text) {
-        // TODO preserve extra spaces from user input
-        String[] words = splitArray(text.lines().flatMap(line -> Arrays.stream(line.split(" "))).toArray(String[]::new));
+        String[] words = text.split(SPLIT_REGEX);
 
         log.debug("Split words: {}", Arrays.toString(words));
 
@@ -96,21 +99,21 @@ public class LineWrapper {
     private void addWord(String word) {
         log.debug("Adding word: {}", word);
 
-        if (word.isBlank()) {
+        /*if (word.isBlank()) {
             log.debug("Skipping blank word");
             addCurrentLineToLines();
             return;
-        }
+        }*/
 
         if (!currentLine.isEmpty() && currentLine.length() + word.length() + 1 > maxLineLength) {
             log.debug("Current line length + word length + 1 ({}) is greater than maxLineLength ({}), adding current line to lines", currentLine.length() + word.length() + 1, maxLineLength);
             addCurrentLineToLines();
         }
 
-        if (!currentLine.isEmpty()) {
+        /*if (!currentLine.isEmpty()) {
             log.debug("Current line is not empty, appending space to current line");
             currentLine.append(" ");
-        }
+        }*/
 
         log.debug("Appending word: {} to current line: {}", word, currentLine);
         currentLine.append(word);
@@ -174,7 +177,7 @@ public class LineWrapper {
                 if (Character.isLetterOrDigit(code)) {
                     colorCode = text.substring(i, i + 2);
 
-                    if ("0123456789abcdef".indexOf(code) != -1) {
+                    if (VALID_COLOR_CODES.indexOf(code) != -1) {
                         log.debug("Found color code: {}", colorCode);
                         break;
                     }
@@ -194,7 +197,7 @@ public class LineWrapper {
 
                 log.debug("Checking code: {}", code);
 
-                if ("klmnor".indexOf(code) != -1) {
+                if (VALID_FORMATTING_CODES.indexOf(code) != -1) {
                     log.debug("Found formatting code: {}", code);
                     formattingCodes.append(text, i, i + 2);
                 }
