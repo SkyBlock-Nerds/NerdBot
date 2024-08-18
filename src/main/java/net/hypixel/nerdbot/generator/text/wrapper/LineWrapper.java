@@ -13,7 +13,7 @@ public class LineWrapper {
 
     private static final String DELIMITER = "\0"; // Null character
     private static final String DELIMITER_REGEX = "(?<=" + DELIMITER + ")|(?=" + DELIMITER + ")";
-    private static final String SPLIT_REGEX = "(?<=\\n)|(?=\\n)|(?<=\\s)|(?=\\s)";
+    private static final String SPLIT_REGEX = "(\\s+|\\S+)";
     private static final String VALID_COLOR_CODES = "0123456789abcdef";
     private static final String VALID_FORMATTING_CODES = "klmnor";
 
@@ -74,7 +74,7 @@ public class LineWrapper {
             log.debug("Replaced \\n with delimiter: '{}'", str);
 
             // Preserve empty strings when splitting
-            String[] parts = str.split("(?<=\0)|(?=\0)");
+            String[] parts = str.split(DELIMITER_REGEX);
 
             log.debug("Split parts: '{}'", Arrays.toString(parts));
 
