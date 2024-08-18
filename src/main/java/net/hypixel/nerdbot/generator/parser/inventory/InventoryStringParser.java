@@ -53,8 +53,6 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
 
             String slotData = components[1];
 
-            System.out.println("slotData: " + slotData);
-
             if (slotData.contains("{")) {
                 result.add(itemFromMap(slotData, material, data));
             } else if (components[1].contains("[")) {
