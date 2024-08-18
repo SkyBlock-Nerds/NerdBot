@@ -8,6 +8,9 @@ import net.hypixel.nerdbot.generator.parser.Parser;
 import net.hypixel.nerdbot.util.Range;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @RequiredArgsConstructor(access = AccessLevel.PUBLIC)
 public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
@@ -49,6 +52,9 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
             }
 
             String slotData = components[1];
+
+            System.out.println("slotData: " + slotData);
+
             if (slotData.contains("{")) {
                 result.add(itemFromMap(slotData, material, data));
             } else if (components[1].contains("[")) {
@@ -75,23 +81,30 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         int endingBracket = slotMap.indexOf("}");
         String slotData = slotMap.substring(1, endingBracket != -1 ? endingBracket : slotMap.length() - 1);
         String[] keyValuePairs = slotData.split(",");
-        int[] slots = new int[keyValuePairs.length];
-        int[] amounts = new int[keyValuePairs.length];
-        int index = 0;
+
+        ArrayList<Integer> amounts = new ArrayList<>();
+        ArrayList<Integer> slots = new ArrayList<>();
 
         for (String pair : keyValuePairs) {
             String[] targetSlot = pair.split(":");
 
-            try {
-                slots[index] = Range.between(1, this.totalSlots).fit(Integer.parseInt(targetSlot[0].trim()));
-                amounts[index] = Range.between(1, 64).fit(Integer.parseInt(targetSlot[1].trim()));
-                index++;
-            } catch (NumberFormatException exception) {
-                throw new GeneratorException("Invalid slot or amount: `%s` in slot data: `%s` for material: `%s,%s`", pair.trim(), slotMap, material, data);
+            if (targetSlot.length != 2) {
+                throw new GeneratorException("Invalid slot or amount format: `%s` in slot data: `%s` for material: `%s,%s`", pair.trim(), slotMap, material, data);
+            }
+
+            int amount = Range.between(1, 64).fit(Integer.parseInt(targetSlot[1].trim()));
+            int[] parsedSlots = parseSlotRange(targetSlot[0].trim(), this.totalSlots);
+
+            for (int slot : parsedSlots) {
+                slots.add(slot);
+                amounts.add(amount);
             }
         }
 
-        return new InventoryItem(slots, amounts, material, data);
+        int[] slotArray = slots.stream().mapToInt(i -> i).toArray();
+        int[] amountArray = amounts.stream().mapToInt(i -> i).toArray();
+
+        return new InventoryItem(slotArray, amountArray, material, data);
     }
 
     /**
@@ -119,22 +132,12 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         }
 
         slotData = slotData.substring(1, slotData.length() - 1);
-        String[] values = slotData.split(",");
-        int[] slots = new int[values.length];
-        int[] amounts = new int[values.length];
-        int index = 0;
 
-        for (String slotIndex : values) {
-            try {
-                slots[index] = Range.between(1, this.totalSlots).fit(Integer.parseInt(slotIndex.trim()));
-                amounts[index] = amount;
-                index++;
-            } catch (NumberFormatException exception) {
-                throw new GeneratorException("Invalid slot: `%s` in slot data: `%s` for material: `%s,%s`", slotIndex.trim(), slotArray, material, data);
-            }
-        }
+        int[] slotArrayResult = parseSlotRange(slotData, this.totalSlots);
+        int[] amountArray = new int[slotArrayResult.length];
+        Arrays.fill(amountArray, amount);
 
-        return new InventoryItem(slots, amounts, material, data);
+        return new InventoryItem(slotArrayResult, amountArray, material, data);
     }
 
     /**
@@ -171,5 +174,46 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         }
 
         return new InventoryItem(slot, amount, material, data);
+    }
+
+    /**
+     * Parses a string of slots into an array of integers.
+     *
+     * @param slotData   The string of slots to parse.
+     * @param totalSlots The total number of slots in the inventory.
+     *
+     * @return An array of integers representing the slots.
+     */
+    private int[] parseSlotRange(String slotData, int totalSlots) {
+        return Arrays.stream(slotData.split(","))
+            .flatMap(value -> {
+                value = value.trim();
+                if (value.contains("-")) {
+                    // Parse a range of slots
+                    String[] rangeParts = value.split("-");
+                    if (rangeParts.length != 2) {
+                        throw new GeneratorException("Invalid range format: `%s`".formatted(value));
+                    }
+
+                    int startSlot = Range.between(1, totalSlots).fit(Integer.parseInt(rangeParts[0].trim()));
+                    int endSlot = Range.between(1, totalSlots).fit(Integer.parseInt(rangeParts[1].trim()));
+
+                    if (startSlot > endSlot) {
+                        throw new GeneratorException("Start slot cannot be greater than end slot in range: `%s`".formatted(value));
+                    }
+
+                    return IntStream.rangeClosed(startSlot, endSlot).boxed();
+                } else {
+                    // Parse a single slot
+                    try {
+                        int slot = Range.between(1, totalSlots).fit(Integer.parseInt(value));
+                        return Stream.of(slot);
+                    } catch (NumberFormatException exception) {
+                        throw new GeneratorException("Invalid slot: `%s`".formatted(value));
+                    }
+                }
+            })
+            .mapToInt(Integer::intValue)
+            .toArray();
     }
 }
