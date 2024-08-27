@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
 
 @Log4j2
 public class LineWrapper {
@@ -14,6 +16,7 @@ public class LineWrapper {
     private static final String DELIMITER = "\0"; // Null character
     private static final String DELIMITER_REGEX = "(?<=" + DELIMITER + ")|(?=" + DELIMITER + ")";
     private static final String SPLIT_REGEX = "(\\s+|\\S+)";
+    private static final Pattern SPLIT_PATTERN = Pattern.compile(SPLIT_REGEX);
     private static final String VALID_COLOR_CODES = "0123456789abcdef";
     private static final String VALID_FORMATTING_CODES = "klmnor";
 
@@ -32,7 +35,11 @@ public class LineWrapper {
     }
 
     public List<List<LineSegment>> wrapText(String text) {
-        String[] words = text.split(SPLIT_REGEX);
+        log.debug("Wrapping text: {}", text);
+
+        String[] words = SPLIT_PATTERN.matcher(text).results()
+            .map(MatchResult::group)
+            .toArray(String[]::new);
 
         log.debug("Split words: {}", Arrays.toString(words));
 
