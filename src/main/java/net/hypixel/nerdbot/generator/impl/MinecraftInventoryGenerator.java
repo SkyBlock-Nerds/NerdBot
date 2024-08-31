@@ -18,6 +18,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
@@ -170,11 +171,11 @@ public class MinecraftInventoryGenerator implements Generator {
         ArrayList<InventoryItem> items = parser.parse(inventoryData);
 
         for (int i = 0; i < items.size(); i++) {
+            InventoryItem item = items.get(i);
             for (int j = i + 1; j < items.size(); j++) {
-                if (items.get(i).getSlot()[0] == items.get(j).getSlot()[0]) {
-                    items.remove(i);
-                    i--;
-                    break;
+                InventoryItem nextItem = items.get(j);
+                if (Arrays.equals(item.getSlot(), nextItem.getSlot())) {
+                    items.set(i, nextItem);
                 }
             }
         }

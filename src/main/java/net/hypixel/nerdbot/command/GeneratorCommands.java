@@ -163,6 +163,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = INVENTORY_ROWS_DESCRIPTION) int rows,
         @AppOption(description = INVENTORY_COLUMNS_DESCRIPTION) int slotsPerRow,
         @AppOption(description = INVENTORY_CONTENTS_DESCRIPTION) String inventoryString,
+        @AppOption(description = "Optional item lore displayed beside the inventory") @Optional String hoveredItemString,
         @AppOption(description = INVENTORY_NAME_DESCRIPTION) @Optional String containerName,
         @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean drawBorder,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
@@ -173,7 +174,7 @@ public class GeneratorCommands extends ApplicationCommand {
         drawBorder = drawBorder == null || drawBorder;
 
         try {
-            GeneratedObject generatedObject = new GeneratorImageBuilder()
+            GeneratorImageBuilder generatedObject = new GeneratorImageBuilder()
                 .addGenerator(new MinecraftInventoryGenerator.Builder()
                     .withRows(rows)
                     .withSlotsPerRow(slotsPerRow)
@@ -181,10 +182,22 @@ public class GeneratorCommands extends ApplicationCommand {
                     .drawBackground(true)
                     .withContainerTitle(containerName)
                     .withInventoryString(inventoryString)
-                    .build())
-                .build();
+                    .build());
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "inventory.png")).queue();
+            if (hoveredItemString != null) {
+                MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                    .withItemLore(hoveredItemString)
+                    .withAlpha(245)
+                    .withPadding(0)
+                    .isPaddingFirstLine(false)
+                    .withEmptyLine(false)
+                    .withRenderBorder(true)
+                    .build();
+
+                generatedObject.addGenerator(tooltipGenerator);
+            }
+
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.build().getImage()), "inventory.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
         } catch (IOException exception) {
