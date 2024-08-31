@@ -67,6 +67,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
         @AppOption(description = EXTRA_DATA_DESCRIPTION) @Optional String data,
         @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
+        @AppOption(description = "If the item should look as if it being hovered over") @Optional Boolean hoverEffect,
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
@@ -74,6 +75,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply(hidden).complete();
 
         enchanted = enchanted != null && enchanted;
+        hoverEffect = hoverEffect != null && hoverEffect;
 
         try {
             GeneratorImageBuilder item = new GeneratorImageBuilder();
@@ -87,6 +89,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     .withItem(itemId)
                     .withData(data)
                     .isEnchanted(enchanted)
+                    .withHoverEffect(hoverEffect)
                     .isBigImage()
                     .build()
                 );
