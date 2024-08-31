@@ -23,7 +23,7 @@ public class MinecraftItemGenerator implements Generator {
     private final String itemId;
     private final String data;
     private final boolean enchanted;
-    private final boolean hovered;
+    private final boolean hoverEffect;
     private final boolean bigImage;
 
     private BufferedImage itemImage;
@@ -49,7 +49,7 @@ public class MinecraftItemGenerator implements Generator {
             itemImage = applyEnchantGlint();
         }
 
-        if (hovered) {
+        if (hoverEffect) {
             itemImage = applyHoverEffect();
         }
 
@@ -119,7 +119,7 @@ public class MinecraftItemGenerator implements Generator {
         private String itemId;
         private String data;
         private boolean enchanted;
-        private boolean hovered;
+        private boolean hoverEffect;
         private boolean bigImage;
 
         public MinecraftItemGenerator.Builder withItem(String itemId) {
@@ -139,8 +139,8 @@ public class MinecraftItemGenerator implements Generator {
             return this;
         }
 
-        public MinecraftItemGenerator.Builder withHoverEffect(boolean hovered) {
-            this.hovered = hovered;
+        public MinecraftItemGenerator.Builder withHoverEffect(boolean hoverEffect) {
+            this.hoverEffect = hoverEffect;
             return this;
         }
 
@@ -155,7 +155,7 @@ public class MinecraftItemGenerator implements Generator {
 
         @Override
         public MinecraftItemGenerator build() {
-            return new MinecraftItemGenerator(itemId, data, enchanted, hovered, bigImage);
+            return new MinecraftItemGenerator(itemId, data, enchanted, hoverEffect, bigImage);
         }
     }
 }
