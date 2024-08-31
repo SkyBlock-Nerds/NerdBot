@@ -8,11 +8,12 @@ import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.item.overlay.ItemOverlay;
 import net.hypixel.nerdbot.generator.item.overlay.OverlayType;
-import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.generator.spritesheet.OverlaySheet;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
+import net.hypixel.nerdbot.util.ImageUtil;
 
 import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
@@ -22,6 +23,7 @@ public class MinecraftItemGenerator implements Generator {
     private final String itemId;
     private final String data;
     private final boolean enchanted;
+    private final boolean hovered;
     private final boolean bigImage;
 
     private BufferedImage itemImage;
@@ -45,6 +47,10 @@ public class MinecraftItemGenerator implements Generator {
 
         if (enchanted) {
             itemImage = applyEnchantGlint();
+        }
+
+        if (hovered) {
+            itemImage = applyHoverEffect();
         }
 
         return new GeneratedObject(itemImage);
@@ -81,6 +87,20 @@ public class MinecraftItemGenerator implements Generator {
         return overlaidItem;
     }
 
+    private BufferedImage applyHoverEffect() {
+        BufferedImage hoveredItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D hoveredItemGraphics = hoveredItem.createGraphics();
+        hoveredItemGraphics.drawImage(itemImage, 0, 0, null);
+
+        hoveredItemGraphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5F));
+        hoveredItemGraphics.setColor(Color.WHITE);
+        hoveredItemGraphics.fillRect(0, 0, itemImage.getWidth(), itemImage.getHeight());
+
+        hoveredItemGraphics.dispose();
+
+        return hoveredItem;
+    }
+
     private BufferedImage applyEnchantGlint() {
         BufferedImage enchantedItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics2D enchantedItemGraphics = enchantedItem.createGraphics();
@@ -99,6 +119,7 @@ public class MinecraftItemGenerator implements Generator {
         private String itemId;
         private String data;
         private boolean enchanted;
+        private boolean hovered;
         private boolean bigImage;
 
         public MinecraftItemGenerator.Builder withItem(String itemId) {
@@ -118,6 +139,11 @@ public class MinecraftItemGenerator implements Generator {
             return this;
         }
 
+        public MinecraftItemGenerator.Builder withHoverEffect(boolean hovered) {
+            this.hovered = hovered;
+            return this;
+        }
+
         public MinecraftItemGenerator.Builder isBigImage(boolean bigImage) {
             this.bigImage = bigImage;
             return this;
@@ -129,7 +155,7 @@ public class MinecraftItemGenerator implements Generator {
 
         @Override
         public MinecraftItemGenerator build() {
-            return new MinecraftItemGenerator(itemId, data, enchanted, bigImage);
+            return new MinecraftItemGenerator(itemId, data, enchanted, hovered, bigImage);
         }
     }
 }

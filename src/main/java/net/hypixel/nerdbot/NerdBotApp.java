@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.MongoException;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.bot.NerdBot;
@@ -52,7 +53,7 @@ public class NerdBotApp {
 
         try {
             nerdBot.create(args);
-        } catch (LoginException exception) {
+        } catch (LoginException | InvalidTokenException exception) {
             log.error("Failed to log into the bot with the given credentials!");
             System.exit(-1);
         } catch (MongoException exception) {

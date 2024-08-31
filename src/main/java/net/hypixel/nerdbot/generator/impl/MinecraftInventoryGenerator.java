@@ -192,6 +192,7 @@ public class MinecraftInventoryGenerator implements Generator {
                 BufferedImage generatedItem = new MinecraftItemGenerator.Builder()
                     .withItem(parsedItem.getItemName())
                     .isEnchanted(parsedItem.getExtraContent() != null && parsedItem.getExtraContent().contains("enchant"))
+                    .withHoverEffect(parsedItem.getExtraContent() != null && parsedItem.getExtraContent().contains("hover"))
                     .withData(parsedItem.getExtraContent())
                     .build()
                     .generate()
