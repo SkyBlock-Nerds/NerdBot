@@ -33,12 +33,12 @@ import java.util.UUID;
 @Log4j2
 public class MinecraftTooltip {
 
+    public static final Range<Integer> LINE_LENGTH = Range.between(16, 128);
     private static final int PIXEL_SIZE = 2;
     private static final int START_XY = PIXEL_SIZE * 5;
     private static final int Y_INCREMENT = PIXEL_SIZE * 10;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
-    public static final Range<Integer> LINE_LENGTH = Range.between(16, 128);
     private static final @NotNull List<Font> MINECRAFT_FONTS = new ArrayList<>();
     private static final Font sansSerif;
 

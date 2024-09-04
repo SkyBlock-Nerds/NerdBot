@@ -49,7 +49,9 @@ public class StatParser implements StringParser {
 
     /**
      * Parses the stat with no extra details
+     *
      * @param stat the stat selected
+     *
      * @return the replacement string
      */
     private String parseStat(Stat stat) {

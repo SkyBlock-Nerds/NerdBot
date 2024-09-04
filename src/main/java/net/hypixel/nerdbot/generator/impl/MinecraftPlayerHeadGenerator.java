@@ -51,7 +51,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
 
     private BufferedImage createHead(String textureId) {
         if (textureId == null) {
-             textureId = DEFAULT_SKIN_VALUE;
+            textureId = DEFAULT_SKIN_VALUE;
         }
 
         // Checking if the texture ID is a player name

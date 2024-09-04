@@ -24,14 +24,6 @@ public final class TextSegment extends ColorSegment {
         super(text);
     }
 
-    @Override
-    public @NotNull JsonObject toJson() {
-        JsonObject object = super.toJson(); // ColorSegment#toJson
-        this.getClickEvent().ifPresent(clickEvent -> object.add("clickEvent", clickEvent.toJson()));
-        this.getHoverEvent().ifPresent(hoverEvent -> object.add("hoverEvent", hoverEvent.toJson()));
-        return object;
-    }
-
     public static @Nullable TextSegment fromJson(@NotNull String jsonString) {
         return fromJson(JsonParser.parseString(jsonString).getAsJsonObject());
     }
@@ -39,14 +31,18 @@ public final class TextSegment extends ColorSegment {
     public static @Nullable TextSegment fromJson(@NotNull JsonObject jsonObject) {
         if (jsonObject.has("text")) {
             TextSegment textSegment = new TextSegment(jsonObject.get("text").getAsString());
-            if (jsonObject.has("clickEvent")) textSegment.setClickEvent(ClickEvent.fromJson(jsonObject.get("clickEvent").getAsJsonObject()));
-            if (jsonObject.has("hoverEvent")) textSegment.setHoverEvent(HoverEvent.fromJson(jsonObject.get("hoverEvent").getAsJsonObject()));
-            if (jsonObject.has("color")) textSegment.setColor(ChatFormat.valueOf(jsonObject.get("color").getAsString().toUpperCase()));
+            if (jsonObject.has("clickEvent"))
+                textSegment.setClickEvent(ClickEvent.fromJson(jsonObject.get("clickEvent").getAsJsonObject()));
+            if (jsonObject.has("hoverEvent"))
+                textSegment.setHoverEvent(HoverEvent.fromJson(jsonObject.get("hoverEvent").getAsJsonObject()));
+            if (jsonObject.has("color"))
+                textSegment.setColor(ChatFormat.valueOf(jsonObject.get("color").getAsString().toUpperCase()));
             if (jsonObject.has("obfuscated")) textSegment.setObfuscated(jsonObject.get("obfuscated").getAsBoolean());
             if (jsonObject.has("italic")) textSegment.setItalic(jsonObject.get("italic").getAsBoolean());
             if (jsonObject.has("bold")) textSegment.setBold(jsonObject.get("bold").getAsBoolean());
             if (jsonObject.has("underlined")) textSegment.setUnderlined(jsonObject.get("underlined").getAsBoolean());
-            if (jsonObject.has("strikethrough")) textSegment.setStrikethrough(jsonObject.get("strikethrough").getAsBoolean());
+            if (jsonObject.has("strikethrough"))
+                textSegment.setStrikethrough(jsonObject.get("strikethrough").getAsBoolean());
 
             return textSegment;
         }
@@ -64,12 +60,21 @@ public final class TextSegment extends ColorSegment {
      * to person. In case the string does not have a {@link ChatFormat#SECTION_SYMBOL}, the method also checks for the
      * {@param characterSubstitute}
      *
-     * @param legacyText The text to make into an object
+     * @param legacyText       The text to make into an object
      * @param symbolSubstitute The character substitute
+     *
      * @return A TextObject representing the legacy text.
      */
     public static @NotNull LineSegment fromLegacy(@NotNull String legacyText, char symbolSubstitute) {
         return fromLegacyHandler(legacyText, symbolSubstitute, () -> new TextSegment(""));
+    }
+
+    @Override
+    public @NotNull JsonObject toJson() {
+        JsonObject object = super.toJson(); // ColorSegment#toJson
+        this.getClickEvent().ifPresent(clickEvent -> object.add("clickEvent", clickEvent.toJson()));
+        this.getHoverEvent().ifPresent(hoverEvent -> object.add("hoverEvent", hoverEvent.toJson()));
+        return object;
     }
 
     public Optional<ClickEvent> getClickEvent() {
@@ -78,6 +83,21 @@ public final class TextSegment extends ColorSegment {
 
     public Optional<HoverEvent> getHoverEvent() {
         return Optional.ofNullable(hoverEvent);
+    }
+
+    @Override
+    public String toString() {
+        return "TextSegment{" +
+            "clickEvent=" + clickEvent +
+            ", hoverEvent=" + hoverEvent +
+            ", text='" + text + '\'' +
+            ", color=" + color +
+            ", italic=" + italic +
+            ", bold=" + bold +
+            ", underlined=" + underlined +
+            ", obfuscated=" + obfuscated +
+            ", strikethrough=" + strikethrough +
+            '}';
     }
 
     public static class Builder implements ClassBuilder<TextSegment> {
@@ -166,20 +186,5 @@ public final class TextSegment extends ColorSegment {
             textSegment.setStrikethrough(this.strikethrough);
             return textSegment;
         }
-    }
-
-    @Override
-    public String toString() {
-        return "TextSegment{" +
-            "clickEvent=" + clickEvent +
-            ", hoverEvent=" + hoverEvent +
-            ", text='" + text + '\'' +
-            ", color=" + color +
-            ", italic=" + italic +
-            ", bold=" + bold +
-            ", underlined=" + underlined +
-            ", obfuscated=" + obfuscated +
-            ", strikethrough=" + strikethrough +
-            '}';
     }
 }
