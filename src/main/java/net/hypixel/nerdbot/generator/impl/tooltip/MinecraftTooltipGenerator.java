@@ -25,7 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftTooltipGenerator implements Generator {
 
-    public static final int DEFAULT_MAX_LINE_LENGTH = 32;
+    public static final int DEFAULT_MAX_LINE_LENGTH = 36;
 
     private final String name;
     private final Rarity rarity;
@@ -80,19 +80,13 @@ public class MinecraftTooltipGenerator implements Generator {
             builder.withLines(LineSegment.fromLegacy(rarity.getColorCode() + settings.getName(), '&'));
         }
 
-        List<String> segments = new ArrayList<>();
-        for (String line : input.split("\n")) {
-            String parsed = Parser.parseString(line, List.of(
-                new ColorCodeParser(),
-                new IconParser(),
-                new StatParser(),
-                new GemstoneParser()
-            ));
-            segments.add(parsed);
+        List<List<LineSegment>> segments = new ArrayList<>();
+
+        for (String line : TextWrapper.wrapString(input, settings.getMaxLineLength())) {
+            segments.add(LineSegment.fromLegacy(line, '&'));
         }
 
-        List<List<LineSegment>> lines = TextWrapper.splitLines(segments, settings.getMaxLineLength());
-        for (List<LineSegment> line : lines) {
+        for (List<LineSegment> line : segments) {
             builder.withLines(line);
         }
 
