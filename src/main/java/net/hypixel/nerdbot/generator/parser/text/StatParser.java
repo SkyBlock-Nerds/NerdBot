@@ -28,46 +28,31 @@ public class StatParser implements StringParser {
             }
 
             switch (statEnum.getParseType()) {
-                case NORMAL:
-                    input = input.replace(match, normalStatColorParser(statEnum, extraData));
-                    break;
-                case BOLD_ICON:
-                    input = input.replace(match, boldedIconColorParser(statEnum, extraData));
-                    break;
-                case DUAL:
-                    input = input.replace(match, dualStatColorParser(statEnum, extraData));
-                    break;
-                case NONE:
-                    input = input.replace(match, noParsing(statEnum, extraData));
-                    break;
-                case SOULBOUND:
-                    input = input.replace(match, soulboundColorParsing(statEnum, extraData));
-                    break;
-                case POST:
-                    input = input.replace(match, postStatColorParser(statEnum, extraData));
-                    break;
-                case POST_DUAL:
-                    input = input.replace(match, postDualColorParser(statEnum, extraData));
-                    break;
-                case ITEM_STAT:
-                    input = input.replace(match, itemStatColorParser(statEnum, extraData));
-                    break;
-                case ABILITY:
-                    input = input.replace(match, abilityColorParser(statEnum, extraData));
-                    break;
-                case DIFFERENT_ICON_COLOR:
+                case NORMAL -> input = input.replace(match, normalStatColorParser(statEnum, extraData));
+                case BOLD -> input = input.replace(match, boldedIconParser(statEnum));
+                case BOLD_ICON -> input = input.replace(match, boldedIconColorParser(statEnum, extraData));
+                case DUAL -> input = input.replace(match, dualStatColorParser(statEnum, extraData));
+                case NONE -> input = input.replace(match, noParsing(statEnum, extraData));
+                case SOULBOUND -> input = input.replace(match, soulboundColorParsing(statEnum, extraData));
+                case POST -> input = input.replace(match, postStatColorParser(statEnum, extraData));
+                case POST_DUAL -> input = input.replace(match, postDualColorParser(statEnum, extraData));
+                case ITEM_STAT -> input = input.replace(match, itemStatColorParser(statEnum, extraData));
+                case ABILITY -> input = input.replace(match, abilityColorParser(statEnum, extraData));
+                case DIFFERENT_ICON_COLOR ->
                     input = input.replace(match, differentIconColorParser(statEnum, extraData));
-                    break;
-                default:
-                    input = input.replace(match, parseStat(statEnum, extraData));
-                    break;
+                default -> input = input.replace(match, parseStat(statEnum));
             }
         }
 
         return input;
     }
 
-    private String parseStat(Stat stat, String extra) {
+    /**
+     * Parses the stat with no extra details
+     * @param stat the stat selected
+     * @return the replacement string
+     */
+    private String parseStat(Stat stat) {
         return stat.getStat();
     }
 
@@ -96,7 +81,10 @@ public class StatParser implements StringParser {
      * @return the color parsed replacement string
      */
     private String boldedIconColorParser(Stat stat, String extraDetails) {
-        return "&" + stat.getColor().getCode() + extraDetails + "&" + ChatFormat.BOLD.getCode() + stat.getIcon() + "&" + stat.getColor().getCode() + " " + stat.getStat();
+        return "&" + stat.getColor().getCode() + extraDetails
+            + "&" + stat.getColor().getCode()
+            + "&" + ChatFormat.BOLD.getCode() + stat.getIcon()
+            + "&" + stat.getColor().getCode() + " " + stat.getStat();
     }
 
     /**

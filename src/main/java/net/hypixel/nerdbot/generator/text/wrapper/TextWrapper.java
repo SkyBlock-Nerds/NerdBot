@@ -1,8 +1,11 @@
 package net.hypixel.nerdbot.generator.text.wrapper;
 
 import lombok.extern.log4j.Log4j2;
-import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.text.segment.LineSegment;
+import net.hypixel.nerdbot.generator.parser.Parser;
+import net.hypixel.nerdbot.generator.parser.text.ColorCodeParser;
+import net.hypixel.nerdbot.generator.parser.text.GemstoneParser;
+import net.hypixel.nerdbot.generator.parser.text.IconParser;
+import net.hypixel.nerdbot.generator.parser.text.StatParser;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -10,40 +13,62 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Log4j2
 public class TextWrapper {
 
-    public static List<List<LineSegment>> wrapSegment(String text, int maxLineLength) {
-        return new LineWrapper(maxLineLength).wrapText(text);
+    public static List<String> wrapString(String string, int maxLineLength) {
+        List<String> lines = new CopyOnWriteArrayList<>();
+        StringBuilder currentLine = new StringBuilder();
+        int currentLength = 0;
+
+        if (!string.contains(" ")) {
+            String strippedString = stripColorCodes(parseLine(string));
+
+            for (int i = 0; i < strippedString.length(); i += maxLineLength) {
+                lines.add(string.substring(i, Math.min(i + maxLineLength, string.length())));
+            }
+
+            return lines;
+        }
+
+        String[] splitLines = string.split("(\n|\\\\n)");
+
+        for (String splitLine : splitLines) {
+            String[] words = splitLine.split(" ");
+
+            for (String word : words) {
+                String parsedWord = parseLine(word);
+                String strippedWord = stripColorCodes(parsedWord);
+
+                if (currentLength + strippedWord.length() > maxLineLength) {
+                    addLine(lines, currentLine);
+                    currentLine = new StringBuilder();
+                    currentLength = 0;
+                }
+
+                currentLine.append(parsedWord).append(" ");
+                currentLength += strippedWord.length();
+            }
+
+            addLine(lines, currentLine);
+            currentLine = new StringBuilder();
+            currentLength = 0;
+        }
+
+        return lines;
     }
 
-    public static List<List<LineSegment>> splitLines(List<String> lines, int maxLineLength) {
-        List<List<LineSegment>> output = new CopyOnWriteArrayList<>();
+    private static String stripColorCodes(String string) {
+        return string.replaceAll("[&§][0-9a-fA-FK-ORk-or]", "");
+    }
 
-        for (String line : lines) {
-            log.debug("Processing line: {}", line);
+    private static void addLine(List<String> lines, StringBuilder currentLine) {
+        lines.add(currentLine.toString().trim());
+    }
 
-            // adds blank line if the line is empty
-            // since this seems to only trigger when using two newline characters in a row
-            if (line == null || line.isBlank()) {
-                log.debug("Adding blank line to output because line is blank or null");
-                output.add(LineSegment.fromLegacy(" ", '&'));
-                continue;
-            }
-
-            // split text into segments based on newline characters
-            String[] segments = line.split("\n");
-
-            for (String segment : segments) {
-                log.debug("Processing segment: {}", segment);
-                output.addAll(wrapSegment(segment, maxLineLength));
-                log.debug("Added segment to output: {}", output);
-            }
-        }
-
-        // throw an exception if every line is empty
-        if (output.stream().allMatch(List::isEmpty)) {
-            log.debug("All lines are empty! Not continuing with text wrapper");
-            throw new GeneratorException("You cannot generate an empty tooltip!");
-        }
-
-        return output;
+    private static String parseLine(String line) {
+        return Parser.parseString(line, List.of(
+            new ColorCodeParser(),
+            new IconParser(),
+            new StatParser(),
+            new GemstoneParser()
+        ));
     }
 }
