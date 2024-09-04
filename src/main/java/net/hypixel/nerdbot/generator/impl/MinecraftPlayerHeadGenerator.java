@@ -82,7 +82,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
         } catch (MalformedURLException exception) {
             throw new GeneratorException("Malformed URL: `%s`", textureId);
         } catch (IOException exception) {
-            throw new GeneratorException("Could not find skin with ID: `%s`".formatted(textureId));
+            throw new GeneratorException("Could not find skin with ID: `%s`", textureId);
         }
     }
 

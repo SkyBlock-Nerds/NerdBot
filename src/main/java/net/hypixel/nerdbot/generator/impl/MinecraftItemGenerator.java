@@ -6,6 +6,8 @@ import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
+import net.hypixel.nerdbot.generator.item.overlay.EnchantmentGlint;
+import net.hypixel.nerdbot.generator.item.overlay.HoverEffect;
 import net.hypixel.nerdbot.generator.item.overlay.ItemOverlay;
 import net.hypixel.nerdbot.generator.item.overlay.OverlayType;
 import net.hypixel.nerdbot.generator.spritesheet.OverlaySheet;
@@ -46,11 +48,11 @@ public class MinecraftItemGenerator implements Generator {
         }
 
         if (enchanted) {
-            itemImage = applyEnchantGlint();
+            itemImage = EnchantmentGlint.applyEnchantGlint(itemImage);
         }
 
         if (hoverEffect) {
-            itemImage = applyHoverEffect();
+            itemImage = HoverEffect.applyHoverEffect(itemImage);
         }
 
         return new GeneratedObject(itemImage);
@@ -85,34 +87,6 @@ public class MinecraftItemGenerator implements Generator {
         }
 
         return overlaidItem;
-    }
-
-    private BufferedImage applyHoverEffect() {
-        BufferedImage hoveredItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D hoveredItemGraphics = hoveredItem.createGraphics();
-        hoveredItemGraphics.drawImage(itemImage, 0, 0, null);
-
-        hoveredItemGraphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5F));
-        hoveredItemGraphics.setColor(Color.WHITE);
-        hoveredItemGraphics.fillRect(0, 0, itemImage.getWidth(), itemImage.getHeight());
-
-        hoveredItemGraphics.dispose();
-
-        return hoveredItem;
-    }
-
-    private BufferedImage applyEnchantGlint() {
-        BufferedImage enchantedItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D enchantedItemGraphics = enchantedItem.createGraphics();
-        enchantedItemGraphics.drawImage(itemImage, 0, 0, null);
-
-        BufferedImage glintImage = OverlaySheet.getEnchantGlint(itemImage.getWidth() == 16);
-        enchantedItemGraphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, 0.33F));
-        enchantedItemGraphics.drawImage(glintImage, 0, 0, null);
-
-        enchantedItemGraphics.dispose();
-
-        return enchantedItem;
     }
 
     public static class Builder implements ClassBuilder<MinecraftItemGenerator> {

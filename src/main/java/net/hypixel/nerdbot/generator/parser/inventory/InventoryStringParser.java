@@ -190,14 +190,14 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
                     // Parse a range of slots
                     String[] rangeParts = value.split("-");
                     if (rangeParts.length != 2) {
-                        throw new GeneratorException("Invalid range format: `%s`".formatted(value));
+                        throw new GeneratorException("Invalid range format: `%s`", value);
                     }
 
                     int startSlot = Range.between(1, totalSlots).fit(Integer.parseInt(rangeParts[0].trim()));
                     int endSlot = Range.between(1, totalSlots).fit(Integer.parseInt(rangeParts[1].trim()));
 
                     if (startSlot > endSlot) {
-                        throw new GeneratorException("Start slot cannot be greater than end slot in range: `%s`".formatted(value));
+                        throw new GeneratorException("Start slot cannot be greater than end slot in range: `%s`", value);
                     }
 
                     return IntStream.rangeClosed(startSlot, endSlot).boxed();
@@ -207,7 +207,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
                         int slot = Range.between(1, totalSlots).fit(Integer.parseInt(value));
                         return Stream.of(slot);
                     } catch (NumberFormatException exception) {
-                        throw new GeneratorException("Invalid slot: `%s`".formatted(value));
+                        throw new GeneratorException("Invalid slot: `%s`", value);
                     }
                 }
             })
