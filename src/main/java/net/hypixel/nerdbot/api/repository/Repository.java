@@ -92,6 +92,18 @@ public abstract class Repository<T> {
         }
     }
 
+    public List<T> getAllDocuments() {
+        List<T> documents = new ArrayList<>();
+
+        mongoCollection.find()
+            .forEach(document -> {
+                T object = documentToEntity(document);
+                documents.add(object);
+            });
+
+        return documents;
+    }
+
     public T findById(String id) {
         T cachedObject = cache.getIfPresent(id);
         if (cachedObject != null) {

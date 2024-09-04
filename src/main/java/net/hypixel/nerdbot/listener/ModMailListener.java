@@ -193,20 +193,20 @@ public class ModMailListener {
                     )
                     .queue();
             }
+        }
 
+        author.openPrivateChannel()
+            .flatMap(channel -> channel.sendMessage(
+                new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.").build()
+            ))
+            .queue();
+
+        if (unlinked) {
             author.openPrivateChannel()
                 .flatMap(channel -> channel.sendMessage(
-                    new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.").build()
+                    new MessageCreateBuilder().setContent("You are not linked to Hypixel in SkyBlock Nerds. Please do so using </link:1142633400537186409>.").build()
                 ))
                 .queue();
-
-            if (unlinked) {
-                author.openPrivateChannel()
-                    .flatMap(channel -> channel.sendMessage(
-                        new MessageCreateBuilder().setContent("You are not linked to Hypixel in SkyBlock Nerds. Please do so using </link:1142633400537186409>.").build()
-                    ))
-                    .queue();
-            }
         }
 
         Optional<Webhook> webhook = getWebhook();

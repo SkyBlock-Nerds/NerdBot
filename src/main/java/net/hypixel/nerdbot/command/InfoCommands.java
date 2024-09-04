@@ -22,6 +22,7 @@ import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
@@ -174,6 +175,7 @@ public class InfoCommands extends ApplicationCommand {
         AtomicInteger staff = new AtomicInteger();
         AtomicInteger grapes = new AtomicInteger();
         AtomicInteger nerds = new AtomicInteger();
+
         for (String roleName : Util.SPECIAL_ROLES) {
             RoleManager.getRole(roleName).ifPresentOrElse(role -> staff.addAndGet(guild.getMembersWithRoles(role).size()),
                 () -> log.warn("Role {} not found", roleName)
@@ -187,11 +189,13 @@ public class InfoCommands extends ApplicationCommand {
             .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
             .append("- Staff: ").append(staff.get()).append("\n");
 
-        RoleManager.getRole("Grape").ifPresentOrElse(role -> grapes.set(guild.getMembersWithRoles(role).size()),
+        RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
+
+        RoleManager.getRoleById(roleConfig.getModeratorRoleId()).ifPresentOrElse(role -> grapes.set(guild.getMembersWithRoles(role).size()),
             () -> log.warn("Role {} not found", "Grape"));
 
-        RoleManager.getRole("Nerd").ifPresentOrElse(role -> nerds.set(guild.getMembersWithRoles(role).size()),
-            () -> log.warn("Role {} not found", "Nerd"));
+        RoleManager.getRoleById(roleConfig.getOrangeRoleId()).ifPresentOrElse(role -> nerds.set(guild.getMembersWithRoles(role).size()),
+            () -> log.warn("Role {} not found", "Orange"));
 
         builder.append("- Grapes: ").append(grapes.get()).append("\n")
             .append("- Nerds: ").append(nerds.get());

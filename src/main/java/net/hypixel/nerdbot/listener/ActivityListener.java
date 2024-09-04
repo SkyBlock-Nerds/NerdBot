@@ -286,7 +286,7 @@ public class ActivityListener {
             if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().getProjectSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
-                log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
+                log.info("Updating project suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }
         }
     }

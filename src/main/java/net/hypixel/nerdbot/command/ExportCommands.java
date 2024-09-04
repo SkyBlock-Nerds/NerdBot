@@ -18,18 +18,18 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.ChannelActivityEntry;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
-import net.hypixel.nerdbot.curator.ForumGreenlitChannelCurator;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.TimeUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.csv.CSVData;
 
@@ -43,7 +43,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 @Log4j2
@@ -144,76 +143,65 @@ public class ExportCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = PARENT_COMMAND, subcommand = "greenlit", description = "Exports all greenlit forum posts into a CSV file", defaultLocked = true)
-    public void exportGreenlitThreads(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Disregards any post before this UNIX timestamp (Default: 0)") long suggestionsAfter) {
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
-
-        if (discordUser == null) {
-            TranslationManager.reply(event, "generic.user_not_found");
-            return;
-        }
+    public void exportGreenlitThreads(GuildSlashEvent event, @Optional @AppOption(description = "Disregards any post before this UNIX timestamp (Default: 0)") long suggestionsAfter) {
+        event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.reply(event, discordUser, "database.not_connected");
+            TranslationManager.edit(event.getHook(), "database.not_connected");
             log.error("Couldn't connect to the database!");
             return;
         }
 
-        Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumGreenlitChannelCurator(true);
-        NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
-            event.deferReply(true).complete();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
-            TimerTask task = new TimerTask() {
-                @Override
-                public void run() {
-                    NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
-                        if (forumChannelCurator.isCompleted()) {
-                            this.cancel();
-                            return;
-                        }
+        if (discordUser == null) {
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
+            return;
+        }
 
-                        if (forumChannelCurator.getCurrentObject() == null) {
-                            return;
-                        }
+        GreenlitMessageRepository greenlitMessageRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class);
+        // Force a save before exporting because some might still be cached
+        greenlitMessageRepository.saveAllToDatabase();
 
-                        event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
-                            + " in " + TimeUtil.formatMsCompact(System.currentTimeMillis() - forumChannelCurator.getStartTime()) + "ms"
-                            + "\nCurrently looking at " + forumChannelCurator.getCurrentObject().getJumpUrl()
-                        ).queue();
-                    });
-                }
-            };
+        List<GreenlitMessage> output = greenlitMessageRepository.getAllDocuments();
 
-            List<GreenlitMessage> output = forumChannelCurator.curate(channel);
+        if (output.isEmpty()) {
+            TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
+            return;
+        }
 
-            if (output.isEmpty()) {
-                TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
-                return;
+        CSVData csvData = new CSVData(List.of("Creation Date", "Tags", "Title"), ";");
+
+        for (GreenlitMessage greenlitMessage : output) {
+            // If we manually limited the timestamps to before "x" time (defaults to 0) it "removes" the greenlit suggestions from appearing in the linked CSV file.
+            if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
+                csvData.addRow(List.of(
+                    formatTimestamp(greenlitMessage.getSuggestionTimestamp()),
+                    "\"" + String.join(", ", greenlitMessage.getTags()) + "\"",
+                    "=HYPERLINK(\"" + greenlitMessage.getSuggestionUrl() + "\", \"" + greenlitMessage.getSuggestionTitle().replace("\"", "\"\"") + "\")"
+                ));
+                log.info("Added greenlit suggestion '" + greenlitMessage.getSuggestionTitle() + "' to the greenlit suggestion export for " + event.getMember().getEffectiveName() + " (suggestions after: " + suggestionsAfter + ")");
+            } else {
+                log.debug("Skipping greenlit suggestion " + greenlitMessage.getSuggestionTitle() + " because it was created before the specified timestamp (after: " + suggestionsAfter + ", suggestion timestamp: " + greenlitMessage.getSuggestionTimestamp() + ")");
             }
+        }
 
-            CSVData csvData = new CSVData(List.of("Creation Date", "Tags", "Title"), ";");
+        if (csvData.isEmpty()) {
+            TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
+            return;
+        }
 
-            for (GreenlitMessage greenlitMessage : output) {
-                // If we manually limited the timestamps to before "x" time (defaults to 0) it "removes" the greenlit suggestions from appearing in the linked CSV file.
-                if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
-                    csvData.addRow(List.of(
-                        formatTimestamp(greenlitMessage.getSuggestionTimestamp()),
-                        "\"" + String.join(", ", greenlitMessage.getTags()) + "\"",
-                        "=HYPERLINK(\"" + greenlitMessage.getSuggestionUrl() + "\", \"" + greenlitMessage.getSuggestionTitle().replace("\"", "\"\"") + "\")"
-                    ));
-                }
-            }
+        try {
+            MessageEditData data = MessageEditBuilder.from(MessageEditData.fromContent(TranslationManager.translate("curator.greenlit_import_instructions", discordUser)))
+                .setFiles(FileUpload.fromData(Util.createTempFile(String.format("export-greenlit-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
+                .build();
 
-            try {
-                event.getHook().sendMessage(TranslationManager.translate("curator.greenlit_import_instructions", discordUser))
-                    .setEphemeral(true)
-                    .addFiles(FileUpload.fromData(Util.createTempFile(String.format("export-greenlit-" + channel.getName() + "-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
-                    .queue();
-            } catch (IOException exception) {
-                TranslationManager.edit(event.getHook(), discordUser, "commands.temp_file_error", exception.getMessage());
-                log.error("Failed to create temp file!", exception);
-            }
-        });
+            event.getHook().editOriginal(data).queue();
+        } catch (IOException exception) {
+            TranslationManager.edit(event.getHook(), discordUser, "commands.temp_file_error", exception.getMessage());
+            log.error("Failed to create temp file!", exception);
+        }
     }
 
     @JDASlashCommand(name = PARENT_COMMAND, subcommand = "uuids", description = "Get all assigned Minecraft Names/UUIDs from all specified roles (requires Member) in the server.", defaultLocked = true)
@@ -377,23 +365,23 @@ public class ExportCommands extends ApplicationCommand {
             }
 
             csvData.addRow(List.of(
-                    member.getUser().getName(),
-                    discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
-                    formatTimestamp(lastActivity.getLastGlobalActivity()),
-                    formatTimestamp(lastActivity.getLastVoiceChannelJoinDate()),
-                    formatTimestamp(lastActivity.getLastItemGenUsage()),
-                    lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionCreationHistory().get(0)),
-                    lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionCreationHistory().get(0)),
-                    lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
-                    lastActivity.getSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getSuggestionVoteHistoryMap())),
-                    lastActivity.getProjectSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getProjectSuggestionVoteHistoryMap())),
-                    lastActivity.getAlphaSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getAlphaSuggestionVoteHistoryMap())),
-                    formatTimestamp(lastActivity.getLastProjectActivity()),
-                    formatTimestamp(lastActivity.getLastAlphaActivity()),
-                    formatTimestamp(lastActivity.getLastModMailUsage()),
-                    String.valueOf(lastActivity.getTotalMessageCount(inactivityDays)),
-                    "\"" + channelActivity + "\"",
-                    "FALSE"
+                member.getUser().getName(),
+                discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
+                formatTimestamp(lastActivity.getLastGlobalActivity()),
+                formatTimestamp(lastActivity.getLastVoiceChannelJoinDate()),
+                formatTimestamp(lastActivity.getLastItemGenUsage()),
+                lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionCreationHistory().get(0)),
+                lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionCreationHistory().get(0)),
+                lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
+                lastActivity.getSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getSuggestionVoteHistoryMap())),
+                lastActivity.getProjectSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getProjectSuggestionVoteHistoryMap())),
+                lastActivity.getAlphaSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getAlphaSuggestionVoteHistoryMap())),
+                formatTimestamp(lastActivity.getLastProjectActivity()),
+                formatTimestamp(lastActivity.getLastAlphaActivity()),
+                formatTimestamp(lastActivity.getLastModMailUsage()),
+                String.valueOf(lastActivity.getTotalMessageCount(inactivityDays)),
+                "\"" + channelActivity + "\"",
+                "FALSE"
             ));
 
             log.debug("Added member " + member.getUser().getName() + " to the activity export for " + event.getMember().getEffectiveName() + " (days required: " + inactivityDays + ", message count required: " + inactivityMessages + ")");
