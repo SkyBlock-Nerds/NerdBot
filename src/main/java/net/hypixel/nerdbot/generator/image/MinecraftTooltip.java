@@ -40,10 +40,10 @@ public class MinecraftTooltip {
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
     private static final @NotNull List<Font> MINECRAFT_FONTS = new ArrayList<>();
-    private static final Font sansSerif;
+    private static final Font SANS_SERIF_FONT;
 
     static {
-        sansSerif = new Font("SansSerif", Font.PLAIN, 20);
+        SANS_SERIF_FONT = new Font("SansSerif", Font.PLAIN, 20);
 
         MINECRAFT_FONTS.addAll(
             Arrays.asList(
@@ -212,7 +212,7 @@ public class MinecraftTooltip {
      * @param symbol The symbol to draw.
      */
     private void drawSymbol(char symbol, @NotNull ColorSegment colorSegment) {
-        this.drawString(Character.toString(symbol), colorSegment, sansSerif);
+        this.drawString(Character.toString(symbol), colorSegment, SANS_SERIF_FONT);
     }
 
     /**
