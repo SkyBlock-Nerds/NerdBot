@@ -66,7 +66,8 @@ public class GeneratorImageBuilder {
                     if (exception instanceof TimeoutException) {
                         throw new GeneratorException("Timeout reached while generating image");
                     }
-                    throw new GeneratorException("An error occurred during image generation: " + exception.getCause().getMessage());
+
+                    throw new GeneratorException(exception.getCause().getMessage());
                 })
                 .get();
         } catch (InterruptedException | ExecutionException | GeneratorException exception) {
