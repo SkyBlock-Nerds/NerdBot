@@ -9,6 +9,9 @@ import net.hypixel.nerdbot.util.Range;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ListIterator;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -60,6 +63,41 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
             } else {
                 result.add(itemFromAmount(slotData, material, data));
             }
+        }
+
+        ListIterator<InventoryItem> iterator = result.listIterator();
+
+        if (iterator.hasNext()) {
+            do {
+                InventoryItem item = iterator.next();
+
+                if (!iterator.hasNext()) {
+                    break;
+                }
+
+                InventoryItem nextItem = result.get(iterator.nextIndex());
+                int[] slots = item.getSlot();
+                int[] nextSlots = nextItem.getSlot();
+
+                // Find overlapping slots between all items
+                Set<Integer> overlappingSlots = Arrays.stream(slots)
+                    .boxed()
+                    .filter(slot -> Arrays.stream(nextSlots).anyMatch(nextSlot -> nextSlot == slot))
+                    .collect(Collectors.toSet());
+
+                if (!overlappingSlots.isEmpty()) {
+                    // Remove overlapping slots from the current item
+                    int[] newSlots = Arrays.stream(slots)
+                        .filter(slot -> !overlappingSlots.contains(slot))
+                        .toArray();
+
+                    // Create a new amounts array with the new slot data
+                    int[] newAmounts = Arrays.copyOfRange(item.getAmount(), 0, newSlots.length);
+
+                    item.setSlot(newSlots);
+                    item.setAmount(newAmounts);
+                }
+            } while (iterator.hasNext());
         }
 
         return result;

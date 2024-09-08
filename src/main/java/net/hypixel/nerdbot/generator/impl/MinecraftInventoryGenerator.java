@@ -167,7 +167,6 @@ public class MinecraftInventoryGenerator implements Generator {
     }
 
     public void drawItems(String inventoryData) {
-        // TODO generator-wide hover effect
         InventoryStringParser parser = new InventoryStringParser(this.totalSlots);
         ArrayList<InventoryItem> items = parser.parse(inventoryData);
 
