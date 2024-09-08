@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.generator.builder;
+package net.hypixel.nerdbot.generator.image;
 
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.Generator;
@@ -54,8 +54,11 @@ public class GeneratorImageBuilder {
 
     /**
      * Build the final image from the list of {@link Generator generators}.
+     * The image will be generated in the order that the generators were added.
+     * If the generation fails or times out, a {@link GeneratorException} will be thrown.
      *
      * @return The final {@link GeneratedObject image}.
+     *
      * @throws GeneratorException if the generation fails or times out.
      */
     public GeneratedObject build() {
