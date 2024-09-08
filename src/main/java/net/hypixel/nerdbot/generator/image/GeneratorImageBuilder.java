@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.generator.image;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
+import net.hypixel.nerdbot.generator.exception.GeneratorTimeoutException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 
 import java.awt.*;
@@ -67,7 +68,7 @@ public class GeneratorImageBuilder {
                 .orTimeout(NerdBotApp.getBot().getConfig().getImageGeneratorTimeoutMs(), TimeUnit.MILLISECONDS)
                 .exceptionally(exception -> {
                     if (exception instanceof TimeoutException) {
-                        throw new GeneratorException("Timeout reached while generating image");
+                        throw new GeneratorTimeoutException("Timeout reached while generating image");
                     }
 
                     throw new GeneratorException(exception.getCause().getMessage());
