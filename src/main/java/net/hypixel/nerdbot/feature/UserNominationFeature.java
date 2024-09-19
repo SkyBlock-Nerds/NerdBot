@@ -135,7 +135,7 @@ public class UserNominationFeature extends BotFeature {
             boolean hasRequiredVotes = totalVotes >= requiredVotes;
             boolean hasRequiredComments = totalComments >= requiredComments;
 
-            log.info("Checking if " + member.getEffectiveName() + " should be flagged for inactivity (total comments: " + totalComments + ", total votes: " + totalVotes + ") (comments: " + hasRequiredComments + ", votes: " + hasRequiredVotes + ")");
+            log.info("Checking if " + member.getEffectiveName() + " should be flagged for inactivity (total messages: " + totalMessages + ", total comments: " + totalComments + ", total votes: " + totalVotes + ") (comments: " + hasRequiredComments + ", votes: " + hasRequiredVotes + ")");
 
             lastActivity.getNominationInfo().getLastInactivityWarningDate().ifPresentOrElse(date -> {
                 Month lastInactivityWarningDate = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
