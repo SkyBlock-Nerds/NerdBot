@@ -148,7 +148,7 @@ public class UserNominationFeature extends BotFeature {
             }, () -> {
                 log.info("No last inactivity warning date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
 
-                if (!hasRequiredComments && !hasRequiredVotes) {
+                if (totalMessages < 100 && !hasRequiredComments && !hasRequiredVotes) {
                     sendInactiveUserMessage(member, discordUser);
                 }
             });
