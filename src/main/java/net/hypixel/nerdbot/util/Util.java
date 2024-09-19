@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
@@ -93,12 +92,8 @@ public class Util {
         return Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
     }
 
-    public static boolean isFirstDayOfMonth() {
-        if (Environment.isDev()) {
-            return true;
-        }
-
-        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
+    public static boolean isDayOfMonth(int dayOfMonth) {
+        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == dayOfMonth;
     }
 
     public static List<String> splitString(String text, int size) {

@@ -16,6 +16,7 @@ import net.hypixel.nerdbot.util.Util;
 import java.time.Duration;
 import java.time.Month;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.TimerTask;
 
@@ -27,8 +28,12 @@ public class UserNominationFeature extends BotFeature {
         this.timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                if (Util.isFirstDayOfMonth()) {
+                if (Util.isDayOfMonth(1)) {
                     nominateUsers();
+                }
+
+                if (Util.isDayOfMonth(15)) {
+                    findInactiveUsers();
                 }
             }
         }, 0, Duration.ofHours(1).toMillis());
@@ -74,7 +79,7 @@ public class UserNominationFeature extends BotFeature {
             boolean hasRequiredVotes = totalVotes >= requiredVotes;
             boolean hasRequiredComments = totalComments >= requiredComments;
 
-            log.info("Checking if " + member.getEffectiveName() + " should be nominated for promotion (total comments: " + totalComments + ", total votes: " + totalVotes + ") (comments: " + hasRequiredComments + ", votes: " + hasRequiredVotes +")");
+            log.info("Checking if " + member.getEffectiveName() + " should be nominated for promotion (total comments: " + totalComments + ", total votes: " + totalVotes + ") (comments: " + hasRequiredComments + ", votes: " + hasRequiredVotes + ")");
 
             lastActivity.getNominationInfo().getLastNominationDate().ifPresentOrElse(date -> {
                 Month lastNominationMonth = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
@@ -94,6 +99,61 @@ public class UserNominationFeature extends BotFeature {
         });
     }
 
+    public static void findInactiveUsers() {
+        Guild guild = Util.getMainGuild();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        int requiredVotes = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
+        int requiredComments = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion();
+
+        log.info("Checking for inactive users (required votes: " + requiredVotes + ", required comments: " + requiredComments + ")");
+
+        discordUserRepository.getAll().forEach(discordUser -> {
+            Member member = guild.getMemberById(discordUser.getDiscordId());
+
+            if (member == null) {
+                log.error("Member not found for user " + discordUser.getDiscordId());
+                return;
+            }
+
+            Role highestRole = RoleManager.getHighestRole(member);
+
+            if (highestRole == null) {
+                log.info("Skipping inactivity check for " + member.getEffectiveName() + " as they have no roles");
+                return;
+            }
+
+            if (Arrays.stream(Util.SPECIAL_ROLES).anyMatch(role -> highestRole.getName().equalsIgnoreCase(role))) {
+                log.info("Skipping inactivity check for " + member.getEffectiveName() + " as they have a special role: " + highestRole.getName());
+                return;
+            }
+
+            LastActivity lastActivity = discordUser.getLastActivity();
+            int totalComments = lastActivity.getTotalComments();
+            int totalVotes = lastActivity.getTotalVotes();
+
+            boolean hasRequiredVotes = totalVotes >= requiredVotes;
+            boolean hasRequiredComments = totalComments >= requiredComments;
+
+            log.info("Checking if " + member.getEffectiveName() + " should be demoted due to inactivity (total comments: " + totalComments + ", total votes: " + totalVotes + ") (comments: " + hasRequiredComments + ", votes: " + hasRequiredVotes + ")");
+
+            lastActivity.getNominationInfo().getLastInactivityWarningDate().ifPresentOrElse(date -> {
+                Month lastInactivityWarningDate = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
+                Month now = Calendar.getInstance().toInstant().atZone(ZoneId.systemDefault()).getMonth();
+
+                if (lastInactivityWarningDate != now && (!hasRequiredComments && !hasRequiredVotes)) {
+                    log.info("Last inactivity check was not this month (last: " + lastInactivityWarningDate + ", now: " + now + "), sending inactivity message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
+                    sendInactiveUserMessage(member, discordUser);
+                }
+            }, () -> {
+                log.info("No last inactivity warning date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
+
+                if (!hasRequiredComments && !hasRequiredVotes) {
+                    sendInactiveUserMessage(member, discordUser);
+                }
+            });
+        });
+    }
+
     private static void sendNominationMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             textChannel.sendMessage("Promote " + member.getEffectiveName() + " to Nerd?\n("
@@ -106,6 +166,21 @@ public class UserNominationFeature extends BotFeature {
             log.info("Sent promotion nomination message for " + member.getEffectiveName() + " in voting channel (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
         }, () -> {
             throw new IllegalStateException("Cannot find voting channel to send nomination message into!");
+        });
+    }
+
+    private static void sendInactiveUserMessage(Member member, DiscordUser discordUser) {
+        ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
+            textChannel.sendMessage("Remove " + member.getEffectiveName() + " for inactivity?\n("
+                + "Total Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes())
+                + " / Total Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments())
+                + " / Total Inactivity Warnings: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalInactivityWarnings())
+                + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastInactivityWarningDateString()
+                + ")").queue();
+            discordUser.getLastActivity().getNominationInfo().increaseInactivityWarnings();
+            log.info("Sent inactivity warning message for " + member.getEffectiveName() + " in voting channel (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
+        }, () -> {
+            throw new IllegalStateException("Cannot find voting channel to send inactivity warning message into!");
         });
     }
 }

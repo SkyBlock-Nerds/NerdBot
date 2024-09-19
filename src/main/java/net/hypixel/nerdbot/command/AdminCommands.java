@@ -715,4 +715,10 @@ public class AdminCommands extends ApplicationCommand {
         UserNominationFeature.nominateUsers();
         TranslationManager.reply(event, "commands.force_nominations.success");
     }
+
+    @JDASlashCommand(name = "force", subcommand = "inactivity-check", description = "Forcefully run the inactivity check", defaultLocked = true)
+    public void forceInactiveCheck(GuildSlashEvent event) {
+        UserNominationFeature.findInactiveUsers();
+        TranslationManager.reply(event, "commands.force_inactive_check.success");
+    }
 }
