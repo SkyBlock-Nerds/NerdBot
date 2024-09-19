@@ -83,7 +83,7 @@ public class Util {
         "nerd-project",
         "nerds-project"
     };
-    public static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
+    public static final String[] SPECIAL_ROLES = {"Apex Nerd", "Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
 
     private Util() {
     }
