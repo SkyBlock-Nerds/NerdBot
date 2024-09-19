@@ -40,13 +40,17 @@ public class ActivityListener {
 
     @SubscribeEvent
     public void onGuildMemberJoin(GuildMemberJoinEvent event) throws RepositoryException {
+        log.info("User {} joined {}", event.getUser().getName(), event.getGuild().getName());
+
+        if (event.getUser().isBot()) {
+            return;
+        }
+
         UpdateResult result = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).saveToDatabase(new DiscordUser(event.getMember()));
 
         if (!result.wasAcknowledged() || result.getModifiedCount() == 0) {
             throw new RepositoryException("Failed to save new user '" + event.getUser().getName() + "' to database! (" + result + ")");
         }
-
-        log.info("User {} joined {}", event.getUser().getName(), event.getGuild().getName());
     }
 
     @SubscribeEvent
