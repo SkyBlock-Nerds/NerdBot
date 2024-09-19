@@ -148,7 +148,7 @@ public class UserNominationFeature extends BotFeature {
             }, () -> {
                 log.info("No last inactivity warning date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
 
-                if (totalMessages < 100 && !hasRequiredComments && !hasRequiredVotes) {
+                if (totalMessages < NerdBotApp.getBot().getConfig().getRoleConfig().getMessagesRequiredForActivity() && !hasRequiredComments && !hasRequiredVotes) {
                     sendInactiveUserMessage(member, discordUser);
                 }
             });
@@ -173,9 +173,8 @@ public class UserNominationFeature extends BotFeature {
 
     private static void sendInactiveUserMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-            String removeOrWarn = discordUser.getLastActivity().getNominationInfo().getTotalInactivityWarnings() >= 3 ? "Remove" : "Warn";
 
-            textChannel.sendMessage(removeOrWarn + " " + member.getEffectiveName() + " for inactivity?\n("
+            textChannel.sendMessage("Warn/remove " + member.getEffectiveName() + " for inactivity?\n("
                 + "Tracked Messages: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
                 + " / Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
                 + " / Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))

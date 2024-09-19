@@ -67,8 +67,15 @@ public class RoleConfig {
 
     /**
      * The amount of days of activity data that the bot will pull for inactivity checks
+     * Default value is 30
      */
     private int daysRequiredForInactivityCheck = 30;
+
+    /**
+     * The amount of messages a user must have to be considered active during an inactivity check
+     * Default value is 100
+     */
+    private int messagesRequiredForActivity = 100;
 
     /**
      * A list of {@link PingableRole PingableRoles} used for announcements etc.
