@@ -734,7 +734,6 @@ public class AdminCommands extends ApplicationCommand {
 
             nominationInfo.setTotalInactivityWarnings(0);
             nominationInfo.setLastInactivityWarningDate(null);
-
         });
     }
 }

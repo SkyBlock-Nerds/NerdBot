@@ -128,19 +128,20 @@ public class UserNominationFeature extends BotFeature {
             }
 
             LastActivity lastActivity = discordUser.getLastActivity();
+            int totalMessages = lastActivity.getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
             int totalComments = lastActivity.getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
             int totalVotes = lastActivity.getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
 
             boolean hasRequiredVotes = totalVotes >= requiredVotes;
             boolean hasRequiredComments = totalComments >= requiredComments;
 
-            log.info("Checking if " + member.getEffectiveName() + " should be demoted due to inactivity (total comments: " + totalComments + ", total votes: " + totalVotes + ") (comments: " + hasRequiredComments + ", votes: " + hasRequiredVotes + ")");
+            log.info("Checking if " + member.getEffectiveName() + " should be flagged for inactivity (total comments: " + totalComments + ", total votes: " + totalVotes + ") (comments: " + hasRequiredComments + ", votes: " + hasRequiredVotes + ")");
 
             lastActivity.getNominationInfo().getLastInactivityWarningDate().ifPresentOrElse(date -> {
                 Month lastInactivityWarningDate = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
                 Month now = Calendar.getInstance().toInstant().atZone(ZoneId.systemDefault()).getMonth();
 
-                if (lastInactivityWarningDate != now && (!hasRequiredComments && !hasRequiredVotes)) {
+                if (lastInactivityWarningDate != now && (!hasRequiredComments && !hasRequiredVotes && totalMessages < 100)) {
                     log.info("Last inactivity check was not this month (last: " + lastInactivityWarningDate + ", now: " + now + "), sending inactivity message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
                     sendInactiveUserMessage(member, discordUser);
                 }
@@ -157,7 +158,8 @@ public class UserNominationFeature extends BotFeature {
     private static void sendNominationMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             textChannel.sendMessage("Promote " + member.getEffectiveName() + " to Nerd?\n("
-                + "Total Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
+                + "Total Messages: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
+                + " / Total Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
                 + " / Total Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
                 + " / Total Nominations: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalNominations())
                 + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDateString()
@@ -171,8 +173,11 @@ public class UserNominationFeature extends BotFeature {
 
     private static void sendInactiveUserMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-            textChannel.sendMessage("Remove " + member.getEffectiveName() + " for inactivity?\n("
-                + "Total Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
+            String removeOrWarn = discordUser.getLastActivity().getNominationInfo().getTotalInactivityWarnings() >= 3 ? "Remove" : "Warn";
+
+            textChannel.sendMessage(removeOrWarn + " " + member.getEffectiveName() + " for inactivity?\n("
+                + "Total Messages: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
+                + " / Total Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
                 + " / Total Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
                 + " / Total Inactivity Warnings: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalInactivityWarnings())
                 + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastInactivityWarningDateString()
