@@ -66,6 +66,11 @@ public class RoleConfig {
     private int daysRequiredForVoteHistory = 90;
 
     /**
+     * The amount of days of activity data that the bot will pull for inactivity checks
+     */
+    private int daysRequiredForInactivityCheck = 30;
+
+    /**
      * A list of {@link PingableRole PingableRoles} used for announcements etc.
      */
     private PingableRole[] pingableRoles = {};
