@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.generator.text.wrapper;
 
 import lombok.extern.log4j.Log4j2;
+import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.generator.parser.Parser;
 import net.hypixel.nerdbot.generator.parser.text.ColorCodeParser;
 import net.hypixel.nerdbot.generator.parser.text.GemstoneParser;
@@ -19,10 +20,11 @@ public class TextWrapper {
         int currentLength = 0;
 
         if (!string.contains(" ")) {
-            String strippedString = stripColorCodes(parseLine(string));
+            String parsedLine = parseLine(string);
+            String strippedString = stripColorCodes(parsedLine);
 
             for (int i = 0; i < strippedString.length(); i += maxLineLength) {
-                lines.add(string.substring(i, Math.min(i + maxLineLength, string.length())));
+                lines.add(parsedLine.substring(i, Math.min(i + maxLineLength, parsedLine.length())));
             }
 
             return lines;

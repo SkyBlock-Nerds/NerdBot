@@ -5,9 +5,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
+import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
-import net.hypixel.nerdbot.generator.placeholder.Rarity;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
 import net.hypixel.nerdbot.util.Range;
@@ -85,7 +85,7 @@ public class MinecraftTooltipGenerator implements Generator {
             builder.withLines(line);
         }
 
-        if (rarity != null && rarity != Rarity.NONE) {
+        if (rarity != null && rarity != Rarity.byName("NONE")) {
             if (settings.isEmptyLine()) {
                 builder.withEmptyLine();
             }
@@ -183,7 +183,7 @@ public class MinecraftTooltipGenerator implements Generator {
             this.emptyLine = false;
             this.paddingFirstLine = false;
             this.centered = false;
-            this.rarity = Rarity.NONE;
+            this.rarity = Rarity.byName("NONE");
             this.itemLore = "";
 
             JsonObject tagObject = nbtJson.get("tag").getAsJsonObject();

@@ -1,0 +1,524 @@
+[
+    {
+        "icon": "❁",
+        "name": "strength",
+        "stat": "Strength",
+        "display": "❁ Strength",
+        "color": "RED",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "❁",
+        "name": "damage",
+        "stat": "Damage",
+        "display": "❁ Damage",
+        "color": "RED",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "❤",
+        "name": "health",
+        "stat": "Health",
+        "display": "❤ Health",
+        "color": "RED",
+        "subColor": "GREEN",
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "❈",
+        "name": "defense",
+        "stat": "Defense",
+        "display": "❈ Defense",
+        "color": "GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "❂",
+        "name": "true_defense",
+        "stat": "True Defense",
+        "display": "❂ True Defense",
+        "color": "WHITE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "✦",
+        "name": "speed",
+        "stat": "Speed",
+        "display": "✦ Speed",
+        "color": "WHITE",
+        "subColor": "GREEN",
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "✎",
+        "name": "intelligence",
+        "stat": "Intelligence",
+        "display": "✎ Intelligence",
+        "color": "AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☣",
+        "name": "crit_chance",
+        "stat": "Crit Chance",
+        "display": "☣ Crit Chance",
+        "color": "BLUE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☠",
+        "name": "crit_damage",
+        "stat": "Crit Damage",
+        "display": "☠ Crit Damage",
+        "color": "BLUE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⚔",
+        "name": "bonus_attack_speed",
+        "stat": "Bonus Attack Speed",
+        "display": "⚔ Bonus Attack Speed",
+        "color": "YELLOW",
+        "subColor": "GREEN",
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⫽",
+        "name": "ferocity",
+        "stat": "Ferocity",
+        "display": "⫽ Ferocity",
+        "color": "RED",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☄",
+        "name": "mending",
+        "stat": "Mending",
+        "display": "☄ Mending",
+        "color": "GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "♨",
+        "name": "vitality",
+        "stat": "Vitality",
+        "display": "♨ Vitality",
+        "color": "DARK_RED",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "❣",
+        "name": "health_regen",
+        "stat": "Health Regen",
+        "display": "❣ Health Regen",
+        "color": "RED",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "✯",
+        "name": "magic_find",
+        "stat": "Magic Find",
+        "display": "✯ Magic Find",
+        "color": "AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "♣",
+        "name": "pet_luck",
+        "stat": "Pet Luck",
+        "display": "♣ Pet Luck",
+        "color": "LIGHT_PURPLE",
+        "subColor": "WHITE",
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "α",
+        "name": "sea_creature_chance",
+        "stat": "Sea Creature Chance",
+        "display": "α Sea Creature Chance",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "BOLD_ICON"
+    },
+    {
+        "icon": "☂",
+        "name": "fishing_speed",
+        "stat": "Fishing Speed",
+        "display": "☂ Fishing Speed",
+        "color": "AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "๑",
+        "name": "ability_damage",
+        "stat": "Ability Damage",
+        "display": "๑ Ability Damage",
+        "color": "RED",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⸕",
+        "name": "mining_speed",
+        "stat": "Mining Speed",
+        "display": "⸕ Mining Speed",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "Ⓟ",
+        "name": "breaking_power",
+        "stat": "Breaking Power",
+        "display": "Ⓟ Breaking Power",
+        "color": "DARK_GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "✧",
+        "name": "pristine",
+        "stat": "Pristine",
+        "display": "✧ Pristine",
+        "color": "DARK_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "mining_fortune",
+        "stat": "Mining Fortune",
+        "display": "☘ Mining Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "farming_fortune",
+        "stat": "Farming Fortune",
+        "display": "☘ Farming Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "foraging_fortune",
+        "stat": "Foraging Fortune",
+        "display": "☘ Foraging Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⸎",
+        "name": "soulflow",
+        "stat": "Soulflow",
+        "display": "⸎ Soulflow",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "ʬ",
+        "name": "overflow_mana",
+        "stat": "Overflow Mana",
+        "display": "ʬ Overflow Mana",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "Ⓢ",
+        "name": "swing_range",
+        "stat": "Swing Range",
+        "display": "Ⓢ Swing Range",
+        "color": "YELLOW",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "♢",
+        "name": "fuel",
+        "stat": "Fuel",
+        "display": "♢ Fuel",
+        "color": "DARK_GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "᠅",
+        "name": "mithril_powder",
+        "stat": "Mithril Powder",
+        "display": "᠅ Mithril Powder",
+        "color": "DARK_GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "᠅",
+        "name": "gemstone_powder",
+        "stat": "Gemstone Powder",
+        "display": "᠅ Gemstone Powder",
+        "color": "LIGHT_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "❣",
+        "name": "requires",
+        "stat": "Requires",
+        "display": "❣ Requires",
+        "color": "DARK_RED",
+        "subColor": "RED",
+        "parseType": "DIFFERENT_ICON_COLOR"
+    },
+    {
+        "icon": "",
+        "name": "view_recipes",
+        "stat": "Right-click to view recipes!",
+        "display": " Right-click to view recipes!",
+        "color": "YELLOW",
+        "subColor": null,
+        "parseType": "NONE"
+    },
+    {
+        "icon": "",
+        "name": "coop_soulbound",
+        "stat": "Co-op Soulbound",
+        "display": " Co-op Soulbound",
+        "color": "DARK_GRAY",
+        "subColor": null,
+        "parseType": "SOULBOUND"
+    },
+    {
+        "icon": "",
+        "name": "soulbound",
+        "stat": "Soulbound",
+        "display": " Soulbound",
+        "color": "DARK_GRAY",
+        "subColor": null,
+        "parseType": "SOULBOUND"
+    },
+    {
+        "icon": "",
+        "name": "reforgeable",
+        "stat": "This item can be reforged!",
+        "display": " This item can be reforged!",
+        "color": "DARK_GRAY",
+        "subColor": null,
+        "parseType": "NONE"
+    },
+    {
+        "icon": "",
+        "name": "item_stat_RED",
+        "stat": "ITEM_STAT_RED",
+        "display": "ITEM_STAT_RED",
+        "color": "GRAY",
+        "subColor": "RED",
+        "parseType": "ITEM_STAT"
+    },
+    {
+        "icon": "",
+        "name": "item_stat_GREEN",
+        "stat": "ITEM_STAT_GREEN",
+        "display": "ITEM_STAT_GREEN",
+        "color": "GRAY",
+        "subColor": "GREEN",
+        "parseType": "ITEM_STAT"
+    },
+    {
+        "icon": "",
+        "name": "item_stat_pink",
+        "stat": "ITEM_STAT_PINK",
+        "display": "ITEM_STAT_PINK",
+        "color": "GRAY",
+        "subColor": "LIGHT_PURPLE",
+        "parseType": "ITEM_STAT"
+    },
+    {
+        "icon": "",
+        "name": "mana_cost",
+        "stat": "Mana Cost:",
+        "display": " Mana Cost:",
+        "color": "DARK_GRAY",
+        "subColor": "DARK_AQUA",
+        "parseType": "POST_DUAL"
+    },
+    {
+        "icon": "",
+        "name": "cooldown",
+        "stat": "Cooldown:",
+        "display": " Cooldown:",
+        "color": "DARK_GRAY",
+        "subColor": "GREEN",
+        "parseType": "POST_DUAL"
+    },
+    {
+        "icon": "",
+        "name": "ability",
+        "stat": "Ability",
+        "display": " Ability",
+        "color": "GOLD",
+        "subColor": "YELLOW",
+        "parseType": "ABILITY"
+    },
+    {
+        "icon": "☯",
+        "name": "combat_wisdom",
+        "stat": "Combat Wisdom",
+        "display": "☯ Combat Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☯",
+        "name": "mining_wisdom",
+        "stat": "Mining Wisdom",
+        "display": "☯ Mining Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☯",
+        "name": "farming_wisdom",
+        "stat": "Farming Wisdom",
+        "display": "☯ Farming Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☯",
+        "name": "foraging_wisdom",
+        "stat": "Foraging Wisdom",
+        "display": "☯ Foraging Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☯",
+        "name": "fishing_wisdom",
+        "stat": "Fishing Wisdom",
+        "display": "☯ Fishing Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☯",
+        "name": "enchanting_wisdom",
+        "stat": "Enchanting Wisdom",
+        "display": "☯ Enchanting Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☯",
+        "name": "alchemy_wisdom",
+        "stat": "Alchemy Wisdom",
+        "display": "☯ Alchemy Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☯",
+        "name": "carpentry_wisdom",
+        "stat": "Carpentry Wisdom",
+        "display": "☯ Carpentry Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☯",
+        "name": "taming_wisdom",
+        "stat": "Taming Wisdom",
+        "display": "☯ Taming Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☯",
+        "name": "runecrafting_wisdom",
+        "stat": "Runecrafting Wisdom",
+        "display": "☯ Runecrafting Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☯",
+        "name": "social_wisdom",
+        "stat": "Social Wisdom",
+        "display": "☯ Social Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "ф",
+        "name": "rift_time",
+        "stat": "Rift Time",
+        "display": "ф Rift Time",
+        "color": "GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "❁",
+        "name": "rift_damage",
+        "stat": "Rift Damage",
+        "display": "❁ Rift Damage",
+        "color": "DARK_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⚡",
+        "name": "mana_regen",
+        "stat": "Mana Regen",
+        "display": "⚡ Mana Regen",
+        "color": "AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "",
+        "name": "rift_transferable",
+        "stat": "Rift-Transferable",
+        "display": "Rift-Transferable",
+        "color": "DARK_PURPLE",
+        "subColor": null,
+        "parseType": "NONE"
+    },
+    {
+        "icon": "༕",
+        "name": "undead",
+        "stat": "This armor piece is undead ༕!",
+        "display": "༕ This armor piece is undead ༕!",
+        "color": "DARK_GREEN",
+        "subColor": null,
+        "parseType": "NONE"
+    }
+]

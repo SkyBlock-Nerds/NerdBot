@@ -1,9 +1,8 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
+import net.hypixel.nerdbot.generator.data.Stat;
 import net.hypixel.nerdbot.generator.parser.StringParser;
-import net.hypixel.nerdbot.generator.placeholder.Stat;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
-import net.hypixel.nerdbot.util.Util;
 
 import java.util.regex.Matcher;
 
@@ -21,26 +20,26 @@ public class StatParser implements StringParser {
             String match = matcher.group(0);
             String icon = matcher.group(1);
             String extraData = matcher.group(2);
-            Stat statEnum = (Stat) Util.findValue(Stat.VALUES, icon);
+            Stat stat = Stat.byName(icon);
 
-            if (statEnum == null) {
+            if (stat == null) {
                 continue;
             }
 
-            switch (statEnum.getParseType()) {
-                case NORMAL -> input = input.replace(match, normalStatColorParser(statEnum, extraData));
-                case BOLD -> input = input.replace(match, boldedIconParser(statEnum));
-                case BOLD_ICON -> input = input.replace(match, boldedIconColorParser(statEnum, extraData));
-                case DUAL -> input = input.replace(match, dualStatColorParser(statEnum, extraData));
-                case NONE -> input = input.replace(match, noParsing(statEnum, extraData));
-                case SOULBOUND -> input = input.replace(match, soulboundColorParsing(statEnum, extraData));
-                case POST -> input = input.replace(match, postStatColorParser(statEnum, extraData));
-                case POST_DUAL -> input = input.replace(match, postDualColorParser(statEnum, extraData));
-                case ITEM_STAT -> input = input.replace(match, itemStatColorParser(statEnum, extraData));
-                case ABILITY -> input = input.replace(match, abilityColorParser(statEnum, extraData));
+            switch (stat.getParseType()) {
+                case NORMAL -> input = input.replace(match, normalStatColorParser(stat, extraData));
+                case BOLD -> input = input.replace(match, boldedIconParser(stat));
+                case BOLD_ICON -> input = input.replace(match, boldedIconColorParser(stat, extraData));
+                case DUAL -> input = input.replace(match, dualStatColorParser(stat, extraData));
+                case NONE -> input = input.replace(match, noParsing(stat, extraData));
+                case SOULBOUND -> input = input.replace(match, soulboundColorParsing(stat, extraData));
+                case POST -> input = input.replace(match, postStatColorParser(stat, extraData));
+                case POST_DUAL -> input = input.replace(match, postDualColorParser(stat, extraData));
+                case ITEM_STAT -> input = input.replace(match, itemStatColorParser(stat, extraData));
+                case ABILITY -> input = input.replace(match, abilityColorParser(stat, extraData));
                 case DIFFERENT_ICON_COLOR ->
-                    input = input.replace(match, differentIconColorParser(statEnum, extraData));
-                default -> input = input.replace(match, parseStat(statEnum));
+                    input = input.replace(match, differentIconColorParser(stat, extraData));
+                default -> input = input.replace(match, parseStat(stat));
             }
         }
 

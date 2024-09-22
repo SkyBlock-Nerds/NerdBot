@@ -1,0 +1,38 @@
+[
+    {
+        "name": "dot",
+        "icon": "•"
+    },
+    {
+        "name": "ticker",
+        "icon": "Ⓞ"
+    },
+    {
+        "name": "zombie_charge",
+        "icon": "ⓩ"
+    },
+    {
+        "name": "star",
+        "icon": "✪"
+    },
+    {
+        "name": "starred",
+        "icon": "⚚"
+    },
+    {
+        "name": "fragged",
+        "icon": "⚚"
+    },
+    {
+        "name": "bingo",
+        "icon": "Ⓑ"
+    },
+    {
+        "name": "zone",
+        "icon": "⏣"
+    },
+    {
+        "name": "abiphone",
+        "icon": "✆"
+    }
+]

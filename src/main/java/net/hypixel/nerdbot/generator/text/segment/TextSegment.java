@@ -4,11 +4,10 @@ package net.hypixel.nerdbot.generator.text.segment;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.Setter;
-import lombok.ToString;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
+import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.generator.text.event.ClickEvent;
 import net.hypixel.nerdbot.generator.text.event.HoverEvent;
-import net.hypixel.nerdbot.generator.text.ChatFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

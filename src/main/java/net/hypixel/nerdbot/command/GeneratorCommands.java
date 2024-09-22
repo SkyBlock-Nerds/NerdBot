@@ -311,7 +311,7 @@ public class GeneratorCommands extends ApplicationCommand {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withName(name)
-                .withRarity((Rarity) Util.findValue(Rarity.VALUES, rarity.toUpperCase()))
+                .withRarity(Rarity.byName(rarity))
                 .withItemLore(itemLore)
                 .withType(type)
                 .withAlpha(alpha)
@@ -474,16 +474,20 @@ public class GeneratorCommands extends ApplicationCommand {
 
     @AutocompletionHandler(name = "item-names", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> itemNames(CommandAutoCompleteInteractionEvent event) {
-        return Spritesheet.getImageMap().keySet().stream().toList();
+        return Spritesheet.getImageMap().keySet()
+            .stream()
+            .toList();
     }
 
     @AutocompletionHandler(name = "item-rarities", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> itemRarities(CommandAutoCompleteInteractionEvent event) {
-        return Arrays.stream(Rarity.values()).map(Rarity::name).toList();
+        return Rarity.getRarityNames();
     }
 
     @AutocompletionHandler(name = "tooltip-side", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> tooltipSide(CommandAutoCompleteInteractionEvent event) {
-        return Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values()).map(MinecraftTooltipGenerator.TooltipSide::name).toList();
+        return Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values())
+            .map(MinecraftTooltipGenerator.TooltipSide::name)
+            .toList();
     }
 }

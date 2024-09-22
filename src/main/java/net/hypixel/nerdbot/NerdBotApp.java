@@ -10,11 +10,13 @@ import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.json.adapter.BadgeTypeAdapter;
+import net.hypixel.nerdbot.util.json.adapter.ColorTypeAdapter;
 import net.hypixel.nerdbot.util.json.adapter.InstantTypeAdapter;
 import net.hypixel.nerdbot.util.json.adapter.UUIDTypeAdapter;
 import sun.misc.Signal;
 
 import javax.security.auth.login.LoginException;
+import java.awt.Color;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
@@ -31,6 +33,7 @@ public class NerdBotApp {
         .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
         .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
         .registerTypeAdapter(Badge.class, new BadgeTypeAdapter())
+        .registerTypeAdapter(Color.class, new ColorTypeAdapter())
         .create();
 
     private static Bot bot;
