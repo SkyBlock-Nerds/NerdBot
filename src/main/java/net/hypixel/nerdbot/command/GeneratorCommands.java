@@ -14,17 +14,16 @@ import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
+import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
+import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
 import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
-import net.hypixel.nerdbot.generator.placeholder.Rarity;
-import net.hypixel.nerdbot.util.ImageUtil;
-import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
+import net.hypixel.nerdbot.util.ImageUtil;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -99,6 +98,7 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating an item display", exception);
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating that item!").queue();
             log.error("Encountered an error while generating an item display", exception);
@@ -122,6 +122,7 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "head.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating a player head", exception);
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating that player head!").queue();
             log.error("Encountered an error while generating a player head", exception);
@@ -154,6 +155,7 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating a recipe", exception);
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating that recipe!").queue();
             log.error("Encountered an error while generating a recipe", exception);
@@ -203,6 +205,7 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.build().getImage()), "inventory.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating an inventory", exception);
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating that inventory!").queue();
             log.error("Encountered an error while generating an inventory", exception);
@@ -272,6 +275,7 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginal("You provided badly formatted NBT!").queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while parsing NBT", exception);
         } catch (IOException e) {
             event.getHook().editOriginal("An error occurred while parsing the NBT!").queue();
             log.error("Encountered an error while parsing NBT", e);
@@ -360,9 +364,10 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
         } catch (GeneratorException | IllegalArgumentException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating an item display", exception);
         } catch (IOException exception) {
-            event.getHook().editOriginal("An error occurred while generating that player head!").queue();
-            log.error("Encountered an error while generating a player head", exception);
+            event.getHook().editOriginal("An error occurred while generating that item!").queue();
+            log.error("Encountered an error while generating an item display", exception);
         }
     }
 
@@ -403,6 +408,7 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatorImageBuilder.build().getImage()), "text.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating text", exception);
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating the text!").queue();
             log.error("Encountered an error while generating text", exception);
@@ -466,6 +472,7 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatorImageBuilder.build().getImage()), "dialogue.png")).queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating dialogue", exception);
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating the dialogue!").queue();
             log.error("Encountered an error while generating dialogue", exception);
