@@ -19,11 +19,11 @@ import java.util.Objects;
 @ToString
 public class Stat {
 
-    private static List<Stat> STATS;
+    private static final List<Stat> STATS = new ArrayList<>();
 
     static {
         try {
-            STATS = new ArrayList<>(JsonLoader.loadFromJson(Stat[].class, Objects.requireNonNull(Stat.class.getResource("/data/stats.json"))));
+            STATS.addAll(JsonLoader.loadFromJson(Stat[].class, Objects.requireNonNull(Stat.class.getResource("/data/stats.json"))));
         } catch (Exception e) {
             log.error("Failed to load stat data", e);
         }

@@ -20,11 +20,11 @@ import java.util.stream.Collectors;
 @ToString
 public class Rarity {
 
-    private static List<Rarity> RARITIES;
+    private static final List<Rarity> RARITIES = new ArrayList<>();
 
     static {
         try {
-            RARITIES = new ArrayList<>(JsonLoader.loadFromJson(Rarity[].class, Objects.requireNonNull(Rarity.class.getResource("/data/rarities.json"))));
+            RARITIES.addAll(JsonLoader.loadFromJson(Rarity[].class, Objects.requireNonNull(Rarity.class.getResource("/data/rarities.json"))));
         } catch (Exception e) {
             log.error("Failed to load rarity data", e);
         }

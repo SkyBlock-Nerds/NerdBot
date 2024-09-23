@@ -18,11 +18,11 @@ import java.util.Objects;
 @ToString
 public class Icon {
 
-    private static List<Icon> ICONS;
+    private static final List<Icon> ICONS = new ArrayList<>();
 
     static {
         try {
-            ICONS = new ArrayList<>(JsonLoader.loadFromJson(Icon[].class, Objects.requireNonNull(Icon.class.getResource("/data/icons.json"))));
+            ICONS.addAll(JsonLoader.loadFromJson(Icon[].class, Objects.requireNonNull(Icon.class.getResource("/data/icons.json"))));
         } catch (Exception e) {
             log.error("Failed to load icon data", e);
         }

@@ -20,11 +20,11 @@ import java.util.Objects;
 @ToString
 public class Gemstone {
 
-    private static List<Gemstone> GEMSTONES;
+    private static final List<Gemstone> GEMSTONES = new ArrayList<>();
 
     static {
         try {
-            GEMSTONES = new ArrayList<>(JsonLoader.loadFromJson(Gemstone[].class, Objects.requireNonNull(Gemstone.class.getResource("/data/gemstones.json"))));
+            GEMSTONES.addAll(JsonLoader.loadFromJson(Gemstone[].class, Objects.requireNonNull(Gemstone.class.getResource("/data/gemstones.json"))));
         } catch (Exception e) {
             log.error("Failed to load gemstone data", e);
         }
