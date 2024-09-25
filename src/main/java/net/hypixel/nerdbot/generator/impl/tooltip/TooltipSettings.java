@@ -3,10 +3,12 @@ package net.hypixel.nerdbot.generator.impl.tooltip;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 @Getter
 @Builder
 @AllArgsConstructor
+@ToString
 public class TooltipSettings {
 
     private final String name;

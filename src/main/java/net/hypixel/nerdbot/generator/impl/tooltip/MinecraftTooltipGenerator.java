@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.generator.impl.tooltip;
 import com.google.gson.JsonObject;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
@@ -23,6 +24,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
+@Log4j2
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftTooltipGenerator implements Generator {
 
@@ -71,6 +73,8 @@ public class MinecraftTooltipGenerator implements Generator {
     }
 
     public MinecraftTooltip parseLore(String input, TooltipSettings settings) {
+        log.info("Parsing lore for item: {} with settings {}", name, settings);
+
         MinecraftTooltip.Builder builder = MinecraftTooltip.builder()
             .withPadding(settings.getPadding())
             .isPaddingFirstLine(settings.isPaddingFirstLine())
@@ -121,7 +125,7 @@ public class MinecraftTooltipGenerator implements Generator {
         private Integer alpha;
         private Integer padding;
         private boolean paddingFirstLine;
-        private int maxLineLength;
+        private int maxLineLength = DEFAULT_MAX_LINE_LENGTH;
         private transient boolean bypassMaxLineLength;
         private boolean centered;
         private transient boolean renderBorder;
