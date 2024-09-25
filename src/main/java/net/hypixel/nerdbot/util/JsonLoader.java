@@ -6,8 +6,11 @@ import net.hypixel.nerdbot.NerdBotApp;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +41,9 @@ public class JsonLoader<T> {
             return (List<T>) cache.get(url.toString());
         }
 
-        try (FileReader reader = new FileReader(url.getFile())) {
+        try (InputStream is = url.openStream()) {
             Type listType = TypeToken.getParameterized(List.class, clazz.getComponentType()).getType();
-            List<T> data = NerdBotApp.GSON.fromJson(reader, listType);
+            List<T> data = NerdBotApp.GSON.fromJson(new InputStreamReader(is, StandardCharsets.UTF_8), listType);
             cache.put(url.toString(), data);
             return data;
         }
