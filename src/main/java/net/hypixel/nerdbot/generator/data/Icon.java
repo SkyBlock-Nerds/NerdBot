@@ -22,7 +22,7 @@ public class Icon {
 
     static {
         try {
-            ICONS.addAll(JsonLoader.loadFromJson(Icon[].class, Objects.requireNonNull(Icon.class.getResource("/data/icons.json"))));
+            ICONS.addAll(JsonLoader.loadFromJson(Icon[].class, Objects.requireNonNull(Icon.class.getClassLoader().getResource("data/icons.json"))));
         } catch (Exception e) {
             log.error("Failed to load icon data", e);
         }

@@ -24,7 +24,7 @@ public class Gemstone {
 
     static {
         try {
-            GEMSTONES.addAll(JsonLoader.loadFromJson(Gemstone[].class, Objects.requireNonNull(Gemstone.class.getResource("/data/gemstones.json"))));
+            GEMSTONES.addAll(JsonLoader.loadFromJson(Gemstone[].class, Objects.requireNonNull(Gemstone.class.getClassLoader().getResource("data/gemstones.json"))));
         } catch (Exception e) {
             log.error("Failed to load gemstone data", e);
         }

@@ -24,7 +24,7 @@ public class Rarity {
 
     static {
         try {
-            RARITIES.addAll(JsonLoader.loadFromJson(Rarity[].class, Objects.requireNonNull(Rarity.class.getResource("/data/rarities.json"))));
+            RARITIES.addAll(JsonLoader.loadFromJson(Rarity[].class, Objects.requireNonNull(Rarity.class.getClassLoader().getResource("data/rarities.json"))));
         } catch (Exception e) {
             log.error("Failed to load rarity data", e);
         }

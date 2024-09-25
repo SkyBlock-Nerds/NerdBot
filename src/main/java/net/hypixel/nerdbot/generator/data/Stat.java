@@ -23,7 +23,7 @@ public class Stat {
 
     static {
         try {
-            STATS.addAll(JsonLoader.loadFromJson(Stat[].class, Objects.requireNonNull(Stat.class.getResource("/data/stats.json"))));
+            STATS.addAll(JsonLoader.loadFromJson(Stat[].class, Objects.requireNonNull(Stat.class.getClassLoader().getResource("data/stats.json"))));
         } catch (Exception e) {
             log.error("Failed to load stat data", e);
         }
