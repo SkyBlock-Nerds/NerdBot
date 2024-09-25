@@ -3,17 +3,23 @@ package net.hypixel.nerdbot.generator.impl.tooltip;
 import com.google.gson.JsonObject;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.data.Rarity;
+import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
 import net.hypixel.nerdbot.util.Range;
+import net.hypixel.nerdbot.util.Util;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,7 +78,13 @@ public class MinecraftTooltipGenerator implements Generator {
             .withAlpha(Range.between(0, 255).fit(settings.getAlpha()));
 
         if (settings.getName() != null && !settings.getName().isEmpty()) {
-            builder.withLines(LineSegment.fromLegacy(rarity.getColorCode() + settings.getName(), '&'));
+            String name = settings.getName();
+
+            if (rarity != null && rarity != Rarity.byName("NONE")) {
+                name = rarity.getColorCode() + name;
+            }
+
+            builder.withLines(LineSegment.fromLegacy(name, '&'));
         }
 
         List<List<LineSegment>> segments = new ArrayList<>();
@@ -110,9 +122,9 @@ public class MinecraftTooltipGenerator implements Generator {
         private Integer padding;
         private boolean paddingFirstLine;
         private int maxLineLength;
-        private boolean bypassMaxLineLength;
+        private transient boolean bypassMaxLineLength;
         private boolean centered;
-        private boolean renderBorder;
+        private transient boolean renderBorder;
 
         public MinecraftTooltipGenerator.Builder withName(String name) {
             this.name = name;
@@ -194,7 +206,49 @@ public class MinecraftTooltipGenerator implements Generator {
                 this.itemLore += jsonElement.getAsString() + "\\n";
             });
 
+            this.itemLore = this.itemLore.replaceAll("§", "&");
+
             return this;
+        }
+
+        /**
+         * Builds a slash command from the current state of the builder.
+         *
+         * @return A properly formatted slash command string.
+         */
+        public String buildSlashCommand() {
+            StringBuilder commandBuilder = new StringBuilder("/" + GeneratorCommands.BASE_COMMAND + " item ");
+            Field[] fields = this.getClass().getDeclaredFields();
+
+            for (Field field : fields) {
+                try {
+                    field.setAccessible(true);
+
+                    int modifiers = field.getModifiers();
+                    if (Modifier.isTransient(modifiers)) {
+                        continue;
+                    }
+
+                    Object value = field.get(this);
+                    if (value != null && !(value instanceof String string && string.isEmpty())) {
+                        String paramName = Util.convertCamelCaseToSnakeCase(field.getName());
+
+                        commandBuilder.append(paramName).append(": ");
+
+                        if (value instanceof Boolean bool) {
+                            commandBuilder.append(StringUtils.capitalize(bool.toString())); // Discord slash commands use "True" and "False" for booleans
+                        } else {
+                            commandBuilder.append(value);
+                        }
+
+                        commandBuilder.append(" ");
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new GeneratorException("Failed to build slash command", e);
+                }
+            }
+
+            return commandBuilder.toString().trim();
         }
 
         @Override

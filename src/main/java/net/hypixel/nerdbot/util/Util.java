@@ -91,6 +91,24 @@ public class Util {
     private Util() {
     }
 
+    public static String convertCamelCaseToSnakeCase(String camelCase) {
+        return camelCase.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
+    }
+
+    public static Pair<String, Integer> getLongestLine(List<String> strings) {
+        String longest = "";
+        int length = 0;
+
+        for (String string : strings) {
+            if (string.length() > length) {
+                longest = string;
+                length = string.length();
+            }
+        }
+
+        return Pair.of(longest, length);
+    }
+
     public static boolean isAprilFirst() {
         return Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
     }

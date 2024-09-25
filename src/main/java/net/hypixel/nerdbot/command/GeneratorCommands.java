@@ -8,12 +8,14 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
@@ -24,6 +26,7 @@ import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import net.hypixel.nerdbot.util.ImageUtil;
+import net.hypixel.nerdbot.util.Util;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -32,7 +35,8 @@ import java.util.List;
 @Log4j2
 public class GeneratorCommands extends ApplicationCommand {
 
-    private static final String BASE_COMMAND = "gen2"; // TODO change this back to "gen" when released
+    public static final String BASE_COMMAND = "gen2"; // TODO change this back to "gen" when released
+
     private static final String ITEM_DESCRIPTION = "The ID of the item to display";
     private static final String EXTRA_DATA_DESCRIPTION = "The extra modifiers to change the item";
     private static final String ENCHANTED_DESCRIPTION = "Whether or not the item should be enchanted";
@@ -262,15 +266,25 @@ public class GeneratorCommands extends ApplicationCommand {
                     .build());
             }
 
-            // TODO set max line length to longest line
             MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .parseNbtJson(jsonObject)
                 .withAlpha(alpha)
-                .withPadding(padding);
+                .withPadding(padding)
+                .withMaxLineLength(Util.getLongestLine(jsonObject.get("tag").getAsJsonObject()
+                    .get("display").getAsJsonObject()
+                    .get("Lore").getAsJsonArray()
+                    .asList()
+                    .stream()
+                    .map(JsonElement::getAsString)
+                    .toList()
+                ).getRight());
 
             GeneratedObject generatedObject = generatorImageBuilder.addGenerator(tooltipGenerator.build()).build();
-            // TODO output a command
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
+            MessageEditBuilder builder = new MessageEditBuilder()
+                .setContent("Your NBT input has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + tooltipGenerator.buildSlashCommand() + "```")
+                .setFiles(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "parsed_nbt.png"));
+
+            event.getHook().editOriginal(builder.build()).queue();
         } catch (JsonParseException exception) {
             event.getHook().editOriginal("You provided badly formatted NBT!").queue();
         } catch (GeneratorException exception) {
