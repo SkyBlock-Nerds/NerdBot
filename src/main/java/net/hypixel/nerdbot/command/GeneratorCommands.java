@@ -322,7 +322,7 @@ public class GeneratorCommands extends ApplicationCommand {
         padding = padding == null ? 0 : padding;
         emptyLine = emptyLine == null || emptyLine;
         centered = centered != null && centered;
-        paddingFirstLine = paddingFirstLine != null && paddingFirstLine;
+        paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
         try {
