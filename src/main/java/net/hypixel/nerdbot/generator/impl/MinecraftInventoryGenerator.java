@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.generator.impl;
 
+import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.image.ImageCoordinates;
@@ -23,6 +24,7 @@ import java.util.List;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
 
+@Log4j2
 public class MinecraftInventoryGenerator implements Generator {
 
     public static final int MAX_ROWS_GENERATED = 100;
@@ -201,6 +203,7 @@ public class MinecraftInventoryGenerator implements Generator {
                 parsedItem.setImage(generatedItem);
             }
 
+            log.info("Drawing item: " + parsedItem);
             this.drawItem(parsedItem);
         }
     }
