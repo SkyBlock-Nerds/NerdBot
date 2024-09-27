@@ -38,7 +38,6 @@ public class ReactionChannelListener {
 
             if (reactionChannel.get().isThread()) {
                 message.createThreadChannel("Related messages here").queue(thread -> {
-                    thread.sendMessage("Thread created for message " + message.getId()).queue();
                     log.info("[Reaction Channel] Created thread for message " + message.getId() + " in reaction channel " + reactionChannel.get().getName());
                 });
             }
