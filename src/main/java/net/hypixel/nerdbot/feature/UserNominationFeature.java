@@ -129,8 +129,8 @@ public class UserNominationFeature extends BotFeature {
 
             LastActivity lastActivity = discordUser.getLastActivity();
             int totalMessages = lastActivity.getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
-            int totalComments = lastActivity.getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
-            int totalVotes = lastActivity.getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
+            int totalComments = lastActivity.getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getCommentsRequiredForInactivityCheck());
+            int totalVotes = lastActivity.getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getVotesRequiredForInactivityCheck());
 
             boolean hasRequiredVotes = totalVotes >= requiredVotes;
             boolean hasRequiredComments = totalComments >= requiredComments;
@@ -148,7 +148,7 @@ public class UserNominationFeature extends BotFeature {
             }, () -> {
                 log.info("No last inactivity warning date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
 
-                if (totalMessages < NerdBotApp.getBot().getConfig().getRoleConfig().getMessagesRequiredForActivity() && !hasRequiredComments && !hasRequiredVotes) {
+                if (totalMessages < NerdBotApp.getBot().getConfig().getRoleConfig().getMessagesRequiredForInactivityCheck() && !hasRequiredComments && !hasRequiredVotes) {
                     sendInactiveUserMessage(member, discordUser);
                 }
             });

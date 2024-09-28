@@ -75,7 +75,19 @@ public class RoleConfig {
      * The amount of messages a user must have to be considered active during an inactivity check
      * Default value is 100
      */
-    private int messagesRequiredForActivity = 100;
+    private int messagesRequiredForInactivityCheck = 100;
+
+    /**
+     * The amount of votes a user must have to be considered active during an inactivity check
+     * Default value is 25
+     */
+    private int votesRequiredForInactivityCheck = 25;
+
+    /**
+     * The amount of comments a user must have to be considered active during an inactivity check
+     * Default value is 100
+     */
+    private int commentsRequiredForInactivityCheck = 100;
 
     /**
      * A list of {@link PingableRole PingableRoles} used for announcements etc.
