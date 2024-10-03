@@ -51,6 +51,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
@@ -89,6 +90,19 @@ public class Util {
     private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
 
     private Util() {
+    }
+
+    public static boolean isValidBase64(String string) {
+        if (string == null || string.isEmpty()) {
+            return false;
+        }
+
+        try {
+            Base64.getDecoder().decode(string);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     public static String convertCamelCaseToSnakeCase(String camelCase) {

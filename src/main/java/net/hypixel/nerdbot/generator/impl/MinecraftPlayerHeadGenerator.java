@@ -122,12 +122,11 @@ public class MinecraftPlayerHeadGenerator implements Generator {
         private int scale;
 
         public Builder withSkin(String texture) {
-            this.texture = texture;
-            return this;
-        }
-
-        public Builder parseBase64String(String base64) {
-            this.texture = base64ToSkinURL(base64);
+            if (Util.isValidBase64(texture)) {
+                this.texture = base64ToSkinURL(texture);
+            } else {
+                this.texture = texture;
+            }
             return this;
         }
 

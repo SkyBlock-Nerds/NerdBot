@@ -256,7 +256,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 String base64 = textures.get(0).getAsJsonObject().get("Value").getAsString();
 
                 generatorImageBuilder.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
-                    .parseBase64String(base64)
+                    .withSkin(base64)
                     .build()
                 );
             } else {
