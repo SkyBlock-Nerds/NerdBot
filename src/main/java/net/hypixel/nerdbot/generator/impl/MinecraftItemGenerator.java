@@ -14,8 +14,6 @@ import net.hypixel.nerdbot.generator.spritesheet.OverlaySheet;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import net.hypixel.nerdbot.util.ImageUtil;
 
-import java.awt.AlphaComposite;
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 

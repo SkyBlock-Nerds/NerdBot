@@ -2,7 +2,8 @@ package net.hypixel.nerdbot.generator.item.overlay;
 
 import net.hypixel.nerdbot.generator.spritesheet.OverlaySheet;
 
-import java.awt.*;
+import java.awt.AlphaComposite;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public class EnchantmentGlint {

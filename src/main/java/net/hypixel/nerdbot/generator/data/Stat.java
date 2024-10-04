@@ -28,6 +28,7 @@ public class Stat {
             log.error("Failed to load stat data", e);
         }
     }
+
     private String icon;
     private String name;
     private String stat;
@@ -35,6 +36,13 @@ public class Stat {
     private ChatFormat color;
     private ChatFormat subColor;
     private ParseType parseType;
+
+    public static Stat byName(String name) {
+        return STATS.stream()
+            .filter(stat -> stat.getName().equalsIgnoreCase(name))
+            .findFirst()
+            .orElse(null);
+    }
 
     /**
      * In some cases, stats can have multiple colors.
@@ -48,13 +56,6 @@ public class Stat {
         } else {
             return color;
         }
-    }
-
-    public static Stat byName(String name) {
-        return STATS.stream()
-            .filter(stat -> stat.getName().equalsIgnoreCase(name))
-            .findFirst()
-            .orElse(null);
     }
 
     public enum ParseType {

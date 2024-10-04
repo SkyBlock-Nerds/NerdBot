@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.generator.text.wrapper;
 
 import lombok.extern.log4j.Log4j2;
-import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.generator.parser.Parser;
 import net.hypixel.nerdbot.generator.parser.text.ColorCodeParser;
 import net.hypixel.nerdbot.generator.parser.text.GemstoneParser;

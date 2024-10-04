@@ -41,15 +41,15 @@ public class Rarity {
             .orElse(null);
     }
 
+    public static List<String> getRarityNames() {
+        return RARITIES.stream().map(Rarity::getName).collect(Collectors.toList());
+    }
+
     public String getColorCode() {
         return "&" + color.getCode();
     }
 
     public String getFormattedDisplay() {
         return getColorCode() + "&" + ChatFormat.BOLD.getCode() + display;
-    }
-
-    public static List<String> getRarityNames() {
-        return RARITIES.stream().map(Rarity::getName).collect(Collectors.toList());
     }
 }

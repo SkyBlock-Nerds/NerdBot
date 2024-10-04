@@ -7,7 +7,7 @@ import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.exception.GeneratorTimeoutException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 
-import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;

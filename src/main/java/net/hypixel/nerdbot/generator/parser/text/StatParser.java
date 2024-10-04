@@ -37,8 +37,7 @@ public class StatParser implements StringParser {
                 case POST_DUAL -> input = input.replace(match, postDualColorParser(stat, extraData));
                 case ITEM_STAT -> input = input.replace(match, itemStatColorParser(stat, extraData));
                 case ABILITY -> input = input.replace(match, abilityColorParser(stat, extraData));
-                case DIFFERENT_ICON_COLOR ->
-                    input = input.replace(match, differentIconColorParser(stat, extraData));
+                case DIFFERENT_ICON_COLOR -> input = input.replace(match, differentIconColorParser(stat, extraData));
                 default -> input = input.replace(match, parseStat(stat));
             }
         }
