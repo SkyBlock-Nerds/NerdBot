@@ -12,7 +12,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Log4j2
 public class Spritesheet {
@@ -68,6 +70,12 @@ public class Spritesheet {
 
     public static BufferedImage getTexture(String textureId) {
         return IMAGE_MAP.get(textureId);
+    }
+
+    public static List<Map.Entry<String, BufferedImage>> searchForTexture(String textureId) {
+        return IMAGE_MAP.entrySet().stream()
+            .filter(entry -> entry.getKey().contains(textureId))
+            .collect(Collectors.toList());
     }
 
     public static Map<String, BufferedImage> getImageMap() {

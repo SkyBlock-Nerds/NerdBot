@@ -28,9 +28,11 @@ import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Log4j2
 public class GeneratorCommands extends ApplicationCommand {
@@ -64,7 +66,7 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
 
-    @JDASlashCommand(name = BASE_COMMAND, group = "display", subcommand = "item", description = "Display an item")
+    @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "display", description = "Display an item")
     public void generateItem(
         GuildSlashEvent event,
         @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
@@ -107,6 +109,28 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginal("An error occurred while generating that item!").queue();
             log.error("Encountered an error while generating an item display", exception);
         }
+    }
+
+    @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "search", description = "Search for an item")
+    public void searchItem(GuildSlashEvent event, @AppOption(description = "The ID of the item to search for") String itemId, @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden) {
+        hidden = hidden != null && hidden;
+        event.deferReply(hidden).complete();
+
+        List<Map.Entry<String, BufferedImage>> results = Spritesheet.searchForTexture(itemId);
+
+        if (results.isEmpty()) {
+            event.getHook().editOriginal("No results found for that item!").queue();
+            return;
+        }
+
+        List<Map.Entry<String, BufferedImage>> topResults = results.subList(0, Math.min(10, results.size()));
+        StringBuilder message = new StringBuilder("Top results for `" + itemId + "` (" + Util.COMMA_SEPARATED_FORMAT.format(results.size()) + " total):\n");
+
+        for (Map.Entry<String, BufferedImage> entry : topResults) {
+            message.append(" - `").append(entry.getKey()).append("`\n");
+        }
+
+        event.getHook().editOriginal(message.toString()).queue();
     }
 
     @JDASlashCommand(name = BASE_COMMAND, subcommand = "head", description = "Generate a player head")
@@ -296,7 +320,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a full item image. Supports displaying items, recipes, and tooltips")
+    @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "full", description = "Generate a full item image. Supports displaying items, recipes, and tooltips")
     public void generateTooltip(
         GuildSlashEvent event,
         @AppOption(description = NAME_DESCRIPTION) String name,
