@@ -493,6 +493,83 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
+    @JDASlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "multi", description = "Generate dialogue for multiple NPCs")
+    public void generateMultiDialogue(
+        GuildSlashEvent event,
+        @AppOption(description = "Names of your NPCs, separated by a comma") String npcNames,
+        @AppOption(description = "NPC dialogue, lines separated by \\n") String dialogue,
+        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
+        @AppOption(description = "If the Abiphone symbol should be shown next to the dialogue") @Optional Boolean abiphone,
+        @AppOption(description = "Player head texture (username, URL, etc.)") @Optional String skinValue,
+        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+    ) {
+        hidden = hidden != null && hidden;
+        abiphone = abiphone != null && abiphone;
+        maxLineLength = maxLineLength == null ? 91 : maxLineLength;
+        event.deferReply(hidden).complete();
+
+        try {
+            String[] lines = dialogue.split("\\\\n");
+            String[] names = npcNames.split(", ?");
+
+            for (int i = 0; i < lines.length; i++) {
+                String[] split = lines[i].split(", ?");
+                try {
+                    int index = Integer.parseInt(split[0]);
+
+                    if (index >= names.length) {
+                        index = names.length - 1;
+                    }
+
+                    lines[i] = "&e[NPC] " + names[index] + "&f: " + (abiphone ? "&b%%ABIPHONE%%&f " : "") + split[1];
+                    String line = lines[i];
+
+                    if (line.contains("{options:")) {
+                        String[] split2 = line.split("\\{options: ?");
+                        lines[i] = split2[0];
+                        String[] options = split2[1].replace("}", "").split(", ?");
+                        lines[i] += "\n&eSelect an option: &f";
+                        for (String option : options) {
+                            lines[i] += "&a" + option + "&f ";
+                        }
+                    }
+                } catch (NumberFormatException exception) {
+                    throw new GeneratorException("Invalid NPC name index found in dialogue: " + split[0] + " (line " + (i + 1) + ")");
+                }
+            }
+
+            dialogue = String.join("\n", lines);
+
+            MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                .withItemLore(dialogue)
+                .withAlpha(0)
+                .withPadding(0)
+                .isPaddingFirstLine(false)
+                .withEmptyLine(false)
+                .withMaxLineLength(maxLineLength)
+                .bypassMaxLineLength(true);
+
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
+                .addGenerator(tooltipGenerator.build());
+
+            if (skinValue != null) {
+                MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder()
+                    .withSkin(skinValue)
+                    .withScale(-2)
+                    .build();
+                generatorImageBuilder.addGenerator(0, playerHeadGenerator);
+            }
+
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatorImageBuilder.build().getImage()), "dialogue.png")).queue();
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating dialogue", exception);
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating the dialogue!").queue();
+            log.error("Encountered an error while generating dialogue", exception);
+        }
+    }
+
     @AutocompletionHandler(name = "item-names", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> itemNames(CommandAutoCompleteInteractionEvent event) {
         return Spritesheet.getImageMap().keySet()
