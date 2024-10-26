@@ -6,10 +6,9 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
-import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
+import net.hypixel.nerdbot.api.database.model.user.history.GeneratorHistory;
 import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
-import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
@@ -40,11 +39,7 @@ public class UserGrabberFeature extends BotFeature {
                     return;
                 }
 
-                DiscordUser discordUser = discordUserRepository.findById(member.getId());
-                if (discordUser == null) {
-                    discordUser = new DiscordUser(member.getId(), new ArrayList<>(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
-                    log.info("Creating new DiscordUser for user " + member.getId());
-                }
+                DiscordUser discordUser = discordUserRepository.findOrCreateById(member.getId());
 
                 if (discordUser.getLastActivity() == null) {
                     log.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
@@ -59,6 +54,11 @@ public class UserGrabberFeature extends BotFeature {
                 if (discordUser.getBadges() == null) {
                     log.info("Badges for " + member.getEffectiveName() + " was null. Setting to default values!");
                     discordUser.setBadges(new ArrayList<>());
+                }
+
+                if (discordUser.getGeneratorHistory() == null) {
+                    log.info("Generator command history for " + member.getEffectiveName() + " was null. Setting to default values!");
+                    discordUser.setGeneratorHistory(new GeneratorHistory());
                 }
 
                 for (BadgeEntry s : discordUser.getBadges()) {

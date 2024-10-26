@@ -13,9 +13,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
@@ -25,11 +28,14 @@ import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
+import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
 
+import java.io.File;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +108,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
             GeneratedObject generatedObject = item.build();
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating an item display", exception);
@@ -148,6 +155,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .build();
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "head.png")).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating a player head", exception);
@@ -181,6 +189,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .build();
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating a recipe", exception);
@@ -231,6 +240,7 @@ public class GeneratorCommands extends ApplicationCommand {
             }
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.build().getImage()), "inventory.png")).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating an inventory", exception);
@@ -309,6 +319,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .setFiles(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "parsed_nbt.png"));
 
             event.getHook().editOriginal(builder.build()).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (JsonParseException exception) {
             event.getHook().editOriginal("You provided badly formatted NBT!").queue();
         } catch (GeneratorException exception) {
@@ -400,6 +411,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
             GeneratedObject generatedObject = generatorImageBuilder.build();
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException | IllegalArgumentException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating an item display", exception);
@@ -444,6 +456,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
             generatorImageBuilder.addGenerator(tooltipGenerator);
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatorImageBuilder.build().getImage()), "text.png")).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating text", exception);
@@ -585,12 +598,39 @@ public class GeneratorCommands extends ApplicationCommand {
             }
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatorImageBuilder.build().getImage()), "dialogue.png")).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating dialogue", exception);
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while generating the dialogue!").queue();
             log.error("Encountered an error while generating dialogue", exception);
+        }
+    }
+
+    @JDASlashCommand(name = BASE_COMMAND, subcommand = "history", description = "View your command history")
+    public void viewHistory(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        List<EmbedBuilder> embedBuilders = new ArrayList<>();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+
+        if (discordUserRepository.findById(event.getUser().getId()) != null) {
+            List<String> history = discordUserRepository.findById(event.getUser().getId()).getGeneratorHistory().getCommandHistory();
+            embedBuilders.addAll(history.stream()
+                .map(s -> new EmbedBuilder().setDescription(s))
+                .toList()
+            );
+        } else {
+            embedBuilders.add(new EmbedBuilder().setTitle("No history found"));
+        }
+
+        try {
+            File file = Util.createTempFile("generator_history.txt", String.join("\n\n", embedBuilders.stream().map(EmbedBuilder::getDescriptionBuilder).toList()));
+            event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
+        } catch (IOException e) {
+            event.getHook().editOriginal("An error occurred while fetching your generator command history!").queue();
+            log.error("Encountered an error while fetching generator command history for {}", event.getUser().getId(), e);
         }
     }
 
@@ -611,5 +651,20 @@ public class GeneratorCommands extends ApplicationCommand {
         return Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values())
             .map(MinecraftTooltipGenerator.TooltipSide::name)
             .toList();
+    }
+
+    /**
+     * Adds a slash command to the given {@link User}'s history.
+     * This will silently fail if the user is not found in the database.
+     *
+     * @param user    The {@link User} to add the command to
+     * @param command The command to add
+     */
+    private void addCommandToUserHistory(User user, String command) {
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+
+        if (discordUserRepository.findById(user.getId()) != null) {
+            discordUserRepository.findById(user.getId()).getGeneratorHistory().addCommand(command);
+        }
     }
 }
