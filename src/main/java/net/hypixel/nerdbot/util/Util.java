@@ -105,6 +105,10 @@ public class Util {
         }
     }
 
+    public static boolean isSHA256(String string) {
+        return string.matches("[a-fA-F0-9]{64}");
+    }
+
     public static String convertCamelCaseToSnakeCase(String camelCase) {
         return camelCase.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
     }
