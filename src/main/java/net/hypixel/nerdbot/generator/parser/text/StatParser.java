@@ -4,17 +4,35 @@ import net.hypixel.nerdbot.generator.data.Stat;
 import net.hypixel.nerdbot.generator.parser.StringParser;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 
 public class StatParser implements StringParser {
 
+    private static final Map<Stat.ParseType, BiFunction<Stat, String, String>> PARSERS = new HashMap<>();
+
+    static {
+        PARSERS.put(Stat.ParseType.NORMAL, StatParser::normalStatColorParser);
+        PARSERS.put(Stat.ParseType.BOLD, (stat, extra) -> boldedIconParser(stat));
+        PARSERS.put(Stat.ParseType.BOLD_ICON, StatParser::boldedIconColorParser);
+        PARSERS.put(Stat.ParseType.DUAL, StatParser::dualStatColorParser);
+        PARSERS.put(Stat.ParseType.NONE, (stat, extra) -> noParsing(stat));
+        PARSERS.put(Stat.ParseType.SOULBOUND, StatParser::soulboundColorParsing);
+        PARSERS.put(Stat.ParseType.POST, StatParser::postStatColorParser);
+        PARSERS.put(Stat.ParseType.POST_DUAL, StatParser::postDualColorParser);
+        PARSERS.put(Stat.ParseType.ITEM_STAT, StatParser::itemStatColorParser);
+        PARSERS.put(Stat.ParseType.ABILITY, StatParser::abilityColorParser);
+        PARSERS.put(Stat.ParseType.DIFFERENT_ICON_COLOR, StatParser::differentIconColorParser);
+    }
+
     @Override
     public String parse(String input) {
-        if (input.isBlank()) {
-            return input;
-        }
+        if (input.isBlank()) return input;
 
         Matcher matcher = VARIABLE_PATTERN.matcher(input);
+        StringBuilder result = new StringBuilder();
 
         while (matcher.find()) {
             String match = matcher.group(0);
@@ -22,211 +40,91 @@ public class StatParser implements StringParser {
             String extraData = matcher.group(2);
             Stat stat = Stat.byName(icon);
 
-            if (stat == null) {
-                continue;
-            }
-
-            switch (stat.getParseType()) {
-                case NORMAL -> input = input.replace(match, normalStatColorParser(stat, extraData));
-                case BOLD -> input = input.replace(match, boldedIconParser(stat));
-                case BOLD_ICON -> input = input.replace(match, boldedIconColorParser(stat, extraData));
-                case DUAL -> input = input.replace(match, dualStatColorParser(stat, extraData));
-                case NONE -> input = input.replace(match, noParsing(stat, extraData));
-                case SOULBOUND -> input = input.replace(match, soulboundColorParsing(stat, extraData));
-                case POST -> input = input.replace(match, postStatColorParser(stat, extraData));
-                case POST_DUAL -> input = input.replace(match, postDualColorParser(stat, extraData));
-                case ITEM_STAT -> input = input.replace(match, itemStatColorParser(stat, extraData));
-                case ABILITY -> input = input.replace(match, abilityColorParser(stat, extraData));
-                case DIFFERENT_ICON_COLOR -> input = input.replace(match, differentIconColorParser(stat, extraData));
-                default -> input = input.replace(match, parseStat(stat));
+            if (stat != null) {
+                matcher.appendReplacement(result, parseStatWithType(stat, extraData));
             }
         }
 
-        return input;
+        matcher.appendTail(result);
+
+        return result.toString();
     }
 
-    /**
-     * Parses the stat with no extra details
-     *
-     * @param stat the stat selected
-     *
-     * @return the replacement string
-     */
-    private String parseStat(Stat stat) {
+    private String parseStatWithType(Stat stat, String extraData) {
+        return PARSERS.getOrDefault(stat.getParseType(), (s, e) -> parseStat(s))
+            .apply(stat, extraData);
+    }
+
+    private static String parseStat(Stat stat) {
         return stat.getStat();
     }
 
-    /**
-     * Displays the selected stat with its extra details and id in its primary color
-     *
-     * @param stat         the selected stat
-     * @param extraDetails the extra arguments provided
-     *
-     * @return returns the color parsed replacement string
-     */
-    private String normalStatColorParser(Stat stat, String extraDetails) {
-        if (extraDetails == null || extraDetails.isEmpty()) {
-            return "&" + stat.getColor().getCode() + stat.getDisplay();
-        }
-
-        return "&" + stat.getColor().getCode() + extraDetails + stat.getDisplay();
+    private static String normalStatColorParser(Stat stat, String extraDetails) {
+        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + (extraDetails == null || extraDetails.isEmpty() ? stat.getDisplay() : extraDetails + stat.getDisplay());
     }
 
-    /**
-     * Displays the selected stat with its icon bolded extra details and id in its primary color
-     *
-     * @param stat         the selected stat
-     * @param extraDetails the extra arguments provided
-     *
-     * @return the color parsed replacement string
-     */
-    private String boldedIconColorParser(Stat stat, String extraDetails) {
-        return "&" + stat.getColor().getCode() + extraDetails
-            + "&" + stat.getColor().getCode()
-            + "&" + ChatFormat.BOLD.getCode() + stat.getIcon()
-            + "&" + stat.getColor().getCode() + " " + stat.getStat();
+    private static String boldedIconColorParser(Stat stat, String extraDetails) {
+        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + extraDetails +
+            ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + stat.getIcon() +
+            ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + " " + stat.getStat();
     }
 
-    /**
-     * Displays the selected stat with its icon bolded
-     *
-     * @param stat the selected stat
-     *
-     * @return the color parsed replacement string
-     */
-    private String boldedIconParser(Stat stat) {
-        return "&" + stat.getColor().getCode() + "&" + ChatFormat.BOLD.getCode() + stat.getIcon();
+    private static String boldedIconParser(Stat stat) {
+        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + stat.getIcon();
     }
 
-    /**
-     * Displays the selected stat with numbers in the secondary color and remaining text in primary color
-     *
-     * @param stat         the stat selected
-     * @param extraDetails the extra arguments provided
-     *
-     * @return returns the color parsed replacement string
-     */
-    private String dualStatColorParser(Stat stat, String extraDetails) {
-        if (extraDetails.isEmpty()) {
-            return normalStatColorParser(stat, extraDetails);
-        }
-
-        return "&" + stat.getSecondaryColor().getCode() + extraDetails + "&" + stat.getColor().getCode() + stat.getDisplay();
+    private static String dualStatColorParser(Stat stat, String extraDetails) {
+        return extraDetails.isEmpty()
+            ? normalStatColorParser(stat, extraDetails)
+            : ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + extraDetails + ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getDisplay();
     }
 
-    /**
-     * Displays the stat with no extra details added on
-     *
-     * @param stat the stat selected
-     *
-     * @return returns the color parsed replacement string
-     */
-    private String noParsing(Stat stat, String e) {
-        return "&" + stat.getColor().getCode() + stat.getStat();
+    private static String noParsing(Stat stat) {
+        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getStat();
     }
 
-
-    /**
-     * Displays the stat with bolded asterisk around it
-     *
-     * @param stat the stat selected
-     *
-     * @return the color parsed replacement string
-     */
-    private String soulboundColorParsing(Stat stat, String e) {
-        return "&" + stat.getColor().getCode() + "&" + ChatFormat.BOLD.getCode() + "* &" + stat.getColor().getCode() + stat.getStat() + " &" + stat.getColor().getCode() + "&" + ChatFormat.BOLD.getCode() + "*";
+    private static String soulboundColorParsing(Stat stat, String e) {
+        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + "* &" +
+            stat.getColor().getCode() + stat.getStat() + " &" +
+            stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + "*";
     }
 
-    /**
-     * Displays the selected stat with extra data after the id.
-     *
-     * @param stat         the stat selected
-     * @param extraDetails the extra arguments provided
-     *
-     * @return returns the color parsed replacement string
-     */
-    private String postStatColorParser(Stat stat, String extraDetails) {
-        // TODO expand to other methods
-        if (extraDetails == null) {
-            return "&" + stat.getColor().getCode() + stat.getDisplay();
-        }
-
-        return "&" + stat.getColor().getCode() + stat.getDisplay() + " " + extraDetails;
+    private static String postStatColorParser(Stat stat, String extraDetails) {
+        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getDisplay() +
+            (extraDetails != null ? " " + extraDetails : "");
     }
 
-    /**
-     * Displays the selected stat with the text after it changed color
-     *
-     * @param stat         the stat selected
-     * @param extraDetails the extra arguments provided
-     *
-     * @return the color parsed replacement string
-     */
-    private String postDualColorParser(Stat stat, String extraDetails) {
-        return "&" + stat.getColor().getCode() + stat.getStat() + " &" + stat.getSecondaryColor().getCode() + extraDetails;
+    private static String postDualColorParser(Stat stat, String extraDetails) {
+        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getStat() +
+            " " + ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + extraDetails;
     }
 
-    /**
-     * Displays the selected stat with an Item Stat and amount
-     *
-     * @param stat         the stat selected
-     * @param extraDetails the extra arguments provided
-     *
-     * @return returns the color parsed replacements string
-     */
-    private String itemStatColorParser(Stat stat, String extraDetails) {
-        if (extraDetails.isEmpty()) {
-            return "ITEM_STAT_MISSING_DETAILS";
-        }
-
+    private static String itemStatColorParser(Stat stat, String extraDetails) {
+        if (extraDetails.isEmpty()) return "ITEM_STAT_MISSING_DETAILS";
         int separator = extraDetails.indexOf(":");
-        if (separator == -1) {
-            return "ITEM_STAT_MISSING_SEPARATOR";
-        }
+        if (separator == -1) return "ITEM_STAT_MISSING_SEPARATOR";
 
         String itemStat = extraDetails.substring(0, separator);
         String amount = extraDetails.substring(separator + 1);
 
-        return "&" + ChatFormat.GRAY.getCode() + itemStat + ": &" + stat.getSecondaryColor().getCode() + amount;
+        return ChatFormat.AMPERSAND_SYMBOL + ChatFormat.GRAY.getCode() + itemStat + ": " + ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + amount;
     }
 
-    /**
-     * Displays the selected stat with an Ability name and amount
-     *
-     * @param stat         the stat selected (ABILITY)
-     * @param extraDetails the extra arguments provided
-     *
-     * @return the color parsed replacements string
-     */
-    private String abilityColorParser(Stat stat, String extraDetails) {
-        if (extraDetails.isEmpty()) {
-            return "ABILITY_MISSING_DETAILS";
-        }
-
+    private static String abilityColorParser(Stat stat, String extraDetails) {
+        if (extraDetails.isEmpty()) return "ABILITY_MISSING_DETAILS";
         int separator = extraDetails.indexOf(":");
-        if (separator == -1) {
-            return "ABILITY_MISSING_SEPARATOR";
-        }
+        if (separator == -1) return "ABILITY_MISSING_SEPARATOR";
 
         String abilityName = extraDetails.substring(0, separator);
         String abilityType = extraDetails.substring(separator + 1);
 
-        return "&" + stat.getColor().getCode() + stat.getStat() + ": " + abilityName + " &" + stat.getSecondaryColor().getCode() + "&" + ChatFormat.BOLD.getCode() + abilityType;
+        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getStat() + ": " + abilityName +
+            " " + ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + abilityType;
     }
 
-    /**
-     * Displays the selected stat with the icon in the primary color and the text in the secondary color
-     *
-     * @param stat         the stat selected
-     * @param extraDetails the extra arguments provided
-     *
-     * @return the color parsed replacement string
-     */
-    private String differentIconColorParser(Stat stat, String extraDetails) {
-        if (extraDetails == null) {
-            return "&" + stat.getColor().getCode() + stat.getIcon() + " &" + stat.getSecondaryColor().getCode() + stat.getStat();
-        }
-
-        return "&" + stat.getColor().getCode() + stat.getIcon() + " &" + stat.getSecondaryColor().getCode() + stat.getStat() + " " + extraDetails;
+    private static String differentIconColorParser(Stat stat, String extraDetails) {
+        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getIcon() +
+            " " + ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + stat.getStat() +
+            (extraDetails != null ? " " + extraDetails : "");
     }
 }
