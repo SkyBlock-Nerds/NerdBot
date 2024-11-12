@@ -11,7 +11,7 @@ public class ColorCodeParser implements StringParser {
     public String parse(String input) {
         for (ChatFormat value : ChatFormat.VALUES) {
             Pattern pattern = Pattern.compile("%%" + value.name() + "%%", Pattern.CASE_INSENSITIVE);
-            input = pattern.matcher(input).replaceAll("&" + value.getCode());
+            input = pattern.matcher(input).replaceAll(String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + value.getCode());
         }
 
         return input;

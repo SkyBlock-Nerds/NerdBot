@@ -36,6 +36,7 @@ public enum ChatFormat {
 
     public static final ChatFormat[] VALUES = values();
     public static final char SECTION_SYMBOL = '§';
+    public static final char AMPERSAND_SYMBOL = '&';
 
     @Getter
     private final char code;

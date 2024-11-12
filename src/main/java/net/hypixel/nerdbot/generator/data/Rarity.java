@@ -46,10 +46,10 @@ public class Rarity {
     }
 
     public String getColorCode() {
-        return "&" + color.getCode();
+        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL + color.getCode());
     }
 
     public String getFormattedDisplay() {
-        return getColorCode() + "&" + ChatFormat.BOLD.getCode() + display;
+        return getColorCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + display;
     }
 }

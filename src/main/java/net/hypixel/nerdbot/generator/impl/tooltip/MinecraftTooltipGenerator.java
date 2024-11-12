@@ -11,6 +11,7 @@ import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
+import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
 import net.hypixel.nerdbot.util.Range;
@@ -68,12 +69,11 @@ public class MinecraftTooltipGenerator implements Generator {
      */
     @Nullable
     public BufferedImage buildItem(String itemLoreString, TooltipSettings settings) {
-        MinecraftTooltip parsedLore = parseLore(itemLoreString, settings);
-        return parsedLore.render().getImage();
+        return parseLore(itemLoreString, settings).render().getImage();
     }
 
     public MinecraftTooltip parseLore(String input, TooltipSettings settings) {
-        log.info("Parsing lore for item: {} with settings {}", name, settings);
+        log.debug("Parsing lore for item: {} with TooltipSettings: {}", name, settings);
 
         MinecraftTooltip.Builder builder = MinecraftTooltip.builder()
             .withPadding(settings.getPadding())
@@ -210,7 +210,7 @@ public class MinecraftTooltipGenerator implements Generator {
                 this.itemLore += jsonElement.getAsString() + "\\n";
             });
 
-            this.itemLore = this.itemLore.replaceAll("§", "&");
+            this.itemLore = this.itemLore.replaceAll(String.valueOf(ChatFormat.SECTION_SYMBOL), String.valueOf(ChatFormat.AMPERSAND_SYMBOL));
 
             return this;
         }
