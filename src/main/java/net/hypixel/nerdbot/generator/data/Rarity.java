@@ -46,7 +46,7 @@ public class Rarity {
     }
 
     public String getColorCode() {
-        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL + color.getCode());
+        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + color.getCode();
     }
 
     public String getFormattedDisplay() {

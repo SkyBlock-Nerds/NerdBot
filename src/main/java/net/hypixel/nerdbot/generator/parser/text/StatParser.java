@@ -60,17 +60,17 @@ public class StatParser implements StringParser {
     }
 
     private static String normalStatColorParser(Stat stat, String extraDetails) {
-        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + (extraDetails == null || extraDetails.isEmpty() ? stat.getDisplay() : extraDetails + stat.getDisplay());
+        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + (extraDetails == null || extraDetails.isEmpty() ? stat.getDisplay() : extraDetails + stat.getDisplay());
     }
 
     private static String boldedIconColorParser(Stat stat, String extraDetails) {
-        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + extraDetails +
+        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + extraDetails +
             ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + stat.getIcon() +
             ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + " " + stat.getStat();
     }
 
     private static String boldedIconParser(Stat stat) {
-        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + stat.getIcon();
+        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + stat.getIcon();
     }
 
     private static String dualStatColorParser(Stat stat, String extraDetails) {
@@ -80,29 +80,35 @@ public class StatParser implements StringParser {
     }
 
     private static String noParsing(Stat stat) {
-        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getStat();
+        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + stat.getStat();
     }
 
     private static String soulboundColorParsing(Stat stat, String e) {
-        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + "* &" +
-            stat.getColor().getCode() + stat.getStat() + " &" +
+        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + "* " + ChatFormat.AMPERSAND_SYMBOL +
+            stat.getColor().getCode() + stat.getStat() + " " + ChatFormat.AMPERSAND_SYMBOL +
             stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + "*";
     }
 
     private static String postStatColorParser(Stat stat, String extraDetails) {
-        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getDisplay() +
+        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + stat.getDisplay() +
             (extraDetails != null ? " " + extraDetails : "");
     }
 
     private static String postDualColorParser(Stat stat, String extraDetails) {
-        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getStat() +
+        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + stat.getStat() +
             " " + ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + extraDetails;
     }
 
     private static String itemStatColorParser(Stat stat, String extraDetails) {
-        if (extraDetails.isEmpty()) return "ITEM_STAT_MISSING_DETAILS";
+        if (extraDetails.isEmpty()) {
+            return "ITEM_STAT_MISSING_DETAILS";
+        }
+
         int separator = extraDetails.indexOf(":");
-        if (separator == -1) return "ITEM_STAT_MISSING_SEPARATOR";
+
+        if (separator == -1) {
+            return "ITEM_STAT_MISSING_SEPARATOR";
+        }
 
         String itemStat = extraDetails.substring(0, separator);
         String amount = extraDetails.substring(separator + 1);
@@ -111,9 +117,15 @@ public class StatParser implements StringParser {
     }
 
     private static String abilityColorParser(Stat stat, String extraDetails) {
-        if (extraDetails.isEmpty()) return "ABILITY_MISSING_DETAILS";
+        if (extraDetails.isEmpty()) {
+            return "ABILITY_MISSING_DETAILS";
+        }
+
         int separator = extraDetails.indexOf(":");
-        if (separator == -1) return "ABILITY_MISSING_SEPARATOR";
+
+        if (separator == -1) {
+            return "ABILITY_MISSING_SEPARATOR";
+        }
 
         String abilityName = extraDetails.substring(0, separator);
         String abilityType = extraDetails.substring(separator + 1);
