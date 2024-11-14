@@ -88,7 +88,7 @@ public class MinecraftTooltipGenerator implements Generator {
                 name = rarity.getColorCode() + name;
             }
 
-            builder.withLines(LineSegment.fromLegacy(name, '&'));
+            builder.withLines(LineSegment.fromLegacy(TextWrapper.parseLine(name), '&'));
         }
 
         List<List<LineSegment>> segments = new ArrayList<>();

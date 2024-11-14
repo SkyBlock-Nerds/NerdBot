@@ -64,7 +64,7 @@ public class TextWrapper {
         lines.add(currentLine.toString().trim());
     }
 
-    private static String parseLine(String line) {
+    public static String parseLine(String line) {
         return Parser.parseString(line, List.of(
             new ColorCodeParser(),
             new IconParser(),
