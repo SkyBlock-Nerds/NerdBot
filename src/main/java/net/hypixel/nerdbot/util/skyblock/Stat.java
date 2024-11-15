@@ -57,6 +57,7 @@ public enum Stat {
     FUEL("♢", "Fuel", MCColor.DARK_GREEN),
     MITHRIL_POWDER("᠅", "Mithril Powder", MCColor.DARK_GREEN),
     GEMSTONE_POWDER("᠅", "Gemstone Powder", MCColor.LIGHT_PURPLE),
+    GLACITE_POWDER("᠅", "Glacite Powder", MCColor.AQUA),
     COLD_RESISTANCE("❄", "Cold Resistance", MCColor.AQUA),
     COLD("❄", "Cold", MCColor.AQUA),
     HEAT("♨", "Heat", MCColor.RED),
