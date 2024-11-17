@@ -14,7 +14,6 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -85,7 +84,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         if (hidden == null) {
-            hidden = getAutoHideSettingFromUserByGuildSlashEvent(event);
+            hidden = getUserAutoHideSetting(event);
         }
         event.deferReply(hidden).complete();
 
@@ -125,7 +124,7 @@ public class GeneratorCommands extends ApplicationCommand {
     @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "search", description = "Search for an item")
     public void searchItem(GuildSlashEvent event, @AppOption(description = "The ID of the item to search for") String itemId, @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden) {
         if (hidden == null) {
-            hidden = getAutoHideSettingFromUserByGuildSlashEvent(event);
+            hidden = getUserAutoHideSetting(event);
         }
         event.deferReply(hidden).complete();
 
@@ -153,7 +152,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         if (hidden == null) {
-            hidden = getAutoHideSettingFromUserByGuildSlashEvent(event);
+            hidden = getUserAutoHideSetting(event);
         }
         event.deferReply(hidden).complete();
 
@@ -181,7 +180,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         if (hidden == null) {
-            hidden = getAutoHideSettingFromUserByGuildSlashEvent(event);
+            hidden = getUserAutoHideSetting(event);
         }
         event.deferReply(hidden).complete();
 
@@ -221,7 +220,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         if (hidden == null) {
-            hidden = getAutoHideSettingFromUserByGuildSlashEvent(event);
+            hidden = getUserAutoHideSetting(event);
         }
         event.deferReply(hidden).complete();
 
@@ -271,7 +270,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         if (hidden == null) {
-            hidden = getAutoHideSettingFromUserByGuildSlashEvent(event);
+            hidden = getUserAutoHideSetting(event);
         }
         event.deferReply(hidden).complete();
 
@@ -365,7 +364,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         if (hidden == null) {
-            hidden = getAutoHideSettingFromUserByGuildSlashEvent(event);
+            hidden = getUserAutoHideSetting(event);
         }
         event.deferReply(hidden).complete();
 
@@ -450,7 +449,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         if (hidden == null) {
-            hidden = getAutoHideSettingFromUserByGuildSlashEvent(event);
+            hidden = getUserAutoHideSetting(event);
         }
         event.deferReply(hidden).complete();
 
@@ -496,7 +495,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         if (hidden == null) {
-            hidden = getAutoHideSettingFromUserByGuildSlashEvent(event);
+            hidden = getUserAutoHideSetting(event);
         }
         abiphone = abiphone != null && abiphone;
         maxLineLength = maxLineLength == null ? 91 : maxLineLength;
@@ -562,7 +561,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         if (hidden == null) {
-            hidden = getAutoHideSettingFromUserByGuildSlashEvent(event);
+            hidden = getUserAutoHideSetting(event);
         }
         abiphone = abiphone != null && abiphone;
         maxLineLength = maxLineLength == null ? 91 : maxLineLength;
@@ -697,7 +696,7 @@ public class GeneratorCommands extends ApplicationCommand {
      * @param event The {@link GuildSlashEvent} triggered by the user you want to get the auto hide preference from.
      * @return      The auto hide preference from the user.
      */
-    private boolean getAutoHideSettingFromUserByGuildSlashEvent(GuildSlashEvent event){
+    private boolean getUserAutoHideSetting(GuildSlashEvent event){
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser user = repository.findById(event.getMember().getId());
         return user.isAutoHideGenCommands();
