@@ -74,7 +74,7 @@ public class DiscordUser {
     private static boolean getDefaultAutoHideGenCommands() {
         // TODO add Logic to retrieve the value from config file
         // Atleast I think it should probably be a config -socksm
-        return true;
+        return false;
     }
 
     public boolean isProfileAssigned() {
