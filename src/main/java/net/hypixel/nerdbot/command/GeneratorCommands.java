@@ -73,6 +73,8 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
 
+    private static final boolean AUTO_HIDE_ON_ERROR = true;
+
     @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "display", description = "Display an item")
     public void generateItem(
         GuildSlashEvent event,
@@ -697,8 +699,13 @@ public class GeneratorCommands extends ApplicationCommand {
      * @return      The auto hide preference from the user.
      */
     private boolean getUserAutoHideSetting(GuildSlashEvent event){
-        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser user = repository.findById(event.getMember().getId());
-        return user.isAutoHideGenCommands();
+        try {
+            DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+            DiscordUser user = repository.findById(event.getMember().getId());
+            return user.isAutoHideGenCommands();
+        }
+        catch (NullPointerException exception) {
+            return AUTO_HIDE_ON_ERROR;
+        }
     }
 }
