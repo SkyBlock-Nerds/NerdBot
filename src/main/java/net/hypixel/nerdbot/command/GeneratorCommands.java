@@ -702,10 +702,11 @@ public class GeneratorCommands extends ApplicationCommand {
     private boolean getUserAutoHideSetting(GuildSlashEvent event) {
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser user = repository.findById(event.getMember().getId());
+        
         if (user != null) {
             return user.isAutoHideGenCommands();
         }
+        
         return AUTO_HIDE_ON_ERROR;
-
     }
 }
