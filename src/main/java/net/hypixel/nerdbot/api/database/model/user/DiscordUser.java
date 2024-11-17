@@ -40,6 +40,7 @@ public class DiscordUser {
     private BirthdayData birthdayData;
     private MojangProfile mojangProfile;
     private GeneratorHistory generatorHistory;
+    private boolean autoHideGenCommands;
 
     public DiscordUser() {
     }
@@ -52,7 +53,8 @@ public class DiscordUser {
             new LastActivity(),
             new BirthdayData(),
             new MojangProfile(),
-            new GeneratorHistory()
+            new GeneratorHistory(),
+            getDefaultAutoHideGenCommands()
         );
     }
 
@@ -64,8 +66,15 @@ public class DiscordUser {
             new LastActivity(),
             new BirthdayData(),
             new MojangProfile(),
-            new GeneratorHistory()
+            new GeneratorHistory(),
+            getDefaultAutoHideGenCommands()
         );
+    }
+
+    private static boolean getDefaultAutoHideGenCommands() {
+        // TODO add Logic to retrieve the value from config file
+        // Atleast I think it should probably be a config -socksm
+        return true;
     }
 
     public boolean isProfileAssigned() {
