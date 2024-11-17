@@ -63,7 +63,6 @@ public class UserCommands extends ApplicationCommand {
         }
 
         user.setAutoHideGenCommands(autohide);
-
         TranslationManager.edit(event.getHook(), user, "commands.auto_hide_preference.preference_set_" + Boolean.toString(autohide));
     }
 }
