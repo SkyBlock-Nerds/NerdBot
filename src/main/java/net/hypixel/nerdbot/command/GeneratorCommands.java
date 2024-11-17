@@ -696,16 +696,17 @@ public class GeneratorCommands extends ApplicationCommand {
      * Gets the gen command auto hide preference from a {@link GuildSlashEvent}.
      *
      * @param event The {@link GuildSlashEvent} triggered by the user you want to get the auto hide preference from.
-     * @return      The auto hide preference from the user.
+     *
+     * @return The auto hide preference from the user.
      */
-    private boolean getUserAutoHideSetting(GuildSlashEvent event){
-        try {
-            DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-            DiscordUser user = repository.findById(event.getMember().getId());
+    private boolean getUserAutoHideSetting(GuildSlashEvent event) {
+
+        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser user = repository.findById(event.getMember().getId());
+        if (user != null) {
             return user.isAutoHideGenCommands();
         }
-        catch (NullPointerException exception) {
-            return AUTO_HIDE_ON_ERROR;
-        }
+        return AUTO_HIDE_ON_ERROR;
+
     }
 }
