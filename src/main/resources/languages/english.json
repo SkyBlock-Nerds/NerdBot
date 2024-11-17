@@ -62,8 +62,8 @@
       "language_set": "You set your language to %s"
     },
     "auto_hide_preference": {
-      "preference_set_true": "Your gen commands will now be automatically hidden",
-      "preference_set_false": "Your gen commands will now be automatically shown"
+      "preference_set_true": "Your generator commands will now be automatically hidden.",
+      "preference_set_false": "Your generator commands will now be automatically shown."
     },
     "invite": {
       "header": "Created %d invites:",
