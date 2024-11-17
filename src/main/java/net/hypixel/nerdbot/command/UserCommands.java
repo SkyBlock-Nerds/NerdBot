@@ -5,6 +5,7 @@ import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
@@ -14,6 +15,7 @@ import net.hypixel.nerdbot.repository.DiscordUserRepository;
 
 import java.util.List;
 
+@Slf4j
 public class UserCommands extends ApplicationCommand {
 
     public static final String SETTING_BASE_COMMAND = "setting";

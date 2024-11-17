@@ -14,6 +14,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
