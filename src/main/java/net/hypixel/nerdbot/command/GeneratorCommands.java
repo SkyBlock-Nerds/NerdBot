@@ -700,7 +700,6 @@ public class GeneratorCommands extends ApplicationCommand {
      * @return The auto hide preference from the user.
      */
     private boolean getUserAutoHideSetting(GuildSlashEvent event) {
-
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser user = repository.findById(event.getMember().getId());
         if (user != null) {
