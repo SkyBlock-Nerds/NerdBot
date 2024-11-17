@@ -176,7 +176,7 @@
     "translations": {
       "reloaded": "Reloaded translations for language %s",
       "reload_complete": "Reloaded translations for all languages!",
-      "not_found": "Translation not found, Using Default."
+      "not_found": "Translation not found, using default."
     },
     "force_nominations": {
       "success": "Forced nominations!"
