@@ -14,13 +14,16 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Entitlement;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.generator.data.PowerStrength;
 import net.hypixel.nerdbot.generator.data.Rarity;
+import net.hypixel.nerdbot.generator.data.Stat;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
 import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
@@ -38,8 +41,10 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 @Log4j2
 public class GeneratorCommands extends ApplicationCommand {
@@ -656,6 +661,161 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginal("An error occurred while fetching your generator command history!").queue();
             log.error("Encountered an error while fetching generator command history for {}", event.getUser().getId(), e);
         }
+    }
+
+    @JDASlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate a powerstone power.")
+    public void generatePowerstone(
+        GuildSlashEvent event,
+        @AppOption(description = "The name of your powerstone") String powerName,
+        @AppOption(autocomplete = "power-strengths", description = "The kind of power stone") String powerStrength,
+        @AppOption(description = "The magical power to calculate with the scaling stats and what will be displayed.") int magicalPower,
+        @AppOption(description = "The  stats that change with magical power") String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
+        @AppOption(description = "The static stats that don't change with magical power") @Optional String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
+        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
+        @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
+        @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
+        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
+        @AppOption(description = "Changes the text at the bottom to display if its selected or not.") @Optional Boolean selected,
+        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+    ) {
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
+        event.deferReply(hidden).complete();
+
+        alpha = alpha == null ? 245 : alpha;
+        padding = padding == null ? 0 : padding;
+
+        // Function to parse stats
+        Function<String, HashMap<String, Integer>> parseStatsToMap = stats -> {
+            HashMap<String, Integer> map = new HashMap<>();
+            String[] entries = stats.split(",");
+            for (String entry : entries) {
+                String[] stat = entry.split(":");
+                if (stat.length != 2 || stat[0].trim().isEmpty() || stat[1].trim().isEmpty()) {
+                    throw new GeneratorException("Invalid stats format: '" + entry + "'. Ensure each stat is in the format 'statName:integerValue'.");
+                }
+                String statName = stat[0].trim();
+                if (map.containsKey(statName)){
+                    throw new GeneratorException("Invalid stats list: Ensure you only have the same type of stat once. Duplicate stat: `" + statName + "`");
+                }
+
+                Integer statValue;
+                try {
+                    statValue = Integer.parseInt(stat[1].trim());
+                } catch (NumberFormatException e) {
+                    throw new GeneratorException("Invalid number format for stat '" + statName + "'. Ensure all values are integers.");
+                }
+                map.put(statName, statValue);
+            }
+            return map;
+        };
+
+        try {
+            String scalingStatsFormatted = "";
+            for (Map.Entry<String, Integer> entry : parseStatsToMap.apply(scalingStats).entrySet()){
+                String statName = entry.getKey();
+                Integer basePower = entry.getValue();
+                Stat stat = Stat.byName(statName);
+                if (stat == null){
+                    throw new GeneratorException("'" + statName + "' isn't a stat. Are you sure you typed it correctly?");
+                }
+
+                double statMultiplier = stat.getPowerScalingMultiplier() != null ? Stat.byName(statName).getPowerScalingMultiplier() : 1;
+
+                scalingStatsFormatted += String.format("%%%%%s:%d%%%%\\n",
+                    statName,
+                    Math.round(((double)basePower/100)*statMultiplier*719.28*Math.pow(Math.log(1+(0.0019*magicalPower)), 1.2))
+                );
+            }
+
+            String bonusStatsFormatted = "";
+            for (Map.Entry<String, Integer> entry : (uniqueBonus != null ? parseStatsToMap.apply(uniqueBonus) : new HashMap<String, Integer>()).entrySet()){
+                String statName = entry.getKey();
+                Integer statAmount = entry.getValue();
+                Stat stat = Stat.byName(statName);
+                if (stat == null){
+                    throw new GeneratorException("'" + statName + "' isn't a stat. Are you sure you typed it correctly?");
+                }
+
+                bonusStatsFormatted += String.format("%%%%%s:%d%%%%\\n",
+                    statName,
+                    statAmount
+                );
+            }
+            bonusStatsFormatted = "&7Unique Power Bonus:\\n" + bonusStatsFormatted + "\\n";
+
+            String itemLoreTemplate =
+                "&8%s\\n" + // %s = PowerStrength.byName(powerStrength) OR powerStrength
+                "\\n" +
+                "&7Stats:\\n" +
+                "%s" + // %s = scalingStatsFormatted
+                "\\n" +
+                "%s" + // %s = bonusStatsFormatted
+                "&7You Have: &6%s Magical Power\\n" + // %d = magicalPower
+                "\\n" +
+                (selected == null || selected ? "&aPower is Selected!" : "&eClick to Select power!");
+
+            String itemLore = String.format(itemLoreTemplate,
+                PowerStrength.byName(powerStrength) == null ? powerStrength : PowerStrength.byName(powerStrength).getFormattedDisplay(),
+                scalingStatsFormatted,
+                bonusStatsFormatted,
+                magicalPower
+                );
+
+            try {
+                GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+                MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                    .withName("&a"+powerName)
+                    .withRarity(Rarity.byName("none"))
+                    .withItemLore(itemLore)
+                    .withAlpha(alpha)
+                    .withPadding(padding)
+                    .withEmptyLine(true)
+                    .isTextCentered(false)
+                    .isPaddingFirstLine(true)
+                    .withRenderBorder(true)
+                    .build();
+
+                if (itemId != null) {
+                    if (itemId.equalsIgnoreCase("player_head")) {
+                        MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder()
+                            .withScale(-2);
+
+                        if (skinValue != null) {
+                            generator.withSkin(skinValue);
+                        }
+
+                        generatorImageBuilder.addGenerator(generator.build());
+                    } else {
+                        generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                            .withItem(itemId)
+                            .isBigImage()
+                            .build());
+                    }
+                }
+
+                generatorImageBuilder.addGenerator(tooltipGenerator);
+                GeneratedObject generatedObject = generatorImageBuilder.build();
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+                addCommandToUserHistory(event.getUser(), event.getCommandString());
+
+            } catch (GeneratorException | IllegalArgumentException exception) {
+                event.getHook().editOriginal(exception.getMessage()).queue();
+                log.error("Encountered an error while generating an item display", exception);
+            } catch (IOException exception) {
+                event.getHook().editOriginal("An error occurred while generating that item!").queue();
+                log.error("Encountered an error while generating an item display", exception);
+            }
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating dialogue", exception);
+        }
+    }
+
+    @AutocompletionHandler(name = "power-strengths", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
+    public List<String> powerStrenghts(CommandAutoCompleteInteractionEvent event){
+        return PowerStrength.getPowerStrengthNames();
     }
 
     @AutocompletionHandler(name = "item-names", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
