@@ -520,5 +520,104 @@
         "color": "DARK_GREEN",
         "subColor": null,
         "parseType": "NONE"
+    },
+    {
+        "icon": "☘",
+        "name": "global_fortune",
+        "stat": "Global Fortune",
+        "display": "☘ Global Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "wheat_fortune",
+        "stat": "Wheat Fortune",
+        "display": "☘ Wheat Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "carrot_fortune",
+        "stat": "Carrot Fortune",
+        "display": "☘ Carrot Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "potato_fortune",
+        "stat": "Potato Fortune",
+        "display": "☘ Potato Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "pumpkin_fortune",
+        "stat": "Pumpkin Fortune",
+        "display": "☘ Pumpkin Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "melon_fortune",
+        "stat": "Melon Fortune",
+        "display": "☘ Melon Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "mushroom_fortune",
+        "stat": "Mushroom Fortune",
+        "display": "☘ Mushroom Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "cactus_fortune",
+        "stat": "Cactus Fortune",
+        "display": "☘ Cactus Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "sugar_cane_fortune",
+        "stat": "Sugar Cane Fortune",
+        "display": "☘ Sugar Cane Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "nether_wart_fortune",
+        "stat": "Nether Wart Fortune",
+        "display": "☘ Nether Wart Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "cocoa_beans_fortune",
+        "stat": "Cocoa Beans Fortune",
+        "display": "☘ Cocoa Beans Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
     }
 ]
