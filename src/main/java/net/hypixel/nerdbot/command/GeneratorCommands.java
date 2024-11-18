@@ -21,6 +21,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.data.PowerStrength;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.data.Stat;
@@ -675,6 +676,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
+        @AppOption(description = "Determines if the `" + BASE_COMMAND + " item full` is included.") @Optional Boolean includeGenFullCommand,
         @AppOption(description = "Changes the text at the bottom to display if its selected or not.") @Optional Boolean selected,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
@@ -777,6 +779,24 @@ public class GeneratorCommands extends ApplicationCommand {
                     .withRenderBorder(true)
                     .build();
 
+                if (includeGenFullCommand != null && includeGenFullCommand){
+                    event.getHook().sendMessage(
+                        "Your powerstone has been parsed into a slash command:\n```" +
+                        new MinecraftTooltipGenerator.Builder()
+                        .withName("&a"+powerName)
+                        .withRarity(Rarity.byName("none"))
+                        .withItemLore(itemLore)
+                        .withAlpha(alpha)
+                        .withPadding(padding)
+                        .withEmptyLine(true)
+                        .isTextCentered(false)
+                        .isPaddingFirstLine(true)
+                        .withRenderBorder(true)
+                        .buildSlashCommand()+
+                        "```"
+                    ).queue();
+                }
+
                 if (itemId != null) {
                     if (itemId.equalsIgnoreCase("player_head")) {
                         MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder()
@@ -811,6 +831,7 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating dialogue", exception);
         }
+
     }
 
     @AutocompletionHandler(name = "power-strengths", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
