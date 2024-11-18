@@ -781,7 +781,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
                 if (includeGenFullCommand != null && includeGenFullCommand){
                     event.getHook().sendMessage(
-                        "Your powerstone has been parsed into a slash command:\n```" +
+                        "Your powerstone has been parsed into a slash command:\n```" + // TODO wait for someone to merge pr#329 https://github.com/SkyBlock-Nerds/NerdBot/pull/329
                         new MinecraftTooltipGenerator.Builder()
                         .withName("&a"+powerName)
                         .withRarity(Rarity.byName("none"))
