@@ -619,5 +619,113 @@
         "color": "GOLD",
         "subColor": null,
         "parseType": "NORMAL"
+    },
+    {
+        "icon": "▚",
+        "name": "mining_spread",
+        "stat": "Mining Spread",
+        "display": "▚ Mining Spread",
+        "color": "YELLOW",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "▚",
+        "name": "gemstone_spread",
+        "stat": "Gemstone Spread",
+        "display": "▚ Gemstone Spread",
+        "color": "YELLOW",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "ore_fortune",
+        "stat": "Ore Fortune",
+        "display": "☘ Ore Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "block_fortune",
+        "stat": "Block Fortune",
+        "display": "☘ Block Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "dwarven_metal_fortune",
+        "stat": "Dwarven Metal Fortune",
+        "display": "☘ Dwarven Metal Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "gemstone_fortune",
+        "stat": "Gemstone Fortune",
+        "display": "☘ Gemstone Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⚓",
+        "name": "double_hook_chance",
+        "stat": "Double Hook Chance",
+        "display": "⚓ Double Hook Chance",
+        "color": "BLUE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "♔",
+        "name": "trophy_fish_chance",
+        "stat": "Trophy Fish Chance",
+        "display": "♔ Trophy Fish Chance",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "ൠ",
+        "name": "bonus_pest_chace",
+        "stat": "Bonus Pest Chance",
+        "display": "ൠ Bonus Pest Chance",
+        "color": "DARK_GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "♨",
+        "name": "heat_resistance",
+        "stat": "Heat Resistance",
+        "display": "♨ Heat Resistance",
+        "color": "RED",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "❄",
+        "name": "cold_resistance",
+        "stat": "Cold Resistance",
+        "display": "❄ Cold Resistance",
+        "color": "AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☠",
+        "name": "fear",
+        "stat": "Fear",
+        "display": "☠ Fear",
+        "color": "DARK_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
     }
 ]
