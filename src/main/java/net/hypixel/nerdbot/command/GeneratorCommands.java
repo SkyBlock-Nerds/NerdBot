@@ -745,7 +745,9 @@ public class GeneratorCommands extends ApplicationCommand {
                     statAmount
                 );
             }
-            bonusStatsFormatted = "&7Unique Power Bonus:\\n" + bonusStatsFormatted + "\\n";
+            if (!bonusStatsFormatted.isEmpty()){
+                bonusStatsFormatted = "&7Unique Power Bonus:\\n" + bonusStatsFormatted + "\\n";
+            }
 
             String itemLoreTemplate =
                 "&8%s\\n" + // %s = PowerStrength.byName(powerStrength) OR powerStrength
