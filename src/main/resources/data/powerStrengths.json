@@ -1,0 +1,32 @@
+[
+    {
+        "name": "marvelous",
+        "display": "Marvelous",
+        "stone": true
+    },
+    {
+        "name": "grandiose",
+        "display": "Grandiose",
+        "stone": true
+    },
+    {
+        "name": "master",
+        "display": "Master",
+        "stone": true
+    },
+    {
+        "name": "advanced",
+        "display": "Advanced",
+        "stone": true
+    },
+    {
+        "name": "intermediate",
+        "display": "Intermediate",
+        "stone": true
+    },
+    {
+        "name": "starter",
+        "display": "Starter",
+        "stone": false
+    }
+]

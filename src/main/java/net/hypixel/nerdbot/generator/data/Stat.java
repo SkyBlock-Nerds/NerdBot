@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.util.JsonLoader;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -36,6 +37,7 @@ public class Stat {
     private ChatFormat color;
     private ChatFormat subColor;
     private ParseType parseType;
+    @Nullable private Float powerScalingMultiplier;
 
     public static Stat byName(String name) {
         return STATS.stream()
@@ -72,4 +74,3 @@ public class Stat {
         DIFFERENT_ICON_COLOR
     }
 }
-

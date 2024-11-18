@@ -6,7 +6,8 @@
         "display": "❁ Strength",
         "color": "RED",
         "subColor": null,
-        "parseType": "NORMAL"
+        "parseType": "NORMAL",
+        "powerScalingMultiplier": 1
     },
     {
         "icon": "❁",
@@ -24,7 +25,8 @@
         "display": "❤ Health",
         "color": "RED",
         "subColor": "GREEN",
-        "parseType": "NORMAL"
+        "parseType": "NORMAL",
+        "powerScalingMultiplier": 1.4
     },
     {
         "icon": "❈",
@@ -33,7 +35,8 @@
         "display": "❈ Defense",
         "color": "GREEN",
         "subColor": null,
-        "parseType": "NORMAL"
+        "parseType": "NORMAL",
+        "powerScalingMultiplier": 1
     },
     {
         "icon": "❂",
@@ -42,7 +45,8 @@
         "display": "❂ True Defense",
         "color": "WHITE",
         "subColor": null,
-        "parseType": "NORMAL"
+        "parseType": "NORMAL",
+        "powerScalingMultiplier": 0.27
     },
     {
         "icon": "✦",
@@ -51,7 +55,8 @@
         "display": "✦ Speed",
         "color": "WHITE",
         "subColor": "GREEN",
-        "parseType": "NORMAL"
+        "parseType": "NORMAL",
+        "powerScalingMultiplier": 0.5
     },
     {
         "icon": "✎",
@@ -60,7 +65,8 @@
         "display": "✎ Intelligence",
         "color": "AQUA",
         "subColor": null,
-        "parseType": "NORMAL"
+        "parseType": "NORMAL",
+        "powerScalingMultiplier": 1.5
     },
     {
         "icon": "☣",
@@ -69,7 +75,8 @@
         "display": "☣ Crit Chance",
         "color": "BLUE",
         "subColor": null,
-        "parseType": "NORMAL"
+        "parseType": "NORMAL",
+        "powerScalingMultiplier": 0.4
     },
     {
         "icon": "☠",
@@ -78,7 +85,8 @@
         "display": "☠ Crit Damage",
         "color": "BLUE",
         "subColor": null,
-        "parseType": "NORMAL"
+        "parseType": "NORMAL",
+        "powerScalingMultiplier": 1
     },
     {
         "icon": "⚔",
@@ -87,7 +95,8 @@
         "display": "⚔ Bonus Attack Speed",
         "color": "YELLOW",
         "subColor": "GREEN",
-        "parseType": "NORMAL"
+        "parseType": "NORMAL",
+        "powerScalingMultiplier": 0.3
     },
     {
         "icon": "⫽",
@@ -105,7 +114,8 @@
         "display": "☄ Mending",
         "color": "GREEN",
         "subColor": null,
-        "parseType": "NORMAL"
+        "parseType": "NORMAL",
+        "powerScalingMultiplier": 0.25
     },
     {
         "icon": "♨",
@@ -114,7 +124,8 @@
         "display": "♨ Vitality",
         "color": "DARK_RED",
         "subColor": null,
-        "parseType": "NORMAL"
+        "parseType": "NORMAL",
+        "powerScalingMultiplier": 0.333
     },
     {
         "icon": "❣",
