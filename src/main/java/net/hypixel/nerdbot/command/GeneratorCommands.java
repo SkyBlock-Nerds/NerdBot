@@ -752,9 +752,9 @@ public class GeneratorCommands extends ApplicationCommand {
                 "%s" + // %s = scalingStatsFormatted
                 "\\n" +
                 "%s" + // %s = bonusStatsFormatted
-                "&7You Have: &6%s Magical Power\\n" + // %d = magicalPower
+                "&7You have: &6%s Magical Power\\n" + // %d = magicalPower
                 "\\n" +
-                (selected == null || selected ? "&aPower is Selected!" : "&eClick to Select power!");
+                (selected == null || selected ? "&aPower is selected!" : "&eClick to select power!");
 
             String itemLore = String.format(itemLoreTemplate,
                 PowerStrength.byName(powerStrength) == null ? powerStrength : PowerStrength.byName(powerStrength).getFormattedDisplay(),
