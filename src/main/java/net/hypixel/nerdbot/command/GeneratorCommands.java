@@ -40,6 +40,7 @@ import net.hypixel.nerdbot.util.Util;
 import java.io.File;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -670,7 +671,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = "The name of your powerstone") String powerName,
         @AppOption(autocomplete = "power-strengths", description = "The kind of power stone") String powerStrength,
         @AppOption(description = "The magical power to calculate with the scaling stats and what will be displayed.") int magicalPower,
-        @AppOption(description = "The  stats that change with magical power") String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
+        @AppOption(description = "The  stats that change with magical power") @Optional String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
         @AppOption(description = "The static stats that don't change with magical power") @Optional String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
         @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
@@ -714,8 +715,10 @@ public class GeneratorCommands extends ApplicationCommand {
         };
 
         try {
+            DecimalFormat bigNumFormat = new DecimalFormat("#,###");
+
             String scalingStatsFormatted = "";
-            for (Map.Entry<String, Integer> entry : parseStatsToMap.apply(scalingStats).entrySet()){
+            for (Map.Entry<String, Integer> entry : (scalingStats != null ? parseStatsToMap.apply(scalingStats) : new HashMap<String, Integer>()).entrySet()){
                 String statName = entry.getKey();
                 Integer basePower = entry.getValue();
                 Stat stat = Stat.byName(statName);
@@ -725,10 +728,13 @@ public class GeneratorCommands extends ApplicationCommand {
 
                 double statMultiplier = stat.getPowerScalingMultiplier() != null ? Stat.byName(statName).getPowerScalingMultiplier() : 1;
 
-                scalingStatsFormatted += String.format("%%%%%s:%d%%%%\\n",
+                scalingStatsFormatted += String.format("%%%%%s:%s%%%%\\n",
                     statName,
-                    Math.round(((double)basePower/100)*statMultiplier*719.28*Math.pow(Math.log(1+(0.0019*magicalPower)), 1.2))
+                    bigNumFormat.format(Math.round(((double)basePower/100)*statMultiplier*719.28*Math.pow(Math.log(1+(0.0019*magicalPower)), 1.2)))
                 );
+            }
+            if (!scalingStatsFormatted.isEmpty()){
+                scalingStatsFormatted = "&7Stats:\\n" + scalingStatsFormatted + "\\n";
             }
 
             String bonusStatsFormatted = "";
@@ -740,9 +746,9 @@ public class GeneratorCommands extends ApplicationCommand {
                     throw new GeneratorException("'" + statName + "' isn't a stat. Are you sure you typed it correctly?");
                 }
 
-                bonusStatsFormatted += String.format("%%%%%s:%d%%%%\\n",
+                bonusStatsFormatted += String.format("%%%%%s:%s%%%%\\n",
                     statName,
-                    statAmount
+                    bigNumFormat.format(statAmount)
                 );
             }
             if (!bonusStatsFormatted.isEmpty()){
@@ -752,9 +758,7 @@ public class GeneratorCommands extends ApplicationCommand {
             String itemLoreTemplate =
                 "&8%s\\n" + // %s = PowerStrength.byName(powerStrength) OR powerStrength
                 "\\n" +
-                "&7Stats:\\n" +
                 "%s" + // %s = scalingStatsFormatted
-                "\\n" +
                 "%s" + // %s = bonusStatsFormatted
                 "&7You have: &6%s Magical Power\\n" + // %d = magicalPower
                 "\\n" +
@@ -764,7 +768,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 PowerStrength.byName(powerStrength) == null ? powerStrength : PowerStrength.byName(powerStrength).getFormattedDisplay(),
                 scalingStatsFormatted,
                 bonusStatsFormatted,
-                magicalPower
+                bigNumFormat.format(magicalPower)
                 );
 
             try {
