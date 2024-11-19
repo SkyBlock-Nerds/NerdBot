@@ -40,6 +40,7 @@ public class DiscordUser {
     private BirthdayData birthdayData;
     private MojangProfile mojangProfile;
     private GeneratorHistory generatorHistory;
+    private boolean autoHideGenCommands;
 
     public DiscordUser() {
     }
@@ -52,7 +53,8 @@ public class DiscordUser {
             new LastActivity(),
             new BirthdayData(),
             new MojangProfile(),
-            new GeneratorHistory()
+            new GeneratorHistory(),
+            false
         );
     }
 
@@ -64,7 +66,8 @@ public class DiscordUser {
             new LastActivity(),
             new BirthdayData(),
             new MojangProfile(),
-            new GeneratorHistory()
+            new GeneratorHistory(),
+            false
         );
     }
 

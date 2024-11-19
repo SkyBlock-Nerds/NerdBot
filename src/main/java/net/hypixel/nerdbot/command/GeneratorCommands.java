@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
@@ -72,6 +73,8 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
 
+    private static final boolean AUTO_HIDE_ON_ERROR = true;
+
     @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "display", description = "Display an item")
     public void generateItem(
         GuildSlashEvent event,
@@ -82,7 +85,9 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
-        hidden = hidden != null && hidden;
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
         event.deferReply(hidden).complete();
 
         enchanted = enchanted != null && enchanted;
@@ -120,7 +125,9 @@ public class GeneratorCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "search", description = "Search for an item")
     public void searchItem(GuildSlashEvent event, @AppOption(description = "The ID of the item to search for") String itemId, @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden) {
-        hidden = hidden != null && hidden;
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
         event.deferReply(hidden).complete();
 
         List<Map.Entry<String, BufferedImage>> results = Spritesheet.searchForTexture(itemId);
@@ -146,7 +153,9 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = TEXTURE_DESCRIPTION) String texture,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
-        hidden = hidden != null && hidden;
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
         event.deferReply(hidden).complete();
 
         try {
@@ -172,7 +181,9 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = RENDER_BACKGROUND_DESCRIPTION) @Optional Boolean renderBackground,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
-        hidden = hidden != null && hidden;
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
         event.deferReply(hidden).complete();
 
         renderBackground = renderBackground == null || renderBackground;
@@ -210,7 +221,9 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean drawBorder,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
-        hidden = hidden != null && hidden;
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
         event.deferReply(hidden).complete();
 
         drawBorder = drawBorder == null || drawBorder;
@@ -258,7 +271,9 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
-        hidden = hidden != null && hidden;
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
         event.deferReply(hidden).complete();
 
         alpha = alpha == null ? 245 : alpha;
@@ -350,7 +365,9 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
-        hidden = hidden != null && hidden;
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
         event.deferReply(hidden).complete();
 
         alpha = alpha == null ? 245 : alpha;
@@ -433,7 +450,9 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = "Whether the border should be rendered (default: true)") @Optional Boolean renderBorder,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
-        hidden = hidden != null && hidden;
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
         event.deferReply(hidden).complete();
 
         centered = centered != null && centered;
@@ -477,7 +496,9 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = "Player head texture (username, URL, etc.)") @Optional String skinValue,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
-        hidden = hidden != null && hidden;
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
         abiphone = abiphone != null && abiphone;
         maxLineLength = maxLineLength == null ? 91 : maxLineLength;
         event.deferReply(hidden).complete();
@@ -541,7 +562,9 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = "Player head texture (username, URL, etc.)") @Optional String skinValue,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
-        hidden = hidden != null && hidden;
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
         abiphone = abiphone != null && abiphone;
         maxLineLength = maxLineLength == null ? 91 : maxLineLength;
         event.deferReply(hidden).complete();
@@ -667,5 +690,23 @@ public class GeneratorCommands extends ApplicationCommand {
         if (discordUserRepository.findById(user.getId()) != null) {
             discordUserRepository.findById(user.getId()).getGeneratorHistory().addCommand(command);
         }
+    }
+
+    /**
+     * Gets the gen command auto hide preference from a {@link GuildSlashEvent}.
+     *
+     * @param event The {@link GuildSlashEvent} triggered by the user you want to get the auto hide preference from.
+     *
+     * @return The auto hide preference from the user.
+     */
+    private boolean getUserAutoHideSetting(GuildSlashEvent event) {
+        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser user = repository.findById(event.getMember().getId());
+        
+        if (user != null) {
+            return user.isAutoHideGenCommands();
+        }
+        
+        return AUTO_HIDE_ON_ERROR;
     }
 }
