@@ -221,7 +221,7 @@ public class MinecraftTooltipGenerator implements Generator {
          * @return A properly formatted slash command string.
          */
         public String buildSlashCommand() {
-            StringBuilder commandBuilder = new StringBuilder("/" + GeneratorCommands.BASE_COMMAND + " item ");
+            StringBuilder commandBuilder = new StringBuilder("/" + GeneratorCommands.BASE_COMMAND + " item full ");
             Field[] fields = this.getClass().getDeclaredFields();
 
             for (Field field : fields) {
