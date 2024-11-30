@@ -704,7 +704,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 
                 String statName = stat[0].trim();
                 
-                if (map.containsKey(statName)){
+                if (map.containsKey(statName)) {
                     throw new GeneratorException("Invalid stats list: Ensure you only have the same type of stat once. Duplicate stat: `" + statName + "`");
                 }
 
@@ -739,7 +739,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
                 scalingStatsFormatted += String.format("%%%%%s:%s%%%%\\n",
                     statName,
-                    bigNumFormat.format(Math.round(((double)basePower/100)*statMultiplier*719.28*Math.pow(Math.log(1+(0.0019*magicalPower)), 1.2))) // Formula: https://imgur.com/a/QwckMcx Source: https://wiki.hypixel.net/Powers#Stat_Calculation
+                    bigNumFormat.format(Math.round(((double)basePower/100)*statMultiplier*719.28*Math.pow(Math.log(1+(0.0019*magicalPower)), 1.2))) // Source: https://wiki.hypixel.net/Powers#Stat_Calculation
                 );
             }
             
