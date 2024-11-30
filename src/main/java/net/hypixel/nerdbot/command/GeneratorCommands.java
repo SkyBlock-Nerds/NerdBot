@@ -684,6 +684,7 @@ public class GeneratorCommands extends ApplicationCommand {
         if (hidden == null) {
             hidden = getUserAutoHideSetting(event);
         }
+        
         event.deferReply(hidden).complete();
 
         alpha = alpha == null ? 245 : alpha;
@@ -693,36 +694,44 @@ public class GeneratorCommands extends ApplicationCommand {
         Function<String, HashMap<String, Integer>> parseStatsToMap = stats -> {
             HashMap<String, Integer> map = new HashMap<>();
             String[] entries = stats.split(",");
+            
             for (String entry : entries) {
                 String[] stat = entry.split(":");
+                
                 if (stat.length != 2 || stat[0].trim().isEmpty() || stat[1].trim().isEmpty()) {
                     throw new GeneratorException("Invalid stats format: '" + entry + "'. Ensure each stat is in the format 'statName:integerValue'.");
                 }
+                
                 String statName = stat[0].trim();
+                
                 if (map.containsKey(statName)){
                     throw new GeneratorException("Invalid stats list: Ensure you only have the same type of stat once. Duplicate stat: `" + statName + "`");
                 }
 
                 Integer statValue;
+                
                 try {
                     statValue = Integer.parseInt(stat[1].trim());
                 } catch (NumberFormatException e) {
                     throw new GeneratorException("Invalid number format for stat '" + statName + "'. Ensure all values are integers.");
                 }
+                
                 map.put(statName, statValue);
             }
+            
             return map;
         };
 
         try {
             DecimalFormat bigNumFormat = new DecimalFormat("#,###");
-
             String scalingStatsFormatted = "";
-            for (Map.Entry<String, Integer> entry : (scalingStats != null ? parseStatsToMap.apply(scalingStats) : new HashMap<String, Integer>()).entrySet()){
+            
+            for (Map.Entry<String, Integer> entry : (scalingStats != null ? parseStatsToMap.apply(scalingStats) : new HashMap<String, Integer>()).entrySet()) {
                 String statName = entry.getKey();
                 Integer basePower = entry.getValue();
                 Stat stat = Stat.byName(statName);
-                if (stat == null){
+                
+                if (stat == null) {
                     throw new GeneratorException("'" + statName + "' isn't a stat. Are you sure you typed it correctly?");
                 }
 
@@ -730,19 +739,21 @@ public class GeneratorCommands extends ApplicationCommand {
 
                 scalingStatsFormatted += String.format("%%%%%s:%s%%%%\\n",
                     statName,
-                    bigNumFormat.format(Math.round(((double)basePower/100)*statMultiplier*719.28*Math.pow(Math.log(1+(0.0019*magicalPower)), 1.2)))
+                    bigNumFormat.format(Math.round(((double)basePower/100)*statMultiplier*719.28*Math.pow(Math.log(1+(0.0019*magicalPower)), 1.2))) // Formula: https://imgur.com/a/QwckMcx Source: https://wiki.hypixel.net/Powers#Stat_Calculation
                 );
             }
-            if (!scalingStatsFormatted.isEmpty()){
+            
+            if (!scalingStatsFormatted.isEmpty()) {
                 scalingStatsFormatted = "&7Stats:\\n" + scalingStatsFormatted + "\\n";
             }
 
             String bonusStatsFormatted = "";
-            for (Map.Entry<String, Integer> entry : (uniqueBonus != null ? parseStatsToMap.apply(uniqueBonus) : new HashMap<String, Integer>()).entrySet()){
+            for (Map.Entry<String, Integer> entry : (uniqueBonus != null ? parseStatsToMap.apply(uniqueBonus) : new HashMap<String, Integer>()).entrySet()) {
                 String statName = entry.getKey();
                 Integer statAmount = entry.getValue();
                 Stat stat = Stat.byName(statName);
-                if (stat == null){
+                
+                if (stat == null) {
                     throw new GeneratorException("'" + statName + "' isn't a stat. Are you sure you typed it correctly?");
                 }
 
@@ -751,7 +762,8 @@ public class GeneratorCommands extends ApplicationCommand {
                     bigNumFormat.format(statAmount)
                 );
             }
-            if (!bonusStatsFormatted.isEmpty()){
+            
+            if (!bonusStatsFormatted.isEmpty()) {
                 bonusStatsFormatted = "&7Unique Power Bonus:\\n" + bonusStatsFormatted + "\\n";
             }
 
@@ -769,12 +781,12 @@ public class GeneratorCommands extends ApplicationCommand {
                 scalingStatsFormatted,
                 bonusStatsFormatted,
                 bigNumFormat.format(magicalPower)
-                );
+            );
 
             try {
                 GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
                 MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                    .withName("&a"+powerName)
+                    .withName("&a" + powerName)
                     .withRarity(Rarity.byName("none"))
                     .withItemLore(itemLore)
                     .withAlpha(alpha)
@@ -785,11 +797,11 @@ public class GeneratorCommands extends ApplicationCommand {
                     .withRenderBorder(true)
                     .build();
 
-                if (includeGenFullCommand != null && includeGenFullCommand){
+                if (includeGenFullCommand != null && includeGenFullCommand) {
                     event.getHook().sendMessage(
-                        "Your powerstone has been parsed into a slash command:\n```" +
+                        "Your Power Stone has been parsed into a slash command:\n```" +
                         new MinecraftTooltipGenerator.Builder()
-                        .withName("&a"+powerName)
+                        .withName("&a" + powerName)
                         .withRarity(Rarity.byName("none"))
                         .withItemLore(itemLore)
                         .withAlpha(alpha)
@@ -798,7 +810,7 @@ public class GeneratorCommands extends ApplicationCommand {
                         .isTextCentered(false)
                         .isPaddingFirstLine(true)
                         .withRenderBorder(true)
-                        .buildSlashCommand()+
+                        .buildSlashCommand() +
                         "```"
                     ).queue();
                 }
@@ -823,9 +835,9 @@ public class GeneratorCommands extends ApplicationCommand {
 
                 generatorImageBuilder.addGenerator(tooltipGenerator);
                 GeneratedObject generatedObject = generatorImageBuilder.build();
+                
                 event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
                 addCommandToUserHistory(event.getUser(), event.getCommandString());
-
             } catch (GeneratorException | IllegalArgumentException exception) {
                 event.getHook().editOriginal(exception.getMessage()).queue();
                 log.error("Encountered an error while generating an item display", exception);
@@ -837,7 +849,6 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating dialogue", exception);
         }
-
     }
 
     @AutocompletionHandler(name = "power-strengths", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
