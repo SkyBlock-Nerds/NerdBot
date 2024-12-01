@@ -129,6 +129,173 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
+    @JDASlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate an image of a Power Stone")
+    public void generatePowerstone(
+        GuildSlashEvent event,
+        @AppOption(description = "The name of your Power Stone") String powerName,
+        @AppOption(autocomplete = "power-strengths", description = "The strength of the Power Stone") String powerStrength,
+        @AppOption(description = "The Magical Power to use in the stat calculations") int magicalPower,
+        @AppOption(description = "The stats that scale with the given Magical Power") @Optional String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
+        @AppOption(description = "The stats that do not scale with the given Magical Power") @Optional String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
+        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
+        @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
+        @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
+        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
+        @AppOption(description = "Includes a slash command for you to edit") @Optional Boolean includeGenFullCommand,
+        @AppOption(description = "Whether the Power Stone shows as selected") @Optional Boolean selected,
+        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+    ) {
+        if (hidden == null) {
+            hidden = getUserAutoHideSetting(event);
+        }
+        event.deferReply(hidden).complete();
+
+        alpha = alpha == null ? DEFAULT_ALPHA : alpha;
+        padding = padding == null ? DEFAULT_PADDING : padding;
+
+        Function<String, HashMap<String, Integer>> parseStatsToMap = stats -> {
+            HashMap<String, Integer> map = new HashMap<>();
+            String[] entries = stats.split(",");
+
+            for (String entry : entries) {
+                String[] stat = entry.split(":");
+
+                if (stat.length != 2 || stat[0].trim().isEmpty() || stat[1].trim().isEmpty()) {
+                    throw new GeneratorException("Stat `" + entry + "` is using an invalid format");
+                }
+
+                String statName = stat[0].trim();
+
+                if (map.containsKey(statName)) {
+                    map.put(statName, map.get(statName) + Integer.parseInt(stat[1].trim()));
+                }
+
+                int statValue;
+
+                try {
+                    statValue = Integer.parseInt(stat[1].trim());
+                } catch (NumberFormatException e) {
+                    throw new GeneratorException("Invalid number for stat `" + statName + "`: " + stat[1].trim());
+                }
+
+                map.put(statName, statValue);
+            }
+
+            return map;
+        };
+
+        try {
+            StringBuilder scalingStatsFormatted = new StringBuilder();
+            Map<String, Integer> scalingStatsMap = scalingStats != null ? parseStatsToMap.apply(scalingStats) : new HashMap<>();
+
+            for (Map.Entry<String, Integer> entry : scalingStatsMap.entrySet()) {
+                String statName = entry.getKey();
+                Integer basePower = entry.getValue();
+                Stat stat = Stat.byName(statName);
+
+                if (stat == null) {
+                    throw new GeneratorException("`" + statName + "` is not a valid stat");
+                }
+
+                scalingStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, Util.COMMA_SEPARATED_FORMAT.format(calculatePowerStoneStat(stat, magicalPower, basePower))));
+            }
+
+            if (!scalingStatsFormatted.isEmpty()) {
+                scalingStatsFormatted = new StringBuilder("&7Stats:\\n")
+                    .append(scalingStatsFormatted)
+                    .append("\\n");
+            }
+
+            StringBuilder bonusStatsFormatted = new StringBuilder();
+            HashMap<String, Integer> bonusStats = parseStatsToMap.apply(uniqueBonus);
+
+            for (Map.Entry<String, Integer> entry : bonusStats.entrySet()) {
+                String statName = entry.getKey();
+                Integer statAmount = entry.getValue();
+                Stat stat = Stat.byName(statName);
+
+                if (stat == null) {
+                    throw new GeneratorException("'" + statName + "' is not a valid stat");
+                }
+
+                bonusStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, Util.COMMA_SEPARATED_FORMAT.format(statAmount)));
+            }
+
+            if (!bonusStatsFormatted.isEmpty()) {
+                bonusStatsFormatted = new StringBuilder("&7Unique Power Bonus:\\n")
+                    .append(bonusStatsFormatted)
+                    .append("\\n");
+            }
+
+            String itemLoreTemplate =
+                "&8%s\\n" + // %s = PowerStrength.byName(powerStrength) OR powerStrength
+                    "\\n" +
+                    "%s" + // %s = scalingStatsFormatted
+                    "%s" + // %s = bonusStatsFormatted
+                    "&7You have: &6%s Magical Power\\n" + // %d = magicalPower
+                    "\\n" +
+                    (selected == null || selected ? "&aPower is selected!" : "&eClick to select power!");
+
+            String itemLore = String.format(itemLoreTemplate,
+                PowerStrength.byName(powerStrength) == null ? powerStrength : PowerStrength.byName(powerStrength).getFormattedDisplay(),
+                scalingStatsFormatted,
+                bonusStatsFormatted,
+                Util.COMMA_SEPARATED_FORMAT.format(magicalPower)
+            );
+
+            try {
+                GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+                MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                    .withName("&a" + powerName)
+                    .withRarity(Rarity.byName("none"))
+                    .withItemLore(itemLore)
+                    .withAlpha(alpha)
+                    .withPadding(padding)
+                    .withEmptyLine(true)
+                    .isTextCentered(false)
+                    .isPaddingFirstLine(true)
+                    .withRenderBorder(true);
+
+                if (includeGenFullCommand != null && includeGenFullCommand) {
+                    event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + tooltipGenerator.buildSlashCommand() + "```").queue();
+                }
+
+                if (itemId != null) {
+                    if (itemId.equalsIgnoreCase("player_head")) {
+                        MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder()
+                            .withScale(-2);
+
+                        if (skinValue != null) {
+                            generator.withSkin(skinValue);
+                        }
+
+                        generatorImageBuilder.addGenerator(generator.build());
+                    } else {
+                        generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                            .withItem(itemId)
+                            .isBigImage()
+                            .build());
+                    }
+                }
+
+                generatorImageBuilder.addGenerator(tooltipGenerator.build());
+                GeneratedObject generatedObject = generatorImageBuilder.build();
+
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+                addCommandToUserHistory(event.getUser(), event.getCommandString());
+            } catch (GeneratorException | IllegalArgumentException exception) {
+                event.getHook().editOriginal(exception.getMessage()).queue();
+                log.error("Encountered an error while generating a Power Stone", exception);
+            } catch (IOException exception) {
+                event.getHook().editOriginal("An error occurred while generating that Power Stone!").queue();
+                log.error("Encountered an error while generating a Power Stone", exception);
+            }
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating a Power Stone", exception);
+        }
+    }
+
     @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "search", description = "Search for an item")
     public void searchItem(GuildSlashEvent event, @AppOption(description = "The ID of the item to search for") String itemId, @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden) {
         if (hidden == null) {
@@ -661,173 +828,6 @@ public class GeneratorCommands extends ApplicationCommand {
         } catch (IOException e) {
             event.getHook().editOriginal("An error occurred while fetching your generator command history!").queue();
             log.error("Encountered an error while fetching generator command history for {}", event.getUser().getId(), e);
-        }
-    }
-
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate an image of a Power Stone")
-    public void generatePowerstone(
-        GuildSlashEvent event,
-        @AppOption(description = "The name of your Power Stone") String powerName,
-        @AppOption(autocomplete = "power-strengths", description = "The strength of the Power Stone") String powerStrength,
-        @AppOption(description = "The Magical Power to use in the stat calculations") int magicalPower,
-        @AppOption(description = "The stats that scale with the given Magical Power") @Optional String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
-        @AppOption(description = "The stats that do not scale with the given Magical Power") @Optional String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
-        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
-        @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
-        @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
-        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
-        @AppOption(description = "Includes a slash command for you to edit") @Optional Boolean includeGenFullCommand,
-        @AppOption(description = "Whether the Power Stone shows as selected") @Optional Boolean selected,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
-    ) {
-        if (hidden == null) {
-            hidden = getUserAutoHideSetting(event);
-        }
-        event.deferReply(hidden).complete();
-
-        alpha = alpha == null ? DEFAULT_ALPHA : alpha;
-        padding = padding == null ? DEFAULT_PADDING : padding;
-
-        Function<String, HashMap<String, Integer>> parseStatsToMap = stats -> {
-            HashMap<String, Integer> map = new HashMap<>();
-            String[] entries = stats.split(",");
-
-            for (String entry : entries) {
-                String[] stat = entry.split(":");
-
-                if (stat.length != 2 || stat[0].trim().isEmpty() || stat[1].trim().isEmpty()) {
-                    throw new GeneratorException("Stat `" + entry + "` is using an invalid format");
-                }
-
-                String statName = stat[0].trim();
-
-                if (map.containsKey(statName)) {
-                    map.put(statName, map.get(statName) + Integer.parseInt(stat[1].trim()));
-                }
-
-                int statValue;
-
-                try {
-                    statValue = Integer.parseInt(stat[1].trim());
-                } catch (NumberFormatException e) {
-                    throw new GeneratorException("Invalid number for stat `" + statName + "`: " + stat[1].trim());
-                }
-
-                map.put(statName, statValue);
-            }
-
-            return map;
-        };
-
-        try {
-            StringBuilder scalingStatsFormatted = new StringBuilder();
-            Map<String, Integer> scalingStatsMap = scalingStats != null ? parseStatsToMap.apply(scalingStats) : new HashMap<>();
-
-            for (Map.Entry<String, Integer> entry : scalingStatsMap.entrySet()) {
-                String statName = entry.getKey();
-                Integer basePower = entry.getValue();
-                Stat stat = Stat.byName(statName);
-
-                if (stat == null) {
-                    throw new GeneratorException("`" + statName + "` is not a valid stat");
-                }
-
-                scalingStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, Util.COMMA_SEPARATED_FORMAT.format(calculatePowerStoneStat(stat, magicalPower, basePower))));
-            }
-
-            if (!scalingStatsFormatted.isEmpty()) {
-                scalingStatsFormatted = new StringBuilder("&7Stats:\\n")
-                    .append(scalingStatsFormatted)
-                    .append("\\n");
-            }
-
-            StringBuilder bonusStatsFormatted = new StringBuilder();
-            HashMap<String, Integer> bonusStats = parseStatsToMap.apply(uniqueBonus);
-
-            for (Map.Entry<String, Integer> entry : bonusStats.entrySet()) {
-                String statName = entry.getKey();
-                Integer statAmount = entry.getValue();
-                Stat stat = Stat.byName(statName);
-
-                if (stat == null) {
-                    throw new GeneratorException("'" + statName + "' is not a valid stat");
-                }
-
-                bonusStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, Util.COMMA_SEPARATED_FORMAT.format(statAmount)));
-            }
-
-            if (!bonusStatsFormatted.isEmpty()) {
-                bonusStatsFormatted = new StringBuilder("&7Unique Power Bonus:\\n")
-                    .append(bonusStatsFormatted)
-                    .append("\\n");
-            }
-
-            String itemLoreTemplate =
-                "&8%s\\n" + // %s = PowerStrength.byName(powerStrength) OR powerStrength
-                    "\\n" +
-                    "%s" + // %s = scalingStatsFormatted
-                    "%s" + // %s = bonusStatsFormatted
-                    "&7You have: &6%s Magical Power\\n" + // %d = magicalPower
-                    "\\n" +
-                    (selected == null || selected ? "&aPower is selected!" : "&eClick to select power!");
-
-            String itemLore = String.format(itemLoreTemplate,
-                PowerStrength.byName(powerStrength) == null ? powerStrength : PowerStrength.byName(powerStrength).getFormattedDisplay(),
-                scalingStatsFormatted,
-                bonusStatsFormatted,
-                Util.COMMA_SEPARATED_FORMAT.format(magicalPower)
-            );
-
-            try {
-                GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
-                MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                    .withName("&a" + powerName)
-                    .withRarity(Rarity.byName("none"))
-                    .withItemLore(itemLore)
-                    .withAlpha(alpha)
-                    .withPadding(padding)
-                    .withEmptyLine(true)
-                    .isTextCentered(false)
-                    .isPaddingFirstLine(true)
-                    .withRenderBorder(true);
-
-                if (includeGenFullCommand != null && includeGenFullCommand) {
-                    event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + tooltipGenerator.buildSlashCommand() + "```").queue();
-                }
-
-                if (itemId != null) {
-                    if (itemId.equalsIgnoreCase("player_head")) {
-                        MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder()
-                            .withScale(-2);
-
-                        if (skinValue != null) {
-                            generator.withSkin(skinValue);
-                        }
-
-                        generatorImageBuilder.addGenerator(generator.build());
-                    } else {
-                        generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
-                            .withItem(itemId)
-                            .isBigImage()
-                            .build());
-                    }
-                }
-
-                generatorImageBuilder.addGenerator(tooltipGenerator.build());
-                GeneratedObject generatedObject = generatorImageBuilder.build();
-
-                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
-                addCommandToUserHistory(event.getUser(), event.getCommandString());
-            } catch (GeneratorException | IllegalArgumentException exception) {
-                event.getHook().editOriginal(exception.getMessage()).queue();
-                log.error("Encountered an error while generating a Power Stone", exception);
-            } catch (IOException exception) {
-                event.getHook().editOriginal("An error occurred while generating that Power Stone!").queue();
-                log.error("Encountered an error while generating a Power Stone", exception);
-            }
-        } catch (GeneratorException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while generating a Power Stone", exception);
         }
     }
 
