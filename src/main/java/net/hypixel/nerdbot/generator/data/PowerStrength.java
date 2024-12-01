@@ -7,7 +7,6 @@ import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.util.JsonLoader;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -24,7 +23,7 @@ public class PowerStrength {
 
     static {
         try {
-            List<PowerStrength> powerStrengths = JsonLoader.loadFromJson(PowerStrength[].class, Objects.requireNonNull(PowerStrength.class.getClassLoader().getResource("data/powerStrengths.json")));
+            List<PowerStrength> powerStrengths = JsonLoader.loadFromJson(PowerStrength[].class, Objects.requireNonNull(PowerStrength.class.getClassLoader().getResource("data/power_strengths.json")));
             POWER_STRENGTHS.addAll(powerStrengths);
         } catch (Exception e) {
             log.error("Failed to load power strength data", e);
