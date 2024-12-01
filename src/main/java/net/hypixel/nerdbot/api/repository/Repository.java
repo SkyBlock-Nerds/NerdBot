@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.Scheduler;
+import com.mongodb.MongoException;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -111,12 +112,17 @@ public abstract class Repository<T> {
             return cachedObject;
         }
 
-        Document document = mongoCollection.find(new Document(identifierFieldName, id)).first();
-        if (document != null) {
-            T object = documentToEntity(document);
-            cacheObject(id, object);
+        try {
+            Document document = mongoCollection.find(new Document(identifierFieldName, id)).first();
+            if (document != null) {
+                T object = documentToEntity(document);
+                cacheObject(id, object);
 
-            return object;
+                return object;
+            }
+        } catch (MongoException e) {
+            log.error("Error finding document with ID " + id, e);
+            return null;
         }
 
         debug("Could not find document with ID " + id + " in cache or database");

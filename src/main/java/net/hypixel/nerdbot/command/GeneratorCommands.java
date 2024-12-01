@@ -14,14 +14,12 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Entitlement;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.data.PowerStrength;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.data.Stat;
@@ -37,10 +35,9 @@ import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
 
-import java.io.File;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -80,6 +77,8 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
 
+    private static final int DEFAULT_PADDING = 0;
+    private static final int DEFAULT_ALPHA = 245;
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
     @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "display", description = "Display an item")
@@ -249,8 +248,8 @@ public class GeneratorCommands extends ApplicationCommand {
             if (hoveredItemString != null) {
                 MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                     .withItemLore(hoveredItemString)
-                    .withAlpha(245)
-                    .withPadding(0)
+                    .withAlpha(DEFAULT_ALPHA)
+                    .withPadding(DEFAULT_PADDING)
                     .isPaddingFirstLine(false)
                     .withEmptyLine(false)
                     .withRenderBorder(true)
@@ -283,8 +282,8 @@ public class GeneratorCommands extends ApplicationCommand {
         }
         event.deferReply(hidden).complete();
 
-        alpha = alpha == null ? 245 : alpha;
-        padding = padding == null ? 0 : padding;
+        alpha = alpha == null ? DEFAULT_ALPHA : alpha;
+        padding = padding == null ? DEFAULT_PADDING : padding;
 
         try {
             JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
@@ -377,8 +376,8 @@ public class GeneratorCommands extends ApplicationCommand {
         }
         event.deferReply(hidden).complete();
 
-        alpha = alpha == null ? 245 : alpha;
-        padding = padding == null ? 0 : padding;
+        alpha = alpha == null ? DEFAULT_ALPHA : alpha;
+        padding = padding == null ? DEFAULT_PADDING : padding;
         emptyLine = emptyLine == null || emptyLine;
         centered = centered != null && centered;
         paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
@@ -464,7 +463,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
         centered = centered != null && centered;
         alpha = alpha == null ? 0 : alpha;
-        padding = padding == null ? 0 : padding;
+        padding = padding == null ? DEFAULT_PADDING : padding;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         renderBorder = renderBorder == null || renderBorder;
 
@@ -531,7 +530,7 @@ public class GeneratorCommands extends ApplicationCommand {
         MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
             .withItemLore(dialogue)
             .withAlpha(0)
-            .withPadding(0)
+            .withPadding(DEFAULT_PADDING)
             .isPaddingFirstLine(false)
             .withEmptyLine(false)
             .withMaxLineLength(maxLineLength)
@@ -611,7 +610,7 @@ public class GeneratorCommands extends ApplicationCommand {
             MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withItemLore(dialogue)
                 .withAlpha(0)
-                .withPadding(0)
+                .withPadding(DEFAULT_PADDING)
                 .isPaddingFirstLine(false)
                 .withEmptyLine(false)
                 .withMaxLineLength(maxLineLength)
@@ -665,127 +664,123 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate a powerstone power.")
+    @JDASlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate an image of a Power Stone")
     public void generatePowerstone(
         GuildSlashEvent event,
-        @AppOption(description = "The name of your powerstone") String powerName,
-        @AppOption(autocomplete = "power-strengths", description = "The kind of power stone") String powerStrength,
-        @AppOption(description = "The magical power to calculate with the scaling stats and what will be displayed.") int magicalPower,
-        @AppOption(description = "The  stats that change with magical power") @Optional String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
-        @AppOption(description = "The static stats that don't change with magical power") @Optional String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
+        @AppOption(description = "The name of your Power Stone") String powerName,
+        @AppOption(autocomplete = "power-strengths", description = "The strength of the Power Stone") String powerStrength,
+        @AppOption(description = "The Magical Power to use in the stat calculations") int magicalPower,
+        @AppOption(description = "The stats that scale with the given Magical Power") @Optional String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
+        @AppOption(description = "The stats that do not scale with the given Magical Power") @Optional String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
         @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
-        @AppOption(description = "Determines if the `" + BASE_COMMAND + " item full` is included.") @Optional Boolean includeGenFullCommand,
-        @AppOption(description = "Changes the text at the bottom to display if its selected or not.") @Optional Boolean selected,
+        @AppOption(description = "Includes a slash command for you to edit") @Optional Boolean includeGenFullCommand,
+        @AppOption(description = "Whether the Power Stone shows as selected") @Optional Boolean selected,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         if (hidden == null) {
             hidden = getUserAutoHideSetting(event);
         }
-        
         event.deferReply(hidden).complete();
 
-        alpha = alpha == null ? 245 : alpha;
-        padding = padding == null ? 0 : padding;
+        alpha = alpha == null ? DEFAULT_ALPHA : alpha;
+        padding = padding == null ? DEFAULT_PADDING : padding;
 
-        // Function to parse stats
         Function<String, HashMap<String, Integer>> parseStatsToMap = stats -> {
             HashMap<String, Integer> map = new HashMap<>();
             String[] entries = stats.split(",");
-            
+
             for (String entry : entries) {
                 String[] stat = entry.split(":");
-                
+
                 if (stat.length != 2 || stat[0].trim().isEmpty() || stat[1].trim().isEmpty()) {
-                    throw new GeneratorException("Invalid stats format: '" + entry + "'. Ensure each stat is in the format 'statName:integerValue'.");
-                }
-                
-                String statName = stat[0].trim();
-                
-                if (map.containsKey(statName)) {
-                    throw new GeneratorException("Invalid stats list: Ensure you only have the same type of stat once. Duplicate stat: `" + statName + "`");
+                    throw new GeneratorException("Stat `" + entry + "` is using an invalid format");
                 }
 
-                Integer statValue;
-                
+                String statName = stat[0].trim();
+
+                if (map.containsKey(statName)) {
+                    map.put(statName, map.get(statName) + Integer.parseInt(stat[1].trim()));
+                }
+
+                int statValue;
+
                 try {
                     statValue = Integer.parseInt(stat[1].trim());
                 } catch (NumberFormatException e) {
-                    throw new GeneratorException("Invalid number format for stat '" + statName + "'. Ensure all values are integers.");
+                    throw new GeneratorException("Invalid number for stat `" + statName + "`: " + stat[1].trim());
                 }
-                
+
                 map.put(statName, statValue);
             }
-            
+
             return map;
         };
 
         try {
-            DecimalFormat bigNumFormat = new DecimalFormat("#,###");
-            String scalingStatsFormatted = "";
-            
-            for (Map.Entry<String, Integer> entry : (scalingStats != null ? parseStatsToMap.apply(scalingStats) : new HashMap<String, Integer>()).entrySet()) {
+            StringBuilder scalingStatsFormatted = new StringBuilder();
+            Map<String, Integer> scalingStatsMap = scalingStats != null ? parseStatsToMap.apply(scalingStats) : new HashMap<>();
+
+            for (Map.Entry<String, Integer> entry : scalingStatsMap.entrySet()) {
                 String statName = entry.getKey();
                 Integer basePower = entry.getValue();
                 Stat stat = Stat.byName(statName);
-                
+
                 if (stat == null) {
-                    throw new GeneratorException("'" + statName + "' isn't a stat. Are you sure you typed it correctly?");
+                    throw new GeneratorException("`" + statName + "` is not a valid stat");
                 }
 
-                double statMultiplier = stat.getPowerScalingMultiplier() != null ? Stat.byName(statName).getPowerScalingMultiplier() : 1;
-
-                scalingStatsFormatted += String.format("%%%%%s:%s%%%%\\n",
-                    statName,
-                    bigNumFormat.format(Math.round(((double)basePower/100)*statMultiplier*719.28*Math.pow(Math.log(1+(0.0019*magicalPower)), 1.2))) // Source: https://wiki.hypixel.net/Powers#Stat_Calculation
-                );
+                scalingStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, Util.COMMA_SEPARATED_FORMAT.format(calculatePowerStoneStat(stat, magicalPower, basePower))));
             }
-            
+
             if (!scalingStatsFormatted.isEmpty()) {
-                scalingStatsFormatted = "&7Stats:\\n" + scalingStatsFormatted + "\\n";
+                scalingStatsFormatted = new StringBuilder("&7Stats:\\n")
+                    .append(scalingStatsFormatted)
+                    .append("\\n");
             }
 
-            String bonusStatsFormatted = "";
-            for (Map.Entry<String, Integer> entry : (uniqueBonus != null ? parseStatsToMap.apply(uniqueBonus) : new HashMap<String, Integer>()).entrySet()) {
+            StringBuilder bonusStatsFormatted = new StringBuilder();
+            HashMap<String, Integer> bonusStats = parseStatsToMap.apply(uniqueBonus);
+
+            for (Map.Entry<String, Integer> entry : bonusStats.entrySet()) {
                 String statName = entry.getKey();
                 Integer statAmount = entry.getValue();
                 Stat stat = Stat.byName(statName);
-                
+
                 if (stat == null) {
-                    throw new GeneratorException("'" + statName + "' isn't a stat. Are you sure you typed it correctly?");
+                    throw new GeneratorException("'" + statName + "' is not a valid stat");
                 }
 
-                bonusStatsFormatted += String.format("%%%%%s:%s%%%%\\n",
-                    statName,
-                    bigNumFormat.format(statAmount)
-                );
+                bonusStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, Util.COMMA_SEPARATED_FORMAT.format(statAmount)));
             }
-            
+
             if (!bonusStatsFormatted.isEmpty()) {
-                bonusStatsFormatted = "&7Unique Power Bonus:\\n" + bonusStatsFormatted + "\\n";
+                bonusStatsFormatted = new StringBuilder("&7Unique Power Bonus:\\n")
+                    .append(bonusStatsFormatted)
+                    .append("\\n");
             }
 
             String itemLoreTemplate =
                 "&8%s\\n" + // %s = PowerStrength.byName(powerStrength) OR powerStrength
-                "\\n" +
-                "%s" + // %s = scalingStatsFormatted
-                "%s" + // %s = bonusStatsFormatted
-                "&7You have: &6%s Magical Power\\n" + // %d = magicalPower
-                "\\n" +
-                (selected == null || selected ? "&aPower is selected!" : "&eClick to select power!");
+                    "\\n" +
+                    "%s" + // %s = scalingStatsFormatted
+                    "%s" + // %s = bonusStatsFormatted
+                    "&7You have: &6%s Magical Power\\n" + // %d = magicalPower
+                    "\\n" +
+                    (selected == null || selected ? "&aPower is selected!" : "&eClick to select power!");
 
             String itemLore = String.format(itemLoreTemplate,
                 PowerStrength.byName(powerStrength) == null ? powerStrength : PowerStrength.byName(powerStrength).getFormattedDisplay(),
                 scalingStatsFormatted,
                 bonusStatsFormatted,
-                bigNumFormat.format(magicalPower)
+                Util.COMMA_SEPARATED_FORMAT.format(magicalPower)
             );
 
             try {
                 GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
-                MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                     .withName("&a" + powerName)
                     .withRarity(Rarity.byName("none"))
                     .withItemLore(itemLore)
@@ -794,25 +789,10 @@ public class GeneratorCommands extends ApplicationCommand {
                     .withEmptyLine(true)
                     .isTextCentered(false)
                     .isPaddingFirstLine(true)
-                    .withRenderBorder(true)
-                    .build();
+                    .withRenderBorder(true);
 
                 if (includeGenFullCommand != null && includeGenFullCommand) {
-                    event.getHook().sendMessage(
-                        "Your Power Stone has been parsed into a slash command:\n```" +
-                        new MinecraftTooltipGenerator.Builder()
-                        .withName("&a" + powerName)
-                        .withRarity(Rarity.byName("none"))
-                        .withItemLore(itemLore)
-                        .withAlpha(alpha)
-                        .withPadding(padding)
-                        .withEmptyLine(true)
-                        .isTextCentered(false)
-                        .isPaddingFirstLine(true)
-                        .withRenderBorder(true)
-                        .buildSlashCommand() +
-                        "```"
-                    ).queue();
+                    event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + tooltipGenerator.buildSlashCommand() + "```").queue();
                 }
 
                 if (itemId != null) {
@@ -833,26 +813,26 @@ public class GeneratorCommands extends ApplicationCommand {
                     }
                 }
 
-                generatorImageBuilder.addGenerator(tooltipGenerator);
+                generatorImageBuilder.addGenerator(tooltipGenerator.build());
                 GeneratedObject generatedObject = generatorImageBuilder.build();
-                
+
                 event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
                 addCommandToUserHistory(event.getUser(), event.getCommandString());
             } catch (GeneratorException | IllegalArgumentException exception) {
                 event.getHook().editOriginal(exception.getMessage()).queue();
-                log.error("Encountered an error while generating an item display", exception);
+                log.error("Encountered an error while generating a Power Stone", exception);
             } catch (IOException exception) {
-                event.getHook().editOriginal("An error occurred while generating that item!").queue();
-                log.error("Encountered an error while generating an item display", exception);
+                event.getHook().editOriginal("An error occurred while generating that Power Stone!").queue();
+                log.error("Encountered an error while generating a Power Stone", exception);
             }
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while generating dialogue", exception);
+            log.error("Encountered an error while generating a Power Stone", exception);
         }
     }
 
     @AutocompletionHandler(name = "power-strengths", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
-    public List<String> powerStrenghts(CommandAutoCompleteInteractionEvent event){
+    public List<String> powerStrengths(CommandAutoCompleteInteractionEvent event) {
         return PowerStrength.getPowerStrengthNames();
     }
 
@@ -900,11 +880,25 @@ public class GeneratorCommands extends ApplicationCommand {
     private boolean getUserAutoHideSetting(GuildSlashEvent event) {
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser user = repository.findById(event.getMember().getId());
-        
+
         if (user != null) {
             return user.isAutoHideGenCommands();
         }
-        
+
         return AUTO_HIDE_ON_ERROR;
+    }
+
+    /**
+     * Calculates the stat value for a Power Stone stat based on the base power and magical power.
+     *
+     * @param stat         The {@link Stat} to calculate the value for
+     * @param basePower    The base power of the stat
+     * @param magicalPower The magical power of the Power Stone
+     *
+     * @return The calculated stat value
+     */
+    private double calculatePowerStoneStat(Stat stat, int basePower, int magicalPower) {
+        double statMultiplier = stat.getPowerScalingMultiplier() != null ? stat.getPowerScalingMultiplier() : 1;
+        return ((double) basePower / 100) * statMultiplier * 719.28 * Math.pow(Math.log(1 + (0.0019 * magicalPower)), 1.2);
     }
 }
