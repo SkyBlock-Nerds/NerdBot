@@ -14,14 +14,15 @@
   "cache": {
     "suggestions": {
       "not_found": "Kon die suggestie niet vinden in de cache! Probeer het later opnieuw!",
-      "filtered_none_found": "Geen suggesties gevonden die overeenkomen met die filter!",
+      "filtered_none_found": "Geen suggesties gevonden die overeenkomen met de filter!",
       "user_deleted_post": "Het originele bericht van deze suggestie was verwijderd!"
     }
   },
   "bot_logs": {
-    "member_removed_not_found": "Kon niet het lid vinden met ID %s die de server is verlaten!"
+    "member_removed_not_found": "Kon het lid die de server is verlanten met het ID %s niet vinden!"
   },
   "repository": {
+    "not_found": "Kon de repository met die naam niet vinden!",
     "saved_to_database": "Sloeg %d documenten op naar de database!",
     "loaded_from_database": "Laadde %d documenten van de database!",
     "save_error": "Er is een fout opgetreden bij het opslaan van de repository: %s",
@@ -29,17 +30,39 @@
     "stats_error": "Er is een fout opgetreden bij het verkrijgen van de statistieken van die repository: %s"
   },
   "curator": {
-    "no_greenlit_messages": "Er waren geen suggesties met groen licht",
-    "greenlit_messages": "%d suggesties hebben groen licht gekregen in %d!",
-    "already_greenlit": "Deze suggestie heeft al groen licht!"
+    "no_greenlit_messages": "Er waren geen suggesties die zijn goedgekeurd",
+    "greenlit_messages": "%d suggesties zijn goedgekeurd in %d!",
+    "already_greenlit": "Deze suggestie is al goedgekeurd!"
   },
   "commands": {
     "only_available_in_threads": "Dit commando is alleen beschikbaar in threads!",
     "cannot_be_used_here": "Dit commando kan hier niet gebruikt worden!",
     "invalid_uuid": "Ongeldige UUID!",
-    "temp_file_error": "Faalde om een tijdelijk bestand te maken: %s",
+    "invalid_user_id": "Ongeldig gebruikers ID!",
+    "temp_file_error": "Faalde om een tijdelijk bestand aan te maken: %s",
+    "profile": {
+      "no_badges": "je hebt geen badges!"
+    },
+    "badge": {
+      "invalid_badge": "%s is een ongeldig Badge ID!",
+      "invalid_tier": "%s is een ongeldig Badge tier! Het heeft aleen %d tiers.",
+      "gave_tier": "Heb de Tier %d van de %s badge aan %s gegeven!",
+      "gave_badge": "Heb de badge %s aan %s gegeven!",
+      "already_has_tier": "%s heeft al Tier %d van de %s badge!",
+      "already_has_badge": "%s heeft al de %s badge!",
+      "does_not_have_tier": "%s heeft de Tier %d van de %s badge niet!",
+      "does_not_have_badge": "%s heeft de %s badge niet!",
+      "failed_to_give_badge": "Het is niet gelukt om de %s badge aan %s te geven!",
+      "removed_tier": "Heb Tier %d van de %s badge van %s verwijderd!",
+      "removed_badge": "Heb %s badge van %s verwijderd!",
+      "failed_to_list": "Het is niet gelukt om alle beschikbare badges weer te geven! Probeer het later nog eens!"
+    },
     "language": {
       "language_set": "Je hebt je taal gezet naar %s"
+    },
+    "auto_hide_preference": {
+      "preference_set_true": "Je generator commando's zullen nu automatisch worden verborgen.",
+      "preference_set_false": "Je generator commando's zullen nu automatisch worden weergeven. "
     },
     "invite": {
       "header": "Maakte %d uitnodigingen:",
@@ -59,39 +82,46 @@
       "reminder_deleted": "Verwijderde herinnering %s!"
     },
     "lock": {
+      "start": "Sluiten...",
       "no_permission": "Ik heb geen toegang om %s te sluiten!",
-      "error": "Er is een fout opgetreden bij het sluiten van %s!"
+      "error": "Er is een fout opgetreden bij het sluiten van %s!",
+      "no_tag": "Ik kon geen tag vinden met de naam %s!",
+      "already_tagged": "Deze thread is al voorzien van een tag!",
+      "success": "Succesvol deze thread gesloten!"
     },
     "archive": {
-      "channel_moved": "Verplaatste %s naar %s!"
+      "start": "Archivering kanaal %s! Als er geen bestand verschijnt, neem dan contact op met de botontwikkelaar.",
+      "error": "Er is een fout opgetreden tijdens het archiveren van kanaal %s! Bekijk de logs voor meer informatie.",
+      "complete": "Klaar met het archiveren van kanaal %s! Het bestand zou hieronder moeten verschijnen."
     },
     "config": {
       "read_error": "Er is een fout opgetreden bij het lezen van het configuratiebestand! Bekijk de logs voor meer informatie.",
       "invalid_value": "Kon niet de gegeven sleutel vinden `%s` in het configuratiebestand!",
       "reloaded": "Herlaadde het configuratiebestand!",
-      "updated": "Updatete het configuratiebestand!"
+      "updated": "Configuratiebestand bijgewerkt!"
     },
     "metrics": {
       "toggle": "Schakelde metrieken om: %s"
     },
     "user": {
-      "linked_by_admin": "Updatete profiel voor %s naar %s (UUID: %s)",
+      "linked_by_admin": "Profiel bijgewerkt voor %s naar %s (UUID: %s)",
       "username_not_found": "Kon de speler met de naam `%s` niet vinden! (%s)",
       "profile_mismatch": "Profiel komt niet overeen voor %s: %s",
       "no_missing_profiles": "Geen missende profielen gevonden!",
-      "migrated_profiles": "Migreerde %d profielen!"
+      "migrated_profiles": "%d profielen gemigreerd!"
     },
     "transfer_tag": {
       "invalid_tags": "Je hebt verkeerde van/naar labels ingevoerd, probeer het nog eens!",
       "no_threads_found": "Geen threads waren gevonden met de label %s!",
-      "updated_threads": "Updatete %d/%d threads ...",
+      "updated_threads": "%d/%d threads bijgewerkt ...",
       "updated_threads_complete": "Rondde het overzetten van %s naar %s in %d threads af!"
     },
     "log_level": {
       "invalid_level": "Er is een ongeldig log level gespecificeerd!",
-      "set_level": "Zette het log level naar %s"
+      "set_level": "Logniveau ingesteld naar %s"
     },
     "request_review": {
+      "disabled": "Beoordelingsverzoeken zijn momenteel uitgeschakeld!",
       "not_suggestion_channel": "Je kunt niet threads versturen in niet-suggestie kanalen voor de beoordeling!",
       "too_soon": "Je kunt nog niet een nieuwe beoordeling aanvragen voor deze thread!",
       "not_own_thread": "Je kunt niet een beoordeling aanvragen voor een thread die je niet zelf gemaakt hebt!",
@@ -108,19 +138,23 @@
       "invalid_role": "Kon niet een rol vinden met ID `%s`!",
       "removed_role": "Verwijderde de rol %s van je! Gebruik hetzelfde commando om het opnieuw toe te voegen.",
       "added_role": "Voegde de rol %s aan je toe! Gebruik hetzelfde commando om het te verwijderen.",
-      "list_roles": "**Toewijsbare rollen:**\n%s\n\n**Gebruik /role <naam> om de rol om te schakelen!"
+      "list_roles": "**Toewijsbare rollen:**\n%s\n\n**Gebruik /role <naam> om de rol om te schakelen!",
+      "cannot_progress_further": "Je hebt al de hoogste rol!",
+      "eligible_promotion": "Je komt momenteel in aanmerking voor een promotie! Dit is geen garantie dat je gepromoveerd zult worden. Bedankt voor je bijdrage aan SkyBlock Nerds!",
+      "not_eligible_promotion": "Je hebt %s/%s benodigde suggestie stemmen en %s/%s benodigde suggestie reacties om genomineerd te worden voor de Orange rol!",
+      "not_currently_accepting_promotions": "We zijn momenteel niet bezig met het beoordelen van promotiekandidaten, probeer het later nog eens!"
     },
     "verify": {
       "already_requested": "Je voorgaande verificatieverzoek is nog niet bekeken. Je wordt gecontacteerd via DM als er verdere informatie nodig is. ",
       "request_sent": "Je verificatieverzoek is verstuurd. Je zal gecontacteerd worden via DM mocht er verdere informatie nodig zijn.",
       "error": "Er is een fout opgetreden bij het verificatieproces! Als dit blijft aanhouden, contacteer ons met Mod Mail",
-      "profile_updated": "Updatete je Mojang profiel naar %s (`%s`)"
+      "profile_updated": "Je Mojang profiel is bijgewerkt naar %s (`%s`)"
     },
     "birthday": {
-      "removed": "Je verjaardag is verwijderd!",
+      "removed": "Je verjaardag is weggehaald!",
       "not_set_yet": "Je verjaardag is nog niet ingesteld!",
       "get": "Je verjaardag staat momenteel op %s",
-      "set": "Zette je verjaardag naar %s!",
+      "set": "Je verjaardag is nu op %s!",
       "bad_date": "Dat is niet een geldige datum. Probeer het nog eens of contacteer een bot ontwikkelaar!"
     },
     "mod_mail": {
@@ -134,11 +168,17 @@
       "exporting_threads": "Exporteren van threads van %s...",
       "exporting_thread": "Exporteren van thread %d/%d: %s van %s",
       "exported_thread": "Rondde het exporteren van thread %d/%d af: %s van %s",
-      "complete": "Ronnde het exporteren van alle threads van %s af!"
+      "complete": "Ronnde het exporteren van alle threads van %s af!",
+      "rate_limited": "Je bent te snel bezig met het exporteren van threads vanuit %s! Probeer het later nog eens!",
+      "none_found": "Er is niets gevonden om te exporteren!"
     },
     "translations": {
       "reloaded": "Herlaadde vertalingen voor de taal %s",
-      "reload_complete": "Herlaadde vertalingen voor alle talen!"
+      "reload_complete": "Herlaadde vertalingen voor alle talen!",
+      "not_found": "Vertaling niet gevonden, standaard wordt gebruikt."
+    },
+    "force_nominations": {
+      "success": "Nominaties geforceerd!"
     }
   }
 }
