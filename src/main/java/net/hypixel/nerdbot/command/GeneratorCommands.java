@@ -295,7 +295,11 @@ public class GeneratorCommands extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "search", description = "Search for an item")
-    public void searchItem(GuildSlashEvent event, @AppOption(description = "The ID of the item to search for") String itemId, @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden) {
+    public void searchItem(
+        GuildSlashEvent event,
+        @AppOption(description = "The ID of the item to search for") String itemId,
+        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+    ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
