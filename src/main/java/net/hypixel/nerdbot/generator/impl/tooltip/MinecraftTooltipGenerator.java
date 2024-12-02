@@ -82,10 +82,12 @@ public class MinecraftTooltipGenerator implements Generator {
             .withAlpha(Range.between(0, 255).fit(settings.getAlpha()));
 
         if (settings.getName() != null && !settings.getName().isEmpty()) {
-            String name = settings.getName();
+            String name;
 
             if (rarity != null && rarity != Rarity.byName("NONE")) {
-                name = rarity.getColorCode() + name;
+                name = rarity.getColorCode() + settings.getName();
+            } else {
+                name = settings.getName();
             }
 
             builder.withLines(LineSegment.fromLegacy(TextWrapper.parseLine(name), '&'));
