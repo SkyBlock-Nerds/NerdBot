@@ -76,10 +76,12 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final String RENDER_BORDER_DESCRIPTION = "Whether the inventory's border should be rendered";
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
+    private static final String PRESERVE_FORMATTING_DESCRIPTION = "Whether or not formatting will be kept across lines";
 
     private static final int DEFAULT_PADDING = 0;
     private static final int DEFAULT_ALPHA = 245;
     private static final boolean AUTO_HIDE_ON_ERROR = true;
+    private static final boolean PRESERVE_FORMATTING_ON_ERROR = true;
 
     @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "display", description = "Display an item")
     public void generateItem(
@@ -392,13 +394,15 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = "Optional item lore displayed beside the inventory") @Optional String hoveredItemString,
         @AppOption(description = INVENTORY_NAME_DESCRIPTION) @Optional String containerName,
         @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean drawBorder,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden,
+        @AppOption(description = PRESERVE_FORMATTING_DESCRIPTION) @Optional Boolean preserveFormatting
     ) {
         if (hidden == null) {
             hidden = getUserAutoHideSetting(event);
         }
         event.deferReply(hidden).complete();
 
+        preserveFormatting = preserveFormatting == null ? getUserPreserveFormattingSetting(event) : preserveFormatting;
         drawBorder = drawBorder == null || drawBorder;
 
         try {
@@ -420,6 +424,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     .isPaddingFirstLine(false)
                     .withEmptyLine(false)
                     .withRenderBorder(true)
+                    .isPreserveFormatting(preserveFormatting)
                     .build();
 
                 generatedObject.addGenerator(tooltipGenerator);
@@ -536,13 +541,15 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = NORMAL_ITEM_DESCRIPTION) @Optional Boolean paddingFirstLine,
         @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
         @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden,
+        @AppOption(description = PRESERVE_FORMATTING_DESCRIPTION) @Optional Boolean preserveFormatting
     ) {
         if (hidden == null) {
             hidden = getUserAutoHideSetting(event);
         }
         event.deferReply(hidden).complete();
 
+        preserveFormatting = preserveFormatting == null ? getUserPreserveFormattingSetting(event) : preserveFormatting;
         alpha = alpha == null ? DEFAULT_ALPHA : alpha;
         padding = padding == null ? DEFAULT_PADDING : padding;
         emptyLine = emptyLine == null || emptyLine;
@@ -564,6 +571,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .isTextCentered(centered)
                 .isPaddingFirstLine(paddingFirstLine)
                 .withRenderBorder(true)
+                .isPreserveFormatting(preserveFormatting)
                 .build();
 
             if (itemId != null) {
@@ -886,6 +894,24 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         return AUTO_HIDE_ON_ERROR;
+    }
+
+    /**
+     * Gets the gen command preserve formatting preference from a {@link GuildSlashEvent}.
+     *
+     * @param event The {@link GuildSlashEvent} triggered by the user you want to get the preserve formatting preference from.
+     *
+     * @return The preserve formatting preference from the user.
+     */
+    private boolean getUserPreserveFormattingSetting(GuildSlashEvent event) {
+        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser user = repository.findById(event.getMember().getId());
+
+        if (user != null) {
+            return user.isPreserveFormattingGenCommands();
+        }
+
+        return PRESERVE_FORMATTING_ON_ERROR;
     }
 
     /**

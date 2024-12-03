@@ -65,6 +65,10 @@
       "preference_set_true": "Your generator commands will now be automatically hidden.",
       "preference_set_false": "Your generator commands will now be automatically shown."
     },
+    "preserve_formatting_preference": {
+      "preference_set_true": "Your generator commands will now automatically have it's formatting preserved across lines.",
+      "preference_set_false": "Your generator commands will now lose formatting across lines."
+    },
     "invite": {
       "header": "Created %d invites:",
       "deleted": "Deleted %d invites!"

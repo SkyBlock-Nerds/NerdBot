@@ -65,4 +65,25 @@ public class UserCommands extends ApplicationCommand {
         user.setAutoHideGenCommands(autohide);
         TranslationManager.edit(event.getHook(), user, "commands.auto_hide_preference.preference_set_" + Boolean.toString(autohide));
     }
+
+    @JDASlashCommand(name = SETTING_BASE_COMMAND, group = GEN_GROUP_COMMAND, subcommand = "preserveformatting", description = "Change if formatting overflows into the next line or not.")
+    public void setPreserveFormattingPreference(GuildSlashEvent event, @AppOption() boolean preserveFormatting) {
+        event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
+        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser user = repository.findById(event.getMember().getId());
+
+        if (user == null) {
+            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
+            return;
+        }
+
+        user.setPreserveFormattingGenCommands(preserveFormatting);
+        TranslationManager.edit(event.getHook(), user, "commands.preserve_formatting_preference.preference_set_" + Boolean.toString(preserveFormatting));
+    }
 }

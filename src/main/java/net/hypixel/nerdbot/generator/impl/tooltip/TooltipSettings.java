@@ -19,6 +19,6 @@ public class TooltipSettings {
     private final boolean paddingFirstLine;
     private final int maxLineLength;
     private final boolean renderBorder;
+    private final boolean preserveFormatting;
 
 }
-

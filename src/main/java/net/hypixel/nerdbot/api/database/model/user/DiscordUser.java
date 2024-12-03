@@ -41,6 +41,7 @@ public class DiscordUser {
     private MojangProfile mojangProfile;
     private GeneratorHistory generatorHistory;
     private boolean autoHideGenCommands;
+    private boolean preserveFormattingGenCommands; // TODO think of a better/shorter name
 
     public DiscordUser() {
     }
@@ -54,7 +55,8 @@ public class DiscordUser {
             new BirthdayData(),
             new MojangProfile(),
             new GeneratorHistory(),
-            false
+            false,
+            true
         );
     }
 
@@ -67,7 +69,8 @@ public class DiscordUser {
             new BirthdayData(),
             new MojangProfile(),
             new GeneratorHistory(),
-            false
+            false,
+            true
         );
     }
 

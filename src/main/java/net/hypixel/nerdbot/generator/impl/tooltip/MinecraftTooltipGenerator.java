@@ -42,18 +42,20 @@ public class MinecraftTooltipGenerator implements Generator {
     private final boolean centeredText;
     private final int maxLineLength;
     private final boolean renderBorder;
+    private final boolean preserveFormatting;
 
     @Override
     public GeneratedObject generate() {
         TooltipSettings settings = new TooltipSettings(
-            name,           // Name of the item
-            emptyLine,      // Whether to add an empty line
-            type,           // Type of the item
-            alpha,          // Alpha value
-            padding,        // Padding value
-            normalItem,     // Whether to pad the first line
-            maxLineLength,  // Maximum line length
-            renderBorder    // Whether to render a border around the tooltip
+            name,               // Name of the item
+            emptyLine,          // Whether to add an empty line
+            type,               // Type of the item
+            alpha,              // Alpha value
+            padding,            // Padding value
+            normalItem,         // Whether to pad the first line
+            maxLineLength,      // Maximum line length
+            renderBorder,       // Whether to render a border around the tooltip
+            preserveFormatting  // Whether the formatting from the previous line will be carried over
         );
 
         return new GeneratedObject(buildItem(itemLore, settings));
@@ -88,13 +90,13 @@ public class MinecraftTooltipGenerator implements Generator {
                 name = rarity.getColorCode() + name;
             }
 
-            builder.withLines(LineSegment.fromLegacy(TextWrapper.parseLine(name), '&'));
+            builder.withLines(LineSegment.fromLegacy(TextWrapper.parseLine(name), '&', false));
         }
 
         List<List<LineSegment>> segments = new ArrayList<>();
 
         for (String line : TextWrapper.wrapString(input, settings.getMaxLineLength())) {
-            segments.add(LineSegment.fromLegacy(line, '&'));
+            segments.add(LineSegment.fromLegacy(line, '&', settings.isPreserveFormatting()));
         }
 
         for (List<LineSegment> line : segments) {
@@ -105,7 +107,7 @@ public class MinecraftTooltipGenerator implements Generator {
             if (settings.isEmptyLine()) {
                 builder.withEmptyLine();
             }
-            builder.withLines(LineSegment.fromLegacy(rarity.getFormattedDisplay() + " " + settings.getType(), '&'));
+            builder.withLines(LineSegment.fromLegacy(rarity.getFormattedDisplay() + " " + settings.getType(), '&', false));
         }
 
         return builder.build();
@@ -129,6 +131,7 @@ public class MinecraftTooltipGenerator implements Generator {
         private transient boolean bypassMaxLineLength;
         private boolean centered;
         private transient boolean renderBorder;
+        private boolean preserveFormatting;
 
         public MinecraftTooltipGenerator.Builder withName(String name) {
             this.name = name;
@@ -191,6 +194,11 @@ public class MinecraftTooltipGenerator implements Generator {
 
         public MinecraftTooltipGenerator.Builder withRenderBorder(boolean renderBorder) {
             this.renderBorder = renderBorder;
+            return this;
+        }
+
+        public MinecraftTooltipGenerator.Builder isPreserveFormatting(boolean preserveFormatting) {
+            this.preserveFormatting = preserveFormatting;
             return this;
         }
 
@@ -257,7 +265,7 @@ public class MinecraftTooltipGenerator implements Generator {
 
         @Override
         public MinecraftTooltipGenerator build() {
-            return new MinecraftTooltipGenerator(name, rarity, itemLore, type, emptyLine, alpha, padding, paddingFirstLine, centered, maxLineLength, renderBorder);
+            return new MinecraftTooltipGenerator(name, rarity, itemLore, type, emptyLine, alpha, padding, paddingFirstLine, centered, maxLineLength, renderBorder, preserveFormatting);
         }
     }
 }
