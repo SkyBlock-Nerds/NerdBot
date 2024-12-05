@@ -523,9 +523,9 @@ public class GeneratorCommands extends ApplicationCommand {
     public void generateTooltip(
         GuildSlashEvent event,
         @AppOption(description = NAME_DESCRIPTION) String name,
-        @AppOption(autocomplete = "item-rarities", description = RARITY_DESCRIPTION) String rarity,
-        @AppOption(description = TYPE_DESCRIPTION) String type,
         @AppOption(description = LORE_DESCRIPTION) String itemLore,
+        @AppOption(description = TYPE_DESCRIPTION) @Optional String type,
+        @AppOption(autocomplete = "item-rarities", description = RARITY_DESCRIPTION) @Optional String rarity,
         @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
         @AppOption(description = RECIPE_STRING_DESCRIPTION) @Optional String recipeString,
@@ -543,6 +543,8 @@ public class GeneratorCommands extends ApplicationCommand {
         }
         event.deferReply(hidden).complete();
 
+        type = type == null ? "" : type;
+        rarity = rarity == null ? "none" : rarity;
         alpha = alpha == null ? DEFAULT_ALPHA : alpha;
         padding = padding == null ? DEFAULT_PADDING : padding;
         emptyLine = emptyLine == null || emptyLine;
