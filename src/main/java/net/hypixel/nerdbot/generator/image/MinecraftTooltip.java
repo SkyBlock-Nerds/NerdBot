@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.generator.text.segment.ColorSegment;

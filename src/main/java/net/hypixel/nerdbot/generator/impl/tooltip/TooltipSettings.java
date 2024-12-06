@@ -11,14 +11,11 @@ import lombok.ToString;
 @ToString
 public class TooltipSettings {
 
-    private final String name;
-    private final boolean emptyLine;
-    private final String type;
-    private final int alpha;
-    private final int padding;
-    private final boolean paddingFirstLine;
-    private final int maxLineLength;
-    private final boolean renderBorder;
+    protected final String lore;
+    protected final String name;
+    protected final int alpha;
+    protected final int padding;
+    protected final int maxLineLength;
+    protected final boolean renderBorder;
 
 }
-

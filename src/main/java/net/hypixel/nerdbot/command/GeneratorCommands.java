@@ -28,8 +28,13 @@ import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
 import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
-import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
+import net.hypixel.nerdbot.generator.impl.tooltip.skyblock.SkyblockItemGenerator;
+import net.hypixel.nerdbot.generator.impl.tooltip.skyblock.powerstone.SkyblockPowerGenerator;
+import net.hypixel.nerdbot.generator.impl.tooltip.skyblock.powerstone.SkyblockPowerstoneGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
+import net.hypixel.nerdbot.generator.powerstone.InvalidPowerstoneStatFormatException;
+import net.hypixel.nerdbot.generator.powerstone.PowerstoneStat;
+import net.hypixel.nerdbot.generator.powerstone.ScalingPowerstoneStat;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.ImageUtil;
@@ -49,6 +54,8 @@ import java.util.function.Function;
 public class GeneratorCommands extends ApplicationCommand {
 
     public static final String BASE_COMMAND = "gen2"; // TODO change this back to "gen" when released
+
+    private static final String GROUP_POWERSTONE = "powerstone";
 
     private static final String ITEM_DESCRIPTION = "The ID of the item to display";
     private static final String EXTRA_DATA_DESCRIPTION = "The extra modifiers to change the item";
@@ -76,15 +83,25 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final String RENDER_BORDER_DESCRIPTION = "Whether the inventory's border should be rendered";
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
+    private static final String MAGICAL_POWER_DESCRIPTION = "The Magical Power to use in the stat calculations";
+    private static final String SCALING_STATS_DESCRIPTION = "The stats that scale with the given Magical Power";
+    private static final String STATIC_STATS_DESCRIPTION = "The stats that do not scale with the given Magical Power";
+    private static final String INCLUDE_GEN_COMMAND_DESCRIPTION = "Includes a slash command for you to edit";
+
+    private static final String ITEM_RARITY_AUTOCOMPLETE = "item-rarities";
+    private static final String POWER_STRENGTH_AUTOCOMPLETE = "power-strengths";
+    private static final String ITEM_NAME_AUTOCOMPLETE = "item-names";
+    private static final String TOOLTIP_SIDE_AUTOCOMPLETE = "tooltip-side";
 
     private static final int DEFAULT_PADDING = 0;
     private static final int DEFAULT_ALPHA = 245;
     private static final boolean AUTO_HIDE_ON_ERROR = true;
+    private static final int DEFAULT_MAGICAL_POWER = 500;
 
     @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "display", description = "Display an item")
     public void generateItem(
         GuildSlashEvent event,
-        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
+        @AppOption(autocomplete = ITEM_NAME_AUTOCOMPLETE, description = ITEM_DESCRIPTION) String itemId,
         @AppOption(description = EXTRA_DATA_DESCRIPTION) @Optional String data,
         @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
         @AppOption(description = "If the item should look as if it being hovered over") @Optional Boolean hoverEffect,
@@ -129,169 +146,169 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate an image of a Power Stone")
+    @JDASlashCommand(name = BASE_COMMAND, group = GROUP_POWERSTONE, subcommand = "stone", description = "Generate an image of a Power")
+    public void generatePower(
+        GuildSlashEvent event,
+        @AppOption(description = "The name of your Power") String powerName,
+        @AppOption(autocomplete = ITEM_RARITY_AUTOCOMPLETE, description = RARITY_DESCRIPTION) String powerstoneRarity,
+        @AppOption(description = MAGICAL_POWER_DESCRIPTION) @Optional Integer magicalPower,
+        @AppOption(description = "Extra lore to add") @Optional String extraLore,
+        @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
+        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
+        @AppOption(description = SCALING_STATS_DESCRIPTION) @Optional String scalingStats,
+        @AppOption(description = STATIC_STATS_DESCRIPTION) @Optional String uniqueBonus,
+        @AppOption(description = "Combat level required to use this powerstone") @Optional String combatRequirement,
+        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden,
+        @AppOption(autocomplete = ITEM_NAME_AUTOCOMPLETE, description = ITEM_DESCRIPTION) @Optional String itemId,
+        @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
+        @AppOption(description = INCLUDE_GEN_COMMAND_DESCRIPTION) @Optional Boolean includeGenFullCommand
+    ) {
+        magicalPower = magicalPower == null ? DEFAULT_MAGICAL_POWER : magicalPower;
+        alpha = alpha == null ? DEFAULT_ALPHA : alpha;
+        padding = padding == null ? DEFAULT_PADDING : padding;
+        combatRequirement = combatRequirement == null ? "" : combatRequirement;
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+        includeGenFullCommand = includeGenFullCommand != null && includeGenFullCommand;
+
+        event.deferReply(hidden).complete();
+
+        try {
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            SkyblockPowerstoneGenerator.Builder skyblockPowerstoneGenerator = new SkyblockPowerstoneGenerator.Builder()
+                .withName(powerName)
+                .withRarity(Rarity.byName(powerstoneRarity))
+                .withExtraLore(extraLore)
+                .withAlpha(alpha)
+                .withPadding(padding)
+                .withMagicalPower(magicalPower)
+                .withCombatRequirement(combatRequirement);
+
+            if (scalingStats != null) {
+                skyblockPowerstoneGenerator.withScalingStats(ScalingPowerstoneStat.scalingStatsfromString(scalingStats, magicalPower));
+            }
+
+            if (uniqueBonus != null) {
+                skyblockPowerstoneGenerator.withStaticStats(PowerstoneStat.statsFromString(uniqueBonus));
+            }
+
+            if (includeGenFullCommand) {
+                event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + skyblockPowerstoneGenerator.buildSlashCommand() + "```").queue();
+            }
+
+            if (itemId != null) {
+                if (itemId.equalsIgnoreCase("player_head")) {
+                    MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder()
+                        .withScale(-2);
+
+                    if (skinValue != null) {
+                        generator.withSkin(skinValue);
+                    }
+
+                    generatorImageBuilder.addGenerator(generator.build());
+                } else {
+                    generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                        .withItem(itemId)
+                        .isBigImage()
+                        .build());
+                }
+            }
+
+            generatorImageBuilder.addGenerator(skyblockPowerstoneGenerator.build());
+            GeneratedObject generatedObject = generatorImageBuilder.build();
+
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
+        }
+        catch (GeneratorException | IllegalArgumentException | InvalidPowerstoneStatFormatException exception){
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating a Power Stone", exception);
+        }
+        catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating that Power Stone!").queue();
+            log.error("Encountered an error while generating a Power Stone", exception);
+        }
+    }
+
+    @JDASlashCommand(name = BASE_COMMAND, group = GROUP_POWERSTONE, subcommand = "power", description = "Generate an image of a Power Stone")
     public void generatePowerstone(
         GuildSlashEvent event,
-        @AppOption(description = "The name of your Power Stone") String powerName,
-        @AppOption(autocomplete = "power-strengths", description = "The strength of the Power Stone") String powerStrength,
-        @AppOption(description = "The Magical Power to use in the stat calculations") int magicalPower,
-        @AppOption(description = "The stats that scale with the given Magical Power") @Optional String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
-        @AppOption(description = "The stats that do not scale with the given Magical Power") @Optional String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
-        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
+        @AppOption(description = "The name of your Power Stone") String stoneName,
+        @AppOption(autocomplete = POWER_STRENGTH_AUTOCOMPLETE, description = "The strength of the Power Stone") String powerStrength,
+        @AppOption(description = "Determines if the power comes from a stone or not") @Optional Boolean stonePower,
+        @AppOption(description = MAGICAL_POWER_DESCRIPTION) @Optional Integer magicalPower,
+        @AppOption(description = SCALING_STATS_DESCRIPTION) @Optional String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
+        @AppOption(description = STATIC_STATS_DESCRIPTION) @Optional String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
+        @AppOption(autocomplete = ITEM_NAME_AUTOCOMPLETE, description = ITEM_DESCRIPTION) @Optional String itemId,
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
-        @AppOption(description = "Includes a slash command for you to edit") @Optional Boolean includeGenFullCommand,
+        @AppOption(description = INCLUDE_GEN_COMMAND_DESCRIPTION) @Optional Boolean includeGenFullCommand,
         @AppOption(description = "Whether the Power Stone shows as selected") @Optional Boolean selected,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
-        if (hidden == null) {
-            hidden = getUserAutoHideSetting(event);
-        }
-        event.deferReply(hidden).complete();
-
+        magicalPower = magicalPower == null ? DEFAULT_MAGICAL_POWER : magicalPower;
         alpha = alpha == null ? DEFAULT_ALPHA : alpha;
         padding = padding == null ? DEFAULT_PADDING : padding;
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+        includeGenFullCommand = includeGenFullCommand != null && includeGenFullCommand;
+        stonePower = stonePower == null || stonePower;
+        selected = selected != null && selected;
 
-        Function<String, HashMap<String, Integer>> parseStatsToMap = stats -> {
-            HashMap<String, Integer> map = new HashMap<>();
-            String[] entries = stats.split(",");
-
-            for (String entry : entries) {
-                String[] stat = entry.split(":");
-
-                if (stat.length != 2 || stat[0].trim().isEmpty() || stat[1].trim().isEmpty()) {
-                    throw new GeneratorException("Stat `" + entry + "` is using an invalid format");
-                }
-
-                String statName = stat[0].trim();
-
-                if (map.containsKey(statName)) {
-                    map.put(statName, map.get(statName) + Integer.parseInt(stat[1].trim()));
-                }
-
-                int statValue;
-
-                try {
-                    statValue = Integer.parseInt(stat[1].trim());
-                } catch (NumberFormatException e) {
-                    throw new GeneratorException("Invalid number for stat `" + statName + "`: " + stat[1].trim());
-                }
-
-                map.put(statName, statValue);
-            }
-
-            return map;
-        };
+        event.deferReply(hidden).complete();
 
         try {
-            StringBuilder scalingStatsFormatted = new StringBuilder();
-            Map<String, Integer> scalingStatsMap = scalingStats != null ? parseStatsToMap.apply(scalingStats) : new HashMap<>();
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            SkyblockPowerGenerator.Builder skyblockPowerGenerator = new SkyblockPowerGenerator.Builder()
+                .withName(stoneName)
+                .withAlpha(alpha)
+                .withPadding(padding)
+                .withSelected(selected)
+                .withMagicalPower(magicalPower)
+                .withStrength(PowerStrength.byName(powerStrength))
+                .withStonePower(stonePower);
 
-            for (Map.Entry<String, Integer> entry : scalingStatsMap.entrySet()) {
-                String statName = entry.getKey();
-                Integer basePower = entry.getValue();
-                Stat stat = Stat.byName(statName);
-
-                if (stat == null) {
-                    throw new GeneratorException("`" + statName + "` is not a valid stat");
-                }
-
-                scalingStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, Util.COMMA_SEPARATED_FORMAT.format(calculatePowerStoneStat(stat, magicalPower, basePower))));
+            if (scalingStats != null) {
+                skyblockPowerGenerator.withScalingStats(ScalingPowerstoneStat.scalingStatsfromString(scalingStats, magicalPower));
             }
 
-            if (!scalingStatsFormatted.isEmpty()) {
-                scalingStatsFormatted = new StringBuilder("&7Stats:\\n")
-                    .append(scalingStatsFormatted)
-                    .append("\\n");
+            if (uniqueBonus != null) {
+                skyblockPowerGenerator.withStaticStats(PowerstoneStat.statsFromString(uniqueBonus));
             }
 
-            StringBuilder bonusStatsFormatted = new StringBuilder();
-            HashMap<String, Integer> bonusStats = parseStatsToMap.apply(uniqueBonus);
-
-            for (Map.Entry<String, Integer> entry : bonusStats.entrySet()) {
-                String statName = entry.getKey();
-                Integer statAmount = entry.getValue();
-                Stat stat = Stat.byName(statName);
-
-                if (stat == null) {
-                    throw new GeneratorException("'" + statName + "' is not a valid stat");
-                }
-
-                bonusStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, Util.COMMA_SEPARATED_FORMAT.format(statAmount)));
+            if (includeGenFullCommand != null && includeGenFullCommand) {
+                event.getHook().sendMessage("Your Power has been parsed into a slash command:\n```" + skyblockPowerGenerator.buildSlashCommand() + "```").queue();
             }
 
-            if (!bonusStatsFormatted.isEmpty()) {
-                bonusStatsFormatted = new StringBuilder("&7Unique Power Bonus:\\n")
-                    .append(bonusStatsFormatted)
-                    .append("\\n");
-            }
+            if (itemId != null) {
+                if (itemId.equalsIgnoreCase("player_head")) {
+                    MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder()
+                        .withScale(-2);
 
-            String itemLoreTemplate =
-                "&8%s\\n" + // %s = PowerStrength.byName(powerStrength) OR powerStrength
-                    "\\n" +
-                    "%s" + // %s = scalingStatsFormatted
-                    "%s" + // %s = bonusStatsFormatted
-                    "&7You have: &6%s Magical Power\\n" + // %d = magicalPower
-                    "\\n" +
-                    (selected == null || selected ? "&aPower is selected!" : "&eClick to select power!");
-
-            String itemLore = String.format(itemLoreTemplate,
-                PowerStrength.byName(powerStrength) == null ? powerStrength : PowerStrength.byName(powerStrength).getFormattedDisplay(),
-                scalingStatsFormatted,
-                bonusStatsFormatted,
-                Util.COMMA_SEPARATED_FORMAT.format(magicalPower)
-            );
-
-            try {
-                GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
-                MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                    .withName("&a" + powerName)
-                    .withRarity(Rarity.byName("none"))
-                    .withItemLore(itemLore)
-                    .withAlpha(alpha)
-                    .withPadding(padding)
-                    .withEmptyLine(true)
-                    .isTextCentered(false)
-                    .isPaddingFirstLine(true)
-                    .withRenderBorder(true);
-
-                if (includeGenFullCommand != null && includeGenFullCommand) {
-                    event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + tooltipGenerator.buildSlashCommand() + "```").queue();
-                }
-
-                if (itemId != null) {
-                    if (itemId.equalsIgnoreCase("player_head")) {
-                        MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder()
-                            .withScale(-2);
-
-                        if (skinValue != null) {
-                            generator.withSkin(skinValue);
-                        }
-
-                        generatorImageBuilder.addGenerator(generator.build());
-                    } else {
-                        generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
-                            .withItem(itemId)
-                            .isBigImage()
-                            .build());
+                    if (skinValue != null) {
+                        generator.withSkin(skinValue);
                     }
+
+                    generatorImageBuilder.addGenerator(generator.build());
+                } else {
+                    generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                        .withItem(itemId)
+                        .isBigImage()
+                        .build());
                 }
-
-                generatorImageBuilder.addGenerator(tooltipGenerator.build());
-                GeneratedObject generatedObject = generatorImageBuilder.build();
-
-                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
-                addCommandToUserHistory(event.getUser(), event.getCommandString());
-            } catch (GeneratorException | IllegalArgumentException exception) {
-                event.getHook().editOriginal(exception.getMessage()).queue();
-                log.error("Encountered an error while generating a Power Stone", exception);
-            } catch (IOException exception) {
-                event.getHook().editOriginal("An error occurred while generating that Power Stone!").queue();
-                log.error("Encountered an error while generating a Power Stone", exception);
             }
-        } catch (GeneratorException exception) {
+
+            generatorImageBuilder.addGenerator(skyblockPowerGenerator.build());
+            GeneratedObject generatedObject = generatorImageBuilder.build();
+
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
+        }
+        catch (GeneratorException | IllegalArgumentException | InvalidPowerstoneStatFormatException exception){
             event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating a Power Stone", exception);
+        }
+        catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating that Power Stone!").queue();
             log.error("Encountered an error while generating a Power Stone", exception);
         }
     }
@@ -413,7 +430,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     .build());
 
             if (hoveredItemString != null) {
-                MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                SkyblockItemGenerator tooltipGenerator = new SkyblockItemGenerator.Builder()
                     .withItemLore(hoveredItemString)
                     .withAlpha(DEFAULT_ALPHA)
                     .withPadding(DEFAULT_PADDING)
@@ -488,7 +505,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     .build());
             }
 
-            MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+            SkyblockItemGenerator.Builder tooltipGenerator = new SkyblockItemGenerator.Builder()
                 .parseNbtJson(jsonObject)
                 .withAlpha(alpha)
                 .withPadding(padding)
@@ -523,10 +540,10 @@ public class GeneratorCommands extends ApplicationCommand {
     public void generateTooltip(
         GuildSlashEvent event,
         @AppOption(description = NAME_DESCRIPTION) String name,
-        @AppOption(autocomplete = "item-rarities", description = RARITY_DESCRIPTION) String rarity,
+        @AppOption(autocomplete = ITEM_RARITY_AUTOCOMPLETE, description = RARITY_DESCRIPTION) String rarity,
         @AppOption(description = TYPE_DESCRIPTION) String type,
         @AppOption(description = LORE_DESCRIPTION) String itemLore,
-        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
+        @AppOption(autocomplete = ITEM_NAME_AUTOCOMPLETE, description = ITEM_DESCRIPTION) @Optional String itemId,
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
         @AppOption(description = RECIPE_STRING_DESCRIPTION) @Optional String recipeString,
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
@@ -535,7 +552,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
         @AppOption(description = NORMAL_ITEM_DESCRIPTION) @Optional Boolean paddingFirstLine,
         @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
-        @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide,
+        @AppOption(autocomplete = TOOLTIP_SIDE_AUTOCOMPLETE, description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         if (hidden == null) {
@@ -548,11 +565,11 @@ public class GeneratorCommands extends ApplicationCommand {
         emptyLine = emptyLine == null || emptyLine;
         centered = centered != null && centered;
         paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
-        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
+        maxLineLength = maxLineLength == null ? SkyblockItemGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
-            MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+            SkyblockItemGenerator tooltipGenerator = new SkyblockItemGenerator.Builder()
                 .withName(name)
                 .withRarity(Rarity.byName(rarity))
                 .withItemLore(itemLore)
@@ -594,7 +611,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 ).build();
             }
 
-            if (tooltipSide != null && MinecraftTooltipGenerator.TooltipSide.valueOf(tooltipSide.toUpperCase()) == MinecraftTooltipGenerator.TooltipSide.LEFT) {
+            if (tooltipSide != null && SkyblockItemGenerator.TooltipSide.valueOf(tooltipSide.toUpperCase()) == SkyblockItemGenerator.TooltipSide.LEFT) {
                 generatorImageBuilder.addGenerator(0, tooltipGenerator);
             } else {
                 generatorImageBuilder.addGenerator(tooltipGenerator);
@@ -631,12 +648,12 @@ public class GeneratorCommands extends ApplicationCommand {
         centered = centered != null && centered;
         alpha = alpha == null ? 0 : alpha;
         padding = padding == null ? DEFAULT_PADDING : padding;
-        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
+        maxLineLength = maxLineLength == null ? SkyblockItemGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         renderBorder = renderBorder == null || renderBorder;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
-            MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+            SkyblockItemGenerator tooltipGenerator = new SkyblockItemGenerator.Builder()
                 .withItemLore(text)
                 .withAlpha(alpha)
                 .withPadding(padding)
@@ -694,7 +711,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
         dialogue = String.join("\n", lines);
 
-        MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+        SkyblockItemGenerator.Builder tooltipGenerator = new SkyblockItemGenerator.Builder()
             .withItemLore(dialogue)
             .withAlpha(0)
             .withPadding(DEFAULT_PADDING)
@@ -774,7 +791,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
             dialogue = String.join("\n", lines);
 
-            MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+            SkyblockItemGenerator.Builder tooltipGenerator = new SkyblockItemGenerator.Builder()
                 .withItemLore(dialogue)
                 .withAlpha(0)
                 .withPadding(DEFAULT_PADDING)
@@ -831,27 +848,27 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @AutocompletionHandler(name = "power-strengths", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
+    @AutocompletionHandler(name = POWER_STRENGTH_AUTOCOMPLETE, showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> powerStrengths(CommandAutoCompleteInteractionEvent event) {
         return PowerStrength.getPowerStrengthNames();
     }
 
-    @AutocompletionHandler(name = "item-names", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
+    @AutocompletionHandler(name = ITEM_NAME_AUTOCOMPLETE, showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> itemNames(CommandAutoCompleteInteractionEvent event) {
         return Spritesheet.getImageMap().keySet()
             .stream()
             .toList();
     }
 
-    @AutocompletionHandler(name = "item-rarities", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
+    @AutocompletionHandler(name = ITEM_RARITY_AUTOCOMPLETE, showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> itemRarities(CommandAutoCompleteInteractionEvent event) {
         return Rarity.getRarityNames();
     }
 
-    @AutocompletionHandler(name = "tooltip-side", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
+    @AutocompletionHandler(name = TOOLTIP_SIDE_AUTOCOMPLETE, showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> tooltipSide(CommandAutoCompleteInteractionEvent event) {
-        return Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values())
-            .map(MinecraftTooltipGenerator.TooltipSide::name)
+        return Arrays.stream(SkyblockItemGenerator.TooltipSide.values())
+            .map(SkyblockItemGenerator.TooltipSide::name)
             .toList();
     }
 
@@ -886,19 +903,5 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         return AUTO_HIDE_ON_ERROR;
-    }
-
-    /**
-     * Calculates the stat value for a Power Stone stat based on the base power and magical power.
-     *
-     * @param stat         The {@link Stat} to calculate the value for
-     * @param basePower    The base power of the stat
-     * @param magicalPower The magical power of the Power Stone
-     *
-     * @return The calculated stat value
-     */
-    private double calculatePowerStoneStat(Stat stat, int basePower, int magicalPower) {
-        double statMultiplier = stat.getPowerScalingMultiplier() != null ? stat.getPowerScalingMultiplier() : 1;
-        return ((double) basePower / 100) * statMultiplier * 719.28 * Math.pow(Math.log(1 + (0.0019 * magicalPower)), 1.2);
     }
 }
