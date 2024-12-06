@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.generator.powerstone;
 
 public class PowerstoneStats {
+
     String statName;
     final Integer statValue;
 

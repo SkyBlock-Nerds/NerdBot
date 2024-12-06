@@ -10,6 +10,7 @@ import java.util.List;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class Powerstone {
+
     List<PowerstoneStats> scalingStats = new ArrayList<PowerstoneStats>();
     List<PowerstoneStats> staticStats = new ArrayList<PowerstoneStats>();
 

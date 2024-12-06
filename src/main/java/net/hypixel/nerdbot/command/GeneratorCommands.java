@@ -22,7 +22,6 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.generator.data.PowerStrength;
 import net.hypixel.nerdbot.generator.data.Rarity;
-import net.hypixel.nerdbot.generator.data.Stat;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
 import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
@@ -219,7 +218,7 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         }
-        catch (GeneratorException | IllegalArgumentException | InvalidPowerstoneStatFormatException exception){
+        catch (GeneratorException | IllegalArgumentException | InvalidPowerstoneStatFormatException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating a Power Stone", exception);
         }
@@ -303,7 +302,7 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         }
-        catch (GeneratorException | IllegalArgumentException | InvalidPowerstoneStatFormatException exception){
+        catch (GeneratorException | IllegalArgumentException | InvalidPowerstoneStatFormatException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating a Power Stone", exception);
         }

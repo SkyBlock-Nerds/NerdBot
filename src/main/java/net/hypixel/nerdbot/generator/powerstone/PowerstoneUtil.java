@@ -24,7 +24,7 @@ public class PowerstoneUtil {
         return output.toString();
     }
 
-    public static String parseStaticStatsToString(List<PowerstoneStat> stats){
+    public static String parseStaticStatsToString(List<PowerstoneStat> stats) {
         StringBuilder output = new StringBuilder();
 
         stats.forEach(stat -> output.append('&').append(stat.getStat().getColor().getCode()).append(stat.statValue > 0 ? "+" : "").append(stat).append("\\n"));
