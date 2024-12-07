@@ -213,6 +213,10 @@ public class SkyblockPowerGenerator extends MinecraftTooltipGenerator<SkyblockPo
                     .append(this.selected ? PowerstoneUtil.POWER_SELECTED_TRUE : PowerstoneUtil.POWER_SELECTED_FALSE);
 
             return builder.toString();
+            // TODO see below
+            // NOTE: Currently gen full still needs the fields 'rarity' and 'type' and this builder doesn't add those so for now the user still has to add it them themselves.
+            // Why not add them? I already made a PR (https://github.com/SkyBlock-Nerds/NerdBot/pull/340) that removes them, I'm sure that if I do add them now I'm going to forget to remove it so instead adding a to do.
+            // So if you are reading this and the above pr is merged remove these comments please, thank you! -Socks
         }
 
         @Override
