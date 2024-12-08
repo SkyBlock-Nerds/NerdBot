@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import lombok.Setter;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
+import net.hypixel.nerdbot.generator.text.TextFormatSettings;
 import net.hypixel.nerdbot.generator.text.event.ClickEvent;
 import net.hypixel.nerdbot.generator.text.event.HoverEvent;
 import org.jetbrains.annotations.NotNull;
@@ -56,15 +57,42 @@ public final class TextSegment extends ColorSegment {
      * which is probably why it was chosen. To get around this, it is common practice to substitute
      * the symbol for another, then translate it later. Often '&' is used, but this can differ from person
      * to person. In case the string does not have a {@link ChatFormat#SECTION_SYMBOL}, the method also checks for the
-     * {@param characterSubstitute}
+     * {@param characterSubstitute}.
      *
-     * @param legacyText       The text to make into an object
-     * @param symbolSubstitute The character substitute
+     * @param legacyText        The text to make into an object.
+     * @param symbolSubstitute  The character substitute.
      *
      * @return A TextObject representing the legacy text.
      */
     public static @NotNull LineSegment fromLegacy(@NotNull String legacyText, char symbolSubstitute) {
         return fromLegacyHandler(legacyText, symbolSubstitute, () -> new TextSegment(""));
+    }
+
+    /**
+     * This function takes in a legacy text string and converts it into a {@link TextSegment}.
+     * <p>
+     * Legacy text strings use the {@link ChatFormat#SECTION_SYMBOL}. Many keyboards do not have this symbol however,
+     * which is probably why it was chosen. To get around this, it is common practice to substitute
+     * the symbol for another, then translate it later. Often '&' is used, but this can differ from person
+     * to person. In case the string does not have a {@link ChatFormat#SECTION_SYMBOL}, the method also checks for the
+     * {@param characterSubstitute}.
+     *
+     * @param legacyText        The text to make into an object.
+     * @param symbolSubstitute  The character substitute.
+     * @param settings          Default Settings of the next line.
+     *
+     * @return A TextObject representing the legacy text.
+     */
+    public static @NotNull LineSegment fromLegacy(@NotNull String legacyText, char symbolSubstitute, TextFormatSettings settings) {
+        return fromLegacyHandler(
+            legacyText,
+            symbolSubstitute,
+            () -> {
+                TextSegment segment = new TextSegment("");
+                segment.settings = settings.clone();
+                return segment;
+            }
+        );
     }
 
     @Override
