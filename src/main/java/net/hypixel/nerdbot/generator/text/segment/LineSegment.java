@@ -10,9 +10,11 @@ import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Stream;
 
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -26,9 +28,23 @@ public final class LineSegment {
     }
 
     public static @NotNull List<LineSegment> fromLegacy(@NotNull String legacyText, char symbolSubstitute) {
-        return Util.safeArrayStream(legacyText.split("(\n|\\\\n)"))
-            .map(line -> TextSegment.fromLegacy(line, symbolSubstitute))
-            .toList();
+        String[] lines = legacyText.split("(\n|\\\\n)");
+        ArrayList<LineSegment> segments = new ArrayList<>();
+
+        for (String line : lines){
+            if (!segments.isEmpty()) {
+                List<ColorSegment> colorSegments = segments.get(segments.size() - 1).getSegments();
+                if (!colorSegments.isEmpty()) {
+                    ColorSegment lastColorSegment = colorSegments.get(colorSegments.size() - 1);
+                    segments.add(TextSegment.fromLegacy(line, symbolSubstitute, lastColorSegment.settings));
+                    continue;
+                }
+            }
+
+            segments.add(TextSegment.fromLegacy(line, symbolSubstitute));
+        }
+
+        return segments;
     }
 
     public int length() {
