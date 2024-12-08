@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
@@ -26,7 +25,6 @@ import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -39,25 +37,26 @@ public class ActivityListener {
     private final Map<Long, Long> voiceActivity = new HashMap<>();
 
     @SubscribeEvent
-    public void onGuildMemberJoin(GuildMemberJoinEvent event) throws RepositoryException {
-        UpdateResult result = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).saveToDatabase(new DiscordUser(event.getMember()));
-
-        if (!result.wasAcknowledged() || result.getModifiedCount() == 0) {
-            throw new RepositoryException("Failed to save new user '" + event.getUser().getName() + "' to database! (" + result + ")");
-        }
+    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
         log.info("User {} joined {}", event.getUser().getName(), event.getGuild().getName());
+
+        if (discordUserRepository.findById(event.getUser().getId()) == null) {
+            discordUserRepository.cacheObject(new DiscordUser(event.getUser().getId()));
+            log.info("Creating and caching new DiscordUser for user {} ({})", event.getUser().getName(), event.getUser().getId());
+        }
     }
 
     @SubscribeEvent
-    public void onGuildMemberLeave(GuildMemberRemoveEvent event) throws RepositoryException {
+    public void onGuildMemberLeave(GuildMemberRemoveEvent event) {
         DeleteResult result = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).deleteFromDatabase(event.getUser().getId());
 
-        if (!result.wasAcknowledged() || result.getDeletedCount() == 0) {
-            throw new RepositoryException("Failed to delete user '" + event.getUser().getName() + "' from database! (" + result + ")");
-        }
-
         log.info("User {} left {}", event.getUser().getName(), event.getGuild().getName());
+
+        if (result.getDeletedCount() == 0) {
+            log.warn("Failed to delete user {} ({}) from the database!", event.getUser().getName(), event.getUser().getId());
+        }
     }
 
     @SubscribeEvent

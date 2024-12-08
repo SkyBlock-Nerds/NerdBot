@@ -40,6 +40,8 @@ public class UserGrabberFeature extends BotFeature {
                     return;
                 }
 
+                log.info("Found user " + member.getEffectiveName() + " (" + member.getId() + ")");
+
                 DiscordUser discordUser = discordUserRepository.findById(member.getId());
                 if (discordUser == null) {
                     discordUser = new DiscordUser(member.getId(), new ArrayList<>(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
