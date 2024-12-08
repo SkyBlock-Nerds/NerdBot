@@ -1,11 +1,13 @@
 package net.hypixel.nerdbot.generator.text.segment;
 
 import com.google.gson.JsonObject;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
+import net.hypixel.nerdbot.generator.text.TextFormatSettings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,11 +18,11 @@ import java.util.function.Supplier;
 @Getter
 @Setter
 @ToString
+@AllArgsConstructor
 public class ColorSegment {
 
     protected @NotNull String text;
-    protected ChatFormat color = ChatFormat.GRAY;
-    protected boolean italic, bold, underlined, obfuscated, strikethrough;
+    TextFormatSettings settings = new TextFormatSettings();
 
     public ColorSegment(@NotNull String text) {
         this.setText(text);
@@ -80,28 +82,28 @@ public class ColorSegment {
 
                     switch (color) {
                         case OBFUSCATED:
-                            currentObject.setObfuscated(true);
+                            currentObject.getSettings().setObfuscated(true);
                             break;
                         case BOLD:
-                            currentObject.setBold(true);
+                            currentObject.getSettings().setBold(true);
                             break;
                         case STRIKETHROUGH:
-                            currentObject.setStrikethrough(true);
+                            currentObject.getSettings().setStrikethrough(true);
                             break;
                         case ITALIC:
-                            currentObject.setItalic(true);
+                            currentObject.getSettings().setItalic(true);
                             break;
                         case UNDERLINE:
-                            currentObject.setUnderlined(true);
+                            currentObject.getSettings().setUnderlined(true);
                             break;
                         case RESET:
                             // Reset everything.
                             currentObject.setColor(ChatFormat.GRAY);
-                            currentObject.setObfuscated(false);
-                            currentObject.setBold(false);
-                            currentObject.setItalic(false);
-                            currentObject.setUnderlined(false);
-                            currentObject.setStrikethrough(false);
+                            currentObject.getSettings().setObfuscated(false);
+                            currentObject.getSettings().setBold(false);
+                            currentObject.getSettings().setItalic(false);
+                            currentObject.getSettings().setUnderlined(false);
+                            currentObject.getSettings().setStrikethrough(false);
                             break;
                         default:
                             // emulate Minecraft's behavior of dropping styles that do not yet have an object.
@@ -125,11 +127,11 @@ public class ColorSegment {
     }
 
     public Optional<ChatFormat> getColor() {
-        return Optional.ofNullable(this.color);
+        return Optional.ofNullable(this.getSettings().getColor());
     }
 
     public void setColor(@NotNull ChatFormat color) {
-        this.color = color;
+        this.getSettings().setColor(color);
     }
 
     public void setText(@NotNull String value) {
@@ -144,11 +146,11 @@ public class ColorSegment {
         object.addProperty("text", this.getText());
         this.getColor().ifPresent(color -> object.addProperty("color", color.toJsonString()));
 
-        if (this.isItalic()) object.addProperty("italic", true);
-        if (this.isBold()) object.addProperty("bold", true);
-        if (this.isUnderlined()) object.addProperty("underlined", true);
-        if (this.isObfuscated()) object.addProperty("obfuscated", true);
-        if (this.isStrikethrough()) object.addProperty("strikethrough", true);
+        if (this.getSettings().isItalic()) object.addProperty("italic", true);
+        if (this.getSettings().isBold()) object.addProperty("bold", true);
+        if (this.getSettings().isUnderlined()) object.addProperty("underlined", true);
+        if (this.getSettings().isObfuscated()) object.addProperty("obfuscated", true);
+        if (this.getSettings().isStrikethrough()) object.addProperty("strikethrough", true);
 
         return object;
     }
@@ -175,11 +177,11 @@ public class ColorSegment {
     protected @NotNull StringBuilder toLegacyBuilder(char symbol) {
         StringBuilder builder = new StringBuilder();
         this.getColor().ifPresent(color -> builder.append(symbol).append(color.getCode()));
-        if (this.isObfuscated()) builder.append(symbol).append(ChatFormat.OBFUSCATED.getCode());
-        if (this.isBold()) builder.append(symbol).append(ChatFormat.BOLD.getCode());
-        if (this.isStrikethrough()) builder.append(symbol).append(ChatFormat.STRIKETHROUGH.getCode());
-        if (this.isUnderlined()) builder.append(symbol).append(ChatFormat.UNDERLINE.getCode());
-        if (this.isItalic()) builder.append(symbol).append(ChatFormat.ITALIC.getCode());
+        if (this.getSettings().isObfuscated()) builder.append(symbol).append(ChatFormat.OBFUSCATED.getCode());
+        if (this.getSettings().isBold()) builder.append(symbol).append(ChatFormat.BOLD.getCode());
+        if (this.getSettings().isStrikethrough()) builder.append(symbol).append(ChatFormat.STRIKETHROUGH.getCode());
+        if (this.getSettings().isUnderlined()) builder.append(symbol).append(ChatFormat.UNDERLINE.getCode());
+        if (this.getSettings().isItalic()) builder.append(symbol).append(ChatFormat.ITALIC.getCode());
 
         this.getColor().ifPresent(color -> {
             builder.setLength(0);
@@ -261,11 +263,11 @@ public class ColorSegment {
         public @NotNull ColorSegment build() {
             ColorSegment colorSegment = new ColorSegment(this.text);
             colorSegment.setColor(this.color);
-            colorSegment.setObfuscated(this.obfuscated);
-            colorSegment.setItalic(this.italic);
-            colorSegment.setBold(this.bold);
-            colorSegment.setUnderlined(this.underlined);
-            colorSegment.setStrikethrough(this.strikethrough);
+            colorSegment.getSettings().setObfuscated(this.obfuscated);
+            colorSegment.getSettings().setItalic(this.italic);
+            colorSegment.getSettings().setBold(this.bold);
+            colorSegment.getSettings().setUnderlined(this.underlined);
+            colorSegment.getSettings().setStrikethrough(this.strikethrough);
             return colorSegment;
         }
     }

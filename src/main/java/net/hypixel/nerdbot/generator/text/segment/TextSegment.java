@@ -36,12 +36,11 @@ public final class TextSegment extends ColorSegment {
                 textSegment.setHoverEvent(HoverEvent.fromJson(jsonObject.get("hoverEvent").getAsJsonObject()));
             if (jsonObject.has("color"))
                 textSegment.setColor(ChatFormat.valueOf(jsonObject.get("color").getAsString().toUpperCase()));
-            if (jsonObject.has("obfuscated")) textSegment.setObfuscated(jsonObject.get("obfuscated").getAsBoolean());
-            if (jsonObject.has("italic")) textSegment.setItalic(jsonObject.get("italic").getAsBoolean());
-            if (jsonObject.has("bold")) textSegment.setBold(jsonObject.get("bold").getAsBoolean());
-            if (jsonObject.has("underlined")) textSegment.setUnderlined(jsonObject.get("underlined").getAsBoolean());
-            if (jsonObject.has("strikethrough"))
-                textSegment.setStrikethrough(jsonObject.get("strikethrough").getAsBoolean());
+            if (jsonObject.has("obfuscated")) textSegment.getSettings().setObfuscated(jsonObject.get("obfuscated").getAsBoolean());
+            if (jsonObject.has("italic")) textSegment.getSettings().setItalic(jsonObject.get("italic").getAsBoolean());
+            if (jsonObject.has("bold")) textSegment.getSettings().setBold(jsonObject.get("bold").getAsBoolean());
+            if (jsonObject.has("underlined")) textSegment.getSettings().setUnderlined(jsonObject.get("underlined").getAsBoolean());
+            if (jsonObject.has("strikethrough")) textSegment.getSettings().setStrikethrough(jsonObject.get("strikethrough").getAsBoolean());
 
             return textSegment;
         }
@@ -90,12 +89,12 @@ public final class TextSegment extends ColorSegment {
             "clickEvent=" + clickEvent +
             ", hoverEvent=" + hoverEvent +
             ", text='" + text + '\'' +
-            ", color=" + color +
-            ", italic=" + italic +
-            ", bold=" + bold +
-            ", underlined=" + underlined +
-            ", obfuscated=" + obfuscated +
-            ", strikethrough=" + strikethrough +
+            ", color=" + settings.getColor() +
+            ", italic=" + settings.isItalic() +
+            ", bold=" + settings.isBold() +
+            ", underlined=" + settings.isUnderlined() +
+            ", obfuscated=" + settings.isObfuscated() +
+            ", strikethrough=" + settings.isStrikethrough() +
             '}';
     }
 
@@ -178,11 +177,11 @@ public final class TextSegment extends ColorSegment {
             textSegment.setClickEvent(this.clickEvent);
             textSegment.setHoverEvent(hoverEvent);
             textSegment.setColor(this.color);
-            textSegment.setObfuscated(this.obfuscated);
-            textSegment.setItalic(this.italic);
-            textSegment.setBold(this.bold);
-            textSegment.setUnderlined(this.underlined);
-            textSegment.setStrikethrough(this.strikethrough);
+            textSegment.getSettings().setObfuscated(this.obfuscated);
+            textSegment.getSettings().setItalic(this.italic);
+            textSegment.getSettings().setBold(this.bold);
+            textSegment.getSettings().setUnderlined(this.underlined);
+            textSegment.getSettings().setStrikethrough(this.strikethrough);
             return textSegment;
         }
     }

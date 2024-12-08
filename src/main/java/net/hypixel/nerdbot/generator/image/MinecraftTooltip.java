@@ -177,7 +177,7 @@ public class MinecraftTooltip {
         this.getLines().forEach(line -> {
             line.getSegments().forEach(segment -> {
                 // Change Fonts and Color
-                this.currentFont = MINECRAFT_FONTS.get((segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0));
+                this.currentFont = MINECRAFT_FONTS.get((segment.getSettings().isBold() ? 1 : 0) + (segment.getSettings().isItalic() ? 2 : 0));
                 this.getGraphics().setFont(this.currentFont);
                 this.currentColor = segment.getColor().orElse(ChatFormat.GRAY);
 
@@ -232,11 +232,11 @@ public class MinecraftTooltip {
         int nextBounds = (int) font.getStringBounds(value, this.getGraphics().getFontRenderContext()).getWidth();
 
         // Draw Strikethrough Drop Shadow
-        if (colorSegment.isStrikethrough())
+        if (colorSegment.getSettings().isStrikethrough())
             this.drawThickLine(nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, true);
 
         // Draw Underlined Drop Shadow
-        if (colorSegment.isUnderlined())
+        if (colorSegment.getSettings().isUnderlined())
             this.drawThickLine(nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, true);
 
         // Draw Drop Shadow Text
@@ -248,11 +248,11 @@ public class MinecraftTooltip {
         this.getGraphics().drawString(value, this.locationX, this.locationY);
 
         // Draw Strikethrough
-        if (colorSegment.isStrikethrough())
+        if (colorSegment.getSettings().isStrikethrough())
             this.drawThickLine(nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, false);
 
         // Draw Underlined
-        if (colorSegment.isUnderlined())
+        if (colorSegment.getSettings().isUnderlined())
             this.drawThickLine(nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, false);
 
         // Update Draw Pointer Location
