@@ -32,7 +32,7 @@
   "curator": {
     "no_greenlit_messages": "No suggestions were greenlit",
     "greenlit_messages": "Greenlit %d suggestions in %dms!",
-    "greenlit_import_instructions": "To import into Google Sheets, go to File -> Import, Upload the `.csv` document shown below.\nChange `Import Location` to `Append to current sheet` and `Separator Type` should be defaulted to Automatic detection if not, change it to tabs.)",
+    "greenlit_import_instructions": "To import into Google Sheets, go to File -> Import, Upload the `.csv` document shown below.\nChange `Import Location` to `Append to current sheet` and `Separator Type` should be defaulted to Automatic detection if not, change it to tabs.",
     "already_greenlit": "This suggestion has already been greenlit!"
   },
   "commands": {
@@ -156,7 +156,7 @@
       "not_set_yet": "Your birthday has not been configured yet!",
       "get": "Your birthday is currently set to %s",
       "set": "Set your birthday to %s!",
-      "bad_date": "That doesn't seem to be a valid date. Please try again or contact a bot developer!"
+      "bad_date": "That doesn't seem to be a valid date."
     },
     "mod_mail": {
       "created": "Created new Mod Mail thread for %s: %s",
