@@ -705,7 +705,7 @@
     },
     {
         "icon": "ൠ",
-        "name": "bonus_pest_chace",
+        "name": "bonus_pest_chance",
         "stat": "Bonus Pest Chance",
         "display": "ൠ Bonus Pest Chance",
         "color": "DARK_GREEN",
