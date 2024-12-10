@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import lombok.Setter;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
+import net.hypixel.nerdbot.generator.text.TextFormatSettings;
 import net.hypixel.nerdbot.generator.text.event.ClickEvent;
 import net.hypixel.nerdbot.generator.text.event.HoverEvent;
 import org.jetbrains.annotations.NotNull;
@@ -36,12 +37,11 @@ public final class TextSegment extends ColorSegment {
                 textSegment.setHoverEvent(HoverEvent.fromJson(jsonObject.get("hoverEvent").getAsJsonObject()));
             if (jsonObject.has("color"))
                 textSegment.setColor(ChatFormat.valueOf(jsonObject.get("color").getAsString().toUpperCase()));
-            if (jsonObject.has("obfuscated")) textSegment.setObfuscated(jsonObject.get("obfuscated").getAsBoolean());
-            if (jsonObject.has("italic")) textSegment.setItalic(jsonObject.get("italic").getAsBoolean());
-            if (jsonObject.has("bold")) textSegment.setBold(jsonObject.get("bold").getAsBoolean());
-            if (jsonObject.has("underlined")) textSegment.setUnderlined(jsonObject.get("underlined").getAsBoolean());
-            if (jsonObject.has("strikethrough"))
-                textSegment.setStrikethrough(jsonObject.get("strikethrough").getAsBoolean());
+            if (jsonObject.has("obfuscated")) textSegment.getSettings().setObfuscated(jsonObject.get("obfuscated").getAsBoolean());
+            if (jsonObject.has("italic")) textSegment.getSettings().setItalic(jsonObject.get("italic").getAsBoolean());
+            if (jsonObject.has("bold")) textSegment.getSettings().setBold(jsonObject.get("bold").getAsBoolean());
+            if (jsonObject.has("underlined")) textSegment.getSettings().setUnderlined(jsonObject.get("underlined").getAsBoolean());
+            if (jsonObject.has("strikethrough")) textSegment.getSettings().setStrikethrough(jsonObject.get("strikethrough").getAsBoolean());
 
             return textSegment;
         }
@@ -57,15 +57,42 @@ public final class TextSegment extends ColorSegment {
      * which is probably why it was chosen. To get around this, it is common practice to substitute
      * the symbol for another, then translate it later. Often '&' is used, but this can differ from person
      * to person. In case the string does not have a {@link ChatFormat#SECTION_SYMBOL}, the method also checks for the
-     * {@param characterSubstitute}
+     * {@param characterSubstitute}.
      *
-     * @param legacyText       The text to make into an object
-     * @param symbolSubstitute The character substitute
+     * @param legacyText        The text to make into an object.
+     * @param symbolSubstitute  The character substitute.
      *
      * @return A TextObject representing the legacy text.
      */
     public static @NotNull LineSegment fromLegacy(@NotNull String legacyText, char symbolSubstitute) {
         return fromLegacyHandler(legacyText, symbolSubstitute, () -> new TextSegment(""));
+    }
+
+    /**
+     * This function takes in a legacy text string and converts it into a {@link TextSegment}.
+     * <p>
+     * Legacy text strings use the {@link ChatFormat#SECTION_SYMBOL}. Many keyboards do not have this symbol however,
+     * which is probably why it was chosen. To get around this, it is common practice to substitute
+     * the symbol for another, then translate it later. Often '&' is used, but this can differ from person
+     * to person. In case the string does not have a {@link ChatFormat#SECTION_SYMBOL}, the method also checks for the
+     * {@param characterSubstitute}.
+     *
+     * @param legacyText        The text to make into an object.
+     * @param symbolSubstitute  The character substitute.
+     * @param settings          Default Settings of the next line.
+     *
+     * @return A TextObject representing the legacy text.
+     */
+    public static @NotNull LineSegment fromLegacy(@NotNull String legacyText, char symbolSubstitute, TextFormatSettings settings) {
+        return fromLegacyHandler(
+            legacyText,
+            symbolSubstitute,
+            () -> {
+                TextSegment segment = new TextSegment("");
+                segment.settings = settings.clone();
+                return segment;
+            }
+        );
     }
 
     @Override
@@ -90,12 +117,12 @@ public final class TextSegment extends ColorSegment {
             "clickEvent=" + clickEvent +
             ", hoverEvent=" + hoverEvent +
             ", text='" + text + '\'' +
-            ", color=" + color +
-            ", italic=" + italic +
-            ", bold=" + bold +
-            ", underlined=" + underlined +
-            ", obfuscated=" + obfuscated +
-            ", strikethrough=" + strikethrough +
+            ", color=" + settings.getColor() +
+            ", italic=" + settings.isItalic() +
+            ", bold=" + settings.isBold() +
+            ", underlined=" + settings.isUnderlined() +
+            ", obfuscated=" + settings.isObfuscated() +
+            ", strikethrough=" + settings.isStrikethrough() +
             '}';
     }
 
@@ -178,11 +205,11 @@ public final class TextSegment extends ColorSegment {
             textSegment.setClickEvent(this.clickEvent);
             textSegment.setHoverEvent(hoverEvent);
             textSegment.setColor(this.color);
-            textSegment.setObfuscated(this.obfuscated);
-            textSegment.setItalic(this.italic);
-            textSegment.setBold(this.bold);
-            textSegment.setUnderlined(this.underlined);
-            textSegment.setStrikethrough(this.strikethrough);
+            textSegment.getSettings().setObfuscated(this.obfuscated);
+            textSegment.getSettings().setItalic(this.italic);
+            textSegment.getSettings().setBold(this.bold);
+            textSegment.getSettings().setUnderlined(this.underlined);
+            textSegment.getSettings().setStrikethrough(this.strikethrough);
             return textSegment;
         }
     }
