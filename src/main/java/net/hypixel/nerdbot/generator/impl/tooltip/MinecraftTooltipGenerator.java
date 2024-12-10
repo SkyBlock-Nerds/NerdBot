@@ -105,7 +105,9 @@ public class MinecraftTooltipGenerator implements Generator {
             if (settings.isEmptyLine()) {
                 builder.withEmptyLine();
             }
-            builder.withLines(LineSegment.fromLegacy(rarity.getFormattedDisplay() + " " + settings.getType(), '&'));
+
+            String formattedType = settings.getType() == null || settings.getType().isEmpty() ? "" : " " + settings.getType();
+            builder.withLines(LineSegment.fromLegacy(rarity.getFormattedDisplay() + formattedType, '&'));
         }
 
         return builder.build();
