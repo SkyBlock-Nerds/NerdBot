@@ -90,7 +90,7 @@ public class ProfileCommands extends ApplicationCommand {
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
             TranslationManager.edit(event.getHook(), discordUser, "commands.verify.request_sent");
 
-            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessageEmbeds(
+            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessage("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">").addEmbeds(
                     new EmbedBuilder()
                         .appendDescription("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">")
                         .setTitle("Mojang Profile Verification")
