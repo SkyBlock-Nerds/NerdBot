@@ -90,9 +90,8 @@ public class ProfileCommands extends ApplicationCommand {
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
             TranslationManager.edit(event.getHook(), discordUser, "commands.verify.request_sent");
 
-            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessageEmbeds(
+            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessage("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">").addEmbeds(
                     new EmbedBuilder()
-                        .appendDescription("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">")
                         .setTitle("Mojang Profile Verification")
                         .setDescription(event.getMember().getAsMention() + " has sent a Mojang verification request. This discord account matches the social set for this Mojang Profile.")
                         .setColor(Color.PINK)
