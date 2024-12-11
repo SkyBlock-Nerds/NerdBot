@@ -92,6 +92,7 @@ public class ProfileCommands extends ApplicationCommand {
 
             ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessageEmbeds(
                     new EmbedBuilder()
+                        .appendDescription("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">")
                         .setTitle("Mojang Profile Verification")
                         .setDescription(event.getMember().getAsMention() + " has sent a Mojang verification request. This discord account matches the social set for this Mojang Profile.")
                         .setColor(Color.PINK)
@@ -423,7 +424,7 @@ public class ProfileCommands extends ApplicationCommand {
                 return Long.compare(o2.getObtainedAt(), o1.getObtainedAt());
             })
             .toList();
-        
+
         EmbedBuilder embedBuilder = new EmbedBuilder()
             .setTitle(viewingSelf ? "Your Badges" : (member.getEffectiveName().endsWith("s") ? member.getEffectiveName() + "'" : member.getEffectiveName() + "'s") + " Badges")
             .setColor(Color.PINK)
