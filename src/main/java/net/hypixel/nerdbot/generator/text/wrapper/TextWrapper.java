@@ -30,6 +30,8 @@ public class TextWrapper {
                 String[] codes = extractFormattingCodes(line);
                 lastColorCode = codes[0];
                 lastFormattingCodes = new StringBuilder(codes[1]);
+
+                log.debug("Last color code: '{}', last formatting codes: '{}'", lastColorCode, lastFormattingCodes.toString());
             }
 
             return lines;
@@ -41,11 +43,15 @@ public class TextWrapper {
             String[] words = splitLine.split(" ");
 
             for (String word : words) {
+                log.debug("Processing word: '{}'", word);
+
                 String parsedWord = parseLine(word);
                 String strippedWord = stripColorCodes(parsedWord);
 
-                if (currentLength + strippedWord.length() > maxLineLength) {
+                if (currentLength + strippedWord.length() >= maxLineLength) {
+                    log.debug("{} >= {} ({}, {}), adding line: '{}'", currentLength + strippedWord.length(), maxLineLength, currentLength, strippedWord.length(), lines.get(lines.size() - 1));
                     addLine(lines, currentLine, lastColorCode, lastFormattingCodes.toString());
+
                     currentLine = new StringBuilder();
                     currentLength = 0;
                 }
@@ -57,16 +63,20 @@ public class TextWrapper {
                 if (!codes[0].isEmpty()) {
                     lastColorCode = codes[0];
                     lastFormattingCodes = new StringBuilder();
+                    log.debug("Last color code: '{}', resetting formatting codes", lastColorCode);
                 }
 
                 if (!codes[1].isEmpty()) {
                     lastFormattingCodes = new StringBuilder(codes[1]);
+                    log.debug("Last formatting codes: '{}'", lastFormattingCodes.toString());
                 }
             }
 
             addLine(lines, currentLine, lastColorCode, lastFormattingCodes.toString());
             currentLine = new StringBuilder();
             currentLength = 0;
+
+            log.debug("Added line: '{}'", lines.get(lines.size() - 1));
         }
 
         return lines;
@@ -129,12 +139,17 @@ public class TextWrapper {
                 if ("0123456789abcdef".indexOf(code) != -1) {
                     lastColorCode = line.substring(i, i + 2);
                     formattingCodes = new StringBuilder();
+
+                    log.debug("Found color code: '{}' in string: '{}'", line.substring(i, i + 2), line);
                 } else if ("klmnor".indexOf(code) != -1) {
                     formattingCodes.append(line, i, i + 2);
+
+                    log.debug("Found formatting code: '{}' in string: '{}'", line.substring(i, i + 2), line);
                 }
             }
         }
 
+        log.debug("Found last color code: '{}', formatting codes: '{}'", lastColorCode, formattingCodes.toString());
         return new String[]{lastColorCode, formattingCodes.toString()};
     }
 }
