@@ -24,14 +24,20 @@ public class TextWrapper {
             String parsedLine = parseLine(string);
             String strippedString = stripColorCodes(parsedLine);
 
-            for (int i = 0; i < strippedString.length(); i += maxLineLength) {
-                String line = parsedLine.substring(i, Math.min(i + maxLineLength, parsedLine.length()));
-                lines.add(lastColorCode + lastFormattingCodes + line);
-                String[] codes = extractFormattingCodes(line);
-                lastColorCode = codes[0];
-                lastFormattingCodes = new StringBuilder(codes[1]);
+            int lineStartIndex = 0;
+            if (lineStartIndex < strippedString.length()) {
+                do {
+                    int lineEndIndex = Math.min(lineStartIndex + maxLineLength, strippedString.length());
+                    String line = parsedLine.substring(lineStartIndex, lineEndIndex);
+                    lines.add(lastColorCode + lastFormattingCodes + line);
+                    String[] codes = extractFormattingCodes(line);
+                    lastColorCode = codes[0];
+                    lastFormattingCodes = new StringBuilder(codes[1]);
 
-                log.debug("Last color code: '{}', last formatting codes: '{}'", lastColorCode, lastFormattingCodes.toString());
+                    log.debug("Last color code: '{}', last formatting codes: '{}'", lastColorCode, lastFormattingCodes.toString());
+
+                    lineStartIndex = lineEndIndex;
+                } while (lineStartIndex < strippedString.length());
             }
 
             return lines;
