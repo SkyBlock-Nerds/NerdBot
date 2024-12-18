@@ -7,11 +7,11 @@ WORKDIR /app
 # Arguments for Git repository information
 ARG GITHUB_USERNAME
 ARG GITHUB_TOKEN
-ENV REPO_USERNAME=SkyBlock-Nerds
-ENV REPO_NAME=NerdBot
-ENV REPO_BRANCH=master
-ENV SOURCE_CODE_DIR=repository
-ENV JAR_FILE_NAME=NerdBot.jar
+ARG REPO_USERNAME=SkyBlock-Nerds
+ARG REPO_NAME=NerdBot
+ARG REPO_BRANCH=master
+ARG SOURCE_CODE_DIR=repository
+ARG JAR_FILE_NAME=NerdBot.jar
 
 # Clone the Git repository
 RUN apt-get update && apt-get install -y maven git zip unzip \
