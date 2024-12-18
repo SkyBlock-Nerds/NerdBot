@@ -12,6 +12,7 @@ ARG REPO_NAME=NerdBot
 ARG REPO_BRANCH=master
 ARG SOURCE_CODE_DIR=repository
 ARG JAR_FILE_NAME=NerdBot.jar
+ENV JAR_FILE_NAME_ENV=$JAR_FILE_NAME
 
 # Clone the Git repository
 RUN apt-get update && apt-get install -y maven git zip unzip \
