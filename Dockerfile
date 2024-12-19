@@ -37,4 +37,4 @@ COPY --from=builder /app/${SOURCE_CODE_DIR}/target/${JAR_FILE_NAME} .
 RUN rm -rf ${SOURCE_CODE_DIR}
 
 # Run the application
-ENTRYPOINT exec java ${JAVA_OPTS} -jar ${JAR_FILE_NAME}
+ENTRYPOINT exec java ${JAVA_OPTS} -jar ${JAR_FILE_NAME_ENV}
