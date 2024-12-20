@@ -11,6 +11,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -69,16 +70,23 @@ public class GeneratorImageBuilder {
             return CompletableFuture.supplyAsync(this::buildInternal)
                 .orTimeout(NerdBotApp.getBot().getConfig().getImageGeneratorTimeoutMs(), TimeUnit.MILLISECONDS)
                 .exceptionally(exception -> {
-                    if (exception instanceof TimeoutException) {
+                    Throwable cause = exception.getCause();
+                    if (cause instanceof TimeoutException) {
                         throw new GeneratorTimeoutException("Timeout reached while generating image");
                     }
 
-                    throw new GeneratorException(exception.getCause().getMessage());
+                    if (cause != null) {
+                        log.error("An error occurred during image generation", cause);
+                    } else {
+                        log.error("An unknown error occurred during image generation", exception);
+                    }
+
+                    throw new GeneratorException("An error occurred during image generation", exception);
                 })
                 .get();
-        } catch (InterruptedException | ExecutionException | GeneratorException exception) {
-            log.error("An error occurred during image generation", exception);
-            throw new GeneratorException("An error occurred during image generation: " + exception.getCause().getMessage());
+        } catch (InterruptedException | ExecutionException exception) {
+            log.error("An error occurred during image generation", Objects.requireNonNullElse(exception.getCause(), exception));
+            throw new GeneratorException("An error occurred during image generation", exception);
         }
     }
 

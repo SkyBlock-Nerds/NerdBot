@@ -55,7 +55,7 @@ public class TextWrapper {
                 String strippedWord = stripColorCodes(parsedWord);
 
                 if (currentLength + strippedWord.length() >= maxLineLength) {
-                    log.debug("{} >= {} ({}, {}), adding line: '{}'", currentLength + strippedWord.length(), maxLineLength, currentLength, strippedWord.length(), lines.get(lines.size() - 1));
+                    log.debug("Adding line due to length ({} >= {}): '{}'", currentLength + strippedWord.length(), maxLineLength, currentLine.toString());
                     addLine(lines, currentLine, lastColorCode, lastFormattingCodes.toString());
 
                     currentLine = new StringBuilder();
