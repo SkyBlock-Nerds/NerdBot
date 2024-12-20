@@ -125,4 +125,9 @@ public class BotConfig {
      * Default value is 10
      */
     private int inactivityMessages = 10;
+
+    /**
+     * The length of time in milliseconds that the bot will wait for an image to be generated before timing out
+     */
+    private long imageGeneratorTimeoutMs = 3_000;
 }
