@@ -9,6 +9,7 @@ import java.util.function.BiFunction;
 @Getter
 public enum Flavor {
     REQUIRE("❣ Requires", MCColor.RED, FlavorParser::postFlavorColorParser),
+    SLAYER_REQUIRE("☠ Requires", MCColor.RED, FlavorParser::postFlavorColorParser),
     RECIPE("Right-click to view recipes!", MCColor.YELLOW),
     COOP_SOULBOUND("Co-op Soulbound", MCColor.DARK_GRAY, FlavorParser::soulboundColorParsing),
     SOULBOUND("Soulbound", MCColor.DARK_GRAY, FlavorParser::soulboundColorParsing),
