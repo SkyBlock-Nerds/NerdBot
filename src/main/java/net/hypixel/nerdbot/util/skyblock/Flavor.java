@@ -18,6 +18,7 @@ public enum Flavor {
     COOLDOWN("Cooldown:", MCColor.DARK_GRAY, MCColor.GREEN, FlavorParser::postDualColorParser),
     HEALTH_COST("Health Cost:", MCColor.DARK_GRAY, MCColor.RED, FlavorParser::postDualColorParser),
     UNDEAD("This armor piece is undead ༕!", MCColor.DARK_GREEN),
+    ARACHNAL("This item is Arachnal Ж!", MCColor.DARK_RED),
     RIFT_TRANSFERABLE("Rift-Transferable", MCColor.DARK_PURPLE);
 
     public static Flavor[] VALUES = values();
