@@ -140,7 +140,7 @@ public class GeneratorStrings {
                                                             Items can be displayed as enchanted by using `enchanted` as the last modifier.
                                                             """;
     public static final String DISPLAY_ITEM_INFO_PLAYER_HEAD = """
-                                                               As mentioned previously the `display_item` command can render Player Heads as well! Firstly set the `item_id` to `player_skull` so that the command knows you want to display a player head. Inside the `extra_modifiers` parameters, you would need to supply how you want the skin to be retrieved, which are as follows.
+                                                               As mentioned previously the `display_item` command can render Player Heads as well! Firstly set the `item_id` to `player_head` so that the command knows you want to display a player head. Inside the `extra_modifiers` parameters, you would need to supply how you want the skin to be retrieved, which are as follows.
 
                                                                **By Player Name**
                                                                Simply type the Minecraft name of the player that you want the skin of.

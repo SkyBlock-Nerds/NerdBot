@@ -52,7 +52,7 @@ public class FlavorParser {
      * @return the color parsed replacements string
      */
     public static String abilityColorParser(Flavor flavor, String extraDetails) {
-        if (extraDetails.length() == 0) {
+        if (extraDetails.isEmpty()) {
             return "ABILITY_MISSING_DETAILS";
         }
 
