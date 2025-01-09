@@ -1,16 +1,28 @@
-<h1 align="center">
-  <img src="assets/images/icon.png" alt="Nerd Bot Icon"/>
-  <br/>
-    Nerd Bot
-</h1>
+<div align="center">
+    <img src=".github/assets/images/icon.png" alt="Nerd Bot Icon"/>
+    <h1>Nerd Bot</h1>
+    <img src="https://img.shields.io/github/issues/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Issues"/>
+    <img src="https://img.shields.io/github/issues-pr/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Pull Requests"/>
+    <img src="https://img.shields.io/github/last-commit/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Last Commit"/>
+    <img src="https://img.shields.io/github/contributors/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Contributors"/>
+</div>
 
-<h1 align="center">
-  <img src="https://img.shields.io/github/license/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="License"/>
-  <img src="https://img.shields.io/github/issues/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Issues"/>
-  <img src="https://img.shields.io/github/issues-pr/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Pull Requests"/>
-  <img src="https://img.shields.io/github/last-commit/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Last Commit"/>
-  <img src="https://img.shields.io/github/contributors/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Contributors"/>
-</h1>
+---
+
+## Supporting the Project
+
+Nerd Bot is a passion project built for the SkyBlock Nerds Discord server. Keeping it running involves server hosting
+costs, and maintaining and improving the bot takes time and effort.
+If you've found the Nerd Bot's features useful in any way, all contributions are greatly appreciated and are put towards 
+infrastructure costs.
+
+<div align="center">
+    <a href="https://github.com/sponsors/Aerhhh"><img src="https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86" height="20px" alt="Aerh's GitHub Sponsor Profile"></a>
+    <a href="https://www.buymeacoffee.com/aaerh"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" height="20px" alt="Aerh's Buy Me A Coffee Profile"></a>
+    <a href="https://ko-fi.com/A0A81MQI3"><img src="https://ko-fi.com/img/githubbutton_sm.svg" height="20px" alt="Aerh's Ko-Fi Profile"></a>
+</div>
+
+---
 
 # Features
 
@@ -26,7 +38,7 @@ Users can create one-time reminders that are either sent publicly or privately b
 ## Endpoint Polling
 
 The bot will periodically poll the Hypixel API and the Hypixel Forums for the latest SkyBlock news, updates, Fire Sales,
-and more. New updates are then posted in an assigned channel.
+and more.
 
 When a new update is found, the bot will send a message in the assigned channel and ping a role defined in code. This
 role is defined in the config file.
@@ -44,9 +56,10 @@ Users are able to link their Minecraft account to their Discord account by using
 checks the Hypixel API to ensure that the user's Discord account is linked to the specified Minecraft account through
 the Hypixel Network's in-game social menu.
 
-## Item Generation
+## Image Generation
 
-The bot can generate images of Minecraft items, tooltips, and crafting recipes with user-provided data.
+The bot can generate images of Minecraft items, tooltips, and crafting recipes with user-provided data. It also supports
+parsing NBT data into an image and returning an editable command.
 
 ## Mod Mail
 
@@ -75,3 +88,4 @@ Please follow the instructions [here](https://github.com/SkyBlock-Nerds/NerdBot/
 # Commands
 
 See the [commands](https://github.com/SkyBlock-Nerds/NerdBot/tree/master/src/main/java/net/hypixel/nerdbot/command) package.
+
