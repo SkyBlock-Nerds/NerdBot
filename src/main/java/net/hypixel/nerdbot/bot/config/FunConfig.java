@@ -15,5 +15,5 @@ public class FunConfig {
      * <br>
      * Value: The emoji value to react with
      */
-    private Map<String, String> autoReactions = new HashMap<>();
+    private final Map<String, String> autoReactions = new HashMap<>();
 }

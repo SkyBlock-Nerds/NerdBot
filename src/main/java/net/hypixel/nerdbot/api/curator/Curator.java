@@ -22,12 +22,12 @@ public abstract class Curator<T, O> {
         this.readOnly = readOnly;
     }
 
-    public abstract List<GreenlitMessage> curate(T t);
-
     public static double getRatio(double positiveReactions, double negativeReactions) {
         if (positiveReactions == 0 && negativeReactions == 0) {
             return 0;
         }
         return positiveReactions / (positiveReactions + negativeReactions) * 100;
     }
+
+    public abstract List<GreenlitMessage> curate(T t);
 }
