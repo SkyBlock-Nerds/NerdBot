@@ -145,5 +145,6 @@
   "activityType": "WATCHING",
   "activity": "with an example message!",
   "inactivityDays": 7,
-  "inactivityMessages": 10
+  "inactivityMessages": 10,
+  "imageGeneratorTimeoutMs": 3000
 }
