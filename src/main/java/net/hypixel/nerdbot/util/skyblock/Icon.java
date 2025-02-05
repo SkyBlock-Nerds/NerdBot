@@ -17,7 +17,8 @@ public enum Icon {
     ZONE("⏣", "Zone"),
     ABIPHONE("✆", "Abiphone Call"),
     CHECKMARK("✔", "Checkmark"),
-    CROSS("✖", "Cross");
+    CROSS("✖", "Cross"),
+    RAFFLE("⛃", "Raffle");
 
     public static final Icon[] VALUES = values();
 
