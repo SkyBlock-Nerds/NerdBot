@@ -33,7 +33,7 @@ that will display this information in a human-readable format.
 
 ## Reminders
 
-Users can create one-time reminders that are either sent publicly or privately based on the user's preference.
+Users can create one-time reminders that are sent privately via Discord's Direct Messages.
 
 ## Endpoint Polling
 
