@@ -13,7 +13,7 @@ public class ComponentDatabaseConnection {
     private final HikariDataSource source;
 
     public ComponentDatabaseConnection() throws SQLException {
-        final PGSimpleDataSource pgSource = new PGSimpleDataSource();
+        PGSimpleDataSource pgSource = new PGSimpleDataSource();
         pgSource.setServerNames(new String[]{System.getProperty("db.postgres.host", "localhost")});
         pgSource.setPortNumbers(new int[]{Integer.parseInt(System.getProperty("db.postgres.port", "5432"))});
         pgSource.setUser(System.getProperty("db.postgres.user", "postgres"));
