@@ -31,8 +31,17 @@ public class TextWrapper {
                     String line = parsedLine.substring(lineStartIndex, lineEndIndex);
                     lines.add(lastColorCode + lastFormattingCodes + line);
                     String[] codes = extractFormattingCodes(line);
-                    lastColorCode = codes[0];
-                    lastFormattingCodes = new StringBuilder(codes[1]);
+
+                    if (!codes[0].isEmpty()) {
+                        lastColorCode = codes[0];
+                        lastFormattingCodes = new StringBuilder();
+                        log.debug("Last color code: '{}', resetting formatting codes", lastColorCode);
+                    }
+
+                    if (!codes[1].isEmpty()) {
+                        lastFormattingCodes = new StringBuilder(codes[1]);
+                        log.debug("Last formatting codes: '{}'", lastFormattingCodes.toString());
+                    }
 
                     log.debug("Last color code: '{}', last formatting codes: '{}'", lastColorCode, lastFormattingCodes.toString());
 
@@ -45,6 +54,8 @@ public class TextWrapper {
 
         String[] splitLines = string.split("(\n|\\\\n)");
 
+        String[] endCodesLastLine = new String[]{"", ""};
+
         for (String splitLine : splitLines) {
             String[] words = splitLine.split(" ");
 
@@ -56,7 +67,8 @@ public class TextWrapper {
 
                 if (currentLength + strippedWord.length() >= maxLineLength) {
                     log.debug("Adding line due to length ({} >= {}): '{}'", currentLength + strippedWord.length(), maxLineLength, currentLine.toString());
-                    addLine(lines, currentLine, lastColorCode, lastFormattingCodes.toString());
+                    addLine(lines, currentLine, endCodesLastLine[0], endCodesLastLine[1]);
+                    endCodesLastLine = new String[]{lastColorCode, lastFormattingCodes.toString()};
 
                     currentLine = new StringBuilder();
                     currentLength = 0;
@@ -78,7 +90,8 @@ public class TextWrapper {
                 }
             }
 
-            addLine(lines, currentLine, lastColorCode, lastFormattingCodes.toString());
+            addLine(lines, currentLine, endCodesLastLine[0], endCodesLastLine[1]);
+            endCodesLastLine = new String[]{lastColorCode, lastFormattingCodes.toString()};
             currentLine = new StringBuilder();
             currentLength = 0;
 
