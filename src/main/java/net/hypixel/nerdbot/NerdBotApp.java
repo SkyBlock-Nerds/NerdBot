@@ -4,16 +4,19 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.MongoException;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.bot.NerdBot;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.gson.adapter.BadgeTypeAdapter;
-import net.hypixel.nerdbot.util.gson.adapter.InstantTypeAdapter;
-import net.hypixel.nerdbot.util.gson.adapter.UUIDTypeAdapter;
+import net.hypixel.nerdbot.util.json.adapter.BadgeTypeAdapter;
+import net.hypixel.nerdbot.util.json.adapter.ColorTypeAdapter;
+import net.hypixel.nerdbot.util.json.adapter.InstantTypeAdapter;
+import net.hypixel.nerdbot.util.json.adapter.UUIDTypeAdapter;
 import sun.misc.Signal;
 
 import javax.security.auth.login.LoginException;
+import java.awt.Color;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
@@ -30,6 +33,7 @@ public class NerdBotApp {
         .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
         .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
         .registerTypeAdapter(Badge.class, new BadgeTypeAdapter())
+        .registerTypeAdapter(Color.class, new ColorTypeAdapter())
         .create();
 
     private static Bot bot;
@@ -52,7 +56,7 @@ public class NerdBotApp {
 
         try {
             nerdBot.create(args);
-        } catch (LoginException exception) {
+        } catch (LoginException | InvalidTokenException exception) {
             log.error("Failed to log into the bot with the given credentials!");
             System.exit(-1);
         } catch (MongoException exception) {
