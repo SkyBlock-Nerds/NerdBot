@@ -1,5 +1,5 @@
 # Use OpenJDK 17 as the base image
-FROM openjdk:17-jdk-slim AS builder
+FROM openjdk:18-jdk-slim AS builder
 
 # Set the working directory
 WORKDIR /app
