@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.stream.Collectors;
@@ -599,22 +600,49 @@ public class GeneratorCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "symbols", description = "Show a list of all stats symbols")
     public void showAllStats(GuildSlashEvent event) {
-        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Symbols").setColor(EMBED_COLORS[0]);
+        List<EmbedBuilder> embedBuilders = new ArrayList<>();
+        EmbedBuilder currentEmbed = new EmbedBuilder().setTitle("All Available Symbols").setColor(EMBED_COLORS[0]);
         StringBuilder idBuilder = new StringBuilder();
         StringBuilder symbolBuilder = new StringBuilder();
         StringBuilder displayBuilder = new StringBuilder();
 
         for (Stat stat : Stat.VALUES) {
-            idBuilder.append("%%").append(stat.name()).append("%%").append("\n");
-            symbolBuilder.append(stat.getIcon()).append("\n");
-            displayBuilder.append(stat.getDisplay()).append("\n");
+            String idLine = "%%" + stat.name() + "%%\n";
+            String symbolLine = stat.getIcon() + "\n";
+            String displayLine = stat.getDisplay() + "\n";
+
+            if (idBuilder.length() + idLine.length() > 1_024
+                || symbolBuilder.length() + symbolLine.length() > 1_024
+                || displayBuilder.length() + displayLine.length() > 1_024) {
+                currentEmbed.addField("ID", idBuilder.toString(), true);
+                currentEmbed.addField("Symbol", symbolBuilder.toString(), true);
+                currentEmbed.addField("Display", displayBuilder.toString(), true);
+
+                embedBuilders.add(currentEmbed);
+                currentEmbed = new EmbedBuilder().setTitle("All Available Symbols").setColor(EMBED_COLORS[0]);
+
+                idBuilder = new StringBuilder();
+                symbolBuilder = new StringBuilder();
+                displayBuilder = new StringBuilder();
+            }
+
+            idBuilder.append(idLine);
+            symbolBuilder.append(symbolLine);
+            displayBuilder.append(displayLine);
         }
 
-        embedBuilder.addField("ID", idBuilder.toString(), true);
-        embedBuilder.addField("Symbol", symbolBuilder.toString(), true);
-        embedBuilder.addField("Display", displayBuilder.toString(), true);
+        if (!idBuilder.isEmpty()) {
+            currentEmbed.addField("ID", idBuilder.toString(), true);
+            currentEmbed.addField("Symbol", symbolBuilder.toString(), true);
+            currentEmbed.addField("Display", displayBuilder.toString(), true);
+            embedBuilders.add(currentEmbed);
+        }
 
-        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
+        event.replyEmbeds(embedBuilders.stream()
+                .map(EmbedBuilder::build)
+                .collect(Collectors.toList())
+            ).setEphemeral(true)
+            .queue();
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "icons", description = "Show a list of all other icons")
