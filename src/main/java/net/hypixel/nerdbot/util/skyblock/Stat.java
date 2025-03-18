@@ -26,6 +26,7 @@ public enum Stat {
     SEA_CREATURE_CHANCE("α", "Sea Creature Chance", MCColor.DARK_AQUA, null, StatColorParser::boldedIconColorParser, StatColorParser::boldedIconParser),
     FISHING_SPEED("☂", "Fishing Speed", MCColor.AQUA),
     DOUBLE_HOOK_CHANCE("⚓", "Double Hook Chance", MCColor.BLUE),
+    TREASURE_CHANCE("⛃", "Treasure Chance", MCColor.GOLD),
     ABILITY_DAMAGE("๑", "Ability Damage", MCColor.RED),
     MINING_SPEED("⸕", "Mining Speed", MCColor.GOLD),
     GEMSTONE_SPREAD("▚", "Gemstone Spread", MCColor.YELLOW),
