@@ -9,13 +9,13 @@
 #   - SSH_PRIVATE_KEY: Private SSH key for accessing the vps
 #   - SSH_USER: The SSH username for the vps
 #   - SSH_HOST: The SSH host (IP or domain) of the vps
-#   - WORK_DIR: The directory on the vps where the app is deployed
+#   - WORK_DIR: The directory on the vps where the app is/will be deployed
 #   - BOT_TOKEN_{Environment specified in the inputs}: Environment variable for the bot
 #   - MONGO_URI: ^
 #   - HYPIXEL_KEY: ^
 #   - CONFIG_PATH: Path to the config file on the vps
 
-name: publish
+name: Publish
 
 on:
   workflow_dispatch:
@@ -40,11 +40,11 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.actor }}/nerd-bot:latest
-  REPO_NAME: ${{ github.event.repository.name}}
+  REPO_NAME: ${{ github.event.repository.name }}
   REPO_USERNAME: ${{ github.event.repository.owner.login }}
   REPO_BRANCH: ${{ github.ref_name }}
   ENVIRONMENT_NAME: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
-  PORT: ${{ github.event.inputs.port || '1234' }} # Default port is 1234 but should probably be changed to 8080
+  PORT: ${{ github.event.inputs.port || '1234' }} # Default port is 1234 but should probably be changed to 8080 (convention)
 
 jobs:
   publish:
