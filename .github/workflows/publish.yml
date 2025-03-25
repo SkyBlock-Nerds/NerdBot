@@ -30,6 +30,11 @@ on:
         required: true
         default: 'PRODUCTION'
         type: string
+      port:
+        description: 'Port'
+        required: true
+        default: '8080'
+        type: string
 
   workflow_run:
     workflows: ["Java CI"]
@@ -90,9 +95,9 @@ jobs:
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           docker stop nerd-bot || true
           docker rm nerd-bot || true
-          docker run -d --name nerd-bot -p 8080:8080 \
             -v ${{ secrets.CONFIG_PATH }}:/app/production.config.json \
             -e "JAVA_OPTS=-Dbot.token=${{ format('secrets.BOT_TOKEN_{0}', inputs.botTokenType) }} \
+          docker run -d --name nerd-bot -p ${{ env.PORT }}:${{ env.PORT }} \
             -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
             -Dbot.environment=PRODUCTION \
             -Dbot.config=/app/production.config.json \
