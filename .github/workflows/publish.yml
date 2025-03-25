@@ -10,7 +10,7 @@
 #   - SSH_USER: The SSH username for the vps
 #   - SSH_HOST: The SSH host (IP or domain) of the vps
 #   - WORK_DIR: The directory on the vps where the app is deployed
-#   - BOT_TOKEN: Environment variable for the bot
+#   - BOT_TOKEN_{Environment specified in the inputs}: Environment variable for the bot
 #   - MONGO_URI: ^
 #   - HYPIXEL_KEY: ^
 #   - CONFIG_PATH: Path to the config file on the vps
@@ -18,38 +18,34 @@
 name: publish
 
 on:
-  push:
-    branches:
-      - 'master'
+  workflow_run:
+    workflows: ["Java CI"]
+    types:
+      - completed
+    if: github.event.workflow_run.event == 'push'
+    inputs:
+      deployToServer:
+        description: 'Deploy to server: (true/false)'
+        required: true
+        default: 'false'
+        type: boolean
+      botTokenType:
+        description: 'Bot token type:'
+        required: true
+        default: 'PRODUCTION'
+        type: string
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.actor }}/nerd-bot:latest
-  REPO_NAME: NerdBot
-  REPO_USERNAME: Skyblock-Nerds
-  REPO_BRANCH: master
+  REPO_NAME: ${{ github.event.repository.name }}
+  REPO_USERNAME: ${{ github.event.repository.owner.login }}
+  REPO_BRANCH: ${{ github.ref_name }}
 
 jobs:
-  build:
-    name: Java CI test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4.2.2
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'adopt'
-
-      - name: Build and test with Maven
-        run: mvn editorconfig:check clean package
-
   publish:
-    needs: build
     name: Publish image
+    if: ${{ contains('true,True,TRUE', inputs.deployToServer) }}
     runs-on: ubuntu-latest
 
     steps:
@@ -91,7 +87,7 @@ jobs:
           docker rm nerd-bot || true
           docker run -d --name nerd-bot -p 8080:8080 \
             -v ${{ secrets.CONFIG_PATH }}:/app/production.config.json \
-            -e "JAVA_OPTS=-Dbot.token=${{ secrets.BOT_TOKEN }} \
+            -e "JAVA_OPTS=-Dbot.token=${{ format('secrets.BOT_TOKEN_{0}', inputs.botTokenType) }} \
             -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
             -Dbot.environment=PRODUCTION \
             -Dbot.config=/app/production.config.json \
