@@ -40,7 +40,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.actor }}/nerd-bot:latest
-  REPO_NAME: ${{ github.event.repository.name | toLower }}
+  REPO_NAME: ${{ github.event.repository.name}}
   REPO_USERNAME: ${{ github.event.repository.owner.login }}
   REPO_BRANCH: ${{ github.ref_name }}
   ENVIRONMENT_NAME: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
@@ -61,11 +61,12 @@ jobs:
 
       - name: Build and push Docker image
         run: |
+          REPO_NAME_LOWER=$(echo "${{ env.REPO_NAME }}" | tr '[:upper:]' '[:lower:]')
           docker build . --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
             --build-arg GITHUB_USERNAME=${{ secrets.GITHUB_USERNAME }} \
             --build-arg GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             --build-arg REPO_USERNAME=${{ env.REPO_USERNAME }} \
-            --build-arg REPO_NAME=${{ env.REPO_NAME }} \
+            --build-arg REPO_NAME=${REPO_NAME_LOWER} \
             --build-arg REPO_BRANCH=${{ env.REPO_BRANCH }}
 
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
