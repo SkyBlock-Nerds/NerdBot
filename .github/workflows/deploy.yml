@@ -1,3 +1,20 @@
+# Usage:
+# - Runs automated tests to ensure the Java project builds correctly.
+# - If the build is successful, it packages the application into a Docker container.
+# - The container is pushed to GHCR and deployed to the vps.
+
+# Requirements:
+# - Config file on the vps. (should be named `production.config.json`)
+# - Secrets must be set up in the repository settings:
+#   - SSH_PRIVATE_KEY: Private SSH key for accessing the vps
+#   - SSH_USER: The SSH username for the vps
+#   - SSH_HOST: The SSH host (IP or domain) of the vps
+#   - WORK_DIR: The directory on the vps where the app is deployed
+#   - BOT_TOKEN: Environment variable for the bot
+#   - MONGO_URI: ^
+#   - HYPIXEL_KEY: ^
+#   - CONFIG_PATH: Path to the config file on the vps
+
 name: publish
 
 on:
