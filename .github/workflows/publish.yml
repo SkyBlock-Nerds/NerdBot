@@ -84,11 +84,14 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
 
+      - name: Convert vars to proper format
+        run: |
+          echo "ENVIRONMENT_NAME_LOWER=$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "IMAGE_NAME_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "BOT_TOKEN_SECRET=BOT_TOKEN_${{ env.ENVIRONMENT_NAME }}" >> $GITHUB_ENV
+
       - name: Deploy
         run: |
-          ENVIRONMENT_NAME_LOWER=$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE_NAME_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
-
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
           cd ${{ secrets.WORK_DIR }}
           docker pull ${{ env.REGISTRY }}/$IMAGE_NAME_LOWER
@@ -96,7 +99,7 @@ jobs:
           docker rm nerd-bot || true
           docker run -d --name nerd-bot -p ${{ env.PORT }}:${{ env.PORT }} \
             -v ${{ secrets.CONFIG_PATH }}:/app/${ENVIRONMENT_NAME_LOWER}.config.json \
-            -e "JAVA_OPTS=-Dbot.token=${{ format('secrets.BOT_TOKEN_{0}', env.ENVIRONMENT_NAME) }} \
+            -e "JAVA_OPTS=-Dbot.token=${{ secrets[env.BOT_TOKEN_SECRET] }} \
             -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
             -Dbot.environment=${{ env.ENVIRONMENT_NAME }} \
             -Dbot.config=/app/${ENVIRONMENT_NAME_LOWER}.config.json \
