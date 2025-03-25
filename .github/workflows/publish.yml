@@ -40,7 +40,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.actor }}/nerd-bot:latest
-  REPO_NAME: ${{ github.event.repository.name.toLowerCase() }}
+  REPO_NAME: ${{ github.event.repository.name | toLower }}
   REPO_USERNAME: ${{ github.event.repository.owner.login }}
   REPO_BRANCH: ${{ github.ref_name }}
   ENVIRONMENT_NAME: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
@@ -92,7 +92,7 @@ jobs:
           docker rm nerd-bot || true
           docker run -d --name nerd-bot -p ${{ env.PORT }}:${{ env.PORT }} \
             -v ${{ secrets.CONFIG_PATH }}:/app/${ENVIRONMENT_NAME_LOWER}.config.json \
-            -e "JAVA_OPTS=-Dbot.token=${{ secrets['BOT_TOKEN_' + env.ENVIRONMENT_NAME] }} \
+            -e "JAVA_OPTS=-Dbot.token=${{ format('secrets.BOT_TOKEN_{0}', env.ENVIRONMENT_NAME) }} \
             -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
             -Dbot.environment=${{ env.ENVIRONMENT_NAME }} \
             -Dbot.config=/app/${ENVIRONMENT_NAME_LOWER}.config.json \
