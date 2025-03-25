@@ -1,4 +1,4 @@
-name: deploy
+name: publish
 
 on:
   push:
@@ -7,11 +7,14 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.actor }}/NerdBot:latest
+  IMAGE_NAME: ${{ github.actor }}/nerd-bot:latest
+  REPO_NAME: NerdBot
+  REPO_USERNAME: Skyblock-Nerds
+  REPO_BRANCH: master
 
 jobs:
   build:
-    name: Java CI Test
+    name: Java CI test
     runs-on: ubuntu-latest
 
     steps:
@@ -24,36 +27,60 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
 
-      - name: Build and Test with Maven
+      - name: Build and test with Maven
         run: mvn editorconfig:check clean package
 
   publish:
     needs: build
-    name: publish image
+    name: Publish image
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4.2.2
-      - name: login
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and push Docker image
         run: |
-          echo ${{ secrets.GH_SECRET }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      - name: Build and Publish
-        run: |
-          docker build . --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          docker build . --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --build-arg GITHUB_USERNAME=${{ secrets.GITHUB_USERNAME }} \
+            --build-arg GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            --build-arg REPO_USERNAME=${{ env.REPO_USERNAME }} \
+            --build-arg REPO_NAME=${{ env.REPO_NAME }} \
+            --build-arg REPO_BRANCH=${{ env.REPO_BRANCH }}
+
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
   deploy:
     needs: publish
-    name: deploy image
+    name: Deploy image
     runs-on: ubuntu-latest
 
     steps:
-      - name: install ssh keys
+      - name: Install SSH keys
         run: |
           install -m 600 -D /dev/null ~/.ssh/id_rsa
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
-      - name: connect and pull
-        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && docker compose pull && docker compose up -d && exit"
-      - name: cleanup
+
+      - name: Deploy
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          cd ${{ secrets.WORK_DIR }}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          docker stop nerd-bot || true
+          docker rm nerd-bot || true
+          docker run -d --name nerd-bot -p 8080:8080 \
+            -v ${{ secrets.CONFIG_PATH }}:/app/production.config.json \
+            -e "JAVA_OPTS=-Dbot.token=${{ secrets.BOT_TOKEN }} \
+            -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
+            -Dbot.environment=PRODUCTION \
+            -Dbot.config=/app/production.config.json \
+            -Dhypixel.key=${{ secrets.HYPIXEL_KEY }}" \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          EOF
+
+      - name: Cleanup SSH keys
         run: rm -rf ~/.ssh
