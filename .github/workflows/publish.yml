@@ -21,12 +21,12 @@ on:
   workflow_dispatch:
     inputs:
       deployToServer:
-        description: 'Deploy to server: (true/false)'
+        description: 'Deploy to server'
         required: true
         default: false
         type: boolean
       botEnvironmentType:
-        description: 'Bot environment type: (All uppercase)'
+        description: 'Bot environment type (All uppercase):'
         required: true
         default: 'PRODUCTION'
         type: string
