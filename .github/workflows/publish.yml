@@ -56,7 +56,7 @@ env:
 jobs:
   publish:
     name: Publish image
-    if: ${{ contains('true,True,TRUE', github.event.inputs.deployToServer || 'false') || github.ref == format('refs/heads/{0}', github.repository.default_branch) }}
+    if: ${{ contains('true,True,TRUE', (github.event.inputs.deployToServer || 'false')) || github.ref == format('refs/heads/{0}', github.repository.default_branch) }}
     runs-on: ubuntu-latest
 
     steps:
