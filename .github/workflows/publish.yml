@@ -20,11 +20,6 @@ name: publish
 on:
   workflow_dispatch:
     inputs:
-      deployToServer:
-        description: 'Deploy to server'
-        required: true
-        default: false
-        type: boolean
       botEnvironmentType:
         description: 'Bot environment type (All uppercase):'
         required: true
@@ -49,14 +44,13 @@ env:
   REPO_NAME: ${{ github.event.repository.name }}
   REPO_USERNAME: ${{ github.event.repository.owner.login }}
   REPO_BRANCH: ${{ github.ref_name }}
-  DEPLOY_TO_SERVER: ${{ github.event.inputs.deployToServer || 'false' }}
   ENVIRONMENT_NAME: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
   PORT: ${{ github.event.inputs.port || '1234' }} # Default port is 1234 but should probably be changed to 8080
 
 jobs:
   publish:
     name: Publish image
-    if: ${{ contains('true,True,TRUE', (github.event.inputs.deployToServer || 'false')) || github.ref == format('refs/heads/{0}', github.repository.default_branch) }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.ref_name == github.repository.default_branch }}
     runs-on: ubuntu-latest
 
     steps:
