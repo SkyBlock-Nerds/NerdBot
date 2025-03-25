@@ -1,0 +1,111 @@
+# Usage:
+# - Runs automated tests to ensure the Java project builds correctly.
+# - If the build is successful, it packages the application into a Docker container.
+# - The container is pushed to GHCR and deployed to the vps.
+
+# Requirements:
+# - Config file on the vps. (should be named `{Environment specified in the inputs}.config.json`)
+# - Secrets must be set up in the repository settings:
+#   - SSH_PRIVATE_KEY: Private SSH key for accessing the vps
+#   - SSH_USER: The SSH username for the vps
+#   - SSH_HOST: The SSH host (IP or domain) of the vps
+#   - WORK_DIR: The directory on the vps where the app is deployed
+#   - BOT_TOKEN_{Environment specified in the inputs}: Environment variable for the bot
+#   - MONGO_URI: ^
+#   - HYPIXEL_KEY: ^
+#   - CONFIG_PATH: Path to the config file on the vps
+
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployToServer:
+        description: 'Deploy to server: (true/false)'
+        required: true
+        default: false
+        type: boolean
+      botEnvironmentType:
+        description: 'Bot environment type: (All uppercase)'
+        required: true
+        default: 'PRODUCTION'
+        type: string
+      port:
+        description: 'Port'
+        required: true
+        default: '8080'
+        type: string
+
+  workflow_run:
+    workflows:
+      - Java CI
+    types:
+      - completed
+    if: github.event.workflow_run.event == 'push'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.actor }}/nerd-bot:latest
+  REPO_NAME: ${{ github.event.repository.name }}
+  REPO_USERNAME: ${{ github.event.repository.owner.login }}
+  REPO_BRANCH: ${{ github.ref_name }}
+  DEPLOY_TO_SERVER: ${{ github.event.inputs.deployToServer || 'false' }}
+  ENVIRONMENT_NAME: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
+  PORT: ${{ github.event.inputs.port || '1234' }} # Default port is 1234 but should probably be changed to 8080
+
+jobs:
+  publish:
+    name: Publish image
+    if: ${{ contains('true,True,TRUE', env.DEPLOY_TO_SERVER) || github.ref == format('refs/heads/{0}', github.repository.default_branch) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and push Docker image
+        run: |
+          docker build . --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --build-arg GITHUB_USERNAME=${{ secrets.GITHUB_USERNAME }} \
+            --build-arg GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            --build-arg REPO_USERNAME=${{ env.REPO_USERNAME }} \
+            --build-arg REPO_NAME=${{ env.REPO_NAME }} \
+            --build-arg REPO_BRANCH=${{ env.REPO_BRANCH }}
+
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+  deploy:
+    needs: publish
+    name: Deploy image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install SSH keys
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          ENVIRONMENT_NAME_LOWER=$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]')
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          cd ${{ secrets.WORK_DIR }}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          docker stop nerd-bot || true
+          docker rm nerd-bot || true
+          docker run -d --name nerd-bot -p ${{ env.PORT }}:${{ env.PORT }} \
+            -v ${{ secrets.CONFIG_PATH }}:/app/${ENVIRONMENT_NAME_LOWER}.config.json \
+            -e "JAVA_OPTS=-Dbot.token=${{ format('secrets.BOT_TOKEN_{0}', env.ENVIRONMENT_NAME) }} \
+            -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
+            -Dbot.environment=${{ env.ENVIRONMENT_NAME }} \
+            -Dbot.config=/app/${ENVIRONMENT_NAME_LOWER}.config.json \
+            -Dhypixel.key=${{ secrets.HYPIXEL_KEY }}" \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          EOF
+
+      - name: Cleanup SSH keys
+        run: rm -rf ~/.ssh
