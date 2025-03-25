@@ -3,7 +3,7 @@ name: Java CI
 on:
   push:
     branches:
-      - '*'
+      - ${{ github.repository.default_branch }}
   pull_request:
     branches:
       - '*'
