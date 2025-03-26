@@ -35,7 +35,6 @@ public class StatParser implements StringParser {
         StringBuilder result = new StringBuilder();
 
         while (matcher.find()) {
-            String match = matcher.group(0);
             String icon = matcher.group(1);
             String extraData = matcher.group(2);
             Stat stat = Stat.byName(icon);
