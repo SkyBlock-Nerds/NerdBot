@@ -28,7 +28,7 @@ public class IconParser implements StringParser {
             input = input.replace(match, parseIcon(iconEnum, extraData));
         }
 
-        return input + "&r";
+        return input;
     }
 
     private String parseIcon(Icon icon, String extra) {
