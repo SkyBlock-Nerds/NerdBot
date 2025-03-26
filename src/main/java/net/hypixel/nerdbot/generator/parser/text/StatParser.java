@@ -47,7 +47,7 @@ public class StatParser implements StringParser {
 
         matcher.appendTail(result);
 
-        return result + "&r";
+        return result.toString();
     }
 
     private String parseStatWithType(Stat stat, String extraData) {
