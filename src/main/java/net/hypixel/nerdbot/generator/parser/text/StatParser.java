@@ -40,7 +40,7 @@ public class StatParser implements StringParser {
             Stat stat = Stat.byName(icon);
 
             if (stat != null) {
-                matcher.appendReplacement(result, parseStatWithType(stat, extraData));
+                matcher.appendReplacement(result, parseStatWithType(stat, extraData) + ChatFormat.SECTION_SYMBOL + ChatFormat.RESET.getCode());
             }
         }
 
