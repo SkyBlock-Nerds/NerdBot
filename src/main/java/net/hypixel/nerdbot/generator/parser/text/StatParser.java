@@ -35,19 +35,18 @@ public class StatParser implements StringParser {
         StringBuilder result = new StringBuilder();
 
         while (matcher.find()) {
-            String match = matcher.group(0);
             String icon = matcher.group(1);
             String extraData = matcher.group(2);
             Stat stat = Stat.byName(icon);
 
             if (stat != null) {
-                matcher.appendReplacement(result, parseStatWithType(stat, extraData));
+                matcher.appendReplacement(result, parseStatWithType(stat, extraData) + ChatFormat.SECTION_SYMBOL + ChatFormat.RESET.getCode());
             }
         }
 
         matcher.appendTail(result);
 
-        return result + "&r";
+        return result.toString();
     }
 
     private String parseStatWithType(Stat stat, String extraData) {
