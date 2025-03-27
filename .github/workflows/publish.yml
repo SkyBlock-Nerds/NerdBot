@@ -4,15 +4,19 @@
 # - The container is pushed to GHCR and deployed to the vps.
 
 # Requirements:
-# - Config file on the vps. (should be named `{Environment specified in the inputs}.config.json`)
-# - Secrets must be set up in the repository settings:
+# - Config file on the vps. (should be named `{Environment}.config.json`)
+#   - Example: `production.config.json`
+#   - Environment default: production
+# - These secrets must be set up in the repository settings:
 #   - SSH_PRIVATE_KEY: Private SSH key for accessing the vps
 #   - SSH_USER: The SSH username for the vps
 #   - SSH_HOST: The SSH host (IP or domain) of the vps
 #   - WORK_DIR: The directory on the vps where the app is/will be deployed
-#   - BOT_TOKEN_{Environment specified in the inputs}: Environment variable for the bot
-#   - MONGO_URI: ^
-#   - HYPIXEL_KEY: ^
+#   - BOT_TOKEN_{Environment}_{BranchName}: Environment variable for the bot
+#     - Example: BOT_TOKEN_PRODUCTION_master
+#     - Environment default: PRODUCTION
+#   - MONGO_URI: Environment variable for the bot
+#   - HYPIXEL_KEY: Environment variable for the bot
 #   - CONFIG_PATH: Path to the config file on the vps
 
 name: Publish
@@ -48,8 +52,9 @@ env:
 
 jobs:
   publish:
-    name: Publish image
     if: ${{ github.event_name == 'workflow_dispatch' || github.ref_name == github.event.repository.default_branch }}
+    # ^ Haven't tried, but I don't think you can specify this in the 'on:' block
+    name: Publish image
     runs-on: ubuntu-latest
 
     steps:
