@@ -1,7 +1,8 @@
 package net.hypixel.nerdbot.bot;
 
-import com.freya02.botcommands.api.CommandsBuilder;
-import com.freya02.botcommands.api.components.DefaultComponentManager;
+import com.github.kaktushose.jda.commands.JDACommands;
+import com.github.kaktushose.jda.commands.annotations.interactions.CommandScope;
+import com.github.kaktushose.jda.commands.definitions.interactions.command.CommandDefinition;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.bulk.BulkWriteResult;
@@ -10,10 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
-import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
-import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -23,7 +21,6 @@ import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.api.repository.Repository;
@@ -32,7 +29,6 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.MessageCache;
-import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.cache.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.feature.ActivityPurgeFeature;
 import net.hypixel.nerdbot.feature.CurateFeature;
@@ -57,6 +53,7 @@ import net.hypixel.nerdbot.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.discord.GuildScopeProviderImpl;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
@@ -64,7 +61,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -194,40 +190,25 @@ public class NerdBot implements Bot {
         try {
             jda.awaitReady();
             jda.addEventListener(new EmojiCache(), new ChannelCache());
+
+            JDACommands.builder(jda, NerdBotApp.class)
+                .guildScopeProvider(new GuildScopeProviderImpl())
+                .globalCommandConfig(CommandDefinition.CommandConfig.of(config -> config.scope(CommandScope.GUILD)))
+                .start();
+
+            config.getAlphaProjectConfig().updateForumIds(config, true, true);
+            messageCache = new MessageCache();
+            suggestionCache = new SuggestionCache();
+
+            NerdBotApp.getBot().onStart();
+            log.info("Bot is ready!");
+
+            if (NerdBotApp.getBot().isReadOnly()) {
+                log.info("\n!!! BOT IS LOADED IN READ-ONLY MODE !!!\n");
+            }
         } catch (InterruptedException exception) {
             log.error("Failed to create JDA instance!", exception);
             System.exit(-1);
-        }
-
-        config.getAlphaProjectConfig().updateForumIds(config, true, true);
-        messageCache = new MessageCache();
-        suggestionCache = new SuggestionCache();
-
-        CommandsBuilder commandsBuilder = CommandsBuilder
-            .newBuilder()
-            .addOwners(config.getOwnerIds().stream().mapToLong(Long::parseLong).toArray())
-            .extensionsBuilder(extensionsBuilder -> extensionsBuilder
-                .registerParameterResolver(new UserLanguageResolver())
-                .registerParameterResolver(new SuggestionTypeResolver())
-                .registerAutocompletionTransformer(UserLanguage.class, userLanguage -> new Command.Choice(userLanguage.getName(), userLanguage.name()))
-                .registerAutocompletionTransformer(Suggestion.ChannelType.class, suggestionType -> new Command.Choice(suggestionType.getName(), suggestionType.name()))
-                .registerAutocompletionTransformer(ForumChannel.class, forumChannel -> new Command.Choice(forumChannel.getName(), forumChannel.getId()))
-                .registerAutocompletionTransformer(ForumTag.class, forumTag -> new Command.Choice(forumTag.getName(), forumTag.getId()))
-            );
-
-        try {
-            commandsBuilder.setComponentManager(new DefaultComponentManager(new ComponentDatabaseConnection()::getConnection));
-        } catch (SQLException exception) {
-            log.error("Failed to connect to the SQL database! Components will not work correctly!", exception);
-        }
-
-        commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
-
-        NerdBotApp.getBot().onStart();
-        log.info("Bot is ready!");
-
-        if (NerdBotApp.getBot().isReadOnly()) {
-            log.info("\n!!! BOT IS LOADED IN READ-ONLY MODE !!!\n");
         }
     }
 

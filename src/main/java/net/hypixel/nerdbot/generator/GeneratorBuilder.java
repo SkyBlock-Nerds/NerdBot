@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator;
 
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
+import com.github.kaktushose.jda.commands.dispatching.events.interactions.CommandEvent;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -63,7 +63,7 @@ public class GeneratorBuilder {
         this.items = new HashMap<>();
 
         // loading all sprites for Minecraft Items
-        try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/spritesheets/minecraft_texture_atlas.png")) {
+        try (InputStream itemStackStream = GeneratorBuilder.class.getResourceAsStream("/minecraft/assets/spritesheets/minecraft_texture_atlas.png")) {
             if (itemStackStream == null) {
                 throw new FileNotFoundException("Could not find minecraft_texture_atlas.png file");
             }
@@ -75,7 +75,7 @@ public class GeneratorBuilder {
         }
 
         // loading the items position in the sprite sheet
-        try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/spritesheets/atlas_coordinates.json")) {
+        try (InputStream itemStream = GeneratorBuilder.class.getResourceAsStream("/minecraft/assets/spritesheets/atlas_coordinates.json")) {
             if (itemStream == null) {
                 throw new FileNotFoundException("Could not find atlas_coordinates.json file");
             }
@@ -103,7 +103,7 @@ public class GeneratorBuilder {
         }
 
         // loading the overlays for some Minecraft Items
-        try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/textures/overlays.png")) {
+        try (InputStream overlayStream = GeneratorBuilder.class.getResourceAsStream("/minecraft/assets/textures/overlays.png")) {
             if (overlayStream == null) {
                 throw new FileNotFoundException("Could not find overlays.png file");
             }
@@ -161,7 +161,7 @@ public class GeneratorBuilder {
     /**
      * Converts text into a Minecraft Item tooltip into a rendered image
      *
-     * @param event          the GuildSlashEvent which the command is triggered from
+     * @param event          the CommandEvent which the command is triggered from
      * @param name           the name of the item
      * @param rarity         the rarity of the item
      * @param itemLoreString the lore of the item
@@ -175,17 +175,17 @@ public class GeneratorBuilder {
      * @return a Minecraft item description
      */
     @Nullable
-    public BufferedImage buildItem(GuildSlashEvent event, String name, String rarity, String itemLoreString, String type,
+    public BufferedImage buildItem(CommandEvent event, String name, String rarity, String itemLoreString, String type,
                                    Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered) {
         // Checking that the fonts have been loaded correctly
         if (!MinecraftImage.isFontsRegistered()) {
-            event.getHook().sendMessage(FONTS_NOT_REGISTERED).setEphemeral(true).queue();
+            event.reply(FONTS_NOT_REGISTERED);
             return null;
         }
 
         // verify rarity argument
         if (Arrays.stream(Rarity.VALUES).noneMatch(rarity1 -> rarity.equalsIgnoreCase(rarity1.name()))) {
-            event.getHook().sendMessage(String.format(INVALID_RARITY, stripString(rarity))).setEphemeral(true).queue();
+            event.reply(String.format(INVALID_RARITY, stripString(rarity)));
             return null;
         }
 
@@ -227,7 +227,7 @@ public class GeneratorBuilder {
 
         // checking that there were no errors while parsing the string
         if (!colorParser.isSuccessfullyParsed()) {
-            event.getHook().sendMessage(colorParser.getErrorString()).setEphemeral(true).queue();
+            event.reply(colorParser.getErrorString());
             return null;
         }
 
@@ -255,13 +255,13 @@ public class GeneratorBuilder {
     /**
      * Renders a Minecraft Head into an image
      *
-     * @param event     the GuildSlashEvent which the command is triggered from
+     * @param event     the CommandEvent which the command is triggered from
      * @param textureID the skin id/player name of the target skin
      *
      * @return a rendered Minecraft head
      */
     @Nullable
-    public BufferedImage buildHead(GuildSlashEvent event, String textureID) {
+    public BufferedImage buildHead(CommandEvent event, String textureID) {
         // checking if the skin is supposed to be for a player
         if (textureID.length() <= 16) {
             textureID = getPlayerHeadURL(event, textureID);
@@ -282,10 +282,10 @@ public class GeneratorBuilder {
             URL target = new URL("http://textures.minecraft.net/texture/" + textureID);
             skin = ImageIO.read(target);
         } catch (MalformedURLException exception) {
-            event.getHook().sendMessage(MALFORMED_HEAD_URL).setEphemeral(false).queue();
+            event.reply(MALFORMED_HEAD_URL);
             return null;
         } catch (IOException exception) {
-            event.getHook().sendMessage(String.format(INVALID_HEAD_URL, stripString(textureID))).setEphemeral(false).queue();
+            event.reply(String.format(INVALID_HEAD_URL, stripString(textureID)));
             return null;
         }
 
@@ -296,25 +296,25 @@ public class GeneratorBuilder {
     /**
      * Converts a player name into a skin id
      *
-     * @param event      the GuildSlashEvent which the command is triggered from
+     * @param event      the CommandEvent which the command is triggered from
      * @param playerName the name of the player
      *
      * @return the skin id for the player's skin
      */
     @Nullable
-    private String getPlayerHeadURL(GuildSlashEvent event, String playerName) {
+    private String getPlayerHeadURL(CommandEvent event, String playerName) {
         playerName = playerName.replaceAll("[^a-zA-Z0-9_]", "");
 
         JsonObject userUUID;
         try {
             userUUID = Util.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
         } catch (IOException | InterruptedException exception) {
-            event.getHook().sendMessage(REQUEST_PLAYER_UUID_ERROR).queue();
+            event.reply(REQUEST_PLAYER_UUID_ERROR);
             return null;
         }
 
         if (userUUID == null || userUUID.get("id") == null) {
-            event.getHook().sendMessage(String.format(PLAYER_NOT_FOUND, playerName)).queue();
+            event.reply(String.format(PLAYER_NOT_FOUND, playerName));
             return null;
         }
 
@@ -322,12 +322,12 @@ public class GeneratorBuilder {
         try {
             userProfile = Util.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
         } catch (IOException | InterruptedException exception) {
-            event.getHook().sendMessage(REQUEST_PLAYER_UUID_ERROR).queue();
+            event.reply(REQUEST_PLAYER_UUID_ERROR);
             return null;
         }
 
         if (userProfile == null || userProfile.get("properties") == null) {
-            event.getHook().sendMessage(String.format(MALFORMED_PLAYER_PROFILE, stripString(playerName))).queue();
+            event.reply(String.format(MALFORMED_PLAYER_PROFILE, stripString(playerName)));
             return null;
         }
 
@@ -357,17 +357,17 @@ public class GeneratorBuilder {
      * @return a rendered minecraft image
      */
     @Nullable
-    public BufferedImage buildItemStack(GuildSlashEvent event, String itemName, String extraDetails) {
+    public BufferedImage buildItemStack(CommandEvent event, String itemName, String extraDetails) {
         // checks that all the textures required to render the items were loaded correctly
         if (!itemsInitialized) {
-            event.getHook().sendMessage(ITEM_RESOURCE_NOT_LOADED).queue();
+            event.reply(ITEM_RESOURCE_NOT_LOADED);
             return null;
         }
 
         // finding the item that the user entered
         Item itemFound = items.get(itemName.toLowerCase());
         if (itemFound == null) {
-            event.getHook().sendMessage(String.format(UNKNOWN_EXTRA_DETAILS, stripString(itemName), stripString(extraDetails))).queue();
+            event.reply(String.format(UNKNOWN_EXTRA_DETAILS, stripString(itemName), stripString(extraDetails)));
             return null;
         }
 
@@ -390,7 +390,7 @@ public class GeneratorBuilder {
      * @return a rendered minecraft image
      */
     @Nullable
-    public BufferedImage buildUnspecifiedItem(GuildSlashEvent event, String itemName, String extraDetails, boolean scaleImage) {
+    public BufferedImage buildUnspecifiedItem(CommandEvent event, String itemName, String extraDetails, boolean scaleImage) {
         BufferedImage itemImage;
         if (extraDetails == null) {
             extraDetails = "";
@@ -426,10 +426,10 @@ public class GeneratorBuilder {
      * @return a rendered minecraft crafting recipe
      */
     @Nullable
-    public BufferedImage buildRecipe(GuildSlashEvent event, String recipeString, boolean renderBackground) {
+    public BufferedImage buildRecipe(CommandEvent event, String recipeString, boolean renderBackground) {
         // checking that the resources were correctly loaded into memory
         if (!MinecraftInventory.resourcesRegistered()) {
-            event.getHook().sendMessage(ITEM_RESOURCE_NOT_LOADED).queue();
+            event.reply(ITEM_RESOURCE_NOT_LOADED);
             return null;
         }
 
@@ -437,7 +437,7 @@ public class GeneratorBuilder {
         RecipeParser parser = new RecipeParser();
         parser.parseRecipe(recipeString);
         if (!parser.isSuccessfullyParsed()) {
-            event.getHook().sendMessage(parser.getErrorString()).queue();
+            event.reply(parser.getErrorString());
             return null;
         }
 
