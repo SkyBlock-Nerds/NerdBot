@@ -43,12 +43,14 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.actor }}/nerd-bot:latest
+  IMAGE_NAME: ${{ github.actor }}/nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}-${{ github.ref_name }}:latest
+  CONTAINER_NAME: nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}-${{ github.ref_name }}
   REPO_NAME: ${{ github.event.repository.name }}
   REPO_USERNAME: ${{ github.event.repository.owner.login }}
   REPO_BRANCH: ${{ github.ref_name }}
   ENVIRONMENT_NAME: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
   PORT: ${{ github.event.inputs.port || '1234' }} # Default port is 1234 but should probably be changed to 8080 (convention)
+  NAME_BOT_TOKEN_SECRET: BOT_TOKEN_${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}_${{ github.ref_name }}'
 
 jobs:
   publish:
@@ -62,20 +64,18 @@ jobs:
         uses: actions/checkout@v4.2.2
 
       - name: Login to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
       - name: Build and push Docker image
         run: |
-          IMAGE_NAME_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
-
-          docker build . --tag ${{ env.REGISTRY }}/$IMAGE_NAME_LOWER \
+          docker build . --tag ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]') \
             --build-arg GITHUB_USERNAME=${{ secrets.GITHUB_USERNAME }} \
             --build-arg GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             --build-arg REPO_USERNAME=${{ env.REPO_USERNAME }} \
             --build-arg REPO_NAME=${{ env.REPO_NAME }} \
             --build-arg REPO_BRANCH=${{ env.REPO_BRANCH }}
 
-          docker push ${{ env.REGISTRY }}/$IMAGE_NAME_LOWER
+          docker push ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
 
   deploy:
     needs: publish
@@ -89,28 +89,21 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
 
-      - name: Convert vars to proper format
-        run: |
-          echo "ENVIRONMENT_NAME_LOWER=$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-          echo "IMAGE_NAME_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-          echo "BOT_TOKEN_SECRET=BOT_TOKEN_${{ env.ENVIRONMENT_NAME }}" >> $GITHUB_ENV
-          echo "CONTAINER_NAME=nerd-bot-${{ env.ENVIRONMENT_NAME_LOWER }}" >> $GITHUB_ENV
-
       - name: Deploy
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
           cd ${{ secrets.WORK_DIR }}
-          docker pull ${{ env.REGISTRY }}/$IMAGE_NAME_LOWER
-          docker stop ${{ env.CONTAINER_NAME }} || true
-          docker rm ${{ env.CONTAINER_NAME }} || true
-          docker run -d --name ${{ env.CONTAINER_NAME }} -p ${{ env.PORT }}:${{ env.PORT }} \
-            -v ${{ secrets.CONFIG_PATH }}:/app/${ENVIRONMENT_NAME_LOWER}.config.json \
-            -e "JAVA_OPTS=-Dbot.token=${{ secrets[env.BOT_TOKEN_SECRET] }} \
+          docker pull ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          docker stop $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') || true
+          docker rm $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') || true
+          docker run -d --name $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') -p ${{ env.PORT }}:${{ env.PORT }} \
+            -v ${{ secrets.CONFIG_PATH }}:/app/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json \
+            -e "JAVA_OPTS=-Dbot.token=${{ secrets[env.NAME_BOT_TOKEN_SECRET] }} \
             -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
             -Dbot.environment=${{ env.ENVIRONMENT_NAME }} \
-            -Dbot.config=/app/${ENVIRONMENT_NAME_LOWER}.config.json \
+            -Dbot.config=/app/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json \
             -Dhypixel.key=${{ secrets.HYPIXEL_KEY }}" \
-            ${{ env.REGISTRY }}/$IMAGE_NAME_LOWER
+            ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
           EOF
 
       - name: Cleanup SSH keys
