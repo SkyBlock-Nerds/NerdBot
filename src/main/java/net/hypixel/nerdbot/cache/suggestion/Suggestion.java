@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.cache.suggestion;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Getter
-@Log4j2
+@Slf4j
 public class Suggestion {
 
     private final String threadId;

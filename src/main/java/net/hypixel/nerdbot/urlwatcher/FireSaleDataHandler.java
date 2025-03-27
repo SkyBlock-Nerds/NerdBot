@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.urlwatcher;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -20,7 +20,7 @@ import java.awt.Color;
 import java.time.Instant;
 import java.util.List;
 
-@Log4j2
+@Slf4j
 public class FireSaleDataHandler implements URLWatcher.DataHandler {
 
     @Override

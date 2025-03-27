@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.api.database.model.user;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -29,7 +29,7 @@ import java.util.TimerTask;
 @AllArgsConstructor
 @Getter
 @Setter
-@Log4j2
+@Slf4j
 public class DiscordUser {
 
     private String discordId;

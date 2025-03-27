@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.cache.suggestion;
 
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -21,7 +21,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Stream;
 
-@Log4j2
+@Slf4j
 public class SuggestionCache extends TimerTask {
 
     private final Map<String, Suggestion> cache = new HashMap<>();

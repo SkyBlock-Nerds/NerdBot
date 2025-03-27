@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.feature;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.badge.BadgeManager;
@@ -16,7 +16,7 @@ import net.hypixel.nerdbot.util.Util;
 
 import java.util.ArrayList;
 
-@Log4j2
+@Slf4j
 public class UserGrabberFeature extends BotFeature {
 
     @Override

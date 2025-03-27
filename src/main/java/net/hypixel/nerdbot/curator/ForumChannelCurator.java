@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.curator;
 
 import io.prometheus.client.Summary;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Log4j2
+@Slf4j
 public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
 
     public ForumChannelCurator(boolean readOnly) {

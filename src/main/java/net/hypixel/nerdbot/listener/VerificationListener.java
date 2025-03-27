@@ -1,29 +1,11 @@
 package net.hypixel.nerdbot.listener;
 
-import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.UserSnowflake;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.command.ProfileCommands;
-import net.hypixel.nerdbot.util.Util;
-import org.jetbrains.annotations.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-@Log4j2
+@Slf4j
 public class VerificationListener {
 
-    @SubscribeEvent
+    /*@SubscribeEvent
     public void onButtonClickEvent(@NotNull ButtonInteractionEvent event) {
         if (event.getButton().getId() == null) {
             return;
@@ -114,5 +96,5 @@ public class VerificationListener {
                 event.getHook().editOriginalComponents(ActionRow.of(buttons)).complete();
             }
         }
-    }
+    }*/
 }

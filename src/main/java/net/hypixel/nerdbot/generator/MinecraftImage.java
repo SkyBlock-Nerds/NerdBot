@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.generator;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.util.ColoredString;
 import net.hypixel.nerdbot.util.FontUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -21,7 +21,7 @@ import java.util.List;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
 
-@Log4j2
+@Slf4j
 public class MinecraftImage {
 
     private static final int PIXEL_SIZE = 2;

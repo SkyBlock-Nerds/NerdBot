@@ -6,7 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.bulk.BulkWriteResult;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -57,9 +57,6 @@ import net.hypixel.nerdbot.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
-import net.hypixel.nerdbot.util.discord.resolver.SuggestionTypeResolver;
-import net.hypixel.nerdbot.util.discord.resolver.UserLanguageResolver;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
@@ -74,7 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-@Log4j2
+@Slf4j
 public class NerdBot implements Bot {
 
     private static final List<BotFeature> FEATURES = Arrays.asList(

@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.feature;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -19,7 +19,7 @@ import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.TimerTask;
 
-@Log4j2
+@Slf4j
 public class UserNominationFeature extends BotFeature {
 
     @Override

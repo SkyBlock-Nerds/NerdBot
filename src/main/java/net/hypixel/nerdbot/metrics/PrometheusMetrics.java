@@ -6,10 +6,10 @@ import io.prometheus.client.Gauge;
 import io.prometheus.client.Summary;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 
-@Log4j2
+@Slf4j
 public class PrometheusMetrics {
 
     public static final Counter EVENTS_AMOUNT = Counter.build()

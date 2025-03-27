@@ -1,14 +1,14 @@
 package net.hypixel.nerdbot.util.xml;
 
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Log4j2
+@Slf4j
 public class SkyBlockThreadHandler extends DefaultHandler {
 
     private static final String DESCRIPTION = "description";

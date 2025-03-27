@@ -1,8 +1,7 @@
 package net.hypixel.nerdbot.generator;
 
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
-import net.hypixel.nerdbot.command.GeneratorCommands;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
 
 import javax.imageio.ImageIO;
@@ -18,7 +17,7 @@ import java.util.HashMap;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
 
-@Log4j2
+@Slf4j
 public class MinecraftInventory {
     private static final boolean RESOURCES_INITIALISED;
     private static final Font MINECRAFT_FONT;
@@ -37,7 +36,7 @@ public class MinecraftInventory {
         }
 
         // loading the inventory background into memory
-        try (InputStream backgroundStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/textures/inventory_background.png")) {
+        try (InputStream backgroundStream = MinecraftInventory.class.getResourceAsStream("/minecraft/assets/textures/inventory_background.png")) {
             if (backgroundStream == null) {
                 throw new FileNotFoundException("Could not find the file called \"/Minecraft/inventory_background.png\"");
             }

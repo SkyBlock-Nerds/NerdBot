@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.util;
 import com.google.gson.JsonObject;
 import com.vdurmont.emoji.EmojiManager;
 import io.prometheus.client.Summary;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -25,7 +25,6 @@ import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
-import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.exception.HttpException;
@@ -60,7 +59,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-@Log4j2
+@Slf4j
 public class Util {
 
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
@@ -451,7 +450,7 @@ public class Util {
     @Nullable
     public static Font initFont(String path, float size) {
         Font font;
-        try (InputStream fontStream = GeneratorCommands.class.getResourceAsStream(path)) {
+        try (InputStream fontStream = Util.class.getResourceAsStream(path)) {
             if (fontStream == null) {
                 log.error("Couldn't initialize font: " + path);
                 return null;
