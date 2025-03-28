@@ -61,7 +61,8 @@ env:
 jobs:
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' || github.ref_name == github.event.repository.default_branch }}
-    # ^ Haven't tried, but I don't think you can specify this in the 'on:' block
+    # ^ Haven't tried, but I don't think you can specify this in the 'on:' block (it only running on the default branch)
+    # If you want to run it automatically on more branches just add another || here
     name: Publish image
     runs-on: ubuntu-latest
 
