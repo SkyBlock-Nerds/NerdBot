@@ -16,7 +16,7 @@ RUN apt-get update  \
     && mvn clean install -U -f pom.xml
 
 # Create a new image to run the application
-FROM openjdk:18-jdk-slim AS runner
+FROM builder AS runner
 
 # Set the working directory
 WORKDIR /app
