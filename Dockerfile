@@ -5,7 +5,8 @@ FROM openjdk:18-jdk-slim AS builder
 WORKDIR /app
 
 # Copy the local project to the container
-COPY . .
+COPY pom.xml .
+COPY src ./src
 
 # Build the application using Maven
 RUN apt-get update  \
