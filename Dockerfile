@@ -5,7 +5,8 @@ FROM openjdk:18-jdk-slim AS builder
 WORKDIR /app
 
 # Copy the local project to the container
-COPY . .
+COPY pom.xml .
+COPY src ./src
 
 # Write the branch name into a file for use at runtime
 RUN echo "${REPO_BRANCH}" > src/main/resources/git-branch.txt
