@@ -9,7 +9,7 @@ COPY pom.xml .
 COPY src ./src
 
 # Build the application using Maven
-RUN apt-get update  \
+RUN apt-get update \
     && apt-get install -y maven \
     && mvn clean install -U -f pom.xml \
     && apt-get remove -y maven \
