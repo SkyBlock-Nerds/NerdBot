@@ -30,7 +30,7 @@ on:
         default: 'PRODUCTION'
         type: string
       port:
-        description: 'Port'
+        description: 'Port:'
         required: true
         default: '8080'
         type: string
