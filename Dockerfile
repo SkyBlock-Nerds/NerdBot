@@ -14,7 +14,10 @@ RUN echo "${REPO_BRANCH}" > src/main/resources/git-branch.txt
 # Build the application using Maven
 RUN apt-get update  \
     && apt-get install -y maven \
-    && mvn clean install -U -f pom.xml
+    && mvn clean install -U -f pom.xml \
+    && apt-get remove -y maven \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create a new image to run the application
 FROM builder AS runner
