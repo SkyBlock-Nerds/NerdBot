@@ -23,7 +23,8 @@ FROM openjdk:18-jdk-slim
 WORKDIR /app
 
 # Copy the built JAR file from the builder image
-COPY --from=builder /app/target/NerdBot.jar .
+COPY --from=builder /app/target/*.jar /app/
+RUN find /app -name "*.jar" ! -name "original-*.jar" -exec mv {} /app/NerdBot.jar \;
 
 # Run the application
 ENTRYPOINT exec java ${JAVA_OPTS} -jar NerdBot.jar
