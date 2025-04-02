@@ -20,7 +20,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a new image to run the application
-FROM builder AS runner
+FROM openjdk:18-jdk-slim
 
 # Set the working directory
 WORKDIR /app
