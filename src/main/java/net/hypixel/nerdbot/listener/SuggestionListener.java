@@ -9,17 +9,14 @@ import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.channel.GenericChannelEvent;
 import net.dv8tion.jda.api.events.channel.update.ChannelUpdateNameEvent;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.managers.channel.concrete.ForumChannelManager;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
-import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,7 +26,7 @@ import java.util.List;
 @Slf4j
 public class SuggestionListener {
 
-    @SubscribeEvent
+    /*@SubscribeEvent
     public void onButtonClickEvent(@NotNull ButtonInteractionEvent event) {
         event.deferEdit().queue();
 
@@ -116,8 +113,8 @@ public class SuggestionListener {
                 .queue();
 
             PrometheusMetrics.REVIEW_REQUEST_STATISTICS.labels(firstMessage.get().getId(), firstMessage.get().getAuthor().getId(), suggestion.getThreadName(), action).inc();
-        }*/
-    }
+        }
+    }*/
 
     @NotNull
     private ThreadChannelManager getThreadChannelManager(ThreadChannel thread, List<ForumTag> tags, SuggestionConfig suggestionConfig) {

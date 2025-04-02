@@ -16,7 +16,6 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
-import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.bot.Environment;
@@ -56,7 +55,6 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.GuildScopeProviderImpl;
 import org.jetbrains.annotations.NotNull;
 
-import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -161,7 +159,7 @@ public class NerdBot implements Bot {
     }
 
     @Override
-    public void create(String[] args) throws LoginException {
+    public void create(String[] args) {
         loadConfig();
 
         JDABuilder builder = JDABuilder.createDefault(System.getProperty("bot.token"))
@@ -191,22 +189,15 @@ public class NerdBot implements Bot {
             jda.awaitReady();
             jda.addEventListener(new EmojiCache(), new ChannelCache());
 
-            JDACommands.builder(jda, NerdBotApp.class)
-                .guildScopeProvider(new GuildScopeProviderImpl())
-                .globalCommandConfig(CommandDefinition.CommandConfig.of(config -> config.scope(CommandScope.GUILD)))
-                .start();
-
             config.getAlphaProjectConfig().updateForumIds(config, true, true);
             messageCache = new MessageCache();
             suggestionCache = new SuggestionCache();
 
-            NerdBotApp.getBot().onStart();
-            log.info("Bot is ready!");
-
-            if (NerdBotApp.getBot().isReadOnly()) {
-                log.info("\n!!! BOT IS LOADED IN READ-ONLY MODE !!!\n");
-            }
-        } catch (InterruptedException exception) {
+            JDACommands.builder(jda, NerdBot.class)
+                .guildScopeProvider(new GuildScopeProviderImpl())
+                .globalCommandConfig(CommandDefinition.CommandConfig.of(config -> config.scope(CommandScope.GUILD)))
+                .start();
+        } catch (Exception exception) {
             log.error("Failed to create JDA instance!", exception);
             System.exit(-1);
         }

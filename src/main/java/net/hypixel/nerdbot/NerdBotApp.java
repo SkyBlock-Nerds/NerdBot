@@ -2,7 +2,6 @@ package net.hypixel.nerdbot;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mongodb.MongoException;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.bot.Bot;
@@ -13,7 +12,6 @@ import net.hypixel.nerdbot.util.gson.adapter.InstantTypeAdapter;
 import net.hypixel.nerdbot.util.gson.adapter.UUIDTypeAdapter;
 import sun.misc.Signal;
 
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
@@ -52,11 +50,6 @@ public class NerdBotApp {
 
         try {
             nerdBot.create(args);
-        } catch (LoginException exception) {
-            log.error("Failed to log into the bot with the given credentials!");
-            System.exit(-1);
-        } catch (MongoException exception) {
-            log.error("Failed to connect to MongoDB!");
         } catch (Exception exception) {
             log.error("Failed to create bot!", exception);
             System.exit(-1);
