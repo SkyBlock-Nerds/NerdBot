@@ -53,9 +53,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.actor }}/nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}-${{ github.ref_name }}:latest
   CONTAINER_NAME: nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}-${{ github.ref_name }}
-  REPO_NAME: ${{ github.event.repository.name }}
-  REPO_USERNAME: ${{ github.event.repository.owner.login }}
-  REPO_BRANCH: ${{ github.ref_name }}
   ENVIRONMENT_NAME: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
   PORT: ${{ github.event.inputs.port || '1234' }} # Default port is 1234 but should probably be changed to 8080 (convention)
   NAME_BOT_TOKEN_SECRET: BOT_TOKEN_${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}_${{ github.ref_name }}
