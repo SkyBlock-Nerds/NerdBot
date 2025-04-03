@@ -14,7 +14,8 @@ RUN apt-get update \
     && mvn clean install -U -f pom.xml \
     && apt-get remove -y maven \
     && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /app/target/original-*.jar
 
 # Use a minimal OpenJDK image for running the bot
 FROM openjdk:18-jdk-slim
@@ -24,9 +25,6 @@ WORKDIR /app
 
 # Copy the built JAR file from the builder image, excluding those prefixed with original-
 COPY --from=builder /app/target/*.jar /app/
-
-# Rename the JAR file, excluding prefixed with original- (aka deleting the non shade jar)
-RUN find /app -name "*.jar" ! -name "original-*.jar" -exec mv {} /app/NerdBot.jar \;
 
 # Run the application
 ENTRYPOINT exec java ${JAVA_OPTS} -jar NerdBot.jar
