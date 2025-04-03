@@ -1,4 +1,4 @@
-# Use OpenJDK 18 as the base image for building
+# Use Eclipse Temurin with Maven as the builder image
 FROM maven:3-eclipse-temurin-17-alpine AS builder
 
 # Set the working directory
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-# Install Maven, build the project, then clean up
+# Clean Maven cache and build the project with Maven
 RUN mvn clean install -U -f pom.xml \
     && rm -f /app/target/original-*.jar
 
@@ -18,7 +18,7 @@ FROM eclipse-temurin:24-jdk-alpine
 # Set the working directory
 WORKDIR /app
 
-# Copy the built JAR file from the builder image, excluding those prefixed with original-
+# Copy the built JAR file from the builder stage
 COPY --from=builder /app/target/*.jar /app/
 
 # Run the application
