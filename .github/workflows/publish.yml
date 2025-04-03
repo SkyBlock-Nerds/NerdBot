@@ -65,9 +65,11 @@ jobs:
 
     steps:
       - name: Checkout code
+        if: ${{ env.USE_OLD_IMAGE == 'false' }}
         uses: actions/checkout@v4.2.2
 
       - name: Login to GHCR
+        if: ${{ env.USE_OLD_IMAGE == 'false' }}
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
       - name: Build and push Docker image
