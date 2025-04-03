@@ -17,8 +17,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /app/target/original-*.jar
 
-# Use a minimal OpenJDK image for running the bot
-FROM openjdk:18-jdk-slim
+# Use a minimal eclipse-temurin image for running the bot
+FROM eclipse-temurin:24-jdk-alpine
 
 # Set the working directory
 WORKDIR /app
