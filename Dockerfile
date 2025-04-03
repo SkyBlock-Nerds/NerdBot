@@ -1,5 +1,5 @@
 # Use OpenJDK 18 as the base image for building
-FROM openjdk:18-jdk-slim AS builder
+FROM maven:3-eclipse-temurin-17-alpine AS builder
 
 # Set the working directory
 WORKDIR /app
@@ -9,12 +9,7 @@ COPY pom.xml .
 COPY src ./src
 
 # Install Maven, build the project, then clean up
-RUN apt-get update \
-    && apt-get install -y maven \
-    && mvn clean install -U -f pom.xml \
-    && apt-get remove -y maven \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/* \
+RUN mvn clean install -U -f pom.xml \
     && rm -f /app/target/original-*.jar
 
 # Use a minimal eclipse-temurin image for running the bot
