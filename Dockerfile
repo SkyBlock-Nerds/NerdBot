@@ -22,4 +22,4 @@ WORKDIR /app
 COPY --from=builder /app/target/*.jar /app/
 
 # Run the application
-ENTRYPOINT exec java ${JAVA_OPTS} -jar NerdBot.jar
+ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -jar NerdBot.jar"]
