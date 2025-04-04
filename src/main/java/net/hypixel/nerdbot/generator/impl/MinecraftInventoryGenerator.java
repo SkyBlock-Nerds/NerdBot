@@ -189,7 +189,7 @@ public class MinecraftInventoryGenerator implements Generator {
                     .build();
                 BufferedImage playerHeadImage = playerHeadGenerator.generate().getImage();
 
-                parsedItem.setImage(playerHeadImage);
+                parsedItem.setItemImage(playerHeadImage);
             } else if (!parsedItem.getItemName().equalsIgnoreCase("null")) {
                 BufferedImage generatedItem = new MinecraftItemGenerator.Builder()
                     .withItem(parsedItem.getItemName())
@@ -200,7 +200,7 @@ public class MinecraftInventoryGenerator implements Generator {
                     .generate()
                     .getImage();
 
-                parsedItem.setImage(generatedItem);
+                parsedItem.setItemImage(generatedItem);
             }
 
             log.info("Drawing item: " + parsedItem);
@@ -210,7 +210,7 @@ public class MinecraftInventoryGenerator implements Generator {
 
     private void drawItem(InventoryItem item) {
         // getting the item and its offset
-        BufferedImage itemToDraw = item.getImage();
+        BufferedImage itemToDraw = item.getItemImage();
         int offset = itemToDraw != null ? Math.abs(itemToDraw.getWidth() - itemToDraw.getHeight()) / 2 : PIXELS_PER_PIXEL;
 
         if (itemToDraw == null) {

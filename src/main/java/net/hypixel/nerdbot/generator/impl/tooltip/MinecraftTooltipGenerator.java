@@ -14,12 +14,12 @@ import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
+import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Range;
 import net.hypixel.nerdbot.util.Util;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.Nullable;
 
-import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -44,34 +44,40 @@ public class MinecraftTooltipGenerator implements Generator {
     private final boolean renderBorder;
 
     @Override
-    public GeneratedObject generate() {
+    public GeneratedObject generate() throws GeneratorException {
         TooltipSettings settings = new TooltipSettings(
-            name,           // Name of the item
-            emptyLine,      // Whether to add an empty line
-            type,           // Type of the item
-            alpha,          // Alpha value
-            padding,        // Padding value
-            normalItem,     // Whether to pad the first line
-            maxLineLength,  // Maximum line length
-            renderBorder    // Whether to render a border around the tooltip
+            name,
+            emptyLine,
+            type,
+            alpha,
+            padding,
+            normalItem,
+            maxLineLength,
+            renderBorder
         );
 
-        return new GeneratedObject(buildItem(itemLore, settings));
+        MinecraftTooltip tooltip = parseLore(itemLore, settings).render();
+
+        if (tooltip.isAnimated()) {
+            try {
+                byte[] gifData = ImageUtil.toGifBytes(tooltip.getAnimationFrames(), tooltip.getFrameDelayMs(), true);
+                return new GeneratedObject(gifData, tooltip.getAnimationFrames(), tooltip.getFrameDelayMs());
+            } catch (IOException e) {
+                throw new GeneratorException("Failed to generate animated tooltip GIF", e);
+            }
+        } else {
+            return new GeneratedObject(tooltip.getImage());
+        }
     }
 
     /**
-     * Builds an item tooltip image from a string of lore.
+     * Parses the lore of the item and applies the {@link TooltipSettings} settings.
      *
-     * @param itemLoreString The lore string to parse
-     * @param settings       The {@link TooltipSettings settings} to use for the generated tooltip image
+     * @param input    The lore to parse
+     * @param settings The {@link TooltipSettings} to apply
      *
-     * @return The generated tooltip image
+     * @return The parsed {@link MinecraftTooltip}
      */
-    @Nullable
-    public BufferedImage buildItem(String itemLoreString, TooltipSettings settings) {
-        return parseLore(itemLoreString, settings).render().getImage();
-    }
-
     public MinecraftTooltip parseLore(String input, TooltipSettings settings) {
         log.debug("Parsing lore for item: {} with TooltipSettings: {}", name, settings);
 

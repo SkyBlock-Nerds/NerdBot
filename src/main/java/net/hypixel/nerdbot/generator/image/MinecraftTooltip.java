@@ -3,7 +3,6 @@ package net.hypixel.nerdbot.generator.image;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
@@ -11,27 +10,31 @@ import net.hypixel.nerdbot.generator.text.segment.ColorSegment;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.util.Range;
 import net.hypixel.nerdbot.util.Util;
-import org.apache.commons.lang.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 
-import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Log4j2
 public class MinecraftTooltip {
+
+    private static final Map<Boolean, Map<Integer, List<Character>>> OBFUSCATION_WIDTH_MAPS = new HashMap<>(); // Boolean to indicate bold or regular
+    private static final int[] UNICODE_BLOCK_RANGES = {
+        0x0020, 0x007E, // Basic Latin
+        0x00A0, 0x00FF, // Latin-1 Supplement
+        0x2500, 0x257F, // Box Drawing
+        0x2580, 0x259F  // Block Elements
+    };
 
     public static final Range<Integer> LINE_LENGTH = Range.between(1, 128);
     private static final int PIXEL_SIZE = 2;
@@ -56,7 +59,12 @@ public class MinecraftTooltip {
 
         // Register Minecraft Fonts
         MINECRAFT_FONTS.forEach(GraphicsEnvironment.getLocalGraphicsEnvironment()::registerFont);
+        // Precompute character widths for the obfuscation effect
+        precomputeCharacterWidths();
     }
+
+    @Getter
+    private List<BufferedImage> animationFrames = new ArrayList<>();
 
     @Getter
     private final List<LineSegment> lines;
@@ -68,142 +76,175 @@ public class MinecraftTooltip {
     private final boolean paddingFirstLine;
     @Getter
     private final boolean renderBorder;
-    @Getter(AccessLevel.PRIVATE)
-    private final Graphics2D graphics;
     @Getter
     private BufferedImage image;
     @Getter
-    private ChatFormat currentColor;
-    private Font currentFont;
-    // Positioning & Size
-    private int locationX = START_XY;
-    private int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
-    private int largestWidth = 0;
+    private boolean isAnimated = false;
+    @Getter
+    private int frameDelayMs;
+    @Getter
+    private int animationFrameCount;
 
-    private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean paddingFirstLine, boolean renderBorder) {
+    private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean paddingFirstLine, boolean renderBorder, int frameDelayMs, int animationFrameCount) {
         this.alpha = alpha;
         this.padding = padding;
         this.paddingFirstLine = paddingFirstLine;
         this.lines = lines;
-        int lineLength = lines.stream()
-            .mapToInt(LineSegment::length)
-            .max()
-            .orElse(LINE_LENGTH.getMaximum());
-        this.graphics = this.initG2D(LINE_LENGTH.fit(lineLength) * 25, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4);
         this.currentColor = defaultColor;
         this.renderBorder = renderBorder;
+        this.frameDelayMs = frameDelayMs;
+        this.animationFrameCount = animationFrameCount;
+    }
+
+    @Getter
+    private ChatFormat currentColor;
+    private Font currentFont;
+
+    private int locationX = START_XY;
+    private int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
+    private int largestWidth = 0;
+
+    private static void precomputeCharacterWidths() {
+        OBFUSCATION_WIDTH_MAPS.put(false, new HashMap<>()); // Map for default style
+        OBFUSCATION_WIDTH_MAPS.put(true, new HashMap<>());  // Map for bold style
+
+        Font defaultFont = MINECRAFT_FONTS.get(0);
+        Font boldFont = MINECRAFT_FONTS.get(1);
+
+        if (defaultFont == null || boldFont == null) {
+            log.error("Default or Bold Minecraft font not initialized, cannot precompute character widths.");
+            return;
+        }
+
+        BufferedImage tempImg = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D tempG2d = tempImg.createGraphics();
+        FontMetrics defaultMetrics = tempG2d.getFontMetrics(defaultFont);
+        FontMetrics boldMetrics = tempG2d.getFontMetrics(boldFont);
+
+        for (int range = 0; range < UNICODE_BLOCK_RANGES.length; range += 2) {
+            for (int codePoint = UNICODE_BLOCK_RANGES[range]; codePoint <= UNICODE_BLOCK_RANGES[range + 1]; codePoint++) {
+                char c = (char) codePoint;
+
+                if (defaultFont.canDisplay(c)) {
+                    int width = defaultMetrics.charWidth(c);
+                    if (width > 0) {
+                        OBFUSCATION_WIDTH_MAPS.get(false).computeIfAbsent(width, k -> new ArrayList<>()).add(c);
+                    }
+                }
+
+                if (boldFont.canDisplay(c)) {
+                    int width = boldMetrics.charWidth(c);
+                    if (width > 0) {
+                        OBFUSCATION_WIDTH_MAPS.get(true).computeIfAbsent(width, k -> new ArrayList<>()).add(c);
+                    }
+                }
+            }
+        }
+        tempG2d.dispose();
+        log.info("Precomputed obfuscation character widths. Default: {} chars, Bold: {} chars.",
+            OBFUSCATION_WIDTH_MAPS.get(false).values().stream().mapToInt(List::size).sum(),
+            OBFUSCATION_WIDTH_MAPS.get(true).values().stream().mapToInt(List::size).sum()
+        );
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    /**
-     * Creates an image, then initialized a Graphics2D object from that image.
-     *
-     * @return G2D object
-     */
-    private Graphics2D initG2D(int width, int height) {
-        // Create Image
-        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+    private BufferedImage cropFrame(BufferedImage frame, int finalWidth, int finalHeight) {
+        int cropWidth = Math.min(finalWidth + START_XY, frame.getWidth());
+        int cropHeight = Math.min(finalHeight, frame.getHeight());
 
-        // Draw Primary Background
-        Graphics2D graphics = this.getImage().createGraphics();
-        graphics.setColor(new Color(18, 3, 18, this.getAlpha()));
-        graphics.fillRect(
-            PIXEL_SIZE * 2,
-            PIXEL_SIZE * 2,
-            width - PIXEL_SIZE * 4,
-            height - PIXEL_SIZE * 4
-        );
-
-        return graphics;
-    }
-
-    /**
-     * Crops the image to fit the space taken up by the borders.
-     */
-    public void cropImage() {
-        this.image = this.getImage().getSubimage(
-            0,
-            0,
-            this.largestWidth + START_XY,
-            this.getImage().getHeight()
-        );
-    }
-
-    /**
-     * Resizes the image to add padding.
-     */
-    public void addPadding() {
-        if (this.getPadding() > 0) {
-            BufferedImage resizedImage = new BufferedImage(
-                this.getImage().getWidth() + this.getPadding() * 2,
-                this.getImage().getHeight() + this.getPadding() * 2,
-                BufferedImage.TYPE_INT_ARGB
-            );
-
-            Graphics2D graphics2D = resizedImage.createGraphics();
-            graphics2D.drawImage(this.getImage(), this.getPadding(), this.getPadding(), this.getImage().getWidth(), this.getImage().getHeight(), null);
-            graphics2D.dispose();
-            this.image = resizedImage;
+        if (cropWidth <= 0 || cropHeight <= 0) {
+            log.warn("Attempted to crop frame with invalid dimensions: width={}, height={}", cropWidth, cropHeight);
+            return frame.getWidth() > 0 && frame.getHeight() > 0 ? frame : new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         }
+
+        return frame.getSubimage(0, 0, cropWidth, cropHeight);
     }
 
-    /**
-     * Creates the inner and outer purple borders around the image.
-     */
-    public void drawBorders() {
-        final int width = this.getImage().getWidth();
-        final int height = this.getImage().getHeight();
+    private BufferedImage addPadding(BufferedImage frame) {
+        if (this.getPadding() <= 0) {
+            return frame;
+        }
 
-        // Draw Darker Purple Border Around Purple Border
-        this.getGraphics().setColor(new Color(18, 3, 18, this.getAlpha()));
-        this.getGraphics().fillRect(0, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2);
-        this.getGraphics().fillRect(PIXEL_SIZE, 0, width - PIXEL_SIZE * 2, PIXEL_SIZE);
-        this.getGraphics().fillRect(width - PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2);
-        this.getGraphics().fillRect(PIXEL_SIZE, height - PIXEL_SIZE, width - PIXEL_SIZE * 2, PIXEL_SIZE);
+        BufferedImage paddedFrame = new BufferedImage(
+            frame.getWidth() + this.getPadding() * 2,
+            frame.getHeight() + this.getPadding() * 2,
+            BufferedImage.TYPE_INT_ARGB
+        );
+
+        Graphics2D graphics2D = paddedFrame.createGraphics();
+        graphics2D.drawImage(frame, this.getPadding(), this.getPadding(), frame.getWidth(), frame.getHeight(), null);
+        graphics2D.dispose();
+        return paddedFrame;
+    }
+
+    private void drawBorders(Graphics2D frameGraphics, int width, int height) {
+        // Draw Darker Purple Border
+        frameGraphics.setColor(new Color(18, 3, 18, this.isAnimated ? 255 : this.getAlpha()));
+        frameGraphics.fillRect(0, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2);
+        frameGraphics.fillRect(PIXEL_SIZE, 0, width - PIXEL_SIZE * 2, PIXEL_SIZE);
+        frameGraphics.fillRect(width - PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2);
+        frameGraphics.fillRect(PIXEL_SIZE, height - PIXEL_SIZE, width - PIXEL_SIZE * 2, PIXEL_SIZE);
 
         // Draw Purple Border
-        this.getGraphics().setColor(new Color(37, 0, 94, this.getAlpha()));
-        this.getGraphics().drawRect(PIXEL_SIZE, PIXEL_SIZE, width - PIXEL_SIZE * 2 - 1, height - PIXEL_SIZE * 2 - 1);
-        this.getGraphics().drawRect(PIXEL_SIZE + 1, PIXEL_SIZE + 1, width - PIXEL_SIZE * 3 - 1, height - PIXEL_SIZE * 3 - 1);
+        frameGraphics.setColor(new Color(37, 0, 94, this.isAnimated ? 255 : this.getAlpha()));
+        frameGraphics.drawRect(PIXEL_SIZE, PIXEL_SIZE, width - PIXEL_SIZE * 2 - 1, height - PIXEL_SIZE * 2 - 1);
+        frameGraphics.drawRect(PIXEL_SIZE + 1, PIXEL_SIZE + 1, width - PIXEL_SIZE * 3 - 1, height - PIXEL_SIZE * 3 - 1);
     }
 
-    /**
-     * Draws the lines on the image.
-     */
-    public void drawLines() {
-        this.getLines().forEach(line -> {
-            line.getSegments().forEach(segment -> {
-                // Change Fonts and Color
+    private void drawLinesInternal(Graphics2D frameGraphics) {
+        this.locationX = START_XY;
+        this.locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
+        int currentFrameLargestWidth = 0;
+
+        for (int lineIndex = 0; lineIndex < this.getLines().size(); lineIndex++) {
+            LineSegment line = this.getLines().get(lineIndex);
+            for (ColorSegment segment : line.getSegments()) {
+                if (segment.isObfuscated()) {
+                    this.isAnimated = true;
+                }
+
                 this.currentFont = MINECRAFT_FONTS.get((segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0));
-                this.getGraphics().setFont(this.currentFont);
+                frameGraphics.setFont(this.currentFont);
                 this.currentColor = segment.getColor().orElse(ChatFormat.GRAY);
 
                 StringBuilder subWord = new StringBuilder();
                 String segmentText = segment.getText();
 
-                // Iterate through all characters on the current segment until there is a character which cannot be displayed
                 for (int charIndex = 0; charIndex < segmentText.length(); charIndex++) {
                     char character = segmentText.charAt(charIndex);
 
-                    if (!this.currentFont.canDisplay(character)) {
-                        this.drawString(subWord.toString(), segment);
-                        subWord.setLength(0);
-                        this.drawSymbol(character, segment);
+                    if (segment.isObfuscated()) {
+                        if (!subWord.isEmpty()) {
+                            this.drawStringInternal(frameGraphics, subWord.toString(), segment, -1);
+                            subWord.setLength(0);
+                        }
+
+                        this.drawStringInternal(frameGraphics, String.valueOf(character), segment, charIndex);
                         continue;
                     }
 
-                    // Prevent Monospace
+                    if (!this.currentFont.canDisplay(character)) {
+                        this.drawStringInternal(frameGraphics, subWord.toString(), segment, -1);
+                        subWord.setLength(0);
+                        this.drawSymbolInternal(frameGraphics, character, segment);
+                        continue;
+                    }
+
                     subWord.append(character);
                 }
 
-                this.drawString(subWord.toString(), segment);
-            });
+                this.drawStringInternal(frameGraphics, subWord.toString(), segment, -1);
+            }
 
-            this.updatePositionAndSize(this.getLines().indexOf(line) == 0 && this.isPaddingFirstLine());
-        });
+            this.locationY += Y_INCREMENT + (lineIndex == 0 && this.isPaddingFirstLine() ? PIXEL_SIZE * 2 : 0);
+            currentFrameLargestWidth = Math.max(this.locationX, currentFrameLargestWidth);
+            this.locationX = START_XY;
+        }
+
+        this.largestWidth = Math.max(this.largestWidth, currentFrameLargestWidth);
     }
 
     /**
@@ -211,8 +252,8 @@ public class MinecraftTooltip {
      *
      * @param symbol The symbol to draw.
      */
-    private void drawSymbol(char symbol, @NotNull ColorSegment colorSegment) {
-        this.drawString(Character.toString(symbol), colorSegment, SANS_SERIF_FONT);
+    private void drawSymbolInternal(Graphics2D frameGraphics, char symbol, @NotNull ColorSegment colorSegment) {
+        this.drawStringInternal(frameGraphics, Character.toString(symbol), colorSegment, -1, SANS_SERIF_FONT);
     }
 
     /**
@@ -220,49 +261,83 @@ public class MinecraftTooltip {
      *
      * @param value The value to draw.
      */
-    private void drawString(@NotNull String value, @NotNull ColorSegment colorSegment) {
-        this.drawString(value, colorSegment, this.currentFont);
+    private void drawStringInternal(Graphics2D frameGraphics, @NotNull String value, @NotNull ColorSegment colorSegment, int originalCharIndex) {
+        this.drawStringInternal(frameGraphics, value, colorSegment, originalCharIndex, this.currentFont);
     }
 
-    private void drawString(@NotNull String value, @NotNull ColorSegment colorSegment, @NotNull Font font) {
-        // Change Font
-        this.getGraphics().setFont(font);
+    private void drawStringInternal(Graphics2D frameGraphics, @NotNull String value, @NotNull ColorSegment colorSegment, int originalCharIndex, @NotNull Font font) {
+        if (value.isEmpty()) {
+            return;
+        }
 
-        // Next Draw Position
-        int nextBounds = (int) font.getStringBounds(value, this.getGraphics().getFontRenderContext()).getWidth();
+        String textToDraw = value;
+
+        if (colorSegment.isObfuscated() && originalCharIndex != -1) {
+            char originalChar = value.charAt(0);
+            int originalWidth = (int) font.getStringBounds(String.valueOf(originalChar), frameGraphics.getFontRenderContext()).getWidth();
+
+            // Select the correct map based on whether the segment is bold
+            Map<Integer, List<Character>> widthMap = OBFUSCATION_WIDTH_MAPS.get(colorSegment.isBold());
+            List<Character> matchingWidthChars = widthMap.get(originalWidth);
+
+            if (matchingWidthChars != null && !matchingWidthChars.isEmpty()) {
+                textToDraw = String.valueOf(matchingWidthChars.get(ThreadLocalRandom.current().nextInt(matchingWidthChars.size())));
+            } else {
+                // Fallback: If no char with matching width is found, use the original char
+                // We could use something else but the original seems safer to avoid potential layout shifting
+                log.warn("No matching character found with width {} for original character '{}', using original", originalWidth, originalChar);
+                textToDraw = String.valueOf(originalChar);
+            }
+        }
+
+        frameGraphics.setFont(font);
+
+        int nextBounds = (int) font.getStringBounds(textToDraw, frameGraphics.getFontRenderContext()).getWidth();
 
         // Draw Strikethrough Drop Shadow
-        if (colorSegment.isStrikethrough())
-            this.drawThickLine(nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, true);
+        if (colorSegment.isStrikethrough()) {
+            this.drawThickLineInternal(frameGraphics, nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, true);
+        }
 
         // Draw Underlined Drop Shadow
-        if (colorSegment.isUnderlined())
-            this.drawThickLine(nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, true);
+        if (colorSegment.isUnderlined()) {
+            this.drawThickLineInternal(frameGraphics, nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, true);
+        }
 
         // Draw Drop Shadow Text
-        this.getGraphics().setColor(this.currentColor.getBackgroundColor());
-        this.getGraphics().drawString(value, this.locationX + PIXEL_SIZE, this.locationY + PIXEL_SIZE);
+        frameGraphics.setColor(this.currentColor.getBackgroundColor());
+        frameGraphics.drawString(textToDraw, this.locationX + PIXEL_SIZE, this.locationY + PIXEL_SIZE);
 
         // Draw Text
-        this.getGraphics().setColor(this.currentColor.getColor());
-        this.getGraphics().drawString(value, this.locationX, this.locationY);
+        frameGraphics.setColor(this.currentColor.getColor());
+        frameGraphics.drawString(textToDraw, this.locationX, this.locationY);
 
         // Draw Strikethrough
-        if (colorSegment.isStrikethrough())
-            this.drawThickLine(nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, false);
+        if (colorSegment.isStrikethrough()) {
+            this.drawThickLineInternal(frameGraphics, nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, false);
+        }
 
         // Draw Underlined
-        if (colorSegment.isUnderlined())
-            this.drawThickLine(nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, false);
+        if (colorSegment.isUnderlined()) {
+            this.drawThickLineInternal(frameGraphics, nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, false);
+        }
 
         // Update Draw Pointer Location
         this.locationX += nextBounds;
-
-        // Reset Font
-        this.getGraphics().setFont(this.currentFont);
     }
 
-    private void drawThickLine(int width, int xPosition, int yPosition, int xOffset, int yOffset, boolean dropShadow) {
+    /**
+     * Draws a thick line on the image.
+     *
+     * @param frameGraphics The graphics context to draw on.
+     * @param width      The width of the line.
+     * @param xPosition  The x position to draw the line.
+     * @param yPosition  The y position to draw the line.
+     * @param xOffset    The x offset to apply to the line.
+     * @param yOffset    The y offset to apply to the line.
+     * @param dropShadow Whether to draw a drop shadow.
+     */
+    private void drawThickLineInternal(Graphics2D frameGraphics, int width, int xPosition, int yPosition, int xOffset, int yOffset, boolean dropShadow) {
         int xPosition1 = xPosition;
         int xPosition2 = xPosition + width + xOffset;
         yPosition += yOffset;
@@ -273,54 +348,65 @@ public class MinecraftTooltip {
             yPosition += PIXEL_SIZE;
         }
 
-        this.getGraphics().setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
-        this.getGraphics().drawLine(xPosition1, yPosition, xPosition2, yPosition);
-        this.getGraphics().drawLine(xPosition1, yPosition + 1, xPosition2, yPosition + 1);
+        frameGraphics.setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
+        frameGraphics.drawLine(xPosition1, yPosition, xPosition2, yPosition);
+        frameGraphics.drawLine(xPosition1, yPosition + 1, xPosition2, yPosition + 1);
     }
 
     /**
-     * Draws lines, resizes the image and draws borders.
+     * Renders the tooltip. If any segment is obfuscated, it generates frames to create an animation.
+     * Otherwise, it generates a single static image.
      */
     public MinecraftTooltip render() {
-        this.drawLines();
-        this.cropImage();
+        this.isAnimated = false;
+        this.animationFrames.clear();
+        this.largestWidth = 0;
 
-        if (this.renderBorder) {
-            this.drawBorders();
+        BufferedImage dummyImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D measureGraphics = dummyImage.createGraphics();
+        this.drawLinesInternal(measureGraphics);
+        measureGraphics.dispose();
+
+        int finalWidth = this.largestWidth;
+        int finalHeight = this.locationY - (Y_INCREMENT + (this.lines.isEmpty() || !this.paddingFirstLine ? 0 : PIXEL_SIZE * 2)) + START_XY + PIXEL_SIZE * 4;
+
+        int framesToGenerate = this.isAnimated ? this.animationFrameCount : 1;
+
+        for (int i = 0; i < framesToGenerate; i++) {
+            int frameWidth = Math.max(1, finalWidth + START_XY + PIXEL_SIZE * 4);
+            int frameHeight = Math.max(1, finalHeight);
+            BufferedImage frameImage = new BufferedImage(frameWidth, frameHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D graphics = frameImage.createGraphics();
+
+            graphics.setColor(new Color(18, 3, 18, this.isAnimated ? 255 : this.getAlpha()));
+            graphics.fillRect(
+                PIXEL_SIZE * 2,
+                PIXEL_SIZE * 2,
+                frameImage.getWidth() - PIXEL_SIZE * 4,
+                frameImage.getHeight() - PIXEL_SIZE * 4
+            );
+
+            this.drawLinesInternal(graphics);
+
+            BufferedImage processedFrame = this.cropFrame(frameImage, finalWidth, finalHeight);
+
+            if (this.renderBorder) {
+                Graphics2D borderGraphics = processedFrame.createGraphics();
+                this.drawBorders(borderGraphics, processedFrame.getWidth(), processedFrame.getHeight());
+                borderGraphics.dispose();
+            }
+
+            processedFrame = this.addPadding(processedFrame);
+            graphics.dispose();
+
+            this.animationFrames.add(processedFrame);
         }
 
-        this.addPadding();
+        if (!this.animationFrames.isEmpty()) {
+            this.image = this.animationFrames.get(0);
+        }
+
         return this;
-    }
-
-    @SneakyThrows
-    public InputStream toStream() {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        ImageIO.write(this.getImage(), "PNG", outputStream);
-        return new ByteArrayInputStream(outputStream.toByteArray());
-    }
-
-    public File toFile() {
-        try {
-            File tempFile = new File(SystemUtils.getJavaIoTmpDir(), String.format("%s.png", UUID.randomUUID()));
-            ImageIO.write(this.getImage(), "PNG", tempFile);
-            return tempFile;
-        } catch (IOException exception) {
-            log.error("Unable to write image to file!", exception);
-        }
-
-        return null;
-    }
-
-    /**
-     * Moves the pointer to draw on the next line.
-     *
-     * @param increaseGap Increase number of pixels between the next line
-     */
-    private void updatePositionAndSize(boolean increaseGap) {
-        this.locationY += Y_INCREMENT + (increaseGap ? PIXEL_SIZE * 2 : 0);
-        this.largestWidth = Math.max(this.locationX, this.largestWidth);
-        this.locationX = START_XY;
     }
 
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -333,6 +419,8 @@ public class MinecraftTooltip {
         private int padding = 0;
         private boolean paddingFirstLine = true;
         private boolean renderBorder = true;
+        private int frameDelayMs = 50;
+        private int animationFrameCount = 10;
 
         public Builder isPaddingFirstLine() {
             return this.isPaddingFirstLine(true);
@@ -385,6 +473,16 @@ public class MinecraftTooltip {
             return this;
         }
 
+        public Builder withFrameDelayMs(int delay) {
+            this.frameDelayMs = Math.max(10, delay);
+            return this;
+        }
+
+        public Builder withAnimationFrameCount(int count) {
+            this.animationFrameCount = Math.max(1, count);
+            return this;
+        }
+
         @Override
         public @NotNull MinecraftTooltip build() {
             return new MinecraftTooltip(
@@ -393,7 +491,9 @@ public class MinecraftTooltip {
                 this.alpha,
                 this.padding,
                 this.paddingFirstLine,
-                this.renderBorder
+                this.renderBorder,
+                this.frameDelayMs,
+                this.animationFrameCount
             );
         }
     }

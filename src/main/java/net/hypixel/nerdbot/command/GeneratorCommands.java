@@ -117,6 +117,7 @@ public class GeneratorCommands extends ApplicationCommand {
             }
 
             GeneratedObject generatedObject = item.build();
+
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
@@ -279,7 +280,12 @@ public class GeneratorCommands extends ApplicationCommand {
                 generatorImageBuilder.addGenerator(tooltipGenerator.build());
                 GeneratedObject generatedObject = generatorImageBuilder.build();
 
-                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+                if (generatedObject.isAnimated()) {
+                    event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "powerstone.gif")).queue();
+                } else {
+                    event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "powerstone.png")).queue();
+                }
+
                 addCommandToUserHistory(event.getUser(), event.getCommandString());
             } catch (GeneratorException | IllegalArgumentException exception) {
                 event.getHook().editOriginal(exception.getMessage()).queue();
@@ -419,7 +425,14 @@ public class GeneratorCommands extends ApplicationCommand {
                 generatedObject.addGenerator(tooltipGenerator);
             }
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.build().getImage()), "inventory.png")).queue();
+            GeneratedObject finalObject = generatedObject.build();
+
+            if (finalObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(finalObject.getGifData(), "inventory.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(finalObject.getImage()), "inventory.png")).queue();
+            }
+
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
@@ -481,23 +494,31 @@ public class GeneratorCommands extends ApplicationCommand {
                     .build());
             }
 
-            MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                .parseNbtJson(jsonObject)
-                .withAlpha(alpha)
-                .withPadding(padding)
-                .withMaxLineLength(Util.getLongestLine(jsonObject.get("tag").getAsJsonObject()
+            int maxLineLength = Util.getLongestLine(jsonObject.get("tag").getAsJsonObject()
                     .get("display").getAsJsonObject()
                     .get("Lore").getAsJsonArray()
                     .asList()
                     .stream()
                     .map(JsonElement::getAsString)
-                    .toList()
-                ).getRight());
+                    .toList()).getRight();
+
+            MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                .parseNbtJson(jsonObject)
+                .withAlpha(alpha)
+                .withPadding(padding)
+                .withRenderBorder(true)
+                .isPaddingFirstLine(true)
+                .withMaxLineLength(maxLineLength);
 
             GeneratedObject generatedObject = generatorImageBuilder.addGenerator(tooltipGenerator.build()).build();
             MessageEditBuilder builder = new MessageEditBuilder()
-                .setContent("Your NBT input has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + tooltipGenerator.buildSlashCommand() + "```")
-                .setFiles(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "parsed_nbt.png"));
+                .setContent("Your NBT input has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + tooltipGenerator.buildSlashCommand() + "```");
+
+            if (generatedObject.isAnimated()) {
+                builder.setFiles(FileUpload.fromData(generatedObject.getGifData(), "parsed_nbt.gif"));
+            } else {
+                builder.setFiles(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "parsed_nbt.png"));
+            }
 
             event.getHook().editOriginal(builder.build()).queue();
             addCommandToUserHistory(event.getUser(), event.getCommandString());
@@ -529,6 +550,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = NORMAL_ITEM_DESCRIPTION) @Optional Boolean paddingFirstLine,
         @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
         @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide,
+        @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean renderBorder,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
@@ -543,6 +565,7 @@ public class GeneratorCommands extends ApplicationCommand {
         centered = centered != null && centered;
         paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
+        renderBorder = renderBorder == null || renderBorder;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
@@ -557,7 +580,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
                 .isPaddingFirstLine(paddingFirstLine)
-                .withRenderBorder(true)
+                .withRenderBorder(renderBorder)
                 .build();
 
             if (itemId != null) {
@@ -582,7 +605,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 generatorImageBuilder.addGenerator(0, new MinecraftInventoryGenerator.Builder()
                     .withRows(3)
                     .withSlotsPerRow(3)
-                    .drawBorder(false)
+                    .drawBorder(renderBorder)
                     .withInventoryString(recipeString)
                     .build()
                 ).build();
@@ -595,7 +618,13 @@ public class GeneratorCommands extends ApplicationCommand {
             }
 
             GeneratedObject generatedObject = generatorImageBuilder.build();
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+
+            if (generatedObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "item.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+            }
+
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException | IllegalArgumentException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
@@ -625,7 +654,7 @@ public class GeneratorCommands extends ApplicationCommand {
         alpha = alpha == null ? 0 : alpha;
         padding = padding == null ? DEFAULT_PADDING : padding;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
-        renderBorder = renderBorder == null || renderBorder;
+        renderBorder = renderBorder != null && renderBorder;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
@@ -641,7 +670,14 @@ public class GeneratorCommands extends ApplicationCommand {
                 .build();
 
             generatorImageBuilder.addGenerator(tooltipGenerator);
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatorImageBuilder.build().getImage()), "text.png")).queue();
+            GeneratedObject generatedObject = generatorImageBuilder.build();
+
+            if (generatedObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "text.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "text.png")).queue();
+            }
+
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
@@ -708,7 +744,15 @@ public class GeneratorCommands extends ApplicationCommand {
                 generatorImageBuilder.addGenerator(0, playerHeadGenerator);
             }
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatorImageBuilder.build().getImage()), "dialogue.png")).queue();
+            GeneratedObject generatedObject = generatorImageBuilder.build();
+
+            if (generatedObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "dialogue.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "dialogue.png")).queue();
+            }
+
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while generating dialogue", exception);
@@ -787,7 +831,14 @@ public class GeneratorCommands extends ApplicationCommand {
                 generatorImageBuilder.addGenerator(0, playerHeadGenerator);
             }
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatorImageBuilder.build().getImage()), "dialogue.png")).queue();
+            GeneratedObject generatedObject = generatorImageBuilder.build();
+
+            if (generatedObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "dialogue.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "dialogue.png")).queue();
+            }
+
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();

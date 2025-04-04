@@ -6,9 +6,11 @@ import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.exception.GeneratorTimeoutException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
+import net.hypixel.nerdbot.util.ImageUtil;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -95,51 +97,156 @@ public class GeneratorImageBuilder {
      *
      * @return The final {@link GeneratedObject image}.
      */
-    private GeneratedObject buildInternal() {
+    private GeneratedObject buildInternal() throws GeneratorException {
+        // Generate all objects first
+        List<GeneratedObject> generatedObjects = new ArrayList<>();
+        for (Generator generator : generators) {
+            try {
+                generatedObjects.add(generator.generate());
+            } catch (Exception e) {
+                throw new GeneratorException("Error generating object from generator: " + e.getMessage(), e);
+            }
+        }
+
+        boolean isAnimated = generatedObjects.stream().anyMatch(GeneratedObject::isAnimated);
+
+        if (isAnimated) {
+            try {
+                return buildAnimatedInternal(generatedObjects);
+            } catch (IOException e) {
+                log.error("Failed to build animated GIF", e);
+                throw new GeneratorException("Failed to build animated GIF: " + e.getMessage(), e);
+            }
+        } else {
+            return buildStaticInternal(generatedObjects);
+        }
+    }
+
+    /**
+     * Builds a static composite image from non-animated GeneratedObjects.
+     */
+    private GeneratedObject buildStaticInternal(List<GeneratedObject> generatedObjects) throws GeneratorException {
+        if (generatedObjects.isEmpty()) {
+            throw new GeneratorException("No generators provided to build an image.");
+        }
+
         int totalWidth = 0;
         int maxHeight = 0;
 
-        List<GeneratedObject> generatedObjects = generators.stream().map(Generator::generate).toList();
-
-        for (GeneratedObject generatedObject : generatedObjects) {
+        // Calculate dimensions
+        for (int i = 0; i < generatedObjects.size(); i++) {
+            GeneratedObject generatedObject = generatedObjects.get(i);
             BufferedImage generatedImage = generatedObject.getImage();
 
             if (generatedImage == null) {
-                throw new GeneratorException("Could not generate that image!");
+                throw new GeneratorException("Generated image is null for " + generatedObject.getClass().getSimpleName());
             }
 
-            if (generatedObjects.size() > 1) {
-                totalWidth += generatedImage.getWidth() + IMAGE_PADDING_PX;
-            } else {
-                totalWidth += generatedImage.getWidth();
+            totalWidth += generatedImage.getWidth();
+            if (i < generatedObjects.size() - 1) { // Add padding except for the last image
+                totalWidth += IMAGE_PADDING_PX;
             }
-
             maxHeight = Math.max(maxHeight, generatedImage.getHeight());
+        }
+
+        if (totalWidth <= 0 || maxHeight <= 0) {
+            throw new GeneratorException("Calculated image dimensions are invalid (width=" + totalWidth + ", height=" + maxHeight + ")");
         }
 
         BufferedImage finalImage = new BufferedImage(totalWidth, maxHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = finalImage.createGraphics();
-        int x = 0;
+        int currentX = 0;
 
+        // Draw images
         for (GeneratedObject generatedObject : generatedObjects) {
             BufferedImage generatedImage = generatedObject.getImage();
-
-            if (generatedImage == null) {
-                throw new GeneratorException("Could not generate image for " + generatedObject.getClass().getSimpleName() + "!");
-            }
-
-            // Calculate the vertical offset to center the image vertically
-            int yOffset = (maxHeight - generatedImage.getHeight()) / 2;
-
-            // Draw the image with the calculated vertical offset
-            graphics.drawImage(generatedImage, x, yOffset, null);
-
-            // Adjust the x position for the next generator
-            x += generatedImage.getWidth() + IMAGE_PADDING_PX;
+            int yOffset = (maxHeight - generatedImage.getHeight()) / 2; // Center vertically
+            graphics.drawImage(generatedImage, currentX, yOffset, null);
+            currentX += generatedImage.getWidth() + IMAGE_PADDING_PX;
         }
 
         graphics.dispose();
-
         return new GeneratedObject(finalImage);
+    }
+
+    /**
+     * Builds an animated GIF from {@link GeneratedObject} instances.
+     */
+    private GeneratedObject buildAnimatedInternal(List<GeneratedObject> generatedObjects) throws IOException, GeneratorException {
+        if (generatedObjects.isEmpty()) {
+            throw new GeneratorException("No generators provided to build an image.");
+        }
+
+        int maxFrames = 1;
+        int frameDelayMs = 50; // Default delay
+        boolean delaySet = false;
+
+        // Find max frames and first delay
+        for (GeneratedObject obj : generatedObjects) {
+            if (obj.isAnimated()) {
+                maxFrames = Math.max(maxFrames, obj.getAnimationFrames().size());
+                if (!delaySet && obj.getFrameDelayMs() > 0) {
+                    frameDelayMs = obj.getFrameDelayMs();
+                    delaySet = true;
+                }
+            }
+        }
+
+        // Calculate dimensions
+        int totalWidth = 0;
+        int maxHeight = 0;
+        for (int i = 0; i < generatedObjects.size(); i++) {
+            GeneratedObject generatedObject = generatedObjects.get(i);
+            BufferedImage frameImage = generatedObject.getImage(); // Use the stored first frame/static image
+
+            if (frameImage == null) {
+                throw new GeneratorException("Generated image (frame 0) is null for " + generatedObject.getClass().getSimpleName());
+            }
+
+            totalWidth += frameImage.getWidth();
+            if (i < generatedObjects.size() - 1) { // Add padding except for the last image
+                totalWidth += IMAGE_PADDING_PX;
+            }
+            maxHeight = Math.max(maxHeight, frameImage.getHeight());
+        }
+
+        if (totalWidth <= 0 || maxHeight <= 0) {
+            throw new GeneratorException("Calculated animated image dimensions are invalid (width=" + totalWidth + ", height=" + maxHeight + ")");
+        }
+
+        List<BufferedImage> compositeFrames = new ArrayList<>();
+
+        // Generate each frame
+        for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
+            BufferedImage compositeFrame = new BufferedImage(totalWidth, maxHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D graphics = compositeFrame.createGraphics();
+            int currentX = 0;
+
+            for (GeneratedObject obj : generatedObjects) {
+                BufferedImage currentFrameImage;
+
+                if (obj.isAnimated()) {
+                    List<BufferedImage> frames = obj.getAnimationFrames();
+
+                    if (frames == null || frames.isEmpty()) {
+                        throw new GeneratorException("Animated object has null or empty frames list: " + obj.getClass().getSimpleName());
+                    }
+                    currentFrameImage = frames.get(frameIndex % frames.size());
+                } else {
+                    currentFrameImage = obj.getImage();
+                }
+
+                int yOffset = (maxHeight - currentFrameImage.getHeight()) / 2;
+                graphics.drawImage(currentFrameImage, currentX, yOffset, null);
+                currentX += currentFrameImage.getWidth() + IMAGE_PADDING_PX;
+            }
+
+            graphics.dispose();
+            compositeFrames.add(compositeFrame);
+        }
+
+        byte[] gifData = ImageUtil.toGifBytes(compositeFrames, frameDelayMs, true);
+
+        return new GeneratedObject(gifData, compositeFrames, frameDelayMs);
     }
 }
