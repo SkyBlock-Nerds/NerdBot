@@ -498,8 +498,15 @@ public class MinecraftTooltip {
         // Calculate final dimensions based on the measured largestWidth and height
         int finalWidth = START_XY + this.largestWidth + START_XY;
         int finalHeight = measuredHeight - (Y_INCREMENT + (this.lines.isEmpty() || !this.paddingFirstLine ? 0 : PIXEL_SIZE * 2)) + START_XY + PIXEL_SIZE * 2;
-        int framesToGenerate = 1;
-        boolean requiresAnimationCheck = true;
+
+        // Determine if we need to animate the image beforehand
+        BufferedImage tempImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D tempGraphics = tempImage.createGraphics();
+        this.isAnimated = false;
+        drawLinesInternal(tempGraphics);
+        tempGraphics.dispose();
+
+        int framesToGenerate = this.isAnimated ? this.animationFrameCount : 1;
 
         for (int i = 0; i < framesToGenerate; i++) {
             // Use the final calculated dimensions for the frame
@@ -509,7 +516,7 @@ public class MinecraftTooltip {
             Graphics2D graphics = frameImage.createGraphics();
 
             // Draw background first
-            graphics.setColor(new Color(18, 3, 18, (requiresAnimationCheck || this.isAnimated) ? 255 : this.getAlpha()));
+            graphics.setColor(new Color(18, 3, 18, this.isAnimated ? 255 : this.getAlpha()));
             graphics.fillRect(
                 PIXEL_SIZE * 2, // Inner edge of border
                 PIXEL_SIZE * 2,
@@ -518,25 +525,6 @@ public class MinecraftTooltip {
             );
 
             drawLinesInternal(graphics);
-
-            // Update framesToGenerate if it's required to be animated
-            // Set the background color to the correct alpha value because GIFs don't support it
-            if (requiresAnimationCheck && this.isAnimated) {
-                framesToGenerate = this.animationFrameCount;
-                requiresAnimationCheck = false;
-
-                // Redraw background with correct alpha value for animation
-                graphics.setColor(new Color(18, 3, 18, 255));
-                graphics.fillRect(
-                    PIXEL_SIZE * 2, PIXEL_SIZE * 2,
-                    frameWidth - PIXEL_SIZE * 4, frameHeight - PIXEL_SIZE * 4
-                );
-
-                // Redraw lines on top of corrected background
-                drawLinesInternal(graphics);
-            } else if (requiresAnimationCheck) {
-                requiresAnimationCheck = false;
-            }
 
             // Draw borders onto the frame
             if (this.renderBorder) {
@@ -591,6 +579,12 @@ public class MinecraftTooltip {
         }
 
         public Builder withAlpha(int value) {
+            // If renderBorder, force alpha to 255 so it shows up
+            if (this.renderBorder) {
+                this.alpha = 255;
+                return this;
+            }
+
             this.alpha = Range.between(0, 255).fit(value);
             return this;
         }

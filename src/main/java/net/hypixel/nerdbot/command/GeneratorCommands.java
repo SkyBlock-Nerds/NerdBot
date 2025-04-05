@@ -576,7 +576,7 @@ public class GeneratorCommands extends ApplicationCommand {
         enchanted = enchanted != null && enchanted;
         paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
-        renderBorder = renderBorder == null || renderBorder;
+        renderBorder = renderBorder != null && renderBorder;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
@@ -655,7 +655,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
         @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
-        @AppOption(description = "Whether the border should be rendered (default: true)") @Optional Boolean renderBorder,
+        @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean renderBorder,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
@@ -663,7 +663,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply(hidden).complete();
 
         centered = centered != null && centered;
-        alpha = alpha == null ? 0 : alpha;
+        alpha = alpha == null ? DEFAULT_ALPHA : alpha;
         padding = padding == null ? DEFAULT_PADDING : padding;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         renderBorder = renderBorder != null && renderBorder;
