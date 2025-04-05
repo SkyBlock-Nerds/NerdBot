@@ -53,7 +53,8 @@ public class MinecraftTooltipGenerator implements Generator {
             padding,
             normalItem,
             maxLineLength,
-            renderBorder
+            renderBorder,
+            centeredText
         );
 
         MinecraftTooltip tooltip = parseLore(itemLore, settings).render();
@@ -85,6 +86,7 @@ public class MinecraftTooltipGenerator implements Generator {
             .withPadding(settings.getPadding())
             .isPaddingFirstLine(settings.isPaddingFirstLine())
             .setRenderBorder(settings.isRenderBorder())
+            .isTextCentered(settings.isCenteredText())
             .withAlpha(Range.between(0, 255).fit(settings.getAlpha()));
 
         if (settings.getName() != null && !settings.getName().isEmpty()) {
@@ -130,13 +132,13 @@ public class MinecraftTooltipGenerator implements Generator {
         private String itemLore;
         private String type;
         private Boolean emptyLine;
-        private Integer alpha;
-        private Integer padding;
-        private boolean paddingFirstLine;
+        private Integer alpha = 255;
+        private Integer padding = 0;
+        private boolean paddingFirstLine = true;
         private int maxLineLength = DEFAULT_MAX_LINE_LENGTH;
         private transient boolean bypassMaxLineLength;
         private boolean centered;
-        private transient boolean renderBorder;
+        private boolean renderBorder = true;
 
         public MinecraftTooltipGenerator.Builder withName(String name) {
             this.name = name;
@@ -209,6 +211,9 @@ public class MinecraftTooltipGenerator implements Generator {
             this.centered = false;
             this.rarity = Rarity.byName("NONE");
             this.itemLore = "";
+            this.renderBorder = true;
+            this.alpha = 255;
+            this.padding = 0;
 
             JsonObject tagObject = nbtJson.get("tag").getAsJsonObject();
             JsonObject displayObject = tagObject.get("display").getAsJsonObject();
@@ -265,7 +270,19 @@ public class MinecraftTooltipGenerator implements Generator {
 
         @Override
         public MinecraftTooltipGenerator build() {
-            return new MinecraftTooltipGenerator(name, rarity, itemLore, type, emptyLine, alpha, padding, paddingFirstLine, centered, maxLineLength, renderBorder);
+            return new MinecraftTooltipGenerator(
+                name,
+                rarity,
+                itemLore,
+                type,
+                emptyLine,
+                alpha,
+                padding,
+                paddingFirstLine,
+                centered,
+                maxLineLength,
+                renderBorder
+            );
         }
     }
 }

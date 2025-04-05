@@ -77,6 +77,8 @@ public class MinecraftTooltip {
     @Getter
     private final boolean renderBorder;
     @Getter
+    private final boolean centeredText;
+    @Getter
     private BufferedImage image;
     @Getter
     private boolean isAnimated = false;
@@ -85,25 +87,41 @@ public class MinecraftTooltip {
     @Getter
     private int animationFrameCount;
 
-    private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean paddingFirstLine, boolean renderBorder, int frameDelayMs, int animationFrameCount) {
+    private transient ChatFormat currentColor;
+    private transient Font currentFont;
+    private transient int locationX = START_XY;
+    private transient int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
+    private transient int largestWidth = 0;
+    private transient Map<Integer, Integer> lineMetrics;
+
+    /**
+     * Construct a new {@link MinecraftTooltip} instance.
+     *
+     * @param lines               A list of {@link LineSegment} objects representing the lines of text.
+     * @param defaultColor        The default {@link ChatFormat} color to use for the text.
+     * @param alpha               The alpha value for the tooltip background. Range: 0-255.
+     * @param padding             The padding value for the tooltip. Range: 0-255.
+     * @param paddingFirstLine    Whether to apply padding to the first line.
+     * @param renderBorder        Whether to render a border around the tooltip.
+     * @param centeredText        Whether to center the text within the tooltip.
+     * @param frameDelayMs        The delay in milliseconds between animation frames.
+     * @param animationFrameCount The number of frames to generate for the animation.
+     */
+    private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean paddingFirstLine, boolean renderBorder, boolean centeredText, int frameDelayMs, int animationFrameCount) {
+        this.lines = lines;
+        this.currentColor = defaultColor;
         this.alpha = alpha;
         this.padding = padding;
         this.paddingFirstLine = paddingFirstLine;
-        this.lines = lines;
-        this.currentColor = defaultColor;
         this.renderBorder = renderBorder;
+        this.centeredText = centeredText;
         this.frameDelayMs = frameDelayMs;
         this.animationFrameCount = animationFrameCount;
     }
 
-    @Getter
-    private ChatFormat currentColor;
-    private Font currentFont;
-
-    private int locationX = START_XY;
-    private int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
-    private int largestWidth = 0;
-
+    /**
+     * Precomputes character widths for the text obfuscation/magic formatting effect.
+     */
     private static void precomputeCharacterWidths() {
         OBFUSCATION_WIDTH_MAPS.put(false, new HashMap<>()); // Map for default style
         OBFUSCATION_WIDTH_MAPS.put(true, new HashMap<>());  // Map for bold style
@@ -127,6 +145,7 @@ public class MinecraftTooltip {
 
                 if (defaultFont.canDisplay(c)) {
                     int width = defaultMetrics.charWidth(c);
+
                     if (width > 0) {
                         OBFUSCATION_WIDTH_MAPS.get(false).computeIfAbsent(width, k -> new ArrayList<>()).add(c);
                     }
@@ -134,35 +153,38 @@ public class MinecraftTooltip {
 
                 if (boldFont.canDisplay(c)) {
                     int width = boldMetrics.charWidth(c);
+
                     if (width > 0) {
                         OBFUSCATION_WIDTH_MAPS.get(true).computeIfAbsent(width, k -> new ArrayList<>()).add(c);
                     }
                 }
             }
         }
+
         tempG2d.dispose();
+
         log.info("Precomputed obfuscation character widths. Default: {} chars, Bold: {} chars.",
             OBFUSCATION_WIDTH_MAPS.get(false).values().stream().mapToInt(List::size).sum(),
             OBFUSCATION_WIDTH_MAPS.get(true).values().stream().mapToInt(List::size).sum()
         );
     }
 
+    /**
+     * Creates a new {@link MinecraftTooltip} instance.
+     *
+     * @return A new {@link Builder} instance for creating a {@link MinecraftTooltip}.
+     */
     public static Builder builder() {
         return new Builder();
     }
 
-    private BufferedImage cropFrame(BufferedImage frame, int finalWidth, int finalHeight) {
-        int cropWidth = Math.min(finalWidth + START_XY, frame.getWidth());
-        int cropHeight = Math.min(finalHeight, frame.getHeight());
-
-        if (cropWidth <= 0 || cropHeight <= 0) {
-            log.warn("Attempted to crop frame with invalid dimensions: width={}, height={}", cropWidth, cropHeight);
-            return frame.getWidth() > 0 && frame.getHeight() > 0 ? frame : new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        }
-
-        return frame.getSubimage(0, 0, cropWidth, cropHeight);
-    }
-
+    /**
+     * Adds padding to the tooltip frame.
+     *
+     * @param frame The {@link BufferedImage} frame to add padding to.
+     *
+     * @return The padded {@link BufferedImage} frame.
+     */
     private BufferedImage addPadding(BufferedImage frame) {
         if (this.getPadding() <= 0) {
             return frame;
@@ -177,16 +199,24 @@ public class MinecraftTooltip {
         Graphics2D graphics2D = paddedFrame.createGraphics();
         graphics2D.drawImage(frame, this.getPadding(), this.getPadding(), frame.getWidth(), frame.getHeight(), null);
         graphics2D.dispose();
+
         return paddedFrame;
     }
 
+    /**
+     * Draws the borders around the tooltip.
+     *
+     * @param frameGraphics The {@link Graphics2D} object to draw on.
+     * @param width         The width of the tooltip.
+     * @param height        The height of the tooltip.
+     */
     private void drawBorders(Graphics2D frameGraphics, int width, int height) {
         // Draw Darker Purple Border
         frameGraphics.setColor(new Color(18, 3, 18, this.isAnimated ? 255 : this.getAlpha()));
-        frameGraphics.fillRect(0, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2);
-        frameGraphics.fillRect(PIXEL_SIZE, 0, width - PIXEL_SIZE * 2, PIXEL_SIZE);
-        frameGraphics.fillRect(width - PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2);
-        frameGraphics.fillRect(PIXEL_SIZE, height - PIXEL_SIZE, width - PIXEL_SIZE * 2, PIXEL_SIZE);
+        frameGraphics.fillRect(0, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2); // Left
+        frameGraphics.fillRect(PIXEL_SIZE, 0, width - PIXEL_SIZE * 2, PIXEL_SIZE); // Top
+        frameGraphics.fillRect(width - PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2); // Right
+        frameGraphics.fillRect(PIXEL_SIZE, height - PIXEL_SIZE, width - PIXEL_SIZE * 2, PIXEL_SIZE); // Bottom
 
         // Draw Purple Border
         frameGraphics.setColor(new Color(37, 0, 94, this.isAnimated ? 255 : this.getAlpha()));
@@ -194,114 +224,224 @@ public class MinecraftTooltip {
         frameGraphics.drawRect(PIXEL_SIZE + 1, PIXEL_SIZE + 1, width - PIXEL_SIZE * 3 - 1, height - PIXEL_SIZE * 3 - 1);
     }
 
-    private void drawLinesInternal(Graphics2D frameGraphics) {
-        this.locationX = START_XY;
+    /**
+     * Calculates the width of a line segment.
+     *
+     * @param graphics The {@link Graphics2D} object to measure text on.
+     * @param line     The {@link LineSegment} to measure.
+     *
+     * @return The width of the line segment.
+     */
+    private int calculateLineWidth(Graphics2D graphics, LineSegment line) {
+        int lineWidth = 0;
+        for (ColorSegment segment : line.getSegments()) {
+            Font font = MINECRAFT_FONTS.get((segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0));
+            graphics.setFont(font);
+            FontMetrics metrics = graphics.getFontMetrics(font);
+            String segmentText = segment.getText();
+
+            for (int charIndex = 0; charIndex < segmentText.length(); charIndex++) {
+                char character = segmentText.charAt(charIndex);
+
+                if (font.canDisplay(character)) {
+                    lineWidth += metrics.charWidth(character);
+                } else {
+                    Font symbolFont = SANS_SERIF_FONT;
+                    graphics.setFont(symbolFont);
+                    FontMetrics symbolMetrics = graphics.getFontMetrics(symbolFont);
+                    lineWidth += symbolMetrics.charWidth(character);
+                    graphics.setFont(font);
+                }
+            }
+        }
+
+        return lineWidth;
+    }
+
+    /**
+     * Calculates the largest width of all lines in a tooltip and sets the {@link #largestWidth} field.
+     *
+     * @param measureGraphics The {@link Graphics2D} object to measure text on.
+     */
+    private void measureLines(Graphics2D measureGraphics) {
+        this.lineMetrics = new HashMap<>();
         this.locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
-        int currentFrameLargestWidth = 0;
 
         for (int lineIndex = 0; lineIndex < this.getLines().size(); lineIndex++) {
             LineSegment line = this.getLines().get(lineIndex);
+            int lineWidth = calculateLineWidth(measureGraphics, line);
+            this.lineMetrics.put(lineIndex, lineWidth);
+
+            this.locationY += Y_INCREMENT + (lineIndex == 0 && this.isPaddingFirstLine() ? PIXEL_SIZE * 2 : 0);
+        }
+
+        this.largestWidth = this.lineMetrics.values().stream().mapToInt(Integer::intValue).max().orElse(0);
+    }
+
+    /**
+     * Draws lines of text on the image.
+     *
+     * @param frameGraphics The {@link Graphics2D} object to draw on.
+     */
+    private void drawLinesInternal(Graphics2D frameGraphics) {
+        this.locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
+        this.isAnimated = false;
+
+        for (int lineIndex = 0; lineIndex < this.getLines().size(); lineIndex++) {
+            LineSegment line = this.getLines().get(lineIndex);
+            int lineWidth = this.lineMetrics.getOrDefault(lineIndex, 0);
+
+            // Adjust X position based on if text is centered
+            if (this.centeredText) {
+                this.locationX = START_XY + (this.largestWidth - lineWidth) / 2;
+            } else {
+                this.locationX = START_XY;
+            }
+
+            // Draw segments for the line
             for (ColorSegment segment : line.getSegments()) {
                 if (segment.isObfuscated()) {
                     this.isAnimated = true;
                 }
-
-                this.currentFont = MINECRAFT_FONTS.get((segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0));
-                frameGraphics.setFont(this.currentFont);
-                this.currentColor = segment.getColor().orElse(ChatFormat.GRAY);
-
-                StringBuilder subWord = new StringBuilder();
-                String segmentText = segment.getText();
-
-                for (int charIndex = 0; charIndex < segmentText.length(); charIndex++) {
-                    char character = segmentText.charAt(charIndex);
-
-                    if (segment.isObfuscated()) {
-                        if (!subWord.isEmpty()) {
-                            this.drawStringInternal(frameGraphics, subWord.toString(), segment, -1);
-                            subWord.setLength(0);
-                        }
-
-                        this.drawStringInternal(frameGraphics, String.valueOf(character), segment, charIndex);
-                        continue;
-                    }
-
-                    if (!this.currentFont.canDisplay(character)) {
-                        this.drawStringInternal(frameGraphics, subWord.toString(), segment, -1);
-                        subWord.setLength(0);
-                        this.drawSymbolInternal(frameGraphics, character, segment);
-                        continue;
-                    }
-
-                    subWord.append(character);
-                }
-
-                this.drawStringInternal(frameGraphics, subWord.toString(), segment, -1);
+                this.drawString(frameGraphics, segment);
             }
 
+            // Increment Y position for the next line
             this.locationY += Y_INCREMENT + (lineIndex == 0 && this.isPaddingFirstLine() ? PIXEL_SIZE * 2 : 0);
-            currentFrameLargestWidth = Math.max(this.locationX, currentFrameLargestWidth);
-            this.locationX = START_XY;
+        }
+    }
+
+    /**
+     * Draws a string with the specified formatting.
+     *
+     * @param graphics     The {@link Graphics2D} object to draw on.
+     * @param colorSegment The {@link ColorSegment} containing formatted text.
+     */
+    private void drawString(Graphics2D graphics, @NotNull ColorSegment colorSegment) {
+        this.currentFont = MINECRAFT_FONTS.get((colorSegment.isBold() ? 1 : 0) + (colorSegment.isItalic() ? 2 : 0));
+        this.currentColor = colorSegment.getColor().orElse(ChatFormat.GRAY);
+        graphics.setFont(this.currentFont);
+        FontMetrics metrics = graphics.getFontMetrics(this.currentFont);
+
+        String text = colorSegment.getText();
+        StringBuilder subWord = new StringBuilder();
+
+        for (int charIndex = 0; charIndex < text.length(); charIndex++) {
+            char character = text.charAt(charIndex);
+
+            if (colorSegment.isObfuscated()) {
+                // Draw previous subWord, if any
+                if (!subWord.isEmpty()) {
+                    drawSubWord(graphics, subWord.toString(), colorSegment, metrics);
+                    subWord.setLength(0);
+                }
+
+                // Draw obfuscated character
+                drawObfuscatedChar(graphics, character, colorSegment, metrics);
+                continue;
+            }
+
+            if (!this.currentFont.canDisplay(character)) {
+                // Draw previous subWord, if any
+                if (!subWord.isEmpty()) {
+                    drawSubWord(graphics, subWord.toString(), colorSegment, metrics);
+                    subWord.setLength(0);
+                }
+
+                // Draw symbol using SANS_SERIF_FONT
+                drawSymbolAndAdvance(graphics, character, colorSegment);
+                continue;
+            }
+
+            subWord.append(character);
         }
 
-        this.largestWidth = Math.max(this.largestWidth, currentFrameLargestWidth);
+        // Draw any remaining subWord, if any
+        if (!subWord.isEmpty()) {
+            drawSubWord(graphics, subWord.toString(), colorSegment, metrics);
+        }
     }
 
     /**
-     * Draws a symbol on the image, and updates the pointer location.
+     * Draw a sub-word with text effects.
      *
-     * @param symbol The symbol to draw.
+     * @param graphics     The {@link Graphics2D} object to draw on.
+     * @param subWord      The sub-word to draw.
+     * @param colorSegment The {@link ColorSegment} containing the color and style information.
+     * @param metrics      The {@link FontMetrics} object to measure the character width.
      */
-    private void drawSymbolInternal(Graphics2D frameGraphics, char symbol, @NotNull ColorSegment colorSegment) {
-        this.drawStringInternal(frameGraphics, Character.toString(symbol), colorSegment, -1, SANS_SERIF_FONT);
-    }
-
-    /**
-     * Draws a string at the current location, and updates the pointer location.
-     *
-     * @param value The value to draw.
-     */
-    private void drawStringInternal(Graphics2D frameGraphics, @NotNull String value, @NotNull ColorSegment colorSegment, int originalCharIndex) {
-        this.drawStringInternal(frameGraphics, value, colorSegment, originalCharIndex, this.currentFont);
-    }
-
-    private void drawStringInternal(Graphics2D frameGraphics, @NotNull String value, @NotNull ColorSegment colorSegment, int originalCharIndex, @NotNull Font font) {
-        if (value.isEmpty()) {
+    private void drawSubWord(Graphics2D graphics, String subWord, ColorSegment colorSegment, FontMetrics metrics) {
+        if (subWord.isEmpty()) {
             return;
         }
 
-        String textToDraw = value;
+        int width = metrics.stringWidth(subWord);
+        drawTextWithEffects(graphics, subWord, colorSegment, width);
+        this.locationX += width;
+    }
 
-        if (colorSegment.isObfuscated() && originalCharIndex != -1) {
-            char originalChar = value.charAt(0);
-            int originalWidth = (int) font.getStringBounds(String.valueOf(originalChar), frameGraphics.getFontRenderContext()).getWidth();
+    /**
+     * Draws a symbol using the {@link MinecraftTooltip#SANS_SERIF_FONT} font.
+     *
+     * @param graphics The {@link Graphics2D} object to draw on.
+     * @param symbol   The symbol to draw.
+     */
+    private void drawSymbolAndAdvance(Graphics2D graphics, char symbol, ColorSegment segment) {
+        graphics.setFont(SANS_SERIF_FONT);
+        FontMetrics symbolMetrics = graphics.getFontMetrics(SANS_SERIF_FONT);
+        String symbolStr = Character.toString(symbol);
+        int width = symbolMetrics.stringWidth(symbolStr);
 
-            // Select the correct map based on whether the segment is bold
-            Map<Integer, List<Character>> widthMap = OBFUSCATION_WIDTH_MAPS.get(colorSegment.isBold());
-            List<Character> matchingWidthChars = widthMap.get(originalWidth);
+        drawTextWithEffects(graphics, symbolStr, segment, width);
 
-            if (matchingWidthChars != null && !matchingWidthChars.isEmpty()) {
-                textToDraw = String.valueOf(matchingWidthChars.get(ThreadLocalRandom.current().nextInt(matchingWidthChars.size())));
-            } else {
-                // Fallback: If no char with matching width is found, use the original char
-                // We could use something else but the original seems safer to avoid potential layout shifting
-                log.warn("No matching character found with width {} for original character '{}', using original", originalWidth, originalChar);
-                textToDraw = String.valueOf(originalChar);
-            }
+        this.locationX += width;
+        graphics.setFont(this.currentFont);
+    }
+
+    /**
+     * Draw an obfuscated character with a random character of the same width.
+     *
+     * @param graphics     The {@link Graphics2D} object to draw on.
+     * @param originalChar The original character to obfuscate.
+     * @param colorSegment The {@link ColorSegment} containing the color and style information.
+     * @param metrics      The {@link FontMetrics} object to measure the character width.
+     */
+    private void drawObfuscatedChar(Graphics2D graphics, char originalChar, ColorSegment colorSegment, FontMetrics metrics) {
+        int originalWidth = metrics.charWidth(originalChar);
+        String charToDrawStr = String.valueOf(originalChar); // Default fallback
+
+        Map<Integer, List<Character>> widthMap = OBFUSCATION_WIDTH_MAPS.get(colorSegment.isBold());
+        List<Character> matchingWidthChars = widthMap.get(originalWidth);
+
+        if (matchingWidthChars != null && !matchingWidthChars.isEmpty()) {
+            charToDrawStr = String.valueOf(matchingWidthChars.get(ThreadLocalRandom.current().nextInt(matchingWidthChars.size())));
+        } else {
+            log.warn("No matching character found with width {} for original character '{}', using original", originalWidth, originalChar);
         }
 
-        frameGraphics.setFont(font);
+        // Recalculate width for the potentially different character
+        int drawnWidth = metrics.stringWidth(charToDrawStr);
+        drawTextWithEffects(graphics, charToDrawStr, colorSegment, drawnWidth);
+        this.locationX += drawnWidth;
+    }
 
-        int nextBounds = (int) font.getStringBounds(textToDraw, frameGraphics.getFontRenderContext()).getWidth();
-
+    /**
+     * Draws the text with strikethrough, underline and drop shadow effects
+     *
+     * @param frameGraphics The {@link Graphics2D} object to draw on.
+     * @param textToDraw    The text to draw.
+     * @param colorSegment  The {@link ColorSegment} containing the color and style information.
+     * @param width         The width of the text to draw.
+     */
+    private void drawTextWithEffects(Graphics2D frameGraphics, String textToDraw, ColorSegment colorSegment, int width) {
         // Draw Strikethrough Drop Shadow
         if (colorSegment.isStrikethrough()) {
-            this.drawThickLineInternal(frameGraphics, nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, true);
+            this.drawThickLineInternal(frameGraphics, width, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, true);
         }
 
         // Draw Underlined Drop Shadow
         if (colorSegment.isUnderlined()) {
-            this.drawThickLineInternal(frameGraphics, nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, true);
+            this.drawThickLineInternal(frameGraphics, width, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, true);
         }
 
         // Draw Drop Shadow Text
@@ -314,28 +454,17 @@ public class MinecraftTooltip {
 
         // Draw Strikethrough
         if (colorSegment.isStrikethrough()) {
-            this.drawThickLineInternal(frameGraphics, nextBounds, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, false);
+            this.drawThickLineInternal(frameGraphics, width, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, false);
         }
 
         // Draw Underlined
         if (colorSegment.isUnderlined()) {
-            this.drawThickLineInternal(frameGraphics, nextBounds, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, false);
+            this.drawThickLineInternal(frameGraphics, width, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, false);
         }
-
-        // Update Draw Pointer Location
-        this.locationX += nextBounds;
     }
 
     /**
-     * Draws a thick line on the image.
-     *
-     * @param frameGraphics The graphics context to draw on.
-     * @param width      The width of the line.
-     * @param xPosition  The x position to draw the line.
-     * @param yPosition  The y position to draw the line.
-     * @param xOffset    The x offset to apply to the line.
-     * @param yOffset    The y offset to apply to the line.
-     * @param dropShadow Whether to draw a drop shadow.
+     * Draws a thick line on the image with optional drop shadow.
      */
     private void drawThickLineInternal(Graphics2D frameGraphics, int width, int xPosition, int yPosition, int xOffset, int yOffset, boolean dropShadow) {
         int xPosition1 = xPosition;
@@ -354,54 +483,74 @@ public class MinecraftTooltip {
     }
 
     /**
-     * Renders the tooltip. If any segment is obfuscated, it generates frames to create an animation.
-     * Otherwise, it generates a single static image.
+     * Draws all tooltip frames.
      */
     public MinecraftTooltip render() {
-        this.isAnimated = false;
         this.animationFrames.clear();
-        this.largestWidth = 0;
 
+        // Determine the largest width using the measureLines method
         BufferedImage dummyImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D measureGraphics = dummyImage.createGraphics();
-        this.drawLinesInternal(measureGraphics);
+        measureLines(measureGraphics);
+        int measuredHeight = this.locationY;
         measureGraphics.dispose();
 
-        int finalWidth = this.largestWidth;
-        int finalHeight = this.locationY - (Y_INCREMENT + (this.lines.isEmpty() || !this.paddingFirstLine ? 0 : PIXEL_SIZE * 2)) + START_XY + PIXEL_SIZE * 4;
-
-        int framesToGenerate = this.isAnimated ? this.animationFrameCount : 1;
+        // Calculate final dimensions based on the measured largestWidth and height
+        int finalWidth = START_XY + this.largestWidth + START_XY;
+        int finalHeight = measuredHeight - (Y_INCREMENT + (this.lines.isEmpty() || !this.paddingFirstLine ? 0 : PIXEL_SIZE * 2)) + START_XY + PIXEL_SIZE * 2;
+        int framesToGenerate = 1;
+        boolean requiresAnimationCheck = true;
 
         for (int i = 0; i < framesToGenerate; i++) {
-            int frameWidth = Math.max(1, finalWidth + START_XY + PIXEL_SIZE * 4);
+            // Use the final calculated dimensions for the frame
+            int frameWidth = Math.max(1, finalWidth);
             int frameHeight = Math.max(1, finalHeight);
             BufferedImage frameImage = new BufferedImage(frameWidth, frameHeight, BufferedImage.TYPE_INT_ARGB);
             Graphics2D graphics = frameImage.createGraphics();
 
-            graphics.setColor(new Color(18, 3, 18, this.isAnimated ? 255 : this.getAlpha()));
+            // Draw background first
+            graphics.setColor(new Color(18, 3, 18, (requiresAnimationCheck || this.isAnimated) ? 255 : this.getAlpha()));
             graphics.fillRect(
+                PIXEL_SIZE * 2, // Inner edge of border
                 PIXEL_SIZE * 2,
-                PIXEL_SIZE * 2,
-                frameImage.getWidth() - PIXEL_SIZE * 4,
-                frameImage.getHeight() - PIXEL_SIZE * 4
+                frameWidth - PIXEL_SIZE * 4, // Width inside borders
+                frameHeight - PIXEL_SIZE * 4 // Height inside borders
             );
 
-            this.drawLinesInternal(graphics);
+            drawLinesInternal(graphics);
 
-            BufferedImage processedFrame = this.cropFrame(frameImage, finalWidth, finalHeight);
+            // Update framesToGenerate if it's required to be animated
+            // Set the background color to the correct alpha value because GIFs don't support it
+            if (requiresAnimationCheck && this.isAnimated) {
+                framesToGenerate = this.animationFrameCount;
+                requiresAnimationCheck = false;
 
-            if (this.renderBorder) {
-                Graphics2D borderGraphics = processedFrame.createGraphics();
-                this.drawBorders(borderGraphics, processedFrame.getWidth(), processedFrame.getHeight());
-                borderGraphics.dispose();
+                // Redraw background with correct alpha value for animation
+                graphics.setColor(new Color(18, 3, 18, 255));
+                graphics.fillRect(
+                    PIXEL_SIZE * 2, PIXEL_SIZE * 2,
+                    frameWidth - PIXEL_SIZE * 4, frameHeight - PIXEL_SIZE * 4
+                );
+
+                // Redraw lines on top of corrected background
+                drawLinesInternal(graphics);
+            } else if (requiresAnimationCheck) {
+                requiresAnimationCheck = false;
             }
 
-            processedFrame = this.addPadding(processedFrame);
+            // Draw borders onto the frame
+            if (this.renderBorder) {
+                this.drawBorders(graphics, frameWidth, frameHeight);
+            }
+
+            // Add padding after rendering tooltip content and borders
+            BufferedImage processedFrame = this.addPadding(frameImage);
             graphics.dispose();
 
             this.animationFrames.add(processedFrame);
         }
 
+        // Set the static image to the first frame if there are any
         if (!this.animationFrames.isEmpty()) {
             this.image = this.animationFrames.get(0);
         }
@@ -411,7 +560,6 @@ public class MinecraftTooltip {
 
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static class Builder implements ClassBuilder<MinecraftTooltip> {
-
         @Getter
         private final List<LineSegment> lines = new ArrayList<>();
         private ChatFormat defaultColor = ChatFormat.GRAY;
@@ -419,6 +567,7 @@ public class MinecraftTooltip {
         private int padding = 0;
         private boolean paddingFirstLine = true;
         private boolean renderBorder = true;
+        private boolean centeredText = false;
         private int frameDelayMs = 50;
         private int animationFrameCount = 10;
 
@@ -433,6 +582,11 @@ public class MinecraftTooltip {
 
         public Builder setRenderBorder(boolean renderBorder) {
             this.renderBorder = renderBorder;
+            return this;
+        }
+
+        public Builder isTextCentered(boolean value) {
+            this.centeredText = value;
             return this;
         }
 
@@ -492,6 +646,7 @@ public class MinecraftTooltip {
                 this.padding,
                 this.paddingFirstLine,
                 this.renderBorder,
+                this.centeredText,
                 this.frameDelayMs,
                 this.animationFrameCount
             );
