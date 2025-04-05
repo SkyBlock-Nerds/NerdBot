@@ -118,7 +118,12 @@ public class GeneratorCommands extends ApplicationCommand {
 
             GeneratedObject generatedObject = item.build();
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+            if (generatedObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "item.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+            }
+
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
@@ -143,6 +148,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
         @AppOption(description = "Includes a slash command for you to edit") @Optional Boolean includeGenFullCommand,
         @AppOption(description = "Whether the Power Stone shows as selected") @Optional Boolean selected,
+        @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
@@ -151,6 +157,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
         alpha = alpha == null ? DEFAULT_ALPHA : alpha;
         padding = padding == null ? DEFAULT_PADDING : padding;
+        enchanted = enchanted != null && enchanted;
 
         Function<String, HashMap<String, Integer>> parseStatsToMap = stats -> {
             HashMap<String, Integer> map = new HashMap<>();
@@ -272,6 +279,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     } else {
                         generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
                             .withItem(itemId)
+                            .isEnchanted(enchanted)
                             .isBigImage()
                             .build());
                     }
@@ -490,17 +498,18 @@ public class GeneratorCommands extends ApplicationCommand {
             } else {
                 generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
                     .withItem(jsonObject.get("id").getAsString())
+                    //.isEnchanted(enchanted) TODO: determine if the item is enchanted
                     .isBigImage()
                     .build());
             }
 
             int maxLineLength = Util.getLongestLine(jsonObject.get("tag").getAsJsonObject()
-                    .get("display").getAsJsonObject()
-                    .get("Lore").getAsJsonArray()
-                    .asList()
-                    .stream()
-                    .map(JsonElement::getAsString)
-                    .toList()).getRight();
+                .get("display").getAsJsonObject()
+                .get("Lore").getAsJsonArray()
+                .asList()
+                .stream()
+                .map(JsonElement::getAsString)
+                .toList()).getRight();
 
             MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .parseNbtJson(jsonObject)
@@ -546,6 +555,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
         @AppOption(description = EMPTY_LINE_DESCRIPTION) @Optional Boolean emptyLine,
+        @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
         @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
         @AppOption(description = NORMAL_ITEM_DESCRIPTION) @Optional Boolean paddingFirstLine,
         @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
@@ -563,6 +573,7 @@ public class GeneratorCommands extends ApplicationCommand {
         padding = padding == null ? DEFAULT_PADDING : padding;
         emptyLine = emptyLine == null || emptyLine;
         centered = centered != null && centered;
+        enchanted = enchanted != null && enchanted;
         paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         renderBorder = renderBorder == null || renderBorder;
@@ -596,6 +607,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 } else {
                     generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
                         .withItem(itemId)
+                        .isEnchanted(enchanted)
                         .isBigImage()
                         .build());
                 }
@@ -922,11 +934,15 @@ public class GeneratorCommands extends ApplicationCommand {
      * @return The auto hide preference from the user.
      */
     private boolean getUserAutoHideSetting(GuildSlashEvent event) {
-        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser user = repository.findById(event.getMember().getId());
+        try {
+            DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+            DiscordUser user = repository.findById(event.getMember().getId());
 
-        if (user != null) {
-            return user.isAutoHideGenCommands();
+            if (user != null) {
+                return user.isAutoHideGenCommands();
+            }
+        } catch (Exception exception) {
+            return AUTO_HIDE_ON_ERROR;
         }
 
         return AUTO_HIDE_ON_ERROR;
