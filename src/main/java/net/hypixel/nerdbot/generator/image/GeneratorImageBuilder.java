@@ -4,7 +4,6 @@ import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.exception.GeneratorTimeoutException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.util.ImageUtil;
 
@@ -13,9 +12,10 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -24,8 +24,12 @@ public class GeneratorImageBuilder {
 
     private static final int IMAGE_PADDING_PX = 25;
 
+    private static final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
     private final List<Generator> generators;
 
+    /**
+     * Default constructor for the {@link GeneratorImageBuilder} class.
+     */
     public GeneratorImageBuilder() {
         this.generators = new ArrayList<>();
     }
@@ -68,27 +72,19 @@ public class GeneratorImageBuilder {
      * @throws GeneratorException if the generation fails or times out.
      */
     public GeneratedObject build() {
+        Future<GeneratedObject> future = executorService.submit(this::buildInternal);
+        long timeoutMs = NerdBotApp.getBot().getConfig().getImageGeneratorTimeoutMs();
+
         try {
-            return CompletableFuture.supplyAsync(this::buildInternal)
-                .orTimeout(NerdBotApp.getBot().getConfig().getImageGeneratorTimeoutMs(), TimeUnit.MILLISECONDS)
-                .exceptionally(exception -> {
-                    Throwable cause = exception.getCause();
-                    if (cause instanceof TimeoutException) {
-                        throw new GeneratorTimeoutException("Timeout reached while generating image");
-                    }
-
-                    if (cause != null) {
-                        log.error("An error occurred during image generation", cause);
-                    } else {
-                        log.error("An unknown error occurred during image generation", exception);
-                    }
-
-                    throw new GeneratorException("An error occurred during image generation", exception);
-                })
-                .get();
-        } catch (InterruptedException | ExecutionException exception) {
-            log.error("An error occurred during image generation", Objects.requireNonNullElse(exception.getCause(), exception));
-            throw new GeneratorException("An error occurred during image generation", exception);
+            return future.get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException exception) {
+            future.cancel(true);
+            throw new GeneratorException("Image generation timed out", exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new GeneratorException("Image generation was interrupted", exception);
+        } catch (ExecutionException exception) {
+            throw new GeneratorException("An error occurred during image generation", exception.getCause());
         }
     }
 
