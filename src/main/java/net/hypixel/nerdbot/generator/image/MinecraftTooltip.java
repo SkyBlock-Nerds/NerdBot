@@ -28,7 +28,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Log4j2
 public class MinecraftTooltip {
 
-    private static final Map<Boolean, Map<Integer, List<Character>>> OBFUSCATION_WIDTH_MAPS = new HashMap<>(); // Boolean to indicate bold or regular
+    private static final Map<Integer, Map<Integer, List<Character>>> OBFUSCATION_WIDTH_MAPS = new HashMap<>(); // Integer key represents font style index (0: regular, 1: bold, 2: italic, 3: bold-italic)
     private static final int[] UNICODE_BLOCK_RANGES = {
         0x0020, 0x007E, // Basic Latin
         0x00A0, 0x00FF, // Latin-1 Supplement
@@ -126,39 +126,44 @@ public class MinecraftTooltip {
      * Precomputes character widths for the text obfuscation/magic formatting effect.
      */
     private static void precomputeCharacterWidths() {
-        OBFUSCATION_WIDTH_MAPS.put(false, new HashMap<>()); // Map for default style
-        OBFUSCATION_WIDTH_MAPS.put(true, new HashMap<>());  // Map for bold style
-
-        Font defaultFont = MINECRAFT_FONTS.get(0);
-        Font boldFont = MINECRAFT_FONTS.get(1);
-
-        if (defaultFont == null || boldFont == null) {
-            log.error("Default or Bold Minecraft font not initialized, cannot precompute character widths.");
-            return;
+        for (int i = 0; i < MINECRAFT_FONTS.size(); i++) {
+            OBFUSCATION_WIDTH_MAPS.put(i, new HashMap<>());
         }
 
         BufferedImage tempImg = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D tempG2d = tempImg.createGraphics();
-        FontMetrics defaultMetrics = tempG2d.getFontMetrics(defaultFont);
-        FontMetrics boldMetrics = tempG2d.getFontMetrics(boldFont);
+        FontMetrics[] metrics = new FontMetrics[MINECRAFT_FONTS.size()];
 
-        for (int range = 0; range < UNICODE_BLOCK_RANGES.length; range += 2) {
-            for (int codePoint = UNICODE_BLOCK_RANGES[range]; codePoint <= UNICODE_BLOCK_RANGES[range + 1]; codePoint++) {
-                char c = (char) codePoint;
+        for (int i = 0; i < MINECRAFT_FONTS.size(); i++) {
+            Font font = MINECRAFT_FONTS.get(i);
 
-                if (defaultFont.canDisplay(c)) {
-                    int width = defaultMetrics.charWidth(c);
+            if (font == null) {
+                log.error("Minecraft font at index {} is null, so we can't precompute the character widths", i);
+                continue;
+            }
 
-                    if (width > 0) {
-                        OBFUSCATION_WIDTH_MAPS.get(false).computeIfAbsent(width, k -> new ArrayList<>()).add(c);
-                    }
-                }
+            metrics[i] = tempG2d.getFontMetrics(font);
+        }
 
-                if (boldFont.canDisplay(c)) {
-                    int width = boldMetrics.charWidth(c);
+        for (int fontIndex = 0; fontIndex < MINECRAFT_FONTS.size(); fontIndex++) {
+            Font font = MINECRAFT_FONTS.get(fontIndex);
+            FontMetrics fontMetrics = metrics[fontIndex];
 
-                    if (width > 0) {
-                        OBFUSCATION_WIDTH_MAPS.get(true).computeIfAbsent(width, k -> new ArrayList<>()).add(c);
+            if (font == null || fontMetrics == null) {
+                continue;
+            }
+
+            Map<Integer, List<Character>> map = OBFUSCATION_WIDTH_MAPS.get(fontIndex);
+
+            for (int range = 0; range < UNICODE_BLOCK_RANGES.length; range += 2) {
+                for (int codePoint = UNICODE_BLOCK_RANGES[range]; codePoint <= UNICODE_BLOCK_RANGES[range + 1]; codePoint++) {
+                    char c = (char) codePoint;
+
+                    if (font.canDisplay(c)) {
+                        int width = fontMetrics.charWidth(c);
+                        if (width > 0) {
+                            map.computeIfAbsent(width, k -> new ArrayList<>()).add(c);
+                        }
                     }
                 }
             }
@@ -166,9 +171,11 @@ public class MinecraftTooltip {
 
         tempG2d.dispose();
 
-        log.info("Precomputed obfuscation character widths. Default: {} chars, Bold: {} chars.",
-            OBFUSCATION_WIDTH_MAPS.get(false).values().stream().mapToInt(List::size).sum(),
-            OBFUSCATION_WIDTH_MAPS.get(true).values().stream().mapToInt(List::size).sum()
+        log.info("Precomputed obfuscation character widths. Regular: {} chars, Bold: {} chars, Italic: {} chars, BoldItalic: {} chars.",
+            OBFUSCATION_WIDTH_MAPS.get(0).values().stream().mapToInt(List::size).sum(),
+            OBFUSCATION_WIDTH_MAPS.get(1).values().stream().mapToInt(List::size).sum(),
+            OBFUSCATION_WIDTH_MAPS.get(2).values().stream().mapToInt(List::size).sum(),
+            OBFUSCATION_WIDTH_MAPS.get(3).values().stream().mapToInt(List::size).sum()
         );
     }
 
@@ -413,8 +420,9 @@ public class MinecraftTooltip {
         int originalWidth = metrics.charWidth(originalChar);
         String charToDrawStr = String.valueOf(originalChar); // Default fallback
 
-        Map<Integer, List<Character>> widthMap = OBFUSCATION_WIDTH_MAPS.get(colorSegment.isBold());
-        List<Character> matchingWidthChars = widthMap.get(originalWidth);
+        int fontStyleIndex = (colorSegment.isBold() ? 1 : 0) + (colorSegment.isItalic() ? 2 : 0);
+        Map<Integer, List<Character>> widthMap = OBFUSCATION_WIDTH_MAPS.get(fontStyleIndex);
+        List<Character> matchingWidthChars = (widthMap != null) ? widthMap.get(originalWidth) : null;
 
         if (matchingWidthChars != null && !matchingWidthChars.isEmpty()) {
             charToDrawStr = String.valueOf(matchingWidthChars.get(ThreadLocalRandom.current().nextInt(matchingWidthChars.size())));
