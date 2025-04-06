@@ -521,7 +521,7 @@
         "display": "Rift-Transferable",
         "color": "DARK_PURPLE",
         "subColor": null,
-        "parseType": "NONE"
+        "parseType": "OUTSIDE_MAGIC"
     },
     {
         "icon": "༕",

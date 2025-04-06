@@ -67,6 +67,7 @@ public class Stat {
         BOLD,
         BOLD_ICON,
         DUAL,
+        OUTSIDE_MAGIC,
         SOULBOUND,
         POST,
         POST_DUAL,

@@ -17,6 +17,7 @@ public class StatParser implements StringParser {
         PARSERS.put(Stat.ParseType.NORMAL, StatParser::normalStatColorParser);
         PARSERS.put(Stat.ParseType.BOLD, (stat, extra) -> boldedIconParser(stat));
         PARSERS.put(Stat.ParseType.BOLD_ICON, StatParser::boldedIconColorParser);
+        PARSERS.put(Stat.ParseType.OUTSIDE_MAGIC, (stat, s) -> outsideMagicColorParser(stat));
         PARSERS.put(Stat.ParseType.DUAL, StatParser::dualStatColorParser);
         PARSERS.put(Stat.ParseType.NONE, (stat, extra) -> noParsing(stat));
         PARSERS.put(Stat.ParseType.SOULBOUND, StatParser::soulboundColorParsing);
@@ -60,6 +61,13 @@ public class StatParser implements StringParser {
 
     private static String normalStatColorParser(Stat stat, String extraDetails) {
         return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + (extraDetails == null || extraDetails.isEmpty() ? stat.getDisplay() : extraDetails + stat.getDisplay());
+    }
+
+    private static String outsideMagicColorParser(Stat stat) {
+        // Nothing else uses this format yet so we can just hardcode the obfuscated character as X
+        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + ChatFormat.OBFUSCATED + "X"
+            + ChatFormat.RESET + " " + ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getStat() + " " +
+            ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + ChatFormat.OBFUSCATED + "X";
     }
 
     private static String boldedIconColorParser(Stat stat, String extraDetails) {
