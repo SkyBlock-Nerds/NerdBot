@@ -12,7 +12,7 @@ import lombok.ToString;
 public class TooltipSettings {
 
     private final String name;
-    private final boolean emptyLine;
+    private final boolean disableRarityLineBreak;
     private final String type;
     private final int alpha;
     private final int padding;

@@ -61,7 +61,7 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final String SKIN_VALUE_DESCRIPTION = "The skin value of the player head";
     private static final String ALPHA_DESCRIPTION = "The alpha of the tooltip";
     private static final String PADDING_DESCRIPTION = "The padding of the tooltip";
-    private static final String EMPTY_LINE_DESCRIPTION = "Whether or not the tooltip should have an empty line";
+    private static final String RARITY_LINE_BREAK_DESCRIPTION = "Whether or not the tooltip should have an empty line between the lore and the rarity/type";
     private static final String CENTERED_DESCRIPTION = "Whether or not the tooltip should be centered";
     private static final String MAX_LINE_LENGTH_DESCRIPTION = "The max line length of the tooltip";
     private static final String NORMAL_ITEM_DESCRIPTION = "TODO";
@@ -256,7 +256,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     .withItemLore(itemLore)
                     .withAlpha(alpha)
                     .withPadding(padding)
-                    .withEmptyLine(true)
+                    .disableRarityLineBreak(true)
                     .isTextCentered(false)
                     .isPaddingFirstLine(true)
                     .withRenderBorder(true);
@@ -425,7 +425,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     .withAlpha(MinecraftTooltip.DEFAULT_ALPHA)
                     .withPadding(MinecraftTooltip.DEFAULT_PADDING)
                     .isPaddingFirstLine(false)
-                    .withEmptyLine(false)
+                    .disableRarityLineBreak(false)
                     .withRenderBorder(true)
                     .build();
 
@@ -553,7 +553,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = RECIPE_STRING_DESCRIPTION) @Optional String recipeString,
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
-        @AppOption(description = EMPTY_LINE_DESCRIPTION) @Optional Boolean emptyLine,
+        @AppOption(description = RARITY_LINE_BREAK_DESCRIPTION) @Optional Boolean disableRarityLineBreak,
         @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
         @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
         @AppOption(description = NORMAL_ITEM_DESCRIPTION) @Optional Boolean paddingFirstLine,
@@ -570,7 +570,7 @@ public class GeneratorCommands extends ApplicationCommand {
         rarity = rarity == null ? "none" : rarity;
         alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
-        emptyLine = emptyLine == null || emptyLine;
+        disableRarityLineBreak = disableRarityLineBreak == null || disableRarityLineBreak;
         centered = centered != null && centered;
         enchanted = enchanted != null && enchanted;
         paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
@@ -586,7 +586,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withType(type)
                 .withAlpha(alpha)
                 .withPadding(padding)
-                .withEmptyLine(emptyLine)
+                .disableRarityLineBreak(disableRarityLineBreak)
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
                 .isPaddingFirstLine(paddingFirstLine)
@@ -676,7 +676,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
                 .isPaddingFirstLine(false)
-                .withEmptyLine(false)
+                .disableRarityLineBreak(false)
                 .withRenderBorder(renderBorder)
                 .build();
 
@@ -739,7 +739,7 @@ public class GeneratorCommands extends ApplicationCommand {
             .withAlpha(0)
             .withPadding(MinecraftTooltip.DEFAULT_PADDING)
             .isPaddingFirstLine(false)
-            .withEmptyLine(false)
+            .disableRarityLineBreak(false)
             .withMaxLineLength(maxLineLength)
             .bypassMaxLineLength(true);
 
@@ -827,7 +827,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withAlpha(0)
                 .withPadding(MinecraftTooltip.DEFAULT_PADDING)
                 .isPaddingFirstLine(false)
-                .withEmptyLine(false)
+                .disableRarityLineBreak(false)
                 .withMaxLineLength(maxLineLength)
                 .bypassMaxLineLength(true);
 

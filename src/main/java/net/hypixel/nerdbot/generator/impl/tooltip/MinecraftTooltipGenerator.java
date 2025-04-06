@@ -35,7 +35,7 @@ public class MinecraftTooltipGenerator implements Generator {
     private final Rarity rarity;
     private final String itemLore;
     private final String type;
-    private final boolean emptyLine;
+    private final boolean disableRarityLineBreak;
     private final int alpha;
     private final int padding;
     private final boolean normalItem;
@@ -47,7 +47,7 @@ public class MinecraftTooltipGenerator implements Generator {
     public GeneratedObject generate() throws GeneratorException {
         TooltipSettings settings = new TooltipSettings(
             name,
-            emptyLine,
+            disableRarityLineBreak,
             type,
             alpha,
             padding,
@@ -110,8 +110,8 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         if (rarity != null && rarity != Rarity.byName("NONE")) {
-            if (settings.isEmptyLine()) {
-                builder.withEmptyLine();
+            if (settings.isDisableRarityLineBreak()) {
+                builder.withRarityLineBreak();
             }
 
             String formattedType = settings.getType() == null || settings.getType().isEmpty() ? "" : " " + settings.getType();
@@ -131,7 +131,7 @@ public class MinecraftTooltipGenerator implements Generator {
         private Rarity rarity;
         private String itemLore;
         private String type;
-        private Boolean emptyLine;
+        private Boolean disableRarityLineBreak;
         private Integer alpha = MinecraftTooltip.DEFAULT_ALPHA;
         private Integer padding = 0;
         private boolean paddingFirstLine = true;
@@ -160,8 +160,8 @@ public class MinecraftTooltipGenerator implements Generator {
             return this;
         }
 
-        public MinecraftTooltipGenerator.Builder withEmptyLine(boolean emptyLine) {
-            this.emptyLine = emptyLine;
+        public MinecraftTooltipGenerator.Builder disableRarityLineBreak(boolean disableRarityLineBreak) {
+            this.disableRarityLineBreak = disableRarityLineBreak;
             return this;
         }
 
@@ -206,7 +206,7 @@ public class MinecraftTooltipGenerator implements Generator {
 
         // TODO support components
         public MinecraftTooltipGenerator.Builder parseNbtJson(JsonObject nbtJson) {
-            this.emptyLine = false;
+            this.disableRarityLineBreak = false;
             this.paddingFirstLine = false;
             this.centered = false;
             this.rarity = Rarity.byName("NONE");
@@ -275,7 +275,7 @@ public class MinecraftTooltipGenerator implements Generator {
                 rarity,
                 itemLore,
                 type,
-                emptyLine,
+                disableRarityLineBreak,
                 alpha,
                 padding,
                 paddingFirstLine,

@@ -597,7 +597,7 @@ public class MinecraftTooltip {
             return this;
         }
 
-        public Builder withEmptyLine() {
+        public Builder withRarityLineBreak() {
             return this.withSegments(ColorSegment.builder().build());
         }
 
