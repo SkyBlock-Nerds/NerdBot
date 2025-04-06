@@ -575,7 +575,7 @@ public class GeneratorCommands extends ApplicationCommand {
         enchanted = enchanted != null && enchanted;
         paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
-        renderBorder = renderBorder != null && renderBorder;
+        renderBorder = renderBorder == null || renderBorder;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
