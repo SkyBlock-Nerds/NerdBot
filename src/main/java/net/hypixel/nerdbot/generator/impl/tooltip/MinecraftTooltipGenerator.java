@@ -132,7 +132,7 @@ public class MinecraftTooltipGenerator implements Generator {
         private String itemLore;
         private String type;
         private Boolean emptyLine;
-        private Integer alpha = 255;
+        private Integer alpha = MinecraftTooltip.DEFAULT_ALPHA;
         private Integer padding = 0;
         private boolean paddingFirstLine = true;
         private int maxLineLength = DEFAULT_MAX_LINE_LENGTH;
@@ -212,7 +212,7 @@ public class MinecraftTooltipGenerator implements Generator {
             this.rarity = Rarity.byName("NONE");
             this.itemLore = "";
             this.renderBorder = true;
-            this.alpha = 255;
+            this.alpha = MinecraftTooltip.DEFAULT_ALPHA;
             this.padding = 0;
 
             JsonObject tagObject = nbtJson.get("tag").getAsJsonObject();

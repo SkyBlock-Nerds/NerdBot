@@ -25,6 +25,7 @@ import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.data.Stat;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
+import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
@@ -76,9 +77,7 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final String RENDER_BORDER_DESCRIPTION = "Whether the inventory's border should be rendered";
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
-
-    private static final int DEFAULT_PADDING = 0;
-    private static final int DEFAULT_ALPHA = 245;
+    
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
     @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "display", description = "Display an item")
@@ -155,8 +154,8 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        alpha = alpha == null ? DEFAULT_ALPHA : alpha;
-        padding = padding == null ? DEFAULT_PADDING : padding;
+        alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
+        padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         enchanted = enchanted != null && enchanted;
 
         Function<String, HashMap<String, Integer>> parseStatsToMap = stats -> {
@@ -423,8 +422,8 @@ public class GeneratorCommands extends ApplicationCommand {
             if (hoveredItemString != null) {
                 MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                     .withItemLore(hoveredItemString)
-                    .withAlpha(DEFAULT_ALPHA)
-                    .withPadding(DEFAULT_PADDING)
+                    .withAlpha(MinecraftTooltip.DEFAULT_ALPHA)
+                    .withPadding(MinecraftTooltip.DEFAULT_PADDING)
                     .isPaddingFirstLine(false)
                     .withEmptyLine(false)
                     .withRenderBorder(true)
@@ -463,8 +462,8 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        alpha = alpha == null ? DEFAULT_ALPHA : alpha;
-        padding = padding == null ? DEFAULT_PADDING : padding;
+        alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
+        padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
 
         try {
             JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
@@ -569,8 +568,8 @@ public class GeneratorCommands extends ApplicationCommand {
 
         type = type == null ? "" : type;
         rarity = rarity == null ? "none" : rarity;
-        alpha = alpha == null ? DEFAULT_ALPHA : alpha;
-        padding = padding == null ? DEFAULT_PADDING : padding;
+        alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
+        padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         emptyLine = emptyLine == null || emptyLine;
         centered = centered != null && centered;
         enchanted = enchanted != null && enchanted;
@@ -663,8 +662,8 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply(hidden).complete();
 
         centered = centered != null && centered;
-        alpha = alpha == null ? DEFAULT_ALPHA : alpha;
-        padding = padding == null ? DEFAULT_PADDING : padding;
+        alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
+        padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         renderBorder = renderBorder != null && renderBorder;
 
@@ -738,7 +737,7 @@ public class GeneratorCommands extends ApplicationCommand {
         MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
             .withItemLore(dialogue)
             .withAlpha(0)
-            .withPadding(DEFAULT_PADDING)
+            .withPadding(MinecraftTooltip.DEFAULT_PADDING)
             .isPaddingFirstLine(false)
             .withEmptyLine(false)
             .withMaxLineLength(maxLineLength)
@@ -826,7 +825,7 @@ public class GeneratorCommands extends ApplicationCommand {
             MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withItemLore(dialogue)
                 .withAlpha(0)
-                .withPadding(DEFAULT_PADDING)
+                .withPadding(MinecraftTooltip.DEFAULT_PADDING)
                 .isPaddingFirstLine(false)
                 .withEmptyLine(false)
                 .withMaxLineLength(maxLineLength)

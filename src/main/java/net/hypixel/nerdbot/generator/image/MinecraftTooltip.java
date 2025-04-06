@@ -36,6 +36,9 @@ public class MinecraftTooltip {
         0x2580, 0x259F  // Block Elements
     };
 
+    public static final int DEFAULT_PADDING = 0;
+    public static final int DEFAULT_ALPHA = 245;
+
     public static final Range<Integer> LINE_LENGTH = Range.between(1, 128);
     private static final int PIXEL_SIZE = 2;
     private static final int START_XY = PIXEL_SIZE * 5;
@@ -551,7 +554,7 @@ public class MinecraftTooltip {
         @Getter
         private final List<LineSegment> lines = new ArrayList<>();
         private ChatFormat defaultColor = ChatFormat.GRAY;
-        private int alpha = 255;
+        private int alpha = DEFAULT_ALPHA;
         private int padding = 0;
         private boolean paddingFirstLine = true;
         private boolean renderBorder = true;
