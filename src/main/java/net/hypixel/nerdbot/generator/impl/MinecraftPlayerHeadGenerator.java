@@ -122,11 +122,11 @@ public class MinecraftPlayerHeadGenerator implements Generator {
         private int scale;
 
         public Builder withSkin(String texture) {
-            if (Util.isValidBase64(texture) && !Util.isSHA256(texture)) {
+            /*if (Util.isValidBase64(texture) && !Util.isSHA256(texture)) { // TODO find better way to check if it's a base64 string, this causes errors when using regular player usernames
                 this.texture = base64ToSkinURL(texture);
-            } else {
+            } else {*/
                 this.texture = texture;
-            }
+            //}
 
             return this;
         }
