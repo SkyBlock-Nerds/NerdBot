@@ -142,7 +142,7 @@ public class StatParser implements StringParser {
     }
 
     private static String differentIconColorParser(Stat stat, String extraDetails) {
-        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getIcon() +
+        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + stat.getIcon() +
             " " + ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + stat.getStat() +
             (extraDetails != null ? " " + extraDetails : "");
     }
