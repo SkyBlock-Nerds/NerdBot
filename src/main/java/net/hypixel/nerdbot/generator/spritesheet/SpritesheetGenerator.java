@@ -21,11 +21,11 @@ import java.util.List;
 
 public class SpritesheetGenerator {
 
-    public static final int IMAGE_HEIGHT = 16;
-    public static final int IMAGE_WIDTH = 16;
+    public static final int IMAGE_HEIGHT = 256;
+    public static final int IMAGE_WIDTH = 256;
     public static final int LARGE_IMAGE_WIDTH = 300;
     public static final int LARGE_IMAGE_HEIGHT = 300;
-    private static final int ATLAS_WIDTH = 1_024 * 4;
+    private static final int ATLAS_WIDTH = 1_024 * 8;
     private static final List<TextureInfo> textureInfo = new ArrayList<>();
 
     public static void main(String[] args) {
