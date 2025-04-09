@@ -40,11 +40,7 @@ on:
         default: false
         type: boolean
 
-  workflow_run:
-    workflows:
-      - Java CI
-    types:
-      - completed
+  push:
     branches:
       - 'master'
       - 'generator'
