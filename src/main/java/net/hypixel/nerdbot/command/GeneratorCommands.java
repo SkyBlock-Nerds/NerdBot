@@ -80,7 +80,7 @@ public class GeneratorCommands extends ApplicationCommand {
     
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
-    @JDASlashCommand(name = BASE_COMMAND, group = "display", description = "Display an item")
+    @JDASlashCommand(name = BASE_COMMAND, subcommand = "display", description = "Display an item")
     public void generateItem(
         GuildSlashEvent event,
         @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
