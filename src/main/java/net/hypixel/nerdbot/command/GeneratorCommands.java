@@ -80,7 +80,7 @@ public class GeneratorCommands extends ApplicationCommand {
     
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
-    @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "display", description = "Display an item")
+    @JDASlashCommand(name = BASE_COMMAND, group = "display", description = "Display an item")
     public void generateItem(
         GuildSlashEvent event,
         @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
@@ -307,7 +307,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "search", description = "Search for an item")
+    @JDASlashCommand(name = BASE_COMMAND, group = "search", description = "Search for an item")
     public void searchItem(GuildSlashEvent event, @AppOption(description = "The ID of the item to search for") String itemId, @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
@@ -450,7 +450,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, group = "parse", subcommand = "nbt", description = "Parse an NBT string")
+    @JDASlashCommand(name = BASE_COMMAND, group = "parse", description = "Parse an NBT string")
     public void parseNbtString(
         GuildSlashEvent event,
         @AppOption(description = NBT_DESCRIPTION) String nbt,
@@ -541,7 +541,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, group = "item", subcommand = "full", description = "Generate a full item image. Supports displaying items, recipes, and tooltips")
+    @JDASlashCommand(name = BASE_COMMAND, group = "full", description = "Generate a full item image. Supports displaying items, recipes, and tooltips")
     public void generateTooltip(
         GuildSlashEvent event,
         @AppOption(description = NAME_DESCRIPTION) String name,
