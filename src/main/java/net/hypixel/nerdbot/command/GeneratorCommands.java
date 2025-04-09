@@ -359,7 +359,7 @@ public class GeneratorCommands extends ApplicationCommand {
     @JDASlashCommand(name = BASE_COMMAND, subcommand = "recipe", description = "Generate a recipe")
     public void generateRecipe(
         GuildSlashEvent event,
-        @AppOption(description = RECIPE_STRING_DESCRIPTION) String recipeString,
+        @AppOption(description = RECIPE_STRING_DESCRIPTION) String recipe,
         @AppOption(description = RENDER_BACKGROUND_DESCRIPTION) @Optional Boolean renderBackground,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
@@ -376,7 +376,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     .withSlotsPerRow(3)
                     .drawBorder(false)
                     .drawBackground(renderBackground)
-                    .withInventoryString(recipeString)
+                    .withInventoryString(recipe)
                     .build())
                 .build();
 
@@ -544,13 +544,13 @@ public class GeneratorCommands extends ApplicationCommand {
     @JDASlashCommand(name = BASE_COMMAND, group = "full", description = "Generate a full item image. Supports displaying items, recipes, and tooltips")
     public void generateTooltip(
         GuildSlashEvent event,
-        @AppOption(description = NAME_DESCRIPTION) String name,
+        @AppOption(description = NAME_DESCRIPTION) String itemName,
         @AppOption(description = LORE_DESCRIPTION) String itemLore,
         @AppOption(description = TYPE_DESCRIPTION) @Optional String type,
         @AppOption(autocomplete = "item-rarities", description = RARITY_DESCRIPTION) @Optional String rarity,
         @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
-        @AppOption(description = RECIPE_STRING_DESCRIPTION) @Optional String recipeString,
+        @AppOption(description = RECIPE_STRING_DESCRIPTION) @Optional String recipe,
         @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
         @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
         @AppOption(description = RARITY_LINE_BREAK_DESCRIPTION) @Optional Boolean disableRarityLineBreak,
@@ -580,7 +580,7 @@ public class GeneratorCommands extends ApplicationCommand {
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                .withName(name)
+                .withName(itemName)
                 .withRarity(Rarity.byName(rarity))
                 .withItemLore(itemLore)
                 .withType(type)
@@ -612,12 +612,12 @@ public class GeneratorCommands extends ApplicationCommand {
                 }
             }
 
-            if (recipeString != null) {
+            if (recipe != null) {
                 generatorImageBuilder.addGenerator(0, new MinecraftInventoryGenerator.Builder()
                     .withRows(3)
                     .withSlotsPerRow(3)
                     .drawBorder(renderBorder)
-                    .withInventoryString(recipeString)
+                    .withInventoryString(recipe)
                     .build()
                 ).build();
             }
