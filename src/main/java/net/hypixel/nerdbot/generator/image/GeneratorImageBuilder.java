@@ -23,7 +23,7 @@ import java.util.concurrent.TimeoutException;
 public class GeneratorImageBuilder {
 
     private static final int IMAGE_PADDING_PX = 25;
-    private static final int IMAGE_BORDER_PADDING_PX = 20;
+    private static final int IMAGE_BORDER_PADDING_PX = 15;
 
     private static final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
     private final List<Generator> generators;
