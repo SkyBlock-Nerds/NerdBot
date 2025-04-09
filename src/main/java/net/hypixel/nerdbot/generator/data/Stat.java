@@ -36,7 +36,7 @@ public class Stat {
     private String display;
     private ChatFormat color;
     private ChatFormat subColor;
-    private ParseType parseType;
+    private String parseType;
     @Nullable
     private Float powerScalingMultiplier;
 
@@ -59,20 +59,5 @@ public class Stat {
         } else {
             return color;
         }
-    }
-
-    public enum ParseType {
-        NONE,
-        NORMAL,
-        BOLD,
-        BOLD_ICON,
-        DUAL,
-        OUTSIDE_MAGIC,
-        SOULBOUND,
-        POST,
-        POST_DUAL,
-        ITEM_STAT,
-        ABILITY,
-        DIFFERENT_ICON_COLOR
     }
 }

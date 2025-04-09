@@ -1,149 +1,145 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
+import lombok.extern.log4j.Log4j2;
+import net.hypixel.nerdbot.generator.data.ParseType;
 import net.hypixel.nerdbot.generator.data.Stat;
 import net.hypixel.nerdbot.generator.parser.StringParser;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+@Log4j2
 public class StatParser implements StringParser {
 
-    private static final Map<Stat.ParseType, BiFunction<Stat, String, String>> PARSERS = new HashMap<>();
+    private static final Map<String, String> BASE_PLACEHOLDERS = new HashMap<>();
 
     static {
-        PARSERS.put(Stat.ParseType.NORMAL, StatParser::normalStatColorParser);
-        PARSERS.put(Stat.ParseType.BOLD, (stat, extra) -> boldedIconParser(stat));
-        PARSERS.put(Stat.ParseType.BOLD_ICON, StatParser::boldedIconColorParser);
-        PARSERS.put(Stat.ParseType.OUTSIDE_MAGIC, (stat, s) -> outsideMagicColorParser(stat));
-        PARSERS.put(Stat.ParseType.DUAL, StatParser::dualStatColorParser);
-        PARSERS.put(Stat.ParseType.NONE, (stat, extra) -> noParsing(stat));
-        PARSERS.put(Stat.ParseType.SOULBOUND, StatParser::soulboundColorParsing);
-        PARSERS.put(Stat.ParseType.POST, StatParser::postStatColorParser);
-        PARSERS.put(Stat.ParseType.POST_DUAL, StatParser::postDualColorParser);
-        PARSERS.put(Stat.ParseType.ITEM_STAT, StatParser::itemStatColorParser);
-        PARSERS.put(Stat.ParseType.ABILITY, StatParser::abilityColorParser);
-        PARSERS.put(Stat.ParseType.DIFFERENT_ICON_COLOR, StatParser::differentIconColorParser);
+        Arrays.stream(ChatFormat.values()).forEach(format -> {
+            BASE_PLACEHOLDERS.put(format.name().toLowerCase(), String.valueOf(format.getCode()));
+            log.debug("Added placeholder for: " + format.name().toLowerCase() + " with code: " + format.getCode());
+        });
+        BASE_PLACEHOLDERS.put("ampersand", String.valueOf(ChatFormat.AMPERSAND_SYMBOL));
+        log.debug("Added placeholder for: ampersand with code: " + ChatFormat.AMPERSAND_SYMBOL);
     }
 
     @Override
     public String parse(String input) {
-        if (input.isBlank()) return input;
+        if (input == null || input.isBlank()) {
+            return input;
+        }
 
         Matcher matcher = VARIABLE_PATTERN.matcher(input);
         StringBuilder result = new StringBuilder();
 
         while (matcher.find()) {
-            String icon = matcher.group(1);
-            String extraData = matcher.group(2);
-            Stat stat = Stat.byName(icon);
+            String statName = matcher.group(1); // Group 1: Stat Name (e.g., HEALTH)
+            String extraData = matcher.group(2); // Group 2: Optional extra data (e.g., 100) - can be null
+            Stat stat = Stat.byName(statName);
 
-            if (stat != null) {
-                matcher.appendReplacement(result, parseStatWithType(stat, extraData) + ChatFormat.SECTION_SYMBOL + ChatFormat.RESET.getCode());
+            log.debug("Found stat: '" + statName + "' with extra data: '" + extraData + "'");
+
+            if (stat == null) {
+                log.warn("Could not find stat by name: '" + statName + "' in input: '" + input + "'");
+                matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(0)));
+                continue;
             }
+
+            ParseType parseType = ParseType.byName(stat.getParseType());
+            if (parseType == null) {
+                log.warn("Could not find parse type by name: '" + stat.getParseType() + "' for stat: '" + stat.getName() + "'");
+                matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(0)));
+                continue;
+            }
+
+            log.debug("Using parse type: '" + parseType.getName() + "' for stat: '" + stat.getName() + "' with extra data: '" + extraData + "'");
+
+            String formattedStat = formatStat(stat, parseType, extraData);
+            String replacement = formattedStat;
+
+            log.debug("Replacement before formatting: " + replacement + " for stat: " + stat.getName() + " with extra data: " + extraData + " and parse type: " + parseType.getName());
+            log.debug("Formatted stat: " + formattedStat);
+
+            if (!formattedStat.startsWith("[")) {
+                replacement += String.valueOf(ChatFormat.SECTION_SYMBOL) + ChatFormat.RESET.getCode();
+            }
+
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
 
         matcher.appendTail(result);
-
         return result.toString();
     }
 
-    private String parseStatWithType(Stat stat, String extraData) {
-        return PARSERS.getOrDefault(stat.getParseType(), (s, e) -> parseStat(s))
-            .apply(stat, extraData);
-    }
+    /**
+     * Formats a {@link Stat} using the given {@link ParseType} and extra details (if any)
+     *
+     * @param stat         The {@link Stat} to format
+     * @param parseType    The {@link ParseType} to use for formatting
+     * @param extraDetails The extra details to include in the formatting (e.g., "100" for HEALTH)
+     *
+     * @return The formatted string
+     */
+    private String formatStat(Stat stat, ParseType parseType, String extraDetails) {
+        boolean hasExtraDetails = extraDetails != null && !extraDetails.isEmpty();
+        String format = hasExtraDetails ? parseType.getFormatWithDetails() : parseType.getFormatWithoutDetails();
 
-    private static String parseStat(Stat stat) {
-        return stat.getStat();
-    }
-
-    private static String normalStatColorParser(Stat stat, String extraDetails) {
-        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + (extraDetails == null || extraDetails.isEmpty() ? stat.getDisplay() : extraDetails + stat.getDisplay());
-    }
-
-    private static String outsideMagicColorParser(Stat stat) {
-        // Nothing else uses this format yet so we can just hardcode the obfuscated character as X
-        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + ChatFormat.OBFUSCATED + "X"
-            + ChatFormat.RESET + " " + ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getStat() + " " +
-            ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + ChatFormat.OBFUSCATED + "X";
-    }
-
-    private static String boldedIconColorParser(Stat stat, String extraDetails) {
-        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + extraDetails +
-            ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + stat.getIcon() +
-            ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + " " + stat.getStat();
-    }
-
-    private static String boldedIconParser(Stat stat) {
-        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + stat.getIcon();
-    }
-
-    private static String dualStatColorParser(Stat stat, String extraDetails) {
-        return extraDetails.isEmpty()
-            ? normalStatColorParser(stat, extraDetails)
-            : ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + extraDetails + ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getDisplay();
-    }
-
-    private static String noParsing(Stat stat) {
-        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + stat.getStat();
-    }
-
-    private static String soulboundColorParsing(Stat stat, String e) {
-        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + "* " + ChatFormat.AMPERSAND_SYMBOL +
-            stat.getColor().getCode() + stat.getStat() + " " + ChatFormat.AMPERSAND_SYMBOL +
-            stat.getColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + "*";
-    }
-
-    private static String postStatColorParser(Stat stat, String extraDetails) {
-        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + stat.getDisplay() +
-            (extraDetails != null ? " " + extraDetails : "");
-    }
-
-    private static String postDualColorParser(Stat stat, String extraDetails) {
-        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + stat.getStat() +
-            " " + ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + extraDetails;
-    }
-
-    private static String itemStatColorParser(Stat stat, String extraDetails) {
-        if (extraDetails.isEmpty()) {
-            return "ITEM_STAT_MISSING_DETAILS";
+        if (format == null) {
+            log.warn("Format string is null for parse type: " + parseType.getName());
+            return "[INVALID FORMAT]";
         }
 
-        int separator = extraDetails.indexOf(":");
+        log.debug("Using format: '" + format + "' for stat: '" + stat.getName() + "' with extra details: '" + extraDetails + "'");
 
-        if (separator == -1) {
-            return "ITEM_STAT_MISSING_SEPARATOR";
+        Map<String, String> placeholders = new HashMap<>(BASE_PLACEHOLDERS);
+        placeholders.put("color", String.valueOf(stat.getColor().getCode()));
+        placeholders.put("subColor", String.valueOf(stat.getSecondaryColor().getCode()));
+        placeholders.put("icon", stat.getIcon() != null ? stat.getIcon() : "");
+        placeholders.put("stat", stat.getStat() != null ? stat.getStat() : "");
+        placeholders.put("display", stat.getDisplay() != null ? stat.getDisplay() : "");
+        placeholders.put("extraDetails", hasExtraDetails ? extraDetails : "");
+
+        // Handle specific parsing logic for ITEM_STAT and ABILITY
+        if (parseType.getName().equalsIgnoreCase("ITEM_STAT")) {
+            if (!hasExtraDetails) {
+                log.warn("Missing extra details for ITEM_STAT: " + stat.getName());
+                return "[ITEM_STAT_MISSING_DETAILS]";
+            }
+
+            int separator = extraDetails.indexOf(":");
+            if (separator == -1) {
+                log.warn("Missing separator ':' in extra details for ITEM_STAT: " + extraDetails);
+                return "[ITEM_STAT_MISSING_SEPARATOR]";
+            }
+
+            placeholders.put("itemStat", extraDetails.substring(0, separator));
+            placeholders.put("amount", extraDetails.substring(separator + 1));
+        } else if (parseType.getName().equalsIgnoreCase("ABILITY")) {
+            if (!hasExtraDetails) {
+                log.warn("Missing extra details for ABILITY: " + stat.getName());
+                return "[ABILITY_MISSING_DETAILS]";
+            }
+
+            int separator = extraDetails.indexOf(":");
+            if (separator == -1) {
+                log.warn("Missing separator ':' in extra details for ABILITY: " + extraDetails);
+                return "[ABILITY_MISSING_SEPARATOR]";
+            }
+
+            placeholders.put("abilityName", extraDetails.substring(0, separator));
+            placeholders.put("abilityType", extraDetails.substring(separator + 1));
         }
 
-        String itemStat = extraDetails.substring(0, separator);
-        String amount = extraDetails.substring(separator + 1);
-
-        return ChatFormat.AMPERSAND_SYMBOL + ChatFormat.GRAY.getCode() + itemStat + ": " + ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + amount;
-    }
-
-    private static String abilityColorParser(Stat stat, String extraDetails) {
-        if (extraDetails.isEmpty()) {
-            return "ABILITY_MISSING_DETAILS";
+        String result = format;
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            result = result.replaceAll("\\{" + Pattern.quote(entry.getKey()) + "\\}", Matcher.quoteReplacement(entry.getValue()));
+            log.debug("Replacing " + entry.getKey() + " with " + entry.getValue());
         }
 
-        int separator = extraDetails.indexOf(":");
-
-        if (separator == -1) {
-            return "ABILITY_MISSING_SEPARATOR";
-        }
-
-        String abilityName = extraDetails.substring(0, separator);
-        String abilityType = extraDetails.substring(separator + 1);
-
-        return ChatFormat.AMPERSAND_SYMBOL + stat.getColor().getCode() + stat.getStat() + ": " + abilityName +
-            " " + ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + ChatFormat.AMPERSAND_SYMBOL + ChatFormat.BOLD.getCode() + abilityType;
-    }
-
-    private static String differentIconColorParser(Stat stat, String extraDetails) {
-        return String.valueOf(ChatFormat.AMPERSAND_SYMBOL) + stat.getColor().getCode() + stat.getIcon() +
-            " " + ChatFormat.AMPERSAND_SYMBOL + stat.getSecondaryColor().getCode() + stat.getStat() +
-            (extraDetails != null ? " " + extraDetails : "");
+        log.debug("Final formatted result: " + result);
+        return result;
     }
 }
