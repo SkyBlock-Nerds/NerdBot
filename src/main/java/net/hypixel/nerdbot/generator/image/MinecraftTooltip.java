@@ -38,8 +38,8 @@ public class MinecraftTooltip {
 
     public static final int DEFAULT_PADDING = 0;
     public static final int DEFAULT_ALPHA = 245;
-
     public static final Range<Integer> LINE_LENGTH = Range.between(1, 128);
+
     private static final int PIXEL_SIZE = 2;
     private static final int START_XY = PIXEL_SIZE * 5;
     private static final int Y_INCREMENT = PIXEL_SIZE * 10;

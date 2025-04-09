@@ -23,6 +23,7 @@ import java.util.concurrent.TimeoutException;
 public class GeneratorImageBuilder {
 
     private static final int IMAGE_PADDING_PX = 25;
+    private static final int IMAGE_BORDER_PADDING_PX = 20;
 
     private static final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
     private final List<Generator> generators;
@@ -149,14 +150,14 @@ public class GeneratorImageBuilder {
             throw new GeneratorException("Calculated image dimensions are invalid (width=" + totalWidth + ", height=" + maxHeight + ")");
         }
 
-        BufferedImage finalImage = new BufferedImage(totalWidth, maxHeight, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage finalImage = new BufferedImage(totalWidth + 2 * IMAGE_BORDER_PADDING_PX, maxHeight + 2 * IMAGE_BORDER_PADDING_PX, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = finalImage.createGraphics();
-        int currentX = 0;
+        int currentX = IMAGE_BORDER_PADDING_PX;
 
         // Draw images
         for (GeneratedObject generatedObject : generatedObjects) {
             BufferedImage generatedImage = generatedObject.getImage();
-            int yOffset = (maxHeight - generatedImage.getHeight()) / 2; // Center vertically
+            int yOffset = IMAGE_BORDER_PADDING_PX + (maxHeight - generatedImage.getHeight()) / 2;
             graphics.drawImage(generatedImage, currentX, yOffset, null);
             currentX += generatedImage.getWidth() + IMAGE_PADDING_PX;
         }
@@ -214,9 +215,9 @@ public class GeneratorImageBuilder {
 
         // Generate each frame
         for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
-            BufferedImage compositeFrame = new BufferedImage(totalWidth, maxHeight, BufferedImage.TYPE_INT_ARGB);
+            BufferedImage compositeFrame = new BufferedImage(totalWidth + 2 * IMAGE_BORDER_PADDING_PX, maxHeight + 2 * IMAGE_BORDER_PADDING_PX, BufferedImage.TYPE_INT_ARGB);
             Graphics2D graphics = compositeFrame.createGraphics();
-            int currentX = 0;
+            int currentX = IMAGE_BORDER_PADDING_PX;
 
             for (GeneratedObject obj : generatedObjects) {
                 BufferedImage currentFrameImage;
@@ -232,7 +233,7 @@ public class GeneratorImageBuilder {
                     currentFrameImage = obj.getImage();
                 }
 
-                int yOffset = (maxHeight - currentFrameImage.getHeight()) / 2;
+                int yOffset = IMAGE_BORDER_PADDING_PX + (maxHeight - currentFrameImage.getHeight()) / 2;
                 graphics.drawImage(currentFrameImage, currentX, yOffset, null);
                 currentX += currentFrameImage.getWidth() + IMAGE_PADDING_PX;
             }
