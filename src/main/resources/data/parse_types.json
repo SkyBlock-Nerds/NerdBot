@@ -26,8 +26,8 @@
     },
     {
         "name": "OUTSIDE_MAGIC",
-        "formatWithDetails": "&{color}&{obfuscated}X{reset} &{color}{stat} &{color}&{obfuscated}X",
-        "formatWithoutDetails": "&{color}&{obfuscated}X{reset} &{color}{stat} &{color}&{obfuscated}X"
+        "formatWithDetails": "&{color}&{obfuscated}X&{reset} &{color}{stat} &{color}&{obfuscated}X",
+        "formatWithoutDetails": "&{color}&{obfuscated}X&{reset} &{color}{stat} &{color}&{obfuscated}X"
     },
     {
         "name": "SOULBOUND",
