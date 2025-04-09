@@ -64,7 +64,7 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final String RARITY_LINE_BREAK_DESCRIPTION = "Whether or not the tooltip should have an empty line between the lore and the rarity/type";
     private static final String CENTERED_DESCRIPTION = "Whether or not the tooltip should be centered";
     private static final String MAX_LINE_LENGTH_DESCRIPTION = "The max line length of the tooltip";
-    private static final String NORMAL_ITEM_DESCRIPTION = "TODO";
+    private static final String LINE_PADDING_DESCRIPTION = "Add a small amount of padding between the item name and the first line of lore";
     private static final String TOOLTIP_SIDE_DESCRIPTION = "Which side the tooltip should be displayed on";
     private static final String TEXT_DESCRIPTION = "The text to display";
     private static final String TEXTURE_DESCRIPTION = "The texture of the player head";
@@ -556,7 +556,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = RARITY_LINE_BREAK_DESCRIPTION) @Optional Boolean disableRarityLineBreak,
         @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
         @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
-        @AppOption(description = NORMAL_ITEM_DESCRIPTION) @Optional Boolean paddingFirstLine,
+        @AppOption(description = LINE_PADDING_DESCRIPTION) @Optional Boolean paddingFirstLine,
         @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
         @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide,
         @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean renderBorder,
