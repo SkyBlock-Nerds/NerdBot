@@ -44,6 +44,9 @@ on:
     branches:
       - 'master'
       - 'generator'
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
 
 env:
   REGISTRY: ghcr.io
