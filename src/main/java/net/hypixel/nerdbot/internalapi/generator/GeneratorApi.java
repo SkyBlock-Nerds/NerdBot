@@ -1,12 +1,18 @@
 package net.hypixel.nerdbot.internalapi.generator;
 
+import com.freya02.botcommands.api.annotations.Optional;
+import com.freya02.botcommands.api.application.annotations.AppOption;
+import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
+import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import kotlin.Pair;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.generator.data.Rarity;
+import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
@@ -15,10 +21,12 @@ import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
+import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.NbtParseException;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -299,6 +307,121 @@ public class GeneratorApi {
             .build();
 
         generatorImageBuilder.addGenerator(tooltipGenerator);
+        return generatorImageBuilder.build();
+    }
+
+    public static GeneratedObject generateSingleDialogue(
+        String npcName,
+        String dialogue,
+        @Nullable Integer maxLineLength,
+        @Nullable Boolean abiphone,
+        @Nullable String skinValue
+    ) {
+        abiphone = abiphone != null && abiphone;
+        maxLineLength = maxLineLength == null ? 91 : maxLineLength;
+
+        String[] lines = dialogue.split("\\\\n");
+        for (int i = 0; i < lines.length; i++) {
+            lines[i] = "&e[NPC] " + npcName + "&f: " + (abiphone ? "&b%%ABIPHONE%%&f " : "") + lines[i];
+            String line = lines[i];
+
+            if (line.contains("{options:")) {
+                String[] split = line.split("\\{options: ?");
+                lines[i] = split[0];
+                String[] options = split[1].replace("}", "").split(", ");
+                lines[i] += "\n&eSelect an option: &f";
+                for (String option : options) {
+                    lines[i] += "&a" + option + "&f ";
+                }
+            }
+        }
+
+        dialogue = String.join("\n", lines);
+
+        MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+            .withItemLore(dialogue)
+            .withAlpha(0)
+            .withPadding(MinecraftTooltip.DEFAULT_PADDING)
+            .isPaddingFirstLine(false)
+            .disableRarityLineBreak(false)
+            .withMaxLineLength(maxLineLength)
+            .bypassMaxLineLength(true);
+
+        GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
+            .addGenerator(tooltipGenerator.build());
+
+        if (skinValue != null) {
+            MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder()
+                .withSkin(skinValue)
+                .withScale(-2)
+                .build();
+            generatorImageBuilder.addGenerator(0, playerHeadGenerator);
+        }
+
+        return generatorImageBuilder.build();
+    }
+
+    public static GeneratedObject generateMultiDialogue(
+        String npcNames,
+        String dialogue,
+        @Nullable Integer maxLineLength,
+        @Nullable Boolean abiphone,
+        @Nullable String skinValue
+    ) {
+        abiphone = abiphone != null && abiphone;
+        maxLineLength = maxLineLength == null ? 91 : maxLineLength;
+
+        String[] lines = dialogue.split("\\\\n");
+        String[] names = npcNames.split(", ?");
+
+        for (int i = 0; i < lines.length; i++) {
+            String[] split = lines[i].split(", ?");
+            try {
+                int index = Integer.parseInt(split[0]);
+
+                if (index >= names.length) {
+                    index = names.length - 1;
+                }
+
+                lines[i] = "&e[NPC] " + names[index] + "&f: " + (abiphone ? "&b%%ABIPHONE%%&f " : "") + split[1];
+                String line = lines[i];
+
+                if (line.contains("{options:")) {
+                    String[] split2 = line.split("\\{options: ?");
+                    lines[i] = split2[0];
+                    String[] options = split2[1].replace("}", "").split(", ?");
+                    lines[i] += "\n&eSelect an option: &f";
+                    for (String option : options) {
+                        lines[i] += "&a" + option + "&f ";
+                    }
+                }
+            } catch (NumberFormatException exception) {
+                throw new GeneratorException("Invalid NPC name index found in dialogue: " + split[0] + " (line " + (i + 1) + ")");
+            }
+        }
+
+        dialogue = String.join("\n", lines);
+
+        MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+            .withItemLore(dialogue)
+            .withAlpha(0)
+            .withPadding(MinecraftTooltip.DEFAULT_PADDING)
+            .isPaddingFirstLine(false)
+            .disableRarityLineBreak(false)
+            .withMaxLineLength(maxLineLength)
+            .bypassMaxLineLength(true);
+
+        GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
+            .addGenerator(tooltipGenerator.build());
+
+        if (skinValue != null) {
+            MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder()
+                .withSkin(skinValue)
+                .withScale(-2)
+                .build();
+            generatorImageBuilder.addGenerator(0, playerHeadGenerator);
+        }
+
         return generatorImageBuilder.build();
     }
 
