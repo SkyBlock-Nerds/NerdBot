@@ -165,4 +165,10 @@ public class ImageUtil {
 
         return baos.toByteArray();
     }
+
+    public static byte[] toByteArray(BufferedImage image) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", baos);
+        return baos.toByteArray();
+    }
 }
