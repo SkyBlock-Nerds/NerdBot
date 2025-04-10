@@ -13,6 +13,8 @@ import net.hypixel.nerdbot.util.json.adapter.BadgeTypeAdapter;
 import net.hypixel.nerdbot.util.json.adapter.ColorTypeAdapter;
 import net.hypixel.nerdbot.util.json.adapter.InstantTypeAdapter;
 import net.hypixel.nerdbot.util.json.adapter.UUIDTypeAdapter;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import sun.misc.Signal;
 
 import javax.security.auth.login.LoginException;
@@ -25,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Log4j2
+@SpringBootApplication
 public class NerdBotApp {
 
     public static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
@@ -66,6 +69,10 @@ public class NerdBotApp {
         }
 
         log.info("Bot created!");
+
+        log.info("Starting Webserver...");
+        SpringApplication.run(NerdBotApp.class, args);
+        log.info("Webserver started!");
     }
 
     public static Optional<UUID> getHypixelAPIKey() {
