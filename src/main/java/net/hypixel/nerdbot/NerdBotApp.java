@@ -71,7 +71,14 @@ public class NerdBotApp {
         log.info("Bot created!");
 
         log.info("Starting Webserver...");
-        SpringApplication.run(NerdBotApp.class, args);
+
+        try {
+            SpringApplication.run(NerdBotApp.class, args);
+        } catch (Exception exception) {
+            log.error("Failed to start webserver!", exception);
+            System.exit(-1);
+        }
+
         log.info("Webserver started!");
     }
 
