@@ -1,16 +1,11 @@
 package net.hypixel.nerdbot.internalapi.generator;
 
-import com.freya02.botcommands.api.annotations.Optional;
-import com.freya02.botcommands.api.application.annotations.AppOption;
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
-import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import kotlin.Pair;
 import lombok.extern.log4j.Log4j2;
-import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
@@ -21,12 +16,10 @@ import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
-import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.NbtParseException;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
