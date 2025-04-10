@@ -12,6 +12,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import kotlin.Pair;
+import kotlin.TuplesKt;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
@@ -32,9 +34,11 @@ import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
+import net.hypixel.nerdbot.internalapi.generator.GeneratorApi;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.exception.NbtParseException;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -94,28 +98,8 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        enchanted = enchanted != null && enchanted;
-        hoverEffect = hoverEffect != null && hoverEffect;
-
         try {
-            GeneratorImageBuilder item = new GeneratorImageBuilder();
-
-            if (itemId.equalsIgnoreCase("player_head") && skinValue != null) {
-                item.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
-                    .withSkin(skinValue)
-                    .build());
-            } else {
-                item.addGenerator(new MinecraftItemGenerator.Builder()
-                    .withItem(itemId)
-                    .withData(data)
-                    .isEnchanted(enchanted)
-                    .withHoverEffect(hoverEffect)
-                    .isBigImage()
-                    .build()
-                );
-            }
-
-            GeneratedObject generatedObject = item.build();
+            GeneratedObject generatedObject = GeneratorApi.generateItem(itemId, data, enchanted, hoverEffect, skinValue);
 
             if (generatedObject.isAnimated()) {
                 event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "item.gif")).queue();
@@ -313,18 +297,17 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        List<Map.Entry<String, BufferedImage>> results = Spritesheet.searchForTexture(itemId);
-
+        List<String> results = GeneratorApi.searchItem(itemId);
         if (results.isEmpty()) {
             event.getHook().editOriginal("No results found for that item!").queue();
             return;
         }
 
-        List<Map.Entry<String, BufferedImage>> topResults = results.subList(0, Math.min(10, results.size()));
+        results = results.subList(0, Math.min(10, results.size()));
         StringBuilder message = new StringBuilder("Top results for `" + itemId + "` (" + Util.COMMA_SEPARATED_FORMAT.format(results.size()) + " total):\n");
 
-        for (Map.Entry<String, BufferedImage> entry : topResults) {
-            message.append(" - `").append(entry.getKey()).append("`\n");
+        for (String entry : results) {
+            message.append(" - `").append(entry).append("`\n");
         }
 
         event.getHook().editOriginal(message.toString()).queue();
@@ -341,10 +324,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply(hidden).complete();
 
         try {
-            GeneratedObject generatedObject = new GeneratorImageBuilder()
-                .addGenerator(new MinecraftPlayerHeadGenerator.Builder().withSkin(texture).build())
-                .build();
-
+            GeneratedObject generatedObject = GeneratorApi.generateHead(texture);
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "head.png")).queue();
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
@@ -367,18 +347,8 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        renderBackground = renderBackground == null || renderBackground;
-
         try {
-            GeneratedObject generatedObject = new GeneratorImageBuilder()
-                .addGenerator(new MinecraftInventoryGenerator.Builder()
-                    .withRows(3)
-                    .withSlotsPerRow(3)
-                    .drawBorder(false)
-                    .drawBackground(renderBackground)
-                    .withInventoryString(recipe)
-                    .build())
-                .build();
+            GeneratedObject generatedObject = GeneratorApi.generateRecipe(recipe, renderBackground);
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
             addCommandToUserHistory(event.getUser(), event.getCommandString());
@@ -406,33 +376,8 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        drawBorder = drawBorder == null || drawBorder;
-
         try {
-            GeneratorImageBuilder generatedObject = new GeneratorImageBuilder()
-                .addGenerator(new MinecraftInventoryGenerator.Builder()
-                    .withRows(rows)
-                    .withSlotsPerRow(slotsPerRow)
-                    .drawBorder(drawBorder)
-                    .drawBackground(true)
-                    .withContainerTitle(containerName)
-                    .withInventoryString(inventoryString)
-                    .build());
-
-            if (hoveredItemString != null) {
-                MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                    .withItemLore(hoveredItemString)
-                    .withAlpha(MinecraftTooltip.DEFAULT_ALPHA)
-                    .withPadding(MinecraftTooltip.DEFAULT_PADDING)
-                    .isPaddingFirstLine(false)
-                    .disableRarityLineBreak(false)
-                    .withRenderBorder(true)
-                    .build();
-
-                generatedObject.addGenerator(tooltipGenerator);
-            }
-
-            GeneratedObject finalObject = generatedObject.build();
+            GeneratedObject finalObject = GeneratorApi.generateInventory(rows, slotsPerRow, inventoryString, hoveredItemString, containerName, drawBorder);
 
             if (finalObject.isAnimated()) {
                 event.getHook().editOriginalAttachments(FileUpload.fromData(finalObject.getGifData(), "inventory.gif")).queue();
@@ -462,82 +407,29 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
-        padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
-
         try {
-            JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
-            JsonObject tagObject = jsonObject.get("tag").getAsJsonObject();
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            Pair<GeneratedObject, String> parsedContent = GeneratorApi.parseNbtString(nbt, alpha, padding);
 
-            if (jsonObject.get("id").getAsString().contains("skull")) {
-                String value = jsonObject.get("id").getAsString();
-                value = value.replace("minecraft:", "")
-                    .replace("skull", "player_head");
-                jsonObject.addProperty("id", value);
-            }
+            MessageEditBuilder messageEditBuilder = new MessageEditBuilder().setContent(parsedContent.component2());
 
-            if (jsonObject.get("id").getAsString().equalsIgnoreCase("player_head")
-                && tagObject.get("SkullOwner") != null) {
-                JsonArray textures = tagObject.get("SkullOwner").getAsJsonObject()
-                    .get("Properties").getAsJsonObject()
-                    .get("textures").getAsJsonArray();
-
-                if (textures.size() > 1) {
-                    event.getHook().editOriginal("There seems to be more than 1 texture in the player head's NBT data. Please double-check it is correct!").queue();
-                    return;
-                }
-
-                String base64 = textures.get(0).getAsJsonObject().get("Value").getAsString();
-
-                generatorImageBuilder.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
-                    .withSkin(base64)
-                    .build()
-                );
+            if (parsedContent.component1().isAnimated()) {
+                messageEditBuilder.setFiles(FileUpload.fromData(parsedContent.component1().getGifData(), "parsed_nbt.gif"));
             } else {
-                generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
-                    .withItem(jsonObject.get("id").getAsString())
-                    //.isEnchanted(enchanted) TODO: determine if the item is enchanted
-                    .isBigImage()
-                    .build());
+                messageEditBuilder.setFiles(FileUpload.fromData(ImageUtil.toFile(parsedContent.component1().getImage()), "parsed_nbt.png"));
             }
 
-            int maxLineLength = Util.getLongestLine(jsonObject.get("tag").getAsJsonObject()
-                .get("display").getAsJsonObject()
-                .get("Lore").getAsJsonArray()
-                .asList()
-                .stream()
-                .map(JsonElement::getAsString)
-                .toList()).getRight();
-
-            MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                .parseNbtJson(jsonObject)
-                .withAlpha(alpha)
-                .withPadding(padding)
-                .withRenderBorder(true)
-                .isPaddingFirstLine(true)
-                .withMaxLineLength(maxLineLength);
-
-            GeneratedObject generatedObject = generatorImageBuilder.addGenerator(tooltipGenerator.build()).build();
-            MessageEditBuilder builder = new MessageEditBuilder()
-                .setContent("Your NBT input has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + tooltipGenerator.buildSlashCommand() + "```");
-
-            if (generatedObject.isAnimated()) {
-                builder.setFiles(FileUpload.fromData(generatedObject.getGifData(), "parsed_nbt.gif"));
-            } else {
-                builder.setFiles(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "parsed_nbt.png"));
-            }
-
-            event.getHook().editOriginal(builder.build()).queue();
+            event.getHook().editOriginal(messageEditBuilder.build()).queue();
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (JsonParseException exception) {
             event.getHook().editOriginal("You provided badly formatted NBT!").queue();
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while parsing NBT", exception);
-        } catch (IOException e) {
+        } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while parsing the NBT!").queue();
-            log.error("Encountered an error while parsing NBT", e);
+            log.error("Encountered an error while parsing NBT", exception);
+        } catch (NbtParseException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
         }
     }
 
@@ -566,69 +458,8 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        type = type == null ? "" : type;
-        rarity = rarity == null ? "none" : rarity;
-        alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
-        padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
-        disableRarityLineBreak = disableRarityLineBreak == null || disableRarityLineBreak;
-        centered = centered != null && centered;
-        enchanted = enchanted != null && enchanted;
-        paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
-        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
-        renderBorder = renderBorder == null || renderBorder;
-
         try {
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
-            MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                .withName(itemName)
-                .withRarity(Rarity.byName(rarity))
-                .withItemLore(itemLore)
-                .withType(type)
-                .withAlpha(alpha)
-                .withPadding(padding)
-                .disableRarityLineBreak(disableRarityLineBreak)
-                .withMaxLineLength(maxLineLength)
-                .isTextCentered(centered)
-                .isPaddingFirstLine(paddingFirstLine)
-                .withRenderBorder(renderBorder)
-                .build();
-
-            if (itemId != null) {
-                if (itemId.equalsIgnoreCase("player_head")) {
-                    MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder()
-                        .withScale(-2);
-
-                    if (skinValue != null) {
-                        generator.withSkin(skinValue);
-                    }
-
-                    generatorImageBuilder.addGenerator(generator.build());
-                } else {
-                    generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
-                        .withItem(itemId)
-                        .isEnchanted(enchanted)
-                        .isBigImage()
-                        .build());
-                }
-            }
-
-            if (recipe != null) {
-                generatorImageBuilder.addGenerator(0, new MinecraftInventoryGenerator.Builder()
-                    .withRows(3)
-                    .withSlotsPerRow(3)
-                    .drawBorder(renderBorder)
-                    .withInventoryString(recipe)
-                    .build()
-                ).build();
-            }
-
-            if (tooltipSide != null && MinecraftTooltipGenerator.TooltipSide.valueOf(tooltipSide.toUpperCase()) == MinecraftTooltipGenerator.TooltipSide.LEFT) {
-                generatorImageBuilder.addGenerator(0, tooltipGenerator);
-            } else {
-                generatorImageBuilder.addGenerator(tooltipGenerator);
-            }
-
-            GeneratedObject generatedObject = generatorImageBuilder.build();
+            GeneratedObject generatedObject = GeneratorApi.generateTooltip(itemName, itemLore, type, rarity, itemId, skinValue, recipe, alpha, padding, disableRarityLineBreak, enchanted, centered, paddingFirstLine, maxLineLength, tooltipSide, renderBorder);
 
             if (generatedObject.isAnimated()) {
                 event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "item.gif")).queue();
@@ -661,27 +492,8 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        centered = centered != null && centered;
-        alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
-        padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
-        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
-        renderBorder = renderBorder != null && renderBorder;
-
         try {
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
-            MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                .withItemLore(text)
-                .withAlpha(alpha)
-                .withPadding(padding)
-                .withMaxLineLength(maxLineLength)
-                .isTextCentered(centered)
-                .isPaddingFirstLine(false)
-                .disableRarityLineBreak(false)
-                .withRenderBorder(renderBorder)
-                .build();
-
-            generatorImageBuilder.addGenerator(tooltipGenerator);
-            GeneratedObject generatedObject = generatorImageBuilder.build();
+            GeneratedObject generatedObject = GeneratorApi.generateText(text, centered, alpha, padding, maxLineLength, renderBorder);
 
             if (generatedObject.isAnimated()) {
                 event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "text.gif")).queue();
@@ -893,21 +705,17 @@ public class GeneratorCommands extends ApplicationCommand {
 
     @AutocompletionHandler(name = "item-names", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> itemNames(CommandAutoCompleteInteractionEvent event) {
-        return Spritesheet.getImageMap().keySet()
-            .stream()
-            .toList();
+        return GeneratorApi.itemNamesAutoCompletes();
     }
 
     @AutocompletionHandler(name = "item-rarities", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> itemRarities(CommandAutoCompleteInteractionEvent event) {
-        return Rarity.getRarityNames();
+        return GeneratorApi.itemRaritiesAutoCompletes();
     }
 
     @AutocompletionHandler(name = "tooltip-side", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
     public List<String> tooltipSide(CommandAutoCompleteInteractionEvent event) {
-        return Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values())
-            .map(MinecraftTooltipGenerator.TooltipSide::name)
-            .toList();
+        return GeneratorApi.tooltipSideAutoCompletes();
     }
 
     /**
