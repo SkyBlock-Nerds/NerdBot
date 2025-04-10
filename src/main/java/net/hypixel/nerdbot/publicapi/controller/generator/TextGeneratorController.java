@@ -2,13 +2,9 @@ package net.hypixel.nerdbot.publicapi.controller.generator;
 
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
-import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.internalapi.generator.GeneratorApi;
-import net.hypixel.nerdbot.util.ImageUtil;
+import net.hypixel.nerdbot.util.HttpUtil;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,15 +29,7 @@ public class TextGeneratorController extends BaseGeneratorController{
         @RequestParam(required = false) @Nullable Boolean renderBorder
     ) {
         try {
-            GeneratedObject generatedItem = GeneratorApi.generateText(text, centered, alpha, padding, maxLineLength, renderBorder);
-
-            byte[] imageBytes = ImageUtil.toByteArray(generatedItem.getImage());
-            ByteArrayResource resource = new ByteArrayResource(imageBytes);
-
-            return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"image.png\"")
-                .contentType(MediaType.IMAGE_PNG)
-                .body(resource);
+            return HttpUtil.properApiImageReturn(GeneratorApi.generateText(text, centered, alpha, padding, maxLineLength, renderBorder));
         } catch (GeneratorException | IOException exception) {
             log.error("Encountered an error while generating the image", exception);
             return ResponseEntity.status(500).body("An error occurred during image generation: " + exception.getCause());
