@@ -21,7 +21,7 @@ import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.language.TranslationManager;
+import net.hypixel.nerdbot.internalapi.language.TranslationManager;
 import net.hypixel.nerdbot.cache.ChannelCache;
 
 import java.awt.Color;

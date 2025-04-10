@@ -1,8 +1,8 @@
 package net.hypixel.nerdbot.repository;
 
 import com.mongodb.client.MongoClient;
-import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
-import net.hypixel.nerdbot.api.repository.Repository;
+import net.hypixel.nerdbot.internalapi.database.model.reminder.Reminder;
+import net.hypixel.nerdbot.internalapi.repository.Repository;
 
 public class ReminderRepository extends Repository<Reminder> {
 

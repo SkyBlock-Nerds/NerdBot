@@ -19,7 +19,7 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.internalapi.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.generator.data.PowerStrength;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.data.Stat;

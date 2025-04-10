@@ -7,7 +7,7 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
+import net.hypixel.nerdbot.internalapi.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.role.RoleManager;

@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.bot.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.hypixel.nerdbot.api.badge.Badge;
+import net.hypixel.nerdbot.internalapi.badge.Badge;
 
 import java.util.List;
 

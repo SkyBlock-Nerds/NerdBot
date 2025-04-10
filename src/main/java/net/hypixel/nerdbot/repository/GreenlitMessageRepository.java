@@ -1,8 +1,8 @@
 package net.hypixel.nerdbot.repository;
 
 import com.mongodb.client.MongoClient;
-import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
-import net.hypixel.nerdbot.api.repository.Repository;
+import net.hypixel.nerdbot.internalapi.database.model.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.internalapi.repository.Repository;
 
 import java.util.concurrent.TimeUnit;
 

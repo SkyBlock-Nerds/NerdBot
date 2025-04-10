@@ -6,8 +6,8 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import net.hypixel.nerdbot.api.badge.Badge;
-import net.hypixel.nerdbot.api.badge.TieredBadge;
+import net.hypixel.nerdbot.internalapi.badge.Badge;
+import net.hypixel.nerdbot.internalapi.badge.TieredBadge;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;

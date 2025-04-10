@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.feature;
 
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.feature.BotFeature;
+import net.hypixel.nerdbot.internalapi.feature.BotFeature;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 
 import java.time.Duration;
