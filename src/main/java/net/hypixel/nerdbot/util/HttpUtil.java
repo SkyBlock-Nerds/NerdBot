@@ -12,7 +12,13 @@ public class HttpUtil {
 
     public static ResponseEntity properApiImageReturn(GeneratedObject generatedItem) throws IOException {
         if (generatedItem.isAnimated()) {
-            return ResponseEntity.ok(generatedItem.getGifData()); //TODO: Check if this actually works (don't have a gif item to test (that i know of))
+            byte[] gifBytes = generatedItem.getGifData();
+            ByteArrayResource resource = new ByteArrayResource(gifBytes);
+
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"image.gif\"")
+                .contentType(MediaType.IMAGE_GIF)
+                .body(resource);
         } else {
             byte[] imageBytes = ImageUtil.toByteArray(generatedItem.getImage());
             ByteArrayResource resource = new ByteArrayResource(imageBytes);
