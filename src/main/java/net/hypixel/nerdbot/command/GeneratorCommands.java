@@ -377,7 +377,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply(hidden).complete();
 
         try {
-            GeneratedObject finalObject = GeneratorApi.generateInventory(rows, slotsPerRow, inventoryString, hoveredItemString, containerName, drawBorder);
+            GeneratedObject finalObject = GeneratorApi.generateInventory(inventoryString, rows, slotsPerRow, hoveredItemString, containerName, drawBorder);
 
             if (finalObject.isAnimated()) {
                 event.getHook().editOriginalAttachments(FileUpload.fromData(finalObject.getGifData(), "inventory.gif")).queue();

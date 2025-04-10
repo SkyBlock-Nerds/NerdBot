@@ -87,9 +87,9 @@ public class GeneratorApi {
     }
 
     public static GeneratedObject generateInventory(
+        String inventoryString,
         int rows,
         int slotsPerRow,
-        String inventoryString,
         @Nullable String hoveredItemString,
         @Nullable String containerName,
         @Nullable Boolean drawBorder
