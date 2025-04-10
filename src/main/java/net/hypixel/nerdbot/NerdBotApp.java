@@ -49,13 +49,12 @@ public class NerdBotApp {
             });
         }
 
-        NerdBot nerdBot = new NerdBot();
-        bot = nerdBot;
+        bot = new NerdBot();
 
         log.info("Starting bot...");
 
         try {
-            nerdBot.create(args);
+            bot.create(args);
         } catch (LoginException | InvalidTokenException exception) {
             log.error("Failed to log into the bot with the given credentials!");
             System.exit(-1);
