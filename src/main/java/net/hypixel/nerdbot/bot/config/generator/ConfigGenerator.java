@@ -130,7 +130,7 @@ public class ConfigGenerator {
         alphaProjectConfig.setAutoLockThreshold(168);
         botConfig.setAlphaProjectConfig(alphaProjectConfig);
 
-        String json = gson.toJson(botConfig);
+        String json = gson.toJson(botConfig).indent(4);
 
         if (isValidJson(json)) {
             log.info("The provided JSON string is valid!");
