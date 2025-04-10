@@ -7,9 +7,9 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
-import net.hypixel.nerdbot.api.language.TranslationManager;
+import net.hypixel.nerdbot.internalapi.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.internalapi.database.model.user.language.UserLanguage;
+import net.hypixel.nerdbot.internalapi.language.TranslationManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 
 import java.util.List;

@@ -12,11 +12,11 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.badge.Badge;
-import net.hypixel.nerdbot.api.badge.BadgeManager;
-import net.hypixel.nerdbot.api.badge.TieredBadge;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.language.TranslationManager;
+import net.hypixel.nerdbot.internalapi.badge.Badge;
+import net.hypixel.nerdbot.internalapi.badge.BadgeManager;
+import net.hypixel.nerdbot.internalapi.badge.TieredBadge;
+import net.hypixel.nerdbot.internalapi.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.internalapi.language.TranslationManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
 

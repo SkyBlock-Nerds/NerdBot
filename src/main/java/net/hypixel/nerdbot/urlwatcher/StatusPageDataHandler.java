@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.urlwatcher;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
+import net.hypixel.nerdbot.internalapi.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.util.Tuple;
 import net.hypixel.nerdbot.util.Util;
