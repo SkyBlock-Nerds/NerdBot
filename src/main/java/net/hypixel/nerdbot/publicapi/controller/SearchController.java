@@ -15,12 +15,12 @@ import java.util.List;
 @RequestMapping("/search")
 public class SearchController {
 
-    @GetMapping("/ItemId")
+    @GetMapping("/itemid")
     public ResponseEntity itemIds() {
         return ResponseEntity.ok(GeneratorApi.itemNamesAutoCompletes());
     }
 
-    @GetMapping("/itemId/{searchTerm}")
+    @GetMapping("/itemid/{searchTerm}")
     public ResponseEntity itemIds(@PathVariable String searchTerm) {
         return ResponseEntity.ok(contains(GeneratorApi.itemNamesAutoCompletes(), searchTerm));
     }
