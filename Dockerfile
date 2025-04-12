@@ -19,7 +19,7 @@ FROM eclipse-temurin:24-jdk-alpine
 WORKDIR /app
 
 # Copy the built JAR file from the builder stage
-COPY --from=builder /app/target/*.jar /app/
+COPY --from=builder /app/target/*.jar /app/NerdBot.jar
 
 # Run the application
 ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -jar NerdBot.jar"]
