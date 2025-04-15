@@ -116,6 +116,7 @@ public class CSVData {
      *
      * @param row    The row of the cell
      * @param column The column of the cell
+     *
      * @return The value of the cell
      */
     public String getCell(int row, int column) {
@@ -126,6 +127,7 @@ public class CSVData {
      * Get a row from the CSV data
      *
      * @param index The index of the row to get
+     *
      * @return The row
      */
     public List<String> getRow(int index) {
@@ -146,6 +148,7 @@ public class CSVData {
      * Get a column from the CSV data
      *
      * @param index The index of the column to get
+     *
      * @return The column
      */
     public List<String> getColumn(int index) {
@@ -200,6 +203,15 @@ public class CSVData {
     }
 
     /**
+     * Check if the CSV data has content
+     *
+     * @return Whether the CSV data has content
+     */
+    public boolean hasContent() {
+        return !content.isEmpty();
+    }
+
+    /**
      * Convert the CSV data to a string
      *
      * @return The CSV data as a string
@@ -207,10 +219,10 @@ public class CSVData {
     public String toCSV() {
         StringBuilder csv = new StringBuilder();
 
-        csv.append(String.join(delimiter, headers)).append("\n");
+        csv.append(String.join(delimiter, headers)).append("\n" );
 
         for (List<String> row : content) {
-            csv.append(String.join(delimiter, row)).append("\n");
+            csv.append(String.join(delimiter, row)).append("\n" );
         }
 
         return csv.toString();

@@ -40,6 +40,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -167,9 +168,13 @@ public class ExportCommands extends ApplicationCommand {
         List<GreenlitMessage> output = greenlitMessageRepository.getAllDocuments();
 
         if (output.isEmpty()) {
+            log.info("No greenlit suggestions found for " + event.getMember().getEffectiveName() + "'s export (after: " + formatTimestampLog(suggestionsAfter) + ", current time: " + formatTimestampLog(System.currentTimeMillis()) + ")");
             TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
             return;
         }
+
+        // Send a log line with formatted dates for the suggestionsAfter parameter
+        log.info("Exporting " + output.size() + " greenlit suggestions for " + event.getMember().getEffectiveName() + " (after: " + formatTimestampLog(suggestionsAfter) + ", current time: " + formatTimestampLog(System.currentTimeMillis()) + ")");
 
         CSVData csvData = new CSVData(List.of("Creation Date", "Tags", "Title"), ";");
 
@@ -177,17 +182,18 @@ public class ExportCommands extends ApplicationCommand {
             // If we manually limited the timestamps to before "x" time (defaults to 0) it "removes" the greenlit suggestions from appearing in the linked CSV file.
             if (greenlitMessage.getSuggestionTimestamp() >= suggestionsAfter) {
                 csvData.addRow(List.of(
-                    formatTimestamp(greenlitMessage.getSuggestionTimestamp()),
+                    formatTimestampSheets(greenlitMessage.getSuggestionTimestamp()),
                     "\"" + String.join(", ", greenlitMessage.getTags()) + "\"",
                     "=HYPERLINK(\"" + greenlitMessage.getSuggestionUrl() + "\", \"" + greenlitMessage.getSuggestionTitle().replace("\"", "\"\"") + "\")"
                 ));
-                log.info("Added greenlit suggestion '" + greenlitMessage.getSuggestionTitle() + "' to the greenlit suggestion export for " + event.getMember().getEffectiveName() + " (suggestions after: " + suggestionsAfter + ")");
+                log.info("Added greenlit suggestion '" + greenlitMessage.getSuggestionTitle() + "' to the greenlit suggestion export for " + event.getMember().getEffectiveName() + " (after: " + formatTimestampLog(suggestionsAfter) + ", current time: " + formatTimestampLog(System.currentTimeMillis()) + ")");
             } else {
-                log.debug("Skipping greenlit suggestion " + greenlitMessage.getSuggestionTitle() + " because it was created before the specified timestamp (after: " + suggestionsAfter + ", suggestion timestamp: " + greenlitMessage.getSuggestionTimestamp() + ")");
+                log.debug("Skipping greenlit suggestion " + greenlitMessage.getSuggestionTitle() + " because it was created before the specified timestamp (after: " + formatTimestampLog(suggestionsAfter) + ", suggestion timestamp: " + formatTimestampLog(greenlitMessage.getSuggestionTimestamp()) + ")");
             }
         }
 
-        if (csvData.isEmpty()) {
+        if (!csvData.hasContent()) {
+            log.info("No greenlit suggestions found for " + event.getMember().getEffectiveName() + "'s export (after: " + formatTimestampLog(suggestionsAfter) + ")");
             TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
             return;
         }
@@ -367,18 +373,18 @@ public class ExportCommands extends ApplicationCommand {
             csvData.addRow(List.of(
                 member.getUser().getName(),
                 discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
-                formatTimestamp(lastActivity.getLastGlobalActivity()),
-                formatTimestamp(lastActivity.getLastVoiceChannelJoinDate()),
-                formatTimestamp(lastActivity.getLastItemGenUsage()),
-                lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getSuggestionCreationHistory().get(0)),
-                lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getProjectSuggestionCreationHistory().get(0)),
-                lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
-                lastActivity.getSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getSuggestionVoteHistoryMap())),
-                lastActivity.getProjectSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getProjectSuggestionVoteHistoryMap())),
-                lastActivity.getAlphaSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestamp(lastActivity.getNewestEntry(lastActivity.getAlphaSuggestionVoteHistoryMap())),
-                formatTimestamp(lastActivity.getLastProjectActivity()),
-                formatTimestamp(lastActivity.getLastAlphaActivity()),
-                formatTimestamp(lastActivity.getLastModMailUsage()),
+                formatTimestampSheets(lastActivity.getLastGlobalActivity()),
+                formatTimestampSheets(lastActivity.getLastVoiceChannelJoinDate()),
+                formatTimestampSheets(lastActivity.getLastItemGenUsage()),
+                lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getSuggestionCreationHistory().get(0)),
+                lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getProjectSuggestionCreationHistory().get(0)),
+                lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
+                lastActivity.getSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getSuggestionVoteHistoryMap())),
+                lastActivity.getProjectSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getProjectSuggestionVoteHistoryMap())),
+                lastActivity.getAlphaSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getAlphaSuggestionVoteHistoryMap())),
+                formatTimestampSheets(lastActivity.getLastProjectActivity()),
+                formatTimestampSheets(lastActivity.getLastAlphaActivity()),
+                formatTimestampSheets(lastActivity.getLastModMailUsage()),
                 String.valueOf(lastActivity.getTotalMessageCount(inactivityDays)),
                 "\"" + channelActivity + "\"",
                 "FALSE"
@@ -396,11 +402,19 @@ public class ExportCommands extends ApplicationCommand {
         }
     }
 
-    private String formatTimestamp(long timestamp) {
+    private String formatTimestampSheets(long timestamp) {
         if (timestamp < 0) {
             return "N/A";
         }
 
         return "=EPOCHTODATE(" + timestamp / 1_000 + ")";
+    }
+
+    private String formatTimestampLog(long timestamp) {
+        if (timestamp < 0) {
+            return "N/A";
+        }
+
+        return new Date(timestamp) + "/" + timestamp;
     }
 }

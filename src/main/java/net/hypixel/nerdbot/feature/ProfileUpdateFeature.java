@@ -28,7 +28,7 @@ public class ProfileUpdateFeature extends BotFeature {
             try {
                 member.modifyNickname(mojangProfile.getUsername()).queue();
             } catch (HierarchyException exception) {
-                log.error("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "]", exception);
+                log.error("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getId() + ") to " + mojangProfile.getUsername() + " due to a hierarchy exception!");
             }
         }
     }

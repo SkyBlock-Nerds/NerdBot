@@ -9,6 +9,7 @@ import java.util.function.BiFunction;
 @Getter
 public enum Flavor {
     REQUIRE("❣ Requires", MCColor.RED, FlavorParser::postFlavorColorParser),
+    SLAYER_REQUIRE("☠ Requires", MCColor.RED, FlavorParser::postFlavorColorParser),
     RECIPE("Right-click to view recipes!", MCColor.YELLOW),
     COOP_SOULBOUND("Co-op Soulbound", MCColor.DARK_GRAY, FlavorParser::soulboundColorParsing),
     SOULBOUND("Soulbound", MCColor.DARK_GRAY, FlavorParser::soulboundColorParsing),
@@ -18,7 +19,11 @@ public enum Flavor {
     COOLDOWN("Cooldown:", MCColor.DARK_GRAY, MCColor.GREEN, FlavorParser::postDualColorParser),
     HEALTH_COST("Health Cost:", MCColor.DARK_GRAY, MCColor.RED, FlavorParser::postDualColorParser),
     UNDEAD("This armor piece is undead ༕!", MCColor.DARK_GREEN),
-    RIFT_TRANSFERABLE("Rift-Transferable", MCColor.DARK_PURPLE);
+    ARACHNAL("This item is Arachnal Ж!", MCColor.DARK_RED),
+    RIFT_TRANSFERABLE("Rift-Transferable", MCColor.DARK_PURPLE),
+    HOOK("ථ Hook", MCColor.BLUE),
+    LINE("ꨃ Line", MCColor.BLUE),
+    SINKER("࿉ Sinker", MCColor.BLUE);
 
     public static Flavor[] VALUES = values();
 

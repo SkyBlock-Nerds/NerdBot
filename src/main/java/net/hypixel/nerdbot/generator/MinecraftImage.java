@@ -4,6 +4,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.entities.channel.Channel;
+import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.generator.util.ColoredString;
 import net.hypixel.nerdbot.util.FontUtil;
 import net.hypixel.nerdbot.util.Util;
@@ -17,6 +20,7 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static net.hypixel.nerdbot.util.Util.initFont;
@@ -186,7 +190,7 @@ public class MinecraftImage {
     /**
      * Draws the strings to the generated image.
      */
-    public void drawLines() {
+    public void drawLines(Channel channel) {
         for (List<ColoredString> line : this.getLines()) {
             for (ColoredString segment : line) {
                 currentColor = segment.getCurrentColor();
@@ -202,17 +206,10 @@ public class MinecraftImage {
                         && !Character.isSpaceChar(character)
                         && !Character.isISOControl(character);
 
-                    if (!FontUtil.canRenderCharacter(MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], character)) {
-                        this.currentFont = FALLBACK_FONT;
-                    } else {
-                        this.currentFont = MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
-                    }
-                    this.getGraphics().setFont(this.currentFont);
-
                     if (isSymbol) {
-                        this.drawString(subWord.toString(), segment);
+                        this.drawString(subWord.toString(), segment, channel);
                         subWord.setLength(0);
-                        this.drawSymbol(character, segment);
+                        this.drawSymbol(character, segment, channel);
                         continue;
                     }
 
@@ -220,7 +217,7 @@ public class MinecraftImage {
                     subWord.append(character);
                 }
 
-                this.drawString(subWord.toString(), segment);
+                this.drawString(subWord.toString(), segment, channel);
             }
 
             // increase size of first line if there are more than one lines present
@@ -268,23 +265,13 @@ public class MinecraftImage {
      *
      * @param symbol The symbol to draw.
      */
-    private void drawSymbol(char symbol, @NotNull ColoredString segment) {
-        this.drawString(Character.toString(symbol), segment);
+    private void drawSymbol(char symbol, @NotNull ColoredString segment, Channel channel) {
+        this.drawString(Character.toString(symbol), segment, channel);
     }
 
-    /**
-     * Draws a string at the current location, and updates the pointer location.
-     *
-     * @param value The value to draw.
-     */
-    private void drawString(@NotNull String value, @NotNull ColoredString segment) {
-        this.drawString(value, segment, this.currentFont);
-    }
-
-    private void drawString(@NotNull String value, @NotNull ColoredString segment, @NotNull Font font) {
+    private void drawString(@NotNull String value, @NotNull ColoredString segment, Channel channel) {
         // Get the Graphics object
         Graphics2D graphics = this.getGraphics();
-        graphics.setFont(font);
 
         // Initialize position variables
         int x = this.locationX;
@@ -294,22 +281,25 @@ public class MinecraftImage {
         graphics.setColor(this.currentColor.getBackgroundColor());
         Color textColor = this.currentColor.getColor();
 
+        ChannelConfig channelConfig = NerdBotApp.getBot().getConfig().getChannelConfig();
+
         // Loop through each character and draw it individually
         for (char c : value.toCharArray()) {
-            boolean canRender = FontUtil.canRenderCharacter(MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c);
-
-            if (Util.isAprilFirst()) {
+            if (Util.isAprilFirst() && Arrays.stream(channelConfig.getFilteredAprilFoolsGenChannelIds()).anyMatch(s -> channel.getId().equalsIgnoreCase(s))) {
                 if (FontUtil.canRenderCharacter(COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c)) {
                     this.currentFont = COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
                 } else {
                     this.currentFont = FALLBACK_FONT;
                 }
-            } else if (!canRender) {
-                this.currentFont = FALLBACK_FONT;
             } else {
-                this.currentFont = MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
+                if (!FontUtil.canRenderCharacter(MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c)) {
+                    this.currentFont = FALLBACK_FONT;
+                } else {
+                    this.currentFont = MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
+                }
             }
 
+            this.getGraphics().setFont(this.currentFont);
             graphics.setFont(this.currentFont);
 
             String character = String.valueOf(c);
@@ -336,10 +326,6 @@ public class MinecraftImage {
 
             // Update x position for the next character
             x += charWidth;
-
-            // Reset font to Minecraft font
-            this.currentFont = MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
-            graphics.setFont(this.currentFont);
         }
 
         // Draw Strikethrough
@@ -377,8 +363,8 @@ public class MinecraftImage {
     /**
      * Draws the Lines, Resizes the Image and Draws the Borders.
      */
-    public MinecraftImage render() {
-        this.drawLines();
+    public MinecraftImage render(Channel channel) {
+        this.drawLines(channel);
         this.cropImage();
         this.centerLines();
         this.drawBorders();
