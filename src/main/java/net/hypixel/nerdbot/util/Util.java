@@ -45,6 +45,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -107,20 +109,26 @@ public class Util {
     }
 
     /**
-     * Get the branch name from the git-branch.txt file
+     * Get the branch name from the BRANCH_NAME environment variable
      *
-     * @return The branch name, or "unknown" if the file could not be read
+     * @return The branch name, or "unknown" if the variable is not set
      */
     public static String getBranchName() {
-        try (InputStream in = Util.class.getResourceAsStream("/git-branch.txt")) {
-            if (in != null) {
-                return new String(in.readAllBytes()).trim();
-            }
-        } catch (IOException exception) {
-            log.error("Failed to read git-branch.txt", exception);
-        }
+        String branchName = System.getenv("BRANCH_NAME");
+        return isNullOrEmpty(branchName) ? "unknown" : branchName;
+    }
 
-        return "unknown";
+    public static boolean isNullOrEmpty(String str) {
+        return str == null || str.isEmpty();
+    }
+
+    public static String getDockerContainerId() {
+        try {
+            return Files.readString(Path.of("/etc/hostname")).trim();
+        } catch (IOException e) {
+            log.error("Failed to read Docker container ID from /etc/hostname", e);
+            return "unknown";
+        }
     }
 
     public static Stream<String> safeArrayStream(String[]... arrays) {
