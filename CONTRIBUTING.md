@@ -10,11 +10,9 @@
 ## With Docker
 A Dockerfile is provided to build the bot into a Docker image. To build the image, run the following command:
 
-`docker build -t nerd-bot.`
+`docker build --build-arg BRANCH_NAME="BranchName" -t nerd-bot .`
 
-Replace `<your-github-username>` with your GitHub username and `<your-github-token>` with your GitHub token. If you do
-not specify a GitHub username or GitHub token then it will default to cloning the repository with no credentials. You
-can also replace `<...other arguments>` with any of the other arguments listed above.
+Replace `BranchName` with the branch you are building from. Do note that this is only used for display purposes in the bot (It doesn't affect the building process and can be omitted).
 
 ---
 
