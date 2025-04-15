@@ -33,7 +33,9 @@ import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
+import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.api.database.model.user.stats.NominationInfo;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
@@ -714,5 +716,24 @@ public class AdminCommands extends ApplicationCommand {
     public void forceNominations(GuildSlashEvent event) {
         UserNominationFeature.nominateUsers();
         TranslationManager.reply(event, "commands.force_nominations.success");
+    }
+
+    @JDASlashCommand(name = "force", subcommand = "inactivity-check", description = "Forcefully run the inactivity check", defaultLocked = true)
+    public void forceInactiveCheck(GuildSlashEvent event) {
+        UserNominationFeature.findInactiveUsers();
+        TranslationManager.reply(event, "commands.force_inactivity_check.success");
+    }
+
+    @JDASlashCommand(name = "reset-inactivity-check-data", description = "Reset the inactivity check data", defaultLocked = true)
+    public void resetInactiveCheckData(GuildSlashEvent event) {
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+
+        discordUserRepository.forEach(discordUser -> {
+            LastActivity lastActivity = discordUser.getLastActivity();
+            NominationInfo nominationInfo = lastActivity.getNominationInfo();
+
+            nominationInfo.setTotalInactivityWarnings(0);
+            nominationInfo.setLastInactivityWarningDate(null);
+        });
     }
 }

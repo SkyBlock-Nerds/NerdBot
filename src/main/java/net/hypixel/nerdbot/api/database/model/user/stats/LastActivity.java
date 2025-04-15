@@ -145,8 +145,8 @@ public class LastActivity {
         return entries;
     }
 
-    public int getTotalVotes() {
-        Instant instant = Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()));
+    public int getTotalVotes(int days) {
+        Instant instant = Instant.now().minus(Duration.ofDays(days));
         Duration duration = Duration.between(instant, Instant.now());
         int totalSuggestionVotes = (int) toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, duration);
         int totalAlphaSuggestionVotes = (int) toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, duration);
@@ -155,8 +155,8 @@ public class LastActivity {
         return totalSuggestionVotes + totalAlphaSuggestionVotes + totalProjectSuggestionVotes;
     }
 
-    public int getTotalComments() {
-        Instant instant = Instant.now().minus(Duration.ofDays(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()));
+    public int getTotalComments(int days) {
+        Instant instant = Instant.now().minus(Duration.ofDays(days));
         Duration duration = Duration.between(instant, Instant.now());
         int totalSuggestionComments = toTotalPeriodNumber(LastActivity::getSuggestionCommentHistory, duration).intValue();
         int totalAlphaSuggestionComments = toTotalPeriodNumber(LastActivity::getAlphaSuggestionCommentHistory, duration).intValue();

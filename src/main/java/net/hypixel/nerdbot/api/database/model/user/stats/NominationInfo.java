@@ -15,6 +15,8 @@ public class NominationInfo {
 
     private int totalNominations = 0;
     private Date lastNominationDate = null;
+    private int totalInactivityWarnings = 0;
+    private Date lastInactivityWarningDate = null;
 
     public void increaseNominations() {
         this.totalNominations++;
@@ -31,5 +33,22 @@ public class NominationInfo {
 
     public Optional<Date> getLastNominationDate() {
         return Optional.ofNullable(lastNominationDate);
+    }
+
+    public void increaseInactivityWarnings() {
+        this.totalInactivityWarnings++;
+        this.lastInactivityWarningDate = new Date();
+    }
+
+    public String getLastInactivityWarningDateString() {
+        if (lastInactivityWarningDate == null) {
+            return "Never";
+        }
+
+        return DiscordTimestamp.toShortDate(lastInactivityWarningDate.getTime());
+    }
+
+    public Optional<Date> getLastInactivityWarningDate() {
+        return Optional.ofNullable(lastInactivityWarningDate);
     }
 }

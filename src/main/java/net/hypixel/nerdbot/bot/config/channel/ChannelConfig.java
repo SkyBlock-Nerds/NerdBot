@@ -72,6 +72,11 @@ public class ChannelConfig {
     private String[] genChannelIds = {};
 
     /**
+     * A list of {@link TextChannel} IDs where the bot will allow April Fools generator changes
+     */
+    private String[] filteredAprilFoolsGenChannelIds = {};
+
+    /**
      * Configuration for channels that will have reactions automatically added to all new messages
      */
     private List<ReactionChannel> reactionChannels = List.of();

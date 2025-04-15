@@ -180,6 +180,9 @@
     },
     "force_nominations": {
       "success": "Forced nominations!"
+    },
+    "force_inactivity_check": {
+      "success": "Forced inactivity check!"
     }
   }
 }

@@ -203,6 +203,15 @@ public class CSVData {
     }
 
     /**
+     * Check if the CSV data has content
+     *
+     * @return Whether the CSV data has content
+     */
+    public boolean hasContent() {
+        return !content.isEmpty();
+    }
+
+    /**
      * Convert the CSV data to a string
      *
      * @return The CSV data as a string
@@ -210,10 +219,10 @@ public class CSVData {
     public String toCSV() {
         StringBuilder csv = new StringBuilder();
 
-        csv.append(String.join(delimiter, headers)).append("\n");
+        csv.append(String.join(delimiter, headers)).append("\n" );
 
         for (List<String> row : content) {
-            csv.append(String.join(delimiter, row)).append("\n");
+            csv.append(String.join(delimiter, row)).append("\n" );
         }
 
         return csv.toString();

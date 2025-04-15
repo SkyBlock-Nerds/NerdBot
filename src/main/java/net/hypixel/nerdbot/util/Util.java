@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
@@ -80,6 +79,7 @@ public class Util {
         "nerd-project",
         "nerds-project"
     };
+    public static final String[] SPECIAL_ROLES = {"Apex Nerd", "Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
     public static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
     private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
     private static final String ALL_PATTERN = "[0-9A-FK-OR]";
@@ -131,12 +131,8 @@ public class Util {
         return Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
     }
 
-    public static boolean isFirstDayOfMonth() {
-        if (Environment.isDev()) {
-            return true;
-        }
-
-        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
+    public static boolean isDayOfMonth(int dayOfMonth) {
+        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == dayOfMonth;
     }
 
     public static List<String> splitString(String text, int size) {
@@ -147,6 +143,23 @@ public class Util {
         }
 
         return parts;
+    }
+
+    /**
+     * Get the branch name from the git-branch.txt file
+     *
+     * @return The branch name, or "unknown" if the file could not be read
+     */
+    public static String getBranchName() {
+        try (InputStream in = Util.class.getResourceAsStream("/git-branch.txt")) {
+            if (in != null) {
+                return new String(in.readAllBytes()).trim();
+            }
+        } catch (IOException exception) {
+            log.error("Failed to read git-branch.txt", exception);
+        }
+
+        return "unknown";
     }
 
     public static Stream<String> safeArrayStream(String[]... arrays) {
