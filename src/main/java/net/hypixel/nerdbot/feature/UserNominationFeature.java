@@ -174,7 +174,7 @@ public class UserNominationFeature extends BotFeature {
     private static void sendInactiveUserMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
 
-            textChannel.sendMessage("Warn/remove " + member.getEffectiveName() + " for inactivity?\n("
+            textChannel.sendMessage("Warn or remove " + member.getEffectiveName() + " for inactivity?\n("
                 + "Tracked Messages: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
                 + " / Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
                 + " / Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
