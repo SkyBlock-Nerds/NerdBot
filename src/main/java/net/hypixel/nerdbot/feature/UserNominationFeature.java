@@ -28,12 +28,12 @@ public class UserNominationFeature extends BotFeature {
         this.timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                if (Util.isDayOfMonth(1)) {
+                if (Util.isDayOfMonth(1) && NerdBotApp.getBot().getConfig().isNominationsEnabled()) {
                     log.info("Running nomination check");
                     nominateUsers();
                 }
 
-                if (Util.isDayOfMonth(15)) {
+                if (Util.isDayOfMonth(15) && NerdBotApp.getBot().getConfig().isInactivityCheckEnabled()) {
                     log.info("Running inactivity check");
                     findInactiveUsers();
                 }

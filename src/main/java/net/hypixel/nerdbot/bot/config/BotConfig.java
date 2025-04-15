@@ -115,6 +115,18 @@ public class BotConfig {
     private String activity = "with a default message!";
 
     /**
+     * Whether nominations to the next role are enabled
+     * Default value is true
+     */
+    private boolean nominationsEnabled = true;
+
+    /**
+     * Whether the bot should run the inactivity checker
+     * Default value is true
+     */
+    private boolean inactivityCheckEnabled = true;
+
+    /**
      * The amount of days that a user must be inactive for to show up in the inactive user list
      * Default value is 7
      */
