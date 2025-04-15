@@ -18,8 +18,12 @@ FROM eclipse-temurin:24-jdk-alpine
 # Set the working directory
 WORKDIR /app
 
+# Pass the branch name from the build stage to the runtime stage
+ARG BRANCH_NAME=unknown
+ENV BRANCH_NAME=${BRANCH_NAME}
+
 # Copy the built JAR file from the builder stage
 COPY --from=builder /app/target/*.jar /app/NerdBot.jar
 
 # Run the application
-ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -jar NerdBot.jar"]
+ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -DBRANCH_NAME=${BRANCH_NAME} -jar NerdBot.jar"]

@@ -107,20 +107,18 @@ public class Util {
     }
 
     /**
-     * Get the branch name from the git-branch.txt file
+     * Get the branch name from the BRANCH_NAME environment variable
      *
-     * @return The branch name, or "unknown" if the file could not be read
+     * @return The branch name, or "unknown" if the variable is not set
      */
     public static String getBranchName() {
-        try (InputStream in = Util.class.getResourceAsStream("/git-branch.txt")) {
-            if (in != null) {
-                return new String(in.readAllBytes()).trim();
-            }
-        } catch (IOException exception) {
-            log.error("Failed to read git-branch.txt", exception);
-        }
+        String branchName = System.getenv("BRANCH_NAME");
+        return isNullOrEmpty(branchName) ? "unknown" : branchName;
+    }
 
-        return "unknown";
+    public static boolean isNullOrEmpty(String str) {
+        return str == null || str.isEmpty();
+    }
     }
 
     public static Stream<String> safeArrayStream(String[]... arrays) {
