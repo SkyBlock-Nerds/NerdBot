@@ -21,6 +21,9 @@ RUN apt-get update && apt-get install -y maven git zip unzip \
 # Set the working directory to the Git directory
 WORKDIR /app/${SOURCE_CODE_DIR}
 
+# Write the branch name into a file for use at runtime
+RUN echo "${REPO_BRANCH}" > src/main/resources/git-branch.txt
+
 # Build the application using Maven
 RUN mvn clean install -U -f pom.xml
 

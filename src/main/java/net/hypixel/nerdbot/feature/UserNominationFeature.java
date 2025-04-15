@@ -29,10 +29,12 @@ public class UserNominationFeature extends BotFeature {
             @Override
             public void run() {
                 if (Util.isDayOfMonth(1)) {
+                    log.info("Running nomination check");
                     nominateUsers();
                 }
 
                 if (Util.isDayOfMonth(15)) {
+                    log.info("Running inactivity check");
                     findInactiveUsers();
                 }
             }
