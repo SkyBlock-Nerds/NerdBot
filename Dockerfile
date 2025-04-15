@@ -9,7 +9,7 @@ COPY pom.xml .
 COPY src ./src
 
 # Clean Maven cache and build the project with Maven
-RUN mvn clean install -U -f pom.xml \
+RUN mvn clean install -f pom.xml \
     && rm -f /app/target/original-*.jar
 
 # Use a minimal eclipse-temurin image for running the bot
