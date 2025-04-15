@@ -75,12 +75,7 @@ jobs:
         if: ${{ env.USE_OLD_IMAGE == 'false' }}
         run: |
           docker build . --tag ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]') \
-            --build-arg GITHUB_USERNAME=${{ secrets.GITHUB_USERNAME }} \
-            --build-arg GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            --build-arg REPO_USERNAME=${{ env.REPO_USERNAME }} \
-            --build-arg REPO_NAME=${{ env.REPO_NAME }} \
-            --build-arg REPO_BRANCH=${{ env.REPO_BRANCH }}
-
+            --build-arg BRANCH_NAME=${{ github.ref_name }} 
           docker push ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
 
   deploy:
