@@ -104,8 +104,9 @@ public class UserNominationFeature extends BotFeature {
     public static void findInactiveUsers() {
         Guild guild = Util.getMainGuild();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        int requiredVotes = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
-        int requiredComments = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion();
+        int requiredVotes = NerdBotApp.getBot().getConfig().getRoleConfig().getVotesRequiredForInactivityCheck();
+        int requiredComments = NerdBotApp.getBot().getConfig().getRoleConfig().getCommentsRequiredForInactivityCheck();
+        int requiredMessages = NerdBotApp.getBot().getConfig().getRoleConfig().getMessagesRequiredForInactivityCheck();
 
         log.info("Checking for inactive users (required votes: " + requiredVotes + ", required comments: " + requiredComments + ")");
 
@@ -136,20 +137,21 @@ public class UserNominationFeature extends BotFeature {
 
             boolean hasRequiredVotes = totalVotes >= requiredVotes;
             boolean hasRequiredComments = totalComments >= requiredComments;
+            boolean hasRequiredMessages = totalMessages >= requiredMessages;
 
-            log.info("Checking if " + member.getEffectiveName() + " should be flagged for inactivity (total messages: " + totalMessages + ", total comments: " + totalComments + ", total votes: " + totalVotes + ") (has min. comments: " + hasRequiredComments + ", has min. votes: " + hasRequiredVotes + ")");
+            log.info("Checking if " + member.getEffectiveName() + " should be flagged for inactivity (total messages: " + totalMessages + ", total comments: " + totalComments + ", total votes: " + totalVotes + ") (has min. comments: " + hasRequiredComments + ", has min. votes: " + hasRequiredVotes + ", has min. messages: " + hasRequiredMessages + ")");
 
             lastActivity.getNominationInfo().getLastInactivityWarningDate().ifPresentOrElse(date -> {
-                Month lastInactivityWarningDate = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
-                Month now = Calendar.getInstance().toInstant().atZone(ZoneId.systemDefault()).getMonth();
+                Month lastInactivityWarningMonth = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
+                Month monthNow = Calendar.getInstance().toInstant().atZone(ZoneId.systemDefault()).getMonth();
 
-                if (lastInactivityWarningDate != now && (!hasRequiredComments && !hasRequiredVotes && totalMessages < 100)) {
-                    log.debug("Last inactivity check was not this month (last: " + lastInactivityWarningDate + ", now: " + now + "), sending inactivity message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
+                if (lastInactivityWarningMonth != monthNow && (!hasRequiredComments && !hasRequiredVotes && !hasRequiredMessages)) {
+                    log.debug("Last inactivity check was not this month (last: " + lastInactivityWarningMonth + ", now: " + monthNow + "), sending inactivity message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
                     sendInactiveUserMessage(member, discordUser);
                 }
             }, () -> {
                 log.debug("No last inactivity warning date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
-                if (totalMessages < NerdBotApp.getBot().getConfig().getRoleConfig().getMessagesRequiredForInactivityCheck() && !hasRequiredComments && !hasRequiredVotes) {
+                if (!hasRequiredMessages && !hasRequiredComments && !hasRequiredVotes) {
                     sendInactiveUserMessage(member, discordUser);
                 }
             });
