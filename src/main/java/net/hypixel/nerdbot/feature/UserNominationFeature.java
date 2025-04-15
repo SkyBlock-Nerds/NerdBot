@@ -137,19 +137,18 @@ public class UserNominationFeature extends BotFeature {
             boolean hasRequiredVotes = totalVotes >= requiredVotes;
             boolean hasRequiredComments = totalComments >= requiredComments;
 
-            log.info("Checking if " + member.getEffectiveName() + " should be flagged for inactivity (total messages: " + totalMessages + ", total comments: " + totalComments + ", total votes: " + totalVotes + ") (comments: " + hasRequiredComments + ", votes: " + hasRequiredVotes + ")");
+            log.info("Checking if " + member.getEffectiveName() + " should be flagged for inactivity (total messages: " + totalMessages + ", total comments: " + totalComments + ", total votes: " + totalVotes + ") (has min. comments: " + hasRequiredComments + ", has min. votes: " + hasRequiredVotes + ")");
 
             lastActivity.getNominationInfo().getLastInactivityWarningDate().ifPresentOrElse(date -> {
                 Month lastInactivityWarningDate = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
                 Month now = Calendar.getInstance().toInstant().atZone(ZoneId.systemDefault()).getMonth();
 
                 if (lastInactivityWarningDate != now && (!hasRequiredComments && !hasRequiredVotes && totalMessages < 100)) {
-                    log.info("Last inactivity check was not this month (last: " + lastInactivityWarningDate + ", now: " + now + "), sending inactivity message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
+                    log.debug("Last inactivity check was not this month (last: " + lastInactivityWarningDate + ", now: " + now + "), sending inactivity message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
                     sendInactiveUserMessage(member, discordUser);
                 }
             }, () -> {
-                log.info("No last inactivity warning date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
-
+                log.debug("No last inactivity warning date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
                 if (totalMessages < NerdBotApp.getBot().getConfig().getRoleConfig().getMessagesRequiredForInactivityCheck() && !hasRequiredComments && !hasRequiredVotes) {
                     sendInactiveUserMessage(member, discordUser);
                 }
@@ -175,7 +174,6 @@ public class UserNominationFeature extends BotFeature {
 
     private static void sendInactiveUserMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-
             textChannel.sendMessage("Warn or remove " + member.getEffectiveName() + " for inactivity?\n("
                 + "Tracked Messages: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
                 + " / Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
