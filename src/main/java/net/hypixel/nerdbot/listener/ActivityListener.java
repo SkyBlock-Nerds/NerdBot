@@ -40,6 +40,10 @@ public class ActivityListener {
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
+        if (event.getUser().isBot()) {
+            return;
+        }
+
         log.info("User {} joined {}", event.getUser().getName(), event.getGuild().getName());
 
         if (discordUserRepository.findById(event.getUser().getId()) == null) {
