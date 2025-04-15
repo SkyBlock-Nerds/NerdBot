@@ -31,15 +31,15 @@ public class MinecraftInventory {
 
     static {
         // Register Minecraft Font
-        MINECRAFT_FONT = initFont("/minecraft_assets/fonts/minecraft.otf", PIXELS_PER_PIXEL * PIXELS_PER_PIXEL);
+        MINECRAFT_FONT = initFont("/minecraft/assets/fonts/minecraft.otf", PIXELS_PER_PIXEL * PIXELS_PER_PIXEL);
         if (MINECRAFT_FONT != null) {
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(MINECRAFT_FONT);
         }
 
         // loading the inventory background into memory
-        try (InputStream backgroundStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/textures/inventory_background.png")) {
+        try (InputStream backgroundStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/textures/inventory_background.png")) {
             if (backgroundStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/inventory_background.png\"");
+                throw new FileNotFoundException("Could not find the file called \"/Minecraft/inventory_background.png\"");
             }
             INVENTORY_IMAGE = ImageIO.read(backgroundStream);
         } catch (IOException exception) {

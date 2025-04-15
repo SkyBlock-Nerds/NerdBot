@@ -19,7 +19,7 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.bot.config.ModMailConfig;
+import net.hypixel.nerdbot.bot.config.channel.ModMailConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
@@ -193,20 +193,20 @@ public class ModMailListener {
                     )
                     .queue();
             }
+        }
 
+        author.openPrivateChannel()
+            .flatMap(channel -> channel.sendMessage(
+                new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.").build()
+            ))
+            .queue();
+
+        if (unlinked) {
             author.openPrivateChannel()
                 .flatMap(channel -> channel.sendMessage(
-                    new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.").build()
+                    new MessageCreateBuilder().setContent("You are not linked to Hypixel in SkyBlock Nerds. Please do so using </link:1142633400537186409>.").build()
                 ))
                 .queue();
-
-            if (unlinked) {
-                author.openPrivateChannel()
-                    .flatMap(channel -> channel.sendMessage(
-                        new MessageCreateBuilder().setContent("You are not linked to Hypixel in SkyBlock Nerds. Please do so using </link:1142633400537186409>.").build()
-                    ))
-                    .queue();
-            }
         }
 
         Optional<Webhook> webhook = getWebhook();

@@ -1,5 +1,5 @@
 # Use OpenJDK 17 as the base image
-FROM openjdk:17-jdk-slim AS builder
+FROM openjdk:18-jdk-slim AS builder
 
 # Set the working directory
 WORKDIR /app
@@ -7,11 +7,12 @@ WORKDIR /app
 # Arguments for Git repository information
 ARG GITHUB_USERNAME
 ARG GITHUB_TOKEN
-ENV REPO_USERNAME=TheMGRF
-ENV REPO_NAME=NerdBot
-ENV REPO_BRANCH=master
-ENV SOURCE_CODE_DIR=repository
-ENV JAR_FILE_NAME=NerdBot.jar
+ARG REPO_USERNAME=SkyBlock-Nerds
+ARG REPO_NAME=NerdBot
+ARG REPO_BRANCH=master
+ARG SOURCE_CODE_DIR=repository
+ARG JAR_FILE_NAME=NerdBot.jar
+ENV JAR_FILE_NAME_ENV=$JAR_FILE_NAME
 
 # Clone the Git repository
 RUN apt-get update && apt-get install -y maven git zip unzip \
@@ -19,6 +20,9 @@ RUN apt-get update && apt-get install -y maven git zip unzip \
 
 # Set the working directory to the Git directory
 WORKDIR /app/${SOURCE_CODE_DIR}
+
+# Write the branch name into a file for use at runtime
+RUN echo "${REPO_BRANCH}" > src/main/resources/git-branch.txt
 
 # Build the application using Maven
 RUN mvn clean install -U -f pom.xml
@@ -36,4 +40,4 @@ COPY --from=builder /app/${SOURCE_CODE_DIR}/target/${JAR_FILE_NAME} .
 RUN rm -rf ${SOURCE_CODE_DIR}
 
 # Run the application
-ENTRYPOINT exec java ${JAVA_OPTS} -jar ${JAR_FILE_NAME}
+ENTRYPOINT exec java ${JAVA_OPTS} -jar ${JAR_FILE_NAME_ENV}

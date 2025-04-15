@@ -1,6 +1,5 @@
 package net.hypixel.nerdbot.command;
 
-import com.freya02.botcommands.api.annotations.Optional;
 import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
@@ -80,15 +79,34 @@ public class ReminderCommands extends ApplicationCommand {
         return Date.from(date);
     }
 
+    private Date parseLong(String time) throws NumberFormatException {
+        return new Date(Long.parseLong(time));
+    }
+
+    private Date parseWithNatty(String time) {
+        try {
+            Parser parser = new Parser();
+            List<DateGroup> groups = parser.parse(time);
+            DateGroup group = groups.get(0);
+            List<Date> dates = group.getDates();
+            return dates.get(0);
+        } catch (IndexOutOfBoundsException e) {
+            // If Natty parsing fails, try custom format
+            return parseCustomFormat(time);
+        } catch (NumberFormatException exception) {
+            throw new DateTimeParseException("Could not parse date: " + time, time, 0);
+        }
+    }
+
     @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
-    public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description, @AppOption(description = "Send the reminder publicly in this channel") @Optional Boolean sendPublicly) {
+    public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description) {
         event.deferReply(true).complete();
 
         DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser user = userRepository.findById(event.getUser().getId());
 
         if (user == null) {
-            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
             return;
         }
 
@@ -113,27 +131,13 @@ public class ReminderCommands extends ApplicationCommand {
             return;
         }
 
-        Date date = null;
-        boolean parsed = false;
-
-        // Try parse the time using the Natty dependency
+        Date date;
         try {
-            Parser parser = new Parser();
-            List<DateGroup> groups = parser.parse(time);
-            DateGroup group = groups.get(0);
-
-            List<Date> dates = group.getDates();
-            date = dates.get(0);
-            parsed = true;
-        } catch (IndexOutOfBoundsException ignored) {
-            // Ignore this exception, it means that the provided time was not parsed
-        }
-
-        // Try parse the time using the regex if the above failed
-        if (!parsed) {
+            date = parseLong(time);
+        } catch (NumberFormatException numberFormatException) {
             try {
-                date = parseCustomFormat(time);
-            } catch (DateTimeParseException exception) {
+                date = parseWithNatty(time);
+            } catch (DateTimeParseException | NumberFormatException exception) {
                 TranslationManager.edit(event.getHook(), user, "commands.reminders.invalid_time_format");
                 return;
             }
@@ -145,13 +149,9 @@ public class ReminderCommands extends ApplicationCommand {
             return;
         }
 
-        if (sendPublicly == null) {
-            sendPublicly = false;
-        }
-
         // Create a new reminder and save it to the database
         ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-        Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId(), sendPublicly);
+        Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId());
 
         reminderRepository.cacheObject(reminder);
         UpdateResult result = reminderRepository.saveToDatabase(reminder);
@@ -169,12 +169,8 @@ public class ReminderCommands extends ApplicationCommand {
                 .setTimestamp(Instant.now())
                 .setFooter(reminder.getUuid().toString())
                 .setColor(Color.GREEN);
-            StringBuilder messageContents = new StringBuilder();
-            messageContents.append("Reminder set for: ").append(DiscordTimestamp.toLongDateTime(date.getTime()));
-            if (sendPublicly) {
-                messageContents.append("\n\nIn channel: ").append(event.getChannel().getAsMention());
-            }
-            channel.sendMessage(messageContents.toString())
+
+            channel.sendMessage("Reminder set for: " + DiscordTimestamp.toLongDateTime(date.getTime()))
                 .addEmbeds(embedBuilder.build())
                 .setSuppressedNotifications(true)
                 .queue();
@@ -194,7 +190,7 @@ public class ReminderCommands extends ApplicationCommand {
         DiscordUser user = userRepository.findById(event.getUser().getId());
 
         if (user == null) {
-            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
             return;
         }
 
@@ -224,9 +220,7 @@ public class ReminderCommands extends ApplicationCommand {
         for (Reminder reminder : reminders) {
             builder.append("(")
                 .append(reminder.getUuid())
-                .append(") Public: `")
-                .append(reminder.isSendPublicly())
-                .append("` ")
+                .append(") ")
                 .append(DiscordTimestamp.toLongDateTime(reminder.getTime().getTime()))
                 .append(" - `")
                 .append(reminder.getDescription())
@@ -248,7 +242,7 @@ public class ReminderCommands extends ApplicationCommand {
         DiscordUser user = userRepository.findById(event.getUser().getId());
 
         if (user == null) {
-            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
             return;
         }
 

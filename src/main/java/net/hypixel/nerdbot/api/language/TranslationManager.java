@@ -9,7 +9,7 @@ import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
+import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.exception.TranslationException;
 import org.jetbrains.annotations.Nullable;
@@ -95,6 +95,10 @@ public class TranslationManager {
             }
 
             if (element == null) {
+                if (language != DEFAULT_LANGUAGE) {
+                    return translate(key, args);
+                }
+
                 return ERROR_MESSAGE.formatted(key);
             }
         }

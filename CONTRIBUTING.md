@@ -4,7 +4,7 @@
 
 - A [MongoDB database](https://www.mongodb.com/free-cloud-database) instance
 - A valid [Discord bot](https://discord.com/developers/applications/me) token
-- A valid [config file](https://github.com/TheMGRF/NerdBot/blob/master/CONTRIBUTING.md#config)
+- A valid [config file](https://github.com/SkyBlock-Nerds/NerdBot/blob/master/CONTRIBUTING.md#config)
 - Optional: [Docker](https://www.docker.com/)
 
 ## With Docker
@@ -13,7 +13,7 @@
 
 - `GITHUB_USERNAME` - Your GitHub username
 - `GITHUB_TOKEN` - Your GitHub token
-- `REPO_USERNAME` - The username of the repository owner (default: TheMGRF)
+- `REPO_USERNAME` - The username of the repository owner (default: SkyBlock-Nerds)
 - `REPO_NAME` - The name of the repository (default: NerdBot)
 - `REPO_BRANCH` - The branch of the repository to clone (default: master)
 - `SOURCE_CODE_DIR` - The directory to clone the repository into (default: repository)
@@ -53,7 +53,7 @@ $ java -Dbot.token="DISCORD_BOT_TOKEN" -Ddb.mongodb.uri="MONGODB_URI" -Dbot.envi
 ## Configuration File Template
 
 An example config file can be
-found [here](https://github.com/TheMGRF/NerdBot/blob/master/src/main/resources/example-config.json).
+found [here](https://github.com/SkyBlock-Nerds/NerdBot/blob/master/src/main/resources/example-config.json).
 
 This file is automatically updated when values are added, removed, or changed.
 

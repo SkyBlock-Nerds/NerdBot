@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.util;
 
 import com.google.gson.JsonObject;
+import com.vdurmont.emoji.EmojiManager;
 import io.prometheus.client.Summary;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
@@ -9,15 +10,19 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
-import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
+import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
@@ -28,7 +33,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -40,8 +46,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,23 +65,35 @@ public class Util {
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
     public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
     public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
+    public static final DateTimeFormatter REGULAR_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss ZZZ").withZone(ZoneId.systemDefault());
+    public static final DateTimeFormatter FILE_NAME_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss").withZone(ZoneId.systemDefault());
 
     // UUID Pattern Matching
     public static final Pattern UUID_REGEX = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}");
     public static final Pattern TRIMMED_UUID_REGEX = Pattern.compile("[a-f0-9]{12}4[a-f0-9]{3}[89aAbB][a-f0-9]{15}");
     private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
     @Deprecated
-    private static final String REGEX = "^[a-zA-Z0-9_]{2,16}";
+    private static final String MINECRAFT_USERNAME_REGEX = "^[a-zA-Z0-9_]{2,16}";
     @Deprecated
     private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
     public static final String[] PROJECT_CHANNEL_NAMES = {
         "project",
+        "projects",
         "projəct",
         "nerd-project",
         "nerds-project"
     };
+    public static final String[] SPECIAL_ROLES = {"Apex Nerd", "Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
 
     private Util() {
+    }
+
+    public static boolean isAprilFirst() {
+        return Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
+    }
+
+    public static boolean isDayOfMonth(int dayOfMonth) {
+        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == dayOfMonth;
     }
 
     public static List<String> splitString(String text, int size) {
@@ -83,6 +104,23 @@ public class Util {
         }
 
         return parts;
+    }
+
+    /**
+     * Get the branch name from the git-branch.txt file
+     *
+     * @return The branch name, or "unknown" if the file could not be read
+     */
+    public static String getBranchName() {
+        try (InputStream in = Util.class.getResourceAsStream("/git-branch.txt")) {
+            if (in != null) {
+                return new String(in.readAllBytes()).trim();
+            }
+        } catch (IOException exception) {
+            log.error("Failed to read git-branch.txt", exception);
+        }
+
+        return "unknown";
     }
 
     public static Stream<String> safeArrayStream(String[]... arrays) {
@@ -216,33 +254,45 @@ public class Util {
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
     }
 
-    public static Suggestion.ChannelType getSuggestionType(ThreadChannel threadChannel) {
-        return getSuggestionType(threadChannel.getParentChannel().asForumChannel());
+    public static Suggestion.ChannelType getThreadSuggestionType(ThreadChannel threadChannel) {
+        return getForumSuggestionType(threadChannel.getParentChannel().asForumChannel());
     }
 
-    public static Suggestion.ChannelType getSuggestionType(ForumChannel forumChannel) {
+    public static Suggestion.ChannelType getForumSuggestionType(ForumChannel forumChannel) {
         SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
         AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
         String parentChannelId = forumChannel.getId();
 
-        if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equals)) {
+        if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
             return Suggestion.ChannelType.ALPHA;
-        } else if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equals)) {
+        } else if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
             return Suggestion.ChannelType.PROJECT;
         } else if (parentChannelId.equals(suggestionConfig.getForumChannelId())) {
             return Suggestion.ChannelType.NORMAL;
+        }
+
+        Category parentCategory = forumChannel.getParentCategory();
+
+        if (parentCategory != null) {
+            return getChannelSuggestionTypeFromName(parentCategory.getName());
+        }
+
+        if (forumChannel.getName().toLowerCase().contains("alpha") || Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(forumChannel.getName().toLowerCase()::contains)) {
+            return getChannelSuggestionTypeFromName(forumChannel.getName());
         }
 
         return Suggestion.ChannelType.UNKNOWN;
     }
 
     // Only used for AlphaProjectConfig initialization and voice activity
-    public static Suggestion.ChannelType getSuggestionType(String channelName) {
-        channelName = channelName.toLowerCase();
+    public static Suggestion.ChannelType getChannelSuggestionType(StandardGuildChannel channel) {
+        return getChannelSuggestionTypeFromName(channel.getName());
+    }
 
-        if (channelName.contains("alpha")) {
+    public static Suggestion.ChannelType getChannelSuggestionTypeFromName(String name) {
+        if (name.toLowerCase().contains("alpha")) {
             return Suggestion.ChannelType.ALPHA;
-        } else if (Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(channelName::contains)) {
+        } else if (Arrays.stream(PROJECT_CHANNEL_NAMES).anyMatch(name.toLowerCase()::contains)) {
             return Suggestion.ChannelType.PROJECT;
         } else {
             return Suggestion.ChannelType.NORMAL;
@@ -278,7 +328,7 @@ public class Util {
         String memberMCUsername = null;
 
         // checks if the member's username has flair
-        if (!Pattern.matches(REGEX, plainUsername)) {
+        if (!Pattern.matches(MINECRAFT_USERNAME_REGEX, plainUsername)) {
             // removes start and end characters ([example], {example}, |example| or (example)).
             // also strips spaces from the username
             plainUsername = plainUsername.replaceAll(SURROUND_REGEX, "").replace(" ", "");
@@ -286,7 +336,7 @@ public class Util {
 
             // gets the first item that matches the name constraints
             for (String item : splitUsername) {
-                if (Pattern.matches(REGEX, item)) {
+                if (Pattern.matches(MINECRAFT_USERNAME_REGEX, item)) {
                     memberMCUsername = item;
                     break;
                 }
@@ -299,25 +349,38 @@ public class Util {
     }
 
     public static MojangProfile getMojangProfile(String username) throws HttpException {
-        String url = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
+        String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
+        String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
         MojangProfile mojangProfile;
-        int statusCode;
 
-        try (Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer()) {
-            HttpResponse<String> httpResponse = getHttpResponse(url);
-            statusCode = httpResponse.statusCode();
-            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse.body(), MojangProfile.class);
+        if (isUUID(username)) {
+            mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", username);
+        }
 
-            requestTimer.observeDuration();
+        try {
+            String httpResponse = sendRequestWithFallback(mojangUrl, ashconUrl);
+            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse, MojangProfile.class);
         } catch (Exception exception) {
             throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + exception.getMessage(), exception);
         }
 
-        if (statusCode != 200) {
-            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + mojangProfile.getErrorMessage());
-        }
-
         return mojangProfile;
+    }
+
+    @Nullable
+    private static String sendRequestWithFallback(String primaryUrl, String fallbackUrl) {
+        try {
+            return getHttpResponse(primaryUrl).body();
+        } catch (IOException | InterruptedException exception) {
+            log.error("An error occurred while sending a request to primary URL!", exception);
+
+            try {
+                return getHttpResponse(fallbackUrl).body();
+            } catch (IOException | InterruptedException fallbackException) {
+                log.error("An error occurred while sending a request to fallback URL!", fallbackException);
+                return null;
+            }
+        }
     }
 
     @NotNull
@@ -336,7 +399,7 @@ public class Util {
     }
 
     public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws HttpException {
-        String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId.toString());
+        String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId);
         Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
 
         try {
@@ -429,5 +492,22 @@ public class Util {
         }
 
         return null;
+    }
+
+    /**
+     * Finds a matching emoji based on the given string
+     * <br>
+     * It can be a unicode emoji or a custom emoji ID
+     *
+     * @param emoji The emoji to find
+     *
+     * @return The emoji object
+     */
+    public static Optional<Emoji> getEmoji(String emoji) {
+        if (EmojiManager.isEmoji(emoji)) {
+            return Optional.of(Emoji.fromUnicode(emoji));
+        }
+
+        return EmojiCache.getEmojiById(emoji);
     }
 }

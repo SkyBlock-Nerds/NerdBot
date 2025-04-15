@@ -22,9 +22,13 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.model.user.BirthdayData;
+import net.hypixel.nerdbot.api.badge.Badge;
+import net.hypixel.nerdbot.api.badge.BadgeManager;
+import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
+import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
+import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
+import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
@@ -34,12 +38,13 @@ import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.exception.HttpException;
-import net.hypixel.nerdbot.util.exception.ProfileMismatchException;
+import net.hypixel.nerdbot.util.exception.MojangProfileException;
+import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 
-import java.awt.*;
+import java.awt.Color;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -62,6 +67,11 @@ public class ProfileCommands extends ApplicationCommand {
     public void requestLinkProfile(GuildSlashEvent event, @AppOption(description = "Your Minecraft IGN to link. Use the account you applied with.") String username) {
         event.deferReply(true).complete();
 
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
 
@@ -73,11 +83,16 @@ public class ProfileCommands extends ApplicationCommand {
         try {
             MojangProfile mojangProfile = requestMojangProfile(event.getMember(), username, true);
 
+            if (mojangProfile.getErrorMessage() != null) {
+                throw new MojangProfileException(mojangProfile.getErrorMessage());
+            }
+
             VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
             TranslationManager.edit(event.getHook(), discordUser, "commands.verify.request_sent");
 
-            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessageEmbeds(
+            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessage("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">").addEmbeds(
                     new EmbedBuilder()
+                        .appendDescription("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">")
                         .setTitle("Mojang Profile Verification")
                         .setDescription(event.getMember().getAsMention() + " has sent a Mojang verification request. This discord account matches the social set for this Mojang Profile.")
                         .setColor(Color.PINK)
@@ -116,7 +131,7 @@ public class ProfileCommands extends ApplicationCommand {
                 .queue(), () -> {
                 log.warn("Profile verification log channel not found!");
             });
-        } catch (HttpException | ProfileMismatchException exception) {
+        } catch (HttpException | MojangProfileException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
         } catch (Exception exception) {
             log.error("Encountered an error while requesting verification for " + event.getMember().getUser().getName() + " (ID: " + event.getMember().getId() + ") with username " + username + "!", exception);
@@ -132,8 +147,13 @@ public class ProfileCommands extends ApplicationCommand {
     )
     public void linkProfile(GlobalSlashEvent event, @AppOption(description = "Your Minecraft IGN to link.") String username) {
         event.deferReply(true).complete();
-        Member member = Util.getMainGuild().retrieveMemberById(event.getUser().getId()).complete();
 
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
+        Member member = Util.getMainGuild().retrieveMemberById(event.getUser().getId()).complete();
         if (member == null) {
             event.getHook().editOriginal("You must be in SkyBlock Nerds to use this command!").queue();
             return;
@@ -170,7 +190,7 @@ public class ProfileCommands extends ApplicationCommand {
                     .queue();
             }, () -> log.warn("Log channel not found!"));
 
-        } catch (HttpException | ProfileMismatchException exception) {
+        } catch (HttpException | MojangProfileMismatchException exception) {
             event.getHook().sendMessage(exception.getMessage()).queue();
         } catch (Exception exception) {
             log.error("Encountered an error while linking " + member.getUser().getName() + " (ID: " + member.getId() + ") to " + username + "!", exception);
@@ -184,6 +204,12 @@ public class ProfileCommands extends ApplicationCommand {
     )
     public void myActivity(GuildSlashEvent event) {
         event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
         List<MessageEmbed> activityEmbeds = getActivityEmbeds(event.getMember());
         event.getHook().editOriginalEmbeds(activityEmbeds.toArray(new MessageEmbed[]{})).queue();
     }
@@ -195,6 +221,12 @@ public class ProfileCommands extends ApplicationCommand {
     )
     public void myInfo(GuildSlashEvent event) {
         event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
@@ -204,16 +236,36 @@ public class ProfileCommands extends ApplicationCommand {
 
         event.getHook().editOriginalEmbeds(
             new EmbedBuilder()
-                .setAuthor(event.getMember().getEffectiveName() + " (" + event.getMember().getUser().getName() + ")")
+                .setAuthor(event.getMember().getEffectiveName() + " (ID: " + event.getMember().getId() + ")")
                 .setTitle("Your Profile")
                 .setThumbnail(event.getMember().getEffectiveAvatarUrl())
                 .setColor(event.getMember().getColor())
-                .addField("ID", event.getMember().getId(), false)
                 .addField("Mojang Profile", profile, false)
-                .addField("Language", discordUser.getLanguage().getName(), false)
-                .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), false)
+                .addField("Badges", discordUser.getBadges().isEmpty() ? "None" : String.valueOf(discordUser.getBadges().size()), true)
+                .addField("Language", discordUser.getLanguage().getName(), true)
+                .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), true)
                 .build()
         ).queue();
+    }
+
+    @JDASlashCommand(
+        name = "profile",
+        subcommand = "badges",
+        description = "View your badges."
+    )
+    public void myBadges(GuildSlashEvent event, @AppOption @Optional Boolean showPublicly) {
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
+        showPublicly = (showPublicly == null || !showPublicly);
+        event.deferReply(showPublicly).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+
+        event.getHook().editOriginalEmbeds(createBadgesEmbed(event.getMember(), discordUser, true)).queue();
     }
 
     @JDASlashCommand(
@@ -230,6 +282,11 @@ public class ProfileCommands extends ApplicationCommand {
     ) {
         event.deferReply(true).complete();
 
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
+
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
 
@@ -237,7 +294,7 @@ public class ProfileCommands extends ApplicationCommand {
         final int pageNum = Math.max(page, 1);
         type = (type == null ? Suggestion.ChannelType.NORMAL : type);
 
-        List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember().getIdLong(), tags, title, type);
+        List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember(), event.getMember().getIdLong(), tags, title, type);
 
         if (suggestions.isEmpty()) {
             TranslationManager.edit(event.getHook(), discordUser, "cache.suggestions.filtered_none_found");
@@ -245,7 +302,7 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         event.getHook().editOriginalEmbeds(
-            SuggestionCommands.buildSuggestionsEmbed(suggestions, tags, title, type, pageNum, false, true)
+            SuggestionCommands.buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, type, pageNum, false, true)
                 .setAuthor(event.getMember().getEffectiveName())
                 .setThumbnail(event.getMember().getEffectiveAvatarUrl())
                 .build()
@@ -260,6 +317,11 @@ public class ProfileCommands extends ApplicationCommand {
     )
     public void removeBirthday(GuildSlashEvent event) {
         event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
@@ -282,6 +344,11 @@ public class ProfileCommands extends ApplicationCommand {
     )
     public void setBirthday(GuildSlashEvent event, @AppOption(description = "Your birthday in the format MM/DD/YYYY.") String birthday, @AppOption(description = "Whether to announce your age.") @Optional Boolean announceAge) {
         event.deferReply(true).complete();
+
+        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+            TranslationManager.edit(event.getHook(), "database.not_connected");
+            return;
+        }
 
         Member member = event.getMember();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -321,7 +388,7 @@ public class ProfileCommands extends ApplicationCommand {
         DiscordUser user = repository.findById(event.getMember().getId());
 
         if (user == null) {
-            TranslationManager.edit(event.getHook(), "generic.not_found", "User");
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
             return;
         }
 
@@ -334,8 +401,63 @@ public class ProfileCommands extends ApplicationCommand {
         return List.of(UserLanguage.VALUES);
     }
 
-    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws ProfileMismatchException, HttpException {
+    public static MessageEmbed createBadgesEmbed(Member member, DiscordUser discordUser, boolean viewingSelf) {
+        List<BadgeEntry> badges = discordUser.getBadges().stream()
+            .sorted((o1, o2) -> {
+                if (BadgeManager.isTieredBadge(o1.getBadgeId()) && BadgeManager.isTieredBadge(o2.getBadgeId())) {
+                    TieredBadge tieredBadge1 = BadgeManager.getTieredBadgeById(o1.getBadgeId());
+                    TieredBadge tieredBadge2 = BadgeManager.getTieredBadgeById(o2.getBadgeId());
+
+                    if (o1.getTier() != null && o2.getTier() != null) {
+                        return Integer.compare(tieredBadge2.getTier(o2.getTier()).getTier(), tieredBadge1.getTier(o1.getTier()).getTier());
+                    } else if (o1.getTier() != null) {
+                        return -1;
+                    } else if (o2.getTier() != null) {
+                        return 1;
+                    }
+                } else if (BadgeManager.isTieredBadge(o1.getBadgeId())) {
+                    return -1;
+                } else if (BadgeManager.isTieredBadge(o2.getBadgeId())) {
+                    return 1;
+                }
+
+                return Long.compare(o2.getObtainedAt(), o1.getObtainedAt());
+            })
+            .toList();
+
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+            .setTitle(viewingSelf ? "Your Badges" : (member.getEffectiveName().endsWith("s") ? member.getEffectiveName() + "'" : member.getEffectiveName() + "'s") + " Badges")
+            .setColor(Color.PINK)
+            .setDescription(badges.stream().map(badgeEntry -> {
+                Badge badge = BadgeManager.getBadgeById(badgeEntry.getBadgeId());
+                StringBuilder stringBuilder = new StringBuilder("**");
+
+                if (BadgeManager.isTieredBadge(badgeEntry.getBadgeId()) && badgeEntry.getTier() != null && badgeEntry.getTier() >= 1) {
+                    TieredBadge tieredBadge = BadgeManager.getTieredBadgeById(badgeEntry.getBadgeId());
+                    stringBuilder.append(tieredBadge.getTier(badgeEntry.getTier()).getFormattedName());
+                } else {
+                    stringBuilder.append(badge.getFormattedName());
+                }
+
+                stringBuilder.append("**\nObtained on ").append(DateFormatUtils.format(badgeEntry.getObtainedAt(), "MMMM dd, yyyy"));
+                return stringBuilder.toString();
+            }).reduce((s, s2) -> s + "\n\n" + s2).orElse("No badges :("));
+
+        if (discordUser.getBadges().isEmpty()) {
+            embedBuilder.setImage("https://i.imgur.com/fs71kmJ.png");
+        }
+
+        return embedBuilder.build();
+    }
+
+
+    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws HttpException, MojangProfileException {
         MojangProfile mojangProfile = Util.getMojangProfile(username);
+
+        if (mojangProfile.getErrorMessage() != null) {
+            throw new MojangProfileException(mojangProfile.getErrorMessage());
+        }
+
         HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
 
         if (!hypixelPlayerResponse.isSuccess()) {
@@ -343,7 +465,7 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
-            throw new ProfileMismatchException("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
+            throw new MojangProfileMismatchException("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
         }
 
         String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
@@ -354,7 +476,7 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         if (enforceSocial && !discordName.equalsIgnoreCase(discord)) {
-            throw new ProfileMismatchException("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
+            throw new MojangProfileMismatchException("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
         }
 
         return mojangProfile;
@@ -428,103 +550,103 @@ public class ProfileCommands extends ApplicationCommand {
             // Suggestions
             new EmbedBuilder().setColor(Color.YELLOW)
                 .setTitle("Suggestion Activity")
-                .addField("Last Created", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCreationHistory), true)
-                .addField("Last Voted", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionVoteHistory), true)
-                .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getSuggestionCommentHistory), true)
+                .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getSuggestionCreationHistory), true)
+                .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getSuggestionVoteHistoryMap), true)
+                .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getSuggestionCommentHistory), true)
                 .addField("Create History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Vote History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
+                    lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Comment History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .build(),
             // Project Suggestion Activity
             new EmbedBuilder().setColor(Color.ORANGE)
                 .setTitle("Project Suggestion Activity")
-                .addField("Last Created", lastActivity.toRelativeTimestamp(LastActivity::getProjectSuggestionCreationHistory), true)
-                .addField("Last Voted", lastActivity.toRelativeTimestamp(LastActivity::getProjectSuggestionVoteHistory), true)
-                .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getProjectSuggestionCommentHistory), true)
+                .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getProjectSuggestionCreationHistory), true)
+                .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getProjectSuggestionVoteHistoryMap), true)
+                .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getProjectSuggestionCommentHistory), true)
                 .addField("Created History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Voted History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
+                    lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Commented History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getProjectSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .build(),
             // Alpha Suggestion Activity
             new EmbedBuilder().setColor(Color.RED)
                 .setTitle("Alpha Suggestion Activity")
-                .addField("Last Created", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCreationHistory), true)
-                .addField("Last Voted", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionVoteHistory), true)
-                .addField("Last Commented", lastActivity.toRelativeTimestamp(LastActivity::getAlphaSuggestionCommentHistory), true)
+                .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getAlphaSuggestionCreationHistory), true)
+                .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getAlphaSuggestionVoteHistoryMap), true)
+                .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getAlphaSuggestionCommentHistory), true)
                 .addField("Create History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Vote History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionVoteHistory, Duration.of(30, ChronoUnit.DAYS))
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
+                    lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .addField("Comment History", String.format(
                     """
-                        24 Hours: %s
-                        7 Days: %s
-                        30 Days: %s""",
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriod(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
+                    24 Hours: %s
+                    7 Days: %s
+                    30 Days: %s""",
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
+                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
                 ), true)
                 .build()
         );

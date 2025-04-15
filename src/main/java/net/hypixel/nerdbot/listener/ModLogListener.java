@@ -1,8 +1,14 @@
 package net.hypixel.nerdbot.listener;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Invite;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.entities.channel.unions.GuildMessageChannelUnion;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
 import net.dv8tion.jda.api.events.guild.GuildUnbanEvent;
 import net.dv8tion.jda.api.events.guild.invite.GuildInviteCreateEvent;
@@ -192,6 +198,10 @@ public class ModLogListener {
             return;
         }
 
+        if (isNotViewableByModerators(event.getGuildChannel())) {
+            return;
+        }
+
         Message message = NerdBotApp.getBot().getMessageCache().getMessage(event.getMessageId());
         if (message == null) {
             return;
@@ -220,7 +230,15 @@ public class ModLogListener {
 
     @SubscribeEvent
     public void onMessageEdit(MessageUpdateEvent event) {
-        if (ChannelCache.getLogChannel().isEmpty() || event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
+        if (ChannelCache.getLogChannel().isEmpty()) {
+            return;
+        }
+
+        if (event.getAuthor().getId().equals(NerdBotApp.getBot().getJDA().getSelfUser().getId())) {
+            return;
+        }
+
+        if (isNotViewableByModerators(event.getGuildChannel())) {
             return;
         }
 
@@ -248,5 +266,9 @@ public class ModLogListener {
 
     private EmbedBuilder getDefaultEmbed() {
         return new EmbedBuilder().setTimestamp(Instant.now());
+    }
+
+    private boolean isNotViewableByModerators(GuildMessageChannelUnion channel) {
+        return channel.getGuild().getRoles().stream().noneMatch(role -> role.getId().equalsIgnoreCase(NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId()) && role.hasAccess(channel));
     }
 }

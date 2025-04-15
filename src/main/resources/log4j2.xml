@@ -18,17 +18,29 @@
             </PatternLayout>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
-                <SizeBasedTriggeringPolicy size="25MB"/>
+                <SizeBasedTriggeringPolicy size="256M"/>
             </Policies>
-            <DefaultRolloverStrategy max="10">
-                <Delete basePath="${basePath}" maxDepth="10">
-                    <IfLastModified age="30d"/>
-                </Delete>
-            </DefaultRolloverStrategy>
+            <Delete basePath="${basePath}" maxDepth="10">
+                <IfLastModified age="30d"/>
+            </Delete>
         </RollingFile>
     </Appenders>
 
     <Loggers>
+        <Logger name="net.dv8tion.jda" level="info" additivity="false">
+            <AppenderRef ref="ConsoleLogger"/>
+        </Logger>
+
+        <!-- BotCommands -->
+        <Logger name="io.github.freya022.botcommands" level="debug" additivity="false">
+            <AppenderRef ref="ConsoleLogger"/>
+        </Logger>
+
+        <!-- HikariCP -->
+        <Logger name="com.zaxxer.hikari" level="info" additivity="false">
+            <AppenderRef ref="ConsoleLogger"/>
+        </Logger>
+
         <Root level="debug">
             <AppenderRef ref="ConsoleLogger"/>
             <AppenderRef ref="FileLogger"/>

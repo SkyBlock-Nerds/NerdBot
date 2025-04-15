@@ -68,8 +68,8 @@ public class GreenlitMessage {
     public EmbedBuilder createEmbed() {
         Color color;
         EmbedBuilder embedBuilder = new EmbedBuilder()
-            .setTitle(suggestionTitle)
-            .setDescription(suggestionContent)
+            .setTitle(suggestionTitle == null || suggestionTitle.isEmpty() ? "No Title" : suggestionTitle)
+            .setDescription(suggestionContent == null || suggestionContent.isEmpty() ? "No Content" : suggestionContent)
             .setFooter("Suggestion ID: " + messageId)
             .setTimestamp(Instant.ofEpochMilli(suggestionTimestamp))
             .addField("Agrees", String.valueOf(agrees), true)
@@ -80,8 +80,8 @@ public class GreenlitMessage {
 
         if (isReviewed()) {
             color = new Color(51, 153, 255);
-        //} else if (isAlpha()) {
-        //    color = new Color(255, 255, 153);
+            //} else if (isAlpha()) {
+            //    color = new Color(255, 255, 153);
         } else {
             color = Color.GREEN;
         }

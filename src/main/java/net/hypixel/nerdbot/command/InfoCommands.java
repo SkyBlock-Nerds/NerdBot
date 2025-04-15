@@ -16,11 +16,13 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
@@ -29,7 +31,11 @@ import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Log4j2
@@ -37,7 +43,6 @@ public class InfoCommands extends ApplicationCommand {
 
     private static final String GREENLIT_SELECTION_MENU_HANDLER_NAME = "greenlit";
     private static final int MAX_ENTRIES_PER_PAGE = 25;
-    private static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
 
     private final Database database = NerdBotApp.getBot().getDatabase();
 
@@ -52,7 +57,7 @@ public class InfoCommands extends ApplicationCommand {
             DiscordUser user = iterator.next();
 
             user.getMember().ifPresent(member -> {
-                if (member.getUser().isBot() || Arrays.stream(SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
+                if (member.getUser().isBot() || Arrays.stream(Util.SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
                     iterator.remove();
                     log.debug("Removed " + user.getDiscordId() + " from the list of users because they are a bot or have a special role");
                 }
@@ -85,48 +90,10 @@ public class InfoCommands extends ApplicationCommand {
         int fromIndex = (page - 1) * pageSize;
 
         if (sourceList.size() <= fromIndex) {
-            return getPage(sourceList, page - 1, pageSize); // Revert to last page
-        }
-
-        return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
-    }
-
-    /**
-     * Returns a view (not a new list) of the source Map for the range based on page and pageSize.
-     *
-     * @param sourceMap the source map
-     * @param page      page number should start from 1
-     * @param pageSize  page size
-     * @param <K>       the type of keys in the map
-     * @param <V>       the type of values in the map
-     *
-     * @return a list view of map entries for the specified page
-     *
-     * @throws IllegalArgumentException if the sourceMap is null, page is invalid, or pageSize is non-positive
-     */
-    public static <K, V> List<Map.Entry<K, V>> getPage(Map<K, V> sourceMap, int page, int pageSize) {
-        if (sourceMap == null) {
-            throw new IllegalArgumentException("Invalid source map");
-        }
-
-        if (page < 1) {
-            throw new IllegalArgumentException("Invalid page number: " + page);
-        }
-
-        if (pageSize <= 0) {
-            throw new IllegalArgumentException("Invalid page size: " + pageSize);
-        }
-
-        int fromIndex = (page - 1) * pageSize;
-        int toIndex = fromIndex + pageSize;
-        List<Map.Entry<K, V>> entries = new ArrayList<>(sourceMap.entrySet());
-
-        if (fromIndex >= entries.size()) {
             return new ArrayList<>();
         }
 
-        toIndex = Math.min(toIndex, entries.size());
-        return entries.subList(fromIndex, toIndex);
+        return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
     }
 
     @JDASlashCommand(name = "info", subcommand = "bot", description = "View information about the bot", defaultLocked = true)
@@ -137,8 +104,9 @@ public class InfoCommands extends ApplicationCommand {
         long totalMemory = Runtime.getRuntime().totalMemory();
 
         builder.append("- Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n")
+            .append("- Branch: `").append(Util.getBranchName()).append("`\n")
             .append("- Environment: ").append(Environment.getEnvironment()).append("\n")
-            .append("- Uptime: ").append(TimeUtil.formatMs(NerdBotApp.getBot().getUptime())).append("\n")
+            .append("- Uptime: ").append(TimeUtil.formatMsCompact(NerdBotApp.getBot().getUptime())).append("\n")
             .append("- Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
 
         event.reply(builder.toString()).setEphemeral(true).queue();
@@ -146,8 +114,6 @@ public class InfoCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "info", subcommand = "greenlit", description = "Get a list of all unreviewed greenlit messages. May not be 100% accurate!", defaultLocked = true)
     public void greenlitInfo(GuildSlashEvent event) {
-        event.deferReply(true).complete();
-
         if (!database.isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
             return;
@@ -157,8 +123,11 @@ public class InfoCommands extends ApplicationCommand {
         List<EmbedBuilder> embeds = new ArrayList<>();
 
         if (repository.isEmpty()) {
-            event.reply("There are no greenlit messages!").setEphemeral(true).queue();
-            return;
+            repository.loadAllDocumentsIntoCache();
+            if (repository.isEmpty()) {
+                event.reply("No greenlit messages found!").setEphemeral(true).queue();
+                return;
+            }
         }
 
         repository.getAll().forEach(greenlitMessage -> embeds.add(greenlitMessage.createEmbed()));
@@ -186,7 +155,9 @@ public class InfoCommands extends ApplicationCommand {
             .setMaxPages(embeds.size() / MAX_ENTRIES_PER_PAGE)
             .build();
 
-        event.getHook().editOriginal(paginator.get()).queue();
+        event.reply(MessageCreateData.fromEditData(paginator.get()))
+            .setEphemeral(true)
+            .queue();
     }
 
     @JDASelectionMenuListener(name = GREENLIT_SELECTION_MENU_HANDLER_NAME)
@@ -205,7 +176,8 @@ public class InfoCommands extends ApplicationCommand {
         AtomicInteger staff = new AtomicInteger();
         AtomicInteger grapes = new AtomicInteger();
         AtomicInteger nerds = new AtomicInteger();
-        for (String roleName : SPECIAL_ROLES) {
+
+        for (String roleName : Util.SPECIAL_ROLES) {
             RoleManager.getRole(roleName).ifPresentOrElse(role -> staff.addAndGet(guild.getMembersWithRoles(role).size()),
                 () -> log.warn("Role {} not found", roleName)
             );
@@ -218,11 +190,13 @@ public class InfoCommands extends ApplicationCommand {
             .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
             .append("- Staff: ").append(staff.get()).append("\n");
 
-        RoleManager.getRole("Grape").ifPresentOrElse(role -> grapes.set(guild.getMembersWithRoles(role).size()),
+        RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
+
+        RoleManager.getRoleById(roleConfig.getModeratorRoleId()).ifPresentOrElse(role -> grapes.set(guild.getMembersWithRoles(role).size()),
             () -> log.warn("Role {} not found", "Grape"));
 
-        RoleManager.getRole("Nerd").ifPresentOrElse(role -> nerds.set(guild.getMembersWithRoles(role).size()),
-            () -> log.warn("Role {} not found", "Nerd"));
+        RoleManager.getRoleById(roleConfig.getOrangeRoleId()).ifPresentOrElse(role -> nerds.set(guild.getMembersWithRoles(role).size()),
+            () -> log.warn("Role {} not found", "Orange"));
 
         builder.append("- Grapes: ").append(grapes.get()).append("\n")
             .append("- Nerds: ").append(nerds.get());
@@ -265,13 +239,13 @@ public class InfoCommands extends ApplicationCommand {
         }
 
         List<DiscordUser> users = getDiscordUsers(NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class));
-        users.sort(Comparator.comparingInt(DiscordUser::getTotalMessageCount));
+        users.sort(Comparator.comparingInt(value -> value.getLastActivity().getTotalMessageCount()));
 
         StringBuilder stringBuilder = new StringBuilder("**Page " + page + "**\n");
 
         getPage(users, page, 10).forEach(discordUser -> {
             discordUser.getMember().ifPresentOrElse(member -> {
-                stringBuilder.append(" • ").append(member.getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getTotalMessageCount())).append(")").append("\n");
+                stringBuilder.append(" • ").append(member.getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount())).append(")").append("\n");
             }, () -> log.error("Couldn't find member " + discordUser.getDiscordId()));
         });
 

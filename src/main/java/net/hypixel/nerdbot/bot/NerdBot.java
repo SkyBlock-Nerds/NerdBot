@@ -19,10 +19,11 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.model.user.UserLanguage;
+import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.api.repository.Repository;
@@ -38,7 +39,16 @@ import net.hypixel.nerdbot.feature.CurateFeature;
 import net.hypixel.nerdbot.feature.HelloGoodbyeFeature;
 import net.hypixel.nerdbot.feature.ProfileUpdateFeature;
 import net.hypixel.nerdbot.feature.UserGrabberFeature;
-import net.hypixel.nerdbot.listener.*;
+import net.hypixel.nerdbot.feature.UserNominationFeature;
+import net.hypixel.nerdbot.listener.ActivityListener;
+import net.hypixel.nerdbot.listener.FunListener;
+import net.hypixel.nerdbot.listener.MetricsListener;
+import net.hypixel.nerdbot.listener.ModLogListener;
+import net.hypixel.nerdbot.listener.ModMailListener;
+import net.hypixel.nerdbot.listener.PinListener;
+import net.hypixel.nerdbot.listener.ReactionChannelListener;
+import net.hypixel.nerdbot.listener.SuggestionListener;
+import net.hypixel.nerdbot.listener.VerificationListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
@@ -72,21 +82,31 @@ public class NerdBot implements Bot {
         new CurateFeature(),
         new UserGrabberFeature(),
         new ProfileUpdateFeature(),
-        new ActivityPurgeFeature()
+        new ActivityPurgeFeature(),
+        new UserNominationFeature()
     );
 
     private final Database database = new Database(System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/"), "skyblock_nerds");
     private JDA jda;
     private BotConfig config;
-    @Getter private SuggestionCache suggestionCache;
-    @Getter private MessageCache messageCache;
-    @Getter private long startTime;
+    @Getter
+    private SuggestionCache suggestionCache;
+    @Getter
+    private MessageCache messageCache;
+    @Getter
+    private long startTime;
 
     public NerdBot() {
     }
 
     @Override
     public void onStart() {
+        if (config.getBadgeConfig().getBadges() != null) {
+            BadgeManager.loadBadges();
+        } else {
+            log.warn("No badges found in config file, so no badges will be loaded!");
+        }
+
         DiscordUserRepository discordUserRepository = database.getRepositoryManager().getRepository(DiscordUserRepository.class);
         if (discordUserRepository != null) {
             discordUserRepository.loadAllDocumentsIntoCache();
@@ -161,7 +181,8 @@ public class NerdBot implements Bot {
                 new SuggestionListener(),
                 new VerificationListener(),
                 new PinListener(),
-                new MetricsListener()
+                new MetricsListener(),
+                new FunListener()
             )
             .setActivity(Activity.of(config.getActivityType(), config.getActivity()));
 
@@ -175,8 +196,7 @@ public class NerdBot implements Bot {
 
         try {
             jda.awaitReady();
-            jda.addEventListener(new EmojiCache());
-            jda.addEventListener(new ChannelCache());
+            jda.addEventListener(new EmojiCache(), new ChannelCache());
         } catch (InterruptedException exception) {
             log.error("Failed to create JDA instance!", exception);
             System.exit(-1);
@@ -188,7 +208,7 @@ public class NerdBot implements Bot {
 
         CommandsBuilder commandsBuilder = CommandsBuilder
             .newBuilder()
-            .addOwners(config.getOwnerIds())
+            .addOwners(config.getOwnerIds().stream().mapToLong(Long::parseLong).toArray())
             .extensionsBuilder(extensionsBuilder -> extensionsBuilder
                 .registerParameterResolver(new UserLanguageResolver())
                 .registerParameterResolver(new SuggestionTypeResolver())
@@ -201,15 +221,10 @@ public class NerdBot implements Bot {
         try {
             commandsBuilder.setComponentManager(new DefaultComponentManager(new ComponentDatabaseConnection()::getConnection));
         } catch (SQLException exception) {
-            log.error("Failed to connect to the SQL database! Components will not work correctly!");
-            log.debug("Debug exception logging.", exception);
+            log.error("Failed to connect to the SQL database! Components will not work correctly!", exception);
         }
 
-        try {
-            commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
-        } catch (IOException exception) {
-            log.error("Failed to build the command builder!", exception);
-        }
+        commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
 
         NerdBotApp.getBot().onStart();
         log.info("Bot is ready!");

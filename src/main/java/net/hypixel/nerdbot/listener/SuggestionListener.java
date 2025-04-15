@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagData;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.channel.GenericChannelEvent;
@@ -24,8 +23,8 @@ import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
-import net.hypixel.nerdbot.bot.config.forum.SuggestionConfig;
+import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
@@ -171,7 +170,7 @@ public class SuggestionListener {
     @SubscribeEvent
     public void onChannelDelete(ChannelDeleteEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().asForumChannel());
+            Suggestion.ChannelType channelType = Util.getForumSuggestionType(event.getChannel().asForumChannel());
 
             if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
                 BotConfig botConfig = NerdBotApp.getBot().getConfig();
@@ -187,20 +186,20 @@ public class SuggestionListener {
 
     private void updateConfigForumIds(GenericChannelEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().asForumChannel());
+            Suggestion.ChannelType channelType = Util.getForumSuggestionType(event.getChannel().asForumChannel());
 
             if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
                 BotConfig botConfig = NerdBotApp.getBot().getConfig();
                 AlphaProjectConfig alphaProjectConfig = botConfig.getAlphaProjectConfig();
                 alphaProjectConfig.updateForumIds(botConfig, channelType == Suggestion.ChannelType.ALPHA, channelType == Suggestion.ChannelType.PROJECT);
 
-                // Add Flared Tag
+                // Auto-create tags
                 if (alphaProjectConfig.isAutoCreateTags()) {
                     ForumChannelManager forumChannelManager = event.getChannel().asForumChannel().getManager();
                     List<BaseForumTag> currentTags = new ArrayList<>(forumChannelManager.getChannel().getAvailableTags());
 
-                    if (currentTags.stream().noneMatch(baseForumTag -> baseForumTag.getName().equalsIgnoreCase(alphaProjectConfig.getFlaredTag()))) {
-                        currentTags.add(new ForumTagData(alphaProjectConfig.getFlaredTag()).setModerated(true).setEmoji(Emoji.fromUnicode("\uD83D\uDD25")));
+                    if (currentTags.stream().noneMatch(baseForumTag -> baseForumTag.getName().equalsIgnoreCase(botConfig.getSuggestionConfig().getReviewedTag()))) {
+                        currentTags.add(new ForumTagData(botConfig.getSuggestionConfig().getReviewedTag()).setModerated(true));
                         forumChannelManager.setAvailableTags(currentTags).queue();
                     }
                 }

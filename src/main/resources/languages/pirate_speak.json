@@ -1,0 +1,144 @@
+{
+  "generic": {
+    "not_found": "%s not plundered",
+    "could_not_find": "Could nah find %s"
+  },
+  "permissions": {
+    "cannot_send_messages": "I do nah have th' correct permission t' send messages in 'tis channel!",
+    "cannot_send_messages_in_threads": "I do nah have th' correct permission t' send messages in threads!",
+    "cannot_create_invites": "I do nah have th' correct permission t' create invites in %s!"
+  },
+  "database": {
+    "no_connection": "Could nah connect t' database!"
+  },
+  "cache": {
+    "suggestions": {
+      "not_found": "Couldn't find that suggestion in th' cache! Please try again later!",
+      "filtered_none_found": "No suggestions found matching that filter!",
+      "user_deleted_post": "The original message for 'tis suggestion was deleted!"
+    }
+  },
+  "bot_logs": {
+    "member_removed_not_found": "Could nah find pirate wit' ID %s who sailed away!"
+  },
+  "repository": {
+    "saved_to_database": "Saved %d documents t' th' database!",
+    "loaded_from_database": "Loaded %d documents from th' database!",
+    "save_error": "An error occurred while savin' th' repository: %s",
+    "load_error": "An error occurred while loadin' th' repository: %s",
+    "stats_error": "An error occurred while gettin' th' statistics for that repository: %s"
+  },
+  "curator": {
+    "no_greenlit_messages": "No suggestions were greenlit",
+    "greenlit_messages": "Greenlit %d suggestions in %d!",
+    "already_greenlit": "'Tis suggestion has already been greenlit!"
+  },
+  "commands": {
+    "only_available_in_threads": "'Tis command is only available in threads!",
+    "cannot_be_used_here": "'Tis command can nah be used here!",
+    "invalid_uuid": "Invalid UUID!",
+    "temp_file_error": "Failed t' create temporary file: %s",
+    "language": {
+      "language_set": "Ye set yer language t' %s"
+    },
+    "invite": {
+      "header": "Created %d invites:",
+      "deleted": "Deleted %d invites!"
+    },
+    "reminders": {
+      "no_description": "Ye need t' provide a description for th' reminder!",
+      "description_too_long": "Yer description is too long! Please keep it under %d characters.",
+      "invalid_time_format": "I could nah parse that date/time format, please try again!",
+      "time_in_past": "Ye can nah set a reminder in th' past!",
+      "save_error": "An error occurred while saving that reminder! Please try again!",
+      "delete_error": "An error occurred while deleting that reminder! Please try again!",
+      "no_reminders": "Ye do nah have any reminders set!",
+      "delete_reminder": "Ye can delete reminders wit' `/remind delete <uuid>`",
+      "reminder_not_found": "I could nah find a reminder wit' that UUID!",
+      "reminder_set": "I will remind ye at %s about:",
+      "reminder_deleted": "Deleted reminder %s!"
+    },
+    "lock": {
+      "no_permission": "I do nah have th' correct permission t' lock %s!",
+      "error": "An error occurred while locking %s!"
+    },
+    "archive": {
+      "channel_moved": "Moved %s t' %s!"
+    },
+    "config": {
+      "read_error": "An error occurred while reading th' config file! Please check th' logs for more information.",
+      "invalid_value": "Could nah find given key `%s` in th' config file!",
+      "reloaded": "Reloaded config file!",
+      "updated": "Updated config file!"
+    },
+    "metrics": {
+      "toggle": "Toggled metrics: %s"
+    },
+    "user": {
+      "linked_by_admin": "Updated profile for %s t' %s (UUID: %s)",
+      "username_not_found": "Could nah find pirate wit' username `%s`! (%s)",
+      "profile_mismatch": "Profile mismatch error for %s: %s",
+      "no_missing_profiles": "No missing profiles plundered!",
+      "migrated_profiles": "Migrated %d profiles!"
+    },
+    "transfer_tag": {
+      "invalid_tags": "Ye have entered invalid from/to tags, please try again!",
+      "no_threads_found": "No threads were found wit' th' tag %s!",
+      "updated_threads": "Updated %d/%d threads ...",
+      "updated_threads_complete": "Finished transferrin' %s t' %s in %d threads!"
+    },
+    "log_level": {
+      "invalid_level": "Invalid log level specified!",
+      "set_level": "Set log level t' %s"
+    },
+    "request_review": {
+      "not_suggestion_channel": "Ye can nah send threads in non-suggestion channels for review!",
+      "too_soon": "Ye can nah request another review on 'tis thread yet!",
+      "not_own_thread": "Ye can nah request a review on a thread ye did nah create!",
+      "already_greenlit": "Ye can only request reviews on threads that are nah greenlit!",
+      "not_enough_reactions": "Ye need at least %d agrees t' request a review!",
+      "bad_reaction_ratio": "Ye need at least a %d%% agree ratio t' request a review!",
+      "too_new": "'Tis suggestion is too new t' request a review!",
+      "success": "'Tis suggestion has been sent for review!",
+      "accepted": "Yer recent review request has been accepted! Thank ye for yer suggestion!",
+      "changes_requested": "Yer recent review request has been denied. We recommend ye review yer suggestion an' make any necessary changes before requestin' another review. Thank ye!",
+      "locked": "We have reviewed yer recent request an' have decided t' lock 'tis suggestion. If ye believe 'tis t' be a mistake or would like more information, please contact us through Mod Mail."
+    },
+    "role": {
+      "invalid_role": "Could nah find a role wit' ID `%s`!",
+      "removed_role": "Removed role %s from ye! Use th' same command t' add it back.",
+      "added_role": "Added role %s t' ye! Use th' same command t' remove it.",
+      "list_roles": "**Assignable Roles:**\n%s\n\n**Use /role <name> t' toggle th' role!**"
+    },
+    "verify": {
+      "already_requested": "Yer previous verification request has nah been reviewed. Ye will be contacted via DM if any further information is required.",
+      "request_sent": "Yer verification request has been sent. Ye will be contacted via DM if any further information is required.",
+      "error": "Encountered an error whilst attemptin' t' verify ye! If 'tis persists, please contact us through Mod Mail",
+      "profile_updated": "Updated yer Mojang profile t' %s (`%s`)"
+    },
+    "birthday": {
+      "removed": "Yer birthday has been removed!",
+      "not_set_yet": "Yer birthday has nah been configured yet!",
+      "get": "Yer birthday is currently set t' %s",
+      "set": "Set yer birthday t' %s!",
+      "bad_date": "That doesn't seem t' be a valid date. Please try again or contact a bot developer!"
+    },
+    "mod_mail": {
+      "created": "Created new Mod Mail thread for %s: %s",
+      "channel_not_found": "Could nah find th' Mod Mail channel! Is there one configured?",
+      "thread_not_found": "Could nah find a Mod Mail thread for %s!",
+      "already_exists": "A Mod Mail thread for %s already exists: %s",
+      "thread_found": "Found Mod Mail thread for %s: %s"
+    },
+    "export": {
+      "exporting_threads": "Exportin' threads from %s...",
+      "exporting_thread": "Exportin' thread %d/%d: %s by %s",
+      "exported_thread": "Finished exportin' thread %d/%d: %s by %s",
+      "complete": "Finished exportin' all threads from %s!"
+    },
+    "translations": {
+      "reloaded": "Reloaded translations for language %s",
+      "reload_complete": "Reloaded translations for all languages!"
+    }
+  }
+}

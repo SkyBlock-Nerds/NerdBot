@@ -7,8 +7,13 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
+import net.hypixel.nerdbot.generator.skull.MinecraftHead;
 import net.hypixel.nerdbot.generator.util.Item;
-import net.hypixel.nerdbot.generator.util.overlay.*;
+import net.hypixel.nerdbot.generator.util.overlay.DualLayerOverlay;
+import net.hypixel.nerdbot.generator.util.overlay.EnchantGlintOverlay;
+import net.hypixel.nerdbot.generator.util.overlay.MappedOverlay;
+import net.hypixel.nerdbot.generator.util.overlay.NormalOverlay;
+import net.hypixel.nerdbot.generator.util.overlay.Overlay;
 import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
@@ -19,7 +24,11 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -55,9 +64,9 @@ public class GeneratorBuilder {
         this.items = new HashMap<>();
 
         // loading all sprites for Minecraft Items
-        try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/minecraft_texture_atlas.png")) {
+        try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/spritesheets/minecraft_texture_atlas.png")) {
             if (itemStackStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/spritesheets/minecraft_texture_atlas.png\"");
+                throw new FileNotFoundException("Could not find minecraft_texture_atlas.png file");
             }
 
             itemSpriteSheet = ImageIO.read(itemStackStream);
@@ -67,9 +76,9 @@ public class GeneratorBuilder {
         }
 
         // loading the items position in the sprite sheet
-        try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/spritesheets/atlas_coordinates.json")) {
+        try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/spritesheets/atlas_coordinates.json")) {
             if (itemStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/spritesheets/atlas_coordinates.json\"");
+                throw new FileNotFoundException("Could not find atlas_coordinates.json file");
             }
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(itemStream));
@@ -95,9 +104,9 @@ public class GeneratorBuilder {
         }
 
         // loading the overlays for some Minecraft Items
-        try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft_assets/textures/overlays.png")) {
+        try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/textures/overlays.png")) {
             if (overlayStream == null) {
-                throw new FileNotFoundException("Could not find find the file called \"/Minecraft/overlays.png\"");
+                throw new FileNotFoundException("Could not find overlays.png file");
             }
 
             HashMap<String, Overlay> overlaysHashMap = new HashMap<>();
@@ -113,6 +122,8 @@ public class GeneratorBuilder {
             overlaysHashMap.put(leatherLeggings.getName(), leatherLeggings);
             Overlay leatherBoots = new NormalOverlay("LEATHER_BOOTS", overlayImage.getSubimage(80, 0, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
             overlaysHashMap.put(leatherBoots.getName(), leatherBoots);
+            Overlay leatherHorseArmor = new NormalOverlay("LEATHER_HORSE_ARMOR", overlayImage.getSubimage(208, 0, 16, 16), true, leatherArmorColor, MCColor.LEATHER_ARMOR_COLORS);
+            overlaysHashMap.put(leatherHorseArmor.getName(), leatherHorseArmor);
 
             // armor trims
             int[] defaultTrimColors = new int[]{-2039584, -4144960, -6250336, -8355712, -10461088, -12566464, -14671840, -16777216};
@@ -238,7 +249,7 @@ public class GeneratorBuilder {
             isNormalItem,
             isCentered
         )
-            .render()
+            .render(event.getChannel())
             .getImage();
     }
 
@@ -280,7 +291,7 @@ public class GeneratorBuilder {
         }
 
         // registering the image into the cache
-        return new MinecraftHead(skin).drawHead().getImage();
+        return new MinecraftHead(skin).generate().getImage();
     }
 
     /**

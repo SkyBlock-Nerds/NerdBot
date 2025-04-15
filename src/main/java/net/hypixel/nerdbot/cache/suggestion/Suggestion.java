@@ -3,6 +3,8 @@ package net.hypixel.nerdbot.cache.suggestion;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -56,7 +58,7 @@ public class Suggestion {
         this.timeCreated = thread.getTimeCreated();
         this.jumpUrl = String.format("https://discord.com/channels/%s/%s", this.getGuildId(), this.getThreadId());
         this.greenlit = channelType == ChannelType.NORMAL && Util.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
-        this.channelType = channelType == null ? Util.getSuggestionType(thread) : channelType;
+        this.channelType = channelType == null ? Util.getThreadSuggestionType(thread) : channelType;
         this.expired = false;
 
         // Activity
@@ -138,6 +140,11 @@ public class Suggestion {
         this.expired = true;
     }
 
+    public boolean canSee(Member member) {
+        ThreadChannel threadChannel = NerdBotApp.getBot().getJDA().getThreadChannelById(this.getThreadId());
+        return threadChannel != null && member.hasPermission(threadChannel, Permission.VIEW_CHANNEL);
+    }
+
     @Getter
     @RequiredArgsConstructor
     public enum ChannelType {
@@ -147,7 +154,7 @@ public class Suggestion {
         ALPHA("Alpha"),
         PROJECT("Project");
 
-        public static final ChannelType[] VALUES = new ChannelType[] { NORMAL, ALPHA, PROJECT };
+        public static final ChannelType[] VALUES = new ChannelType[]{NORMAL, ALPHA, PROJECT};
 
         private final String name;
 

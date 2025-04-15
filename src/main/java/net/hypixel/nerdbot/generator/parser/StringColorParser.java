@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.generator.parser;
 import net.hypixel.nerdbot.generator.util.ColoredString;
 import net.hypixel.nerdbot.generator.util.GeneratorStrings;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.skyblock.Flavor;
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
 import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
@@ -20,6 +21,7 @@ public class StringColorParser {
     private static final Stat[] stats = Stat.VALUES;
     private static final Gemstone[] gemstones = Gemstone.VALUES;
     private static final Icon[] icons = Icon.VALUES;
+    private static final Flavor[] flavors = Flavor.VALUES;
 
     // variables used to store the description
     private final List<List<ColoredString>> parsedDescription;
@@ -157,6 +159,14 @@ public class StringColorParser {
                         continue;
                     }
 
+                    // checking if the command is a flavor text
+                    Flavor flavor = (Flavor) Util.findValue(flavors, selectedCommand);
+                    if (flavor != null) {
+                        String replacementText = flavor.getParsedFlavorText(extraData) + currentColor;
+                        description.replace(charIndex, closingIndex + 2, replacementText);
+                        continue;
+                    }
+
                     // checking if the command is supposed to only trigger for the text inside it
                     MCColor tempStatColor = (MCColor) Util.findValue(colors, selectedCommand);
                     if (tempStatColor != null) {
@@ -167,7 +177,7 @@ public class StringColorParser {
                     }
 
                     // creating an error message showing the available stats, gemstones and color codes available
-                    this.errorString = String.format(GeneratorStrings.INVALID_STAT_CODE, GeneratorStrings.stripString(selectedCommand));
+                    this.errorString = String.format(GeneratorStrings.INVALID_STAT_CODE, GeneratorStrings.stripString(selectedCommand), GeneratorStrings.COMMAND_PREFIX);
                     return;
                 }
                 // checking if the user is using normal mc character codes

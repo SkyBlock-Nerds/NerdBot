@@ -1,11 +1,12 @@
 package net.hypixel.nerdbot.listener;
 
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.entities.channel.unions.GuildMessageChannelUnion;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -19,12 +20,11 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
-import net.hypixel.nerdbot.bot.config.forum.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -37,25 +37,30 @@ public class ActivityListener {
     private final Map<Long, Long> voiceActivity = new HashMap<>();
 
     @SubscribeEvent
-    public void onGuildMemberJoin(GuildMemberJoinEvent event) throws RepositoryException {
-        UpdateResult result = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).saveToDatabase(new DiscordUser(event.getMember()));
+    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
-        if (!result.wasAcknowledged() || result.getModifiedCount() == 0) {
-            throw new RepositoryException("Failed to save new user '" + event.getUser().getName() + "' to database!");
+        if (event.getUser().isBot()) {
+            return;
         }
 
         log.info("User {} joined {}", event.getUser().getName(), event.getGuild().getName());
+
+        if (discordUserRepository.findById(event.getUser().getId()) == null) {
+            discordUserRepository.cacheObject(new DiscordUser(event.getUser().getId()));
+            log.info("Creating and caching new DiscordUser for user {} ({})", event.getUser().getName(), event.getUser().getId());
+        }
     }
 
     @SubscribeEvent
-    public void onGuildMemberLeave(GuildMemberRemoveEvent event) throws RepositoryException {
+    public void onGuildMemberLeave(GuildMemberRemoveEvent event) {
         DeleteResult result = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).deleteFromDatabase(event.getUser().getId());
 
-        if (!result.wasAcknowledged() || result.getDeletedCount() == 0) {
-            throw new RepositoryException("Failed to delete user '" + event.getUser().getName() + "' from database!");
-        }
-
         log.info("User {} left {}", event.getUser().getName(), event.getGuild().getName());
+
+        if (result.getDeletedCount() == 0) {
+            log.warn("Failed to delete user {} ({}) from the database!", event.getUser().getName(), event.getUser().getId());
+        }
     }
 
     @SubscribeEvent
@@ -122,12 +127,20 @@ public class ActivityListener {
         }
 
         long time = System.currentTimeMillis();
-        Suggestion.ChannelType channelType = Util.getSuggestionType(event.getChannel().getName());
+        Suggestion.ChannelType channelType;
+
+        if (guildChannel instanceof ThreadChannel threadChannel) {
+            channelType = Util.getThreadSuggestionType(threadChannel);
+        } else if (guildChannel instanceof TextChannel) {
+            channelType = Util.getChannelSuggestionType(guildChannel.asTextChannel());
+        } else {
+            channelType = Util.getChannelSuggestionTypeFromName(guildChannel.getName());
+        }
 
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
             ForumChannel forumChannel = guildChannel.asThreadChannel().getParentChannel().asForumChannel();
-            channelType = Util.getSuggestionType(forumChannel);
+            channelType = Util.getForumSuggestionType(forumChannel);
 
             // New Suggestion Comments
             if (channelType == Suggestion.ChannelType.NORMAL) {
@@ -148,16 +161,28 @@ public class ActivityListener {
             }
         }
 
+        // Alpha/Project-specific Messages
         if (channelType == Suggestion.ChannelType.ALPHA) {
             discordUser.getLastActivity().setLastAlphaActivity(time);
+            log.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
         } else if (channelType == Suggestion.ChannelType.PROJECT) {
             discordUser.getLastActivity().setLastProjectActivity(time);
+            log.info("Updating last project activity date for " + member.getEffectiveName() + " to " + time);
         }
 
-        discordUser.getLastActivity().setLastGlobalActivity(time);
+        // Global Messages
         log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
+        discordUser.getLastActivity().setLastGlobalActivity(time);
 
-        discordUser.getLastActivity().getChannelActivity().put(guildChannel.getId(), discordUser.getLastActivity().getChannelActivity().getOrDefault(guildChannel.getId(), 0) + 1);
+        // Update Channel Message History
+        if (!(guildChannel instanceof ThreadChannel threadChannel)) {
+            log.debug("Updating channel message history for {} in channel '{}' (ID: {})", member.getEffectiveName(), guildChannel.getName(), guildChannel.getId());
+            discordUser.getLastActivity().addChannelHistory(guildChannel, time);
+        } else {
+            GuildChannel parentChannel = threadChannel.getParentChannel();
+            log.debug("Updating channel message history for {} in thread '{}' (Parent Channel Name: {}, Parent Channel ID: {}, Thread Channel ID: {})", member.getEffectiveName(), threadChannel.getName(), parentChannel.getName(), parentChannel.getId(), threadChannel.getId());
+            discordUser.getLastActivity().addChannelHistory(parentChannel, time);
+        }
     }
 
     @SubscribeEvent
@@ -185,7 +210,7 @@ public class ActivityListener {
                 PrometheusMetrics.TOTAL_VOICE_TIME_SPENT_BY_USER.labels(member.getEffectiveName(), channelLeft.getName()).inc((TimeUnit.MILLISECONDS.toSeconds(timeSpent)));
 
                 if ((timeSpent / 1_000L) > NerdBotApp.getBot().getConfig().getVoiceThreshold()) {
-                    Suggestion.ChannelType channelType = Util.getSuggestionType(channelLeft.getName());
+                    Suggestion.ChannelType channelType = Util.getChannelSuggestionType(channelLeft.asVoiceChannel());
 
                     if (channelType == Suggestion.ChannelType.ALPHA) {
                         discordUser.getLastActivity().setAlphaVoiceJoinDate(time);
@@ -210,7 +235,7 @@ public class ActivityListener {
     }
 
     @SubscribeEvent
-    public void onReactionReceived(MessageReactionAddEvent event) {
+    public void onActivityReactionAdd(MessageReactionAddEvent event) {
         if (!event.isFromGuild() || event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
             return; // Ignore non-guild and native emojis
         }
@@ -247,7 +272,7 @@ public class ActivityListener {
 
             // New Suggestion Voting
             if (forumChannelId.equals(NerdBotApp.getBot().getConfig().getSuggestionConfig().getForumChannelId())) {
-                discordUser.getLastActivity().getSuggestionVoteHistory().add(0, time);
+                discordUser.getLastActivity().getSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                 log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }
@@ -255,16 +280,16 @@ public class ActivityListener {
             // New Alpha Suggestion Voting
             AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
             if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
-                discordUser.getLastActivity().getAlphaSuggestionVoteHistory().add(0, time);
+                discordUser.getLastActivity().getAlphaSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                 log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }
 
             // New Project Suggestion Voting
             if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
-                discordUser.getLastActivity().getProjectSuggestionVoteHistory().add(0, time);
+                discordUser.getLastActivity().getProjectSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
-                log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
+                log.info("Updating project suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }
         }
     }

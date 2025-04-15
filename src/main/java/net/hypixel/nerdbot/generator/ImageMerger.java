@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class ImageMerger {
@@ -53,6 +53,7 @@ public class ImageMerger {
 
         this.finalImage = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR_PRE);
         this.g2d = this.finalImage.createGraphics();
+        this.g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
     }
 
     private int[] performScale(double targetMaxHeight, int imageWidth, int imageHeight) {

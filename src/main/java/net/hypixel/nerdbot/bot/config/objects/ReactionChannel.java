@@ -17,6 +17,7 @@ public class ReactionChannel {
     private final String name;
     private final String discordChannelId;
     private final List<String> emojiIds;
+    private final boolean thread;
 
     public List<Emoji> getEmojis() {
         return emojiIds.stream()

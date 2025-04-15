@@ -8,7 +8,6 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
@@ -33,18 +32,16 @@ public class Reminder {
     private String channelId;
     private String userId;
     private Date time;
-    private boolean sendPublicly;
 
     public Reminder() {
     }
 
-    public Reminder(String description, Date time, String channelId, String userId, boolean sendPublicly) {
+    public Reminder(String description, Date time, String channelId, String userId) {
         this.uuid = UUID.randomUUID();
         this.description = description;
         this.channelId = channelId;
         this.userId = userId;
         this.time = time;
-        this.sendPublicly = sendPublicly;
     }
 
     public void schedule() {
@@ -70,28 +67,14 @@ public class Reminder {
             message = user.getAsMention() + ", you asked me to remind you at " + timestamp + " about: ";
         }
 
-        if (!sendPublicly) {
-            user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(message).addEmbeds(new EmbedBuilder().setDescription(description).build()).queue());
-        } else {
-            ChannelCache.getTextChannelById(channelId).ifPresentOrElse(textChannel -> {
-                textChannel.sendMessage(message)
-                    .addEmbeds(new EmbedBuilder().setDescription(description).build())
-                    .queue();
-            }, () -> {
-                log.error("Couldn't find channel with ID '" + channelId + "' to send reminder " + uuid + "! Attempting to send privately");
-
-                user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(message)
-                    .addEmbeds(new EmbedBuilder().setDescription(description).build())
-                    .queue());
-            });
-        }
-
-        DeleteResult result = reminderRepository.deleteFromDatabase(uuid.toString());
-        if (result == null) {
-            log.error("Couldn't delete reminder from database: " + uuid + " (result: null)");
-        } else {
-            log.info("Reminder deleted from database: " + uuid + " (result: " + result + ")");
-        }
+        user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(message)
+            .addEmbeds(new EmbedBuilder().setDescription(description).build())
+            .queue((success) -> {
+                log.info("Sent reminder '" + uuid + "' message to user " + userId);
+            }, (failure) -> {
+                log.error("Couldn't send reminder message to user: " + userId + " (reminder: " + uuid + ")");
+            })
+        );
     }
 
     class ReminderTask extends TimerTask {
@@ -102,6 +85,7 @@ public class Reminder {
             if (result != null && result.wasAcknowledged() && result.getDeletedCount() > 0) {
                 timer.cancel();
                 sendReminder(false);
+                log.info("Reminder '" + uuid + "' successfully deleted (result: " + result + ")");
             }
         }
     }

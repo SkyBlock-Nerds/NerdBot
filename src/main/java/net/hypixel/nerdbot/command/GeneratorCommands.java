@@ -14,6 +14,7 @@ import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -25,6 +26,7 @@ import net.hypixel.nerdbot.generator.parser.StringColorParser;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.JsonUtil;
 import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.skyblock.Flavor;
 import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
@@ -33,7 +35,12 @@ import net.hypixel.nerdbot.util.skyblock.Stat;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Queue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -164,7 +171,7 @@ public class GeneratorCommands extends ApplicationCommand {
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "display", description = "Draws a Minecraft item into a file")
     public void generateItemImage(GuildSlashEvent event,
                                   @AppOption(description = DESC_ITEM_ID, name = "item_id") String itemID,
-                                  @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraDetails,
+                                  @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraModifiers,
                                   @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
@@ -172,7 +179,7 @@ public class GeneratorCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).complete();
 
-        BufferedImage item = builder.buildUnspecifiedItem(event, itemID, extraDetails, true);
+        BufferedImage item = builder.buildUnspecifiedItem(event, itemID, extraModifiers, true);
         if (item != null) {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(item))).setEphemeral(hidden).queue();
         }
@@ -195,7 +202,7 @@ public class GeneratorCommands extends ApplicationCommand {
                                  @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
                                  @Optional @AppOption(description = DESC_PADDING) Integer padding,
                                  @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
-                                 @Optional @AppOption(description = DESC_ITEM_ID, name = "display_item_id") String itemID,
+                                 @Optional @AppOption(description = DESC_ITEM_ID) String itemId,
                                  @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraModifiers,
                                  @Optional @AppOption(description = DESC_RECIPE) String recipe,
                                  @Optional @AppOption(description = DESC_RENDER_INVENTORY) Boolean renderBackground,
@@ -207,7 +214,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply(hidden).complete();
 
         // checking that there are two or more different items to merge the images
-        if ((itemName == null || rarity == null || itemLore == null) && itemID == null && recipe == null) {
+        if ((itemName == null || rarity == null || itemLore == null) && itemId == null && recipe == null) {
             event.getHook().sendMessage(MISSING_FULL_GEN_ITEM).queue();
             return;
         }
@@ -226,8 +233,8 @@ public class GeneratorCommands extends ApplicationCommand {
 
         // building the item for the which is beside the description
         BufferedImage generatedItem = null;
-        if (itemID != null) {
-            generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, false);
+        if (itemId != null) {
+            generatedItem = builder.buildUnspecifiedItem(event, itemId, extraModifiers, true);
             if (generatedItem == null) {
                 return;
             }
@@ -394,7 +401,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 // checking if the item is enchanted and applying the enchantment glint to the extra modifiers
                 JsonArray enchantJson = JsonUtil.isJsonArray(tagJSON, "ench");
                 if (enchantJson != null) {
-                    extraModifiers = extraModifiers.length() == 0 ? "enchant" : extraModifiers + ",enchant";
+                    extraModifiers = extraModifiers.isEmpty() ? "enchant" : extraModifiers + ",enchant";
                 }
             }
         }
@@ -421,7 +428,7 @@ public class GeneratorCommands extends ApplicationCommand {
         itemText.replace(itemText.length() - 2, itemText.length(), "");
         // checking if there was supposed to be an item stack is displayed with the item
         if (includeItem) {
-            itemGenCommand.append(" display_item_id:").append(itemID).append(extraModifiers.length() != 0 ? " extra_modifiers:" + extraModifiers : "");
+            itemGenCommand.append(" item_id:").append(itemID).append(!extraModifiers.isEmpty() ? " extra_modifiers:" + extraModifiers : "");
         }
 
         // creating the generated description
@@ -433,7 +440,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
         // checking if an item should be displayed alongside the description
         if (includeItem) {
-            BufferedImage generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, false);
+            BufferedImage generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, true);
             if (generatedItem == null) {
                 return;
             }
@@ -593,22 +600,49 @@ public class GeneratorCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "symbols", description = "Show a list of all stats symbols")
     public void showAllStats(GuildSlashEvent event) {
-        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Symbols").setColor(EMBED_COLORS[0]);
+        List<EmbedBuilder> embedBuilders = new ArrayList<>();
+        EmbedBuilder currentEmbed = new EmbedBuilder().setTitle("All Available Symbols").setColor(EMBED_COLORS[0]);
         StringBuilder idBuilder = new StringBuilder();
         StringBuilder symbolBuilder = new StringBuilder();
         StringBuilder displayBuilder = new StringBuilder();
 
         for (Stat stat : Stat.VALUES) {
-            idBuilder.append("%%").append(stat.name()).append("%%").append("\n");
-            symbolBuilder.append(stat.getIcon()).append("\n");
-            displayBuilder.append(stat.getDisplay()).append("\n");
+            String idLine = "%%" + stat.name() + "%%\n";
+            String symbolLine = stat.getIcon() + "\n";
+            String displayLine = stat.getDisplay() + "\n";
+
+            if (idBuilder.length() + idLine.length() > 1_024
+                || symbolBuilder.length() + symbolLine.length() > 1_024
+                || displayBuilder.length() + displayLine.length() > 1_024) {
+                currentEmbed.addField("ID", idBuilder.toString(), true);
+                currentEmbed.addField("Symbol", symbolBuilder.toString(), true);
+                currentEmbed.addField("Display", displayBuilder.toString(), true);
+
+                embedBuilders.add(currentEmbed);
+                currentEmbed = new EmbedBuilder().setTitle("All Available Symbols").setColor(EMBED_COLORS[0]);
+
+                idBuilder = new StringBuilder();
+                symbolBuilder = new StringBuilder();
+                displayBuilder = new StringBuilder();
+            }
+
+            idBuilder.append(idLine);
+            symbolBuilder.append(symbolLine);
+            displayBuilder.append(displayLine);
         }
 
-        embedBuilder.addField("ID", idBuilder.toString(), true);
-        embedBuilder.addField("Symbol", symbolBuilder.toString(), true);
-        embedBuilder.addField("Display", displayBuilder.toString(), true);
+        if (!idBuilder.isEmpty()) {
+            currentEmbed.addField("ID", idBuilder.toString(), true);
+            currentEmbed.addField("Symbol", symbolBuilder.toString(), true);
+            currentEmbed.addField("Display", displayBuilder.toString(), true);
+            embedBuilders.add(currentEmbed);
+        }
 
-        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
+        event.replyEmbeds(embedBuilders.stream()
+                .map(EmbedBuilder::build)
+                .collect(Collectors.toList())
+            ).setEphemeral(true)
+            .queue();
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "icons", description = "Show a list of all other icons")
@@ -628,7 +662,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "colors", description = "Show a list of all other icons")
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "colors", description = "Show a list of all colors")
     public void showAllColors(GuildSlashEvent event) {
         EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Colors").setColor(EMBED_COLORS[0]);
         StringBuilder idBuilder = new StringBuilder();
@@ -645,6 +679,23 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
 
+    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "flavors", description = "Show a list of all flavor texts")
+    public void showAllFlavorTexts(GuildSlashEvent event) {
+        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Flavor texts").setColor(EMBED_COLORS[0]);
+        StringBuilder idBuilder = new StringBuilder();
+        StringBuilder textBuilder = new StringBuilder();
+
+        for (Flavor flavor : Flavor.VALUES) {
+            idBuilder.append("%%").append(flavor.name()).append("%%").append("\n");
+            textBuilder.append(flavor.getText()).append("\n");
+        }
+
+        embedBuilder.addField("IDs", idBuilder.toString(), true);
+        embedBuilder.addField("Flavor texts", textBuilder.toString(), true);
+
+        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
+    }
+
     @AutocompletionHandler(name = "rarities", mode = AutocompletionMode.CONTINUITY, showUserInput = false)
     public Queue<String> listRarities(CommandAutoCompleteInteractionEvent event) {
         return Stream.of(Rarity.VALUES).map(Enum::name).collect(Collectors.toCollection(ArrayDeque::new));
@@ -657,6 +708,11 @@ public class GeneratorCommands extends ApplicationCommand {
         if (itemGenChannelIds == null) {
             event.reply("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
             return true;
+        }
+
+        // If the command was used in a thread, check if the parent channel is an item gen channel
+        if (event.getChannel() instanceof ThreadChannel threadChannel) {
+            senderChannelId = threadChannel.getParentChannel().getId();
         }
 
         if (Util.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {

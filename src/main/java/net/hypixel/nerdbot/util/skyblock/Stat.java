@@ -25,13 +25,33 @@ public enum Stat {
     PET_LUCK("♣", "Pet Luck", MCColor.LIGHT_PURPLE, MCColor.WHITE, StatColorParser::normalStatColorParser, null),
     SEA_CREATURE_CHANCE("α", "Sea Creature Chance", MCColor.DARK_AQUA, null, StatColorParser::boldedIconColorParser, StatColorParser::boldedIconParser),
     FISHING_SPEED("☂", "Fishing Speed", MCColor.AQUA),
+    DOUBLE_HOOK_CHANCE("⚓", "Double Hook Chance", MCColor.BLUE),
+    TREASURE_CHANCE("⛃", "Treasure Chance", MCColor.GOLD),
     ABILITY_DAMAGE("๑", "Ability Damage", MCColor.RED),
     MINING_SPEED("⸕", "Mining Speed", MCColor.GOLD),
+    GEMSTONE_SPREAD("▚", "Gemstone Spread", MCColor.YELLOW),
+    MINING_SPREAD("▚", "Mining Spread", MCColor.YELLOW),
     BREAKING_POWER("Ⓟ", "Breaking Power", MCColor.DARK_GREEN),
     PRISTINE("✧", "Pristine", MCColor.DARK_PURPLE),
+    BONUS_PEST_CHANCE("ൠ", "Bonus Pest Chance", MCColor.DARK_GREEN),
+    TROPHY_FISH_CHANCE("♔", "Trophy Fish Chance", MCColor.GOLD),
     MINING_FORTUNE("☘", "Mining Fortune", MCColor.GOLD),
     FARMING_FORTUNE("☘", "Farming Fortune", MCColor.GOLD),
+    WHEAT_FORTUNE("☘", "Wheat Fortune", MCColor.GOLD),
+    CARROT_FORTUNE("☘", "Carrot Fortune", MCColor.GOLD),
+    POTATO_FORTUNE("☘", "Potato Fortune", MCColor.GOLD),
+    PUMPKIN_FORTUNE("☘", "Pumpkin Fortune", MCColor.GOLD),
+    MELON_FORTUNE("☘", "Melon Fortune", MCColor.GOLD),
+    MUSHROOM_FORTUNE("☘", "Mushroom Fortune", MCColor.GOLD),
+    CACTUS_FORTUNE("☘", "Cactus Fortune", MCColor.GOLD),
+    SUGAR_CANE_FORTUNE("☘", "Sugar Cane Fortune", MCColor.GOLD),
+    NETHER_WART_FORTUNE("☘", "Nether Wart Fortune", MCColor.GOLD),
+    COCOA_BEANS_FORTUNE("☘", "Cocoa Beans Fortune", MCColor.GOLD),
     FORAGING_FORTUNE("☘", "Foraging Fortune", MCColor.GOLD),
+    ORE_FORTUNE("☘", "Ore Fortune", MCColor.GOLD),
+    BLOCK_FORTUNE("☘", "Block Fortune", MCColor.GOLD),
+    DWARVEN_METAL_FORTUNE("☘", "Dwarven Metal Fortune", MCColor.GOLD),
+    GEMSTONE_FORTUNE("☘", "Gemstone Fortune", MCColor.GOLD),
     COMBAT_WISDOM("☯", "Combat Wisdom", MCColor.DARK_AQUA),
     MINING_WISDOM("☯", "Mining Wisdom", MCColor.DARK_AQUA),
     FARMING_WISDOM("☯", "Farming Wisdom", MCColor.DARK_AQUA),
@@ -53,20 +73,16 @@ public enum Stat {
     FUEL("♢", "Fuel", MCColor.DARK_GREEN),
     MITHRIL_POWDER("᠅", "Mithril Powder", MCColor.DARK_GREEN),
     GEMSTONE_POWDER("᠅", "Gemstone Powder", MCColor.LIGHT_PURPLE),
-    REQUIRE("❣", "Requires", MCColor.RED, StatColorParser::postStatColorParser),
-    RECIPE("", "Right-click to view recipes!", MCColor.YELLOW, StatColorParser::noParsing),
-    COOP_SOULBOUND("", "Co-op Soulbound", MCColor.DARK_GRAY, StatColorParser::soulboundColorParsing),
-    SOULBOUND("", "Soulbound", MCColor.DARK_GRAY, StatColorParser::soulboundColorParsing),
-    REFORGABLE("", "This item can be reforged!", MCColor.DARK_GRAY, StatColorParser::noParsing),
+    GLACITE_POWDER("᠅", "Glacite Powder", MCColor.AQUA),
+    COLD("❄", "Cold", MCColor.AQUA),
+    HEAT("♨", "Heat", MCColor.RED),
+    COLD_RESISTANCE(COLD.getIcon(), "Cold Resistance", MCColor.AQUA),
+    HEAT_RESISTANCE(HEAT.getIcon(), "Heat Resistance", MCColor.RED),
+    MAGE_REPUTATION("ቾ", "Mage Reputation", MCColor.DARK_PURPLE),
+    BARBARIAN_REPUTATION("⚒", "Barbarian Reputation", MCColor.RED),
     ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, StatColorParser::itemStatColorParser, null),
     ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, StatColorParser::itemStatColorParser, null),
-    ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, StatColorParser::itemStatColorParser, null),
-    MANA_COST("", "Mana Cost:", MCColor.DARK_GRAY, MCColor.DARK_AQUA, StatColorParser::postDualColorParser, null),
-    COOLDOWN("", "Cooldown:", MCColor.DARK_GRAY, MCColor.GREEN, StatColorParser::postDualColorParser, null),
-    HEALTH_COST("", "Health Cost:", MCColor.DARK_GRAY, MCColor.RED, StatColorParser::postDualColorParser, null),
-    ABILITY("", "Ability", MCColor.GOLD, MCColor.YELLOW, StatColorParser::abilityColorParser, null),
-    RIFT_TRANSFERABLE("", "Rift-Transferable", MCColor.DARK_PURPLE, StatColorParser::noParsing),
-    UNDEAD("༕", "This armor piece is undead ༕!", MCColor.DARK_GREEN, StatColorParser::noParsing);
+    ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, StatColorParser::itemStatColorParser, null);
 
     public static final Stat[] VALUES = values();
 
@@ -91,10 +107,6 @@ public enum Stat {
 
     Stat(String icon, String stat, MCColor color) {
         this(icon, stat, color, null, StatColorParser::normalStatColorParser, null);
-    }
-
-    Stat(String icon, String stat, MCColor color, BiFunction<Stat, String, String> statColorParser) {
-        this(icon, stat, color, null, statColorParser, null);
     }
 
     public String getIcon() {

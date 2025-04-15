@@ -81,11 +81,6 @@
       "no_missing_profiles": "Geen missende profielen gevonden!",
       "migrated_profiles": "Migreerde %d profielen!"
     },
-    "flared": {
-      "no_tag": "Ik kon niet een label vinden met de naam `%s`!",
-      "already_tagged": "Dit bericht is al gelabeld!",
-      "tagged": "%s heeft de %s label toegevoegd en heeft deze suggestie gesloten!"
-    },
     "transfer_tag": {
       "invalid_tags": "Je hebt verkeerde van/naar labels ingevoerd, probeer het nog eens!",
       "no_threads_found": "Geen threads waren gevonden met de label %s!",

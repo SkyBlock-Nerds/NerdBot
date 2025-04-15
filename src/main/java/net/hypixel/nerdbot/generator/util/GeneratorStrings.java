@@ -1,10 +1,12 @@
 package net.hypixel.nerdbot.generator.util;
 
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
-import net.hypixel.nerdbot.util.skyblock.*;
+import net.hypixel.nerdbot.util.skyblock.Icon;
+import net.hypixel.nerdbot.util.skyblock.MCColor;
+import net.hypixel.nerdbot.util.skyblock.Rarity;
+import net.hypixel.nerdbot.util.skyblock.Stat;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 public class GeneratorStrings {
     public static final String COMMAND_PREFIX = "gen";
@@ -54,7 +56,7 @@ public class GeneratorStrings {
 
     // item gen item messages
     public static final String INVALID_RARITY; // generated in static constructor
-    public static final String INVALID_STAT_CODE; // generated in static constructor
+    public static final String INVALID_STAT_CODE = "You used an unknown attribute: `%s`. You can use the `/%s help` subcommands to view all possible attributes.";
     public static final String INVALID_MINECRAFT_COLOR_CODE; // generated in static constructor
     public static final String PERCENT_NOT_FOUND = "It seems that you don't have a closing `%%` near `%s`.";
     public static final String PERCENT_OUT_OF_RANGE = "It seems that you are missing a starting/ending `%%` for a color code or stat.";
@@ -138,7 +140,7 @@ public class GeneratorStrings {
                                                             Items can be displayed as enchanted by using `enchanted` as the last modifier.
                                                             """;
     public static final String DISPLAY_ITEM_INFO_PLAYER_HEAD = """
-                                                               As mentioned previously the `display_item` command can render Player Heads as well! Firstly set the `item_id` to `player_skull` so that the command knows you want to display a player head. Inside the `extra_modifiers` parameters, you would need to supply how you want the skin to be retrieved, which are as follows.
+                                                               As mentioned previously the `display_item` command can render Player Heads as well! Firstly set the `item_id` to `player_head` so that the command knows you want to display a player head. Inside the `extra_modifiers` parameters, you would need to supply how you want the skin to be retrieved, which are as follows.
 
                                                                **By Player Name**
                                                                Simply type the Minecraft name of the player that you want the skin of.
@@ -222,20 +224,7 @@ public class GeneratorStrings {
 
     static {
         MCColor[] colors = MCColor.VALUES;
-        Stat[] stats = Stat.VALUES;
-        Gemstone[] gemstones = Gemstone.VALUES;
         Rarity[] rarities = Rarity.VALUES;
-        Icon[] icons = Icon.VALUES;
-
-        INVALID_STAT_CODE = "You used an invalid option: `%s`" +
-            "\n\n**Valid Colors:**\n" +
-            Arrays.stream(colors).map(color1 -> color1 + " (`&" + color1.getColorCode() + "` or `%%%%" + color1 + "%%%%`)").collect(Collectors.joining(", ")) +
-            "\n\n**Valid Stats:**\n" +
-            Arrays.stream(stats).map(Stat::toString).collect(Collectors.joining(", ")) +
-            "\n\n**Valid Icons:**\n" +
-            Arrays.stream(icons).map(Icon::toString).collect(Collectors.joining(", ")) +
-            "\n\n**Valid Gemstones:**\n" +
-            Arrays.stream(gemstones).map(Gemstone::toString).collect(Collectors.joining(", "));
 
         StringBuilder availableMinecraftCodes = new StringBuilder(100);
         availableMinecraftCodes.append("You used an invalid character code `%c`.\nValid color codes include...\n");
