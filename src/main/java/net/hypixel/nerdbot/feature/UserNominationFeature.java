@@ -4,11 +4,13 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.cache.ChannelCache;
+import net.hypixel.nerdbot.command.ModMailCommands;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
@@ -18,6 +20,7 @@ import java.time.Month;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Optional;
 import java.util.TimerTask;
 
 @Log4j2
@@ -161,12 +164,12 @@ public class UserNominationFeature extends BotFeature {
     private static void sendNominationMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             textChannel.sendMessage("Promote " + member.getEffectiveName() + " to Nerd?\n("
-                + "Tracked Messages: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
-                + " / Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
-                + " / Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
-                + " / Nominations: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalNominations())
-                + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDateString()
-                + ")").queue();
+                    + "Tracked Messages: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
+                    + " / Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
+                    + " / Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
+                    + " / Nominations: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalNominations())
+                    + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDateString()
+                    + ")").queue();
             discordUser.getLastActivity().getNominationInfo().increaseNominations();
             log.info("Sent promotion nomination message for " + member.getEffectiveName() + " in voting channel (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
         }, () -> {
@@ -176,13 +179,20 @@ public class UserNominationFeature extends BotFeature {
 
     private static void sendInactiveUserMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-            textChannel.sendMessage("Warn or remove " + member.getEffectiveName() + " for inactivity? Last " + NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck() + " day(s):"
-                + "\n(Tracked Messages: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
-                + " / Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
-                + " / Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
-                + " / Inactivity Warnings: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalInactivityWarnings())
-                + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastInactivityWarningDateString()
-                + ")").queue();
+            Optional<ThreadChannel> modMailThread = ModMailCommands.getModMailThread(member.getUser());
+            String message = "Warn or remove " + member.getEffectiveName() + " for inactivity? Last " + NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck() + " day(s):"
+                    + "\n(Tracked Messages: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
+                    + " / Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
+                    + " / Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
+                    + " / Inactivity Warnings: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalInactivityWarnings())
+                    + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastInactivityWarningDateString()
+                    + ")";
+
+            if (modMailThread.isPresent()) {
+                message += "\nMod Mail Thread: " + modMailThread.get().getAsMention();
+            }
+
+            textChannel.sendMessage(message).queue();
             discordUser.getLastActivity().getNominationInfo().increaseInactivityWarnings();
             log.info("Sent inactivity warning message for " + member.getEffectiveName() + " in voting channel (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
         }, () -> {

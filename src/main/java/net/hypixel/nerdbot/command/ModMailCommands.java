@@ -96,7 +96,7 @@ public class ModMailCommands extends ApplicationCommand {
         }, () -> TranslationManager.edit(event.getHook(), commandSender, "commands.mod_mail.channel_not_found"));
     }
 
-    public Optional<ThreadChannel> getModMailThread(User user) {
+    public static Optional<ThreadChannel> getModMailThread(User user) {
         Optional<ForumChannel> optionalModMailChannel = ChannelCache.getModMailChannel();
 
         if (optionalModMailChannel.isEmpty()) {
