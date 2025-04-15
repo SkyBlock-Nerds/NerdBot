@@ -113,7 +113,7 @@ public class HypixelThreadURLWatcher {
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 String content = response.body().string();
-                log.debug("Successfully fetched content from " + url + "!" + " (Content: " + content + ")");
+                log.debug("Successfully fetched content from " + url + "!");
                 return SkyBlockThreadParser.parseSkyBlockThreads(content);
             } else {
                 log.error("Failed to fetch content from " + url + "! (Response: " + response + ")");
