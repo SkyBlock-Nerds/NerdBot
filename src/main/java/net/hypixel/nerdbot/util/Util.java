@@ -45,6 +45,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -119,6 +121,14 @@ public class Util {
     public static boolean isNullOrEmpty(String str) {
         return str == null || str.isEmpty();
     }
+
+    public static String getDockerContainerId() {
+        try {
+            return Files.readString(Path.of("/etc/hostname")).trim();
+        } catch (IOException e) {
+            log.error("Failed to read Docker container ID from /etc/hostname", e);
+            return "unknown";
+        }
     }
 
     public static Stream<String> safeArrayStream(String[]... arrays) {
