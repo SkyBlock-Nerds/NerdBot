@@ -19,6 +19,9 @@
 #   - HYPIXEL_KEY: Environment variable for the bot
 #   - CONFIG_FOLDER_PATH: Path to the config file folder on the vps
 
+# WARNING: your branch name can only contain alphanumerical symbols or '_'.
+#   Reason: Github Secrets do not support '-' in the name.
+
 name: Publish
 
 on:
