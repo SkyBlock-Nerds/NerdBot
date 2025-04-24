@@ -35,28 +35,20 @@ on:
       port:
         description: 'Port:'
         required: true
-        default: '8080'
+        default: '1234' # Default port is 1234 but should probably be changed to 9090 (convention)
         type: string
-      useOldImage:
+      useOldImage: # Useful in case of crashes
         description: 'Use old Docker image:'
         required: true
         default: false
         type: boolean
-
-  push:
-    branches:
-      - 'master'
-      - 'generator'
-    paths-ignore:
-      - '**.md'
-      - '.github/**'
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}-${{ github.ref_name }}:latest
   CONTAINER_NAME: nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}-${{ github.ref_name }}
   ENVIRONMENT_NAME: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
-  PORT: ${{ github.event.inputs.port || '1234' }} # Default port is 1234 but should probably be changed to 8080 (convention)
+  PORT: ${{ github.event.inputs.port || '1234' }} # Default port is 1234 but should probably be changed to 9090 (convention)
   NAME_BOT_TOKEN_SECRET: BOT_TOKEN_${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}_${{ github.ref_name }}
   USE_OLD_IMAGE: ${{ github.event.inputs.useOldImage || 'false' }}
 
