@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 public class TextWrapper {
 
     private static final Pattern STRIP_COLOR_PATTERN = Pattern.compile("[&§][0-9a-fA-FK-ORk-or]");
-    private static final Pattern NEWLINE_PATTERN = Pattern.compile("(\n|\\\\n)");
     private static final Pattern WORD_SPLIT_PATTERN = Pattern.compile(" ");
 
     private static final List<Parser<String>> PARSERS = List.of(
@@ -26,16 +25,25 @@ public class TextWrapper {
     );
 
     /**
+     * Represents a word segment with its stripped form and visible character count.
+     */
+    private record WordInfo(String original, String stripped, int visibleLength) {
+        static WordInfo from(String text) {
+            String stripped = stripColorCodes(text);
+            return new WordInfo(text, stripped, stripped.length());
+        }
+    }
+
+    /**
      * Holds the last color code and active formatting codes to carry over between lines/segments.
      */
     private record FormatState(String lastColor, String formattingCodes) {
-        // Represents the initial state with no formatting.
-        private static final FormatState EMPTY = new FormatState("", "");
+        static final FormatState EMPTY = new FormatState("", "");
 
         /**
          * Creates the formatting prefix string (e.g., "&c&l") to prepend to a new line/segment.
          */
-        public String prefix() {
+        String prefix() {
             return lastColor + formattingCodes;
         }
 
@@ -43,31 +51,29 @@ public class TextWrapper {
          * Calculates the formatting state at the end of a given segment
          * based on the state at the beginning of it
          *
-         * @param segment      The text segment to analyze.
-         * @param initialState The {@link FormatState} before this segment.
+         * @param segment  The text segment to analyse.
+         * @param previous The {@link FormatState} before this segment.
          *
-         * @return The {@link FormatState} after processing this segment.
+         * @return The {@link FormatState}  at the end of the segment.
          */
-        public static FormatState deriveStateFromSegment(String segment, FormatState initialState) {
-            String lastColor = initialState.lastColor();
-            StringBuilder formatting = new StringBuilder(initialState.formattingCodes());
+        static FormatState deriveFromSegment(String segment, FormatState previous) {
+            String lastColor = previous.lastColor();
+            StringBuilder formatting = new StringBuilder(previous.formattingCodes());
             boolean colorFoundInSegment = false;
 
             for (int i = 0; i < segment.length(); i++) {
                 if ((segment.charAt(i) == '&' || segment.charAt(i) == '§') && i + 1 < segment.length()) {
                     char code = Character.toLowerCase(segment.charAt(i + 1));
                     String codeStr = segment.substring(i, i + 2);
-
-                    if ("0123456789abcdef".indexOf(code) != -1) {
+                    if ("0123456789abcdef".indexOf(code) >= 0) {
                         lastColor = codeStr;
-                        formatting = new StringBuilder(); // We want to reset the formatting when changing color
+                        formatting = new StringBuilder();
                         colorFoundInSegment = true;
-                        i++; // Skip the code character
+                        i++;
                         log.debug("Found color code: '{}'", codeStr);
-                    } else if ("klmnor".indexOf(code) != -1) {
-                        // Append formatting codes to the formatting string
-                        if (colorFoundInSegment || initialState.lastColor.equals(lastColor)) {
-                            if (formatting.indexOf(codeStr) == -1) {
+                    } else if ("klmnor".indexOf(code) >= 0) {
+                        if (colorFoundInSegment || previous.lastColor().equals(lastColor)) {
+                            if (formatting.indexOf(codeStr) < 0) {
                                 formatting.append(codeStr);
                                 log.debug("Found formatting code: '{}'", codeStr);
                             }
@@ -101,89 +107,19 @@ public class TextWrapper {
         }
 
         String parsedInput = parseLine(input);
-        String[] rawLines = NEWLINE_PATTERN.split(parsedInput);
+        List<String> rawLines = parsedInput.lines().toList();
         FormatState currentFormatState = FormatState.EMPTY;
 
         for (String rawLine : rawLines) {
             log.debug("Processing raw line: '{}'", rawLine);
 
-            if (rawLine.isEmpty()) {
+            if (rawLine.isBlank()) {
                 lines.add(""); // Preserve empty lines between paragraphs
                 currentFormatState = FormatState.EMPTY;
-                log.debug("Adding empty line");
-                continue;
-            }
-
-            String[] words = WORD_SPLIT_PATTERN.split(rawLine);
-            StringBuilder currentLineBuilder = new StringBuilder();
-            int currentVisibleLength = 0;
-
-            // Process each word individually
-            for (String word : words) {
-                if (word.isEmpty()) {
-                    log.debug("Skipping empty word in words array: '{}' currentLineBuilder: '{}'", word, currentLineBuilder);
-                    continue;
-                }
-
-                String strippedWord = stripColorCodes(word);
-                int wordVisibleLength = strippedWord.length();
-
-                // Handle words that are longer than the max line length
-                if (wordVisibleLength > maxLineLength) {
-                    // Finish the current line before splitting the long word
-                    if (!currentLineBuilder.isEmpty()) {
-                        String finishedLine = currentLineBuilder.toString().trim();
-
-                        lines.add(currentFormatState.prefix() + finishedLine);
-                        log.debug("Adding line before splitting long word: '{}'", lines.get(lines.size() - 1));
-
-                        currentFormatState = FormatState.deriveStateFromSegment(finishedLine, currentFormatState);
-                        currentLineBuilder = new StringBuilder();
-                        currentVisibleLength = 0;
-                    }
-
-                    // Split the long word using the splitLongWord method
-                    currentFormatState = splitLongWord(word, maxLineLength, lines, currentFormatState);
-                } else { // Word fits within the max line length
-                    int spaceLength = (currentVisibleLength > 0) ? 1 : 0;
-
-                    // Check if the word fits on the current line
-                    if (currentVisibleLength + spaceLength + wordVisibleLength <= maxLineLength) {
-                        if (spaceLength > 0) {
-                            currentLineBuilder.append(" ");
-                            log.debug("Added space to current line: '{}'", currentLineBuilder);
-                        }
-
-                        currentLineBuilder.append(word);
-                        currentVisibleLength += spaceLength + wordVisibleLength;
-                        log.debug("Added word to current line: '{}'", word);
-                    } else {
-                        // Doesn't fit so lets stop and add the current line to the list
-                        String finishedLine = currentLineBuilder.toString().trim();
-
-                        lines.add(currentFormatState.prefix() + finishedLine);
-                        log.debug("Adding line due to length: '{}' (" + "currentVisibleLength: {}, wordVisibleLength: {})",
-                            lines.get(lines.size() - 1), currentVisibleLength, wordVisibleLength
-                        );
-
-                        currentFormatState = FormatState.deriveStateFromSegment(finishedLine, currentFormatState);
-
-                        // Start a new line
-                        currentLineBuilder = new StringBuilder(word);
-                        currentVisibleLength = wordVisibleLength;
-                    }
-                }
-            }
-
-            // Add any remaining text
-            if (!currentLineBuilder.isEmpty()) {
-                String finishedLine = currentLineBuilder.toString().trim();
-
-                lines.add(currentFormatState.prefix() + finishedLine);
-                log.debug("Adding last line: '{}'", lines.get(lines.size() - 1));
-
-                // Update format state for the next paragraph
-                currentFormatState = FormatState.deriveStateFromSegment(finishedLine, currentFormatState);
+            } else {
+                WrappedLineResult result = wrapSingleRawLine(rawLine, currentFormatState, maxLineLength);
+                lines.addAll(result.wrappedLines());
+                currentFormatState = result.endState();
             }
         }
 
@@ -191,68 +127,132 @@ public class TextWrapper {
     }
 
     /**
-     * Splits a single word that is longer than maxLineLength into multiple lines,
-     * attempting to preserve formatting codes across each line.
+     * Holds the wrapped lines for one raw line plus the final {@link FormatState}
+     */
+    private record WrappedLineResult(List<String> wrappedLines, FormatState endState) {
+    }
+
+    /**
+     * Wraps one raw line (including spaces) into wrapped lines.
+     *
+     * @param rawLine       The original line with leading spaces.
+     * @param initialState  The {@link FormatState} at line start.
+     * @param maxLineLength The maximum visible line length.
+     *
+     * @return Wrapped lines and final {@link FormatState}.
+     */
+    private static WrappedLineResult wrapSingleRawLine(String rawLine, FormatState initialState, int maxLineLength) {
+        String withoutIndent = rawLine.stripLeading();
+        String indent = rawLine.substring(0, rawLine.length() - withoutIndent.length());
+        String linePrefix = initialState.prefix() + indent;
+
+        List<String> lines = new ArrayList<>();
+        FormatState state = initialState;
+        StringBuilder currentLineBuilder = new StringBuilder(indent);
+        int currentVisibleLength = indent.length();
+        boolean isFirstWord = true;
+
+        // Split the line into words
+        for (String rawWord : WORD_SPLIT_PATTERN.split(withoutIndent)) {
+            if (rawWord.isEmpty()) {
+                continue;
+            }
+
+            WordInfo info = WordInfo.from(rawWord);
+            int visibleLength = info.visibleLength();
+
+            if (visibleLength > maxLineLength) {
+                // Write out current line content before splitting the long word
+                if (currentLineBuilder.length() > indent.length()) {
+                    String completedLine = currentLineBuilder.toString().stripTrailing();
+                    lines.add(linePrefix + completedLine);
+                    state = FormatState.deriveFromSegment(completedLine, state);
+                    currentLineBuilder = new StringBuilder(indent);
+                    currentVisibleLength = indent.length();
+                    isFirstWord = true;
+                }
+
+                state = splitLongWord(rawWord, maxLineLength, lines, state, indent);
+                continue;
+            }
+
+            int spaceNeeded = isFirstWord ? 0 : 1;
+            // Start a new wrapped line if there isn't enough space
+            if (currentVisibleLength + spaceNeeded + visibleLength > maxLineLength) {
+                String completedLine = currentLineBuilder.toString().stripTrailing();
+                lines.add(linePrefix + completedLine);
+                state = FormatState.deriveFromSegment(completedLine, state);
+                currentLineBuilder = new StringBuilder(indent);
+                currentVisibleLength = indent.length();
+                spaceNeeded = 0;
+            }
+
+            if (spaceNeeded > 0) {
+                currentLineBuilder.append(' ');
+                currentVisibleLength++;
+            }
+
+            currentLineBuilder.append(rawWord);
+            currentVisibleLength += visibleLength;
+            isFirstWord = false;
+        }
+
+        // Add any remaining content to the current line
+        if (currentLineBuilder.length() > indent.length()) {
+            String completedLine = currentLineBuilder.toString().stripTrailing();
+            lines.add(linePrefix + completedLine);
+            state = FormatState.deriveFromSegment(completedLine, state);
+        }
+
+        return new WrappedLineResult(lines, state);
+    }
+
+    /**
+     * Splits a long word into segments that fit within maxLineLength,
+     * preserving formatting codes and indent.
      *
      * @param word          The word to split.
-     * @param maxLineLength The maximum visible length per line.
-     * @param lines         The list to add the split segments to.
+     * @param maxLineLength The maximum visible length per segment.
+     * @param lines         The list to add the split segments into.
      * @param initialState  The {@link FormatState} entering this word.
+     * @param indent        Leading spaces to preserve
      *
-     * @return The {@link FormatState} at the end of the split word.
+     * @return the {@link FormatState} after all segments
      */
-    private static FormatState splitLongWord(String word, int maxLineLength, List<String> lines, FormatState initialState) {
-        log.debug("Splitting long word: '{}'", word);
-
+    private static FormatState splitLongWord(String word, int maxLineLength, List<String> lines, FormatState initialState, String indent) {
         FormatState currentWordFormatState = initialState;
-        int currentActualIndex = 0; // Position in the original string
+        String prefix = initialState.prefix() + indent;
+        int currentActualIndex = 0;
 
         while (currentActualIndex < word.length()) {
             int currentVisibleLength = 0;
-            int segmentEndActualIndex = currentActualIndex; // End position in the original string
+            int segmentEndActualIndex = currentActualIndex;
 
-            // Iterate through the word to find where to cut based on visible characters
             for (int i = currentActualIndex; i < word.length(); ) {
-                char currentChar = word.charAt(i);
-
-                // Check for formatting codes (& or § followed by a valid code character)
-                if ((currentChar == '&' || currentChar == '§') && i + 1 < word.length()) {
-                    char code = Character.toLowerCase(word.charAt(i + 1));
-
-                    if ("0123456789abcdefklmnor".indexOf(code) != -1) {
-                        i += 2; // Skip formatting codes since they don't count towards visible length
-                    } else {
-                        currentVisibleLength++; // Treat first character as a visible character
-                        i++;
-                    }
+                if (isFormattingCodeAt(word, i)) {
+                    // Skip over the formatting code
+                    i += 2;
                 } else {
-                    currentVisibleLength++; // Regular visible character
+                    currentVisibleLength++;
                     i++;
                 }
 
-                segmentEndActualIndex = i; // Mark the position after the processed character
+                segmentEndActualIndex = i;
 
-                // Stop if this segment reaches the max visible length
-                if (currentVisibleLength >= maxLineLength) {
-                    log.debug("Reached max visible length: {} (currentVisibleLength: {})", maxLineLength, currentVisibleLength);
+                if (currentVisibleLength >= maxLineLength - indent.length()) {
                     break;
                 }
             }
 
-            // Extract the substring for this line segment
             String lineSegment = word.substring(currentActualIndex, segmentEndActualIndex);
 
-            // Add the segment to the list of lines, prepending existing formatting
-            lines.add(currentWordFormatState.prefix() + lineSegment);
-            log.debug("Added split word segment: '{}'", lines.get(lines.size() - 1));
+            lines.add(prefix + lineSegment);
+            log.debug("Added split word segment: '{}'", lines.getLast());
 
-            // Determine the formatting state to be used for the next segment
-            currentWordFormatState = FormatState.deriveStateFromSegment(lineSegment, currentWordFormatState);
-            // Move the starting point for the next segment
+            currentWordFormatState = FormatState.deriveFromSegment(lineSegment, currentWordFormatState);
             currentActualIndex = segmentEndActualIndex;
         }
 
-        // Return the final state after processing the entire word
         return currentWordFormatState;
     }
 
@@ -272,6 +272,25 @@ public class TextWrapper {
     }
 
     /**
+     * Returns true if at position in text there's a Minecraft formatting
+     * code ('&' or '§' followed by a valid color character)
+     */
+    private static boolean isFormattingCodeAt(CharSequence text, int position) {
+        if (position + 1 >= text.length()) {
+            return false;
+        }
+
+        char prefix = text.charAt(position);
+        char codeChar = Character.toLowerCase(text.charAt(position + 1));
+
+        if (prefix != '&' && prefix != '§') {
+            return false;
+        }
+
+        return "0123456789abcdefklmnor".indexOf(codeChar) >= 0;
+    }
+
+    /**
      * Applies a list of {@link Parser parsers} to a line of text. Parsers are
      * executed in the order they are defined in the {@link #PARSERS} array.
      *
@@ -283,7 +302,6 @@ public class TextWrapper {
         if (line == null) {
             return "";
         }
-
         return Parser.parseString(line, PARSERS);
     }
 }
