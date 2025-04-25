@@ -80,6 +80,7 @@ public class Util {
         "nerds-project"
     };
     public static final String[] SPECIAL_ROLES = {"Apex Nerd", "Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
+    public static final String[] SPECIAL_ROLES = {"Ultimate Nerd", "Ultimate Nerd But Red", "Game Master"};
     private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
     private static final String ALL_PATTERN = "[0-9A-FK-OR]";
     public static final Pattern VANILLA_PATTERN = Pattern.compile(SECTION_SYMBOL + "+(" + ALL_PATTERN + ")", Pattern.CASE_INSENSITIVE);
