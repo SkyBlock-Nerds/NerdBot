@@ -286,8 +286,7 @@ public class ModMailListener {
 
         // Stuffy: Check if message starts with ? and if so, ignore it, log it and send a message to the thread channel.
         if (message.getContentRaw().startsWith("?")) {
-            Emoji emoji = Emoji.fromUnicode("U+1F92B");
-            message.addReaction(emoji).queue();
+            message.addReaction(Emoji.fromUnicode("U+1F92B")).queue();
             log.info(author.getName() + " sent a hidden message (Thread ID: " + threadChannel.getId() + ")");
             return;
         }
@@ -296,6 +295,7 @@ public class ModMailListener {
         User requester = NerdBotApp.getBot().getJDA().getUserById(userId);
         if (requester == null) {
             log.error("Unable to find user with ID " + userId + " for thread " + threadChannel.getId() + "!");
+            message.addReaction(Emoji.fromUnicode("U+274C")).queue();
             return;
         }
 
