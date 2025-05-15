@@ -39,7 +39,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
             String[] components = item.split(":", 2);
 
             if (components.length != 2) {
-                throw new GeneratorException("Unknown inventory item: `%s`", item);
+                throw new GeneratorException("Incorrect amount of components present in item: `%s` (expected 2, found %d)".formatted(item, components.length));
             }
 
             // getting the material data
@@ -105,7 +105,6 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
 
     /**
      * Converts the key-value pairs into slot and amount data for a {@link InventoryItem}
-     * <br>
      *
      * @param slotMap  String-Dictionary with mapped slot index (key) and amount (value)
      * @param material Material of the item required

@@ -57,7 +57,7 @@ public class NerdBotApp {
         try {
             nerdBot.create(args);
         } catch (LoginException | InvalidTokenException exception) {
-            log.error("Failed to log into the bot with the given credentials!");
+            log.error("Failed to log into the bot with the given credentials: " + exception.getMessage());
             System.exit(-1);
         } catch (MongoException exception) {
             log.error("Failed to connect to MongoDB!");
