@@ -64,13 +64,15 @@ import java.util.stream.Stream;
 public class Util {
 
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
-    public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
     public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
     public static final DateTimeFormatter REGULAR_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss ZZZ").withZone(ZoneId.systemDefault());
     public static final DateTimeFormatter FILE_NAME_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss").withZone(ZoneId.systemDefault());
 
-    public static final Pattern UUID_REGEX = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}");
-    public static final Pattern TRIMMED_UUID_REGEX = Pattern.compile("[a-f0-9]{12}4[a-f0-9]{3}[89aAbB][a-f0-9]{15}");
+    public static final Pattern MINECRAFT_USERNAME_REGEX = Pattern.compile("^[a-zA-Z0-9_]{2,16}");
+    public static final Pattern MINECRAFT_UUID_REGEX = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}");
+    public static final Pattern TRIMMED_MINECRAFT_UUID_REGEX = Pattern.compile("[a-f0-9]{12}4[a-f0-9]{3}[89aAbB][a-f0-9]{15}");
+    public static final Pattern SKIN_BASE64_REGEX = Pattern.compile("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$");
+
     public static final String SECTION_SYMBOL = "§";
     public static final String[] PROJECT_CHANNEL_NAMES = {
         "project",
@@ -83,8 +85,6 @@ public class Util {
     private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
     private static final String ALL_PATTERN = "[0-9A-FK-OR]";
     public static final Pattern VANILLA_PATTERN = Pattern.compile(SECTION_SYMBOL + "+(" + ALL_PATTERN + ")", Pattern.CASE_INSENSITIVE);
-    @Deprecated
-    private static final String MINECRAFT_USERNAME_REGEX = "^[a-zA-Z0-9_]{2,16}";
     @Deprecated
     private static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
 
@@ -366,7 +366,7 @@ public class Util {
         String memberMCUsername = null;
 
         // checks if the member's username has flair
-        if (!Pattern.matches(MINECRAFT_USERNAME_REGEX, plainUsername)) {
+        if (!MINECRAFT_USERNAME_REGEX.matcher(plainUsername).matches()) {
             // removes start and end characters ([example], {example}, |example| or (example)).
             // also strips spaces from the username
             plainUsername = plainUsername.replaceAll(SURROUND_REGEX, "").replace(" ", "");
@@ -374,7 +374,7 @@ public class Util {
 
             // gets the first item that matches the name constraints
             for (String item : splitUsername) {
-                if (Pattern.matches(MINECRAFT_USERNAME_REGEX, item)) {
+                if (MINECRAFT_USERNAME_REGEX.matcher(item).matches()) {
                     memberMCUsername = item;
                     break;
                 }
@@ -451,7 +451,7 @@ public class Util {
     }
 
     public static boolean isUUID(String input) {
-        return (input != null && !input.isEmpty()) && (input.matches(UUID_REGEX.pattern()) || input.matches(TRIMMED_UUID_REGEX.pattern()));
+        return (input != null && !input.isEmpty()) && (input.matches(MINECRAFT_UUID_REGEX.pattern()) || input.matches(TRIMMED_MINECRAFT_UUID_REGEX.pattern()));
     }
 
     /**

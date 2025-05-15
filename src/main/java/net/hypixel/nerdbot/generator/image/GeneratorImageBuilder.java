@@ -85,7 +85,7 @@ public class GeneratorImageBuilder {
             Thread.currentThread().interrupt();
             throw new GeneratorException("Image generation was interrupted", exception);
         } catch (ExecutionException exception) {
-            throw new GeneratorException("An error occurred during image generation", exception.getCause());
+            throw new GeneratorException(exception.getCause().getMessage(), exception);
         }
     }
 

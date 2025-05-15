@@ -233,16 +233,16 @@ public class MinecraftTooltipGenerator implements Generator {
          *
          * @return A properly formatted slash command string.
          */
+        // TODO support player head textures
         public String buildSlashCommand() {
-            StringBuilder commandBuilder = new StringBuilder("/" + GeneratorCommands.BASE_COMMAND + " item full ");
+            StringBuilder commandBuilder = new StringBuilder("/" + GeneratorCommands.BASE_COMMAND + " full ");
             Field[] fields = this.getClass().getDeclaredFields();
 
             for (Field field : fields) {
                 try {
                     field.setAccessible(true);
 
-                    int modifiers = field.getModifiers();
-                    if (Modifier.isTransient(modifiers)) {
+                    if (Modifier.isTransient(field.getModifiers())) {
                         continue;
                     }
 
