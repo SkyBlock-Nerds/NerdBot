@@ -141,20 +141,21 @@ public class UserNominationFeature extends BotFeature {
             boolean hasRequiredVotes = totalVotes >= requiredVotes;
             boolean hasRequiredComments = totalComments >= requiredComments;
             boolean hasRequiredMessages = totalMessages >= requiredMessages;
+            final int requirementsMet = (hasRequiredMessages ? 1 : 0) + (hasRequiredComments ? 1 : 0) + (hasRequiredVotes ? 1 : 0);
 
-            log.info("Checking if " + member.getEffectiveName() + " should be flagged for inactivity (total messages: " + totalMessages + ", total comments: " + totalComments + ", total votes: " + totalVotes + ") (has min. comments: " + hasRequiredComments + ", has min. votes: " + hasRequiredVotes + ", has min. messages: " + hasRequiredMessages + ")");
+            log.info("Checking if " + member.getEffectiveName() + " should be flagged for inactivity (total messages: " + totalMessages + ", total comments: " + totalComments + ", total votes: " + totalVotes + ") (has min. comments: " + hasRequiredComments + ", has min. votes: " + hasRequiredVotes + ", has min. messages: " + hasRequiredMessages + ", requirements met: " + requirementsMet + "/3)");
 
             lastActivity.getNominationInfo().getLastInactivityWarningDate().ifPresentOrElse(date -> {
                 Month lastInactivityWarningMonth = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
                 Month monthNow = Calendar.getInstance().toInstant().atZone(ZoneId.systemDefault()).getMonth();
 
-                if (lastInactivityWarningMonth != monthNow && !(hasRequiredComments && hasRequiredVotes && hasRequiredMessages)) {
+                if (lastInactivityWarningMonth != monthNow && requirementsMet < 2) {
                     log.debug("Last inactivity check was not this month (last: " + lastInactivityWarningMonth + ", now: " + monthNow + "), sending inactivity message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
                     sendInactiveUserMessage(member, discordUser);
                 }
             }, () -> {
                 log.debug("No last inactivity warning date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
-                if (!(hasRequiredMessages && hasRequiredComments && hasRequiredVotes)) {
+                if (requirementsMet < 2) {
                     sendInactiveUserMessage(member, discordUser);
                 }
             });
