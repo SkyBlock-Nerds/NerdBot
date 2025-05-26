@@ -9,6 +9,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.feature.BotFeature;
+import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.command.ModMailCommands;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -84,7 +85,7 @@ public class UserNominationFeature extends BotFeature {
             boolean hasRequiredVotes = totalVotes >= requiredVotes;
             boolean hasRequiredComments = totalComments >= requiredComments;
 
-            log.info("Checking if " + member.getEffectiveName() + " should be nominated for promotion (total comments: " + totalComments + ", total votes: " + totalVotes + ") (comments: " + hasRequiredComments + ", votes: " + hasRequiredVotes + ")");
+            log.info("Checking if " + member.getEffectiveName() + " should be nominated for promotion (total comments: " + totalComments + ", total votes: " + totalVotes + ", meets comments requirement: " + hasRequiredComments + ", meets votes requirement: " + hasRequiredVotes + ")");
 
             lastActivity.getNominationInfo().getLastNominationDate().ifPresentOrElse(date -> {
                 Month lastNominationMonth = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
@@ -111,7 +112,7 @@ public class UserNominationFeature extends BotFeature {
         int requiredComments = NerdBotApp.getBot().getConfig().getRoleConfig().getCommentsRequiredForInactivityCheck();
         int requiredMessages = NerdBotApp.getBot().getConfig().getRoleConfig().getMessagesRequiredForInactivityCheck();
 
-        log.info("Checking for inactive users (required votes: " + requiredVotes + ", required comments: " + requiredComments + ")");
+        log.info("Checking for inactive users (required votes: " + requiredVotes + ", required comments: " + requiredComments + ", required messages: " + requiredMessages + ")");
 
         discordUserRepository.getAll().forEach(discordUser -> {
             Member member = guild.getMemberById(discordUser.getDiscordId());
@@ -151,12 +152,12 @@ public class UserNominationFeature extends BotFeature {
 
                 if (lastInactivityWarningMonth != monthNow && requirementsMet < 2) {
                     log.debug("Last inactivity check was not this month (last: " + lastInactivityWarningMonth + ", now: " + monthNow + "), sending inactivity message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
-                    sendInactiveUserMessage(member, discordUser);
+                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments);
                 }
             }, () -> {
-                log.debug("No last inactivity warning date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
+                log.debug("No last inactivity warning date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", min. messages: " + requiredMessages + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
                 if (requirementsMet < 2) {
-                    sendInactiveUserMessage(member, discordUser);
+                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments);
                 }
             });
         });
@@ -178,15 +179,21 @@ public class UserNominationFeature extends BotFeature {
         });
     }
 
-    private static void sendInactiveUserMessage(Member member, DiscordUser discordUser) {
+    private static void sendInactiveUserMessage(Member member, DiscordUser discordUser, int requiredMessages, int requiredVotes, int requiredComments) {
+        LastActivity lastActivity = discordUser.getLastActivity();
+        RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
+        int totalMessages = lastActivity.getTotalMessageCount(roleConfig.getDaysRequiredForInactivityCheck());
+        int totalVotes = lastActivity.getTotalVotes(roleConfig.getDaysRequiredForInactivityCheck());
+        int totalComments = lastActivity.getTotalComments(roleConfig.getDaysRequiredForInactivityCheck());
+
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             Optional<ThreadChannel> modMailThread = ModMailCommands.getModMailThread(member.getUser());
-            String message = "Warn or remove " + member.getEffectiveName() + " for inactivity? Last " + NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck() + " day(s):"
-                + "\n(Tracked Messages: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
-                + " / Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
-                + " / Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck()))
-                + " / Inactivity Warnings: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalInactivityWarnings())
-                + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastInactivityWarningDateString()
+            String message = "Warn or remove " + member.getEffectiveName() + " for inactivity? Last " + roleConfig.getDaysRequiredForInactivityCheck() + " day(s):"
+                + "\n(Tracked Messages: " + Util.COMMA_SEPARATED_FORMAT.format(totalMessages) + "/" + requiredMessages
+                + " / Votes: " + Util.COMMA_SEPARATED_FORMAT.format(totalVotes) + "/" + requiredVotes
+                + " / Comments: " + Util.COMMA_SEPARATED_FORMAT.format(totalComments) + "/" + requiredComments
+                + " / Inactivity Warnings: " + Util.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalInactivityWarnings())
+                + " / Last: " + lastActivity.getNominationInfo().getLastInactivityWarningDateString()
                 + ")";
 
             if (modMailThread.isPresent()) {
