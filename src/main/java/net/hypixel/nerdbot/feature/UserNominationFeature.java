@@ -135,8 +135,8 @@ public class UserNominationFeature extends BotFeature {
 
             LastActivity lastActivity = discordUser.getLastActivity();
             int totalMessages = lastActivity.getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
-            int totalComments = lastActivity.getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getCommentsRequiredForInactivityCheck());
-            int totalVotes = lastActivity.getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getVotesRequiredForInactivityCheck());
+            int totalComments = lastActivity.getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
+            int totalVotes = lastActivity.getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
 
             boolean hasRequiredVotes = totalVotes >= requiredVotes;
             boolean hasRequiredComments = totalComments >= requiredComments;
