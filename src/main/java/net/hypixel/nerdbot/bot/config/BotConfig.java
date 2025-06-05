@@ -139,11 +139,6 @@ public class BotConfig {
     private int inactivityMessages = 10;
 
     /**
-     * The length of time in milliseconds that the bot will wait for an image to be generated before timing out
-     */
-    private long imageGeneratorTimeoutMs = 3_000;
-
-    /**
      * The api used for generating images.
      */
     private String imageGeneratorProvider = "";

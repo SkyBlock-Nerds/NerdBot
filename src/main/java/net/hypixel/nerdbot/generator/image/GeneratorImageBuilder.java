@@ -73,20 +73,7 @@ public class GeneratorImageBuilder {
      * @throws GeneratorException if the generation fails or times out.
      */
     public GeneratedObject build() {
-        Future<GeneratedObject> future = executorService.submit(this::buildInternal);
-        long timeoutMs = NerdBotApp.getBot().getConfig().getImageGeneratorTimeoutMs();
-
-        try {
-            return future.get(timeoutMs, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException exception) {
-            future.cancel(true);
-            throw new GeneratorException("Image generation timed out", exception);
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            throw new GeneratorException("Image generation was interrupted", exception);
-        } catch (ExecutionException exception) {
-            throw new GeneratorException(exception.getCause().getMessage(), exception);
-        }
+        return buildInternal();
     }
 
     /**
