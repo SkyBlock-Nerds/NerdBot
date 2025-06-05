@@ -16,7 +16,9 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.service.orangejuice.SearchService;
+import net.hypixel.nerdbot.service.orangejuice.generateHeadService;
 import net.hypixel.nerdbot.service.orangejuice.generateItemService;
+import net.hypixel.nerdbot.service.orangejuice.requestmodels.generator.HeadGeneratorRequest;
 import net.hypixel.nerdbot.service.orangejuice.requestmodels.generator.ItemGeneratorRequest;
 import net.hypixel.nerdbot.util.Util;
 
@@ -139,7 +141,20 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        // TODO: call api and return error or result
+        try {
+            HeadGeneratorRequest request = new HeadGeneratorRequest();
+            request.setSkinValue(texture);
+
+            generateHeadService service = new generateHeadService();
+            byte[] imageBytes = service.generateHead(request);
+
+            event.getHook().editOriginalAttachments(
+                FileUpload.fromData(imageBytes, "head.png")
+            ).queue();
+        } catch (Exception e) {
+            log.error("Error generating item image", e);
+            event.getHook().editOriginal("Failed to generate item image.").queue();
+        }
 
         addCommandToUserHistory(event.getUser(), event.getCommandString());
     }
