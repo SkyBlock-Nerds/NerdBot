@@ -15,8 +15,8 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.service.orangejuice.SearchService;
 import net.hypixel.nerdbot.util.Util;
-import org.apache.commons.lang.NotImplementedException;
 
 import java.io.File;
 import java.io.IOException;
@@ -88,7 +88,12 @@ public class GeneratorCommands extends ApplicationCommand {
 
         List<String> results = new ArrayList<>();
 
-        // TODO: call api and return error or result
+        try {
+            results = SearchService.getItemIds(itemId);
+        } catch (Exception e) {
+            log.error("Error searching for itemId.", e);
+            event.getHook().editOriginal("Search failed, an error occurred.").queue();
+        }
 
         if (results.isEmpty()) {
             event.getHook().editOriginal("No results found for that item!").queue();
@@ -287,23 +292,19 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-
     @AutocompletionHandler(name = "item-names", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
-    public List<String> itemNames(CommandAutoCompleteInteractionEvent event) {
-        // TODO: call api and return error or result
-        throw new NotImplementedException();
+    public List<String> itemNames(CommandAutoCompleteInteractionEvent event) throws IOException, InterruptedException {
+        return SearchService.getItemIds(null);
     }
 
     @AutocompletionHandler(name = "item-rarities", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
-    public List<String> itemRarities(CommandAutoCompleteInteractionEvent event) {
-        // TODO: call api and return error or result
-        throw new NotImplementedException();
+    public List<String> itemRarities(CommandAutoCompleteInteractionEvent event) throws IOException, InterruptedException {
+        return SearchService.getRarities(null);
     }
 
     @AutocompletionHandler(name = "tooltip-side", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
-    public List<String> tooltipSide(CommandAutoCompleteInteractionEvent event) {
-        // TODO: call api and return error or result
-        throw new NotImplementedException();
+    public List<String> tooltipSide(CommandAutoCompleteInteractionEvent event) throws IOException, InterruptedException {
+        return SearchService.getTooltipSides(null);
     }
 
     /**
