@@ -154,5 +154,6 @@
   "inactivityCheckEnabled": true,
   "inactivityDays": 7,
   "inactivityMessages": 10,
-  "imageGeneratorTimeoutMs": 3000
+  "imageGeneratorTimeoutMs": 3000,
+  "imageGeneratorProvider": ""
 }
