@@ -4,7 +4,7 @@ import net.hypixel.nerdbot.service.orangejuice.requestmodels.generator.HeadGener
 
 import java.io.IOException;
 
-public class generateHeadService extends generatorBaseService {
+public class GenerateHeadService extends GeneratorBaseService {
 
     public byte[] generateHead(HeadGeneratorRequest data) throws IOException, InterruptedException {
         return generateImage("/head", data);

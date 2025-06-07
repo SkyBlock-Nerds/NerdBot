@@ -7,7 +7,7 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-public class generatorBaseService extends OrangeJuiceApiService {
+public class GeneratorBaseService extends OrangeJuiceApiService {
 
     protected byte[] generateImage(String endpoint, Object data) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()

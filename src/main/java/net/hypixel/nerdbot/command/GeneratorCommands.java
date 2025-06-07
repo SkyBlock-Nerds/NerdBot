@@ -16,8 +16,8 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.service.orangejuice.SearchService;
-import net.hypixel.nerdbot.service.orangejuice.generateHeadService;
-import net.hypixel.nerdbot.service.orangejuice.generateItemService;
+import net.hypixel.nerdbot.service.orangejuice.GenerateHeadService;
+import net.hypixel.nerdbot.service.orangejuice.GenerateItemService;
 import net.hypixel.nerdbot.service.orangejuice.requestmodels.generator.HeadGeneratorRequest;
 import net.hypixel.nerdbot.service.orangejuice.requestmodels.generator.ItemGeneratorRequest;
 import net.hypixel.nerdbot.util.Util;
@@ -83,7 +83,7 @@ public class GeneratorCommands extends ApplicationCommand {
             request.setHoverEffect(hoverEffect);
             request.setSkinValue(skinValue);
 
-            generateItemService service = new generateItemService();
+            GenerateItemService service = new GenerateItemService();
             byte[] imageBytes = service.generateItem(request);
 
             event.getHook().editOriginalAttachments(
@@ -145,7 +145,7 @@ public class GeneratorCommands extends ApplicationCommand {
             HeadGeneratorRequest request = new HeadGeneratorRequest();
             request.setSkinValue(texture);
 
-            generateHeadService service = new generateHeadService();
+            GenerateHeadService service = new GenerateHeadService();
             byte[] imageBytes = service.generateHead(request);
 
             event.getHook().editOriginalAttachments(
