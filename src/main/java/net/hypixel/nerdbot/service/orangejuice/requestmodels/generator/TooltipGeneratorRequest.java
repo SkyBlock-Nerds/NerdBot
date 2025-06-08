@@ -1,7 +1,10 @@
 package net.hypixel.nerdbot.service.orangejuice.requestmodels.generator;
 
+import lombok.Data;
+import lombok.Getter;
 import net.hypixel.nerdbot.service.orangejuice.requestmodels.generator.submodels.InventoryItem;
 
+@Data
 public class TooltipGeneratorRequest {
     private String itemName;
 

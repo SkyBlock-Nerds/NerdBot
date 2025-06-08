@@ -15,17 +15,21 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.service.orangejuice.GenerateTextService;
+import net.hypixel.nerdbot.service.orangejuice.NbtParseService;
 import net.hypixel.nerdbot.service.orangejuice.SearchService;
 import net.hypixel.nerdbot.service.orangejuice.GenerateHeadService;
 import net.hypixel.nerdbot.service.orangejuice.GenerateItemService;
 import net.hypixel.nerdbot.service.orangejuice.requestmodels.generator.HeadGeneratorRequest;
 import net.hypixel.nerdbot.service.orangejuice.requestmodels.generator.ItemGeneratorRequest;
+import net.hypixel.nerdbot.service.orangejuice.requestmodels.generator.TextGeneratorRequest;
 import net.hypixel.nerdbot.util.Util;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 
 @Log4j2
 public class GeneratorCommands extends ApplicationCommand {
@@ -87,7 +91,7 @@ public class GeneratorCommands extends ApplicationCommand {
             byte[] imageBytes = service.generateItem(request);
 
             event.getHook().editOriginalAttachments(
-                FileUpload.fromData(imageBytes, "item.png")
+                FileUpload.fromData(imageBytes, "item" + getImageExtension(imageBytes))
             ).queue();
         } catch (Exception e) {
             log.error("Error generating item image", e);
@@ -207,7 +211,43 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        // TODO: call api and return error or result
+        try {
+            NbtParseService.ParsedNbt parsedNbt = new NbtParseService().parseNbt(nbt, alpha, padding);
+
+            BiFunction<String, Object, String> concatIfNotNull = (str, obj) -> obj != null ? str + ": " + obj + " " : "";
+
+            event.getHook().editOriginal(
+                "Parsed NBT successfully! Here is the command:\n" +
+                    "```\n" +
+                    "/" + BASE_COMMAND + " full " +
+                    concatIfNotNull.apply("item_name", parsedNbt.getTooltipGeneratorRequest().getItemName()) +
+                    concatIfNotNull.apply("item_lore", parsedNbt.getTooltipGeneratorRequest().getItemLore()) +
+                    concatIfNotNull.apply("type", parsedNbt.getTooltipGeneratorRequest().getType()) +
+                    concatIfNotNull.apply("rarity", parsedNbt.getTooltipGeneratorRequest().getRarity()) +
+                    concatIfNotNull.apply("item_id", parsedNbt.getTooltipGeneratorRequest().getItemId()) +
+                    concatIfNotNull.apply("skin_value", parsedNbt.getTooltipGeneratorRequest().getSkinValue()) +
+                    concatIfNotNull.apply("recipe", parsedNbt.getTooltipGeneratorRequest().getRecipe()) +
+                    concatIfNotNull.apply("alpha", parsedNbt.getTooltipGeneratorRequest().getAlpha()) +
+                    concatIfNotNull.apply("padding", parsedNbt.getTooltipGeneratorRequest().getPadding()) +
+                    concatIfNotNull.apply("disable_rarity_line_break", parsedNbt.getTooltipGeneratorRequest().getDisableRarityLineBreak()) +
+                    concatIfNotNull.apply("enchanted", parsedNbt.getTooltipGeneratorRequest().getEnchanted()) +
+                    concatIfNotNull.apply("centered", parsedNbt.getTooltipGeneratorRequest().getCentered()) +
+                    concatIfNotNull.apply("padding_first_line", parsedNbt.getTooltipGeneratorRequest().getPaddingFirstLine()) +
+                    concatIfNotNull.apply("max_line_length", parsedNbt.getTooltipGeneratorRequest().getMaxLineLength()) +
+                    concatIfNotNull.apply("tooltip_side", parsedNbt.getTooltipGeneratorRequest().getTooltipSide()) +
+                    concatIfNotNull.apply("render_border", parsedNbt.getTooltipGeneratorRequest().getRenderBorder()) +
+                    "```"
+            ).queue();
+
+            byte[] imageBytes = parsedNbt.getImage();
+            event.getHook().editOriginalAttachments(
+                FileUpload.fromData(imageBytes, "parsedNbtImage" + getImageExtension(imageBytes))
+            ).queue();
+
+        } catch (Exception e) {
+            log.error("Error generating item image", e);
+            event.getHook().editOriginal("Failed to parse NBT.").queue();
+        }
 
         addCommandToUserHistory(event.getUser(), event.getCommandString());
     }
@@ -257,7 +297,25 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.deferReply(hidden).complete();
 
-        // TODO: call api and return error or result
+        try {
+            TextGeneratorRequest request = new TextGeneratorRequest();
+            request.setText(text);
+            request.setCentered(centered);
+            request.setAlpha(alpha);
+            request.setPadding(padding);
+            request.setMaxLineLength(maxLineLength);
+            request.setRenderBorder(renderBorder);
+
+            GenerateTextService service = new GenerateTextService();
+            byte[] imageBytes = service.generateText(request);
+
+            event.getHook().editOriginalAttachments(
+                FileUpload.fromData(imageBytes, "text" + getImageExtension(imageBytes))
+            ).queue();
+        } catch (Exception e) {
+            log.error("Error generating text image", e);
+            event.getHook().editOriginal("Failed to generate text image.").queue();
+        }
 
         addCommandToUserHistory(event.getUser(), event.getCommandString());
     }
@@ -376,5 +434,23 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         return AUTO_HIDE_ON_ERROR;
+    }
+
+    /**
+     * Determines the image extension based on the first few bytes of the image data.
+     * This is a simple heuristic to determine if the image is a PNG or GIF.
+     *
+     * @param bytes The byte array of the image data.
+     * @return The file extension for the image type, either ".png" or ".gif".
+     */
+    public String getImageExtension(byte[] bytes) {
+        if (bytes.length > 8 && bytes[0] == (byte)0x89 && bytes[1] == (byte)0x50) {
+            return ".png";
+        } else if (bytes.length > 6 && bytes[0] == (byte)0x47 && bytes[1] == (byte)0x49) {
+            return ".gif";
+        }
+
+        log.info("Couldn't find image type, defaulting to PNG");
+        return ".png";
     }
 }
