@@ -359,36 +359,38 @@ public class Util {
     public static MojangProfile getMojangProfile(String username) throws HttpException {
         String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
         String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
-        MojangProfile mojangProfile;
 
         if (isUUID(username)) {
             mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", username);
         }
 
         try {
-            String httpResponse = sendRequestWithFallback(mojangUrl, ashconUrl);
-            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse, MojangProfile.class);
+            String body = sendRequestWithFallback(mojangUrl, ashconUrl);
+            return NerdBotApp.GSON.fromJson(body, MojangProfile.class);
+        } catch (IOException | InterruptedException exception) {
+            throw new HttpException("Network error fetching profile for `" + username + "`", exception);
         } catch (Exception exception) {
-            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + exception.getMessage(), exception);
+            throw new HttpException("Failed to parse Mojang profile for `" + username + "`: " + exception.getMessage(), exception);
         }
-
-        return mojangProfile;
     }
 
     @Nullable
-    private static String sendRequestWithFallback(String primaryUrl, String fallbackUrl) {
-        try {
-            return getHttpResponse(primaryUrl).body();
-        } catch (IOException | InterruptedException exception) {
-            log.error("An error occurred while sending a request to primary URL!", exception);
+    private static String sendRequestWithFallback(String primaryUrl, String fallbackUrl)
+        throws IOException, InterruptedException, HttpException {
+        HttpResponse<String> primary = getHttpResponse(primaryUrl);
 
-            try {
-                return getHttpResponse(fallbackUrl).body();
-            } catch (IOException | InterruptedException fallbackException) {
-                log.error("An error occurred while sending a request to fallback URL!", fallbackException);
-                return null;
-            }
+        if (requestWasSuccessful(primary)) {
+            return primary.body();
         }
+
+        log.warn("Primary URL returned {}: {} (trying fallback URL)", primary.statusCode(), primary.body());
+        HttpResponse<String> fallback = getHttpResponse(fallbackUrl);
+
+        if (requestWasSuccessful(fallback)) {
+            return fallback.body();
+        }
+
+        throw new HttpException(String.format("Both primary and fallback requests failed (primary: %d, fallback: %d)", primary.statusCode(), fallback.statusCode()));
     }
 
     @NotNull
@@ -396,13 +398,20 @@ public class Util {
         return getMojangProfile(uniqueId.toString());
     }
 
+    private static boolean requestWasSuccessful(HttpResponse<?> response) {
+        int code = response.statusCode();
+        return code >= 200 && code < 300;
+    }
+
     private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url)).GET();
-        Arrays.asList(headers).forEach(pair -> builder.header(pair.getLeft(), pair.getRight()));
+        Arrays.stream(headers).forEach(h -> builder.header(h.getLeft(), h.getRight()));
+
         HttpRequest request = builder.build();
-        log.info("Sending HTTP request to " + url + " with headers " + Arrays.toString(headers));
+        log.info("Sending HTTP request to {} with headers {}", url, Arrays.toString(headers));
         PrometheusMetrics.HTTP_REQUESTS_AMOUNT.labels(request.method(), url).inc();
+
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
