@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.api.urlwatcher;
+package net.hypixel.nerdbot.urlwatcher;
 
 import lombok.Getter;
 import lombok.Setter;
