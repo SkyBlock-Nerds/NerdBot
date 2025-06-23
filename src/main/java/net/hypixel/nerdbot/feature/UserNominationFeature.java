@@ -187,11 +187,10 @@ public class UserNominationFeature extends BotFeature {
             EmbedBuilder embedBuilder = new EmbedBuilder()
                 .setColor(Color.GREEN)
                 .setTitle("🌟 Promotion Nomination")
-                .setDescription("**" + member.getEffectiveName() + "** is eligible for promotion to **Nerd** role!")
+                .setDescription("**" + member.getEffectiveName() + "** is eligible for promotion!")
                 .setThumbnail(member.getEffectiveAvatarUrl())
-                .addField("📊 Activity Summary",
-                    String.format("**Period:** Last %d days\n**All Requirements:** ✅ Met",
-                        roleConfig.getDaysRequiredForVoteHistory()),
+                .addField("📊 Activity Summary (last %d days)".formatted(roleConfig.getDaysRequiredForVoteHistory()),
+                    "**All Requirements:** ✅ Met",
                     false)
                 .addField("💬 Messages",
                     String.format("📈 **%s** tracked",
@@ -409,9 +408,8 @@ public class UserNominationFeature extends BotFeature {
                         group.getDisplayName(),
                         !roleNames.isEmpty() ? roleNames.toString() : "Unknown"),
                     false)
-                .addField("📊 Activity Summary",
-                    String.format("**Period:** Last %d days\n**Requirements Met:** %d/3\n**Last Activity:** %s",
-                        group.getActivityCheckDays(),
+                .addField("📊 Activity Summary (last %d days)".formatted(group.getActivityCheckDays()),
+                    String.format("**Requirements Met:** %d/3\n**Last Activity:** %s",
                         requirementsMet,
                         lastActivity.getRoleRestrictedChannelRelativeTimestamp(group.getIdentifier())),
                     false)
