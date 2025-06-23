@@ -49,4 +49,32 @@ public class TimeUtil {
             return String.format("%ds", seconds);
         }
     }
+
+    public static String formatMsLong(long ms) {
+        long days = TimeUnit.MILLISECONDS.toDays(ms);
+        ms -= TimeUnit.DAYS.toMillis(days);
+        long hours = TimeUnit.MILLISECONDS.toHours(ms);
+        ms -= TimeUnit.HOURS.toMillis(hours);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(ms);
+        ms -= TimeUnit.MINUTES.toMillis(minutes);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(ms);
+        StringBuilder sb = new StringBuilder();
+
+        if (days > 0) {
+            sb.append(days).append(" days ");
+        }
+
+        if (hours > 0) {
+            sb.append(hours).append(" hours ");
+        }
+        if (minutes > 0) {
+            sb.append(minutes).append(" minutes ");
+        }
+
+        if (seconds > 0) {
+            sb.append(seconds).append(" seconds");
+        }
+
+        return sb.toString().trim();
+    }
 }
