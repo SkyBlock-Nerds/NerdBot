@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.feature;
 
 import lombok.extern.log4j.Log4j2;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -10,17 +11,21 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.bot.config.RoleConfig;
+import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.command.ModMailCommands;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.Util;
 
+import java.awt.Color;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.Month;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Optional;
 import java.util.TimerTask;
 
@@ -40,6 +45,7 @@ public class UserNominationFeature extends BotFeature {
                 if (Util.isDayOfMonth(15) && NerdBotApp.getBot().getConfig().isInactivityCheckEnabled()) {
                     log.info("Running inactivity check");
                     findInactiveUsers();
+                    findInactiveUsersInRoleRestrictedChannels();
                 }
             }
         }, 0, Duration.ofHours(1).toMillis());
@@ -165,13 +171,52 @@ public class UserNominationFeature extends BotFeature {
 
     private static void sendNominationMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-            textChannel.sendMessage("Promote " + member.getEffectiveName() + " to Nerd?\n("
-                + "Tracked Messages: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
-                + " / Votes: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
-                + " / Comments: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()))
-                + " / Nominations: " + Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getNominationInfo().getTotalNominations())
-                + " / Last: " + discordUser.getLastActivity().getNominationInfo().getLastNominationDateString()
-                + ")").queue();
+            LastActivity lastActivity = discordUser.getLastActivity();
+            RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
+
+            int totalMessages = lastActivity.getTotalMessageCount(roleConfig.getDaysRequiredForVoteHistory());
+            int totalVotes = lastActivity.getTotalVotes(roleConfig.getDaysRequiredForVoteHistory());
+            int totalComments = lastActivity.getTotalComments(roleConfig.getDaysRequiredForVoteHistory());
+
+            int requiredVotes = roleConfig.getMinimumVotesRequiredForPromotion();
+            int requiredComments = roleConfig.getMinimumCommentsRequiredForPromotion();
+
+            String votesStatus = totalVotes >= requiredVotes ? "✅" : "⚠️";
+            String commentsStatus = totalComments >= requiredComments ? "✅" : "⚠️";
+
+            EmbedBuilder embedBuilder = new EmbedBuilder()
+                .setColor(Color.GREEN)
+                .setTitle("🌟 Promotion Nomination")
+                .setDescription("**" + member.getEffectiveName() + "** is eligible for promotion to **Nerd** role!")
+                .setThumbnail(member.getEffectiveAvatarUrl())
+                .addField("📊 Activity Summary",
+                    String.format("**Period:** Last %d days\n**All Requirements:** ✅ Met",
+                        roleConfig.getDaysRequiredForVoteHistory()),
+                    false)
+                .addField("💬 Messages",
+                    String.format("📈 **%s** tracked",
+                        Util.COMMA_SEPARATED_FORMAT.format(totalMessages)),
+                    true)
+                .addField("🗳️ Votes",
+                    String.format("%s **%s** / %s required",
+                        votesStatus,
+                        Util.COMMA_SEPARATED_FORMAT.format(totalVotes),
+                        Util.COMMA_SEPARATED_FORMAT.format(requiredVotes)),
+                    true)
+                .addField("💭 Comments",
+                    String.format("%s **%s** / %s required",
+                        commentsStatus,
+                        Util.COMMA_SEPARATED_FORMAT.format(totalComments),
+                        Util.COMMA_SEPARATED_FORMAT.format(requiredComments)),
+                    true)
+                .addField("📈 Nomination History",
+                    String.format("**Total Nominations:** %s\n**Last Nomination:** %s",
+                        Util.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalNominations()),
+                        lastActivity.getNominationInfo().getLastNominationDateString()),
+                    false)
+                .setTimestamp(java.time.Instant.now());
+
+            textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
             discordUser.getLastActivity().getNominationInfo().increaseNominations();
             log.info("Sent promotion nomination message for " + member.getEffectiveName() + " in voting channel (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
         }, () -> {
@@ -188,23 +233,226 @@ public class UserNominationFeature extends BotFeature {
 
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             Optional<ThreadChannel> modMailThread = ModMailCommands.getModMailThread(member.getUser());
-            String message = "Warn or remove " + member.getEffectiveName() + " for inactivity? Last " + roleConfig.getDaysRequiredForInactivityCheck() + " day(s):"
-                + "\n(Tracked Messages: " + Util.COMMA_SEPARATED_FORMAT.format(totalMessages) + "/" + requiredMessages
-                + " / Votes: " + Util.COMMA_SEPARATED_FORMAT.format(totalVotes) + "/" + requiredVotes
-                + " / Comments: " + Util.COMMA_SEPARATED_FORMAT.format(totalComments) + "/" + requiredComments
-                + " / Inactivity Warnings: " + Util.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalInactivityWarnings())
-                + " / Last: " + lastActivity.getNominationInfo().getLastInactivityWarningDateString()
-                + ")";
 
-            if (modMailThread.isPresent()) {
-                message += "\nMod Mail Thread: " + modMailThread.get().getAsMention();
-            }
+            String messagesStatus = totalMessages >= requiredMessages ? "✅" : "⚠️";
+            String votesStatus = totalVotes >= requiredVotes ? "✅" : "⚠️";
+            String commentsStatus = totalComments >= requiredComments ? "✅" : "⚠️";
 
-            textChannel.sendMessage(message).queue();
+            int requirementsMet = (totalMessages >= requiredMessages ? 1 : 0) +
+                (totalVotes >= requiredVotes ? 1 : 0) +
+                (totalComments >= requiredComments ? 1 : 0);
+
+            Color embedColor = requirementsMet == 0 ? Color.RED : Color.ORANGE;
+
+            EmbedBuilder embedBuilder = new EmbedBuilder()
+                .setColor(embedColor)
+                .setTitle("⚠️ Inactivity Warning")
+                .setDescription(member.getAsMention() + " has been flagged for inactivity")
+                .setThumbnail(member.getEffectiveAvatarUrl())
+                .addField("📊 Activity Summary (last %d days)".formatted(roleConfig.getDaysRequiredForInactivityCheck()),
+                    String.format("**Requirements Met:** %d/3", requirementsMet),
+                    false)
+                .addField("💬 Messages",
+                    String.format("%s **%s** / %s required",
+                        messagesStatus,
+                        Util.COMMA_SEPARATED_FORMAT.format(totalMessages),
+                        Util.COMMA_SEPARATED_FORMAT.format(requiredMessages)),
+                    true)
+                .addField("🗳️ Votes",
+                    String.format("%s **%s** / %s required",
+                        votesStatus,
+                        Util.COMMA_SEPARATED_FORMAT.format(totalVotes),
+                        Util.COMMA_SEPARATED_FORMAT.format(requiredVotes)),
+                    true)
+                .addField("💭 Comments",
+                    String.format("%s **%s** / %s required",
+                        commentsStatus,
+                        Util.COMMA_SEPARATED_FORMAT.format(totalComments),
+                        Util.COMMA_SEPARATED_FORMAT.format(requiredComments)),
+                    true)
+                .addField("📈 Warning History",
+                    String.format("**Total Warnings:** %s\n**Last Warning:** %s",
+                        Util.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalInactivityWarnings()),
+                        lastActivity.getNominationInfo().getLastInactivityWarningDateString()),
+                    false)
+                .setTimestamp(Instant.now());
+
+            modMailThread.ifPresent(threadChannel -> embedBuilder.addField("📧 Mod Mail",
+                "Active thread: " + threadChannel.getAsMention(),
+                false));
+
+            textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
             discordUser.getLastActivity().getNominationInfo().increaseInactivityWarnings();
             log.info("Sent inactivity warning message for " + member.getEffectiveName() + " in voting channel (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
         }, () -> {
             throw new IllegalStateException("Cannot find voting channel to send inactivity warning message into!");
+        });
+    }
+
+    /**
+     * Check for inactive users in role-restricted channels
+     */
+    public static void findInactiveUsersInRoleRestrictedChannels() {
+        Guild guild = Util.getMainGuild();
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        List<RoleRestrictedChannelGroup> channelGroups = NerdBotApp.getBot().getConfig().getChannelConfig().getRoleRestrictedChannelGroups();
+
+        if (channelGroups.isEmpty()) {
+            log.debug("No role-restricted channel groups configured, skipping role-restricted inactivity check");
+            return;
+        }
+
+        log.info("Checking for inactive users in {} role-restricted channel groups", channelGroups.size());
+
+        for (RoleRestrictedChannelGroup group : channelGroups) {
+            log.info("Checking inactivity for role-restricted channel group '{}' (display name: '{}', required messages: {}, required votes: {}, required comments: {}, check days: {})",
+                group.getIdentifier(), group.getDisplayName(), group.getMinimumMessagesForActivity(),
+                group.getMinimumVotesForActivity(), group.getMinimumCommentsForActivity(), group.getActivityCheckDays());
+
+            discordUserRepository.getAll().forEach(discordUser -> {
+                Member member = guild.getMemberById(discordUser.getDiscordId());
+
+                if (member == null) {
+                    log.error("Member not found for user " + discordUser.getDiscordId());
+                    return;
+                }
+
+                boolean hasRequiredRole = Arrays.stream(group.getRequiredRoleIds())
+                    .anyMatch(roleId -> member.getRoles().stream()
+                        .map(Role::getId)
+                        .anyMatch(memberRoleId -> memberRoleId.equalsIgnoreCase(roleId)));
+
+                if (!hasRequiredRole) {
+                    log.debug("Skipping role-restricted inactivity check for {} in group '{}' as they don't have required roles",
+                        member.getEffectiveName(), group.getIdentifier());
+                    return;
+                }
+
+                Role highestRole = RoleManager.getHighestRole(member);
+                if (highestRole != null && Arrays.stream(Util.SPECIAL_ROLES).anyMatch(role -> highestRole.getName().equalsIgnoreCase(role))) {
+                    log.debug("Skipping role-restricted inactivity check for {} in group '{}' as they have a special role: {}",
+                        member.getEffectiveName(), group.getIdentifier(), highestRole.getName());
+                    return;
+                }
+
+                LastActivity lastActivity = discordUser.getLastActivity();
+                int totalMessages = lastActivity.getRoleRestrictedChannelMessageCount(group.getIdentifier(), group.getActivityCheckDays());
+                int totalVotes = lastActivity.getRoleRestrictedChannelVoteCount(group.getIdentifier(), group.getActivityCheckDays());
+                int totalComments = lastActivity.getRoleRestrictedChannelCommentCount(group.getIdentifier(), group.getActivityCheckDays());
+
+                boolean hasRequiredMessages = totalMessages >= group.getMinimumMessagesForActivity();
+                boolean hasRequiredVotes = totalVotes >= group.getMinimumVotesForActivity();
+                boolean hasRequiredComments = totalComments >= group.getMinimumCommentsForActivity();
+                final int requirementsMet = (hasRequiredMessages ? 1 : 0) + (hasRequiredComments ? 1 : 0) + (hasRequiredVotes ? 1 : 0);
+
+                log.debug("Checking if {} should be flagged for inactivity in group '{}' (messages: {}/{}, comments: {}/{}, votes: {}/{}) (requirements met: {}/3)",
+                    member.getEffectiveName(), group.getIdentifier(),
+                    totalMessages, group.getMinimumMessagesForActivity(),
+                    totalComments, group.getMinimumCommentsForActivity(),
+                    totalVotes, group.getMinimumVotesForActivity(),
+                    requirementsMet);
+
+                lastActivity.getNominationInfo().getLastRoleRestrictedInactivityWarningDate().ifPresentOrElse(date -> {
+                    Month lastInactivityWarningMonth = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
+                    Month monthNow = Calendar.getInstance().toInstant().atZone(ZoneId.systemDefault()).getMonth();
+
+                    if (lastInactivityWarningMonth != monthNow && requirementsMet < 2) {
+                        log.info("Last role-restricted inactivity check for group '{}' was not this month (last: {}, now: {}), sending inactivity message for {} (nomination info: {})",
+                            group.getIdentifier(), lastInactivityWarningMonth, monthNow, member.getEffectiveName(), lastActivity.getNominationInfo());
+                        sendRoleRestrictedInactiveUserMessage(member, discordUser, group, totalMessages, totalVotes, totalComments);
+                    }
+                }, () -> {
+                    log.debug("No last role-restricted inactivity warning date found for {} in group '{}', checking if they meet the minimum requirements (nomination info: {})",
+                        member.getEffectiveName(), group.getIdentifier(), lastActivity.getNominationInfo());
+                    if (requirementsMet < 2) {
+                        sendRoleRestrictedInactiveUserMessage(member, discordUser, group, totalMessages, totalVotes, totalComments);
+                    }
+                });
+            });
+        }
+    }
+
+    private static void sendRoleRestrictedInactiveUserMessage(Member member, DiscordUser discordUser, RoleRestrictedChannelGroup group, int totalMessages, int totalVotes, int totalComments) {
+        LastActivity lastActivity = discordUser.getLastActivity();
+
+        ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
+            Optional<ThreadChannel> modMailThread = ModMailCommands.getModMailThread(member.getUser());
+
+            String messagesStatus = totalMessages >= group.getMinimumMessagesForActivity() ? "✅" : "⚠️";
+            String votesStatus = totalVotes >= group.getMinimumVotesForActivity() ? "✅" : "⚠️";
+            String commentsStatus = totalComments >= group.getMinimumCommentsForActivity() ? "✅" : "⚠️";
+
+            int requirementsMet = (totalMessages >= group.getMinimumMessagesForActivity() ? 1 : 0) +
+                (totalVotes >= group.getMinimumVotesForActivity() ? 1 : 0) +
+                (totalComments >= group.getMinimumCommentsForActivity() ? 1 : 0);
+
+            Color embedColor = requirementsMet == 0 ? Color.RED : new Color(255, 165, 0); // Orange to signify some requirements met
+
+            StringBuilder roleNames = new StringBuilder();
+            for (String roleId : group.getRequiredRoleIds()) {
+                Role role = member.getGuild().getRoleById(roleId);
+                if (role != null) {
+                    if (!roleNames.isEmpty()) {
+                        roleNames.append(", ");
+                    }
+                    roleNames.append(role.getName());
+                }
+            }
+
+            EmbedBuilder embedBuilder = new EmbedBuilder()
+                .setColor(embedColor)
+                .setTitle("🔒 Role-Restricted Channel Inactivity")
+                .setDescription("**" + member.getAsMention() + "** has been flagged for inactivity in **" + group.getDisplayName() + "**")
+                .setThumbnail(member.getEffectiveAvatarUrl())
+                .addField("🏷️ Channel Group",
+                    String.format("**Group:** %s\n**Required Roles:** %s",
+                        group.getDisplayName(),
+                        !roleNames.isEmpty() ? roleNames.toString() : "Unknown"),
+                    false)
+                .addField("📊 Activity Summary",
+                    String.format("**Period:** Last %d days\n**Requirements Met:** %d/3\n**Last Activity:** %s",
+                        group.getActivityCheckDays(),
+                        requirementsMet,
+                        lastActivity.getRoleRestrictedChannelRelativeTimestamp(group.getIdentifier())),
+                    false)
+                .addField("💬 Messages",
+                    String.format("%s **%s** / %s required",
+                        messagesStatus,
+                        Util.COMMA_SEPARATED_FORMAT.format(totalMessages),
+                        Util.COMMA_SEPARATED_FORMAT.format(group.getMinimumMessagesForActivity())),
+                    true)
+                .addField("🗳️ Votes",
+                    String.format("%s **%s** / %s required",
+                        votesStatus,
+                        Util.COMMA_SEPARATED_FORMAT.format(totalVotes),
+                        Util.COMMA_SEPARATED_FORMAT.format(group.getMinimumVotesForActivity())),
+                    true)
+                .addField("💭 Comments",
+                    String.format("%s **%s** / %s required",
+                        commentsStatus,
+                        Util.COMMA_SEPARATED_FORMAT.format(totalComments),
+                        Util.COMMA_SEPARATED_FORMAT.format(group.getMinimumCommentsForActivity())),
+                    true)
+                .addField("📈 Role-Restricted Warning History",
+                    String.format("**Total Warnings:** %s\n**Last Warning:** %s",
+                        Util.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalRoleRestrictedInactivityWarnings()),
+                        lastActivity.getNominationInfo().getLastRoleRestrictedInactivityWarningDateString()),
+                    false);
+
+            modMailThread.ifPresent(threadChannel -> embedBuilder.addField("📧 Mod Mail",
+                "Active thread: " + threadChannel.getAsMention(),
+                false));
+
+            embedBuilder.setTimestamp(java.time.Instant.now());
+            textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
+
+            discordUser.getLastActivity().getNominationInfo().increaseRoleRestrictedInactivityWarnings();
+
+            log.info("Sent role-restricted channel inactivity warning message for {} in group '{}' in voting channel (role-restricted warnings: {})",
+                member.getEffectiveName(), group.getIdentifier(),
+                lastActivity.getNominationInfo().getTotalRoleRestrictedInactivityWarnings());
+        }, () -> {
+            throw new IllegalStateException("Cannot find voting channel to send role-restricted inactivity warning message into!");
         });
     }
 }

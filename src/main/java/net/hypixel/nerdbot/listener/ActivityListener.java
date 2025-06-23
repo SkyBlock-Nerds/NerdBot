@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.listener;
 import com.mongodb.client.result.DeleteResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -21,6 +22,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -29,7 +31,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Log4j2
@@ -100,6 +104,14 @@ public class ActivityListener {
                 discordUser.getLastActivity().setLastProjectActivity(time);
                 log.info("Updating new project suggestion activity date for {} to {}", member.getEffectiveName(), time);
             }
+
+            Optional<RoleRestrictedChannelGroup> matchingGroup = findMatchingRoleRestrictedGroup(forumChannelId, member);
+            if (matchingGroup.isPresent()) {
+                String groupIdentifier = matchingGroup.get().getIdentifier();
+                discordUser.getLastActivity().addRoleRestrictedChannelActivity(groupIdentifier, event.getChannel().asThreadChannel().getParentChannel(), 1, time);
+                log.info("Updating role-restricted channel group '{}' thread creation activity for {} to {}",
+                    groupIdentifier, member.getEffectiveName(), time);
+            }
         }
     }
 
@@ -135,6 +147,27 @@ public class ActivityListener {
             channelType = Util.getChannelSuggestionType(guildChannel.asTextChannel());
         } else {
             channelType = Util.getChannelSuggestionTypeFromName(guildChannel.getName());
+        }
+
+        Optional<RoleRestrictedChannelGroup> matchingGroup = findMatchingRoleRestrictedGroup(guildChannel.getId(), member);
+        if (matchingGroup.isPresent()) {
+            String groupIdentifier = matchingGroup.get().getIdentifier();
+
+            // Handle thread comments in role-restricted channels
+            if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
+                discordUser.getLastActivity().addRoleRestrictedChannelComment(groupIdentifier, time);
+                log.info("Updating role-restricted channel group '{}' comment activity for {} to {}",
+                    groupIdentifier, member.getEffectiveName(), time);
+            }
+
+            // Handle regular messages in role-restricted channels
+            GuildChannel targetChannel = guildChannel instanceof ThreadChannel threadChannel
+                ? threadChannel.getParentChannel()
+                : guildChannel;
+
+            discordUser.getLastActivity().addRoleRestrictedChannelActivity(groupIdentifier, targetChannel, 1, time);
+            log.info("Updating role-restricted channel group '{}' message activity for {} to {}",
+                groupIdentifier, member.getEffectiveName(), time);
         }
 
         // New Suggestion Comments
@@ -174,14 +207,16 @@ public class ActivityListener {
         log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
         discordUser.getLastActivity().setLastGlobalActivity(time);
 
-        // Update Channel Message History
-        if (!(guildChannel instanceof ThreadChannel threadChannel)) {
-            log.debug("Updating channel message history for {} in channel '{}' (ID: {})", member.getEffectiveName(), guildChannel.getName(), guildChannel.getId());
-            discordUser.getLastActivity().addChannelHistory(guildChannel, time);
-        } else {
-            GuildChannel parentChannel = threadChannel.getParentChannel();
-            log.debug("Updating channel message history for {} in thread '{}' (Parent Channel Name: {}, Parent Channel ID: {}, Thread Channel ID: {})", member.getEffectiveName(), threadChannel.getName(), parentChannel.getName(), parentChannel.getId(), threadChannel.getId());
-            discordUser.getLastActivity().addChannelHistory(parentChannel, time);
+        // Update Channel Message History (only if not already tracked in role-restricted channels)
+        if (matchingGroup.isEmpty()) {
+            if (!(guildChannel instanceof ThreadChannel threadChannel)) {
+                log.debug("Updating channel message history for {} in channel '{}' (ID: {})", member.getEffectiveName(), guildChannel.getName(), guildChannel.getId());
+                discordUser.getLastActivity().addChannelHistory(guildChannel, time);
+            } else {
+                GuildChannel parentChannel = threadChannel.getParentChannel();
+                log.debug("Updating channel message history for {} in thread '{}' (Parent Channel Name: {}, Parent Channel ID: {}, Thread Channel ID: {})", member.getEffectiveName(), threadChannel.getName(), parentChannel.getName(), parentChannel.getId(), threadChannel.getId());
+                discordUser.getLastActivity().addChannelHistory(parentChannel, time);
+            }
         }
     }
 
@@ -221,6 +256,15 @@ public class ActivityListener {
                     } else {
                         discordUser.getLastActivity().setLastVoiceChannelJoinDate(time);
                         log.info("Updating last global voice activity for {} to {}", member.getEffectiveName(), time);
+                    }
+
+                    // Check if voice channel belongs to a role-restricted group
+                    Optional<RoleRestrictedChannelGroup> matchingGroup = findMatchingRoleRestrictedGroup(channelLeft.getId(), member);
+                    if (matchingGroup.isPresent()) {
+                        String groupIdentifier = matchingGroup.get().getIdentifier();
+                        discordUser.getLastActivity().getRoleRestrictedChannelLastActivity().put(groupIdentifier, time);
+                        log.info("Updating role-restricted channel group '{}' voice activity for {} to {}",
+                            groupIdentifier, member.getEffectiveName(), time);
                     }
                 }
             }
@@ -270,6 +314,15 @@ public class ActivityListener {
             String forumChannelId = threadChannel.getParentChannel().getId();
             long time = System.currentTimeMillis();
 
+            // Check role-restricted channel groups for voting
+            Optional<RoleRestrictedChannelGroup> matchingGroup = findMatchingRoleRestrictedGroup(forumChannelId, member);
+            if (matchingGroup.isPresent()) {
+                String groupIdentifier = matchingGroup.get().getIdentifier();
+                discordUser.getLastActivity().addRoleRestrictedChannelVote(groupIdentifier, threadChannel.getId(), time);
+                log.info("Updating role-restricted channel group '{}' voting activity for {} to {}",
+                    groupIdentifier, member.getEffectiveName(), time);
+            }
+
             // New Suggestion Voting
             if (forumChannelId.equals(NerdBotApp.getBot().getConfig().getSuggestionConfig().getForumChannelId())) {
                 discordUser.getLastActivity().getSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
@@ -292,5 +345,32 @@ public class ActivityListener {
                 log.info("Updating project suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }
         }
+    }
+
+    /**
+     * Find a matching role-restricted channel group for the given channel and member
+     */
+    private Optional<RoleRestrictedChannelGroup> findMatchingRoleRestrictedGroup(String channelId, Member member) {
+        List<RoleRestrictedChannelGroup> groups = NerdBotApp.getBot().getConfig().getChannelConfig().getRoleRestrictedChannelGroups();
+
+        for (RoleRestrictedChannelGroup group : groups) {
+            boolean channelMatches = Arrays.stream(group.getChannelIds())
+                .anyMatch(groupChannelId -> groupChannelId.equalsIgnoreCase(channelId));
+
+            if (!channelMatches) {
+                continue;
+            }
+
+            boolean hasRequiredRole = Arrays.stream(group.getRequiredRoleIds())
+                .anyMatch(roleId -> member.getRoles().stream()
+                    .map(Role::getId)
+                    .anyMatch(memberRoleId -> memberRoleId.equalsIgnoreCase(roleId)));
+
+            if (hasRequiredRole) {
+                return Optional.of(group);
+            }
+        }
+
+        return Optional.empty();
     }
 }
