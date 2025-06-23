@@ -47,15 +47,10 @@ public class StatusPageResponse {
         private String groupId;
         @SerializedName("page_id")
         private String pageId;
-        private Group group;
+        private boolean group;
         @SerializedName("only_show_if_degraded")
         private boolean onlyShowIfDegraded;
-
-        @Data
-        public static class Group {
-            private String id;
-            private String name;
-        }
+        private List<String> components;
     }
 
     @Data
