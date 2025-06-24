@@ -15,15 +15,18 @@ import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.PermissionOverride;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
@@ -66,10 +69,13 @@ import org.apache.logging.log4j.Level;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -550,9 +556,9 @@ public class AdminCommands extends ApplicationCommand {
             if (hasAccess) {
                 fieldValue.append("**Last Activity:** ").append(lastActivity.getRoleRestrictedChannelRelativeTimestamp(group.getIdentifier())).append("\n");
                 fieldValue.append("**30-day Activity:**\n");
-                fieldValue.append(" • Messages: ").append(lastActivity.getRoleRestrictedChannelMessageCount(group.getIdentifier(), 30)).append("/").append(group.getMinimumMessagesForActivity()).append("\n");
-                fieldValue.append(" • Votes: ").append(lastActivity.getRoleRestrictedChannelVoteCount(group.getIdentifier(), 30)).append("/").append(group.getMinimumVotesForActivity()).append("\n");
-                fieldValue.append(" • Comments: ").append(lastActivity.getRoleRestrictedChannelCommentCount(group.getIdentifier(), 30)).append("/").append(group.getMinimumCommentsForActivity()).append("\n");
+                fieldValue.append(" - Messages: ").append(lastActivity.getRoleRestrictedChannelMessageCount(group.getIdentifier(), 30)).append("/").append(group.getMinimumMessagesForActivity()).append("\n");
+                fieldValue.append(" - Votes: ").append(lastActivity.getRoleRestrictedChannelVoteCount(group.getIdentifier(), 30)).append("/").append(group.getMinimumVotesForActivity()).append("\n");
+                fieldValue.append(" - Comments: ").append(lastActivity.getRoleRestrictedChannelCommentCount(group.getIdentifier(), 30)).append("/").append(group.getMinimumCommentsForActivity()).append("\n");
 
                 int messagesMet = lastActivity.getRoleRestrictedChannelMessageCount(group.getIdentifier(), group.getActivityCheckDays()) >= group.getMinimumMessagesForActivity() ? 1 : 0;
                 int votesMet = lastActivity.getRoleRestrictedChannelVoteCount(group.getIdentifier(), group.getActivityCheckDays()) >= group.getMinimumVotesForActivity() ? 1 : 0;
@@ -1019,7 +1025,7 @@ public class AdminCommands extends ApplicationCommand {
                 if (groupsAfter > 0) {
                     summary.append("**Created Groups:**\n");
                     for (RoleRestrictedChannelGroup group : finalConfig.getChannelConfig().getRoleRestrictedChannelGroups()) {
-                        summary.append(String.format("• **%s** (%d channels)\n",
+                        summary.append(String.format("- **%s** (%d channels)\n",
                             group.getDisplayName(), group.getChannelIds().length));
                     }
                 } else {
@@ -1065,6 +1071,164 @@ public class AdminCommands extends ApplicationCommand {
                 event.getUser().getName(), removedCount);
         } else {
             event.reply("✅ No empty role-restricted channel groups found.").setEphemeral(true).queue();
+        }
+    }
+
+    @JDASlashCommand(name = "debug", subcommand = "ungrouped-channels", description = "Show channels that are not part of any role-restricted group", defaultLocked = true)
+    public void debugUngroupedChannels(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+
+        if (discordUser == null) {
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
+            return;
+        }
+
+        BotConfig botConfig = NerdBotApp.getBot().getConfig();
+        List<RoleRestrictedChannelGroup> groups = botConfig.getChannelConfig().getRoleRestrictedChannelGroups();
+        Set<String> groupedChannelIds = new HashSet<>();
+
+        for (RoleRestrictedChannelGroup group : groups) {
+            groupedChannelIds.addAll(Arrays.asList(group.getChannelIds()));
+        }
+
+        List<GuildChannel> ungroupedTextChannels = new ArrayList<>();
+        List<GuildChannel> ungroupedVoiceChannels = new ArrayList<>();
+        List<GuildChannel> ungroupedForumChannels = new ArrayList<>();
+        List<GuildChannel> ungroupedOtherChannels = new ArrayList<>();
+
+        Guild guild = event.getGuild();
+
+        for (TextChannel channel : guild.getTextChannels()) {
+            if (!groupedChannelIds.contains(channel.getId())) {
+                ungroupedTextChannels.add(channel);
+            }
+        }
+
+        for (VoiceChannel channel : guild.getVoiceChannels()) {
+            if (!groupedChannelIds.contains(channel.getId())) {
+                ungroupedVoiceChannels.add(channel);
+            }
+        }
+
+        for (ForumChannel channel : guild.getForumChannels()) {
+            if (!groupedChannelIds.contains(channel.getId())) {
+                ungroupedForumChannels.add(channel);
+            }
+        }
+
+        for (GuildChannel channel : guild.getChannels()) {
+            if (!groupedChannelIds.contains(channel.getId()) &&
+                channel.getType() != ChannelType.TEXT &&
+                channel.getType() != ChannelType.VOICE &&
+                channel.getType() != ChannelType.FORUM) {
+                ungroupedOtherChannels.add(channel);
+            }
+        }
+
+        int totalUngrouped = ungroupedTextChannels.size() + ungroupedVoiceChannels.size()
+            + ungroupedForumChannels.size() + ungroupedOtherChannels.size();
+        int totalChannels = guild.getChannels().size();
+        int totalGrouped = groupedChannelIds.size();
+
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+            .setTitle("📋 Ungrouped Channels Analysis")
+            .setColor(totalUngrouped > 0 ? Color.YELLOW : Color.GREEN)
+            .setDescription("Channels that are not part of any role-restricted channel group")
+            .addField("📊 Summary",
+                String.format("**Total Channels:** %d\n**Grouped:** %d\n**Ungrouped:** %d\n**Groups:** %d",
+                    totalChannels, totalGrouped, totalUngrouped, groups.size()),
+                false);
+
+        if (!ungroupedTextChannels.isEmpty()) {
+            StringBuilder textChannels = new StringBuilder();
+            for (int i = 0; i < Math.min(ungroupedTextChannels.size(), 10); i++) {
+                GuildChannel channel = ungroupedTextChannels.get(i);
+                textChannels.append("- ").append(channel.getAsMention())
+                    .append(" (").append(getChannelAccessType(channel)).append(")\n");
+            }
+            if (ungroupedTextChannels.size() > 10) {
+                textChannels.append("... and ").append(ungroupedTextChannels.size() - 10).append(" more");
+            }
+
+            embedBuilder.addField(String.format("💬 Text Channels (%d)", ungroupedTextChannels.size()),
+                textChannels.toString(), false);
+        }
+
+        if (!ungroupedVoiceChannels.isEmpty()) {
+            StringBuilder voiceChannels = new StringBuilder();
+            for (int i = 0; i < Math.min(ungroupedVoiceChannels.size(), 10); i++) {
+                GuildChannel channel = ungroupedVoiceChannels.get(i);
+                voiceChannels.append("- ").append(channel.getName())
+                    .append(" (").append(getChannelAccessType(channel)).append(")\n");
+            }
+            if (ungroupedVoiceChannels.size() > 10) {
+                voiceChannels.append("... and ").append(ungroupedVoiceChannels.size() - 10).append(" more");
+            }
+
+            embedBuilder.addField(String.format("🔊 Voice Channels (%d)", ungroupedVoiceChannels.size()),
+                voiceChannels.toString(), false);
+        }
+
+        if (!ungroupedForumChannels.isEmpty()) {
+            StringBuilder forumChannels = new StringBuilder();
+            for (int i = 0; i < Math.min(ungroupedForumChannels.size(), 10); i++) {
+                GuildChannel channel = ungroupedForumChannels.get(i);
+                forumChannels.append(" - ").append(channel.getAsMention())
+                    .append(" (").append(getChannelAccessType(channel)).append(")\n");
+            }
+            if (ungroupedForumChannels.size() > 10) {
+                forumChannels.append("... and ").append(ungroupedForumChannels.size() - 10).append(" more");
+            }
+
+            embedBuilder.addField(String.format("📋 Forum Channels (%d)", ungroupedForumChannels.size()),
+                forumChannels.toString(), false);
+        }
+
+        if (!ungroupedOtherChannels.isEmpty()) {
+            StringBuilder otherChannels = new StringBuilder();
+            for (int i = 0; i < Math.min(ungroupedOtherChannels.size(), 5); i++) {
+                GuildChannel channel = ungroupedOtherChannels.get(i);
+                otherChannels.append(" - ").append(channel.getName())
+                    .append(" (").append(channel.getType().name()).append(")\n");
+            }
+            if (ungroupedOtherChannels.size() > 5) {
+                otherChannels.append("... and ").append(ungroupedOtherChannels.size() - 5).append(" more");
+            }
+
+            embedBuilder.addField(String.format("🔧 Other Channels (%d)", ungroupedOtherChannels.size()),
+                otherChannels.toString(), false);
+        }
+        
+        embedBuilder.setTimestamp(Instant.now());
+        event.getHook().editOriginalEmbeds(embedBuilder.build()).queue();
+    }
+
+    /**
+     * Helper method to determine channel access type
+     */
+    private String getChannelAccessType(GuildChannel channel) {
+        PermissionOverride everyoneOverride = channel.getPermissionContainer().getPermissionOverride(channel.getGuild().getPublicRole());
+
+        if (everyoneOverride != null && everyoneOverride.getDenied().contains(Permission.VIEW_CHANNEL)) {
+            List<String> allowedRoles = new ArrayList<>();
+            for (PermissionOverride override : channel.getPermissionContainer().getPermissionOverrides()) {
+                if (override.isRoleOverride() && override.getAllowed().contains(Permission.VIEW_CHANNEL)) {
+                    allowedRoles.add(override.getRole().getName());
+                }
+            }
+
+            if (allowedRoles.isEmpty()) {
+                return "Private - No roles allowed";
+            } else if (allowedRoles.size() == 1) {
+                return "Role-restricted: " + allowedRoles.get(0);
+            } else {
+                return "Role-restricted: " + allowedRoles.size() + " roles";
+            }
+        } else {
+            return "Public";
         }
     }
 }
