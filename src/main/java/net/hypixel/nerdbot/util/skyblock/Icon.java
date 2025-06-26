@@ -18,7 +18,12 @@ public enum Icon {
     ABIPHONE("✆", "Abiphone Call"),
     CHECKMARK("✔", "Checkmark"),
     CROSS("✖", "Cross"),
-    RAFFLE("⛃", "Raffle");
+    RAFFLE("⛃", "Raffle"),
+    SWEEP_BOOSTER("ꕮ", "Sweep Booster"),
+    LUCK_BOOSTER("ꆤ", "Luck Booster"),
+    FIGHTING_BOOSTER("४", "Fighting Booster"),
+    FORAGING_WISDOM_BOOSTER("⸙", "Foraging Wisdom Booster"),
+    FORAGING_FORTUNE_BOOSTER("⎋", "Foraging Fortune Booster");
 
     public static final Icon[] VALUES = values();
 
