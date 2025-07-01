@@ -488,6 +488,15 @@
         "parseType": "NORMAL"
     },
     {
+        "icon": "☯",
+        "name": "hunting_wisdom",
+        "stat": "Hunting Wisdom",
+        "display": "☯ Hunting Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
         "icon": "ф",
         "name": "rift_time",
         "stat": "Rift Time",
