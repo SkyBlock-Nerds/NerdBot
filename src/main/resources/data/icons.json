@@ -36,23 +36,23 @@
         "icon": "✆"
     },
     {
-        "name": "Sweep Booster",
+        "name": "sweep_booster",
         "icon": "ꕮ"
     },
     {
-        "name": "Luck Booster",
+        "name": "luck_booster",
         "icon": "ꆤ"
     },
     {
-        "name": "Fighting Booster",
+        "name": "fighting_booster",
         "icon": "४"
     },
     {
-        "name": "Foraging Wisdom Booster",
+        "name": "foraging_wisdom_booster",
         "icon": "⸙"
     },
     {
-        "name": "Foraging Fortune Booster",
+        "name": "foraging_fortune_booster",
         "icon": "⎋"
     }
 ]
