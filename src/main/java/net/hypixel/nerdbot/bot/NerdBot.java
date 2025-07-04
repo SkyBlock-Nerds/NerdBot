@@ -47,6 +47,7 @@ import net.hypixel.nerdbot.listener.ModLogListener;
 import net.hypixel.nerdbot.listener.ModMailListener;
 import net.hypixel.nerdbot.listener.PinListener;
 import net.hypixel.nerdbot.listener.ReactionChannelListener;
+import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.listener.SuggestionListener;
 import net.hypixel.nerdbot.listener.VerificationListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
@@ -182,7 +183,8 @@ public class NerdBot implements Bot {
                 new VerificationListener(),
                 new PinListener(),
                 new MetricsListener(),
-                new FunListener()
+                new FunListener(),
+                new RoleRestrictedChannelListener()
             )
             .setActivity(Activity.of(config.getActivityType(), config.getActivity()));
 
