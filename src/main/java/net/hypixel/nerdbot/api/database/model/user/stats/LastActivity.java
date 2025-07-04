@@ -63,8 +63,16 @@ public class LastActivity {
     private Map<String, Long> alphaSuggestionVoteHistoryMap = new HashMap<>();
     private Map<String, Long> projectSuggestionVoteHistoryMap = new HashMap<>();
 
+    // Channel Activity History
     private List<ChannelActivityEntry> channelActivityHistory = new ArrayList<>();
     private Map<String, Integer> channelActivity = new HashMap<>();
+
+    // Role-Restricted Channel Activity
+    private Map<String, Long> roleRestrictedChannelLastActivity = new HashMap<>();
+    private Map<String, List<Long>> roleRestrictedChannelMessageHistory = new HashMap<>();
+    private Map<String, List<Long>> roleRestrictedChannelCommentHistory = new HashMap<>();
+    private Map<String, Map<String, Long>> roleRestrictedChannelVoteHistory = new HashMap<>();
+    private Map<String, List<ChannelActivityEntry>> roleRestrictedChannelActivityHistory = new HashMap<>();
 
     private NominationInfo nominationInfo = new NominationInfo();
 
@@ -95,6 +103,115 @@ public class LastActivity {
             });
     }
 
+    /**
+     * Add activity to a role-restricted channel group
+     */
+    public void addRoleRestrictedChannelActivity(String groupIdentifier, GuildChannel guildChannel, int amount, long timestamp) {
+        roleRestrictedChannelLastActivity.put(groupIdentifier, timestamp);
+        roleRestrictedChannelMessageHistory.computeIfAbsent(groupIdentifier, k -> new ArrayList<>()).add(0, timestamp);
+
+        List<ChannelActivityEntry> groupHistory = roleRestrictedChannelActivityHistory.computeIfAbsent(groupIdentifier, k -> new ArrayList<>());
+        groupHistory.stream()
+            .filter(entry -> entry.getChannelId().equals(guildChannel.getId()) || entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannel.getName()))
+            .findFirst()
+            .ifPresentOrElse(entry -> {
+                entry.setMessageCount(entry.getMessageCount() + amount);
+                entry.setLastMessageTimestamp(timestamp);
+
+                String monthYear = DateFormatUtils.format(timestamp, "MM-yyyy");
+                entry.getMonthlyMessageCount().merge(monthYear, amount, Integer::sum);
+
+                if (entry.getLastKnownDisplayName() == null || !entry.getLastKnownDisplayName().equalsIgnoreCase(guildChannel.getName())) {
+                    log.info("Updating role-restricted channel activity entry for group {} channel {} (ID: {}) with new display name: {}",
+                        groupIdentifier, entry.getLastKnownDisplayName(), guildChannel.getId(), guildChannel.getName());
+                    entry.setLastKnownDisplayName(guildChannel.getName());
+                }
+
+                log.info("Updated role-restricted channel activity entry for group {} channel {} (ID: {}): {} messages",
+                    groupIdentifier, guildChannel.getName(), guildChannel.getId(), entry.getMessageCount());
+            }, () -> {
+                log.info("Adding new role-restricted channel activity entry for group {} channel {} (ID: {})",
+                    groupIdentifier, guildChannel.getName(), guildChannel.getId());
+                groupHistory.add(new ChannelActivityEntry(guildChannel.getId(), guildChannel.getName(), amount, timestamp,
+                    new HashMap<>(Map.of(DateFormatUtils.format(timestamp, "MM-yyyy"), amount))));
+            });
+    }
+
+    /**
+     * Add comment activity to a role-restricted channel group
+     */
+    public void addRoleRestrictedChannelComment(String groupIdentifier, long timestamp) {
+        roleRestrictedChannelCommentHistory.computeIfAbsent(groupIdentifier, k -> new ArrayList<>()).add(0, timestamp);
+        roleRestrictedChannelLastActivity.put(groupIdentifier, timestamp);
+    }
+
+    /**
+     * Add vote activity to a role-restricted channel group
+     */
+    public void addRoleRestrictedChannelVote(String groupIdentifier, String suggestionId, long timestamp) {
+        roleRestrictedChannelVoteHistory.computeIfAbsent(groupIdentifier, k -> new HashMap<>()).putIfAbsent(suggestionId, timestamp);
+        roleRestrictedChannelLastActivity.put(groupIdentifier, timestamp);
+    }
+
+    /**
+     * Get total message count for a role-restricted channel group within specified days
+     */
+    public int getRoleRestrictedChannelMessageCount(String groupIdentifier, int days) {
+        List<ChannelActivityEntry> entries = getRoleRestrictedChannelActivityHistory(groupIdentifier, days);
+        return entries.stream().mapToInt(ChannelActivityEntry::getMessageCount).sum();
+    }
+
+    /**
+     * Get total vote count for a role-restricted channel group within specified days
+     */
+    public int getRoleRestrictedChannelVoteCount(String groupIdentifier, int days) {
+        Map<String, Long> votes = roleRestrictedChannelVoteHistory.getOrDefault(groupIdentifier, new HashMap<>());
+        Instant cutoff = Instant.now().minus(Duration.ofDays(days));
+        return (int) votes.values().stream()
+            .filter(timestamp -> timestamp >= cutoff.toEpochMilli())
+            .count();
+    }
+
+    /**
+     * Get total comment count for a role-restricted channel group within specified days
+     */
+    public int getRoleRestrictedChannelCommentCount(String groupIdentifier, int days) {
+        List<Long> comments = roleRestrictedChannelCommentHistory.getOrDefault(groupIdentifier, new ArrayList<>());
+        Instant cutoff = Instant.now().minus(Duration.ofDays(days));
+        return (int) comments.stream()
+            .filter(timestamp -> timestamp >= cutoff.toEpochMilli())
+            .count();
+    }
+
+    /**
+     * Get channel activity history for a role-restricted channel group within specified days
+     */
+    public List<ChannelActivityEntry> getRoleRestrictedChannelActivityHistory(String groupIdentifier, int days) {
+        List<ChannelActivityEntry> groupHistory = roleRestrictedChannelActivityHistory.getOrDefault(groupIdentifier, new ArrayList<>());
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(days - 1);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-yyyy").withResolverStyle(ResolverStyle.SMART);
+        List<ChannelActivityEntry> entries = new ArrayList<>();
+
+        for (ChannelActivityEntry entry : groupHistory) {
+            Map<String, Integer> monthlyMessageCountMap = new HashMap<>(entry.getMonthlyMessageCount());
+
+            monthlyMessageCountMap.entrySet().removeIf(e -> {
+                YearMonth date = YearMonth.parse(e.getKey(), formatter);
+                return date.isBefore(YearMonth.from(startDate)) || date.isAfter(YearMonth.from(endDate));
+            });
+
+            int messageCount = monthlyMessageCountMap.values().stream().mapToInt(i -> i).sum();
+
+            if (messageCount > 0) {
+                entries.add(new ChannelActivityEntry(entry.getChannelId(), entry.getLastKnownDisplayName(),
+                    messageCount, entry.getLastMessageTimestamp(), monthlyMessageCountMap));
+            }
+        }
+
+        return entries;
+    }
+
     public boolean purgeOldHistory() {
         long configuredDays = Duration.of(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory(), ChronoUnit.DAYS).toMillis();
         long currentTime = System.currentTimeMillis();
@@ -110,7 +227,10 @@ public class LastActivity {
             this.projectSuggestionCommentHistory.removeIf(time -> time <= (currentTime - configuredDays)) ||
             this.getSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - configuredDays)) ||
             this.getAlphaSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - configuredDays)) ||
-            this.getProjectSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - configuredDays));
+            this.getProjectSuggestionVoteHistoryMap().values().removeIf(time -> time <= (currentTime - configuredDays)) ||
+            this.roleRestrictedChannelMessageHistory.values().stream().anyMatch(messageHistory -> messageHistory.removeIf(time -> time <= (currentTime - configuredDays))) ||
+            this.roleRestrictedChannelCommentHistory.values().stream().anyMatch(commentHistory -> commentHistory.removeIf(time -> time <= (currentTime - configuredDays))) ||
+            this.roleRestrictedChannelVoteHistory.values().stream().anyMatch(voteHistory -> voteHistory.values().removeIf(time -> time <= (currentTime - configuredDays)));
     }
 
     public int getTotalMessageCount() {
@@ -219,6 +339,17 @@ public class LastActivity {
         }
 
         return this.toTimestamp(function).toRelativeTimestamp();
+    }
+
+    /**
+     * Get relative timestamp for role-restricted channel group last activity
+     */
+    public String getRoleRestrictedChannelRelativeTimestamp(String groupIdentifier) {
+        long lastActivity = roleRestrictedChannelLastActivity.getOrDefault(groupIdentifier, -1L);
+        if (lastActivity <= 0) {
+            return "Never";
+        }
+        return new DiscordTimestamp(lastActivity).toRelativeTimestamp();
     }
 
     private DiscordTimestamp toTimestamp(ToLongFunction<LastActivity> function) {

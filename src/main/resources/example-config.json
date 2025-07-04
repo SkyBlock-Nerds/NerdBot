@@ -49,13 +49,15 @@
     "genChannelIds": [
       "1234567890123456789"
     ],
+    "filteredAprilFoolsGenChannelIds": [],
     "reactionChannels": [
       {
         "name": "example_name",
         "discordChannelId": "1234567890123456789",
         "emojiIds": [
           "1234567890123456789"
-        ]
+        ],
+        "thread": true
       }
     ],
     "blacklistedChannels": [
@@ -67,6 +69,12 @@
         "name": "Example Name"
       }
     ],
+    "roleRestrictedChannelGroups": [],
+    "autoManageRoleRestrictedChannels": true,
+    "defaultMinimumMessagesForActivity": 5,
+    "defaultMinimumVotesForActivity": 2,
+    "defaultMinimumCommentsForActivity": 1,
+    "defaultActivityCheckDays": 30,
     "autoPinFirstMessage": true,
     "autoPinBlacklistedChannels": [
       "1234567890123456789"
@@ -83,6 +91,10 @@
     "minimumVotesRequiredForPromotion": 100,
     "minimumCommentsRequiredForPromotion": 100,
     "daysRequiredForVoteHistory": 90,
+    "daysRequiredForInactivityCheck": 30,
+    "messagesRequiredForInactivityCheck": 100,
+    "votesRequiredForInactivityCheck": 25,
+    "commentsRequiredForInactivityCheck": 100,
     "pingableRoles": [
       {
         "name": "Example Name",
@@ -144,6 +156,8 @@
   "interval": 43200000,
   "activityType": "WATCHING",
   "activity": "with an example message!",
+  "nominationsEnabled": true,
+  "inactivityCheckEnabled": true,
   "inactivityDays": 7,
   "inactivityMessages": 10
 }

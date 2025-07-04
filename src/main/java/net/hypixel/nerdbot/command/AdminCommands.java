@@ -13,15 +13,22 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.PermissionOverride;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
@@ -38,10 +45,14 @@ import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.database.model.user.stats.NominationInfo;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.api.repository.Repository;
+import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
+import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.UserNominationFeature;
+import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.JsonUtil;
@@ -58,10 +69,13 @@ import org.apache.logging.log4j.Level;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -502,6 +516,77 @@ public class AdminCommands extends ApplicationCommand {
         TranslationManager.edit(event.getHook(), discordUser, "commands.user.migrated_profiles", mojangProfiles.size());
     }
 
+    @JDASlashCommand(name = "debug", subcommand = "role-restricted-activity", description = "Debug role-restricted channel activity for a user", defaultLocked = true)
+    public void debugRoleRestrictedActivity(GuildSlashEvent event, @AppOption(description = "The user to debug") Member member) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+        DiscordUser targetUser = discordUserRepository.findById(member.getId());
+
+        if (discordUser == null || targetUser == null) {
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
+            return;
+        }
+
+        List<RoleRestrictedChannelGroup> groups = NerdBotApp.getBot().getConfig().getChannelConfig().getRoleRestrictedChannelGroups();
+
+        if (groups.isEmpty()) {
+            event.getHook().editOriginal("No role-restricted channel groups configured.").queue();
+            return;
+        }
+
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+            .setTitle("Role-Restricted Channel Activity Debug")
+            .setDescription("Activity data for " + member.getAsMention())
+            .setColor(Color.ORANGE)
+            .setThumbnail(member.getEffectiveAvatarUrl());
+
+        LastActivity lastActivity = targetUser.getLastActivity();
+
+        for (RoleRestrictedChannelGroup group : groups) {
+            boolean hasAccess = Arrays.stream(group.getRequiredRoleIds())
+                .anyMatch(roleId -> member.getRoles().stream()
+                    .map(Role::getId)
+                    .anyMatch(memberRoleId -> memberRoleId.equalsIgnoreCase(roleId)));
+
+            StringBuilder fieldValue = new StringBuilder();
+            fieldValue.append("**Has Access:** ").append(hasAccess ? "✅" : "❌").append("\n");
+
+            if (hasAccess) {
+                fieldValue.append("**Last Activity:** ").append(lastActivity.getRoleRestrictedChannelRelativeTimestamp(group.getIdentifier())).append("\n");
+                fieldValue.append("**30-day Activity:**\n");
+                fieldValue.append(" - Messages: ").append(lastActivity.getRoleRestrictedChannelMessageCount(group.getIdentifier(), 30)).append("/").append(group.getMinimumMessagesForActivity()).append("\n");
+                fieldValue.append(" - Votes: ").append(lastActivity.getRoleRestrictedChannelVoteCount(group.getIdentifier(), 30)).append("/").append(group.getMinimumVotesForActivity()).append("\n");
+                fieldValue.append(" - Comments: ").append(lastActivity.getRoleRestrictedChannelCommentCount(group.getIdentifier(), 30)).append("/").append(group.getMinimumCommentsForActivity()).append("\n");
+
+                int messagesMet = lastActivity.getRoleRestrictedChannelMessageCount(group.getIdentifier(), group.getActivityCheckDays()) >= group.getMinimumMessagesForActivity() ? 1 : 0;
+                int votesMet = lastActivity.getRoleRestrictedChannelVoteCount(group.getIdentifier(), group.getActivityCheckDays()) >= group.getMinimumVotesForActivity() ? 1 : 0;
+                int commentsMet = lastActivity.getRoleRestrictedChannelCommentCount(group.getIdentifier(), group.getActivityCheckDays()) >= group.getMinimumCommentsForActivity() ? 1 : 0;
+                int totalMet = messagesMet + votesMet + commentsMet;
+
+                fieldValue.append("**Requirements Met:** ").append(totalMet).append("/3 ");
+                if (totalMet >= 2) {
+                    fieldValue.append("✅");
+                } else {
+                    fieldValue.append("⚠️");
+                }
+            } else {
+                fieldValue.append("**Required Roles:** ");
+                for (String roleId : group.getRequiredRoleIds()) {
+                    Role role = member.getGuild().getRoleById(roleId);
+                    if (role != null) {
+                        fieldValue.append(role.getName()).append(" ");
+                    }
+                }
+            }
+
+            embedBuilder.addField(group.getDisplayName(), fieldValue.toString(), false);
+        }
+
+        event.getHook().editOriginalEmbeds(embedBuilder.build()).queue();
+    }
+
     @JDASlashCommand(name = "cache", subcommand = "force-save", description = "Force save the specified cache to the database", defaultLocked = true)
     public void forceSaveRepository(GuildSlashEvent event, @AppOption String repositoryName) {
         event.deferReply(true).complete();
@@ -724,6 +809,12 @@ public class AdminCommands extends ApplicationCommand {
         TranslationManager.reply(event, "commands.force_inactivity_check.success");
     }
 
+    @JDASlashCommand(name = "force", subcommand = "restricted-inactivity-check", description = "Forcefully run the restricted inactivity check", defaultLocked = true)
+    public void forceRestrictedInactiveCheck(GuildSlashEvent event) {
+        UserNominationFeature.findInactiveUsersInRoleRestrictedChannels();
+        TranslationManager.reply(event, "commands.force_restricted_inactivity_check.success");
+    }
+
     @JDASlashCommand(name = "reset-inactivity-check-data", description = "Reset the inactivity check data", defaultLocked = true)
     public void resetInactiveCheckData(GuildSlashEvent event) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -735,5 +826,409 @@ public class AdminCommands extends ApplicationCommand {
             nominationInfo.setTotalInactivityWarnings(0);
             nominationInfo.setLastInactivityWarningDate(null);
         });
+    }
+
+    @JDASlashCommand(name = "scan-channel", description = "Manually scan a channel for role membership", defaultLocked = true)
+    public void scanChannelForRoleRestricted(GuildSlashEvent event, @AppOption(description = "The channel to scan") GuildChannel channel) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+
+        if (discordUser == null) {
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
+            return;
+        }
+
+        BotConfig botConfig = NerdBotApp.getBot().getConfig();
+
+        if (!botConfig.getChannelConfig().isAutoManageRoleRestrictedChannels()) {
+            event.getHook().editOriginal("Automatic channel management is disabled. Enable it first with `/channel-config toggle`").queue();
+            return;
+        }
+
+        List<String> currentGroups = new ArrayList<>();
+        for (RoleRestrictedChannelGroup group : botConfig.getChannelConfig().getRoleRestrictedChannelGroups()) {
+            if (Arrays.asList(group.getChannelIds()).contains(channel.getId())) {
+                currentGroups.add(group.getDisplayName());
+            }
+        }
+
+        RoleRestrictedChannelListener listener = new RoleRestrictedChannelListener();
+        listener.updateChannelGroupMembership(channel, false);
+        listener.updateChannelGroupMembership(channel, true);
+
+        BotConfig updatedConfig = NerdBotApp.getBot().getConfig();
+        List<String> newGroups = new ArrayList<>();
+        for (RoleRestrictedChannelGroup group : updatedConfig.getChannelConfig().getRoleRestrictedChannelGroups()) {
+            if (Arrays.asList(group.getChannelIds()).contains(channel.getId())) {
+                newGroups.add(group.getDisplayName());
+            }
+        }
+
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+            .setTitle("Channel Scan Results")
+            .setDescription("Scanned " + channel.getAsMention() + " for role-restricted group membership")
+            .setColor(Color.BLUE)
+            .addField("Channel Type", channel.getType().name(), true)
+            .addField("Before Scan",
+                currentGroups.isEmpty() ? "No groups" : String.join(", ", currentGroups),
+                false)
+            .addField("After Scan",
+                newGroups.isEmpty() ? "No groups" : String.join(", ", newGroups),
+                false);
+
+        StringBuilder permissionInfo = new StringBuilder();
+        PermissionOverride everyoneOverride = channel.getPermissionContainer().getPermissionOverride(channel.getGuild().getPublicRole());
+        if (everyoneOverride != null && everyoneOverride.getDenied().contains(Permission.VIEW_CHANNEL)) {
+            permissionInfo.append("🔒 @everyone denied: `VIEW_CHANNEL`\n");
+
+            List<String> allowedRoles = new ArrayList<>();
+            for (PermissionOverride override : channel.getPermissionContainer().getPermissionOverrides()) {
+                if (override.isRoleOverride() && override.getAllowed().contains(Permission.VIEW_CHANNEL)) {
+                    allowedRoles.add(override.getRole().getName());
+                }
+            }
+
+            if (!allowedRoles.isEmpty()) {
+                permissionInfo.append("✅ Allowed roles: ").append(String.join(", ", allowedRoles));
+            } else {
+                permissionInfo.append("❌ No roles explicitly allowed");
+            }
+        } else {
+            permissionInfo.append("🌐 Publicly accessible");
+        }
+
+        embedBuilder.addField("Permission Analysis", permissionInfo.toString(), false);
+
+        event.getHook().editOriginalEmbeds(embedBuilder.build()).queue();
+
+        log.info("{} manually scanned channel {} ({})",
+            event.getUser().getName(), channel.getName(), channel.getId());
+    }
+
+    @JDASlashCommand(name = "channel-config", subcommand = "toggle", description = "Toggle automatic management of role-restricted channel groups", defaultLocked = true)
+    public void toggleAutoManageRoleRestricted(GuildSlashEvent event) {
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+
+        if (discordUser == null) {
+            TranslationManager.reply(event, "generic.user_not_found");
+            return;
+        }
+
+        BotConfig botConfig = NerdBotApp.getBot().getConfig();
+        boolean currentState = botConfig.getChannelConfig().isAutoManageRoleRestrictedChannels();
+        botConfig.getChannelConfig().setAutoManageRoleRestrictedChannels(!currentState);
+
+        NerdBotApp.getBot().writeConfig(botConfig);
+
+        String status = !currentState ? "enabled" : "disabled";
+        event.reply("✅ Automatic management of role-restricted channel groups has been **" + status + "**.").setEphemeral(true).queue();
+
+        log.info("{} {} automatic management of role-restricted channel groups",
+            event.getUser().getName(), !currentState ? "enabled" : "disabled");
+    }
+
+    @JDASlashCommand(name = "channel-config", subcommand = "status", description = "View the status of automatic role-restricted channel management", defaultLocked = true)
+    public void autoManageStatus(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+
+        if (discordUser == null) {
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
+            return;
+        }
+
+        BotConfig botConfig = NerdBotApp.getBot().getConfig();
+        ChannelConfig channelConfig = botConfig.getChannelConfig();
+
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+            .setTitle("Role-Restricted Channel Auto-Management Status")
+            .setColor(channelConfig.isAutoManageRoleRestrictedChannels() ? Color.GREEN : Color.RED)
+            .addField("Automatic Management",
+                channelConfig.isAutoManageRoleRestrictedChannels() ? "✅ Enabled" : "❌ Disabled",
+                false)
+            .addField("Configured Groups",
+                String.valueOf(channelConfig.getRoleRestrictedChannelGroups().size()),
+                true);
+
+        if (channelConfig.isAutoManageRoleRestrictedChannels()) {
+            embedBuilder
+                .addField("Default Message Requirement",
+                    String.valueOf(channelConfig.getDefaultMinimumMessagesForActivity()),
+                    true)
+                .addField("Default Vote Requirement",
+                    String.valueOf(channelConfig.getDefaultMinimumVotesForActivity()),
+                    true)
+                .addField("Default Comment Requirement",
+                    String.valueOf(channelConfig.getDefaultMinimumCommentsForActivity()),
+                    true)
+                .addField("Default Check Period",
+                    channelConfig.getDefaultActivityCheckDays() + " days",
+                    true)
+                .addBlankField(true);
+        }
+
+        int totalChannels = channelConfig.getRoleRestrictedChannelGroups().stream()
+            .mapToInt(group -> group.getChannelIds().length)
+            .sum();
+
+        embedBuilder.addField("Total Tracked Channels", String.valueOf(totalChannels), false);
+
+        event.getHook().editOriginalEmbeds(embedBuilder.build()).queue();
+    }
+
+    @JDASlashCommand(name = "channel-config", subcommand = "rebuild", description = "Rebuild role-restricted channel groups from current permissions", defaultLocked = true)
+    public void rebuildRoleRestrictedGroups(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+
+        if (discordUser == null) {
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
+            return;
+        }
+
+        BotConfig botConfig = NerdBotApp.getBot().getConfig();
+
+        if (!botConfig.getChannelConfig().isAutoManageRoleRestrictedChannels()) {
+            event.getHook().editOriginal("❌ Automatic channel management is disabled. Enable it first with `/channel-config toggle`").queue();
+            return;
+        }
+
+        int groupsBefore = botConfig.getChannelConfig().getRoleRestrictedChannelGroups().size();
+        int channelsBefore = botConfig.getChannelConfig().getRoleRestrictedChannelGroups().stream()
+            .mapToInt(group -> group.getChannelIds().length)
+            .sum();
+
+        event.getHook().editOriginal("🔄 Scanning all guild channels and rebuilding groups... This may take a moment.").queue();
+
+        NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
+            try {
+                botConfig.getChannelConfig().rebuildRoleRestrictedChannelGroups();
+                NerdBotApp.getBot().writeConfig(botConfig);
+
+                BotConfig finalConfig = NerdBotApp.getBot().getConfig();
+                int groupsAfter = finalConfig.getChannelConfig().getRoleRestrictedChannelGroups().size();
+                int channelsAfter = finalConfig.getChannelConfig().getRoleRestrictedChannelGroups().stream()
+                    .mapToInt(group -> group.getChannelIds().length)
+                    .sum();
+
+                StringBuilder summary = new StringBuilder("✅ **Rebuild Complete**\n\n");
+                summary.append(String.format("**Before:** %d groups, %d channels\n", groupsBefore, channelsBefore));
+                summary.append(String.format("**After:** %d groups, %d channels\n\n", groupsAfter, channelsAfter));
+
+                if (groupsAfter > 0) {
+                    summary.append("**Created Groups:**\n");
+                    for (RoleRestrictedChannelGroup group : finalConfig.getChannelConfig().getRoleRestrictedChannelGroups()) {
+                        summary.append(String.format("- **%s** (%d channels)\n",
+                            group.getDisplayName(), group.getChannelIds().length));
+                    }
+                } else {
+                    summary.append("**Result:** No role-restricted channels found - all channels appear to be publicly accessible.");
+                }
+
+                event.getHook().editOriginal(summary.toString()).queue();
+
+                log.info("Role-restricted channel groups rebuild completed by {}: {} groups -> {} groups, {} channels -> {} channels",
+                    event.getUser().getName(), groupsBefore, groupsAfter, channelsBefore, channelsAfter);
+
+            } catch (Exception e) {
+                log.error("Error during role-restricted channel groups rebuild", e);
+                event.getHook().editOriginal("❌ **Rebuild Failed**\n\nAn error occurred during the rebuild process. Check the logs for details.").queue();
+            }
+        });
+    }
+
+    @JDASlashCommand(name = "channel-config", subcommand = "clean", description = "Remove empty role-restricted channel groups", defaultLocked = true)
+    public void cleanRoleRestrictedGroups(GuildSlashEvent event) {
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+
+        if (discordUser == null) {
+            TranslationManager.reply(event, "generic.user_not_found");
+            return;
+        }
+
+        BotConfig botConfig = NerdBotApp.getBot().getConfig();
+        int groupsBefore = botConfig.getChannelConfig().getRoleRestrictedChannelGroups().size();
+
+        boolean removed = botConfig.getChannelConfig().removeEmptyRoleRestrictedGroups();
+
+        if (removed) {
+            NerdBotApp.getBot().writeConfig(botConfig);
+            int groupsAfter = botConfig.getChannelConfig().getRoleRestrictedChannelGroups().size();
+            int removedCount = groupsBefore - groupsAfter;
+
+            event.reply(String.format("✅ Removed %d empty role-restricted channel group(s). %d groups remaining.",
+                removedCount, groupsAfter)).setEphemeral(true).queue();
+
+            log.info("{} cleaned role-restricted channel groups: removed {} empty groups",
+                event.getUser().getName(), removedCount);
+        } else {
+            event.reply("✅ No empty role-restricted channel groups found.").setEphemeral(true).queue();
+        }
+    }
+
+    @JDASlashCommand(name = "debug", subcommand = "ungrouped-channels", description = "Show channels that are not part of any role-restricted group", defaultLocked = true)
+    public void debugUngroupedChannels(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+
+        if (discordUser == null) {
+            TranslationManager.edit(event.getHook(), "generic.user_not_found");
+            return;
+        }
+
+        BotConfig botConfig = NerdBotApp.getBot().getConfig();
+        List<RoleRestrictedChannelGroup> groups = botConfig.getChannelConfig().getRoleRestrictedChannelGroups();
+        Set<String> groupedChannelIds = new HashSet<>();
+
+        for (RoleRestrictedChannelGroup group : groups) {
+            groupedChannelIds.addAll(Arrays.asList(group.getChannelIds()));
+        }
+
+        List<GuildChannel> ungroupedTextChannels = new ArrayList<>();
+        List<GuildChannel> ungroupedVoiceChannels = new ArrayList<>();
+        List<GuildChannel> ungroupedForumChannels = new ArrayList<>();
+        List<GuildChannel> ungroupedOtherChannels = new ArrayList<>();
+
+        Guild guild = event.getGuild();
+
+        for (TextChannel channel : guild.getTextChannels()) {
+            if (!groupedChannelIds.contains(channel.getId())) {
+                ungroupedTextChannels.add(channel);
+            }
+        }
+
+        for (VoiceChannel channel : guild.getVoiceChannels()) {
+            if (!groupedChannelIds.contains(channel.getId())) {
+                ungroupedVoiceChannels.add(channel);
+            }
+        }
+
+        for (ForumChannel channel : guild.getForumChannels()) {
+            if (!groupedChannelIds.contains(channel.getId())) {
+                ungroupedForumChannels.add(channel);
+            }
+        }
+
+        for (GuildChannel channel : guild.getChannels()) {
+            if (!groupedChannelIds.contains(channel.getId()) &&
+                channel.getType() != ChannelType.TEXT &&
+                channel.getType() != ChannelType.VOICE &&
+                channel.getType() != ChannelType.FORUM) {
+                ungroupedOtherChannels.add(channel);
+            }
+        }
+
+        int totalUngrouped = ungroupedTextChannels.size() + ungroupedVoiceChannels.size()
+            + ungroupedForumChannels.size() + ungroupedOtherChannels.size();
+        int totalChannels = guild.getChannels().size();
+        int totalGrouped = groupedChannelIds.size();
+
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+            .setTitle("📋 Ungrouped Channels Analysis")
+            .setColor(totalUngrouped > 0 ? Color.YELLOW : Color.GREEN)
+            .setDescription("Channels that are not part of any role-restricted channel group")
+            .addField("📊 Summary",
+                String.format("**Total Channels:** %d\n**Grouped:** %d\n**Ungrouped:** %d\n**Groups:** %d",
+                    totalChannels, totalGrouped, totalUngrouped, groups.size()),
+                false);
+
+        if (!ungroupedTextChannels.isEmpty()) {
+            StringBuilder textChannels = new StringBuilder();
+            for (int i = 0; i < Math.min(ungroupedTextChannels.size(), 10); i++) {
+                GuildChannel channel = ungroupedTextChannels.get(i);
+                textChannels.append("- ").append(channel.getAsMention())
+                    .append(" (").append(getChannelAccessType(channel)).append(")\n");
+            }
+            if (ungroupedTextChannels.size() > 10) {
+                textChannels.append("... and ").append(ungroupedTextChannels.size() - 10).append(" more");
+            }
+
+            embedBuilder.addField(String.format("💬 Text Channels (%d)", ungroupedTextChannels.size()),
+                textChannels.toString(), false);
+        }
+
+        if (!ungroupedVoiceChannels.isEmpty()) {
+            StringBuilder voiceChannels = new StringBuilder();
+            for (int i = 0; i < Math.min(ungroupedVoiceChannels.size(), 10); i++) {
+                GuildChannel channel = ungroupedVoiceChannels.get(i);
+                voiceChannels.append("- ").append(channel.getName())
+                    .append(" (").append(getChannelAccessType(channel)).append(")\n");
+            }
+            if (ungroupedVoiceChannels.size() > 10) {
+                voiceChannels.append("... and ").append(ungroupedVoiceChannels.size() - 10).append(" more");
+            }
+
+            embedBuilder.addField(String.format("🔊 Voice Channels (%d)", ungroupedVoiceChannels.size()),
+                voiceChannels.toString(), false);
+        }
+
+        if (!ungroupedForumChannels.isEmpty()) {
+            StringBuilder forumChannels = new StringBuilder();
+            for (int i = 0; i < Math.min(ungroupedForumChannels.size(), 10); i++) {
+                GuildChannel channel = ungroupedForumChannels.get(i);
+                forumChannels.append(" - ").append(channel.getAsMention())
+                    .append(" (").append(getChannelAccessType(channel)).append(")\n");
+            }
+            if (ungroupedForumChannels.size() > 10) {
+                forumChannels.append("... and ").append(ungroupedForumChannels.size() - 10).append(" more");
+            }
+
+            embedBuilder.addField(String.format("📋 Forum Channels (%d)", ungroupedForumChannels.size()),
+                forumChannels.toString(), false);
+        }
+
+        if (!ungroupedOtherChannels.isEmpty()) {
+            StringBuilder otherChannels = new StringBuilder();
+            for (int i = 0; i < Math.min(ungroupedOtherChannels.size(), 5); i++) {
+                GuildChannel channel = ungroupedOtherChannels.get(i);
+                otherChannels.append(" - ").append(channel.getName())
+                    .append(" (").append(channel.getType().name()).append(")\n");
+            }
+            if (ungroupedOtherChannels.size() > 5) {
+                otherChannels.append("... and ").append(ungroupedOtherChannels.size() - 5).append(" more");
+            }
+
+            embedBuilder.addField(String.format("🔧 Other Channels (%d)", ungroupedOtherChannels.size()),
+                otherChannels.toString(), false);
+        }
+        
+        embedBuilder.setTimestamp(Instant.now());
+        event.getHook().editOriginalEmbeds(embedBuilder.build()).queue();
+    }
+
+    /**
+     * Helper method to determine channel access type
+     */
+    private String getChannelAccessType(GuildChannel channel) {
+        PermissionOverride everyoneOverride = channel.getPermissionContainer().getPermissionOverride(channel.getGuild().getPublicRole());
+
+        if (everyoneOverride != null && everyoneOverride.getDenied().contains(Permission.VIEW_CHANNEL)) {
+            List<String> allowedRoles = new ArrayList<>();
+            for (PermissionOverride override : channel.getPermissionContainer().getPermissionOverrides()) {
+                if (override.isRoleOverride() && override.getAllowed().contains(Permission.VIEW_CHANNEL)) {
+                    allowedRoles.add(override.getRole().getName());
+                }
+            }
+
+            if (allowedRoles.isEmpty()) {
+                return "Private - No roles allowed";
+            } else if (allowedRoles.size() == 1) {
+                return "Role-restricted: " + allowedRoles.get(0);
+            } else {
+                return "Role-restricted: " + allowedRoles.size() + " roles";
+            }
+        } else {
+            return "Public";
+        }
     }
 }
