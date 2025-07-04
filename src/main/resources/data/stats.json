@@ -488,6 +488,15 @@
         "parseType": "NORMAL"
     },
     {
+        "icon": "☯",
+        "name": "hunting_wisdom",
+        "stat": "Hunting Wisdom",
+        "display": "☯ Hunting Wisdom",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
         "icon": "ф",
         "name": "rift_time",
         "stat": "Rift Time",
@@ -736,6 +745,78 @@
         "stat": "Fear",
         "display": "☠ Fear",
         "color": "DARK_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "fig_fortune",
+        "stat": "Fig Fortune",
+        "display": "☘ Fig Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "mangrove_fortune",
+        "stat": "Mangrove Fortune",
+        "display": "☘ Mangrove Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "Hunter_fortune",
+        "stat": "Hunter Fortune",
+        "display": "☘ Hunter Fortune",
+        "color": "LIGHT_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "syphon_luck",
+        "stat": "Syphon Luck",
+        "display": "☘ Syphon Luck",
+        "color": "LIGHT_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "∮",
+        "name": "sweep",
+        "stat": "Sweep",
+        "display": "∮ Sweep",
+        "color": "DARK_GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⚶",
+        "name": "respiration",
+        "stat": "Respiration",
+        "display": "⚶ Respiration",
+        "color": "DARK_AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "❍",
+        "name": "pressure_resistance",
+        "stat": "Pressure Resistance",
+        "display": "❍ Pressure Resistance",
+        "color": "BLUE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "ᛷ",
+        "name": "pull",
+        "stat": "Pull",
+        "display": "ᛷ Pull",
+        "color": "AQUA",
         "subColor": null,
         "parseType": "NORMAL"
     }

@@ -34,5 +34,25 @@
     {
         "name": "abiphone",
         "icon": "✆"
+    },
+    {
+        "name": "sweep_booster",
+        "icon": "ꕮ"
+    },
+    {
+        "name": "luck_booster",
+        "icon": "ꆤ"
+    },
+    {
+        "name": "fighting_booster",
+        "icon": "४"
+    },
+    {
+        "name": "foraging_wisdom_booster",
+        "icon": "⸙"
+    },
+    {
+        "name": "foraging_fortune_booster",
+        "icon": "⎋"
     }
 ]
