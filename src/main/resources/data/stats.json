@@ -768,7 +768,7 @@
     },
     {
         "icon": "☘",
-        "name": "Hunter_fortune",
+        "name": "hunter_fortune",
         "stat": "Hunter Fortune",
         "display": "☘ Hunter Fortune",
         "color": "LIGHT_PURPLE",
