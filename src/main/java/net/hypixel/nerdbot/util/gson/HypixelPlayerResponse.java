@@ -106,7 +106,7 @@ public class HypixelPlayerResponse {
                 this.achievementsOneTimeFixed = this.achievementsOneTime.stream()
                     .filter(obj -> (obj instanceof String))
                     .map(String::valueOf)
-                    .collect(Collectors.toList());
+                    .toList();
 
             return achievementsOneTimeFixed;
         }

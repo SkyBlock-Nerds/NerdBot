@@ -302,143 +302,34 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply(hidden).complete();
         includeItem = Objects.requireNonNullElse(includeItem, false);
 
-        // converting the nbt into json
-        JsonObject itemJSON;
-        try {
-            itemJSON = NerdBotApp.GSON.fromJson(itemNBT, JsonObject.class);
-        } catch (JsonSyntaxException exception) {
-            event.getHook().sendMessage(ITEM_PARSE_JSON_FORMAT).queue();
-            return;
-        }
+        JsonObject itemJSON = validateAndParseItemJSON(event, itemNBT);
+        if (itemJSON == null) return;
 
-        // checking if the user has copied the text directly from in game
-        JsonObject tagJSON = JsonUtil.isJsonObject(itemJSON, "tag");
-        if (tagJSON == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag")).queue();
-            return;
-        }
+        DisplayData displayData = validateDisplayData(event, itemJSON);
+        if (displayData == null) return;
 
-        // checking if there is a display tag
-        JsonObject displayJSON = JsonUtil.isJsonObject(tagJSON, "display");
-        if (displayJSON == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("display")).queue();
-            return;
-        }
-        // checking that there is a name and lore parameters in the JsonObject
-        String itemName = JsonUtil.isJsonString(displayJSON, "Name");
-        JsonArray itemLoreArray = JsonUtil.isJsonArray(displayJSON, "Lore");
-        if (itemName == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Name")).queue();
-            return;
-        } else if (itemLoreArray == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Lore")).queue();
-            return;
-        }
-        itemName = itemName.replaceAll("§", "&");
+        String itemName = displayData.itemName();
+        JsonArray itemLoreArray = displayData.itemLoreArray();
+        JsonObject displayJSON = displayData.displayJSON();
+        JsonObject tagJSON = displayData.tagJSON();
 
         String itemID = "";
         String extraModifiers = "";
-        // checking if the user wants to create full gen
         if (includeItem) {
-            itemID = JsonUtil.isJsonString(itemJSON, "id");
-            if (itemID == null) {
-                event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("id")).queue();
-                return;
-            }
-            itemID = itemID.replace("minecraft:", "");
-
-            if (itemID.equals("skull")) {
-                // checking if there is a SkullOwner json object within the main tag json
-                JsonObject skullOwnerJSON = JsonUtil.isJsonObject(tagJSON, "SkullOwner");
-                if (skullOwnerJSON == null) {
-                    event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("SkullOwner")).queue();
-                    return;
-                }
-                // checking if there is a Properties json object within SkullOwner
-                JsonObject propertiesJSON = JsonUtil.isJsonObject(skullOwnerJSON, "Properties");
-                if (propertiesJSON == null) {
-                    event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Properties")).queue();
-                    return;
-                }
-                // checking if there is a textures json object within properties
-                JsonArray texturesJSON = JsonUtil.isJsonArray(propertiesJSON, "textures");
-                if (texturesJSON == null) {
-                    event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("textures")).queue();
-                    return;
-                }
-                // checking that there is only one json object in the array
-                if (texturesJSON.size() != 1) {
-                    event.getHook().sendMessage(MULTIPLE_ITEM_SKULL_DATA).queue();
-                    return;
-                } else if (!texturesJSON.get(0).isJsonObject()) {
-                    event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
-                    return;
-                }
-                // checking that there is a Base64 skin url string
-                String base64String = JsonUtil.isJsonString(texturesJSON.get(0).getAsJsonObject(), "Value");
-                if (base64String == null) {
-                    event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
-                    return;
-                }
-                // converting the Base64 string into the Skin URL
-                try {
-                    extraModifiers = builder.base64ToSkinURL(base64String);
-                } catch (NullPointerException | IllegalArgumentException exception) {
-                    event.getHook().sendMessage(INVALID_BASE_64_SKIN_URL).queue();
-                    return;
-                }
-            } else {
-                // checking if there is a color attribute present and adding it to the extra attributes
-                String color = JsonUtil.isJsonString(displayJSON, "color");
-                if (color != null) {
-                    try {
-                        Integer selectedColor = Integer.decode(color);
-                        extraModifiers = String.valueOf(selectedColor);
-                    } catch (NumberFormatException ignored) {
-                    }
-                }
-
-                // checking if the item is enchanted and applying the enchantment glint to the extra modifiers
-                JsonArray enchantJson = JsonUtil.isJsonArray(tagJSON, "ench");
-                if (enchantJson != null) {
-                    extraModifiers = extraModifiers.isEmpty() ? "enchant" : extraModifiers + ",enchant";
-                }
-            }
+            ItemData itemData = processItemData(event, itemJSON, tagJSON, displayJSON);
+            if (itemData == null) return;
+            itemID = itemData.itemID();
+            extraModifiers = itemData.extraModifiers();
         }
 
-        // adding all the text to the string builders
-        StringBuilder itemGenCommand = new StringBuilder("/").append(COMMAND_PREFIX).append(includeItem ? " full" : " item");
-        StringBuilder itemText = new StringBuilder();
-        itemText.append(itemName).append("\\n");
-        itemGenCommand.append(" item_name:").append(itemName).append(" rarity:NONE item_lore:");
-
-        // adding the entire lore to the string builder
-        int maxLineLength = 0;
-        for (JsonElement element : itemLoreArray) {
-            String itemLore = element.getAsString().replaceAll("§", "&").replaceAll("`", "");
-            itemText.append(itemLore).append("\\n");
-            itemGenCommand.append(itemLore).append("\\n");
-
-            if (maxLineLength < itemLore.length()) {
-                maxLineLength = itemLore.length();
-            }
-        }
-        maxLineLength++;
-        itemGenCommand.replace(itemGenCommand.length() - 2, itemGenCommand.length(), "").append(" max_line_length:").append(maxLineLength);
-        itemText.replace(itemText.length() - 2, itemText.length(), "");
-        // checking if there was supposed to be an item stack is displayed with the item
-        if (includeItem) {
-            itemGenCommand.append(" item_id:").append(itemID).append(!extraModifiers.isEmpty() ? " extra_modifiers:" + extraModifiers : "");
-        }
-
-        // creating the generated description
-        BufferedImage generatedDescription = builder.buildItem(event, "NONE", "NONE", itemText.toString(), "NONE", false, 255, 0, maxLineLength, true, false);
+        CommandData commandData = buildCommandAndText(itemName, itemLoreArray, includeItem, itemID, extraModifiers);
+        
+        BufferedImage generatedDescription = builder.buildItem(event, "NONE", "NONE", commandData.itemText(), "NONE", false, 255, 0, commandData.maxLineLength(), true, false);
         if (generatedDescription == null) {
-            event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
+            event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();
             return;
         }
 
-        // checking if an item should be displayed alongside the description
         if (includeItem) {
             BufferedImage generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, true);
             if (generatedItem == null) {
@@ -452,9 +343,165 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedDescription))).setEphemeral(false).queue();
         }
 
-        event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
+        event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();
 
-        // Log item gen activity
+        logItemGenActivity(event);
+    }
+
+    private JsonObject validateAndParseItemJSON(GuildSlashEvent event, String itemNBT) {
+        try {
+            return NerdBotApp.GSON.fromJson(itemNBT, JsonObject.class);
+        } catch (JsonSyntaxException exception) {
+            event.getHook().sendMessage(ITEM_PARSE_JSON_FORMAT).queue();
+            return null;
+        }
+    }
+
+    private record DisplayData(String itemName, JsonArray itemLoreArray, JsonObject displayJSON, JsonObject tagJSON) {}
+
+    private DisplayData validateDisplayData(GuildSlashEvent event, JsonObject itemJSON) {
+        JsonObject tagJSON = JsonUtil.isJsonObject(itemJSON, "tag");
+        if (tagJSON == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag")).queue();
+            return null;
+        }
+
+        JsonObject displayJSON = JsonUtil.isJsonObject(tagJSON, "display");
+        if (displayJSON == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("display")).queue();
+            return null;
+        }
+
+        String itemName = JsonUtil.isJsonString(displayJSON, "Name");
+        JsonArray itemLoreArray = JsonUtil.isJsonArray(displayJSON, "Lore");
+        
+        if (itemName == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Name")).queue();
+            return null;
+        }
+        if (itemLoreArray == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Lore")).queue();
+            return null;
+        }
+
+        itemName = itemName.replaceAll("§", "&");
+        return new DisplayData(itemName, itemLoreArray, displayJSON, tagJSON);
+    }
+
+    private record ItemData(String itemID, String extraModifiers) {}
+
+    private ItemData processItemData(GuildSlashEvent event, JsonObject itemJSON, JsonObject tagJSON, JsonObject displayJSON) {
+        String itemID = JsonUtil.isJsonString(itemJSON, "id");
+        if (itemID == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("id")).queue();
+            return null;
+        }
+        itemID = itemID.replace("minecraft:", "");
+
+        String extraModifiers = "";
+        if (itemID.equals("skull")) {
+            extraModifiers = processSkullData(event, tagJSON);
+            if (extraModifiers == null) return null;
+        } else {
+            extraModifiers = processNonSkullModifiers(tagJSON, displayJSON);
+        }
+
+        return new ItemData(itemID, extraModifiers);
+    }
+
+    private String processSkullData(GuildSlashEvent event, JsonObject tagJSON) {
+        JsonObject skullOwnerJSON = JsonUtil.isJsonObject(tagJSON, "SkullOwner");
+        if (skullOwnerJSON == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("SkullOwner")).queue();
+            return null;
+        }
+
+        JsonObject propertiesJSON = JsonUtil.isJsonObject(skullOwnerJSON, "Properties");
+        if (propertiesJSON == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Properties")).queue();
+            return null;
+        }
+
+        JsonArray texturesJSON = JsonUtil.isJsonArray(propertiesJSON, "textures");
+        if (texturesJSON == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("textures")).queue();
+            return null;
+        }
+
+        if (texturesJSON.size() != 1) {
+            event.getHook().sendMessage(MULTIPLE_ITEM_SKULL_DATA).queue();
+            return null;
+        }
+        
+        if (!texturesJSON.get(0).isJsonObject()) {
+            event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
+            return null;
+        }
+
+        String base64String = JsonUtil.isJsonString(texturesJSON.get(0).getAsJsonObject(), "Value");
+        if (base64String == null) {
+            event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
+            return null;
+        }
+
+        try {
+            return builder.base64ToSkinURL(base64String);
+        } catch (NullPointerException | IllegalArgumentException exception) {
+            event.getHook().sendMessage(INVALID_BASE_64_SKIN_URL).queue();
+            return null;
+        }
+    }
+
+    private String processNonSkullModifiers(JsonObject tagJSON, JsonObject displayJSON) {
+        String extraModifiers = "";
+        
+        String color = JsonUtil.isJsonString(displayJSON, "color");
+        if (color != null) {
+            try {
+                Integer selectedColor = Integer.decode(color);
+                extraModifiers = String.valueOf(selectedColor);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        JsonArray enchantJson = JsonUtil.isJsonArray(tagJSON, "ench");
+        if (enchantJson != null) {
+            extraModifiers = extraModifiers.isEmpty() ? "enchant" : extraModifiers + ",enchant";
+        }
+        
+        return extraModifiers;
+    }
+
+    private record CommandData(String itemGenCommand, String itemText, int maxLineLength) {}
+
+    private CommandData buildCommandAndText(String itemName, JsonArray itemLoreArray, boolean includeItem, String itemID, String extraModifiers) {
+        StringBuilder itemGenCommand = new StringBuilder("/").append(COMMAND_PREFIX).append(includeItem ? " full" : " item");
+        StringBuilder itemText = new StringBuilder();
+        itemText.append(itemName).append("\\n");
+        itemGenCommand.append(" item_name:").append(itemName).append(" rarity:NONE item_lore:");
+
+        int maxLineLength = 0;
+        for (JsonElement element : itemLoreArray) {
+            String itemLore = element.getAsString().replaceAll("§", "&").replaceAll("`", "");
+            itemText.append(itemLore).append("\\n");
+            itemGenCommand.append(itemLore).append("\\n");
+
+            if (maxLineLength < itemLore.length()) {
+                maxLineLength = itemLore.length();
+            }
+        }
+        maxLineLength++;
+        itemGenCommand.replace(itemGenCommand.length() - 2, itemGenCommand.length(), "").append(" max_line_length:").append(maxLineLength);
+        itemText.replace(itemText.length() - 2, itemText.length(), "");
+        
+        if (includeItem) {
+            itemGenCommand.append(" item_id:").append(itemID).append(!extraModifiers.isEmpty() ? " extra_modifiers:" + extraModifiers : "");
+        }
+
+        return new CommandData(itemGenCommand.toString(), itemText.toString(), maxLineLength);
+    }
+
+    private void logItemGenActivity(GuildSlashEvent event) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
@@ -640,7 +687,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
         event.replyEmbeds(embedBuilders.stream()
                 .map(EmbedBuilder::build)
-                .collect(Collectors.toList())
+                .toList()
             ).setEphemeral(true)
             .queue();
     }

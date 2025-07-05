@@ -10,16 +10,14 @@ import net.hypixel.nerdbot.NerdBotApp;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,22 +32,19 @@ public class JsonUtil {
     }
 
     public static JsonObject readJsonFile(String filename) {
-        try {
-            Reader reader = new InputStreamReader(new FileInputStream(filename), StandardCharsets.UTF_8);
-            JsonObject jsonObject = NerdBotApp.GSON.fromJson(reader, JsonObject.class);
-            reader.close();
-            return jsonObject;
+        try (Reader reader = Files.newBufferedReader(Path.of(filename), StandardCharsets.UTF_8)) {
+            return NerdBotApp.GSON.fromJson(reader, JsonObject.class);
         } catch (IOException exception) {
-            log.error("Failed to read json file: " + filename, exception);
+            log.error("Failed to read json file: {}", filename, exception);
             return null;
         }
     }
 
     public static void writeJsonFile(String filename, JsonObject jsonObject) {
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(filename), StandardCharsets.UTF_8)) {
+        try (Writer writer = Files.newBufferedWriter(Path.of(filename), StandardCharsets.UTF_8)) {
             NerdBotApp.GSON.toJson(jsonObject, writer);
         } catch (IOException exception) {
-            log.error("Failed to write json file: " + filename, exception);
+            log.error("Failed to write json file: {}", filename, exception);
         }
     }
 
@@ -92,11 +87,8 @@ public class JsonUtil {
             } else {
                 Object newValue = newJson.get(key);
 
-                if (oldValue instanceof Map && newValue instanceof Map) {
-                    @SuppressWarnings("unchecked") // Suppress unchecked warning
-                    Map<String, Object> oldMap = (Map<String, Object>) oldValue;
-                    Map<String, Object> newMap = (Map<String, Object>) newValue;
-                    differences.addAll(findChangedValues(oldMap, newMap, path + key + "."));
+                if (oldValue instanceof Map<?, ?> oldMap && newValue instanceof Map<?, ?> newMap) {
+                    differences.addAll(findChangedValues((Map<String, Object>) oldMap, (Map<String, Object>) newMap, path + key + "."));
                 } else if (!Objects.equals(oldValue, newValue)) {
                     differences.add(new Tuple<>(path + key, oldValue, newValue));
                 }
