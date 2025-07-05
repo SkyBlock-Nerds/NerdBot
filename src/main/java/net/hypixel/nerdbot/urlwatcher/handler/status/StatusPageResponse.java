@@ -76,6 +76,12 @@ public class StatusPageResponse {
         private List<IncidentUpdate> incidentUpdates;
         private List<Component> components;
 
+        public IncidentUpdate getLatestUpdate() {
+            return incidentUpdates != null && !incidentUpdates.isEmpty()
+                ? incidentUpdates.get(0)
+                : null;
+        }
+
         @Data
         public static class IncidentUpdate {
             private String id;
@@ -107,16 +113,6 @@ public class StatusPageResponse {
                 @SerializedName("new_status")
                 private String newStatus;
             }
-        }
-
-        public String getFormattedResolvedAt() {
-            return DiscordTimestamp.toLongDateTime(Instant.parse(resolvedAt).toEpochMilli());
-        }
-
-        public IncidentUpdate getLatestUpdate() {
-            return incidentUpdates != null && !incidentUpdates.isEmpty()
-                ? incidentUpdates.get(0)
-                : null;
         }
     }
 
