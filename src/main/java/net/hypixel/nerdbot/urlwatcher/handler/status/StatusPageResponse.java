@@ -2,14 +2,13 @@ package net.hypixel.nerdbot.urlwatcher.handler.status;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
-import lombok.extern.log4j.Log4j2;
+
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.time.Instant;
 import java.util.List;
 
 @Data
-@Log4j2
 public class StatusPageResponse {
     private Page page;
     private List<Component> components;
