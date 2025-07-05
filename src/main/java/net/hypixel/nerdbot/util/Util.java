@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.util;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.vdurmont.emoji.EmojiManager;
 import io.prometheus.client.Summary;
 import lombok.extern.log4j.Log4j2;
@@ -44,6 +45,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -86,6 +88,10 @@ public class Util {
         "nerds-project"
     };
     public static final String[] SPECIAL_ROLES = {"Apex Nerd", "Ultimate Nerd", "Ultimate Nerd But Red"};
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(10))
+        .followRedirects(HttpClient.Redirect.NORMAL)
+        .build();
 
     private Util() {
     }
@@ -369,8 +375,10 @@ public class Util {
             return NerdBotApp.GSON.fromJson(body, MojangProfile.class);
         } catch (IOException | InterruptedException exception) {
             throw new HttpException("Network error fetching profile for `" + username + "`", exception);
-        } catch (Exception exception) {
-            throw new HttpException("Failed to parse Mojang profile for `" + username + "`: " + exception.getMessage(), exception);
+        } catch (JsonSyntaxException exception) {
+            throw new HttpException("Invalid JSON response from Mojang API for `" + username + "`", exception);
+        } catch (IllegalStateException exception) {
+            throw new HttpException("Malformed Mojang profile data for `" + username + "`", exception);
         }
     }
 
@@ -404,15 +412,17 @@ public class Util {
     }
 
     private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws IOException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url)).GET();
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .timeout(Duration.ofSeconds(30))
+            .GET();
         Arrays.stream(headers).forEach(h -> builder.header(h.getLeft(), h.getRight()));
 
         HttpRequest request = builder.build();
         log.info("Sending HTTP request to {} with headers {}", url, Arrays.toString(headers));
         PrometheusMetrics.HTTP_REQUESTS_AMOUNT.labels(request.method(), url).inc();
 
-        return client.send(request, HttpResponse.BodyHandlers.ofString());
+        return HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws HttpException {
@@ -422,8 +432,13 @@ public class Util {
         try {
             String hypixelApiKey = NerdBotApp.getHypixelAPIKey().map(UUID::toString).orElse("");
             return NerdBotApp.GSON.fromJson(getHttpResponse(url, Pair.of("API-Key", hypixelApiKey)).body(), HypixelPlayerResponse.class);
-        } catch (Exception exception) {
-            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId + "`", exception);
+        } catch (IOException exception) {
+            throw new HttpException("Network error while fetching Hypixel player data for `" + uniqueId + "`", exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new HttpException("Request interrupted while fetching Hypixel player data for `" + uniqueId + "`", exception);
+        } catch (JsonSyntaxException exception) {
+            throw new HttpException("Invalid JSON response from Hypixel API for `" + uniqueId + "`", exception);
         } finally {
             requestTimer.observeDuration();
         }

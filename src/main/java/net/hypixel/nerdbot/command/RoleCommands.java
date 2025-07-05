@@ -31,7 +31,7 @@ public class RoleCommands extends ApplicationCommand {
         DiscordUser user = repository.findOrCreateById(event.getUser().getId());
 
         RoleManager.getPingableRoleByName(role).ifPresentOrElse(pingableRole -> {
-            Role discordRole = event.getGuild().getRoleById(pingableRole.getRoleId());
+            Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
             if (discordRole == null) {
                 TranslationManager.edit(event.getHook(), user, "commands.role.invalid_role");
                 return;
@@ -51,7 +51,7 @@ public class RoleCommands extends ApplicationCommand {
     @AutocompletionHandler(name = "pingable-roles", showUserInput = false)
     public List<String> listPingableRoles(CommandAutoCompleteInteractionEvent event) {
         return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
-            .map(PingableRole::getName)
+            .map(PingableRole::name)
             .toList();
     }
 
@@ -63,7 +63,7 @@ public class RoleCommands extends ApplicationCommand {
         DiscordUser user = repository.findById(event.getMember().getId());
 
         String roles = Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
-            .map(PingableRole::getName)
+            .map(PingableRole::name)
             .collect(Collectors.joining("\n"));
 
         TranslationManager.edit(event.getHook(), user, "commands.role.list_roles", roles);
