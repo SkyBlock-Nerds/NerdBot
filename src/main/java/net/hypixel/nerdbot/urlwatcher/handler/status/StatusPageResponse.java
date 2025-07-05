@@ -151,6 +151,9 @@ public class StatusPageResponse {
         }
 
         public String getFormattedScheduledFor() {
+            if (scheduledFor == null) {
+                return "";
+            }
             return DiscordTimestamp.toLongDateTime(Instant.parse(scheduledFor).toEpochMilli());
         }
 
