@@ -61,18 +61,18 @@ public class TimeUtil {
         StringBuilder sb = new StringBuilder();
 
         if (days > 0) {
-            sb.append(days).append("day").append(days == 1 ? " " : "s ");
+            sb.append(days).append(days == 1 ? " day " : " days ");
         }
 
         if (hours > 0) {
-            sb.append(hours).append("hour").append(hours == 1 ? " " : "s ");
+            sb.append(hours).append(hours == 1 ? " hour " : " hours ");
         }
         
         if (minutes > 0) {
-            sb.append(minutes).append("minute").append(minutes == 1 ? " " : "s ");
+            sb.append(minutes).append(minutes == 1 ? " minute " : " minutes ");
         }
 
-        sb.append(seconds).append("second").append(seconds == 1 ? "" : "s");
+        sb.append(seconds).append(seconds == 1 ? " second" : " seconds");
         return sb.toString().trim();
     }
 }
