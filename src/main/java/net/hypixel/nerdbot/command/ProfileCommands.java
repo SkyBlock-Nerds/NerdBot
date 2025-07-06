@@ -30,6 +30,8 @@ import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.language.TranslationManager;
+import net.hypixel.nerdbot.bot.config.RoleConfig;
+import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -45,6 +47,8 @@ import org.apache.commons.lang.time.DateUtils;
 import java.awt.Color;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -523,125 +527,240 @@ public class ProfileCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(member.getId());
         LastActivity lastActivity = discordUser.getLastActivity();
 
-        return List.of(
-            // General Activity
-            new EmbedBuilder().setColor(Color.GREEN)
-                .setTitle("General Activity")
-                // General
-                .addField("Last Seen", lastActivity.toRelativeTimestamp(LastActivity::getLastGlobalActivity), true)
-                .addField("General Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
-                .addField("Item Generator", lastActivity.toRelativeTimestamp(LastActivity::getLastItemGenUsage), true)
-                // Project
-                .addField("Projects", lastActivity.toRelativeTimestamp(LastActivity::getLastProjectActivity), true)
-                .addField("Project Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getProjectVoiceJoinDate), true)
-                .addBlankField(true)
-                // Alpha
-                .addField("Alpha", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaActivity), true)
-                .addField("Alpha Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getAlphaVoiceJoinDate), true)
-                .addBlankField(true)
-                .build(),
-            // Suggestions
-            new EmbedBuilder().setColor(Color.YELLOW)
-                .setTitle("Suggestion Activity")
-                .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getSuggestionCreationHistory), true)
-                .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getSuggestionVoteHistoryMap), true)
-                .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getSuggestionCommentHistory), true)
-                .addField("Create History", String.format(
-                    """
-                    24 Hours: %s
-                    7 Days: %s
-                    30 Days: %s""",
-                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
-                ), true)
-                .addField("Vote History", String.format(
-                    """
-                    24 Hours: %s
-                    7 Days: %s
-                    30 Days: %s""",
-                    lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
-                ), true)
-                .addField("Comment History", String.format(
-                    """
-                    24 Hours: %s
-                    7 Days: %s
-                    30 Days: %s""",
-                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
-                ), true)
-                .build(),
-            // Project Suggestion Activity
-            new EmbedBuilder().setColor(Color.ORANGE)
-                .setTitle("Project Suggestion Activity")
-                .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getProjectSuggestionCreationHistory), true)
-                .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getProjectSuggestionVoteHistoryMap), true)
-                .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getProjectSuggestionCommentHistory), true)
-                .addField("Created History", String.format(
-                    """
-                    24 Hours: %s
-                    7 Days: %s
-                    30 Days: %s""",
-                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
-                ), true)
-                .addField("Voted History", String.format(
-                    """
-                    24 Hours: %s
-                    7 Days: %s
-                    30 Days: %s""",
-                    lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
-                ), true)
-                .addField("Commented History", String.format(
-                    """
-                    24 Hours: %s
-                    7 Days: %s
-                    30 Days: %s""",
-                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
-                ), true)
-                .build(),
-            // Alpha Suggestion Activity
-            new EmbedBuilder().setColor(Color.RED)
-                .setTitle("Alpha Suggestion Activity")
-                .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getAlphaSuggestionCreationHistory), true)
-                .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getAlphaSuggestionVoteHistoryMap), true)
-                .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getAlphaSuggestionCommentHistory), true)
-                .addField("Create History", String.format(
-                    """
-                    24 Hours: %s
-                    7 Days: %s
-                    30 Days: %s""",
-                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
-                ), true)
-                .addField("Vote History", String.format(
-                    """
-                    24 Hours: %s
-                    7 Days: %s
-                    30 Days: %s""",
-                    lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
-                ), true)
-                .addField("Comment History", String.format(
-                    """
-                    24 Hours: %s
-                    7 Days: %s
-                    30 Days: %s""",
-                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
-                    lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
-                ), true)
-                .build()
-        );
+        List<MessageEmbed> embeds = new ArrayList<>();
+
+        RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
+        int inactivityCheckDays = roleConfig.getDaysRequiredForInactivityCheck();
+        int requiredMessages = roleConfig.getMessagesRequiredForInactivityCheck();
+        int requiredVotes = roleConfig.getVotesRequiredForInactivityCheck();
+        int requiredComments = roleConfig.getCommentsRequiredForInactivityCheck();
+
+        int promotionDays = roleConfig.getDaysRequiredForVoteHistory();
+        int promotionVotes = roleConfig.getMinimumVotesRequiredForPromotion();
+        int promotionComments = roleConfig.getMinimumCommentsRequiredForPromotion();
+
+        // General Activity
+        embeds.add(new EmbedBuilder().setColor(Color.GREEN)
+            .setTitle("General Activity")
+            // General
+            .addField("Last Seen", lastActivity.toRelativeTimestamp(LastActivity::getLastGlobalActivity), true)
+            .addField("General Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
+            .addField("Item Generator", lastActivity.toRelativeTimestamp(LastActivity::getLastItemGenUsage), true)
+            // Project
+            .addField("Projects", lastActivity.toRelativeTimestamp(LastActivity::getLastProjectActivity), true)
+            .addField("Project Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getProjectVoiceJoinDate), true)
+            .addBlankField(true)
+            // Alpha
+            .addField("Alpha", lastActivity.toRelativeTimestamp(LastActivity::getLastAlphaActivity), true)
+            .addField("Alpha Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getAlphaVoiceJoinDate), true)
+            .addBlankField(true)
+            .setFooter(String.format(
+                "Activity Requirements (per %d days): %d messages, %d votes, %d comments",
+                inactivityCheckDays, requiredMessages, requiredVotes, requiredComments
+            ))
+            .build());
+
+        // Suggestions
+        embeds.add(new EmbedBuilder().setColor(Color.YELLOW)
+            .setTitle("Suggestion Activity")
+            .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getSuggestionCreationHistory), true)
+            .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getSuggestionVoteHistoryMap), true)
+            .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getSuggestionCommentHistory), true)
+            .addField("Create History", String.format(
+                """
+                24 Hours: %s
+                7 Days: %s
+                30 Days: %s""",
+                lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
+                lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
+                lastActivity.toTotalPeriodList(LastActivity::getSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
+            ), true)
+            .addField("Vote History", String.format(
+                """
+                24 Hours: %s
+                7 Days: %s
+                30 Days: %s""",
+                lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
+                lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
+                lastActivity.toTotalPeriodMap(LastActivity::getSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
+            ), true)
+            .addField("Comment History", String.format(
+                """
+                24 Hours: %s
+                7 Days: %s
+                30 Days: %s""",
+                lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
+                lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
+                lastActivity.toTotalPeriodList(LastActivity::getSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
+            ), true)
+            .setFooter(String.format(
+                "Promotion Requirements (per %d days): %d votes, %d comments",
+                promotionDays, promotionVotes, promotionComments
+            ))
+            .build());
+
+        // Project Suggestion Activity
+        embeds.add(new EmbedBuilder().setColor(Color.ORANGE)
+            .setTitle("Project Suggestion Activity")
+            .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getProjectSuggestionCreationHistory), true)
+            .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getProjectSuggestionVoteHistoryMap), true)
+            .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getProjectSuggestionCommentHistory), true)
+            .addField("Created History", String.format(
+                """
+                24 Hours: %s
+                7 Days: %s
+                30 Days: %s""",
+                lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
+                lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
+                lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
+            ), true)
+            .addField("Voted History", String.format(
+                """
+                24 Hours: %s
+                7 Days: %s
+                30 Days: %s""",
+                lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
+                lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
+                lastActivity.toTotalPeriodMap(LastActivity::getProjectSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
+            ), true)
+            .addField("Commented History", String.format(
+                """
+                24 Hours: %s
+                7 Days: %s
+                30 Days: %s""",
+                lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
+                lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
+                lastActivity.toTotalPeriodList(LastActivity::getProjectSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
+            ), true)
+            .setFooter(String.format(
+                "Promotion Requirements (per %d days): %d votes, %d comments",
+                promotionDays, promotionVotes, promotionComments
+            ))
+            .build());
+
+        // Alpha Suggestion Activity
+        embeds.add(new EmbedBuilder().setColor(Color.RED)
+            .setTitle("Alpha Suggestion Activity")
+            .addField("Last Created", lastActivity.toRelativeTimestampList(LastActivity::getAlphaSuggestionCreationHistory), true)
+            .addField("Last Voted", lastActivity.toRelativeTimestampMap(LastActivity::getAlphaSuggestionVoteHistoryMap), true)
+            .addField("Last Commented", lastActivity.toRelativeTimestampList(LastActivity::getAlphaSuggestionCommentHistory), true)
+            .addField("Create History", String.format(
+                """
+                24 Hours: %s
+                7 Days: %s
+                30 Days: %s""",
+                lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(24, ChronoUnit.HOURS)),
+                lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(7, ChronoUnit.DAYS)),
+                lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCreationHistory, Duration.of(30, ChronoUnit.DAYS))
+            ), true)
+            .addField("Vote History", String.format(
+                """
+                24 Hours: %s
+                7 Days: %s
+                30 Days: %s""",
+                lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(24, ChronoUnit.HOURS)),
+                lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(7, ChronoUnit.DAYS)),
+                lastActivity.toTotalPeriodMap(LastActivity::getAlphaSuggestionVoteHistoryMap, Duration.of(30, ChronoUnit.DAYS))
+            ), true)
+            .addField("Comment History", String.format(
+                """
+                24 Hours: %s
+                7 Days: %s
+                30 Days: %s""",
+                lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(24, ChronoUnit.HOURS)),
+                lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(7, ChronoUnit.DAYS)),
+                lastActivity.toTotalPeriodList(LastActivity::getAlphaSuggestionCommentHistory, Duration.of(30, ChronoUnit.DAYS))
+            ), true)
+            .setFooter(String.format(
+                "Promotion Requirements (per %d days): %d votes, %d comments",
+                promotionDays, promotionVotes, promotionComments
+            ))
+            .build());
+
+        // Role-Restricted Channel Activity
+        List<RoleRestrictedChannelGroup> channelGroups = NerdBotApp.getBot().getConfig().getChannelConfig().getRoleRestrictedChannelGroups();
+
+        if (!channelGroups.isEmpty()) {
+            Color[] restrictedChannelColors = {
+                Color.CYAN,
+                Color.MAGENTA,
+                Color.PINK,
+                Color.BLUE,
+                new Color(128, 0, 128), // Purple
+                new Color(255, 165, 0), // Orange
+                new Color(75, 0, 130),  // Indigo
+                new Color(255, 20, 147) // Deep Pink
+            };
+
+            int colorIndex = 0;
+
+            for (RoleRestrictedChannelGroup group : channelGroups) {
+                boolean hasAccess = Arrays.stream(group.getRequiredRoleIds())
+                    .anyMatch(roleId -> member.getRoles().stream()
+                        .map(Role::getId)
+                        .anyMatch(memberRoleId -> memberRoleId.equalsIgnoreCase(roleId)));
+
+                if (!hasAccess) {
+                    continue;
+                }
+
+                int messages24h = lastActivity.getRoleRestrictedChannelMessageCount(group.getIdentifier(), 1);
+                int messages7d = lastActivity.getRoleRestrictedChannelMessageCount(group.getIdentifier(), 7);
+                int messages30d = lastActivity.getRoleRestrictedChannelMessageCount(group.getIdentifier(), 30);
+
+                int votes24h = lastActivity.getRoleRestrictedChannelVoteCount(group.getIdentifier(), 1);
+                int votes7d = lastActivity.getRoleRestrictedChannelVoteCount(group.getIdentifier(), 7);
+                int votes30d = lastActivity.getRoleRestrictedChannelVoteCount(group.getIdentifier(), 30);
+
+                int comments24h = lastActivity.getRoleRestrictedChannelCommentCount(group.getIdentifier(), 1);
+                int comments7d = lastActivity.getRoleRestrictedChannelCommentCount(group.getIdentifier(), 7);
+                int comments30d = lastActivity.getRoleRestrictedChannelCommentCount(group.getIdentifier(), 30);
+
+                String lastActivityTime = lastActivity.getRoleRestrictedChannelRelativeTimestamp(group.getIdentifier());
+
+                Color embedColor = restrictedChannelColors[colorIndex % restrictedChannelColors.length];
+                colorIndex++;
+
+                EmbedBuilder embedBuilder = new EmbedBuilder()
+                    .setColor(embedColor)
+                    .setTitle(group.getDisplayName() + " Activity")
+                    .addField("Last Activity", lastActivityTime, true)
+                    .addBlankField(true)
+                    .addBlankField(true)
+                    .addField("Message History", String.format(
+                        """
+                        24 Hours: %d
+                        7 Days: %d
+                        30 Days: %d""",
+                        messages24h, messages7d, messages30d
+                    ), true)
+                    .addField("Vote History", String.format(
+                        """
+                        24 Hours: %d
+                        7 Days: %d
+                        30 Days: %d""",
+                        votes24h, votes7d, votes30d
+                    ), true)
+                    .addField("Comment History", String.format(
+                        """
+                        24 Hours: %d
+                        7 Days: %d
+                        30 Days: %d""",
+                        comments24h, comments7d, comments30d
+                    ), true);
+
+                embedBuilder.setFooter(String.format(
+                    "Activity Requirements (per %d days): %d messages, %d votes, %d comments",
+                    group.getActivityCheckDays(),
+                    group.getMinimumMessagesForActivity(),
+                    group.getMinimumVotesForActivity(),
+                    group.getMinimumCommentsForActivity()
+                ));
+
+                embeds.add(embedBuilder.build());
+            }
+        }
+
+        return embeds;
     }
 }

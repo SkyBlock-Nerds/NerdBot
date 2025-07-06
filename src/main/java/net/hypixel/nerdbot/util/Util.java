@@ -45,6 +45,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -81,6 +83,7 @@ public class Util {
         "nerd-project",
         "nerds-project"
     };
+    public static final String[] SPECIAL_ROLES = {"Apex Nerd", "Ultimate Nerd", "Ultimate Nerd But Red"};
     public static final String[] SPECIAL_ROLES = {"Apex Nerd", "Ultimate Nerd", "Ultimate Nerd But Red"};
     private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
     private static final String ALL_PATTERN = "[0-9A-FK-OR]";
@@ -145,20 +148,26 @@ public class Util {
     }
 
     /**
-     * Get the branch name from the git-branch.txt file
+     * Get the branch name from the BRANCH_NAME environment variable
      *
-     * @return The branch name, or "unknown" if the file could not be read
+     * @return The branch name, or "unknown" if the variable is not set
      */
     public static String getBranchName() {
-        try (InputStream in = Util.class.getResourceAsStream("/git-branch.txt")) {
-            if (in != null) {
-                return new String(in.readAllBytes()).trim();
-            }
-        } catch (IOException exception) {
-            log.error("Failed to read git-branch.txt", exception);
-        }
+        String branchName = System.getenv("BRANCH_NAME");
+        return isNullOrEmpty(branchName) ? "unknown" : branchName;
+    }
 
-        return "unknown";
+    public static boolean isNullOrEmpty(String str) {
+        return str == null || str.isEmpty();
+    }
+
+    public static String getDockerContainerId() {
+        try {
+            return Files.readString(Path.of("/etc/hostname")).trim();
+        } catch (IOException e) {
+            log.error("Failed to read Docker container ID from /etc/hostname", e);
+            return "unknown";
+        }
     }
 
     public static Stream<String> safeArrayStream(String[]... arrays) {
@@ -389,36 +398,38 @@ public class Util {
     public static MojangProfile getMojangProfile(String username) throws HttpException {
         String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
         String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
-        MojangProfile mojangProfile;
 
         if (isUUID(username)) {
             mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", username);
         }
 
         try {
-            String httpResponse = sendRequestWithFallback(mojangUrl, ashconUrl);
-            mojangProfile = NerdBotApp.GSON.fromJson(httpResponse, MojangProfile.class);
+            String body = sendRequestWithFallback(mojangUrl, ashconUrl);
+            return NerdBotApp.GSON.fromJson(body, MojangProfile.class);
+        } catch (IOException | InterruptedException exception) {
+            throw new HttpException("Network error fetching profile for `" + username + "`", exception);
         } catch (Exception exception) {
-            throw new HttpException("Failed to request Mojang Profile for `" + username + "`: " + exception.getMessage(), exception);
+            throw new HttpException("Failed to parse Mojang profile for `" + username + "`: " + exception.getMessage(), exception);
         }
-
-        return mojangProfile;
     }
 
     @Nullable
-    private static String sendRequestWithFallback(String primaryUrl, String fallbackUrl) {
-        try {
-            return getHttpResponse(primaryUrl).body();
-        } catch (IOException | InterruptedException exception) {
-            log.error("An error occurred while sending a request to primary URL!", exception);
+    private static String sendRequestWithFallback(String primaryUrl, String fallbackUrl)
+        throws IOException, InterruptedException, HttpException {
+        HttpResponse<String> primary = getHttpResponse(primaryUrl);
 
-            try {
-                return getHttpResponse(fallbackUrl).body();
-            } catch (IOException | InterruptedException fallbackException) {
-                log.error("An error occurred while sending a request to fallback URL!", fallbackException);
-                return null;
-            }
+        if (requestWasSuccessful(primary)) {
+            return primary.body();
         }
+
+        log.warn("Primary URL returned {}: {} (trying fallback URL)", primary.statusCode(), primary.body());
+        HttpResponse<String> fallback = getHttpResponse(fallbackUrl);
+
+        if (requestWasSuccessful(fallback)) {
+            return fallback.body();
+        }
+
+        throw new HttpException(String.format("Both primary and fallback requests failed (primary: %d, fallback: %d)", primary.statusCode(), fallback.statusCode()));
     }
 
     @NotNull
@@ -426,13 +437,20 @@ public class Util {
         return getMojangProfile(uniqueId.toString());
     }
 
+    private static boolean requestWasSuccessful(HttpResponse<?> response) {
+        int code = response.statusCode();
+        return code >= 200 && code < 300;
+    }
+
     private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url)).GET();
-        Arrays.asList(headers).forEach(pair -> builder.header(pair.getLeft(), pair.getRight()));
+        Arrays.stream(headers).forEach(h -> builder.header(h.getLeft(), h.getRight()));
+
         HttpRequest request = builder.build();
-        log.info("Sending HTTP request to " + url + " with headers " + Arrays.toString(headers));
+        log.info("Sending HTTP request to {} with headers {}", url, Arrays.toString(headers));
         PrometheusMetrics.HTTP_REQUESTS_AMOUNT.labels(request.method(), url).inc();
+
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 

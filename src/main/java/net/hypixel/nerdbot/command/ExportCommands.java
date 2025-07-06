@@ -228,7 +228,7 @@ public class ExportCommands extends ApplicationCommand {
 
         log.info("Found " + profiles.size() + " members meeting requirements.");
         profiles.forEach(profile -> uuidArray.add(profile.getUniqueId().toString()));
-        File file = Util.createTempFile(String.format("export-uuids-%s.csv", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), NerdBotApp.GSON.toJson(uuidArray));
+        File file = Util.createTempFile(String.format("export-uuids-%s.json", Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), NerdBotApp.GSON.toJson(uuidArray));
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
 

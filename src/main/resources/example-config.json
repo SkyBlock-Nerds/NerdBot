@@ -69,6 +69,12 @@
         "name": "Example Name"
       }
     ],
+    "roleRestrictedChannelGroups": [],
+    "autoManageRoleRestrictedChannels": true,
+    "defaultMinimumMessagesForActivity": 5,
+    "defaultMinimumVotesForActivity": 2,
+    "defaultMinimumCommentsForActivity": 1,
+    "defaultActivityCheckDays": 30,
     "autoPinFirstMessage": true,
     "autoPinBlacklistedChannels": [
       "1234567890123456789"

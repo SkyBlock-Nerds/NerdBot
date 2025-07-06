@@ -17,6 +17,8 @@ public class NominationInfo {
     private Date lastNominationDate = null;
     private int totalInactivityWarnings = 0;
     private Date lastInactivityWarningDate = null;
+    private int totalRoleRestrictedInactivityWarnings = 0;
+    private Date lastRoleRestrictedInactivityWarningDate = null;
 
     public void increaseNominations() {
         this.totalNominations++;
@@ -50,5 +52,22 @@ public class NominationInfo {
 
     public Optional<Date> getLastInactivityWarningDate() {
         return Optional.ofNullable(lastInactivityWarningDate);
+    }
+
+    public void increaseRoleRestrictedInactivityWarnings() {
+        this.totalRoleRestrictedInactivityWarnings++;
+        this.lastRoleRestrictedInactivityWarningDate = new Date();
+    }
+
+    public String getLastRoleRestrictedInactivityWarningDateString() {
+        if (lastRoleRestrictedInactivityWarningDate == null) {
+            return "Never";
+        }
+
+        return DiscordTimestamp.toShortDate(lastRoleRestrictedInactivityWarningDate.getTime());
+    }
+
+    public Optional<Date> getLastRoleRestrictedInactivityWarningDate() {
+        return Optional.ofNullable(lastRoleRestrictedInactivityWarningDate);
     }
 }

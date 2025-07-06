@@ -1,5 +1,4 @@
 <div align="center">
-    <img src=".github/assets/images/icon.png" alt="Nerd Bot Icon"/>
     <h1>Nerd Bot</h1>
     <img src="https://img.shields.io/github/issues/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Issues"/>
     <img src="https://img.shields.io/github/issues-pr/SkyBlock-Nerds/NerdBot?style=for-the-badge" alt="Pull Requests"/>

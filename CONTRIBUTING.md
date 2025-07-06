@@ -8,27 +8,11 @@
 - Optional: [Docker](https://www.docker.com/)
 
 ## With Docker
-
-### Environment Variables/Arguments
-
-- `GITHUB_USERNAME` - Your GitHub username
-- `GITHUB_TOKEN` - Your GitHub token
-- `REPO_USERNAME` - The username of the repository owner (default: SkyBlock-Nerds)
-- `REPO_NAME` - The name of the repository (default: NerdBot)
-- `REPO_BRANCH` - The branch of the repository to clone (default: master)
-- `SOURCE_CODE_DIR` - The directory to clone the repository into (default: repository)
-- `JAR_FILE_NAME` - The name of the jar file to build (default: NerdBot.jar)
-
 A Dockerfile is provided to build the bot into a Docker image. To build the image, run the following command:
 
-`docker build -t nerd-bot --build-arg GITHUB_USERNAME=<your-github-username> --build-arg GITHUB_TOKEN=<your-github-token> <...other arguments> .`
+`docker build --build-arg BRANCH_NAME="BranchName" -t nerd-bot .`
 
-Replace `<your-github-username>` with your GitHub username and `<your-github-token>` with your GitHub token. If you do
-not specify a GitHub username or GitHub token then it will default to cloning the repository with no credentials. You
-can also replace `<...other arguments>` with any of the other arguments listed above.
-
-Every time this image is built, it will automatically pull the latest changes from the repository and compile
-application.
+Replace `BranchName` with the branch you are building from. Do note that this is only used for display purposes in the bot (It doesn't affect the building process and can be omitted).
 
 ---
 

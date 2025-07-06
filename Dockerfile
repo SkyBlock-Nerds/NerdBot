@@ -1,43 +1,29 @@
-# Use OpenJDK 17 as the base image
-FROM openjdk:18-jdk-slim AS builder
+# Use Eclipse Temurin with Maven as the builder image
+FROM maven:3-eclipse-temurin-24-alpine AS builder
 
 # Set the working directory
 WORKDIR /app
 
-# Arguments for Git repository information
-ARG GITHUB_USERNAME
-ARG GITHUB_TOKEN
-ARG REPO_USERNAME=SkyBlock-Nerds
-ARG REPO_NAME=NerdBot
-ARG REPO_BRANCH=master
-ARG SOURCE_CODE_DIR=repository
-ARG JAR_FILE_NAME=NerdBot.jar
-ENV JAR_FILE_NAME_ENV=$JAR_FILE_NAME
+# Copy the project files
+COPY pom.xml .
+COPY src ./src
 
-# Clone the Git repository
-RUN apt-get update && apt-get install -y maven git zip unzip \
-    && git clone https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${REPO_USERNAME}/${REPO_NAME}.git -b ${REPO_BRANCH} ${SOURCE_CODE_DIR}
+# Clean Maven cache and build the project with Maven
+RUN mvn clean install -f pom.xml \
+    && rm -f /app/target/original-*.jar
 
-# Set the working directory to the Git directory
-WORKDIR /app/${SOURCE_CODE_DIR}
-
-# Write the branch name into a file for use at runtime
-RUN echo "${REPO_BRANCH}" > src/main/resources/git-branch.txt
-
-# Build the application using Maven
-RUN mvn clean install -U -f pom.xml
-
-# Create a new image to run the application
-FROM builder AS runner
+# Use a minimal eclipse-temurin image for running the bot
+FROM eclipse-temurin:24-jdk-alpine
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the built JAR file from the builder image
-COPY --from=builder /app/${SOURCE_CODE_DIR}/target/${JAR_FILE_NAME} .
+# Pass the branch name from the build stage to the runtime stage
+ARG BRANCH_NAME=unknown
+ENV BRANCH_NAME=${BRANCH_NAME}
 
-# Delete the Git directory
-RUN rm -rf ${SOURCE_CODE_DIR}
+# Copy the built JAR file from the builder stage
+COPY --from=builder /app/target/*.jar /app/NerdBot.jar
 
 # Run the application
-ENTRYPOINT exec java ${JAVA_OPTS} -jar ${JAR_FILE_NAME_ENV}
+ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -DBRANCH_NAME=${BRANCH_NAME} -jar NerdBot.jar"]

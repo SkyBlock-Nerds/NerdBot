@@ -105,6 +105,7 @@ public class InfoCommands extends ApplicationCommand {
 
         builder.append("- Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n")
             .append("- Branch: `").append(Util.getBranchName()).append("`\n")
+            .append("- Container ID: `").append(Util.getDockerContainerId()).append("`\n")
             .append("- Environment: ").append(Environment.getEnvironment()).append("\n")
             .append("- Uptime: ").append(TimeUtil.formatMsCompact(NerdBotApp.getBot().getUptime())).append("\n")
             .append("- Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");

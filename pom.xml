@@ -27,7 +27,7 @@
         <dependency>
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
-            <version>5.3.2</version>
+            <version>5.6.1</version>
         </dependency>
         <dependency>
             <groupId>club.minnced</groupId>
@@ -42,12 +42,12 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.13.0</version>
+            <version>2.13.1</version>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
-            <version>5.4.0</version>
+            <version>5.5.1</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -68,7 +68,7 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.24.3</version>
+            <version>2.25.0</version>
         </dependency>
         <dependency>
             <groupId>com.joestelmach</groupId>
@@ -103,7 +103,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.5</version>
+            <version>42.7.7</version>
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
@@ -185,7 +185,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.5.1</version>
                 <executions>
                     <execution>
                         <phase>compile</phase>

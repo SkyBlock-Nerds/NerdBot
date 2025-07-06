@@ -248,6 +248,10 @@ public class ModLogListener {
         }
 
         Message after = event.getMessage();
+        if (before.getContentRaw().equals(after.getContentRaw())) {
+            return;
+        }
+
         User user = before.getAuthor();
         Channel channel = before.getChannel();
         MessageEmbed messageEmbed = getDefaultEmbed()
@@ -268,7 +272,19 @@ public class ModLogListener {
         return new EmbedBuilder().setTimestamp(Instant.now());
     }
 
+    /**
+     * Checks if the channel is not viewable by the configured moderator role
+     *
+     * @param channel The channel to check
+     *
+     * @return True if the channel is not viewable by the moderator role, false otherwise
+     */
     private boolean isNotViewableByModerators(GuildMessageChannelUnion channel) {
-        return channel.getGuild().getRoles().stream().noneMatch(role -> role.getId().equalsIgnoreCase(NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId()) && role.hasAccess(channel));
+        return channel.getGuild().getRoles()
+            .stream()
+            .noneMatch(role ->
+                role.getId().equalsIgnoreCase(NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId())
+                    && role.hasAccess(channel)
+            );
     }
 }
