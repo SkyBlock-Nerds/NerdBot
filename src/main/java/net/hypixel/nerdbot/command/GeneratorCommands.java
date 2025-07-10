@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -121,24 +122,31 @@ public class GeneratorCommands extends ApplicationCommand {
                              @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
                              @Optional @AppOption(description = DESC_PADDING) Integer padding,
                              @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
-                             @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+                             @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) {
         if (isIncorrectChannel(event)) {
             return;
         }
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).complete();
+        final boolean hide = (hidden != null && hidden);
+        event.deferReply(hide).complete();
         // building the item's description
-        BufferedImage generatedImage = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false);
-        if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
-        }
+        builder.buildItemAsync(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false)
+            .thenCompose(generatedImage -> {
+                if (generatedImage == null) {
+                    return CompletableFuture.completedFuture(null);
+                }
+                return Util.toFileAsync(generatedImage);
+            })
+            .thenAccept(file -> {
+                if (file != null) {
+                    event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(hide).queue();
+                }
+            })
+            .exceptionally(throwable -> {
+                log.error("Failed to generate or convert image to file", throwable);
+                return null;
+            });
 
-        // Log item gen activity
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
-        long currentTime = System.currentTimeMillis();
-        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+        logItemGenActivity(event);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
@@ -150,46 +158,60 @@ public class GeneratorCommands extends ApplicationCommand {
         if (isIncorrectChannel(event)) {
             return;
         }
-        hidden = (hidden != null && hidden);
+        final boolean hide = (hidden != null && hidden);
         centered = (centered != null && centered);
         alpha = alpha == null ? 128 : Math.max(0, Math.min(alpha, 255));
-        event.deferReply(hidden).complete();
+        event.deferReply(hide).complete();
         // building the chat message
-        BufferedImage generatedImage = builder.buildItem(event, "NONE", "NONE", message, "", true, alpha, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered);
-        if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
-        }
+        builder.buildItemAsync(event, "NONE", "NONE", message, "", true, alpha, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered)
+            .thenCompose(generatedImage -> {
+                if (generatedImage == null) {
+                    return CompletableFuture.completedFuture(null);
+                }
+                return Util.toFileAsync(generatedImage);
+            })
+            .thenAccept(file -> {
+                if (file != null) {
+                    event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(hide).queue();
+                }
+            })
+            .exceptionally(throwable -> {
+                log.error("Failed to generate or convert image to file", throwable);
+                return null;
+            });
 
-        // Log item gen activity
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
-        long currentTime = System.currentTimeMillis();
-        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+        logItemGenActivity(event);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "display", description = "Draws a Minecraft item into a file")
     public void generateItemImage(GuildSlashEvent event,
                                   @AppOption(description = DESC_ITEM_ID, name = "item_id") String itemID,
                                   @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraModifiers,
-                                  @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+                                  @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) {
         if (isIncorrectChannel(event)) {
             return;
         }
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).complete();
+        final boolean hide = (hidden != null && hidden);
+        event.deferReply(hide).complete();
 
-        BufferedImage item = builder.buildUnspecifiedItem(event, itemID, extraModifiers, true);
-        if (item != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(item))).setEphemeral(hidden).queue();
-        }
+        builder.buildUnspecifiedItemAsync(event, itemID, extraModifiers, true)
+            .thenCompose(item -> {
+                if (item == null) {
+                    return CompletableFuture.completedFuture(null);
+                }
+                return Util.toFileAsync(item);
+            })
+            .thenAccept(file -> {
+                if (file != null) {
+                    event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(hide).queue();
+                }
+            })
+            .exceptionally(throwable -> {
+                log.error("Failed to generate or convert image to file", throwable);
+                return null;
+            });
 
-        // Log item gen activity
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
-        long currentTime = System.currentTimeMillis();
-        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+        logItemGenActivity(event);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Creates an image that looks like an item from Minecraft, complete with lore and a display item.")
@@ -206,12 +228,12 @@ public class GeneratorCommands extends ApplicationCommand {
                                  @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraModifiers,
                                  @Optional @AppOption(description = DESC_RECIPE) String recipe,
                                  @Optional @AppOption(description = DESC_RENDER_INVENTORY) Boolean renderBackground,
-                                 @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+                                 @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) {
         if (isIncorrectChannel(event)) {
             return;
         }
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).complete();
+        final boolean hide = (hidden != null && hidden);
+        event.deferReply(hide).complete();
 
         // checking that there are two or more different items to merge the images
         if ((itemName == null || rarity == null || itemLore == null) && itemId == null && recipe == null) {
@@ -222,50 +244,55 @@ public class GeneratorCommands extends ApplicationCommand {
         extraModifiers = Objects.requireNonNullElse(extraModifiers, "");
         renderBackground = Objects.requireNonNullElse(renderBackground, true);
 
-        // building the description for the item
-        BufferedImage generatedDescription = null;
-        if (itemName != null && rarity != null && itemLore != null) {
-            generatedDescription = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false);
-            if (generatedDescription == null) {
-                return;
-            }
-        }
+        // Create futures for all async operations
+        CompletableFuture<BufferedImage> descriptionFuture = 
+            (itemName != null && rarity != null && itemLore != null) 
+                ? builder.buildItemAsync(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false)
+                : CompletableFuture.completedFuture(null);
 
-        // building the item for the which is beside the description
-        BufferedImage generatedItem = null;
-        if (itemId != null) {
-            generatedItem = builder.buildUnspecifiedItem(event, itemId, extraModifiers, true);
-            if (generatedItem == null) {
-                return;
-            }
-        }
+        CompletableFuture<BufferedImage> itemFuture = 
+            (itemId != null) 
+                ? builder.buildUnspecifiedItemAsync(event, itemId, extraModifiers, true)
+                : CompletableFuture.completedFuture(null);
 
-        // building the recipe for the item
-        BufferedImage generatedRecipe = null;
-        if (recipe != null) {
-            generatedRecipe = builder.buildRecipe(event, recipe, renderBackground);
-            if (generatedRecipe == null) {
-                return;
-            }
-        }
+        CompletableFuture<BufferedImage> recipeFuture = 
+            (recipe != null) 
+                ? builder.buildRecipeAsync(event, recipe, renderBackground)
+                : CompletableFuture.completedFuture(null);
 
-        ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, generatedRecipe);
-        merger.drawFinalImage();
-        event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
+        // Combine all futures and process the result
+        CompletableFuture.allOf(descriptionFuture, itemFuture, recipeFuture)
+            .thenCompose(unused -> {
+                try {
+                    BufferedImage generatedDescription = descriptionFuture.get();
+                    BufferedImage generatedItem = itemFuture.get();
+                    BufferedImage generatedRecipe = recipeFuture.get();
 
-        // Log item gen activity
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
-        long currentTime = System.currentTimeMillis();
-        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+                    ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, generatedRecipe);
+                    merger.drawFinalImage();
+                    return Util.toFileAsync(merger.getImage());
+                } catch (Exception e) {
+                    return CompletableFuture.failedFuture(e);
+                }
+            })
+            .thenAccept(file -> {
+                if (file != null) {
+                    event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(hide).queue();
+                }
+            })
+            .exceptionally(throwable -> {
+                log.error("Failed to generate or convert merged image to file", throwable);
+                return null;
+            });
+
+        logItemGenActivity(event);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "recipe", description = "Generates a Minecraft Recipe Image")
     public void generateRecipe(GuildSlashEvent event,
                                @AppOption(description = DESC_RECIPE) String recipe,
                                @Optional @AppOption(description = DESC_RENDER_INVENTORY) Boolean renderBackground,
-                               @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+                               @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) {
         if (isIncorrectChannel(event)) {
             return;
         }
@@ -275,17 +302,24 @@ public class GeneratorCommands extends ApplicationCommand {
         renderBackground = (renderBackground == null || renderBackground);
 
         // building the Minecraft recipe
-        BufferedImage generatedRecipe = builder.buildRecipe(event, recipe, renderBackground);
-        if (generatedRecipe != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedRecipe))).queue();
-        }
+        builder.buildRecipeAsync(event, recipe, renderBackground)
+            .thenCompose(generatedRecipe -> {
+                if (generatedRecipe == null) {
+                    return CompletableFuture.completedFuture(null);
+                }
+                return Util.toFileAsync(generatedRecipe);
+            })
+            .thenAccept(file -> {
+                if (file != null) {
+                    event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+                }
+            })
+            .exceptionally(throwable -> {
+                log.error("Failed to generate or convert recipe image to file", throwable);
+                return null;
+            });
 
-        // Log item gen activity
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
-        long currentTime = System.currentTimeMillis();
-        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+        logItemGenActivity(event);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
@@ -293,57 +327,82 @@ public class GeneratorCommands extends ApplicationCommand {
                                      @AppOption(description = DESC_PARSE_ITEM, name = "item_nbt") String itemNBT,
                                      @Optional @AppOption(description = DESC_INCLUDE_ITEM) Boolean includeItem,
                                      @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden
-    ) throws IOException {
+    ) {
         if (isIncorrectChannel(event)) {
             return;
         }
 
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).complete();
-        includeItem = Objects.requireNonNullElse(includeItem, false);
+        final boolean hide = (hidden != null && hidden);
+        event.deferReply(hide).complete();
+        final boolean shouldIncludeItem = Objects.requireNonNullElse(includeItem, false);
 
         JsonObject itemJSON = validateAndParseItemJSON(event, itemNBT);
-        if (itemJSON == null) return;
+        if (itemJSON == null) {
+            return;
+        }
 
         DisplayData displayData = validateDisplayData(event, itemJSON);
-        if (displayData == null) return;
+        if (displayData == null) {
+            return;
+        }
 
         String itemName = displayData.itemName();
         JsonArray itemLoreArray = displayData.itemLoreArray();
         JsonObject displayJSON = displayData.displayJSON();
         JsonObject tagJSON = displayData.tagJSON();
 
-        String itemID = "";
-        String extraModifiers = "";
-        if (includeItem) {
-            ItemData itemData = processItemData(event, itemJSON, tagJSON, displayJSON);
-            if (itemData == null) return;
-            itemID = itemData.itemID();
-            extraModifiers = itemData.extraModifiers();
-        }
-
-        CommandData commandData = buildCommandAndText(itemName, itemLoreArray, includeItem, itemID, extraModifiers);
-        
-        BufferedImage generatedDescription = builder.buildItem(event, "NONE", "NONE", commandData.itemText(), "NONE", false, 255, 0, commandData.maxLineLength(), true, false);
-        if (generatedDescription == null) {
-            event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();
-            return;
-        }
-
-        if (includeItem) {
-            BufferedImage generatedItem = builder.buildUnspecifiedItem(event, itemID, extraModifiers, true);
-            if (generatedItem == null) {
+        final ItemData itemData;
+        if (shouldIncludeItem) {
+            itemData = processItemData(event, itemJSON, tagJSON, displayJSON);
+            if (itemData == null) {
                 return;
             }
-
-            ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, null);
-            merger.drawFinalImage();
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
         } else {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedDescription))).setEphemeral(false).queue();
+            itemData = new ItemData("", "");
         }
 
-        event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();
+        CommandData commandData = buildCommandAndText(itemName, itemLoreArray, shouldIncludeItem, itemData.itemID(), itemData.extraModifiers());
+        
+        builder.buildItemAsync(event, "NONE", "NONE", commandData.itemText(), "NONE", false, 255, 0, commandData.maxLineLength(), true, false)
+            .thenCompose(generatedDescription -> {
+                if (generatedDescription == null) {
+                    event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();
+                    return CompletableFuture.completedFuture(null);
+                }
+
+                if (shouldIncludeItem) {
+                    return builder.buildUnspecifiedItemAsync(event, itemData.itemID(), itemData.extraModifiers(), true)
+                        .thenCompose(generatedItem -> {
+                            if (generatedItem == null) {
+                                return CompletableFuture.completedFuture(null);
+                            }
+
+                            ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, null);
+                            merger.drawFinalImage();
+                            return Util.toFileAsync(merger.getImage());
+                        })
+                        .thenAccept(file -> {
+                            if (file != null) {
+                                event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(hide).queue();
+                                event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();
+                            }
+                        })
+                        .thenApply(unused -> null);
+                } else {
+                    return Util.toFileAsync(generatedDescription)
+                        .thenAccept(file -> {
+                            if (file != null) {
+                                event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(false).queue();
+                                event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();
+                            }
+                        })
+                        .thenApply(unused -> null);
+                }
+            })
+            .exceptionally(throwable -> {
+                log.error("Failed to generate or convert image to file", throwable);
+                return null;
+            });
 
         logItemGenActivity(event);
     }
@@ -401,7 +460,9 @@ public class GeneratorCommands extends ApplicationCommand {
         String extraModifiers = "";
         if (itemID.equals("skull")) {
             extraModifiers = processSkullData(event, tagJSON);
-            if (extraModifiers == null) return null;
+            if (extraModifiers == null) {
+                return null;
+            }
         } else {
             extraModifiers = processNonSkullModifiers(tagJSON, displayJSON);
         }
@@ -503,10 +564,19 @@ public class GeneratorCommands extends ApplicationCommand {
 
     private void logItemGenActivity(GuildSlashEvent event) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
-        discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+        
+        discordUserRepository.findByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                if (discordUser != null) {
+                    discordUser.getLastActivity().setLastItemGenUsage(currentTime);
+                    log.info("Updating last item generator activity date for {} to {}", Util.getDisplayName(event.getUser()), currentTime);
+                }
+            })
+            .exceptionally(throwable -> {
+                log.warn("Failed to log item generator activity for user {}", event.getUser().getId(), throwable);
+                return null;
+            });
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "general", description = "Show some general tips for using the Item Generation commands.")

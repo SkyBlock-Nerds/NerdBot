@@ -31,6 +31,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Log4j2
 public abstract class Repository<T> {
@@ -42,6 +45,7 @@ public abstract class Repository<T> {
     private final Class<T> entityClass;
     private final String identifierFieldName;
     private Field field;
+    private final ExecutorService repositoryExecutor = Executors.newCachedThreadPool();
 
     protected Repository(MongoClient mongoClient, String databaseName, String collectionName, String identifierFieldName) {
         this(mongoClient, databaseName, collectionName, identifierFieldName, 0, null);
@@ -92,6 +96,23 @@ public abstract class Repository<T> {
         }
     }
 
+    public CompletableFuture<Void> loadAllDocumentsIntoCacheAsync() {
+        return CompletableFuture.runAsync(() -> {
+            log("Loading ALL documents from database into cache asynchronously");
+
+            for (Document document : mongoCollection.find()) {
+                T object = documentToEntity(document);
+
+                if (cache.getIfPresent(getId(object)) != null) {
+                    debug("Document with ID " + getId(object) + " already exists in cache");
+                    continue;
+                }
+
+                cacheObject(object);
+            }
+        }, repositoryExecutor);
+    }
+
     public List<T> getAllDocuments() {
         List<T> documents = new ArrayList<>();
 
@@ -102,6 +123,20 @@ public abstract class Repository<T> {
             });
 
         return documents;
+    }
+
+    public CompletableFuture<List<T>> getAllDocumentsAsync() {
+        return CompletableFuture.supplyAsync(() -> {
+            List<T> documents = new ArrayList<>();
+
+            mongoCollection.find()
+                .forEach(document -> {
+                    T object = documentToEntity(document);
+                    documents.add(object);
+                });
+
+            return documents;
+        }, repositoryExecutor);
     }
 
     public T findById(String id) {
@@ -121,6 +156,27 @@ public abstract class Repository<T> {
 
         debug("Could not find document with ID " + id + " in cache or database");
         return null;
+    }
+
+    public CompletableFuture<T> findByIdAsync(String id) {
+        return CompletableFuture.supplyAsync(() -> {
+            T cachedObject = cache.getIfPresent(id);
+            if (cachedObject != null) {
+                debug("Found document with ID " + id + " in cache");
+                return cachedObject;
+            }
+
+            Document document = mongoCollection.find(new Document(identifierFieldName, id)).first();
+            if (document != null) {
+                T object = documentToEntity(document);
+                cacheObject(id, object);
+
+                return object;
+            }
+
+            debug("Could not find document with ID " + id + " in cache or database");
+            return null;
+        }, repositoryExecutor);
     }
 
     public T findOrCreateById(String id, Object... parameters) {
@@ -147,6 +203,34 @@ public abstract class Repository<T> {
         }
 
         return null;
+    }
+
+    public CompletableFuture<T> findOrCreateByIdAsync(String id, Object... parameters) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                T existingObject = findById(id);
+
+                if (existingObject != null) {
+                    return existingObject;
+                }
+
+                List<Class<?>> constructorParameters = new ArrayList<>(List.of(parameters.getClass()));
+                T object = entityClass.getConstructor(constructorParameters.toArray(new Class[0])).newInstance(parameters);
+
+                log.debug("Created new instance of " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+
+                cacheObject(id, object);
+                saveToDatabase(object);
+
+                return object;
+            } catch (NoSuchMethodException e) {
+                log.error("Could not find constructor for " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+            } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+                log.error("Error creating new instance of " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+            }
+
+            return null;
+        }, repositoryExecutor);
     }
 
     public T getByIndex(int index) {
@@ -176,6 +260,16 @@ public abstract class Repository<T> {
         return mongoCollection.updateOne(new Document(identifierFieldName, id), updateOperation, new UpdateOptions().upsert(true));
     }
 
+    public CompletableFuture<UpdateResult> saveToDatabaseAsync(T object) {
+        return CompletableFuture.supplyAsync(() -> {
+            String id = getId(object);
+            Document document = entityToDocument(object);
+            Bson updateOperation = new Document("$set", document);
+
+            return mongoCollection.updateOne(new Document(identifierFieldName, id), updateOperation, new UpdateOptions().upsert(true));
+        }, repositoryExecutor);
+    }
+
 
     @Nullable
     public BulkWriteResult saveAllToDatabase() {
@@ -198,11 +292,42 @@ public abstract class Repository<T> {
         return null;
     }
 
+    public CompletableFuture<BulkWriteResult> saveAllToDatabaseAsync() {
+        return CompletableFuture.supplyAsync(() -> {
+            log("Saving all documents in cache to database asynchronously (found " + cache.asMap().size() + ")");
+
+            List<WriteModel<Document>> updates = new ArrayList<>();
+
+            getAll().stream().map(this::entityToDocument).forEach(doc -> {
+                Bson filter = Filters.eq(identifierFieldName, doc.get(identifierFieldName));
+                Bson update = new Document("$set", doc);
+                updates.add(new UpdateOneModel<>(filter, update, new UpdateOptions().upsert(true)));
+            });
+
+            debug("Prepared " + updates.size() + " update operations");
+
+            if (!updates.isEmpty()) {
+                return mongoCollection.bulkWrite(updates);
+            }
+
+            return null;
+        }, repositoryExecutor);
+    }
+
     public DeleteResult deleteFromDatabase(String id) {
         cache.invalidate(id);
         log("Deleting document with ID " + id + " from database");
 
         return mongoCollection.deleteOne(Filters.eq(identifierFieldName, id));
+    }
+
+    public CompletableFuture<DeleteResult> deleteFromDatabaseAsync(String id) {
+        return CompletableFuture.supplyAsync(() -> {
+            cache.invalidate(id);
+            log("Deleting document with ID " + id + " from database asynchronously");
+
+            return mongoCollection.deleteOne(Filters.eq(identifierFieldName, id));
+        }, repositoryExecutor);
     }
 
     protected String getId(T entity) {

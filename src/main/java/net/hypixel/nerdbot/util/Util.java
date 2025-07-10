@@ -62,6 +62,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import java.util.concurrent.CompletableFuture;
 
 @Log4j2
 public class Util {
@@ -187,6 +188,16 @@ public class Util {
         }
         log.info("Created temporary file " + file.getAbsolutePath());
         return file;
+    }
+
+    public static CompletableFuture<File> createTempFileAsync(String fileName, String content) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return createTempFile(fileName, content);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     /**
@@ -324,6 +335,15 @@ public class Util {
         return NerdBotApp.GSON.fromJson(requestResponse, JsonObject.class);
     }
 
+    public static CompletableFuture<JsonObject> makeHttpRequestAsync(String url) {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format(url))).GET().build();
+        
+        return client.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
+            .thenApply(HttpResponse::body)
+            .thenApply(response -> NerdBotApp.GSON.fromJson(response, JsonObject.class));
+    }
+
     /***
      * Saves the image to a file
      * @return a file which can be shared
@@ -333,6 +353,16 @@ public class Util {
         File tempFile = File.createTempFile("image", ".png");
         ImageIO.write(imageToSave, "PNG", tempFile);
         return tempFile;
+    }
+
+    public static CompletableFuture<File> toFileAsync(BufferedImage imageToSave) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return toFile(imageToSave);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Deprecated
@@ -382,6 +412,32 @@ public class Util {
         }
     }
 
+    public static CompletableFuture<MojangProfile> getMojangProfileAsync(String username) {
+        String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
+        String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
+
+        if (isUUID(username)) {
+            mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", mojangUrl);
+        }
+
+        return sendRequestWithFallbackAsync(mojangUrl, ashconUrl)
+            .thenApply(body -> {
+                try {
+                    return NerdBotApp.GSON.fromJson(body, MojangProfile.class);
+                } catch (JsonSyntaxException exception) {
+                    throw new RuntimeException(new HttpException("Invalid JSON response from Mojang API for `" + username + "`", exception));
+                } catch (IllegalStateException exception) {
+                    throw new RuntimeException(new HttpException("Malformed Mojang profile data for `" + username + "`", exception));
+                }
+            })
+            .exceptionally(throwable -> {
+                if (throwable.getCause() instanceof HttpException) {
+                    throw new RuntimeException(throwable.getCause());
+                }
+                throw new RuntimeException(new HttpException("Network error fetching profile for `" + username + "`", throwable));
+            });
+    }
+
     @Nullable
     private static String sendRequestWithFallback(String primaryUrl, String fallbackUrl)
         throws IOException, InterruptedException, HttpException {
@@ -399,6 +455,25 @@ public class Util {
         }
 
         throw new HttpException(String.format("Both primary and fallback requests failed (primary: %d, fallback: %d)", primary.statusCode(), fallback.statusCode()));
+    }
+
+    private static CompletableFuture<String> sendRequestWithFallbackAsync(String primaryUrl, String fallbackUrl) {
+        return getHttpResponseAsync(primaryUrl)
+            .thenCompose(primary -> {
+                if (requestWasSuccessful(primary)) {
+                    return CompletableFuture.completedFuture(primary.body());
+                }
+                
+                log.warn("Primary URL returned {}: {} (trying fallback URL)", primary.statusCode(), primary.body());
+                return getHttpResponseAsync(fallbackUrl)
+                    .thenApply(fallback -> {
+                        if (requestWasSuccessful(fallback)) {
+                            return fallback.body();
+                        }
+                        
+                        throw new RuntimeException(new HttpException(String.format("Both primary and fallback requests failed (primary: %d, fallback: %d)", primary.statusCode(), fallback.statusCode())));
+                    });
+            });
     }
 
     @NotNull
@@ -425,6 +500,20 @@ public class Util {
         return HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
+    private static CompletableFuture<HttpResponse<String>> getHttpResponseAsync(String url, Pair<String, String>... headers) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .timeout(Duration.ofSeconds(30))
+            .GET();
+        Arrays.stream(headers).forEach(h -> builder.header(h.getLeft(), h.getRight()));
+
+        HttpRequest request = builder.build();
+        log.info("Sending async HTTP request to {} with headers {}", url, Arrays.toString(headers));
+        PrometheusMetrics.HTTP_REQUESTS_AMOUNT.labels(request.method(), url).inc();
+
+        return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+    }
+
     public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws HttpException {
         String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId);
         Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
@@ -442,6 +531,31 @@ public class Util {
         } finally {
             requestTimer.observeDuration();
         }
+    }
+
+    public static CompletableFuture<HypixelPlayerResponse> getHypixelPlayerAsync(UUID uniqueId) {
+        String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId);
+        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
+        
+        String hypixelApiKey = NerdBotApp.getHypixelAPIKey().map(UUID::toString).orElse("");
+        
+        return getHttpResponseAsync(url, Pair.of("API-Key", hypixelApiKey))
+            .thenApply(response -> {
+                try {
+                    return NerdBotApp.GSON.fromJson(response.body(), HypixelPlayerResponse.class);
+                } catch (JsonSyntaxException exception) {
+                    throw new RuntimeException(new HttpException("Invalid JSON response from Hypixel API for `" + uniqueId + "`", exception));
+                } finally {
+                    requestTimer.observeDuration();
+                }
+            })
+            .exceptionally(throwable -> {
+                requestTimer.observeDuration();
+                if (throwable.getCause() instanceof HttpException) {
+                    throw new RuntimeException(throwable.getCause());
+                }
+                throw new RuntimeException(new HttpException("Network error while fetching Hypixel player data for `" + uniqueId + "`", throwable));
+            });
     }
 
     public static boolean isUUID(String input) {

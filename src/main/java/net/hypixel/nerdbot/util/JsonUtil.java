@@ -24,9 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Log4j2
 public class JsonUtil {
+
+    private static final ExecutorService jsonExecutor = Executors.newCachedThreadPool();
 
     private JsonUtil() {
     }
@@ -40,12 +45,34 @@ public class JsonUtil {
         }
     }
 
+    public static CompletableFuture<JsonObject> readJsonFileAsync(String filename) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (Reader reader = Files.newBufferedReader(Path.of(filename), StandardCharsets.UTF_8)) {
+                return NerdBotApp.GSON.fromJson(reader, JsonObject.class);
+            } catch (IOException exception) {
+                log.error("Failed to read json file: {}", filename, exception);
+                throw new RuntimeException("Failed to read json file: " + filename, exception);
+            }
+        }, jsonExecutor);
+    }
+
     public static void writeJsonFile(String filename, JsonObject jsonObject) {
         try (Writer writer = Files.newBufferedWriter(Path.of(filename), StandardCharsets.UTF_8)) {
             NerdBotApp.GSON.toJson(jsonObject, writer);
         } catch (IOException exception) {
             log.error("Failed to write json file: {}", filename, exception);
         }
+    }
+
+    public static CompletableFuture<Void> writeJsonFileAsync(String filename, JsonObject jsonObject) {
+        return CompletableFuture.runAsync(() -> {
+            try (Writer writer = Files.newBufferedWriter(Path.of(filename), StandardCharsets.UTF_8)) {
+                NerdBotApp.GSON.toJson(jsonObject, writer);
+            } catch (IOException exception) {
+                log.error("Failed to write json file: {}", filename, exception);
+                throw new RuntimeException("Failed to write json file: " + filename, exception);
+            }
+        }, jsonExecutor);
     }
 
     public static JsonObject setJsonValue(JsonObject jsonObject, String keyPath, JsonElement newValue) {
@@ -145,6 +172,18 @@ public class JsonUtil {
     public static Object jsonToObject(File file, Class<?> clazz) throws FileNotFoundException {
         BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
         return NerdBotApp.GSON.fromJson(br, clazz);
+    }
+
+    public static CompletableFuture<Object> jsonToObjectAsync(File file, Class<?> clazz) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
+                return NerdBotApp.GSON.fromJson(br, clazz);
+            } catch (FileNotFoundException e) {
+                log.error("File not found: {}", file.getPath(), e);
+                throw new RuntimeException("File not found: " + file.getPath(), e);
+            }
+        }, jsonExecutor);
     }
 
     public static JsonObject isJsonObject(JsonObject obj, String element) {
