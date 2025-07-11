@@ -149,7 +149,7 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "invites", subcommand = "create", description = "Generate a bunch of invites for a specific channel.", defaultLocked = true)
     public void createInvites(GuildSlashEvent event, @AppOption int amount, @AppOption @Optional TextChannel channel) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
@@ -201,7 +201,7 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findOrCreateByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 List<Invite> invites = event.getGuild().retrieveInvites().complete();
@@ -253,7 +253,7 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "config", subcommand = "reload", description = "Reload the config file", defaultLocked = true)
     public void reloadConfig(GuildSlashEvent event) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
@@ -261,13 +261,14 @@ public class AdminCommands extends ApplicationCommand {
                     return;
                 }
 
-                Bot bot = NerdBotApp.getBot();
+                event.deferReply().setEphemeral(true).complete();
 
+                Bot bot = NerdBotApp.getBot();
                 bot.loadConfig();
                 bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
                 PrometheusMetrics.setMetricsEnabled(bot.getConfig().getMetricsConfig().isEnabled());
 
-                TranslationManager.reply(event, discordUser, "commands.config.reloaded");
+                event.getHook().editOriginal("Reloaded the config file!").queue();
             })
             .exceptionally(throwable -> {
                 log.error("Error loading user for config reload", throwable);
@@ -288,7 +289,7 @@ public class AdminCommands extends ApplicationCommand {
 
         // We should store the name of the config file on boot lol this is bad
         String fileName = System.getProperty("bot.config") != null ? System.getProperty("bot.config") : Environment.getEnvironment().name().toLowerCase() + ".config.json";
-        
+
         JsonUtil.readJsonFileAsync(fileName)
             .thenCompose(obj -> {
                 if (obj == null) {
@@ -372,7 +373,7 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findByIdAsync(member.getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
@@ -381,14 +382,14 @@ public class AdminCommands extends ApplicationCommand {
                 }
 
                 boolean enforceSocial = bypassSocial == null || !bypassSocial;
-                
+
                 ProfileCommands.requestMojangProfileAsync(member, username, enforceSocial)
                     .thenAccept(mojangProfile -> {
                         if (mojangProfile == null) {
                             TranslationManager.edit(event.getHook(), discordUser, "commands.user.username_not_found", username, "Profile not found");
                             return;
                         }
-                        
+
                         if (mojangProfile.getErrorMessage() != null) {
                             if (mojangProfile.getErrorMessage().contains("does not match")) {
                                 TranslationManager.edit(event.getHook(), discordUser, "commands.user.profile_mismatch", username, mojangProfile.getErrorMessage());
@@ -397,7 +398,7 @@ public class AdminCommands extends ApplicationCommand {
                             }
                             return;
                         }
-                        
+
                         ProfileCommands.updateMojangProfile(member, mojangProfile);
                         TranslationManager.edit(event.getHook(), discordUser, "commands.user.linked_by_admin", member.getAsMention(), mojangProfile.getUsername(), mojangProfile.getUniqueId());
 
@@ -452,7 +453,7 @@ public class AdminCommands extends ApplicationCommand {
             .onSuccess(members -> {
                 List<CompletableFuture<String>> memberChecks = members.stream()
                     .filter(member -> !member.getUser().isBot())
-                    .map(member -> 
+                    .map(member ->
                         discordUserRepository.findByIdAsync(member.getId())
                             .thenApply(discordUser -> {
                                 if (discordUser != null && discordUser.noProfileAssigned()) {
@@ -567,13 +568,13 @@ public class AdminCommands extends ApplicationCommand {
                 List<CompletableFuture<Void>> migrationTasks = members.stream()
                     .filter(member -> !member.getUser().isBot())
                     .filter(member -> Util.getScuffedMinecraftIGN(member).isPresent())
-                    .map(member -> 
+                    .map(member ->
                         discordUserRepository.findByIdAsync(member.getId())
                             .thenCompose(user -> {
                                 if (user == null || !user.noProfileAssigned()) {
                                     return CompletableFuture.completedFuture(null);
                                 }
-                                
+
                                 String scuffedUsername = Util.getScuffedMinecraftIGN(member).orElseThrow();
                                 return Util.getMojangProfileAsync(scuffedUsername)
                                     .thenAccept(mojangProfile -> {
