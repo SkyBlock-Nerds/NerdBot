@@ -13,6 +13,7 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
 import net.hypixel.nerdbot.bot.config.RoleConfig;
+import net.hypixel.nerdbot.bot.config.StatusPageConfig;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.bot.config.channel.ModMailConfig;
@@ -129,6 +130,20 @@ public class ConfigGenerator {
         alphaProjectConfig.setAutoArchiveThreshold(168);
         alphaProjectConfig.setAutoLockThreshold(168);
         botConfig.setAlphaProjectConfig(alphaProjectConfig);
+
+        StatusPageConfig statusPageConfig = new StatusPageConfig();
+        statusPageConfig.setOperationalColor("00C851");
+        statusPageConfig.setDegradedColor("FFBB33");
+        statusPageConfig.setPartialOutageColor("FF4444");
+        statusPageConfig.setMajorOutageColor("8B0000");
+        statusPageConfig.setMaintenanceColor("3498DB");
+        statusPageConfig.setMaxDescriptionLength(200);
+        statusPageConfig.setIncludeResolvedIncidents(true);
+        statusPageConfig.setIncludeCompletedMaintenances(true);
+        statusPageConfig.setEnableStatusAlerts(true);
+        statusPageConfig.setStatusAlertRoleName("Status Alerts");
+        statusPageConfig.setEnableMaintenanceAlerts(false);
+        botConfig.setStatusPageConfig(statusPageConfig);
 
         String json = gson.toJson(botConfig);
 
