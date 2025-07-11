@@ -259,7 +259,9 @@ public class Util {
     }
 
     public static String formatSize(long size) {
-        if (size <= 0) return "0";
+        if (size <= 0) {
+            return "0";
+        }
         final String[] units = new String[]{"B", "kB", "MB", "GB", "TB"};
         int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
         return new DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
@@ -633,8 +635,9 @@ public class Util {
     @Nullable
     public static Enum<?> findValue(Enum<?>[] enumSet, String match) {
         for (Enum<?> enumItem : enumSet) {
-            if (match.equalsIgnoreCase(enumItem.name()))
+            if (match.equalsIgnoreCase(enumItem.name())) {
                 return enumItem;
+            }
         }
 
         return null;

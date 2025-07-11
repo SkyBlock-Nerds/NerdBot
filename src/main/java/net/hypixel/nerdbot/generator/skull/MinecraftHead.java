@@ -45,8 +45,9 @@ public class MinecraftHead {
         if (currentInvisibilityColor != 0) {
             for (int y = 0; y < 32; y++) {
                 for (int x = 32; x < 64; x++) {
-                    if (invisibilityColor == this.skin.getRGB(x, y))
+                    if (invisibilityColor == this.skin.getRGB(x, y)) {
                         this.skin.setRGB(x, y, 0);
+                    }
                 }
             }
         }
@@ -144,8 +145,9 @@ public class MinecraftHead {
         }
 
         Arrays.sort(order, (face1, face2) -> {
-            if (face1[1] == face2[1])
+            if (face1[1] == face2[1]) {
                 return 0;
+            }
             return face1[1] < face2[1] ? 1 : -1;
         });
         return order;
