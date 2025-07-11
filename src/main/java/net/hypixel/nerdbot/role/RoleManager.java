@@ -18,18 +18,18 @@ public class RoleManager {
 
     public static Optional<PingableRole> getPingableRoleByName(String name) {
         return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
-            .filter(pingableRole -> pingableRole.getName().equalsIgnoreCase(name))
+            .filter(pingableRole -> pingableRole.name().equalsIgnoreCase(name))
             .findFirst();
     }
 
     public static Optional<PingableRole> getPingableRoleById(String id) {
         return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
-            .filter(pingableRole -> pingableRole.getRoleId().equalsIgnoreCase(id))
+            .filter(pingableRole -> pingableRole.roleId().equalsIgnoreCase(id))
             .findFirst();
     }
 
     public static String formatPingableRoleAsMention(@NotNull PingableRole pingableRole) {
-        return "<@&" + pingableRole.getRoleId() + ">";
+        return "<@&" + pingableRole.roleId() + ">";
     }
 
     public static boolean hasRoleByName(Member member, String name) {

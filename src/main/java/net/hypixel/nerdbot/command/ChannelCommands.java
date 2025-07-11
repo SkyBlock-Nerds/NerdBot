@@ -112,40 +112,47 @@ public class ChannelCommands extends ApplicationCommand {
         TranslationManager.edit(hook, "commands.lock.start");
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+        
+        discordUserRepository.findByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    TranslationManager.edit(hook, "generic.user_not_found");
+                    return;
+                }
 
-        if (discordUser == null) {
-            TranslationManager.edit(hook, "generic.user_not_found");
-            return;
-        }
+                if (!(event.getChannel() instanceof ThreadChannel threadChannel) || !(threadChannel.getParentChannel() instanceof ForumChannel)) {
+                    TranslationManager.edit(hook, discordUser, "commands.only_available_in_threads");
+                    return;
+                }
 
-        if (!(event.getChannel() instanceof ThreadChannel threadChannel) || !(threadChannel.getParentChannel() instanceof ForumChannel)) {
-            TranslationManager.edit(hook, discordUser, "commands.only_available_in_threads");
-            return;
-        }
+                ForumChannel forumChannel = threadChannel.getParentChannel().asForumChannel();
+                SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+                boolean isSuggestion = threadChannel.getParentChannel().getId().equalsIgnoreCase(suggestionConfig.getForumChannelId());
 
-        ForumChannel forumChannel = threadChannel.getParentChannel().asForumChannel();
-        SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
-        boolean isSuggestion = threadChannel.getParentChannel().getId().equalsIgnoreCase(suggestionConfig.getForumChannelId());
+                if (isSuggestion) {
+                    if (!Util.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) {
+                        TranslationManager.edit(hook, discordUser, "commands.lock.no_tag", suggestionConfig.getReviewedTag());
+                        return;
+                    }
 
-        if (isSuggestion) {
-            if (!Util.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) {
-                TranslationManager.edit(hook, discordUser, "commands.lock.no_tag", suggestionConfig.getReviewedTag());
-                return;
-            }
+                    handleTagAndLock(event, discordUser, threadChannel, forumChannel, suggestionConfig.getReviewedTag());
+                } else {
+                    Optional<CustomForumTag> customForumTag = NerdBotApp.getBot().getConfig().getChannelConfig().getCustomForumTags().stream()
+                        .filter(tag -> tag.getOwnerId() != null && tag.getOwnerId().equals(discordUser.getDiscordId()))
+                        .findFirst();
 
-            handleTagAndLock(event, discordUser, threadChannel, forumChannel, suggestionConfig.getReviewedTag());
-        } else {
-            Optional<CustomForumTag> customForumTag = NerdBotApp.getBot().getConfig().getChannelConfig().getCustomForumTags().stream()
-                .filter(tag -> tag.getOwnerId() != null && tag.getOwnerId().equals(discordUser.getDiscordId()))
-                .findFirst();
-
-            if (customForumTag.isPresent()) {
-                handleTagAndLock(event, discordUser, threadChannel, forumChannel, customForumTag.get().getName());
-            } else {
-                handleTagAndLock(event, discordUser, threadChannel, forumChannel, suggestionConfig.getReviewedTag());
-            }
-        }
+                    if (customForumTag.isPresent()) {
+                        handleTagAndLock(event, discordUser, threadChannel, forumChannel, customForumTag.get().getName());
+                    } else {
+                        handleTagAndLock(event, discordUser, threadChannel, forumChannel, suggestionConfig.getReviewedTag());
+                    }
+                }
+            })
+            .exceptionally(throwable -> {
+                log.error("Error loading user for channel lock", throwable);
+                TranslationManager.edit(hook, "Failed to load user data");
+                return null;
+            });
     }
 
     private void handleTagAndLock(GuildSlashEvent event, DiscordUser discordUser, ThreadChannel threadChannel, ForumChannel forumChannel, String tagName) {

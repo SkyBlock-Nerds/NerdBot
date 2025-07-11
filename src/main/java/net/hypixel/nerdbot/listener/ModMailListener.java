@@ -142,123 +142,136 @@ public class ModMailListener {
         Optional<ThreadChannel> existingTicket = channels.stream()
             .filter(threadChannel -> threadChannel.getName().contains(author.getId())) // Find Existing ModMail Thread
             .findFirst();
-        boolean updateFirstPost = false;
         String expectedThreadName = MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(author), author.getId());
-        ThreadChannel modMailThread;
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(author.getId());
-        boolean unlinked = discordUser.noProfileAssigned();
-        String username = unlinked ? "**Unlinked**" : discordUser.getMojangProfile().getUsername();
-        String uniqueId = unlinked ? "**Unlinked**" : discordUser.getMojangProfile().getUniqueId().toString();
-        String expectedFirstPost = "Received new Mod Mail request from " + author.getAsMention() + "!\n\n" +
-            "User ID: " + author.getId() + "\n" +
-            "Minecraft IGN: " + username + "\n" +
-            "Minecraft UUID: " + uniqueId;
+        
+        discordUserRepository.findByIdAsync(author.getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    log.warn("DiscordUser not found for mod mail from user: {}", author.getId());
+                    return;
+                }
+                
+                boolean unlinked = discordUser.noProfileAssigned();
+                String username = unlinked ? "**Unlinked**" : discordUser.getMojangProfile().getUsername();
+                String uniqueId = unlinked ? "**Unlinked**" : discordUser.getMojangProfile().getUniqueId().toString();
+                String expectedFirstPost = "Received new Mod Mail request from " + author.getAsMention() + "!\n\n" +
+                    "User ID: " + author.getId() + "\n" +
+                    "Minecraft IGN: " + username + "\n" +
+                    "Minecraft UUID: " + uniqueId;
 
-        if (existingTicket.isPresent()) {
-            modMailThread = existingTicket.get();
+                boolean updateFirstPost = false;
+                ThreadChannel modMailThread;
 
-            if (modMailThread.isArchived()) {
-                modMailThread.getManager().setArchived(false).complete();
-                updateFirstPost = true;
-            }
+                if (existingTicket.isPresent()) {
+                    modMailThread = existingTicket.get();
 
-            if (!modMailThread.getName().equals(expectedThreadName)) {
-                modMailThread.getManager().setName(expectedThreadName).queue();
-                updateFirstPost = true;
-            }
-        } else {
-            modMailThread = modMailChannel.createForumPost(expectedThreadName, MessageCreateData.fromContent(expectedFirstPost)).complete().getThreadChannel();
-            modMailThread.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
-            String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
+                    if (modMailThread.isArchived()) {
+                        modMailThread.getManager().setArchived(false).complete();
+                        updateFirstPost = true;
+                    }
 
-            if (modMailRoleId != null) {
-                RoleManager.getRoleById(modMailRoleId).ifPresent(role -> {
-                    modMailThread.getGuild().getMembersWithRoles(role).forEach(member -> modMailThread.addThreadMember(member).complete());
-                });
-            }
-        }
+                    if (!modMailThread.getName().equals(expectedThreadName)) {
+                        modMailThread.getManager().setName(expectedThreadName).queue();
+                        updateFirstPost = true;
+                    }
+                } else {
+                    modMailThread = modMailChannel.createForumPost(expectedThreadName, MessageCreateData.fromContent(expectedFirstPost)).complete().getThreadChannel();
+                    modMailThread.getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_24_HOURS).queue();
+                    String modMailRoleId = NerdBotApp.getBot().getConfig().getModMailConfig().getRoleId();
 
-        if (updateFirstPost) {
-            MessageHistory messageHistory = modMailThread.getHistoryFromBeginning(1).complete();
-            boolean firstPost = messageHistory.getRetrievedHistory().get(0).getIdLong() == modMailThread.getIdLong();
+                    if (modMailRoleId != null) {
+                        RoleManager.getRoleById(modMailRoleId).ifPresent(role -> {
+                            modMailThread.getGuild().getMembersWithRoles(role).forEach(member -> modMailThread.addThreadMember(member).complete());
+                        });
+                    }
+                }
 
-            if (firstPost) {
-                messageHistory.getRetrievedHistory()
-                    .get(0)
-                    .editMessage(
-                        new MessageEditBuilder()
-                            .setContent(expectedFirstPost)
-                            .build()
-                    )
+                if (updateFirstPost) {
+                    MessageHistory messageHistory = modMailThread.getHistoryFromBeginning(1).complete();
+                    boolean firstPost = messageHistory.getRetrievedHistory().get(0).getIdLong() == modMailThread.getIdLong();
+
+                    if (firstPost) {
+                        messageHistory.getRetrievedHistory()
+                            .get(0)
+                            .editMessage(
+                                new MessageEditBuilder()
+                                    .setContent(expectedFirstPost)
+                                    .build()
+                            )
+                            .queue();
+                    }
+                }
+
+                author.openPrivateChannel()
+                    .flatMap(channel -> channel.sendMessage(
+                        new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.").build()
+                    ))
                     .queue();
-            }
-        }
 
-        author.openPrivateChannel()
-            .flatMap(channel -> channel.sendMessage(
-                new MessageCreateBuilder().setContent("Thank you for contacting Mod Mail, we will get back with your request shortly.").build()
-            ))
-            .queue();
+                if (unlinked) {
+                    author.openPrivateChannel()
+                        .flatMap(channel -> channel.sendMessage(
+                            new MessageCreateBuilder().setContent("You are not linked to Hypixel in SkyBlock Nerds. Please do so using </link:1142633400537186409>.").build()
+                        ))
+                        .queue();
+                }
 
-        if (unlinked) {
-            author.openPrivateChannel()
-                .flatMap(channel -> channel.sendMessage(
-                    new MessageCreateBuilder().setContent("You are not linked to Hypixel in SkyBlock Nerds. Please do so using </link:1142633400537186409>.").build()
-                ))
-                .queue();
-        }
+                Optional<Webhook> webhook = getWebhook();
+                log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + modMailThread.getId() + ")");
+                boolean shouldSendMention = shouldAppendRoleMention(discordUser);
 
-        Optional<Webhook> webhook = getWebhook();
-        log.info(author.getName() + " replied to their Mod Mail request (Thread ID: " + modMailThread.getId() + ")");
-        boolean shouldSendMention = shouldAppendRoleMention(discordUser);
+                if (webhook.isPresent()) {
+                    try (JDAWebhookClient client = JDAWebhookClient.from(webhook.get()).onThread(modMailThread.getIdLong())) {
+                        List<String> messages = buildContent(message, true);
 
-        if (webhook.isPresent()) {
-            try (JDAWebhookClient client = JDAWebhookClient.from(webhook.get()).onThread(modMailThread.getIdLong())) {
-                List<String> messages = buildContent(message, true);
+                        for (int i = 0; i < messages.size(); i++) {
+                            WebhookMessageBuilder webhookMessage = new WebhookMessageBuilder();
+                            webhookMessage.setUsername(Util.getDisplayName(author));
+                            webhookMessage.setAvatarUrl(author.getEffectiveAvatarUrl());
+                            String content = messages.get(i);
 
-                for (int i = 0; i < messages.size(); i++) {
-                    WebhookMessageBuilder webhookMessage = new WebhookMessageBuilder();
-                    webhookMessage.setUsername(Util.getDisplayName(event.getAuthor()));
-                    webhookMessage.setAvatarUrl(event.getAuthor().getEffectiveAvatarUrl());
-                    String content = messages.get(i);
+                            if (shouldSendMention) {
+                                content = appendModMailRoleMention(messages, content, i);
+                            }
 
-                    if (shouldSendMention) {
-                        content = appendModMailRoleMention(messages, content, i);
+                            // Last message
+                            if (i == messages.size() - 1) {
+                                buildFiles(message).forEach(fileUpload -> webhookMessage.addFile(fileUpload.getName(), fileUpload.getData()));
+                            }
+
+                            webhookMessage.setContent(content);
+                            client.send(webhookMessage.build());
+                        }
                     }
+                } else {
+                    List<String> messages = buildContent(message, false);
 
-                    // Last message
-                    if (i == messages.size() - 1) {
-                        buildFiles(message).forEach(fileUpload -> webhookMessage.addFile(fileUpload.getName(), fileUpload.getData()));
+                    for (int i = 0; i < messages.size(); i++) {
+                        MessageCreateBuilder messageBuilder = new MessageCreateBuilder();
+                        String content = messages.get(i);
+
+                        if (shouldSendMention) {
+                            content = appendModMailRoleMention(messages, content, i);
+                        }
+
+                        // Last message
+                        if (i == messages.size() - 1) {
+                            messageBuilder.setFiles(buildFiles(message));
+                        }
+
+                        messageBuilder.setContent(content);
+                        modMailThread.sendMessage(messageBuilder.build()).complete();
                     }
-
-                    webhookMessage.setContent(content);
-                    client.send(webhookMessage.build());
-                }
-            }
-        } else {
-            List<String> messages = buildContent(message, false);
-
-            for (int i = 0; i < messages.size(); i++) {
-                MessageCreateBuilder messageBuilder = new MessageCreateBuilder();
-                String content = messages.get(i);
-
-                if (shouldSendMention) {
-                    content = appendModMailRoleMention(messages, content, i);
                 }
 
-                // Last message
-                if (i == messages.size() - 1) {
-                    messageBuilder.setFiles(buildFiles(message));
-                }
-
-                messageBuilder.setContent(content);
-                modMailThread.sendMessage(messageBuilder.build()).complete();
-            }
-        }
-
-        // Update last use
-        discordUser.getLastActivity().setLastModMailUsage(System.currentTimeMillis());
+                // Update last use
+                discordUser.getLastActivity().setLastModMailUsage(System.currentTimeMillis());
+            })
+            .exceptionally(throwable -> {
+                log.error("Error loading user for mod mail from: {}", author.getId(), throwable);
+                return null;
+            });
     }
 
     @SubscribeEvent

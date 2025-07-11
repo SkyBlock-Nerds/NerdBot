@@ -23,8 +23,12 @@ import java.util.concurrent.TimeUnit;
 public class MessageCache implements EventListener {
 
     private final Cache<String, Message> cache = Caffeine.newBuilder()
-        .maximumSize(10_000)
-        .expireAfterWrite(7, TimeUnit.DAYS)
+        .maximumSize(5_000)
+        .expireAfterWrite(3, TimeUnit.DAYS)
+        .expireAfterAccess(1, TimeUnit.DAYS)
+        .removalListener((key, value, cause) -> 
+            log.debug("Message {} removed from cache due to {}", key, cause))
+        .recordStats()
         .build();
 
     public MessageCache() {
