@@ -20,9 +20,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import okhttp3.Call;
-import okhttp3.Callback;
-import org.jetbrains.annotations.NotNull;
 
 @Log4j2
 public class HypixelThreadURLWatcher {
@@ -151,45 +148,49 @@ public class HypixelThreadURLWatcher {
     }
 
     public CompletableFuture<List<HypixelThread>> fetchAndParseContentAsync() {
-        log.debug("Fetching content asynchronously from " + url);
+        return CompletableFuture.supplyAsync(() -> {
+            log.debug("Fetching content asynchronously from " + url);
 
-        Request.Builder requestBuilder = new Request.Builder().url(url);
+            Request.Builder requestBuilder = new Request.Builder().url(url);
 
-        if (headers != null) {
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
-                requestBuilder.header(entry.getKey(), entry.getValue());
-            }
-        }
-
-        Request request = requestBuilder.build();
-        CompletableFuture<List<HypixelThread>> future = new CompletableFuture<>();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                log.error("Failed to fetch content asynchronously from {}", url, e);
-                future.complete(null);
-            }
-
-            @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) {
-                try (response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        String content = response.body().string();
-                        log.debug("Successfully fetched content asynchronously from " + url + "!" + " (Content: " + content + ")");
-                        List<HypixelThread> threads = SkyBlockThreadParser.parseSkyBlockThreads(content);
-                        future.complete(threads);
-                    } else {
-                        log.error("Failed to fetch content asynchronously from " + url + "! (Response: " + response + ")");
-                        future.complete(null);
-                    }
-                } catch (IOException e) {
-                    log.error("Error reading response body from " + url, e);
-                    future.complete(null);
+            if (headers != null) {
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    requestBuilder.header(entry.getKey(), entry.getValue());
                 }
             }
-        });
 
-        return future;
+            Request request = requestBuilder.build();
+
+            try (Response response = client.newCall(request).execute()) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String content = response.body().string();
+                    log.debug("Successfully fetched content asynchronously from " + url + "!" + " (Content: " + content + ")");
+                    return SkyBlockThreadParser.parseSkyBlockThreads(content);
+                } else {
+                    log.error("Failed to fetch content asynchronously from " + url + "! (Response: " + response + ")");
+                    return null;
+                }
+            } catch (IOException e) {
+                log.error("Failed to fetch content asynchronously from " + url, e);
+                return null;
+            }
+        }, executorService);
+    }
+
+    public void shutdown() {
+        log.info("Shutting down HypixelThreadURLWatcher for " + url);
+        timer.cancel();
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                log.warn("ExecutorService did not terminate gracefully, forcing shutdown");
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            log.warn("Interrupted while waiting for ExecutorService termination");
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+        active = false;
     }
 }

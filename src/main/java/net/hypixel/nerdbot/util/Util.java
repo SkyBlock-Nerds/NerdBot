@@ -327,21 +327,19 @@ public class Util {
     }
 
     public static JsonObject makeHttpRequest(String url) throws IOException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format(url))).GET().build();
         String requestResponse;
 
-        HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = HTTP_CLIENT.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         requestResponse = response.body();
 
         return NerdBotApp.GSON.fromJson(requestResponse, JsonObject.class);
     }
 
     public static CompletableFuture<JsonObject> makeHttpRequestAsync(String url) {
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest httpRequest = HttpRequest.newBuilder().uri(URI.create(String.format(url))).GET().build();
         
-        return client.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
+        return HTTP_CLIENT.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
             .thenApply(HttpResponse::body)
             .thenApply(response -> NerdBotApp.GSON.fromJson(response, JsonObject.class));
     }

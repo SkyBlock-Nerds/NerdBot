@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Log4j2
 public class JsonUtil {
@@ -252,6 +253,20 @@ public class JsonUtil {
             return array.get(index);
         } catch (NumberFormatException e) {
             return null;
+        }
+    }
+
+    public static void shutdown() {
+        jsonExecutor.shutdown();
+        try {
+            if (!jsonExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                log.warn("JsonUtil executor did not terminate gracefully, forcing shutdown");
+                jsonExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            log.warn("Interrupted while waiting for JsonUtil executor termination");
+            jsonExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 }
