@@ -176,12 +176,11 @@ public class JsonUtil {
 
     public static CompletableFuture<Object> jsonToObjectAsync(File file, Class<?> clazz) {
         return CompletableFuture.supplyAsync(() -> {
-            try {
-                BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
+            try (BufferedReader br = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
                 return NerdBotApp.GSON.fromJson(br, clazz);
-            } catch (FileNotFoundException e) {
-                log.error("File not found: {}", file.getPath(), e);
-                throw new RuntimeException("File not found: " + file.getPath(), e);
+            } catch (IOException e) {
+                log.error("Error reading file: {}", file.getPath(), e);
+                throw new RuntimeException("Error reading file: " + file.getPath(), e);
             }
         }, jsonExecutor);
     }
