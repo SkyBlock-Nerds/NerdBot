@@ -187,7 +187,10 @@ public abstract class Repository<T> {
                 return existingObject;
             }
 
-            List<Class<?>> constructorParameters = new ArrayList<>(List.of(parameters.getClass()));
+            List<Class<?>> constructorParameters = new ArrayList<>();
+            for (Object param : parameters) {
+                constructorParameters.add(param != null ? param.getClass() : Object.class);
+            }
             T object = entityClass.getConstructor(constructorParameters.toArray(new Class[0])).newInstance(parameters);
 
             log.debug("Created new instance of " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
@@ -214,7 +217,10 @@ public abstract class Repository<T> {
                     return existingObject;
                 }
 
-                List<Class<?>> constructorParameters = new ArrayList<>(List.of(parameters.getClass()));
+                List<Class<?>> constructorParameters = new ArrayList<>();
+                for (Object param : parameters) {
+                    constructorParameters.add(param != null ? param.getClass() : Object.class);
+                }
                 T object = entityClass.getConstructor(constructorParameters.toArray(new Class[0])).newInstance(parameters);
 
                 log.debug("Created new instance of " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
