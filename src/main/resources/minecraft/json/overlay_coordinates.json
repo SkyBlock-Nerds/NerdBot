@@ -1,0 +1,12 @@
+[
+    {"name": "enchant_glint_large", "size": 300, "x": 0, "y": 16, "type": "null", "isBig": true, "colorOptions": "null"},
+    {"name": "enchant_glint_small", "size": 16, "x": 0, "y": 0, "type": "null", "isBig": false, "colorOptions": "null"},
+    {"name": "firework_star", "size": 16, "x": 16, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "firework"},
+    {"name": "leather_boots", "size": 16, "x": 32, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "leather_armor"},
+    {"name": "leather_chestplate", "size": 16, "x": 48, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "leather_armor"},
+    {"name": "leather_helmet", "size": 16, "x": 64, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "leather_armor"},
+    {"name": "leather_leggings", "size": 16, "x": 80, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "leather_armor"},
+    {"name": "potion_overlay", "size": 16, "x": 96, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "potion"},
+    {"name": "spawn_egg", "size": 16, "x": 112, "y": 0, "type": "DUAL_LAYER", "isBig": false, "colorOptions": "spawn_egg"},
+    {"name": "tipped_arrow_head", "size": 16, "x": 128, "y": 0, "type": "NORMAL", "isBig": false, "colorOptions": "potion"}
+]
