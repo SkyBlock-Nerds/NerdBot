@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
+import com.mongodb.client.result.DeleteResult;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -374,46 +375,24 @@ public class ActivityListener {
     private Optional<RoleRestrictedChannelGroup> findMatchingRoleRestrictedGroup(String channelId, Member member) {
         List<RoleRestrictedChannelGroup> groups = NerdBotApp.getBot().getConfig().getChannelConfig().getRoleRestrictedChannelGroups();
 
-        log.info("Checking role-restricted groups for channel '{}' and member '{}'", channelId, member.getEffectiveName());
-        log.info("Member '{}' has roles: {}", member.getEffectiveName(), 
-            member.getRoles().stream().map(role -> role.getName() + " (" + role.getId() + ")").toList());
-
         for (RoleRestrictedChannelGroup group : groups) {
-            log.info("Found role-restricted channel group '{}' with channels: {} and roles: {}",
-                group.getIdentifier(), Arrays.toString(group.getChannelIds()), Arrays.toString(group.getRequiredRoleIds()));
-
             boolean channelMatches = Arrays.stream(group.getChannelIds())
                 .anyMatch(groupChannelId -> groupChannelId.equalsIgnoreCase(channelId));
 
-            log.info("Channel match check: '{}' matches any of {} = {}", 
-                channelId, Arrays.toString(group.getChannelIds()), channelMatches);
-
             if (!channelMatches) {
-                log.info("Channel ID '{}' does not match any in group '{}'", channelId, group.getIdentifier());
                 continue;
             }
 
-            log.info("Channel matched! Now checking if member '{}' has any required roles from: {}", 
-                member.getEffectiveName(), Arrays.toString(group.getRequiredRoleIds()));
-
             boolean hasRequiredRole = Arrays.stream(group.getRequiredRoleIds())
-                .anyMatch(roleId -> {
-                    boolean hasRole = member.getRoles().stream()
-                        .map(Role::getId)
-                        .anyMatch(memberRoleId -> memberRoleId.equalsIgnoreCase(roleId));
-                    log.info("Role check: Member has role '{}' = {}", roleId, hasRole);
-                    return hasRole;
-                });
+                .anyMatch(roleId -> member.getRoles().stream()
+                    .map(Role::getId)
+                    .anyMatch(memberRoleId -> memberRoleId.equalsIgnoreCase(roleId)));
 
             if (hasRequiredRole) {
-                log.info("Member {} has required role for group '{}'", member.getEffectiveName(), group.getIdentifier());
                 return Optional.of(group);
-            } else {
-                log.info("Member '{}' does not have any required roles for group '{}'", member.getEffectiveName(), group.getIdentifier());
             }
         }
 
-        log.info("No matching role-restricted channel group found for channel ID '{}' and member '{}'", channelId, member.getEffectiveName());
         return Optional.empty();
     }
 }
