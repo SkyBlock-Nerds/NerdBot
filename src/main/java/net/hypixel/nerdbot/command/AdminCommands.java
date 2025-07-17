@@ -238,21 +238,15 @@ public class AdminCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "config", subcommand = "reload", description = "Reload the config file", defaultLocked = true)
     public void reloadConfig(GuildSlashEvent event) {
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
-
-        if (discordUser == null) {
-            TranslationManager.reply(event, "generic.user_not_found");
-            return;
-        }
-
         Bot bot = NerdBotApp.getBot();
+
+        event.deferReply().setEphemeral(true).complete();
 
         bot.loadConfig();
         bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
         PrometheusMetrics.setMetricsEnabled(bot.getConfig().getMetricsConfig().isEnabled());
 
-        TranslationManager.reply(event, discordUser, "commands.config.reloaded");
+        event.getHook().editOriginal("Reloaded the config file!").queue();
     }
 
     @JDASlashCommand(name = "config", subcommand = "edit", description = "Edit the config file", defaultLocked = true)
