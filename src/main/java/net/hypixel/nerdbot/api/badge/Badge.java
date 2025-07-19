@@ -1,17 +1,14 @@
 package net.hypixel.nerdbot.api.badge;
 
 import com.vdurmont.emoji.EmojiManager;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.ToString;
+import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.cache.EmojiCache;
 
-@AllArgsConstructor
 @Getter
-@ToString
+@RequiredArgsConstructor
 public class Badge {
-
     private final String id;
     private final String name;
     private final String emoji;
