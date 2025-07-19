@@ -1,8 +1,9 @@
 package net.hypixel.nerdbot.generator.parser;
 
+import lombok.Getter;
 import net.hypixel.nerdbot.generator.util.ColoredString;
 import net.hypixel.nerdbot.generator.util.GeneratorStrings;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.EnumUtils;
 import net.hypixel.nerdbot.util.skyblock.Flavor;
 import net.hypixel.nerdbot.util.skyblock.Gemstone;
 import net.hypixel.nerdbot.util.skyblock.Icon;
@@ -24,6 +25,7 @@ public class StringColorParser {
     private static final Flavor[] flavors = Flavor.VALUES;
 
     // variables used to store the description
+    @Getter
     private final List<List<ColoredString>> parsedDescription;
     private final int wrappedLineLength;
     private ArrayList<ColoredString> currentLine = new ArrayList<>();
@@ -33,7 +35,9 @@ public class StringColorParser {
     private int lineLength;
     private int imageMaxLineLength = 0;
 
+    @Getter
     private String errorString;
+    @Getter
     private boolean successfullyParsed;
 
     public StringColorParser(Integer maxLength) {
@@ -46,18 +50,6 @@ public class StringColorParser {
 
         maxLength = Objects.requireNonNullElse(maxLength, StringColorParser.MAX_STANDARD_LINE_LENGTH);
         wrappedLineLength = Math.min(StringColorParser.MAX_FINAL_LINE_LENGTH, Math.max(1, maxLength));
-    }
-
-    public List<List<ColoredString>> getParsedDescription() {
-        return parsedDescription;
-    }
-
-    public boolean isSuccessfullyParsed() {
-        return successfullyParsed;
-    }
-
-    public String getErrorString() {
-        return errorString;
     }
 
     public int getEstimatedImageWidth() {
@@ -101,7 +93,7 @@ public class StringColorParser {
 
                     String selectedCommand = description.substring(charIndex + 2, closingIndex);
                     // checking if the command is a color code
-                    MCColor mcColor = (MCColor) Util.findValue(colors, selectedCommand);
+                    MCColor mcColor = (MCColor) EnumUtils.findValue(colors, selectedCommand);
                     if (mcColor != null) {
                         // setting the correct option for the segment
                         switch (mcColor) {
@@ -121,7 +113,7 @@ public class StringColorParser {
                             (currentString.isUnderlined() ? "&n" : "") : "");
 
                     // checking if the command is a gemstone type
-                    Gemstone gemstone = (Gemstone) Util.findValue(gemstones, selectedCommand);
+                    Gemstone gemstone = (Gemstone) EnumUtils.findValue(gemstones, selectedCommand);
                     if (gemstone != null) {
                         // replacing the selected space with the stat's text
                         String replacementText = "%%DARK_GRAY%%" + gemstone.getIcon() + currentColor;
@@ -143,7 +135,7 @@ public class StringColorParser {
                     }
 
                     // checking if the command is a stat
-                    Stat stat = (Stat) Util.findValue(stats, selectedCommand);
+                    Stat stat = (Stat) EnumUtils.findValue(stats, selectedCommand);
                     if (stat != null) {
                         // replacing the selected space with the stat's text
                         String replacementText = stat.getParsedStat(isIcon, extraData) + currentColor;
@@ -152,7 +144,7 @@ public class StringColorParser {
                     }
 
                     // checking if the command is an icon
-                    Icon icon = (Icon) Util.findValue(icons, selectedCommand);
+                    Icon icon = (Icon) EnumUtils.findValue(icons, selectedCommand);
                     if (icon != null) {
                         String replacementText = icon.getParsedIcon(extraData) + currentColor;
                         description.replace(charIndex, closingIndex + 2, replacementText);
@@ -160,7 +152,7 @@ public class StringColorParser {
                     }
 
                     // checking if the command is a flavor text
-                    Flavor flavor = (Flavor) Util.findValue(flavors, selectedCommand);
+                    Flavor flavor = (Flavor) EnumUtils.findValue(flavors, selectedCommand);
                     if (flavor != null) {
                         String replacementText = flavor.getParsedFlavorText(extraData) + currentColor;
                         description.replace(charIndex, closingIndex + 2, replacementText);
@@ -168,7 +160,7 @@ public class StringColorParser {
                     }
 
                     // checking if the command is supposed to only trigger for the text inside it
-                    MCColor tempStatColor = (MCColor) Util.findValue(colors, selectedCommand);
+                    MCColor tempStatColor = (MCColor) EnumUtils.findValue(colors, selectedCommand);
                     if (tempStatColor != null) {
                         // setting the correct color option for the segment
                         String replacementText = "&" + tempStatColor.getColorCode() + extraData + currentColor;

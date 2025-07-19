@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.util.gson;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.UUIDUtils;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -112,16 +112,16 @@ public class HypixelPlayerResponse {
         }
 
         public UUID getUniqueId() {
-            return Util.toUUID(this.uuid);
+            return UUIDUtils.toUUID(this.uuid);
         }
 
     }
 
     public static class SocialMedia {
 
-        private boolean prompt;
         @Getter
         private final Map<Service, String> links = new HashMap<>();
+        private boolean prompt;
 
         public enum Service {
 
@@ -162,7 +162,7 @@ public class HypixelPlayerResponse {
                 }
 
                 public UUID getUniqueId() {
-                    return Util.toUUID(this.profileId);
+                    return UUIDUtils.toUUID(this.profileId);
                 }
 
             }

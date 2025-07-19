@@ -7,7 +7,7 @@ import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.bot.NerdBot;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.UUIDUtils;
 import net.hypixel.nerdbot.util.gson.adapter.BadgeTypeAdapter;
 import net.hypixel.nerdbot.util.gson.adapter.InstantTypeAdapter;
 import net.hypixel.nerdbot.util.gson.adapter.UUIDTypeAdapter;
@@ -66,7 +66,7 @@ public class NerdBotApp {
     }
 
     public static Optional<UUID> getHypixelAPIKey() {
-        return Optional.ofNullable(System.getProperty("hypixel.key")).map(Util::toUUID);
+        return Optional.ofNullable(System.getProperty("hypixel.key")).map(UUIDUtils::toUUID);
     }
 
     public static NerdBot getBot() {

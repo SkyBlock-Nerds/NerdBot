@@ -4,7 +4,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.objects.PingableRole;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -56,7 +56,7 @@ public class RoleManager {
     }
 
     public static Optional<Role> getRole(String name) {
-        return Util.getMainGuild().getRoles().stream()
+        return DiscordUtils.getMainGuild().getRoles().stream()
             .filter(role -> role.getName().equals(name))
             .findFirst();
     }
@@ -67,7 +67,7 @@ public class RoleManager {
     }
 
     public static Optional<Role> getRoleById(String id) {
-        return Util.getMainGuild().getRoles().stream()
+        return DiscordUtils.getMainGuild().getRoles().stream()
             .filter(role -> role.getId().equals(id))
             .findFirst();
     }

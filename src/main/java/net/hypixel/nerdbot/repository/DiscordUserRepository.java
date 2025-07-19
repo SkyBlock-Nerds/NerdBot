@@ -9,7 +9,7 @@ import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.repository.Repository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,12 +52,12 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
             if (!discordUser.getLastActivity().getChannelActivity().isEmpty()) {
                 log.info("Old channel activity for " + discordUser.getDiscordId() + " was not empty! (size: " + discordUser.getLastActivity().getChannelActivity().size() + ")");
                 discordUser.getLastActivity().getChannelActivity().forEach((channelId, messageCount) -> {
-                    if (Util.getMainGuild().getTextChannelById(channelId) == null) {
+                    if (DiscordUtils.getMainGuild().getTextChannelById(channelId) == null) {
                         log.info("Channel " + channelId + " was not found in the guild! Skipping...");
                         return;
                     }
 
-                    discordUser.getLastActivity().addChannelHistory(Util.getMainGuild().getTextChannelById(channelId), messageCount, System.currentTimeMillis());
+                    discordUser.getLastActivity().addChannelHistory(DiscordUtils.getMainGuild().getTextChannelById(channelId), messageCount, System.currentTimeMillis());
                 });
                 discordUser.getLastActivity().getChannelActivity().clear();
                 discordUser.getLastActivity().setChannelActivity(null);
@@ -84,10 +84,10 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
     }
 
     public Member getMemberById(String id) {
-        return Util.getMainGuild().getMemberById(id);
+        return DiscordUtils.getMainGuild().getMemberById(id);
     }
 
     public User getUserById(String id) {
-        return Util.getMainGuild().getJDA().getUserById(id);
+        return DiscordUtils.getMainGuild().getJDA().getUserById(id);
     }
 }

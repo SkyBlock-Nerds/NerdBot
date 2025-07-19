@@ -26,7 +26,8 @@ import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.ArrayUtils;
+import net.hypixel.nerdbot.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -92,14 +93,14 @@ public class ActivityListener {
 
             // New Alpha Suggestion
             AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
-            if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().getAlphaSuggestionCreationHistory().add(0, time);
                 discordUser.getLastActivity().setLastAlphaActivity(time);
                 log.info("Updating new alpha suggestion activity date for {} to {}", member.getEffectiveName(), time);
             }
 
             // New Project Suggestion
-            if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            if (ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().getProjectSuggestionCreationHistory().add(0, time);
                 discordUser.getLastActivity().setLastProjectActivity(time);
                 log.info("Updating new project suggestion activity date for {} to {}", member.getEffectiveName(), time);
@@ -142,11 +143,11 @@ public class ActivityListener {
         Suggestion.ChannelType channelType;
 
         if (guildChannel instanceof ThreadChannel threadChannel) {
-            channelType = Util.getThreadSuggestionType(threadChannel);
+            channelType = DiscordUtils.getThreadSuggestionType(threadChannel);
         } else if (guildChannel instanceof TextChannel) {
-            channelType = Util.getChannelSuggestionType(guildChannel.asTextChannel());
+            channelType = DiscordUtils.getChannelSuggestionType(guildChannel.asTextChannel());
         } else {
-            channelType = Util.getChannelSuggestionTypeFromName(guildChannel.getName());
+            channelType = DiscordUtils.getChannelSuggestionTypeFromName(guildChannel.getName());
         }
 
         Optional<RoleRestrictedChannelGroup> matchingGroup = findMatchingRoleRestrictedGroup(guildChannel.getId(), member);
@@ -173,7 +174,7 @@ public class ActivityListener {
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
             ForumChannel forumChannel = guildChannel.asThreadChannel().getParentChannel().asForumChannel();
-            channelType = Util.getForumSuggestionType(forumChannel);
+            channelType = DiscordUtils.getForumSuggestionType(forumChannel);
 
             // New Suggestion Comments
             if (channelType == Suggestion.ChannelType.NORMAL) {
@@ -245,7 +246,7 @@ public class ActivityListener {
                 PrometheusMetrics.TOTAL_VOICE_TIME_SPENT_BY_USER.labels(member.getEffectiveName(), channelLeft.getName()).inc((TimeUnit.MILLISECONDS.toSeconds(timeSpent)));
 
                 if ((timeSpent / 1_000L) > NerdBotApp.getBot().getConfig().getVoiceThreshold()) {
-                    Suggestion.ChannelType channelType = Util.getChannelSuggestionType(channelLeft.asVoiceChannel());
+                    Suggestion.ChannelType channelType = DiscordUtils.getChannelSuggestionType(channelLeft.asVoiceChannel());
 
                     if (channelType == Suggestion.ChannelType.ALPHA) {
                         discordUser.getLastActivity().setAlphaVoiceJoinDate(time);
@@ -332,14 +333,14 @@ public class ActivityListener {
 
             // New Alpha Suggestion Voting
             AlphaProjectConfig alphaProjectConfig = NerdBotApp.getBot().getConfig().getAlphaProjectConfig();
-            if (Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().getAlphaSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                 log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
             }
 
             // New Project Suggestion Voting
-            if (Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
+            if (ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().getProjectSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 NerdBotApp.getBot().getSuggestionCache().updateSuggestion(threadChannel);
                 log.info("Updating project suggestion voting activity date for " + member.getEffectiveName() + " to " + time);

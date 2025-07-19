@@ -22,7 +22,8 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.channel.ModMailConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +67,7 @@ public class ModMailListener {
     }
 
     private static Optional<Webhook> getWebhook() {
-        return Util.getMainGuild()
+        return DiscordUtils.getMainGuild()
             .retrieveWebhooks()
             .complete()
             .stream()
@@ -97,10 +98,10 @@ public class ModMailListener {
         content = content.replaceAll("@(everyone|here|&\\d+)", "@\u200b$1");
 
         if (!webhook) {
-            content = String.format("**%s:**%s%s", Util.getDisplayName(message.getAuthor()), "\n", content);
+            content = String.format("**%s:**%s%s", DiscordUtils.getDisplayName(message.getAuthor()), "\n", content);
         }
 
-        return Util.splitString(content, 1_024);
+        return StringUtils.splitString(content, 1_024);
     }
 
     private static List<FileUpload> buildFiles(Message message) {
@@ -143,7 +144,7 @@ public class ModMailListener {
             .filter(threadChannel -> threadChannel.getName().contains(author.getId())) // Find Existing ModMail Thread
             .findFirst();
         boolean updateFirstPost = false;
-        String expectedThreadName = MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(author), author.getId());
+        String expectedThreadName = MOD_MAIL_TITLE_TEMPLATE.formatted(DiscordUtils.getDisplayName(author), author.getId());
         ThreadChannel modMailThread;
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(author.getId());
@@ -219,7 +220,7 @@ public class ModMailListener {
 
                 for (int i = 0; i < messages.size(); i++) {
                     WebhookMessageBuilder webhookMessage = new WebhookMessageBuilder();
-                    webhookMessage.setUsername(Util.getDisplayName(event.getAuthor()));
+                    webhookMessage.setUsername(DiscordUtils.getDisplayName(event.getAuthor()));
                     webhookMessage.setAvatarUrl(event.getAuthor().getEffectiveAvatarUrl());
                     String content = messages.get(i);
 
@@ -302,7 +303,7 @@ public class ModMailListener {
         requester.openPrivateChannel()
             .flatMap(channel -> channel.sendMessage(
                 new MessageCreateBuilder()
-                    .setContent("**[Mod Mail] " + Util.getDisplayName(author) + ":** " + message.getContentDisplay())
+                    .setContent("**[Mod Mail] " + DiscordUtils.getDisplayName(author) + ":** " + message.getContentDisplay())
                     .setFiles(buildFiles(message))
                     .build()
             ))

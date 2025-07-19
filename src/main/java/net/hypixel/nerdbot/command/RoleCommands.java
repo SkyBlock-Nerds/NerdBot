@@ -15,7 +15,7 @@ import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -91,10 +91,10 @@ public class RoleCommands extends ApplicationCommand {
             TranslationManager.edit(event.getHook(), user, "commands.role.eligible_promotion");
         } else {
             TranslationManager.edit(event.getHook(), user, "commands.role.not_eligible_promotion",
-                Util.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
-                Util.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion()),
-                Util.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
-                Util.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion())
+                StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
+                StringUtils.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion()),
+                StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
+                StringUtils.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion())
             );
         }
     }
