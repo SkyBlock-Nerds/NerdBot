@@ -13,7 +13,6 @@ public class Utils {
     private Utils() {
     }
 
-
     @Deprecated
     public static Optional<String> getScuffedMinecraftIGN(net.dv8tion.jda.api.entities.Member member) {
         // removes non-standard ascii characters from the discord nickname
