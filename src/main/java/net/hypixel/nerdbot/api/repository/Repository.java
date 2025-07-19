@@ -97,20 +97,29 @@ public abstract class Repository<T> {
     }
 
     public CompletableFuture<Void> loadAllDocumentsIntoCacheAsync() {
-        return CompletableFuture.runAsync(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             log("Loading ALL documents from database into cache asynchronously");
+            
+            List<Document> documents = new ArrayList<>();
+            mongoCollection.find().into(documents);
+            return documents;
+        }, repositoryExecutor)
+        .thenCompose(documents -> {
+            List<CompletableFuture<Void>> futures = documents.stream()
+                .map(document -> CompletableFuture.runAsync(() -> {
+                    T object = documentToEntity(document);
 
-            for (Document document : mongoCollection.find()) {
-                T object = documentToEntity(document);
+                    if (cache.getIfPresent(getId(object)) != null) {
+                        debug("Document with ID " + getId(object) + " already exists in cache");
+                        return;
+                    }
 
-                if (cache.getIfPresent(getId(object)) != null) {
-                    debug("Document with ID " + getId(object) + " already exists in cache");
-                    continue;
-                }
-
-                cacheObject(object);
-            }
-        }, repositoryExecutor);
+                    cacheObject(object);
+                }, repositoryExecutor))
+                .toList();
+                
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        });
     }
 
     public List<T> getAllDocuments() {
