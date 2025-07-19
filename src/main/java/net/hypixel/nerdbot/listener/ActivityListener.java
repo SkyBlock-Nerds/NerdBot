@@ -26,8 +26,8 @@ import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.SuggestionUtils;
 import net.hypixel.nerdbot.util.ArrayUtils;
+import net.hypixel.nerdbot.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -143,11 +143,11 @@ public class ActivityListener {
         Suggestion.ChannelType channelType;
 
         if (guildChannel instanceof ThreadChannel threadChannel) {
-            channelType = SuggestionUtils.getThreadSuggestionType(threadChannel);
+            channelType = DiscordUtils.getThreadSuggestionType(threadChannel);
         } else if (guildChannel instanceof TextChannel) {
-            channelType = SuggestionUtils.getChannelSuggestionType(guildChannel.asTextChannel());
+            channelType = DiscordUtils.getChannelSuggestionType(guildChannel.asTextChannel());
         } else {
-            channelType = SuggestionUtils.getChannelSuggestionTypeFromName(guildChannel.getName());
+            channelType = DiscordUtils.getChannelSuggestionTypeFromName(guildChannel.getName());
         }
 
         Optional<RoleRestrictedChannelGroup> matchingGroup = findMatchingRoleRestrictedGroup(guildChannel.getId(), member);
@@ -174,7 +174,7 @@ public class ActivityListener {
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
             ForumChannel forumChannel = guildChannel.asThreadChannel().getParentChannel().asForumChannel();
-            channelType = SuggestionUtils.getForumSuggestionType(forumChannel);
+            channelType = DiscordUtils.getForumSuggestionType(forumChannel);
 
             // New Suggestion Comments
             if (channelType == Suggestion.ChannelType.NORMAL) {
@@ -246,7 +246,7 @@ public class ActivityListener {
                 PrometheusMetrics.TOTAL_VOICE_TIME_SPENT_BY_USER.labels(member.getEffectiveName(), channelLeft.getName()).inc((TimeUnit.MILLISECONDS.toSeconds(timeSpent)));
 
                 if ((timeSpent / 1_000L) > NerdBotApp.getBot().getConfig().getVoiceThreshold()) {
-                    Suggestion.ChannelType channelType = SuggestionUtils.getChannelSuggestionType(channelLeft.asVoiceChannel());
+                    Suggestion.ChannelType channelType = DiscordUtils.getChannelSuggestionType(channelLeft.asVoiceChannel());
 
                     if (channelType == Suggestion.ChannelType.ALPHA) {
                         discordUser.getLastActivity().setAlphaVoiceJoinDate(time);

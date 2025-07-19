@@ -14,7 +14,6 @@ import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.util.DiscordUtils;
-import net.hypixel.nerdbot.util.SuggestionUtils;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -59,7 +58,7 @@ public class Suggestion {
         this.timeCreated = thread.getTimeCreated();
         this.jumpUrl = String.format("https://discord.com/channels/%s/%s", this.getGuildId(), this.getThreadId());
         this.greenlit = channelType == ChannelType.NORMAL && DiscordUtils.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
-        this.channelType = channelType == null ? SuggestionUtils.getThreadSuggestionType(thread) : channelType;
+        this.channelType = channelType == null ? DiscordUtils.getThreadSuggestionType(thread) : channelType;
         this.expired = false;
 
         // Activity
