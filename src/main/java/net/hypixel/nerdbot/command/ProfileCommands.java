@@ -38,7 +38,8 @@ import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.MojangProfileException;
 import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
@@ -157,7 +158,7 @@ public class ProfileCommands extends ApplicationCommand {
             return;
         }
 
-        Member member = Util.getMainGuild().retrieveMemberById(event.getUser().getId()).complete();
+        Member member = DiscordUtils.getMainGuild().retrieveMemberById(event.getUser().getId()).complete();
         if (member == null) {
             event.getHook().editOriginal("You must be in SkyBlock Nerds to use this command!").queue();
             return;
@@ -456,13 +457,13 @@ public class ProfileCommands extends ApplicationCommand {
 
 
     public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws HttpException, MojangProfileException {
-        MojangProfile mojangProfile = Util.getMojangProfile(username);
+        MojangProfile mojangProfile = HttpUtils.getMojangProfile(username);
 
         if (mojangProfile.getErrorMessage() != null) {
             throw new MojangProfileException(mojangProfile.getErrorMessage());
         }
 
-        HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
+        HypixelPlayerResponse hypixelPlayerResponse = HttpUtils.getHypixelPlayer(mojangProfile.getUniqueId());
 
         if (!hypixelPlayerResponse.isSuccess()) {
             throw new HttpException("Unable to look up `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());

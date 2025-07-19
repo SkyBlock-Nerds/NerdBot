@@ -12,7 +12,7 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.ArrayUtils;
 
 @Log4j2
 public class PinListener {
@@ -56,7 +56,7 @@ public class PinListener {
         // Ignore channel if blacklisted.
         String[] autoPinBlacklistedChannels = channelConfig.getAutoPinBlacklistedChannels();
         String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().asForumChannel().getId();
-        if (Util.safeArrayStream(autoPinBlacklistedChannels).anyMatch(forumChannelId::equalsIgnoreCase)) {
+        if (ArrayUtils.safeArrayStream(autoPinBlacklistedChannels).anyMatch(forumChannelId::equalsIgnoreCase)) {
             return;
         }
 

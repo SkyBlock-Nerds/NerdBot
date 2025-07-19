@@ -16,7 +16,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.ArrayUtils;
 
 @Log4j2
 public class MetricsListener {
@@ -37,7 +37,7 @@ public class MetricsListener {
             BotConfig botConfig = NerdBotApp.getBot().getConfig();
 
             if (forumChannelId.equals(botConfig.getSuggestionConfig().getForumChannelId())
-                || Util.safeArrayStream(botConfig.getAlphaProjectConfig().getAlphaForumIds(), botConfig.getAlphaProjectConfig().getProjectForumIds()).anyMatch(forumChannelId::equals)) {
+                || ArrayUtils.safeArrayStream(botConfig.getAlphaProjectConfig().getAlphaForumIds(), botConfig.getAlphaProjectConfig().getProjectForumIds()).anyMatch(forumChannelId::equals)) {
                 PrometheusMetrics.TOTAL_SUGGESTIONS_AMOUNT.inc();
             }
         }

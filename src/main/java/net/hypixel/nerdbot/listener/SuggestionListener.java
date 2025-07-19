@@ -30,7 +30,9 @@ import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.SuggestionUtils;
+import net.hypixel.nerdbot.util.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -69,7 +71,7 @@ public class SuggestionListener {
 
             ForumChannel forum = thread.getParentChannel().asForumChannel();
 
-            if (!Util.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
+            if (!DiscordUtils.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
                 TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "the greenlit tag");
                 return;
             }
@@ -89,12 +91,12 @@ public class SuggestionListener {
 
             switch (action) {
                 case "accept" -> {
-                    if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
+                    if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || DiscordUtils.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
                         TranslationManager.send(event.getHook().setEphemeral(true), user, "curator.already_greenlit");
                         return;
                     }
                     List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
-                    tags.add(Util.getTagByName(forum, suggestionConfig.getGreenlitTag()));
+                    tags.add(DiscordUtils.getTagByName(forum, suggestionConfig.getGreenlitTag()));
                     ThreadChannelManager threadManager = getThreadChannelManager(thread, tags, suggestionConfig);
 
                     // Send Changes
@@ -170,7 +172,7 @@ public class SuggestionListener {
     @SubscribeEvent
     public void onChannelDelete(ChannelDeleteEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            Suggestion.ChannelType channelType = Util.getForumSuggestionType(event.getChannel().asForumChannel());
+            Suggestion.ChannelType channelType = SuggestionUtils.getForumSuggestionType(event.getChannel().asForumChannel());
 
             if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
                 BotConfig botConfig = NerdBotApp.getBot().getConfig();
@@ -186,7 +188,7 @@ public class SuggestionListener {
 
     private void updateConfigForumIds(GenericChannelEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            Suggestion.ChannelType channelType = Util.getForumSuggestionType(event.getChannel().asForumChannel());
+            Suggestion.ChannelType channelType = SuggestionUtils.getForumSuggestionType(event.getChannel().asForumChannel());
 
             if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
                 BotConfig botConfig = NerdBotApp.getBot().getConfig();
@@ -216,8 +218,8 @@ public class SuggestionListener {
             String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
 
             return forumChannelId.equals(suggestionConfig.getForumChannelId())
-                || Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equals)
-                || Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equals);
+                || ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equals)
+                || ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equals);
         }
 
         return false;

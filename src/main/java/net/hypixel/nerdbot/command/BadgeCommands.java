@@ -18,7 +18,7 @@ import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.FileUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -136,7 +136,7 @@ public class BadgeCommands extends ApplicationCommand {
 
         if (sb.length() > 2048) {
             try {
-                event.getHook().editOriginal(MessageEditData.fromFiles(FileUpload.fromData(Util.createTempFile("badges.txt", sb.toString())))).queue();
+                event.getHook().editOriginal(MessageEditData.fromFiles(FileUpload.fromData(FileUtils.createTempFile("badges.txt", sb.toString())))).queue();
                 return;
             } catch (IOException exception) {
                 log.error("Failed to create temp file listing all badges!", exception);

@@ -144,6 +144,11 @@ public class ChannelConfig {
     private String[] autoPinBlacklistedChannels = {};
 
     /**
+     * Channel name patterns that identify project channels for suggestion categorization
+     */
+    private String[] projectChannelNames = {};
+
+    /**
      * Find or create a role-restricted channel group for the given roles
      *
      * @param roleIds Set of role IDs that should have access to channels in this group

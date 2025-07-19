@@ -4,7 +4,7 @@ import com.mongodb.client.MongoClient;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import net.hypixel.nerdbot.util.ClassUtil;
+import net.hypixel.nerdbot.util.ClassUtils;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 
 import java.lang.reflect.Constructor;
@@ -41,7 +41,7 @@ public class RepositoryManager {
         log.info("Registering repositories from package: " + packageName);
 
         try {
-            Set<Class<?>> classes = ClassUtil.findClasses(packageName, Repository.class);
+            Set<Class<?>> classes = ClassUtils.findClasses(packageName, Repository.class);
 
             for (Class<?> clazz : classes) {
                 log.debug("Found class: " + clazz.getName());

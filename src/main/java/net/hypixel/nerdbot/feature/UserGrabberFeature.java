@@ -12,7 +12,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.util.ArrayList;
 
@@ -32,7 +32,7 @@ public class UserGrabberFeature extends BotFeature {
         }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        Guild guild = Util.getMainGuild();
+        Guild guild = DiscordUtils.getMainGuild();
         log.info("Grabbing users from guild " + guild.getName());
 
         guild.loadMembers(member -> {

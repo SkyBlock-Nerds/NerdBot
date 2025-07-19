@@ -29,7 +29,7 @@ import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -78,7 +78,7 @@ public class SuggestionCommands extends ApplicationCommand {
             .filter(Suggestion::notDeleted)
             .filter(suggestion -> {
                 if (userId != null) {
-                    Member user = Util.getMainGuild().retrieveMemberById(userId).complete();
+                    Member user = DiscordUtils.getMainGuild().retrieveMemberById(userId).complete();
                     return user != null && suggestion.getOwnerIdLong() == userId && suggestion.canSee(member);
                 }
                 return true;

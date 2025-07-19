@@ -17,7 +17,7 @@ import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.listener.ModMailListener;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -67,7 +67,7 @@ public class ModMailCommands extends ApplicationCommand {
                 return;
             }
 
-            String expectedThreadName = ModMailListener.MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(member.getUser()), member.getId());
+            String expectedThreadName = ModMailListener.MOD_MAIL_TITLE_TEMPLATE.formatted(DiscordUtils.getDisplayName(member.getUser()), member.getId());
             DiscordUser specifiedUser = discordUserRepository.findById(member.getId());
 
             if (specifiedUser == null) {
@@ -104,7 +104,7 @@ public class ModMailCommands extends ApplicationCommand {
         }
 
         ForumChannel modMailChannel = optionalModMailChannel.get();
-        String expectedThreadName = ModMailListener.MOD_MAIL_TITLE_TEMPLATE.formatted(Util.getDisplayName(user), user.getId());
+        String expectedThreadName = ModMailListener.MOD_MAIL_TITLE_TEMPLATE.formatted(DiscordUtils.getDisplayName(user), user.getId());
         Stream<ThreadChannel> archivedThreads = modMailChannel.retrieveArchivedPublicThreadChannels().stream();
         Optional<ThreadChannel> foundArchivedThread = archivedThreads
             .filter(channel -> channel.getName().equalsIgnoreCase(expectedThreadName))

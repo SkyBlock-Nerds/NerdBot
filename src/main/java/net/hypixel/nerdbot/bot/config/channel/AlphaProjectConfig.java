@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.SuggestionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +69,7 @@ public class AlphaProjectConfig {
             // Update Alpha Forum IDs (Alpha Takes Priority)
             log.info("Updating Alpha Forum IDs");
             this.alphaForumIds = forumChannels.stream()
-                .filter(forumChannel -> Util.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.ALPHA)
+                .filter(forumChannel -> SuggestionUtils.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.ALPHA)
                 .map(ISnowflake::getId)
                 .toList()
                 .toArray(new String[]{});
@@ -79,7 +79,7 @@ public class AlphaProjectConfig {
             // Update Project Forum IDs
             log.info("Updating Project Forum IDs");
             this.projectForumIds = forumChannels.stream()
-                .filter(forumChannel -> Util.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.PROJECT)
+                .filter(forumChannel -> SuggestionUtils.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.PROJECT)
                 .map(ISnowflake::getId)
                 .toList()
                 .toArray(new String[]{});
