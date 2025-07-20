@@ -264,7 +264,12 @@ public class ModMailService {
      */
     private void updateFirstPost(ThreadChannel thread, User user) {
         MessageHistory messageHistory = thread.getHistoryFromBeginning(1).complete();
-        boolean firstPost = messageHistory.getRetrievedHistory().get(0).getIdLong() == thread.getIdLong();
+        List<Message> retrievedHistory = messageHistory.getRetrievedHistory();
+        if (retrievedHistory.isEmpty()) {
+            log.warn("No messages found in the thread history for thread {}", thread.getName());
+            return;
+        }
+        boolean firstPost = retrievedHistory.get(0).getIdLong() == thread.getIdLong();
 
         if (firstPost) {
             String updatedPost = generateInitialPost(user, null);
