@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.listener;
+package net.hypixel.nerdbot.modmail;
 
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.entities.Message;
@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.hypixel.nerdbot.modmail.ModMailService;
 
 @Log4j2
 public class ModMailListener {
