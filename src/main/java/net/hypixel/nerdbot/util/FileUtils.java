@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.CompletableFuture;
 
 @Log4j2
 public class FileUtils {
@@ -46,9 +47,29 @@ public class FileUtils {
         return file;
     }
 
+    public static CompletableFuture<File> createTempFileAsync(String fileName, String content) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return createTempFile(fileName, content);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
     public static File toFile(BufferedImage imageToSave) throws IOException {
         File tempFile = File.createTempFile("image", ".png");
         ImageIO.write(imageToSave, "PNG", tempFile);
         return tempFile;
+    }
+
+    public static CompletableFuture<File> toFileAsync(BufferedImage imageToSave) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return toFile(imageToSave);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }

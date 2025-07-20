@@ -13,7 +13,7 @@ import net.hypixel.nerdbot.generator.util.overlay.EnchantGlintOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.MappedOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.NormalOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.Overlay;
-import net.hypixel.nerdbot.util.JsonUtils;
+import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 
@@ -36,11 +36,11 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.FONTS_NOT_REGISTERED;
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.INVALID_HEAD_URL;
@@ -383,7 +383,7 @@ public class GeneratorBuilder {
 
         JsonObject userUUID;
         try {
-            userUUID = JsonUtils.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
+            userUUID = HttpUtils.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
         } catch (IOException | InterruptedException exception) {
             event.getHook().sendMessage(REQUEST_PLAYER_UUID_ERROR).queue();
             return null;
@@ -396,7 +396,7 @@ public class GeneratorBuilder {
 
         JsonObject userProfile;
         try {
-            userProfile = JsonUtils.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
+            userProfile = HttpUtils.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
         } catch (IOException | InterruptedException exception) {
             event.getHook().sendMessage(REQUEST_PLAYER_UUID_ERROR).queue();
             return null;
@@ -422,14 +422,14 @@ public class GeneratorBuilder {
     private CompletableFuture<String> getPlayerHeadURLAsync(GuildSlashEvent event, String playerName) {
         String cleanPlayerName = playerName.replaceAll("[^a-zA-Z0-9_]", "");
 
-        return Util.makeHttpRequestAsync(String.format("https://api.mojang.com/users/profiles/minecraft/%s", cleanPlayerName))
+        return HttpUtils.makeHttpRequestAsync(String.format("https://api.mojang.com/users/profiles/minecraft/%s", cleanPlayerName))
             .thenCompose(userUUID -> {
                 if (userUUID == null || userUUID.get("id") == null) {
                     event.getHook().sendMessage(String.format(PLAYER_NOT_FOUND, cleanPlayerName)).queue();
                     return CompletableFuture.completedFuture(null);
                 }
 
-                return Util.makeHttpRequestAsync(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
+                return HttpUtils.makeHttpRequestAsync(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
             })
             .thenApply(userProfile -> {
                 if (userProfile == null || userProfile.get("properties") == null) {

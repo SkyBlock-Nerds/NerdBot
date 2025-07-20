@@ -20,7 +20,6 @@ import net.dv8tion.jda.api.managers.channel.concrete.ForumChannelManager;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
@@ -30,8 +29,8 @@ import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
-import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.ArrayUtils;
+import net.hypixel.nerdbot.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -95,7 +94,7 @@ public class SuggestionListener {
 
                     switch (action) {
                         case "accept" -> {
-                            if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
+                            if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || DiscordUtils.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
                                 TranslationManager.send(event.getHook().setEphemeral(true), user, "curator.already_greenlit");
                                 return;
                             }

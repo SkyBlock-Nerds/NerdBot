@@ -175,7 +175,7 @@ public class NerdBot implements Bot {
             database.getMongoClient().close();
         }
 
-        JsonUtil.shutdown();
+        JsonUtils.shutdown();
 
         log.info("Bot shutdown complete!");
     }

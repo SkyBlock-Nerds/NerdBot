@@ -18,14 +18,15 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.generator.GeneratorBuilder;
 import net.hypixel.nerdbot.generator.ImageMerger;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.JsonUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.ArrayUtils;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.FileUtils;
+import net.hypixel.nerdbot.util.JsonUtils;
 import net.hypixel.nerdbot.util.skyblock.Flavor;
 import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
@@ -134,7 +135,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 if (generatedImage == null) {
                     return CompletableFuture.completedFuture(null);
                 }
-                return Util.toFileAsync(generatedImage);
+                return FileUtils.toFileAsync(generatedImage);
             })
             .thenAccept(file -> {
                 if (file != null) {
@@ -168,7 +169,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 if (generatedImage == null) {
                     return CompletableFuture.completedFuture(null);
                 }
-                return Util.toFileAsync(generatedImage);
+                return FileUtils.toFileAsync(generatedImage);
             })
             .thenAccept(file -> {
                 if (file != null) {
@@ -199,7 +200,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 if (item == null) {
                     return CompletableFuture.completedFuture(null);
                 }
-                return Util.toFileAsync(item);
+                return FileUtils.toFileAsync(item);
             })
             .thenAccept(file -> {
                 if (file != null) {
@@ -245,18 +246,18 @@ public class GeneratorCommands extends ApplicationCommand {
         renderBackground = Objects.requireNonNullElse(renderBackground, true);
 
         // Create futures for all async operations
-        CompletableFuture<BufferedImage> descriptionFuture = 
-            (itemName != null && rarity != null && itemLore != null) 
+        CompletableFuture<BufferedImage> descriptionFuture =
+            (itemName != null && rarity != null && itemLore != null)
                 ? builder.buildItemAsync(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false)
                 : CompletableFuture.completedFuture(null);
 
-        CompletableFuture<BufferedImage> itemFuture = 
-            (itemId != null) 
+        CompletableFuture<BufferedImage> itemFuture =
+            (itemId != null)
                 ? builder.buildUnspecifiedItemAsync(event, itemId, extraModifiers, true)
                 : CompletableFuture.completedFuture(null);
 
-        CompletableFuture<BufferedImage> recipeFuture = 
-            (recipe != null) 
+        CompletableFuture<BufferedImage> recipeFuture =
+            (recipe != null)
                 ? builder.buildRecipeAsync(event, recipe, renderBackground)
                 : CompletableFuture.completedFuture(null);
 
@@ -270,7 +271,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
                     ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, generatedRecipe);
                     merger.drawFinalImage();
-                    return Util.toFileAsync(merger.getImage());
+                    return FileUtils.toFileAsync(merger.getImage());
                 } catch (Exception e) {
                     return CompletableFuture.failedFuture(e);
                 }
@@ -307,7 +308,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 if (generatedRecipe == null) {
                     return CompletableFuture.completedFuture(null);
                 }
-                return Util.toFileAsync(generatedRecipe);
+                return FileUtils.toFileAsync(generatedRecipe);
             })
             .thenAccept(file -> {
                 if (file != null) {
@@ -362,7 +363,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         CommandData commandData = buildCommandAndText(itemName, itemLoreArray, shouldIncludeItem, itemData.itemID(), itemData.extraModifiers());
-        
+
         builder.buildItemAsync(event, "NONE", "NONE", commandData.itemText(), "NONE", false, 255, 0, commandData.maxLineLength(), true, false)
             .thenCompose(generatedDescription -> {
                 if (generatedDescription == null) {
@@ -379,7 +380,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
                             ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, null);
                             merger.drawFinalImage();
-                            return Util.toFileAsync(merger.getImage());
+                            return FileUtils.toFileAsync(merger.getImage());
                         })
                         .thenAccept(file -> {
                             if (file != null) {
@@ -389,7 +390,7 @@ public class GeneratorCommands extends ApplicationCommand {
                         })
                         .thenApply(unused -> null);
                 } else {
-                    return Util.toFileAsync(generatedDescription)
+                    return FileUtils.toFileAsync(generatedDescription)
                         .thenAccept(file -> {
                             if (file != null) {
                                 event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(false).queue();
@@ -416,24 +417,25 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    private record DisplayData(String itemName, JsonArray itemLoreArray, JsonObject displayJSON, JsonObject tagJSON) {}
+    private record DisplayData(String itemName, JsonArray itemLoreArray, JsonObject displayJSON, JsonObject tagJSON) {
+    }
 
     private DisplayData validateDisplayData(GuildSlashEvent event, JsonObject itemJSON) {
-        JsonObject tagJSON = JsonUtil.isJsonObject(itemJSON, "tag");
+        JsonObject tagJSON = JsonUtils.isJsonObject(itemJSON, "tag");
         if (tagJSON == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag")).queue();
             return null;
         }
 
-        JsonObject displayJSON = JsonUtil.isJsonObject(tagJSON, "display");
+        JsonObject displayJSON = JsonUtils.isJsonObject(tagJSON, "display");
         if (displayJSON == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("display")).queue();
             return null;
         }
 
-        String itemName = JsonUtil.isJsonString(displayJSON, "Name");
-        JsonArray itemLoreArray = JsonUtil.isJsonArray(displayJSON, "Lore");
-        
+        String itemName = JsonUtils.isJsonString(displayJSON, "Name");
+        JsonArray itemLoreArray = JsonUtils.isJsonArray(displayJSON, "Lore");
+
         if (itemName == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Name")).queue();
             return null;
@@ -447,10 +449,11 @@ public class GeneratorCommands extends ApplicationCommand {
         return new DisplayData(itemName, itemLoreArray, displayJSON, tagJSON);
     }
 
-    private record ItemData(String itemID, String extraModifiers) {}
+    private record ItemData(String itemID, String extraModifiers) {
+    }
 
     private ItemData processItemData(GuildSlashEvent event, JsonObject itemJSON, JsonObject tagJSON, JsonObject displayJSON) {
-        String itemID = JsonUtil.isJsonString(itemJSON, "id");
+        String itemID = JsonUtils.isJsonString(itemJSON, "id");
         if (itemID == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("id")).queue();
             return null;
@@ -471,19 +474,19 @@ public class GeneratorCommands extends ApplicationCommand {
     }
 
     private String processSkullData(GuildSlashEvent event, JsonObject tagJSON) {
-        JsonObject skullOwnerJSON = JsonUtil.isJsonObject(tagJSON, "SkullOwner");
+        JsonObject skullOwnerJSON = JsonUtils.isJsonObject(tagJSON, "SkullOwner");
         if (skullOwnerJSON == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("SkullOwner")).queue();
             return null;
         }
 
-        JsonObject propertiesJSON = JsonUtil.isJsonObject(skullOwnerJSON, "Properties");
+        JsonObject propertiesJSON = JsonUtils.isJsonObject(skullOwnerJSON, "Properties");
         if (propertiesJSON == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Properties")).queue();
             return null;
         }
 
-        JsonArray texturesJSON = JsonUtil.isJsonArray(propertiesJSON, "textures");
+        JsonArray texturesJSON = JsonUtils.isJsonArray(propertiesJSON, "textures");
         if (texturesJSON == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("textures")).queue();
             return null;
@@ -493,13 +496,13 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().sendMessage(MULTIPLE_ITEM_SKULL_DATA).queue();
             return null;
         }
-        
+
         if (!texturesJSON.get(0).isJsonObject()) {
             event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
             return null;
         }
 
-        String base64String = JsonUtil.isJsonString(texturesJSON.get(0).getAsJsonObject(), "Value");
+        String base64String = JsonUtils.isJsonString(texturesJSON.get(0).getAsJsonObject(), "Value");
         if (base64String == null) {
             event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
             return null;
@@ -515,8 +518,8 @@ public class GeneratorCommands extends ApplicationCommand {
 
     private String processNonSkullModifiers(JsonObject tagJSON, JsonObject displayJSON) {
         String extraModifiers = "";
-        
-        String color = JsonUtil.isJsonString(displayJSON, "color");
+
+        String color = JsonUtils.isJsonString(displayJSON, "color");
         if (color != null) {
             try {
                 Integer selectedColor = Integer.decode(color);
@@ -525,15 +528,16 @@ public class GeneratorCommands extends ApplicationCommand {
             }
         }
 
-        JsonArray enchantJson = JsonUtil.isJsonArray(tagJSON, "ench");
+        JsonArray enchantJson = JsonUtils.isJsonArray(tagJSON, "ench");
         if (enchantJson != null) {
             extraModifiers = extraModifiers.isEmpty() ? "enchant" : extraModifiers + ",enchant";
         }
-        
+
         return extraModifiers;
     }
 
-    private record CommandData(String itemGenCommand, String itemText, int maxLineLength) {}
+    private record CommandData(String itemGenCommand, String itemText, int maxLineLength) {
+    }
 
     private CommandData buildCommandAndText(String itemName, JsonArray itemLoreArray, boolean includeItem, String itemID, String extraModifiers) {
         StringBuilder itemGenCommand = new StringBuilder("/").append(COMMAND_PREFIX).append(includeItem ? " full" : " item");
@@ -554,7 +558,7 @@ public class GeneratorCommands extends ApplicationCommand {
         maxLineLength++;
         itemGenCommand.replace(itemGenCommand.length() - 2, itemGenCommand.length(), "").append(" max_line_length:").append(maxLineLength);
         itemText.replace(itemText.length() - 2, itemText.length(), "");
-        
+
         if (includeItem) {
             itemGenCommand.append(" item_id:").append(itemID).append(!extraModifiers.isEmpty() ? " extra_modifiers:" + extraModifiers : "");
         }
@@ -565,12 +569,12 @@ public class GeneratorCommands extends ApplicationCommand {
     private void logItemGenActivity(GuildSlashEvent event) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         long currentTime = System.currentTimeMillis();
-        
+
         discordUserRepository.findByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (discordUser != null) {
                     discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-                    log.info("Updating last item generator activity date for {} to {}", Util.getDisplayName(event.getUser()), currentTime);
+                    log.info("Updating last item generator activity date for {} to {}", DiscordUtils.getDisplayName(event.getUser()), currentTime);
                 }
             })
             .exceptionally(throwable -> {
@@ -832,7 +836,7 @@ public class GeneratorCommands extends ApplicationCommand {
             senderChannelId = threadChannel.getParentChannel().getId();
         }
 
-        if (Util.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
+        if (ArrayUtils.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
             ChannelCache.getChannelByName(itemGenChannelIds[0]).ifPresentOrElse(
                 channel -> event.reply("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue(),
                 () -> event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue()

@@ -62,7 +62,7 @@ public class URLWatcher {
                     .thenAccept(newContent -> {
                         if (newContent != null && !newContent.equals(lastContent)) {
                             log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
-                            handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseStringToMap(lastContent), JsonUtil.parseStringToMap(newContent), ""));
+                            handler.handleData(lastContent, newContent, JsonUtils.findChangedValues(JsonUtils.parseStringToMap(lastContent), JsonUtils.parseStringToMap(newContent), ""));
                             lastContent = newContent;
                         }
                     })
@@ -90,7 +90,7 @@ public class URLWatcher {
         fetchContentAsync()
             .thenAccept(newContent -> {
                 if (newContent != null && !newContent.equals(lastContent)) {
-                    handler.handleData(lastContent, newContent, JsonUtils.findChangedValues(JsonUtil.parseStringToMap(lastContent), JsonUtil.parseStringToMap(newContent), ""));
+                    handler.handleData(lastContent, newContent, JsonUtils.findChangedValues(JsonUtils.parseStringToMap(lastContent), JsonUtils.parseStringToMap(newContent), ""));
                     lastContent = newContent;
                     log.debug("Watched " + url + " once, found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
                 }

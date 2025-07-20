@@ -41,8 +41,6 @@ import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.exception.HttpException;
-import net.hypixel.nerdbot.util.exception.MojangProfileException;
-import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
@@ -549,7 +547,7 @@ public class ProfileCommands extends ApplicationCommand {
                     return CompletableFuture.completedFuture(errorProfile);
                 }
 
-                return Util.getHypixelPlayerAsync(mojangProfile.getUniqueId())
+                return HttpUtils.getHypixelPlayerAsync(mojangProfile.getUniqueId())
                     .thenApply(hypixelPlayerResponse -> {
                         if (!hypixelPlayerResponse.isSuccess()) {
                             MojangProfile errorProfile = new MojangProfile();

@@ -8,7 +8,6 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
@@ -16,7 +15,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -57,14 +55,11 @@ import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.FileUtils;
+import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.JsonUtils;
 import net.hypixel.nerdbot.util.LoggingUtils;
 import net.hypixel.nerdbot.util.TimeUtils;
-import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.Utils;
-import net.hypixel.nerdbot.util.exception.HttpException;
-import net.hypixel.nerdbot.util.exception.MojangProfileException;
-import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.logging.log4j.Level;
@@ -309,7 +304,7 @@ public class AdminCommands extends ApplicationCommand {
                     return CompletableFuture.failedFuture(exception);
                 }
 
-                return JsonUtils.writeJsonFileAsync(fileName, JsonUtil.setJsonValue(obj, key, element));
+                return JsonUtils.writeJsonFileAsync(fileName, JsonUtils.setJsonValue(obj, key, element));
             })
             .thenRun(() -> {
                 log.info(event.getUser().getName() + " edited the config file!");
@@ -582,7 +577,7 @@ public class AdminCommands extends ApplicationCommand {
                                 }
 
                                 String scuffedUsername = Utils.getScuffedMinecraftIGN(member).orElseThrow();
-                                return Utils.getMojangProfileAsync(scuffedUsername)
+                                return HttpUtils.getMojangProfileAsync(scuffedUsername)
                                     .thenAccept(mojangProfile -> {
                                         if (mojangProfile != null) {
                                             mojangProfiles.add(mojangProfile);
