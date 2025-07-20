@@ -282,7 +282,10 @@ public class ModMailService {
         if (modMailRoleId != null) {
             RoleManager.getRoleById(modMailRoleId).ifPresent(role -> {
                 thread.getGuild().getMembersWithRoles(role).forEach(member ->
-                    thread.addThreadMember(member).complete()
+                    thread.addThreadMember(member).queue(
+                        success -> log.info("Successfully added member {} to thread {}", member.getEffectiveName(), thread.getName()),
+                        error -> log.error("Failed to add member {} to thread {}", member.getEffectiveName(), thread.getName(), error)
+                    )
                 );
             });
         }
