@@ -20,7 +20,8 @@ import net.hypixel.nerdbot.bot.config.channel.ModMailConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.StringUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -227,7 +228,7 @@ public class ModMailService {
      * @return The generated thread name in the format "DisplayName (UserID)".
      */
     private String generateThreadName(User user) {
-        return TITLE_TEMPLATE.formatted(Util.getDisplayName(user), user.getId());
+        return TITLE_TEMPLATE.formatted(DiscordUtils.getDisplayName(user), user.getId());
     }
 
     /**
@@ -343,7 +344,7 @@ public class ModMailService {
      * @param attachments The list of {@link Message.Attachment} objects attached to the response message.
      */
     private void sendStaffResponseToUser(User requester, User staff, String content, List<Message.Attachment> attachments) {
-        String formattedContent = "**[Mod Mail] " + Util.getDisplayName(staff) + ":** " + content;
+        String formattedContent = "**[Mod Mail] " + DiscordUtils.getDisplayName(staff) + ":** " + content;
         List<FileUpload> files = buildFileUploads(attachments);
 
         requester.openPrivateChannel()
@@ -436,7 +437,7 @@ public class ModMailService {
         try (JDAWebhookClient client = JDAWebhookClient.from(webhook).onThread(thread.getIdLong())) {
             for (int i = 0; i < messageChunks.size(); i++) {
                 WebhookMessageBuilder webhookMessage = new WebhookMessageBuilder();
-                webhookMessage.setUsername(Util.getDisplayName(user));
+                webhookMessage.setUsername(DiscordUtils.getDisplayName(user));
                 webhookMessage.setAvatarUrl(user.getEffectiveAvatarUrl());
 
                 String content = messageChunks.get(i);
@@ -495,10 +496,10 @@ public class ModMailService {
         content = content.replaceAll("@(everyone|here|&\\d+)", "@\u200b$1");
 
         if (!webhook) {
-            content = String.format("**%s:**%s%s", Util.getDisplayName(user), "\n", content);
+            content = String.format("**%s:**%s%s", DiscordUtils.getDisplayName(user), "\n", content);
         }
 
-        return Util.splitString(content, MAX_CONTENT_CHUNK_SIZE);
+        return StringUtils.splitString(content, MAX_CONTENT_CHUNK_SIZE);
     }
 
     /**
@@ -569,7 +570,7 @@ public class ModMailService {
             return Optional.empty();
         }
 
-        return Util.getMainGuild()
+        return DiscordUtils.getMainGuild()
             .retrieveWebhooks()
             .complete()
             .stream()
