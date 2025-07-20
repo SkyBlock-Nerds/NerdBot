@@ -219,10 +219,10 @@ public class CSVData {
     public String toCSV() {
         StringBuilder csv = new StringBuilder();
 
-        csv.append(String.join(delimiter, headers)).append("\n" );
+        csv.append(String.join(delimiter, headers)).append("\n");
 
         for (List<String> row : content) {
-            csv.append(String.join(delimiter, row)).append("\n" );
+            csv.append(String.join(delimiter, row)).append("\n");
         }
 
         return csv.toString();

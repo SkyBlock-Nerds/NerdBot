@@ -26,8 +26,10 @@ import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.TimeUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.TimeUtils;
+import net.hypixel.nerdbot.util.FileUtils;
+import net.hypixel.nerdbot.util.StringUtils;
+import net.hypixel.nerdbot.util.Utils;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.jetbrains.annotations.NotNull;
 
@@ -57,7 +59,7 @@ public class InfoCommands extends ApplicationCommand {
             DiscordUser user = iterator.next();
 
             user.getMember().ifPresent(member -> {
-                if (member.getUser().isBot() || Arrays.stream(Util.SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
+                if (member.getUser().isBot() || Arrays.stream(Utils.SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
                     iterator.remove();
                     log.debug("Removed " + user.getDiscordId() + " from the list of users because they are a bot or have a special role");
                 }
@@ -112,11 +114,11 @@ public class InfoCommands extends ApplicationCommand {
             - Memory: %s / %s
             """.formatted(
                 bot.getName(), bot.getId(),
-                Util.getBranchName(),
-                Util.getDockerContainerId(),
+                FileUtils.getBranchName(),
+                FileUtils.getDockerContainerId(),
                 Environment.getEnvironment(),
-                TimeUtil.formatMsCompact(NerdBotApp.getBot().getUptime()),
-                Util.formatSize(usedMemory), Util.formatSize(totalMemory)
+                TimeUtils.formatMsCompact(NerdBotApp.getBot().getUptime()),
+                StringUtils.formatSize(usedMemory), StringUtils.formatSize(totalMemory)
             );
 
         event.reply(botInfo).setEphemeral(true).queue();
@@ -187,7 +189,7 @@ public class InfoCommands extends ApplicationCommand {
         AtomicInteger grapes = new AtomicInteger();
         AtomicInteger nerds = new AtomicInteger();
 
-        for (String roleName : Util.SPECIAL_ROLES) {
+        for (String roleName : Utils.SPECIAL_ROLES) {
             RoleManager.getRole(roleName).ifPresentOrElse(role -> staff.addAndGet(guild.getMembersWithRoles(role).size()),
                 () -> log.warn("Role {} not found", roleName)
             );
@@ -265,7 +267,7 @@ public class InfoCommands extends ApplicationCommand {
 
         getPage(users, page, 10).forEach(discordUser -> {
             discordUser.getMember().ifPresentOrElse(member -> {
-                stringBuilder.append(" • ").append(member.getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount())).append(")").append("\n");
+                stringBuilder.append(" • ").append(member.getAsMention()).append(" (").append(StringUtils.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount())).append(")").append("\n");
             }, () -> log.error("Couldn't find member " + discordUser.getDiscordId()));
         });
 

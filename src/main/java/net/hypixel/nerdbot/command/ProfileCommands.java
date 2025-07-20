@@ -38,7 +38,8 @@ import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.MojangProfileException;
 import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
@@ -78,7 +79,7 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findOrCreateByIdAsync(event.getMember().getId())
             .thenCompose(discordUser -> {
                 if (VERIFY_CACHE.getIfPresent(event.getMember().getId()) != null) {
@@ -91,7 +92,7 @@ public class ProfileCommands extends ApplicationCommand {
                         if (mojangProfile == null) {
                             return;
                         }
-                        
+
                         if (mojangProfile.getErrorMessage() != null) {
                             event.getHook().editOriginal(mojangProfile.getErrorMessage()).queue();
                             return;
@@ -164,7 +165,7 @@ public class ProfileCommands extends ApplicationCommand {
             return;
         }
 
-        Util.getMainGuild().retrieveMemberById(event.getUser().getId())
+        DiscordUtils.getMainGuild().retrieveMemberById(event.getUser().getId())
             .submit()
             .thenCompose(member -> {
                 if (member == null) {
@@ -174,18 +175,18 @@ public class ProfileCommands extends ApplicationCommand {
 
                 DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
                 return discordUserRepository.findOrCreateByIdAsync(event.getUser().getId())
-                    .thenCompose(discordUser -> 
+                    .thenCompose(discordUser ->
                         requestMojangProfileAsync(member, username, true)
                             .thenAccept(mojangProfile -> {
                                 if (mojangProfile == null) {
                                     return;
                                 }
-                                
+
                                 if (mojangProfile.getErrorMessage() != null) {
                                     event.getHook().editOriginal(mojangProfile.getErrorMessage()).queue();
                                     return;
                                 }
-                                
+
                                 updateMojangProfile(member, mojangProfile);
 
                                 TranslationManager.edit(event.getHook(), discordUser, "commands.verify.profile_updated", mojangProfile.getUsername(), mojangProfile.getUniqueId());
@@ -252,14 +253,14 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
                     TranslationManager.edit(event.getHook(), "generic.user_not_found");
                     return;
                 }
-                
+
                 String profile = discordUser.isProfileAssigned() ?
                     discordUser.getMojangProfile().getUsername() + " (" + discordUser.getMojangProfile().getUniqueId().toString() + ")" :
                     "*Missing Data*";
@@ -299,14 +300,14 @@ public class ProfileCommands extends ApplicationCommand {
         event.deferReply(showPublicly).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
                     TranslationManager.edit(event.getHook(), "generic.user_not_found");
                     return;
                 }
-                
+
                 event.getHook().editOriginalEmbeds(createBadgesEmbed(event.getMember(), discordUser, true)).queue();
             })
             .exceptionally(throwable -> {
@@ -336,7 +337,7 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findOrCreateByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 final int pageNum = Math.max(page == null ? 1 : page, 1);
@@ -378,14 +379,14 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
                     TranslationManager.edit(event.getHook(), "generic.user_not_found");
                     return;
                 }
-                
+
                 if (discordUser.getBirthdayData().getTimer() != null) {
                     discordUser.getBirthdayData().getTimer().cancel();
                 }
@@ -418,14 +419,14 @@ public class ProfileCommands extends ApplicationCommand {
 
         Member member = event.getMember();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findByIdAsync(member.getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
                     TranslationManager.edit(event.getHook(), "generic.user_not_found");
                     return;
                 }
-                
+
                 try {
                     BirthdayData birthdayData = discordUser.getBirthdayData();
 
@@ -463,7 +464,7 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         repository.findByIdAsync(event.getMember().getId())
             .thenAccept(user -> {
                 if (user == null) {
@@ -536,12 +537,12 @@ public class ProfileCommands extends ApplicationCommand {
     }
 
     public static CompletableFuture<MojangProfile> requestMojangProfileAsync(Member member, String username, boolean enforceSocial) {
-        return Util.getMojangProfileAsync(username)
+        return HttpUtils.getMojangProfileAsync(username)
             .thenCompose(mojangProfile -> {
                 if (mojangProfile == null) {
                     return CompletableFuture.completedFuture(null);
                 }
-                
+
                 if (mojangProfile.getErrorMessage() != null) {
                     MojangProfile errorProfile = new MojangProfile();
                     errorProfile.setErrorMessage(mojangProfile.getErrorMessage());

@@ -16,7 +16,7 @@ import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +30,7 @@ public class RoleCommands extends ApplicationCommand {
         event.deferReply().setEphemeral(true).complete();
 
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         repository.findOrCreateByIdAsync(event.getUser().getId())
             .thenAccept(user -> {
                 RoleManager.getPingableRoleByName(role).ifPresentOrElse(pingableRole -> {
@@ -69,14 +69,14 @@ public class RoleCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         repository.findByIdAsync(event.getMember().getId())
             .thenAccept(user -> {
                 if (user == null) {
                     TranslationManager.edit(event.getHook(), "generic.user_not_found");
                     return;
                 }
-                
+
                 String roles = Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
                     .map(PingableRole::name)
                     .collect(Collectors.joining("\n"));
@@ -101,7 +101,7 @@ public class RoleCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         repository.findByIdAsync(event.getMember().getId())
             .thenAccept(user -> {
                 if (user == null) {
@@ -118,10 +118,10 @@ public class RoleCommands extends ApplicationCommand {
                     TranslationManager.edit(event.getHook(), user, "commands.role.eligible_promotion");
                 } else {
                     TranslationManager.edit(event.getHook(), user, "commands.role.not_eligible_promotion",
-                        Util.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
-                        Util.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion()),
-                        Util.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
-                        Util.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion())
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion()),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion())
                     );
                 }
             })

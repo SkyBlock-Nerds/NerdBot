@@ -19,7 +19,9 @@ import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.bot.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.FileUtils;
+import net.hypixel.nerdbot.util.StringUtils;
 import net.hypixel.nerdbot.util.csv.CSVData;
 
 import java.io.File;
@@ -43,7 +45,7 @@ public class ChannelCommands extends ApplicationCommand {
 
         AtomicInteger total = new AtomicInteger(0);
         channel.getIterableHistory().forEachAsync(message -> {
-            String formattedTimestamp = message.getTimeCreated().format(Util.REGULAR_DATE_FORMAT);
+            String formattedTimestamp = message.getTimeCreated().format(FileUtils.REGULAR_DATE_FORMAT);
             String messageContent = message.getContentRaw().replace("\"", "\"\"");
 
             if (!message.getAttachments().isEmpty()) {
@@ -83,13 +85,13 @@ public class ChannelCommands extends ApplicationCommand {
             }
 
             if (total.incrementAndGet() % (total.get() < 1000 ? 100 : (int) Math.pow(10, String.valueOf(total.get()).length() - 1)) == 0) {
-                log.info("Archiving channel " + channel.getName() + " (ID: " + channel.getId() + ") - processed " + Util.COMMA_SEPARATED_FORMAT.format(total.get()) + " message" + (total.get() == 1 ? "" : "s") + " so far!");
+                log.info("Archiving channel " + channel.getName() + " (ID: " + channel.getId() + ") - processed " + StringUtils.COMMA_SEPARATED_FORMAT.format(total.get()) + " message" + (total.get() == 1 ? "" : "s") + " so far!");
             }
 
             return true;
         }).thenAccept(unused -> {
             try {
-                File file = Util.createTempFile(String.format("archive-%s-%s-%s.csv", channel.getName(), channel.getId(), Util.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
+                File file = FileUtils.createTempFile(String.format("archive-%s-%s-%s.csv", channel.getName(), channel.getId(), FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
                 log.info("Finished archiving channel " + channel.getName() + " (ID: " + channel.getId() + ")! File located at: " + file.getAbsolutePath());
 
                 if (!event.getHook().isExpired()) {
@@ -112,7 +114,7 @@ public class ChannelCommands extends ApplicationCommand {
         TranslationManager.edit(hook, "commands.lock.start");
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
@@ -130,7 +132,7 @@ public class ChannelCommands extends ApplicationCommand {
                 boolean isSuggestion = threadChannel.getParentChannel().getId().equalsIgnoreCase(suggestionConfig.getForumChannelId());
 
                 if (isSuggestion) {
-                    if (!Util.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) {
+                    if (!DiscordUtils.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) {
                         TranslationManager.edit(hook, discordUser, "commands.lock.no_tag", suggestionConfig.getReviewedTag());
                         return;
                     }
@@ -158,13 +160,13 @@ public class ChannelCommands extends ApplicationCommand {
     private void handleTagAndLock(GuildSlashEvent event, DiscordUser discordUser, ThreadChannel threadChannel, ForumChannel forumChannel, String tagName) {
         InteractionHook hook = event.getHook();
 
-        if (!Util.hasTagByName(forumChannel, tagName)) {
+        if (!DiscordUtils.hasTagByName(forumChannel, tagName)) {
             TranslationManager.edit(hook, discordUser, "commands.lock.no_tag", tagName);
             return;
         }
 
         ThreadChannelManager threadManager = threadChannel.getManager();
-        ForumTag tag = Util.getTagByName(forumChannel, tagName);
+        ForumTag tag = DiscordUtils.getTagByName(forumChannel, tagName);
 
         if (!threadChannel.getAppliedTags().contains(tag)) {
             List<ForumTag> appliedTags = new ArrayList<>(threadChannel.getAppliedTags());

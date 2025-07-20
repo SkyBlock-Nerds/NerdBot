@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.util.gson.adapter;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.UUIDUtils;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -22,6 +22,6 @@ public class UUIDTypeAdapter extends TypeAdapter<UUID> {
 
     @Override
     public UUID read(JsonReader jsonReader) throws IOException {
-        return Util.toUUID(jsonReader.nextString());
+        return UUIDUtils.toUUID(jsonReader.nextString());
     }
 }

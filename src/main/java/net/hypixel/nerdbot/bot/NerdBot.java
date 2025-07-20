@@ -43,7 +43,7 @@ import net.hypixel.nerdbot.listener.ActivityListener;
 import net.hypixel.nerdbot.listener.FunListener;
 import net.hypixel.nerdbot.listener.MetricsListener;
 import net.hypixel.nerdbot.listener.ModLogListener;
-import net.hypixel.nerdbot.listener.ModMailListener;
+import net.hypixel.nerdbot.modmail.ModMailListener;
 import net.hypixel.nerdbot.listener.PinListener;
 import net.hypixel.nerdbot.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;
@@ -55,8 +55,8 @@ import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
 import net.hypixel.nerdbot.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
-import net.hypixel.nerdbot.util.JsonUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.JsonUtils;
+import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
 import net.hypixel.nerdbot.util.discord.resolver.SuggestionTypeResolver;
 import net.hypixel.nerdbot.util.discord.resolver.UserLanguageResolver;
@@ -119,7 +119,7 @@ public class NerdBot implements Bot {
         loadRemindersFromDatabase();
         startUrlWatchers();
 
-        Util.getMainGuild().loadMembers()
+        DiscordUtils.getMainGuild().loadMembers()
             .onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size()))
             .onError(throwable -> log.error("Failed to load members!", throwable));
 
@@ -157,7 +157,7 @@ public class NerdBot implements Bot {
                     .thenAccept(result -> {
                         if (result != null && result.wasAcknowledged()) {
                             int total = result.getInsertedCount() + result.getModifiedCount();
-                            log.info("Saved {} documents to database for repository {} ({} inserted, {} modified, {} deleted)", 
+                            log.info("Saved {} documents to database for repository {} ({} inserted, {} modified, {} deleted)",
                                 total, repository.getClass().getSimpleName(), result.getInsertedCount(), result.getModifiedCount(), result.getDeletedCount());
                         } else {
                             log.info("Saved 0 documents to database for repository {}", repository.getClass().getSimpleName());
@@ -356,7 +356,7 @@ public class NerdBot implements Bot {
 
         log.info("Loading config file from '{}'", fileName);
         File file = new File(fileName);
-        JsonUtil.jsonToObjectAsync(file, BotConfig.class)
+        JsonUtils.jsonToObjectAsync(file, BotConfig.class)
             .thenAccept(loadedConfig -> {
                 config = (BotConfig) loadedConfig;
                 log.info("Loaded config from {}", file.getAbsolutePath());

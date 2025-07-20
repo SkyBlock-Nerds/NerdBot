@@ -6,9 +6,9 @@ import org.reflections.scanners.SubTypesScanner;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ClassUtil {
+public class ClassUtils {
 
-    private ClassUtil() {
+    private ClassUtils() {
     }
 
     public static Set<Class<?>> findClasses(String packageName, Class<?> clazz) {

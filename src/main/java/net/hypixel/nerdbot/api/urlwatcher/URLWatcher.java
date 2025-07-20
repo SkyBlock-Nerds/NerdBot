@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.api.urlwatcher;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
-import net.hypixel.nerdbot.util.JsonUtil;
+import net.hypixel.nerdbot.util.JsonUtils;
 import net.hypixel.nerdbot.util.Tuple;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -78,7 +78,7 @@ public class URLWatcher {
     }
 
     public void simulateDataChange(String oldData, String newData, DataHandler handler) {
-        List<Tuple<String, Object, Object>> changedValues = JsonUtil.findChangedValues(JsonUtil.parseStringToMap(oldData), JsonUtil.parseStringToMap(newData), "");
+        List<Tuple<String, Object, Object>> changedValues = JsonUtils.findChangedValues(JsonUtils.parseStringToMap(oldData), JsonUtils.parseStringToMap(newData), "");
         handler.handleData(oldData, newData, changedValues);
         lastContent = newData;
         log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newData);
@@ -86,11 +86,11 @@ public class URLWatcher {
 
     public void watchOnce(DataHandler handler) {
         active = true;
-        
+
         fetchContentAsync()
             .thenAccept(newContent -> {
                 if (newContent != null && !newContent.equals(lastContent)) {
-                    handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseStringToMap(lastContent), JsonUtil.parseStringToMap(newContent), ""));
+                    handler.handleData(lastContent, newContent, JsonUtils.findChangedValues(JsonUtil.parseStringToMap(lastContent), JsonUtil.parseStringToMap(newContent), ""));
                     lastContent = newContent;
                     log.debug("Watched " + url + " once, found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
                 }

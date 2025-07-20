@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
-import net.hypixel.nerdbot.util.JsonUtil;
+import net.hypixel.nerdbot.util.JsonUtils;
 import net.hypixel.nerdbot.util.exception.TranslationException;
 import org.jetbrains.annotations.Nullable;
 
@@ -89,9 +89,9 @@ public class TranslationManager {
                 String[] split = k.split("\\[");
                 String property = split[0];
                 String indexStr = split[1].replace("]", "");
-                element = JsonUtil.getIndexedElement(element, property, indexStr);
+                element = JsonUtils.getIndexedElement(element, property, indexStr);
             } else {
-                element = JsonUtil.getNextElement(element, k);
+                element = JsonUtils.getNextElement(element, k);
             }
 
             if (element == null) {

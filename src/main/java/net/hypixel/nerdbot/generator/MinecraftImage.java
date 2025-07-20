@@ -8,8 +8,8 @@ import net.dv8tion.jda.api.entities.channel.Channel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.generator.util.ColoredString;
-import net.hypixel.nerdbot.util.FontUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.FontUtils;
+import net.hypixel.nerdbot.util.TimeUtils;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static net.hypixel.nerdbot.util.Util.initFont;
-
 @Log4j2
 public class MinecraftImage {
 
@@ -33,18 +31,18 @@ public class MinecraftImage {
     private static final int Y_INCREMENT = PIXEL_SIZE * 10;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
-    private static final Font FALLBACK_FONT = initFont("/minecraft/assets/fonts/unifont-15.1.05.otf", 15.5f);
+    private static final Font FALLBACK_FONT = FontUtils.initFont("/minecraft/assets/fonts/unifont-15.1.05.otf", 15.5f);
     private static final Font[] COMIC_SANS = new Font[]{
-        initFont("/minecraft/assets/fonts/COMICSANS.TTF", 20.0f),
-        initFont("/minecraft/assets/fonts/COMICSANSBOLD.TTF", 20.0f),
-        initFont("/minecraft/assets/fonts/COMICSANSITALIC.TTF", 20.0f),
-        initFont("/minecraft/assets/fonts/COMICSANSBOLDITALIC.TTF", 20.0f)
+        FontUtils.initFont("/minecraft/assets/fonts/COMICSANS.TTF", 20.0f),
+        FontUtils.initFont("/minecraft/assets/fonts/COMICSANSBOLD.TTF", 20.0f),
+        FontUtils.initFont("/minecraft/assets/fonts/COMICSANSITALIC.TTF", 20.0f),
+        FontUtils.initFont("/minecraft/assets/fonts/COMICSANSBOLDITALIC.TTF", 20.0f)
     };
     private static final Font[] MINECRAFT_FONTS = new Font[]{
-        initFont("/minecraft/assets/fonts/minecraft.otf", 15.5f),
-        initFont("/minecraft/assets/fonts/3_Minecraft-Bold.otf", 20.0f),
-        initFont("/minecraft/assets/fonts/2_Minecraft-Italic.otf", 20.5f),
-        initFont("/minecraft/assets/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
+        FontUtils.initFont("/minecraft/assets/fonts/minecraft.otf", 15.5f),
+        FontUtils.initFont("/minecraft/assets/fonts/3_Minecraft-Bold.otf", 20.0f),
+        FontUtils.initFont("/minecraft/assets/fonts/2_Minecraft-Italic.otf", 20.5f),
+        FontUtils.initFont("/minecraft/assets/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
     };
 
     private static boolean fontsRegisteredCorrectly = true;
@@ -285,14 +283,14 @@ public class MinecraftImage {
 
         // Loop through each character and draw it individually
         for (char c : value.toCharArray()) {
-            if (Util.isAprilFirst() && Arrays.stream(channelConfig.getFilteredAprilFoolsGenChannelIds()).anyMatch(s -> channel.getId().equalsIgnoreCase(s))) {
-                if (FontUtil.canRenderCharacter(COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c)) {
+            if (TimeUtils.isAprilFirst() && Arrays.stream(channelConfig.getFilteredAprilFoolsGenChannelIds()).anyMatch(s -> channel.getId().equalsIgnoreCase(s))) {
+                if (FontUtils.canRenderCharacter(COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c)) {
                     this.currentFont = COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
                 } else {
                     this.currentFont = FALLBACK_FONT;
                 }
             } else {
-                if (!FontUtil.canRenderCharacter(MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c)) {
+                if (!FontUtils.canRenderCharacter(MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c)) {
                     this.currentFont = FALLBACK_FONT;
                 } else {
                     this.currentFont = MINECRAFT_FONTS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];

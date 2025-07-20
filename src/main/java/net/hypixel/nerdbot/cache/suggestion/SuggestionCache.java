@@ -8,7 +8,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.ArrayUtils;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -52,14 +52,14 @@ public class SuggestionCache extends TimerTask {
             suggestionChannel.ifPresent(forumChannel -> this.loadSuggestions(forumChannel, Suggestion.ChannelType.NORMAL));
 
             // Alpha Suggestions
-            Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds())
+            ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds())
                 .map(ChannelCache::getForumChannelById)
                 .flatMap(Optional::stream)
                 .filter(Objects::nonNull)
                 .forEach(forumChannel -> this.loadSuggestions(forumChannel, Suggestion.ChannelType.ALPHA));
 
             // Project Suggestions
-            Util.safeArrayStream(alphaProjectConfig.getProjectForumIds())
+            ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds())
                 .map(ChannelCache::getForumChannelById)
                 .flatMap(Optional::stream)
                 .filter(Objects::nonNull)

@@ -9,7 +9,7 @@ import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.repository.Repository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +28,7 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
 
     @Override
     public CompletableFuture<Void> loadAllDocumentsIntoCacheAsync() {
-        return super.loadAllDocumentsIntoCacheAsync().thenCompose(unused -> 
+        return super.loadAllDocumentsIntoCacheAsync().thenCompose(unused ->
             CompletableFuture.runAsync(() -> {
                 getAll().forEach(discordUser -> {
                     if (discordUser.getLastActivity() == null) {
@@ -57,10 +57,10 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
     }
 
     public Member getMemberById(String id) {
-        return Util.getMainGuild().getMemberById(id);
+        return DiscordUtils.getMainGuild().getMemberById(id);
     }
 
     public User getUserById(String id) {
-        return Util.getMainGuild().getJDA().getUserById(id);
+        return DiscordUtils.getMainGuild().getJDA().getUserById(id);
     }
 }

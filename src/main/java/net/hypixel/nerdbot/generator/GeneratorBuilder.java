@@ -13,7 +13,7 @@ import net.hypixel.nerdbot.generator.util.overlay.EnchantGlintOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.MappedOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.NormalOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.Overlay;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.JsonUtils;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 
@@ -383,7 +383,7 @@ public class GeneratorBuilder {
 
         JsonObject userUUID;
         try {
-            userUUID = Util.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
+            userUUID = JsonUtils.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
         } catch (IOException | InterruptedException exception) {
             event.getHook().sendMessage(REQUEST_PLAYER_UUID_ERROR).queue();
             return null;
@@ -396,7 +396,7 @@ public class GeneratorBuilder {
 
         JsonObject userProfile;
         try {
-            userProfile = Util.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
+            userProfile = JsonUtils.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
         } catch (IOException | InterruptedException exception) {
             event.getHook().sendMessage(REQUEST_PLAYER_UUID_ERROR).queue();
             return null;
