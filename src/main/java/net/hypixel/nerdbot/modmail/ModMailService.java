@@ -45,9 +45,13 @@ public class ModMailService {
 
     public static ModMailService getInstance() {
         if (instance == null) {
-            ModMailConfig config = NerdBotApp.getBot().getConfig().getModMailConfig();
-            DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-            instance = new ModMailService(config, userRepository);
+            synchronized (ModMailService.class) {
+                if (instance == null) {
+                    ModMailConfig config = NerdBotApp.getBot().getConfig().getModMailConfig();
+                    DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+                    instance = new ModMailService(config, userRepository);
+                }
+            }
         }
         return instance;
     }
