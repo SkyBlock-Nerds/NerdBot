@@ -9,7 +9,8 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.HttpUtils;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -19,9 +20,9 @@ import java.util.TimerTask;
 public class ProfileUpdateFeature extends BotFeature {
 
     public static void updateNickname(DiscordUser discordUser) {
-        MojangProfile mojangProfile = Util.getMojangProfile(discordUser.getMojangProfile().getUniqueId());
+        MojangProfile mojangProfile = HttpUtils.getMojangProfile(discordUser.getMojangProfile().getUniqueId());
         discordUser.setMojangProfile(mojangProfile);
-        Guild guild = Util.getMainGuild();
+        Guild guild = DiscordUtils.getMainGuild();
         Member member = guild.retrieveMemberById(discordUser.getDiscordId()).complete();
 
         if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {

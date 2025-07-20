@@ -16,7 +16,10 @@ import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.StringUtils;
+import net.hypixel.nerdbot.util.TimeUtils;
+import net.hypixel.nerdbot.util.Utils;
 
 import java.awt.Color;
 import java.time.Duration;
@@ -37,12 +40,12 @@ public class UserNominationFeature extends BotFeature {
         this.timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                if (Util.isDayOfMonth(1) && NerdBotApp.getBot().getConfig().isNominationsEnabled()) {
+                if (TimeUtils.isDayOfMonth(1) && NerdBotApp.getBot().getConfig().isNominationsEnabled()) {
                     log.info("Running nomination check");
                     nominateUsers();
                 }
 
-                if (Util.isDayOfMonth(15) && NerdBotApp.getBot().getConfig().isInactivityCheckEnabled()) {
+                if (TimeUtils.isDayOfMonth(15) && NerdBotApp.getBot().getConfig().isInactivityCheckEnabled()) {
                     log.info("Running inactivity check");
                     findInactiveUsers();
                     findInactiveUsersInRoleRestrictedChannels();
@@ -57,7 +60,7 @@ public class UserNominationFeature extends BotFeature {
     }
 
     public static void nominateUsers() {
-        Guild guild = Util.getMainGuild();
+        Guild guild = DiscordUtils.getMainGuild();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         int requiredVotes = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
         int requiredComments = NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion();
@@ -112,7 +115,7 @@ public class UserNominationFeature extends BotFeature {
     }
 
     public static void findInactiveUsers() {
-        Guild guild = Util.getMainGuild();
+        Guild guild = DiscordUtils.getMainGuild();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         int requiredVotes = NerdBotApp.getBot().getConfig().getRoleConfig().getVotesRequiredForInactivityCheck();
         int requiredComments = NerdBotApp.getBot().getConfig().getRoleConfig().getCommentsRequiredForInactivityCheck();
@@ -135,7 +138,7 @@ public class UserNominationFeature extends BotFeature {
                 return;
             }
 
-            if (Arrays.stream(Util.SPECIAL_ROLES).anyMatch(role -> highestRole.getName().equalsIgnoreCase(role))) {
+            if (Arrays.stream(Utils.SPECIAL_ROLES).anyMatch(role -> highestRole.getName().equalsIgnoreCase(role))) {
                 log.info("Skipping inactivity check for " + member.getEffectiveName() + " as they have a special role: " + highestRole.getName());
                 return;
             }
@@ -194,23 +197,23 @@ public class UserNominationFeature extends BotFeature {
                     false)
                 .addField("💬 Messages",
                     String.format("📈 **%s** tracked",
-                        Util.COMMA_SEPARATED_FORMAT.format(totalMessages)),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalMessages)),
                     true)
                 .addField("🗳️ Votes",
                     String.format("%s **%s** / %s required",
                         votesStatus,
-                        Util.COMMA_SEPARATED_FORMAT.format(totalVotes),
-                        Util.COMMA_SEPARATED_FORMAT.format(requiredVotes)),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalVotes),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(requiredVotes)),
                     true)
                 .addField("💭 Comments",
                     String.format("%s **%s** / %s required",
                         commentsStatus,
-                        Util.COMMA_SEPARATED_FORMAT.format(totalComments),
-                        Util.COMMA_SEPARATED_FORMAT.format(requiredComments)),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalComments),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(requiredComments)),
                     true)
                 .addField("📈 Nomination History",
                     String.format("**Total Nominations:** %s\n**Last Nomination:** %s",
-                        Util.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalNominations()),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalNominations()),
                         lastActivity.getNominationInfo().getLastNominationDateString()),
                     false)
                 .setTimestamp(java.time.Instant.now());
@@ -254,24 +257,24 @@ public class UserNominationFeature extends BotFeature {
                 .addField("💬 Messages",
                     String.format("%s **%s** / %s required",
                         messagesStatus,
-                        Util.COMMA_SEPARATED_FORMAT.format(totalMessages),
-                        Util.COMMA_SEPARATED_FORMAT.format(requiredMessages)),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalMessages),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(requiredMessages)),
                     true)
                 .addField("🗳️ Votes",
                     String.format("%s **%s** / %s required",
                         votesStatus,
-                        Util.COMMA_SEPARATED_FORMAT.format(totalVotes),
-                        Util.COMMA_SEPARATED_FORMAT.format(requiredVotes)),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalVotes),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(requiredVotes)),
                     true)
                 .addField("💭 Comments",
                     String.format("%s **%s** / %s required",
                         commentsStatus,
-                        Util.COMMA_SEPARATED_FORMAT.format(totalComments),
-                        Util.COMMA_SEPARATED_FORMAT.format(requiredComments)),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalComments),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(requiredComments)),
                     true)
                 .addField("📈 Warning History",
                     String.format("**Total Warnings:** %s\n**Last Warning:** %s",
-                        Util.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalInactivityWarnings()),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalInactivityWarnings()),
                         lastActivity.getNominationInfo().getLastInactivityWarningDateString()),
                     false)
                 .setTimestamp(Instant.now());
@@ -292,7 +295,7 @@ public class UserNominationFeature extends BotFeature {
      * Check for inactive users in role-restricted channels
      */
     public static void findInactiveUsersInRoleRestrictedChannels() {
-        Guild guild = Util.getMainGuild();
+        Guild guild = DiscordUtils.getMainGuild();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         List<RoleRestrictedChannelGroup> channelGroups = NerdBotApp.getBot().getConfig().getChannelConfig().getRoleRestrictedChannelGroups();
 
@@ -328,7 +331,7 @@ public class UserNominationFeature extends BotFeature {
                 }
 
                 Role highestRole = RoleManager.getHighestRole(member);
-                if (highestRole != null && Arrays.stream(Util.SPECIAL_ROLES).anyMatch(role -> highestRole.getName().equalsIgnoreCase(role))) {
+                if (highestRole != null && Arrays.stream(Utils.SPECIAL_ROLES).anyMatch(role -> highestRole.getName().equalsIgnoreCase(role))) {
                     log.debug("Skipping role-restricted inactivity check for {} in group '{}' as they have a special role: {}",
                         member.getEffectiveName(), group.getIdentifier(), highestRole.getName());
                     return;
@@ -416,24 +419,24 @@ public class UserNominationFeature extends BotFeature {
                 .addField("💬 Messages",
                     String.format("%s **%s** / %s required",
                         messagesStatus,
-                        Util.COMMA_SEPARATED_FORMAT.format(totalMessages),
-                        Util.COMMA_SEPARATED_FORMAT.format(group.getMinimumMessagesForActivity())),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalMessages),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(group.getMinimumMessagesForActivity())),
                     true)
                 .addField("🗳️ Votes",
                     String.format("%s **%s** / %s required",
                         votesStatus,
-                        Util.COMMA_SEPARATED_FORMAT.format(totalVotes),
-                        Util.COMMA_SEPARATED_FORMAT.format(group.getMinimumVotesForActivity())),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalVotes),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(group.getMinimumVotesForActivity())),
                     true)
                 .addField("💭 Comments",
                     String.format("%s **%s** / %s required",
                         commentsStatus,
-                        Util.COMMA_SEPARATED_FORMAT.format(totalComments),
-                        Util.COMMA_SEPARATED_FORMAT.format(group.getMinimumCommentsForActivity())),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalComments),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(group.getMinimumCommentsForActivity())),
                     true)
                 .addField("📈 Role-Restricted Warning History",
                     String.format("**Total Warnings:** %s\n**Last Warning:** %s",
-                        Util.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalRoleRestrictedInactivityWarnings()),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalRoleRestrictedInactivityWarnings()),
                         lastActivity.getNominationInfo().getLastRoleRestrictedInactivityWarningDateString()),
                     false);
 

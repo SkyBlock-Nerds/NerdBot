@@ -56,8 +56,8 @@ import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
 import net.hypixel.nerdbot.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
-import net.hypixel.nerdbot.util.JsonUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.JsonUtils;
+import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
 import net.hypixel.nerdbot.util.discord.resolver.SuggestionTypeResolver;
 import net.hypixel.nerdbot.util.discord.resolver.UserLanguageResolver;
@@ -116,7 +116,7 @@ public class NerdBot implements Bot {
         loadRemindersFromDatabase();
         startUrlWatchers();
 
-        Util.getMainGuild().loadMembers()
+        DiscordUtils.getMainGuild().loadMembers()
             .onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size()))
             .onError(throwable -> log.error("Failed to load members!", throwable));
 
@@ -340,7 +340,7 @@ public class NerdBot implements Bot {
         try {
             log.info("Loading config file from '" + fileName + "'");
             File file = new File(fileName);
-            config = (BotConfig) JsonUtil.jsonToObject(file, BotConfig.class);
+            config = (BotConfig) JsonUtils.jsonToObject(file, BotConfig.class);
 
             log.info("Loaded config from " + file.getAbsolutePath());
         } catch (FileNotFoundException exception) {

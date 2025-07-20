@@ -71,5 +71,4 @@ public class ModMailCommands extends ApplicationCommand {
             }
         }, () -> TranslationManager.edit(event.getHook(), commandSender, "commands.mod_mail.channel_not_found"));
     }
-
 }

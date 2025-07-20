@@ -24,8 +24,10 @@ import net.hypixel.nerdbot.generator.GeneratorBuilder;
 import net.hypixel.nerdbot.generator.ImageMerger;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.JsonUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.FileUtils;
+import net.hypixel.nerdbot.util.JsonUtils;
+import net.hypixel.nerdbot.util.ArrayUtils;
 import net.hypixel.nerdbot.util.skyblock.Flavor;
 import net.hypixel.nerdbot.util.skyblock.Icon;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
@@ -130,7 +132,7 @@ public class GeneratorCommands extends ApplicationCommand {
         // building the item's description
         BufferedImage generatedImage = builder.buildItem(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false);
         if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
+            event.getHook().sendFiles(FileUpload.fromData(FileUtils.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
 
         // Log item gen activity
@@ -138,7 +140,7 @@ public class GeneratorCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+        log.info("Updating last item generator activity date for " + DiscordUtils.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
@@ -157,7 +159,7 @@ public class GeneratorCommands extends ApplicationCommand {
         // building the chat message
         BufferedImage generatedImage = builder.buildItem(event, "NONE", "NONE", message, "", true, alpha, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered);
         if (generatedImage != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedImage))).setEphemeral(hidden).queue();
+            event.getHook().sendFiles(FileUpload.fromData(FileUtils.toFile(generatedImage))).setEphemeral(hidden).queue();
         }
 
         // Log item gen activity
@@ -165,7 +167,7 @@ public class GeneratorCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+        log.info("Updating last item generator activity date for " + DiscordUtils.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "display", description = "Draws a Minecraft item into a file")
@@ -181,7 +183,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
         BufferedImage item = builder.buildUnspecifiedItem(event, itemID, extraModifiers, true);
         if (item != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(item))).setEphemeral(hidden).queue();
+            event.getHook().sendFiles(FileUpload.fromData(FileUtils.toFile(item))).setEphemeral(hidden).queue();
         }
 
         // Log item gen activity
@@ -189,7 +191,7 @@ public class GeneratorCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+        log.info("Updating last item generator activity date for " + DiscordUtils.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Creates an image that looks like an item from Minecraft, complete with lore and a display item.")
@@ -251,14 +253,14 @@ public class GeneratorCommands extends ApplicationCommand {
 
         ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, generatedRecipe);
         merger.drawFinalImage();
-        event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
+        event.getHook().sendFiles(FileUpload.fromData(FileUtils.toFile(merger.getImage()))).setEphemeral(hidden).queue();
 
         // Log item gen activity
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+        log.info("Updating last item generator activity date for " + DiscordUtils.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "recipe", description = "Generates a Minecraft Recipe Image")
@@ -277,7 +279,7 @@ public class GeneratorCommands extends ApplicationCommand {
         // building the Minecraft recipe
         BufferedImage generatedRecipe = builder.buildRecipe(event, recipe, renderBackground);
         if (generatedRecipe != null) {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedRecipe))).queue();
+            event.getHook().sendFiles(FileUpload.fromData(FileUtils.toFile(generatedRecipe))).queue();
         }
 
         // Log item gen activity
@@ -285,7 +287,7 @@ public class GeneratorCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+        log.info("Updating last item generator activity date for " + DiscordUtils.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
@@ -312,21 +314,21 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         // checking if the user has copied the text directly from in game
-        JsonObject tagJSON = JsonUtil.isJsonObject(itemJSON, "tag");
+        JsonObject tagJSON = JsonUtils.isJsonObject(itemJSON, "tag");
         if (tagJSON == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag")).queue();
             return;
         }
 
         // checking if there is a display tag
-        JsonObject displayJSON = JsonUtil.isJsonObject(tagJSON, "display");
+        JsonObject displayJSON = JsonUtils.isJsonObject(tagJSON, "display");
         if (displayJSON == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("display")).queue();
             return;
         }
         // checking that there is a name and lore parameters in the JsonObject
-        String itemName = JsonUtil.isJsonString(displayJSON, "Name");
-        JsonArray itemLoreArray = JsonUtil.isJsonArray(displayJSON, "Lore");
+        String itemName = JsonUtils.isJsonString(displayJSON, "Name");
+        JsonArray itemLoreArray = JsonUtils.isJsonArray(displayJSON, "Lore");
         if (itemName == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Name")).queue();
             return;
@@ -340,7 +342,7 @@ public class GeneratorCommands extends ApplicationCommand {
         String extraModifiers = "";
         // checking if the user wants to create full gen
         if (includeItem) {
-            itemID = JsonUtil.isJsonString(itemJSON, "id");
+            itemID = JsonUtils.isJsonString(itemJSON, "id");
             if (itemID == null) {
                 event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("id")).queue();
                 return;
@@ -349,19 +351,19 @@ public class GeneratorCommands extends ApplicationCommand {
 
             if (itemID.equals("skull")) {
                 // checking if there is a SkullOwner json object within the main tag json
-                JsonObject skullOwnerJSON = JsonUtil.isJsonObject(tagJSON, "SkullOwner");
+                JsonObject skullOwnerJSON = JsonUtils.isJsonObject(tagJSON, "SkullOwner");
                 if (skullOwnerJSON == null) {
                     event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("SkullOwner")).queue();
                     return;
                 }
                 // checking if there is a Properties json object within SkullOwner
-                JsonObject propertiesJSON = JsonUtil.isJsonObject(skullOwnerJSON, "Properties");
+                JsonObject propertiesJSON = JsonUtils.isJsonObject(skullOwnerJSON, "Properties");
                 if (propertiesJSON == null) {
                     event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Properties")).queue();
                     return;
                 }
                 // checking if there is a textures json object within properties
-                JsonArray texturesJSON = JsonUtil.isJsonArray(propertiesJSON, "textures");
+                JsonArray texturesJSON = JsonUtils.isJsonArray(propertiesJSON, "textures");
                 if (texturesJSON == null) {
                     event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("textures")).queue();
                     return;
@@ -375,7 +377,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     return;
                 }
                 // checking that there is a Base64 skin url string
-                String base64String = JsonUtil.isJsonString(texturesJSON.get(0).getAsJsonObject(), "Value");
+                String base64String = JsonUtils.isJsonString(texturesJSON.get(0).getAsJsonObject(), "Value");
                 if (base64String == null) {
                     event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
                     return;
@@ -389,7 +391,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 }
             } else {
                 // checking if there is a color attribute present and adding it to the extra attributes
-                String color = JsonUtil.isJsonString(displayJSON, "color");
+                String color = JsonUtils.isJsonString(displayJSON, "color");
                 if (color != null) {
                     try {
                         Integer selectedColor = Integer.decode(color);
@@ -399,7 +401,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 }
 
                 // checking if the item is enchanted and applying the enchantment glint to the extra modifiers
-                JsonArray enchantJson = JsonUtil.isJsonArray(tagJSON, "ench");
+                JsonArray enchantJson = JsonUtils.isJsonArray(tagJSON, "ench");
                 if (enchantJson != null) {
                     extraModifiers = extraModifiers.isEmpty() ? "enchant" : extraModifiers + ",enchant";
                 }
@@ -447,9 +449,9 @@ public class GeneratorCommands extends ApplicationCommand {
 
             ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, null);
             merger.drawFinalImage();
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(merger.getImage()))).setEphemeral(hidden).queue();
+            event.getHook().sendFiles(FileUpload.fromData(FileUtils.toFile(merger.getImage()))).setEphemeral(hidden).queue();
         } else {
-            event.getHook().sendFiles(FileUpload.fromData(Util.toFile(generatedDescription))).setEphemeral(false).queue();
+            event.getHook().sendFiles(FileUpload.fromData(FileUtils.toFile(generatedDescription))).setEphemeral(false).queue();
         }
 
         event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, itemGenCommand)).setEphemeral(true).queue();
@@ -459,7 +461,7 @@ public class GeneratorCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
         long currentTime = System.currentTimeMillis();
         discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-        log.info("Updating last item generator activity date for " + Util.getDisplayName(event.getUser()) + " to " + currentTime);
+        log.info("Updating last item generator activity date for " + DiscordUtils.getDisplayName(event.getUser()) + " to " + currentTime);
     }
 
     @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "general", description = "Show some general tips for using the Item Generation commands.")
@@ -715,7 +717,7 @@ public class GeneratorCommands extends ApplicationCommand {
             senderChannelId = threadChannel.getParentChannel().getId();
         }
 
-        if (Util.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
+        if (ArrayUtils.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
             ChannelCache.getChannelByName(itemGenChannelIds[0]).ifPresentOrElse(
                 channel -> event.reply("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue(),
                 () -> event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue()

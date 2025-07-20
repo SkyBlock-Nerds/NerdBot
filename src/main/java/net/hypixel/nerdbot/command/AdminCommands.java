@@ -55,10 +55,13 @@ import net.hypixel.nerdbot.feature.UserNominationFeature;
 import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.JsonUtil;
-import net.hypixel.nerdbot.util.LoggingUtil;
-import net.hypixel.nerdbot.util.TimeUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.FileUtils;
+import net.hypixel.nerdbot.util.JsonUtils;
+import net.hypixel.nerdbot.util.LoggingUtils;
+import net.hypixel.nerdbot.util.TimeUtils;
+import net.hypixel.nerdbot.util.HttpUtils;
+import net.hypixel.nerdbot.util.Utils;
 import net.hypixel.nerdbot.util.exception.HttpException;
 import net.hypixel.nerdbot.util.exception.MojangProfileException;
 import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
@@ -124,7 +127,7 @@ public class AdminCommands extends ApplicationCommand {
                         }
 
                         event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
-                            + " in " + TimeUtil.formatMsCompact(System.currentTimeMillis() - forumChannelCurator.getStartTime())
+                            + " in " + TimeUtils.formatMsCompact(System.currentTimeMillis() - forumChannelCurator.getStartTime())
                             + "\nCurrently looking at " + (forumChannelCurator.getCurrentObject().getJumpUrl())
                         ).queue();
                     });
@@ -228,7 +231,7 @@ public class AdminCommands extends ApplicationCommand {
         }
 
         try {
-            File file = Util.createTempFile("config-" + System.currentTimeMillis() + ".json", NerdBotApp.GSON.toJson(NerdBotApp.getBot().getConfig()));
+            File file = FileUtils.createTempFile("config-" + System.currentTimeMillis() + ".json", NerdBotApp.GSON.toJson(NerdBotApp.getBot().getConfig()));
             event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.config.read_error");
@@ -261,7 +264,7 @@ public class AdminCommands extends ApplicationCommand {
 
         // We should store the name of the config file on boot lol this is bad
         String fileName = System.getProperty("bot.config") != null ? System.getProperty("bot.config") : Environment.getEnvironment().name().toLowerCase() + ".config.json";
-        JsonObject obj = JsonUtil.readJsonFile(fileName);
+        JsonObject obj = JsonUtils.readJsonFile(fileName);
 
         if (obj == null) {
             TranslationManager.reply(event, discordUser, "commands.config.read_error");
@@ -276,7 +279,7 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
-        JsonUtil.writeJsonFile(fileName, JsonUtil.setJsonValue(obj, key, element));
+        JsonUtils.writeJsonFile(fileName, JsonUtils.setJsonValue(obj, key, element));
         log.info(event.getUser().getName() + " edited the config file!");
         TranslationManager.reply(event, discordUser, "commands.config.updated");
     }
@@ -492,12 +495,12 @@ public class AdminCommands extends ApplicationCommand {
             .stream()
             .filter(member -> !member.getUser().isBot())
             .filter(member -> discordUserRepository.findById(member.getId()).noProfileAssigned())
-            .filter(member -> Util.getScuffedMinecraftIGN(member).isPresent())
+            .filter(member -> Utils.getScuffedMinecraftIGN(member).isPresent())
             .forEach(member -> {
-                String scuffedUsername = Util.getScuffedMinecraftIGN(member).orElseThrow();
+                String scuffedUsername = Utils.getScuffedMinecraftIGN(member).orElseThrow();
 
                 try {
-                    MojangProfile mojangProfile = Util.getMojangProfile(scuffedUsername);
+                    MojangProfile mojangProfile = HttpUtils.getMojangProfile(scuffedUsername);
                     mojangProfiles.add(mojangProfile);
                     DiscordUser user = discordUserRepository.findById(member.getId());
                     user.setMojangProfile(mojangProfile);
@@ -749,7 +752,7 @@ public class AdminCommands extends ApplicationCommand {
 
     @AutocompletionHandler(name = "forumchannels", mode = AutocompletionMode.FUZZY, showUserInput = false)
     public List<ForumChannel> listForumChannels(CommandAutoCompleteInteractionEvent event) {
-        return Util.getMainGuild().getForumChannels();
+        return DiscordUtils.getMainGuild().getForumChannels();
     }
 
     @AutocompletionHandler(name = "forumtags", mode = AutocompletionMode.FUZZY, showUserInput = false)
@@ -782,7 +785,7 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
-        LoggingUtil.setGlobalLogLevel(logLevel);
+        LoggingUtils.setGlobalLogLevel(logLevel);
         TranslationManager.edit(event.getHook(), discordUser, "commands.log_level.set_level", logLevel);
     }
 
