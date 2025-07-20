@@ -44,7 +44,7 @@ import net.hypixel.nerdbot.listener.ActivityListener;
 import net.hypixel.nerdbot.listener.FunListener;
 import net.hypixel.nerdbot.listener.MetricsListener;
 import net.hypixel.nerdbot.listener.ModLogListener;
-import net.hypixel.nerdbot.listener.ModMailListener;
+import net.hypixel.nerdbot.modmail.ModMailListener;
 import net.hypixel.nerdbot.listener.PinListener;
 import net.hypixel.nerdbot.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;

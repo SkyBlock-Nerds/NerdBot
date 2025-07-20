@@ -10,10 +10,10 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.feature.BotFeature;
+import net.hypixel.nerdbot.modmail.ModMailService;
 import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.cache.ChannelCache;
-import net.hypixel.nerdbot.command.ModMailCommands;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.DiscordUtils;
@@ -234,7 +234,7 @@ public class UserNominationFeature extends BotFeature {
         int totalComments = lastActivity.getTotalComments(roleConfig.getDaysRequiredForInactivityCheck());
 
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-            Optional<ThreadChannel> modMailThread = ModMailCommands.getModMailThread(member.getUser());
+            Optional<ThreadChannel> modMailThread = ModMailService.getInstance().findExistingThread(member.getUser());
 
             String messagesStatus = totalMessages >= requiredMessages ? "✅" : "⚠️";
             String votesStatus = totalVotes >= requiredVotes ? "✅" : "⚠️";
@@ -378,7 +378,7 @@ public class UserNominationFeature extends BotFeature {
         LastActivity lastActivity = discordUser.getLastActivity();
 
         ChannelCache.getTextChannelById(NerdBotApp.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-            Optional<ThreadChannel> modMailThread = ModMailCommands.getModMailThread(member.getUser());
+            Optional<ThreadChannel> modMailThread = ModMailService.getInstance().findExistingThread(member.getUser());
 
             String messagesStatus = totalMessages >= group.getMinimumMessagesForActivity() ? "✅" : "⚠️";
             String votesStatus = totalVotes >= group.getMinimumVotesForActivity() ? "✅" : "⚠️";
