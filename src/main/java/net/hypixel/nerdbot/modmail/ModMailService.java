@@ -497,7 +497,7 @@ public class ModMailService {
             content = String.format("**%s:**%s%s", Util.getDisplayName(user), "\n", content);
         }
 
-        return Util.splitString(content, 1_024);
+        return Util.splitString(content, MAX_CONTENT_CHUNK_SIZE);
     }
 
     /**
