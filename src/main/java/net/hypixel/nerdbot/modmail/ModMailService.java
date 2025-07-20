@@ -31,9 +31,11 @@ import java.util.stream.Stream;
 @Log4j2
 public class ModMailService {
 
+    private static final int MAX_CONTENT_CHUNK_SIZE = 1_024;
     public static final String TITLE_TEMPLATE = "%s (%s)";
+    private static final String SLASH_COMMAND_LINK_ID = "1142633400537186409";
 
-    private static ModMailService instance;
+    private static volatile ModMailService instance;
 
     private final ModMailConfig config;
     private final DiscordUserRepository userRepository;
@@ -375,9 +377,8 @@ public class ModMailService {
     private void sendUnlinkedUserMessage(User user) {
         user.openPrivateChannel()
             .flatMap(channel -> channel.sendMessage(
-                """                
-                You must link your Minecraft account before using Mod Mail.
-                Please link your account using </link:" + SLASH_COMMAND_LINK_ID + "> and try again."""
+                "You must link your Minecraft account before using Mod Mail.\n" +
+                "Please link your account using </link:" + SLASH_COMMAND_LINK_ID + "> and try again."
             ))
             .queue();
     }
