@@ -377,7 +377,7 @@ public class ModMailService {
             .flatMap(channel -> channel.sendMessage(
                 """                
                 You must link your Minecraft account before using Mod Mail.
-                Please link your account using </link:1142633400537186409> and try again."""
+                Please link your account using </link:" + SLASH_COMMAND_LINK_ID + "> and try again."""
             ))
             .queue();
     }
