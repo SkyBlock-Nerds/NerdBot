@@ -519,11 +519,23 @@ public class GeneratorCommands extends ApplicationCommand {
     private String processNonSkullModifiers(JsonObject tagJSON, JsonObject displayJSON) {
         String extraModifiers = "";
 
-        String color = JsonUtils.isJsonString(displayJSON, "color");
-        if (color != null) {
+        if (displayJSON.has("color")) {
             try {
-                Integer selectedColor = Integer.decode(color);
-                extraModifiers = String.valueOf(selectedColor);
+                int colorValue;
+                if (displayJSON.get("color").isJsonPrimitive() && displayJSON.get("color").getAsJsonPrimitive().isNumber()) {
+                    colorValue = displayJSON.get("color").getAsInt();
+                } else {
+                    String colorString = JsonUtils.isJsonString(displayJSON, "color");
+                    if (colorString != null) {
+                        colorValue = Integer.decode(colorString);
+                    } else {
+                        colorValue = -1;
+                    }
+                }
+                
+                if (colorValue >= 0) {
+                    extraModifiers = String.format("#%06X", colorValue);
+                }
             } catch (NumberFormatException ignored) {
             }
         }
