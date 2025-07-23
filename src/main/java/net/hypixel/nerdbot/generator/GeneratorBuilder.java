@@ -63,7 +63,7 @@ public class GeneratorBuilder {
     private final HashMap<String, Item> items;
     private boolean itemsInitialized = true;
     private BufferedImage itemSpriteSheet;
-    private final ExecutorService generatorExecutor = Executors.newCachedThreadPool();
+    private final ExecutorService generatorExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public GeneratorBuilder() {
         this.items = new HashMap<>();
