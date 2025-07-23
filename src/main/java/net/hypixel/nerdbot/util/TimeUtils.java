@@ -54,6 +54,32 @@ public class TimeUtils {
         }
     }
 
+    public static String formatMsLong(long ms) {
+        long days = TimeUnit.MILLISECONDS.toDays(ms);
+        ms -= TimeUnit.DAYS.toMillis(days);
+        long hours = TimeUnit.MILLISECONDS.toHours(ms);
+        ms -= TimeUnit.HOURS.toMillis(hours);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(ms);
+        ms -= TimeUnit.MINUTES.toMillis(minutes);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(ms);
+        StringBuilder sb = new StringBuilder();
+
+        if (days > 0) {
+            sb.append(days).append(days == 1 ? " day " : " days ");
+        }
+
+        if (hours > 0) {
+            sb.append(hours).append(hours == 1 ? " hour " : " hours ");
+        }
+
+        if (minutes > 0) {
+            sb.append(minutes).append(minutes == 1 ? " minute " : " minutes ");
+        }
+
+        sb.append(seconds).append(seconds == 1 ? " second" : " seconds");
+        return sb.toString().trim();
+    }
+
     public static boolean isAprilFirst() {
         return Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
     }
