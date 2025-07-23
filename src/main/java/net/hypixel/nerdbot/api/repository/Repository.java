@@ -45,8 +45,9 @@ public abstract class Repository<T> {
     private final Class<T> entityClass;
     private final String identifierFieldName;
     private Field field;
-    private final ExecutorService repositoryExecutor = Executors.newCachedThreadPool();
+    private static final ExecutorService SHARED_EXECUTOR = Executors.newFixedThreadPool(10);
 
+    private final ExecutorService repositoryExecutor = SHARED_EXECUTOR;
     protected Repository(MongoClient mongoClient, String databaseName, String collectionName, String identifierFieldName) {
         this(mongoClient, databaseName, collectionName, identifierFieldName, 0, null);
     }
