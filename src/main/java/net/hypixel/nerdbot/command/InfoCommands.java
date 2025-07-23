@@ -105,14 +105,23 @@ public class InfoCommands extends ApplicationCommand {
         long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         long totalMemory = Runtime.getRuntime().totalMemory();
 
-        builder.append("- Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n")
-            .append("- Branch: `").append(FileUtils.getBranchName()).append("`\n")
-            .append("- Container ID: `").append(FileUtils.getDockerContainerId()).append("`\n")
-            .append("- Environment: ").append(Environment.getEnvironment()).append("\n")
-            .append("- Uptime: ").append(TimeUtils.formatMsCompact(NerdBotApp.getBot().getUptime())).append("\n")
-            .append("- Memory: ").append(StringUtils.formatSize(usedMemory)).append(" / ").append(StringUtils.formatSize(totalMemory)).append("\n");
+        String botInfo = """
+            - Bot name: %s (ID: %s)
+            - Branch: `%s`
+            - Container ID: `%s`
+            - Environment: %s
+            - Uptime: %s
+            - Memory: %s / %s
+            """.formatted(
+                bot.getName(), bot.getId(),
+                FileUtils.getBranchName(),
+                FileUtils.getDockerContainerId(),
+                Environment.getEnvironment(),
+                TimeUtils.formatMsCompact(NerdBotApp.getBot().getUptime()),
+                StringUtils.formatSize(usedMemory), StringUtils.formatSize(totalMemory)
+            );
 
-        event.reply(builder.toString()).setEphemeral(true).queue();
+        event.reply(botInfo).setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "greenlit", description = "Get a list of all unreviewed greenlit messages. May not be 100% accurate!", defaultLocked = true)
@@ -186,13 +195,6 @@ public class InfoCommands extends ApplicationCommand {
             );
         }
 
-        builder.append("Server name: ").append(guild.getName()).append(" (Server ID: ").append(guild.getId()).append(")\n")
-            .append("Created at: ").append(DiscordTimestamp.toRelativeTimestamp(guild.getTimeCreated().toInstant().toEpochMilli())).append("\n")
-            .append("Boosters: ").append(guild.getBoostCount()).append(" (").append(guild.getBoostTier().name()).append(")\n")
-            .append("Channels: ").append(guild.getChannels().size()).append("\n")
-            .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
-            .append("- Staff: ").append(staff.get()).append("\n");
-
         RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
 
         RoleManager.getRoleById(roleConfig.getModeratorRoleId()).ifPresentOrElse(role -> grapes.set(guild.getMembersWithRoles(role).size()),
@@ -201,10 +203,27 @@ public class InfoCommands extends ApplicationCommand {
         RoleManager.getRoleById(roleConfig.getOrangeRoleId()).ifPresentOrElse(role -> nerds.set(guild.getMembersWithRoles(role).size()),
             () -> log.warn("Role {} not found", "Orange"));
 
-        builder.append("- Grapes: ").append(grapes.get()).append("\n")
-            .append("- Nerds: ").append(nerds.get());
+        String serverInfo = """
+            Server name: %s (Server ID: %s)
+            Created at: %s
+            Boosters: %s (%s)
+            Channels: %s
+            Members: %s/%s
+            - Staff: %s
+            - Grapes: %s
+            - Nerds: %s
+            """.formatted(
+                guild.getName(), guild.getId(),
+                DiscordTimestamp.toRelativeTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()),
+                guild.getBoostCount(), guild.getBoostTier().name(),
+                guild.getChannels().size(),
+                guild.getMembers().size(), guild.getMaxMembers(),
+                staff.get(),
+                grapes.get(),
+                nerds.get()
+            );
 
-        event.reply(builder.toString()).setEphemeral(true).queue();
+        event.reply(serverInfo).setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "activity", description = "View information regarding user activity", defaultLocked = true)

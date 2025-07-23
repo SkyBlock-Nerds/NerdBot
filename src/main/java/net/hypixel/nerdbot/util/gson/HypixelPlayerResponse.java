@@ -102,11 +102,12 @@ public class HypixelPlayerResponse {
         private Stats stats;
 
         public List<String> getAchievementsOneTime() {
-            if (this.achievementsOneTimeFixed == null)
+            if (this.achievementsOneTimeFixed == null) {
                 this.achievementsOneTimeFixed = this.achievementsOneTime.stream()
                     .filter(obj -> (obj instanceof String))
                     .map(String::valueOf)
-                    .collect(Collectors.toList());
+                    .toList();
+            }
 
             return achievementsOneTimeFixed;
         }

@@ -4,7 +4,6 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.google.gson.JsonObject;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
 import net.hypixel.nerdbot.generator.skull.MinecraftHead;
@@ -14,7 +13,7 @@ import net.hypixel.nerdbot.generator.util.overlay.EnchantGlintOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.MappedOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.NormalOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.Overlay;
-import net.hypixel.nerdbot.util.JsonUtils;
+import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 
@@ -31,10 +30,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,12 +63,13 @@ public class GeneratorBuilder {
     private final HashMap<String, Item> items;
     private boolean itemsInitialized = true;
     private BufferedImage itemSpriteSheet;
+    private final ExecutorService generatorExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public GeneratorBuilder() {
         this.items = new HashMap<>();
 
         // loading all sprites for Minecraft Items
-        try (InputStream itemStackStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/spritesheets/minecraft_texture_atlas.png")) {
+        try (InputStream itemStackStream = this.getClass().getResourceAsStream("/minecraft/assets/spritesheets/minecraft_texture_atlas.png")) {
             if (itemStackStream == null) {
                 throw new FileNotFoundException("Could not find minecraft_texture_atlas.png file");
             }
@@ -76,7 +81,7 @@ public class GeneratorBuilder {
         }
 
         // loading the items position in the sprite sheet
-        try (InputStream itemStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/spritesheets/atlas_coordinates.json")) {
+        try (InputStream itemStream = this.getClass().getResourceAsStream("/minecraft/assets/spritesheets/atlas_coordinates.json")) {
             if (itemStream == null) {
                 throw new FileNotFoundException("Could not find atlas_coordinates.json file");
             }
@@ -104,7 +109,7 @@ public class GeneratorBuilder {
         }
 
         // loading the overlays for some Minecraft Items
-        try (InputStream overlayStream = GeneratorCommands.class.getResourceAsStream("/minecraft/assets/textures/overlays.png")) {
+        try (InputStream overlayStream = this.getClass().getResourceAsStream("/minecraft/assets/textures/overlays.png")) {
             if (overlayStream == null) {
                 throw new FileNotFoundException("Could not find overlays.png file");
             }
@@ -253,6 +258,13 @@ public class GeneratorBuilder {
             .getImage();
     }
 
+    public CompletableFuture<BufferedImage> buildItemAsync(GuildSlashEvent event, String name, String rarity, String itemLoreString, String type,
+                                                           Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered) {
+        return CompletableFuture.supplyAsync(() -> 
+            buildItem(event, name, rarity, itemLoreString, type, addEmptyLine, alpha, padding, maxLineLength, isNormalItem, isCentered), 
+            generatorExecutor);
+    }
+
     /**
      * Renders a Minecraft Head into an image
      *
@@ -294,6 +306,69 @@ public class GeneratorBuilder {
         return new MinecraftHead(skin).generate().getImage();
     }
 
+    public CompletableFuture<BufferedImage> buildHeadAsync(GuildSlashEvent event, String textureID) {
+        // checking if the skin is supposed to be for a player
+        if (textureID.length() <= 16) {
+            return getPlayerHeadURLAsync(event, textureID)
+                .thenCompose(resolvedTextureID -> {
+                    if (resolvedTextureID == null) {
+                        return CompletableFuture.completedFuture(null);
+                    }
+                    
+                    return CompletableFuture.supplyAsync(() -> {
+                        // checking if there is the has added the full url to the texture ID
+                        String finalTextureID = resolvedTextureID;
+                        Matcher textureMatcher = TEXTURE_URL.matcher(finalTextureID);
+                        if (textureMatcher.matches()) {
+                            finalTextureID = textureMatcher.group(1);
+                        }
+
+                        // converting the skin retrieved into a 3d head
+                        BufferedImage skin;
+                        try {
+                            URL target = new URL("http://textures.minecraft.net/texture/" + finalTextureID);
+                            skin = ImageIO.read(target);
+                        } catch (MalformedURLException exception) {
+                            event.getHook().sendMessage(MALFORMED_HEAD_URL).setEphemeral(false).queue();
+                            return null;
+                        } catch (IOException exception) {
+                            event.getHook().sendMessage(String.format(INVALID_HEAD_URL, stripString(finalTextureID))).setEphemeral(false).queue();
+                            return null;
+                        }
+
+                        // registering the image into the cache
+                        return new MinecraftHead(skin).generate().getImage();
+                    }, generatorExecutor);
+                });
+        } else {
+            return CompletableFuture.supplyAsync(() -> {
+                String finalTextureID = textureID;
+                
+                // checking if there is the has added the full url to the texture ID
+                Matcher textureMatcher = TEXTURE_URL.matcher(finalTextureID);
+                if (textureMatcher.matches()) {
+                    finalTextureID = textureMatcher.group(1);
+                }
+
+                // converting the skin retrieved into a 3d head
+                BufferedImage skin;
+                try {
+                    URL target = new URL("http://textures.minecraft.net/texture/" + finalTextureID);
+                    skin = ImageIO.read(target);
+                } catch (MalformedURLException exception) {
+                    event.getHook().sendMessage(MALFORMED_HEAD_URL).setEphemeral(false).queue();
+                    return null;
+                } catch (IOException exception) {
+                    event.getHook().sendMessage(String.format(INVALID_HEAD_URL, stripString(finalTextureID))).setEphemeral(false).queue();
+                    return null;
+                }
+
+                // registering the image into the cache
+                return new MinecraftHead(skin).generate().getImage();
+            }, generatorExecutor);
+        }
+    }
+
     /**
      * Converts a player name into a skin id
      *
@@ -308,7 +383,7 @@ public class GeneratorBuilder {
 
         JsonObject userUUID;
         try {
-            userUUID = JsonUtils.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
+            userUUID = HttpUtils.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
         } catch (IOException | InterruptedException exception) {
             event.getHook().sendMessage(REQUEST_PLAYER_UUID_ERROR).queue();
             return null;
@@ -321,7 +396,7 @@ public class GeneratorBuilder {
 
         JsonObject userProfile;
         try {
-            userProfile = JsonUtils.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
+            userProfile = HttpUtils.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
         } catch (IOException | InterruptedException exception) {
             event.getHook().sendMessage(REQUEST_PLAYER_UUID_ERROR).queue();
             return null;
@@ -334,6 +409,41 @@ public class GeneratorBuilder {
 
         String base64SkinData = userProfile.get("properties").getAsJsonArray().get(0).getAsJsonObject().get("value").getAsString();
         return base64ToSkinURL(base64SkinData);
+    }
+
+    /**
+     * Converts a player name into a skin id asynchronously
+     *
+     * @param event      the GuildSlashEvent which the command is triggered from
+     * @param playerName the name of the player
+     *
+     * @return CompletableFuture containing the skin id for the player's skin
+     */
+    private CompletableFuture<String> getPlayerHeadURLAsync(GuildSlashEvent event, String playerName) {
+        String cleanPlayerName = playerName.replaceAll("[^a-zA-Z0-9_]", "");
+
+        return HttpUtils.makeHttpRequestAsync(String.format("https://api.mojang.com/users/profiles/minecraft/%s", cleanPlayerName))
+            .thenCompose(userUUID -> {
+                if (userUUID == null || userUUID.get("id") == null) {
+                    event.getHook().sendMessage(String.format(PLAYER_NOT_FOUND, cleanPlayerName)).queue();
+                    return CompletableFuture.completedFuture(null);
+                }
+
+                return HttpUtils.makeHttpRequestAsync(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
+            })
+            .thenApply(userProfile -> {
+                if (userProfile == null || userProfile.get("properties") == null) {
+                    event.getHook().sendMessage(String.format(MALFORMED_PLAYER_PROFILE, stripString(cleanPlayerName))).queue();
+                    return null;
+                }
+
+                String base64SkinData = userProfile.get("properties").getAsJsonArray().get(0).getAsJsonObject().get("value").getAsString();
+                return base64ToSkinURL(base64SkinData);
+            })
+            .exceptionally(throwable -> {
+                event.getHook().sendMessage(REQUEST_PLAYER_UUID_ERROR).queue();
+                return null;
+            });
     }
 
     /**
@@ -381,6 +491,12 @@ public class GeneratorBuilder {
         return itemStack;
     }
 
+    public CompletableFuture<BufferedImage> buildItemStackAsync(GuildSlashEvent event, String itemName, String extraDetails) {
+        return CompletableFuture.supplyAsync(() -> 
+            buildItemStack(event, itemName, extraDetails), 
+            generatorExecutor);
+    }
+
     /**
      * Creates a rendered generic Minecraft item image of a Skull or Item Stack
      *
@@ -416,6 +532,32 @@ public class GeneratorBuilder {
         }
 
         return itemImage;
+    }
+
+    public CompletableFuture<BufferedImage> buildUnspecifiedItemAsync(GuildSlashEvent event, String itemName, String extraDetails, boolean scaleImage) {
+        String finalExtraDetails = extraDetails == null ? "" : extraDetails;
+        
+        // checking if the user wanted to build something that isn't a skull
+        if (itemName.equalsIgnoreCase("player_head") || itemName.equalsIgnoreCase("skull")) {
+            if (!finalExtraDetails.isEmpty()) {
+                return buildHeadAsync(event, finalExtraDetails);
+            } else {
+                return buildItemStackAsync(event, "player_head", finalExtraDetails);
+            }
+        } else {
+            return buildItemStackAsync(event, itemName, finalExtraDetails)
+                .thenApply(itemImage -> {
+                    if (scaleImage && itemImage != null && itemImage.getWidth() <= 16) {
+                        Image copiedSection = itemImage.getScaledInstance(itemImage.getWidth() * 20, itemImage.getHeight() * 20, Image.SCALE_FAST);
+                        BufferedImage scaledImage = new BufferedImage(itemImage.getWidth() * 20, itemImage.getHeight() * 20, BufferedImage.TYPE_INT_ARGB);
+                        Graphics2D g2d = scaledImage.createGraphics();
+                        g2d.drawImage(copiedSection, 0, 0, null);
+                        g2d.dispose();
+                        return scaledImage;
+                    }
+                    return itemImage;
+                });
+        }
     }
 
     /**
@@ -455,5 +597,47 @@ public class GeneratorBuilder {
         // renders the image
         MinecraftInventory inventory = new MinecraftInventory(parser.getRecipeData(), renderBackground).render();
         return inventory.getImage();
+    }
+
+    public CompletableFuture<BufferedImage> buildRecipeAsync(GuildSlashEvent event, String recipeString, boolean renderBackground) {
+        // checking that the resources were correctly loaded into memory
+        if (!MinecraftInventory.resourcesRegistered()) {
+            event.getHook().sendMessage(ITEM_RESOURCE_NOT_LOADED).queue();
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // creates a recipe parser to convert the string into different item slots
+        RecipeParser parser = new RecipeParser();
+        parser.parseRecipe(recipeString);
+        if (!parser.isSuccessfullyParsed()) {
+            event.getHook().sendMessage(parser.getErrorString()).queue();
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Create list of futures for all recipe items
+        List<CompletableFuture<Void>> itemFutures = new ArrayList<>();
+        
+        for (RecipeParser.RecipeItem item : parser.getRecipeData().values()) {
+            CompletableFuture<Void> itemFuture = buildUnspecifiedItemAsync(event, item.getItemName(), item.getExtraDetails(), false)
+                .thenAccept(itemImage -> {
+                    if (itemImage == null) {
+                        throw new RuntimeException("Failed to build item: " + item.getItemName());
+                    }
+                    item.setImage(itemImage);
+                });
+            itemFutures.add(itemFuture);
+        }
+
+        // Wait for all items to be processed, then render the final image
+        return CompletableFuture.allOf(itemFutures.toArray(new CompletableFuture[0]))
+            .thenApply(unused -> {
+                // renders the image
+                MinecraftInventory inventory = new MinecraftInventory(parser.getRecipeData(), renderBackground).render();
+                return inventory.getImage();
+            })
+            .exceptionally(throwable -> {
+                log.error("Failed to build recipe async", throwable);
+                return null;
+            });
     }
 }

@@ -11,8 +11,7 @@ import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.util.DiscordUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 @Log4j2
@@ -28,59 +27,33 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
     }
 
     @Override
-    public void loadAllDocumentsIntoCache() {
-        super.loadAllDocumentsIntoCache();
-
-        getAll().forEach(discordUser -> {
-            if (discordUser.getLastActivity() == null) {
-                log.info("Last activity for " + discordUser.getDiscordId() + " was null. Setting to default values!");
-                discordUser.setLastActivity(new LastActivity());
-            }
-
-            if (discordUser.getLastActivity().getChannelActivityHistory() == null) {
-                log.info("Channel activity history for " + discordUser.getDiscordId() + " was null. Setting to default values!");
-                discordUser.getLastActivity().setChannelActivityHistory(new ArrayList<>());
-            }
-
-            discordUser.getLastActivity().getChannelActivityHistory().forEach(channelActivityEntry -> {
-                if (channelActivityEntry.getMonthlyMessageCount() == null) {
-                    log.info("Monthly message count for " + discordUser.getDiscordId() + " was null. Setting to default values!");
-                    channelActivityEntry.setMonthlyMessageCount(new HashMap<>());
-                }
-            });
-
-            if (!discordUser.getLastActivity().getChannelActivity().isEmpty()) {
-                log.info("Old channel activity for " + discordUser.getDiscordId() + " was not empty! (size: " + discordUser.getLastActivity().getChannelActivity().size() + ")");
-                discordUser.getLastActivity().getChannelActivity().forEach((channelId, messageCount) -> {
-                    if (DiscordUtils.getMainGuild().getTextChannelById(channelId) == null) {
-                        log.info("Channel " + channelId + " was not found in the guild! Skipping...");
-                        return;
+    public CompletableFuture<Void> loadAllDocumentsIntoCacheAsync() {
+        return super.loadAllDocumentsIntoCacheAsync().thenCompose(unused ->
+            CompletableFuture.runAsync(() -> {
+                getAll().forEach(discordUser -> {
+                    if (discordUser.getLastActivity() == null) {
+                        log.info("Last activity for " + discordUser.getDiscordId() + " was null. Setting to default values!");
+                        discordUser.setLastActivity(new LastActivity());
                     }
 
-                    discordUser.getLastActivity().addChannelHistory(DiscordUtils.getMainGuild().getTextChannelById(channelId), messageCount, System.currentTimeMillis());
+                    if (discordUser.getBirthdayData() == null) {
+                        log.info("Birthday data for " + discordUser.getDiscordId() + " was null. Setting to default values!");
+                        discordUser.setBirthdayData(new BirthdayData());
+                    }
+
+                    if (discordUser.getLanguage() == null) {
+                        log.info("Language for " + discordUser.getDiscordId() + " was null. Setting to default values!");
+                        discordUser.setLanguage(UserLanguage.ENGLISH);
+                    }
+
+                    cacheObject(discordUser);
+
+                    if (discordUser.getBirthdayData().isBirthdaySet()) {
+                        discordUser.scheduleBirthdayReminder(discordUser.getBirthdayData().getBirthdayThisYear());
+                    }
                 });
-                discordUser.getLastActivity().getChannelActivity().clear();
-                discordUser.getLastActivity().setChannelActivity(null);
-            }
-
-            discordUser.getLastActivity().purgeOldHistory();
-
-            if (discordUser.getBirthdayData() == null) {
-                log.info("Birthday data for " + discordUser.getDiscordId() + " was null. Setting to default values!");
-                discordUser.setBirthdayData(new BirthdayData());
-            }
-
-            if (discordUser.getLanguage() == null) {
-                log.info("Language for " + discordUser.getDiscordId() + " was null. Setting to default values!");
-                discordUser.setLanguage(UserLanguage.ENGLISH);
-            }
-
-            cacheObject(discordUser);
-
-            if (discordUser.getBirthdayData().isBirthdaySet()) {
-                discordUser.scheduleBirthdayReminder(discordUser.getBirthdayData().getBirthdayThisYear());
-            }
-        });
+            })
+        );
     }
 
     public Member getMemberById(String id) {

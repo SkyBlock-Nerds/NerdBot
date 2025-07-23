@@ -99,8 +99,9 @@ public class MinecraftInventory {
      */
     private void drawRecipeItems() {
         for (RecipeParser.RecipeItem item : this.recipe.values()) {
-            if (item.getSlot() < 1 || item.getSlot() > 9)
+            if (item.getSlot() < 1 || item.getSlot() > 9) {
                 continue;
+            }
 
             // converts the index into an x and y coordinates bottom right hand corner
             int itemSlotIndex = item.getSlot() - 1;
@@ -115,8 +116,9 @@ public class MinecraftInventory {
                 -offset, 0, itemToDraw.getWidth() + offset, itemToDraw.getHeight(), null);
 
             // checking if numbers should be written
-            if (item.getAmount() == 1)
+            if (item.getAmount() == 1) {
                 continue;
+            }
 
             // writes the text and drop shadow in the bottom right
             int textX = x + SLOT_DIMENSION - PIXELS_PER_PIXEL;

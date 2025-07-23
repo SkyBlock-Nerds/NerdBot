@@ -384,7 +384,7 @@ public class ChannelConfig {
                 return role != null ? role.getName().toLowerCase().replaceAll("[^a-z0-9]", "") : roleId;
             })
             .sorted()
-            .collect(Collectors.toList());
+            .toList();
 
         return String.join("-", roleNames) + "-channels";
     }
@@ -399,7 +399,7 @@ public class ChannelConfig {
                 return role != null ? role.getName() : "Unknown Role";
             })
             .sorted()
-            .collect(Collectors.toList());
+            .toList();
 
         if (roleNames.size() == 1) {
             return roleNames.get(0) + " Channels";
