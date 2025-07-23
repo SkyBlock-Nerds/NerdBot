@@ -1,13 +1,17 @@
 package net.hypixel.nerdbot.util;
 
+import lombok.extern.log4j.Log4j2;
+
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
-public class TimeUtil {
+@Log4j2
+public class TimeUtils {
 
     public static final SimpleDateFormat GLOBAL_DATE_TIME_FORMAT = new SimpleDateFormat("d MMMM yyyy HH:mm a");
 
-    private TimeUtil() {
+    private TimeUtils() {
     }
 
     public static String formatNow() {
@@ -67,12 +71,20 @@ public class TimeUtil {
         if (hours > 0) {
             sb.append(hours).append(hours == 1 ? " hour " : " hours ");
         }
-        
+
         if (minutes > 0) {
             sb.append(minutes).append(minutes == 1 ? " minute " : " minutes ");
         }
 
         sb.append(seconds).append(seconds == 1 ? " second" : " seconds");
         return sb.toString().trim();
+    }
+
+    public static boolean isAprilFirst() {
+        return Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
+    }
+
+    public static boolean isDayOfMonth(int dayOfMonth) {
+        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == dayOfMonth;
     }
 }

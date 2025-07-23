@@ -8,7 +8,6 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import lombok.extern.log4j.Log4j2;
@@ -16,7 +15,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -55,13 +53,13 @@ import net.hypixel.nerdbot.feature.UserNominationFeature;
 import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.JsonUtil;
-import net.hypixel.nerdbot.util.LoggingUtil;
-import net.hypixel.nerdbot.util.TimeUtil;
-import net.hypixel.nerdbot.util.Util;
-import net.hypixel.nerdbot.util.exception.HttpException;
-import net.hypixel.nerdbot.util.exception.MojangProfileException;
-import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.FileUtils;
+import net.hypixel.nerdbot.util.HttpUtils;
+import net.hypixel.nerdbot.util.JsonUtils;
+import net.hypixel.nerdbot.util.LoggingUtils;
+import net.hypixel.nerdbot.util.TimeUtils;
+import net.hypixel.nerdbot.util.Utils;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.logging.log4j.Level;
@@ -78,6 +76,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -88,104 +87,115 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "curate", description = "Manually run the curation process", defaultLocked = true)
     public void curate(GuildSlashEvent event, @AppOption ForumChannel channel, @Optional @AppOption(description = "Run the curator without greenlighting suggestions") Boolean readOnly) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+        final boolean finalReadOnly = readOnly != null && readOnly;
 
-        if (discordUser == null) {
-            TranslationManager.reply(event, "generic.user_not_found");
-            return;
-        }
-
-        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.reply(event, discordUser, "database.not_connected");
-            log.error("Couldn't connect to the database!");
-            return;
-        }
-
-        if (readOnly == null) {
-            readOnly = false;
-        }
-
-        Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumChannelCurator(readOnly);
-
-        NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
-            event.deferReply(true).complete();
-
-            TimerTask task = new TimerTask() {
-                @Override
-                public void run() {
-                    NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
-                        if (forumChannelCurator.isCompleted()) {
-                            this.cancel();
-                            return;
-                        }
-
-                        if (forumChannelCurator.getCurrentObject() == null) {
-                            return;
-                        }
-
-                        event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
-                            + " in " + TimeUtil.formatMsCompact(System.currentTimeMillis() - forumChannelCurator.getStartTime())
-                            + "\nCurrently looking at " + (forumChannelCurator.getCurrentObject().getJumpUrl())
-                        ).queue();
-                    });
+        discordUserRepository.findByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    TranslationManager.reply(event, "generic.user_not_found");
+                    return;
                 }
-            };
 
-            Timer timer = new Timer();
-            timer.scheduleAtFixedRate(task, 0, 1_000);
+                if (!NerdBotApp.getBot().getDatabase().isConnected()) {
+                    TranslationManager.reply(event, discordUser, "database.not_connected");
+                    log.error("Couldn't connect to the database!");
+                    return;
+                }
 
-            List<GreenlitMessage> output = forumChannelCurator.curate(channel);
+                Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumChannelCurator(finalReadOnly);
 
-            if (output.isEmpty()) {
-                TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
-            } else {
-                TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_messages", output.size(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime());
-            }
-        });
+                NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
+                    event.deferReply(true).complete();
+
+                    TimerTask task = new TimerTask() {
+                        @Override
+                        public void run() {
+                            NerdBotApp.EXECUTOR_SERVICE.execute(() -> {
+                                if (forumChannelCurator.isCompleted()) {
+                                    this.cancel();
+                                    return;
+                                }
+
+                                if (forumChannelCurator.getCurrentObject() == null) {
+                                    return;
+                                }
+
+                                event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
+                                    + " in " + TimeUtils.formatMsCompact(System.currentTimeMillis() - forumChannelCurator.getStartTime())
+                                    + "\nCurrently looking at " + (forumChannelCurator.getCurrentObject().getJumpUrl())
+                                ).queue();
+                            });
+                        }
+                    };
+
+                    Timer timer = new Timer();
+                    timer.scheduleAtFixedRate(task, 0, 1_000);
+
+                    List<GreenlitMessage> output = forumChannelCurator.curate(channel);
+
+                    if (output.isEmpty()) {
+                        TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
+                    } else {
+                        TranslationManager.edit(event.getHook(), discordUser, "curator.greenlit_messages", output.size(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime());
+                    }
+                });
+            })
+            .exceptionally(throwable -> {
+                log.error("Error loading user for curation", throwable);
+                TranslationManager.reply(event, "Failed to load user data");
+                return null;
+            });
     }
 
     @JDASlashCommand(name = "invites", subcommand = "create", description = "Generate a bunch of invites for a specific channel.", defaultLocked = true)
     public void createInvites(GuildSlashEvent event, @AppOption int amount, @AppOption @Optional TextChannel channel) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
-        if (discordUser == null) {
-            TranslationManager.reply(event, "generic.user_not_found");
-            return;
-        }
+        discordUserRepository.findByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    TranslationManager.reply(event, "generic.user_not_found");
+                    return;
+                }
 
-        List<Invite> invites = new ArrayList<>(amount);
-        TextChannel selected = Objects.requireNonNullElse(channel, NerdBotApp.getBot().getJDA().getTextChannelsByName("limbo", true).get(0));
-        event.deferReply(true).complete();
+                List<Invite> invites = new ArrayList<>(amount);
+                TextChannel selected = Objects.requireNonNullElse(channel, NerdBotApp.getBot().getJDA().getTextChannelsByName("limbo", true).get(0));
+                event.deferReply(true).complete();
 
-        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
-            textChannel.sendMessageEmbeds(
-                new EmbedBuilder()
-                    .setTitle("Invites Created")
-                    .setDescription(event.getUser().getAsMention() + " created " + amount + " invite(s) for " + selected.getAsMention() + ".")
-                    .build()
-            ).queue();
-        }, () -> log.warn("Log channel not found!"));
+                ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
+                    textChannel.sendMessageEmbeds(
+                        new EmbedBuilder()
+                            .setTitle("Invites Created")
+                            .setDescription(event.getUser().getAsMention() + " created " + amount + " invite(s) for " + selected.getAsMention() + ".")
+                            .build()
+                    ).queue();
+                }, () -> log.warn("Log channel not found!"));
 
-        for (int i = 0; i < amount; i++) {
-            try {
-                InviteAction action = selected.createInvite()
-                    .setUnique(true)
-                    .setMaxAge(7L, TimeUnit.DAYS)
-                    .setMaxUses(1);
+                for (int i = 0; i < amount; i++) {
+                    try {
+                        InviteAction action = selected.createInvite()
+                            .setUnique(true)
+                            .setMaxAge(7L, TimeUnit.DAYS)
+                            .setMaxUses(1);
 
-                Invite invite = action.complete();
-                invites.add(invite);
-                log.info("Created new temporary invite '" + invite.getUrl() + "' for channel " + selected.getName() + " by " + event.getUser().getName());
-            } catch (InsufficientPermissionException exception) {
-                TranslationManager.edit(event.getHook(), discordUser, "permissions.cannot_create_invites", selected.getAsMention());
-                return;
-            }
-        }
+                        Invite invite = action.complete();
+                        invites.add(invite);
+                        log.info("Created new temporary invite '" + invite.getUrl() + "' for channel " + selected.getName() + " by " + event.getUser().getName());
+                    } catch (InsufficientPermissionException exception) {
+                        TranslationManager.edit(event.getHook(), discordUser, "permissions.cannot_create_invites", selected.getAsMention());
+                        return;
+                    }
+                }
 
-        StringBuilder stringBuilder = new StringBuilder("**" + TranslationManager.translate(discordUser, "commands.invite.header", invites.size()) + "**\n");
-        invites.forEach(invite -> stringBuilder.append(invite.getUrl()).append("\n"));
-        event.getHook().editOriginal(stringBuilder.toString()).queue();
+                StringBuilder stringBuilder = new StringBuilder("**" + TranslationManager.translate(discordUser, "commands.invite.header", invites.size()) + "**\n");
+                invites.forEach(invite -> stringBuilder.append(invite.getUrl()).append("\n"));
+                event.getHook().editOriginal(stringBuilder.toString()).queue();
+            })
+            .exceptionally(throwable -> {
+                log.error("Error loading user for invite creation", throwable);
+                TranslationManager.reply(event, "Failed to load user data");
+                return null;
+            });
     }
 
     @JDASlashCommand(name = "invites", subcommand = "delete", description = "Delete all active invites.", defaultLocked = true)
@@ -193,26 +203,33 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
 
-        List<Invite> invites = event.getGuild().retrieveInvites().complete();
-        invites.forEach(invite -> {
-            invite.delete().complete();
-            log.info(event.getUser().getName() + " deleted invite " + invite.getUrl());
-        });
+        discordUserRepository.findOrCreateByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                List<Invite> invites = event.getGuild().retrieveInvites().complete();
+                invites.forEach(invite -> {
+                    invite.delete().complete();
+                    log.info(event.getUser().getName() + " deleted invite " + invite.getUrl());
+                });
 
-        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
-            textChannel.sendMessageEmbeds(
-                new EmbedBuilder()
-                    .setTitle("Invites Deleted")
-                    .setDescription(event.getUser().getAsMention() + " deleted all " + invites.size() + " invite(s).")
-                    .build()
-            ).queue();
-        }, () -> {
-            log.warn("Log channel not found!");
-        });
+                ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
+                    textChannel.sendMessageEmbeds(
+                        new EmbedBuilder()
+                            .setTitle("Invites Deleted")
+                            .setDescription(event.getUser().getAsMention() + " deleted all " + invites.size() + " invite(s).")
+                            .build()
+                    ).queue();
+                }, () -> {
+                    log.warn("Log channel not found!");
+                });
 
-        TranslationManager.edit(event.getHook(), discordUser, "commands.invite.deleted", invites.size());
+                TranslationManager.edit(event.getHook(), discordUser, "commands.invite.deleted", invites.size());
+            })
+            .exceptionally(throwable -> {
+                log.error("Error loading user for invite deletion", throwable);
+                event.getHook().editOriginal("Failed to load user data").queue();
+                return null;
+            });
     }
 
     @JDASlashCommand(name = "config", subcommand = "show", description = "View the currently loaded config", defaultLocked = true)
@@ -228,7 +245,7 @@ public class AdminCommands extends ApplicationCommand {
         }
 
         try {
-            File file = Util.createTempFile("config-" + System.currentTimeMillis() + ".json", NerdBotApp.GSON.toJson(NerdBotApp.getBot().getConfig()));
+            File file = FileUtils.createTempFile("config-" + System.currentTimeMillis() + ".json", NerdBotApp.GSON.toJson(NerdBotApp.getBot().getConfig()));
             event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             TranslationManager.edit(event.getHook(), discordUser, "commands.config.read_error");
@@ -239,20 +256,28 @@ public class AdminCommands extends ApplicationCommand {
     @JDASlashCommand(name = "config", subcommand = "reload", description = "Reload the config file", defaultLocked = true)
     public void reloadConfig(GuildSlashEvent event) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
-        if (discordUser == null) {
-            TranslationManager.reply(event, "generic.user_not_found");
-            return;
-        }
+        discordUserRepository.findByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    TranslationManager.reply(event, "generic.user_not_found");
+                    return;
+                }
 
-        Bot bot = NerdBotApp.getBot();
+                event.deferReply().setEphemeral(true).complete();
 
-        bot.loadConfig();
-        bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
-        PrometheusMetrics.setMetricsEnabled(bot.getConfig().getMetricsConfig().isEnabled());
+                Bot bot = NerdBotApp.getBot();
+                bot.loadConfig();
+                bot.getJDA().getPresence().setActivity(Activity.of(bot.getConfig().getActivityType(), bot.getConfig().getActivity()));
+                PrometheusMetrics.setMetricsEnabled(bot.getConfig().getMetricsConfig().isEnabled());
 
-        TranslationManager.reply(event, discordUser, "commands.config.reloaded");
+                event.getHook().editOriginal("Reloaded the config file!").queue();
+            })
+            .exceptionally(throwable -> {
+                log.error("Error loading user for config reload", throwable);
+                TranslationManager.reply(event, "Failed to load user data");
+                return null;
+            });
     }
 
     @JDASlashCommand(name = "config", subcommand = "edit", description = "Edit the config file", defaultLocked = true)
@@ -267,24 +292,35 @@ public class AdminCommands extends ApplicationCommand {
 
         // We should store the name of the config file on boot lol this is bad
         String fileName = System.getProperty("bot.config") != null ? System.getProperty("bot.config") : Environment.getEnvironment().name().toLowerCase() + ".config.json";
-        JsonObject obj = JsonUtil.readJsonFile(fileName);
 
-        if (obj == null) {
-            TranslationManager.reply(event, discordUser, "commands.config.read_error");
-            return;
-        }
+        JsonUtils.readJsonFileAsync(fileName)
+            .thenCompose(obj -> {
+                if (obj == null) {
+                    return CompletableFuture.failedFuture(new RuntimeException("Failed to read config file"));
+                }
 
-        JsonElement element;
-        try {
-            element = JsonParser.parseString(value);
-        } catch (JsonSyntaxException exception) {
-            TranslationManager.reply(event, discordUser, "commands.config.invalid_value", exception.getMessage());
-            return;
-        }
+                JsonElement element;
+                try {
+                    element = JsonParser.parseString(value);
+                } catch (JsonSyntaxException exception) {
+                    return CompletableFuture.failedFuture(exception);
+                }
 
-        JsonUtil.writeJsonFile(fileName, JsonUtil.setJsonValue(obj, key, element));
-        log.info(event.getUser().getName() + " edited the config file!");
-        TranslationManager.reply(event, discordUser, "commands.config.updated");
+                return JsonUtils.writeJsonFileAsync(fileName, JsonUtils.setJsonValue(obj, key, element));
+            })
+            .thenRun(() -> {
+                log.info(event.getUser().getName() + " edited the config file!");
+                TranslationManager.reply(event, discordUser, "commands.config.updated");
+            })
+            .exceptionally(throwable -> {
+                if (throwable.getCause() instanceof JsonSyntaxException) {
+                    TranslationManager.reply(event, discordUser, "commands.config.invalid_value", throwable.getCause().getMessage());
+                } else {
+                    log.error("Error processing config file", throwable);
+                    TranslationManager.reply(event, discordUser, "commands.config.read_error");
+                }
+                return null;
+            });
     }
 
     @JDASlashCommand(name = "translations", subcommand = "reload", description = "Reload the translations file", defaultLocked = true)
@@ -340,50 +376,68 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(member.getId());
 
-        if (discordUser == null) {
-            TranslationManager.reply(event, "generic.user_not_found");
-            return;
-        }
+        discordUserRepository.findByIdAsync(member.getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    TranslationManager.reply(event, "generic.user_not_found");
+                    return;
+                }
 
-        bypassSocial = (bypassSocial == null || !bypassSocial);
+                boolean enforceSocial = bypassSocial == null || !bypassSocial;
 
-        try {
-            MojangProfile mojangProfile = ProfileCommands.requestMojangProfile(member, username, bypassSocial);
-            ProfileCommands.updateMojangProfile(member, mojangProfile);
-            TranslationManager.edit(event.getHook(), discordUser, "commands.user.linked_by_admin", member.getAsMention(), mojangProfile.getUsername(), mojangProfile.getUniqueId());
+                ProfileCommands.requestMojangProfileAsync(member, username, enforceSocial)
+                    .thenAccept(mojangProfile -> {
+                        if (mojangProfile == null) {
+                            TranslationManager.edit(event.getHook(), discordUser, "commands.user.username_not_found", username, "Profile not found");
+                            return;
+                        }
 
-            ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
-                textChannel.sendMessageEmbeds(
-                    new EmbedBuilder()
-                        .setTitle("Mojang Profile Change")
-                        .setThumbnail(member.getAvatarUrl())
-                        .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
-                        .addField("Username", mojangProfile.getUsername(), false)
-                        .addField(
-                            "UUID / SkyCrypt",
-                            String.format(
-                                "[%s](https://sky.shiiyu.moe/stats/%s)",
-                                mojangProfile.getUniqueId(),
-                                mojangProfile.getUniqueId()
-                            ),
-                            false
-                        )
-                        .build()
-                ).queue();
-            }, () -> {
-                log.warn("Log channel not found!");
+                        if (mojangProfile.getErrorMessage() != null) {
+                            if (mojangProfile.getErrorMessage().contains("does not match")) {
+                                TranslationManager.edit(event.getHook(), discordUser, "commands.user.profile_mismatch", username, mojangProfile.getErrorMessage());
+                            } else {
+                                event.getHook().editOriginal(mojangProfile.getErrorMessage()).queue();
+                            }
+                            return;
+                        }
+
+                        ProfileCommands.updateMojangProfile(member, mojangProfile);
+                        TranslationManager.edit(event.getHook(), discordUser, "commands.user.linked_by_admin", member.getAsMention(), mojangProfile.getUsername(), mojangProfile.getUniqueId());
+
+                        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
+                            textChannel.sendMessageEmbeds(
+                                new EmbedBuilder()
+                                    .setTitle("Mojang Profile Change")
+                                    .setThumbnail(member.getAvatarUrl())
+                                    .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
+                                    .addField("Username", mojangProfile.getUsername(), false)
+                                    .addField(
+                                        "UUID / SkyCrypt",
+                                        String.format(
+                                            "[%s](https://sky.shiiyu.moe/stats/%s)",
+                                            mojangProfile.getUniqueId(),
+                                            mojangProfile.getUniqueId()
+                                        ),
+                                        false
+                                    )
+                                    .build()
+                            ).queue();
+                        }, () -> {
+                            log.warn("Log channel not found!");
+                        });
+                    })
+                    .exceptionally(throwable -> {
+                        log.error("Error during profile linking", throwable);
+                        TranslationManager.edit(event.getHook(), discordUser, "commands.user.username_not_found", username, throwable.getMessage());
+                        return null;
+                    });
+            })
+            .exceptionally(throwable -> {
+                log.error("Error loading user for profile linking", throwable);
+                TranslationManager.edit(event.getHook(), "Failed to load user data");
+                return null;
             });
-        } catch (HttpException exception) {
-            TranslationManager.edit(event.getHook(), discordUser, "commands.user.username_not_found", username, exception.getMessage());
-            log.error("Unable to locate Minecraft UUID for " + username + "!", exception);
-        } catch (MojangProfileMismatchException exception) {
-            TranslationManager.edit(event.getHook(), discordUser, "commands.user.profile_mismatch", username, exception.getMessage());
-        } catch (MojangProfileException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("An error occurred when fetching the Mojang profile for " + member.getId() + "!", exception);
-        }
     }
 
     @JDASlashCommand(
@@ -396,33 +450,52 @@ public class AdminCommands extends ApplicationCommand {
         event.deferReply(true).queue();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
-        if (discordUser == null) {
-            TranslationManager.edit(event.getHook(), "generic.user_not_found");
-            return;
-        }
-
-        String missing = event.getGuild()
+        event.getGuild()
             .loadMembers()
-            .get()
-            .stream()
-            .filter(member -> !member.getUser().isBot())
-            .filter(member -> discordUserRepository.findById(member.getId()).noProfileAssigned())
-            .map(IMentionable::getAsMention)
-            .collect(Collectors.joining(", "));
+            .onSuccess(members -> {
+                List<CompletableFuture<String>> memberChecks = members.stream()
+                    .filter(member -> !member.getUser().isBot())
+                    .map(member ->
+                        discordUserRepository.findByIdAsync(member.getId())
+                            .thenApply(discordUser -> {
+                                if (discordUser != null && discordUser.noProfileAssigned()) {
+                                    return member.getAsMention();
+                                }
+                                return null;
+                            })
+                    )
+                    .toList();
 
-        if (!missing.isEmpty()) {
-            event.getHook().editOriginalEmbeds(
-                new EmbedBuilder()
-                    .setColor(Color.MAGENTA)
-                    .setTitle("Missing Mojang Profiles")
-                    .setDescription(missing)
-                    .build()
-            ).queue();
-        } else {
-            TranslationManager.edit(event.getHook(), discordUser, "commands.user.no_missing_profiles");
-        }
+                CompletableFuture.allOf(memberChecks.toArray(new CompletableFuture[0]))
+                    .thenRun(() -> {
+                        String missing = memberChecks.stream()
+                            .map(CompletableFuture::join)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.joining(", "));
+
+                        if (!missing.isEmpty()) {
+                            event.getHook().editOriginalEmbeds(
+                                new EmbedBuilder()
+                                    .setColor(Color.MAGENTA)
+                                    .setTitle("Missing Mojang Profiles")
+                                    .setDescription(missing)
+                                    .build()
+                            ).queue();
+                        } else {
+                            event.getHook().editOriginal("No users with missing Mojang Profiles found.").queue();
+                        }
+                    })
+                    .exceptionally(throwable -> {
+                        log.error("Error checking missing profiles", throwable);
+                        event.getHook().editOriginal("An error occurred while checking for missing profiles: " + throwable.getMessage()).queue();
+                        return null;
+                    });
+            })
+            .onError(throwable -> {
+                log.error("Failed to load guild members", throwable);
+                event.getHook().editOriginal("Failed to load guild members").queue();
+            });
     }
 
     @JDASlashCommand(
@@ -494,26 +567,48 @@ public class AdminCommands extends ApplicationCommand {
 
         event.getGuild()
             .loadMembers()
-            .get()
-            .stream()
-            .filter(member -> !member.getUser().isBot())
-            .filter(member -> discordUserRepository.findById(member.getId()).noProfileAssigned())
-            .filter(member -> Util.getScuffedMinecraftIGN(member).isPresent())
-            .forEach(member -> {
-                String scuffedUsername = Util.getScuffedMinecraftIGN(member).orElseThrow();
+            .onSuccess(members -> {
+                List<CompletableFuture<Void>> migrationTasks = members.stream()
+                    .filter(member -> !member.getUser().isBot())
+                    .filter(member -> Utils.getScuffedMinecraftIGN(member).isPresent())
+                    .map(member ->
+                        discordUserRepository.findByIdAsync(member.getId())
+                            .thenCompose(user -> {
+                                if (user == null || !user.noProfileAssigned()) {
+                                    return CompletableFuture.completedFuture(null);
+                                }
 
-                try {
-                    MojangProfile mojangProfile = Util.getMojangProfile(scuffedUsername);
-                    mojangProfiles.add(mojangProfile);
-                    DiscordUser user = discordUserRepository.findById(member.getId());
-                    user.setMojangProfile(mojangProfile);
-                    log.info("Migrated " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ") to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId() + ")");
-                } catch (HttpException exception) {
-                    log.error("Unable to migrate " + member.getEffectiveName() + "(ID: " + member.getId() + ")", exception);
-                }
+                                String scuffedUsername = Utils.getScuffedMinecraftIGN(member).orElseThrow();
+                                return HttpUtils.getMojangProfileAsync(scuffedUsername)
+                                    .thenAccept(mojangProfile -> {
+                                        if (mojangProfile != null) {
+                                            mojangProfiles.add(mojangProfile);
+                                            user.setMojangProfile(mojangProfile);
+                                            log.info("Migrated " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ") to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId() + ")");
+                                        }
+                                    })
+                                    .exceptionally(throwable -> {
+                                        log.error("Unable to migrate " + member.getEffectiveName() + "(ID: " + member.getId() + ")", throwable);
+                                        return null;
+                                    });
+                            })
+                    )
+                    .toList();
+
+                CompletableFuture.allOf(migrationTasks.toArray(new CompletableFuture[0]))
+                    .thenRun(() -> {
+                        event.getHook().editOriginal("Migration complete! Migrated " + mojangProfiles.size() + " users.").queue();
+                    })
+                    .exceptionally(throwable -> {
+                        log.error("Error during username migration", throwable);
+                        event.getHook().editOriginal("Migration failed: " + throwable.getMessage()).queue();
+                        return null;
+                    });
+            })
+            .onError(throwable -> {
+                log.error("Failed to load guild members for migration", throwable);
+                event.getHook().editOriginal("Failed to load guild members").queue();
             });
-
-        TranslationManager.edit(event.getHook(), discordUser, "commands.user.migrated_profiles", mojangProfiles.size());
     }
 
     @JDASlashCommand(name = "debug", subcommand = "role-restricted-activity", description = "Debug role-restricted channel activity for a user", defaultLocked = true)
@@ -755,7 +850,7 @@ public class AdminCommands extends ApplicationCommand {
 
     @AutocompletionHandler(name = "forumchannels", mode = AutocompletionMode.FUZZY, showUserInput = false)
     public List<ForumChannel> listForumChannels(CommandAutoCompleteInteractionEvent event) {
-        return Util.getMainGuild().getForumChannels();
+        return DiscordUtils.getMainGuild().getForumChannels();
     }
 
     @AutocompletionHandler(name = "forumtags", mode = AutocompletionMode.FUZZY, showUserInput = false)
@@ -788,7 +883,7 @@ public class AdminCommands extends ApplicationCommand {
             return;
         }
 
-        LoggingUtil.setGlobalLogLevel(logLevel);
+        LoggingUtils.setGlobalLogLevel(logLevel);
         TranslationManager.edit(event.getHook(), discordUser, "commands.log_level.set_level", logLevel);
     }
 

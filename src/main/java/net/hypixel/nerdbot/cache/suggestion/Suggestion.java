@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -57,8 +57,8 @@ public class Suggestion {
         this.guildId = thread.getGuild().getId();
         this.timeCreated = thread.getTimeCreated();
         this.jumpUrl = String.format("https://discord.com/channels/%s/%s", this.getGuildId(), this.getThreadId());
-        this.greenlit = channelType == ChannelType.NORMAL && Util.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
-        this.channelType = channelType == null ? Util.getThreadSuggestionType(thread) : channelType;
+        this.greenlit = channelType == ChannelType.NORMAL && DiscordUtils.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
+        this.channelType = channelType == null ? DiscordUtils.getThreadSuggestionType(thread) : channelType;
         this.expired = false;
 
         // Activity
@@ -111,7 +111,7 @@ public class Suggestion {
     }
 
     public Optional<Message> getFirstMessage() {
-        return Util.getFirstMessage(this.getThreadId());
+        return DiscordUtils.getFirstMessage(this.getThreadId());
     }
 
     public static int getReactionCount(Message message, String emojiId) {

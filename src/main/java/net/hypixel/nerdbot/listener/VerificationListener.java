@@ -12,7 +12,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.command.ProfileCommands;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
@@ -64,9 +64,9 @@ public class VerificationListener {
                 }
             } else if (action.equals("kicknow")) {
                 updateButtons = false;
-                Guild guild = Util.getMainGuild();
+                Guild guild = DiscordUtils.getMainGuild();
                 Member member = guild.retrieveMemberById(memberId).complete();
-                String displayName = Util.getDisplayName(member.getUser());
+                String displayName = DiscordUtils.getDisplayName(member.getUser());
                 guild.kick(UserSnowflake.fromId(memberId)).complete();
 
                 event.getInteraction()
@@ -92,7 +92,7 @@ public class VerificationListener {
                         buttonStyle = ButtonStyle.DANGER;
                         buttonLabel = "Expired";
                     } else {
-                        Guild guild = Util.getMainGuild();
+                        Guild guild = DiscordUtils.getMainGuild();
                         Member member = guild.retrieveMemberById(memberId).complete();
 
                         if (member == null) {

@@ -144,6 +144,11 @@ public class ChannelConfig {
     private String[] autoPinBlacklistedChannels = {};
 
     /**
+     * Channel name patterns that identify project channels for suggestion categorization
+     */
+    private String[] projectChannelNames = {};
+
+    /**
      * Find or create a role-restricted channel group for the given roles
      *
      * @param roleIds Set of role IDs that should have access to channels in this group
@@ -379,7 +384,7 @@ public class ChannelConfig {
                 return role != null ? role.getName().toLowerCase().replaceAll("[^a-z0-9]", "") : roleId;
             })
             .sorted()
-            .collect(Collectors.toList());
+            .toList();
 
         return String.join("-", roleNames) + "-channels";
     }
@@ -394,7 +399,7 @@ public class ChannelConfig {
                 return role != null ? role.getName() : "Unknown Role";
             })
             .sorted()
-            .collect(Collectors.toList());
+            .toList();
 
         if (roleNames.size() == 1) {
             return roleNames.get(0) + " Channels";

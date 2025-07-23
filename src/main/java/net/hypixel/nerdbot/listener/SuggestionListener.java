@@ -20,7 +20,6 @@ import net.dv8tion.jda.api.managers.channel.concrete.ForumChannelManager;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
@@ -30,7 +29,8 @@ import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.ArrayUtils;
+import net.hypixel.nerdbot.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -45,89 +45,95 @@ public class SuggestionListener {
         event.deferEdit().queue();
 
         DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser user = userRepository.findById(event.getUser().getId());
 
-        String buttonId = event.getButton().getId();
-        boolean accepted = false;
+        userRepository.findByIdAsync(event.getUser().getId())
+            .thenAccept(user -> {
+                if (user == null) {
+                    return;
+                }
 
-        if (buttonId == null) {
-            return;
-        }
+                String buttonId = event.getButton().getId();
+                boolean accepted = false;
 
-        if (buttonId.startsWith("suggestion-review")) {
-            String[] parts = buttonId.split("-");
-            String action = parts[2];
-            String threadId = parts[3];
+                if (buttonId == null) {
+                    return;
+                }
 
-            ThreadChannel thread = NerdBotApp.getBot().getJDA().getThreadChannelById(threadId);
-            SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
+                if (buttonId.startsWith("suggestion-review")) {
+                    String[] parts = buttonId.split("-");
+                    String action = parts[2];
+                    String threadId = parts[3];
 
-            if (thread == null) {
-                TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "thread with ID " + threadId);
-                return;
-            }
+                    ThreadChannel thread = NerdBotApp.getBot().getJDA().getThreadChannelById(threadId);
+                    SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
 
-            ForumChannel forum = thread.getParentChannel().asForumChannel();
+                    if (thread == null) {
+                        TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "thread with ID " + threadId);
+                        return;
+                    }
 
-            if (!Util.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
+                    ForumChannel forum = thread.getParentChannel().asForumChannel();
+
+            if (!DiscordUtils.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
                 TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "the greenlit tag");
                 return;
             }
 
-            Suggestion suggestion = NerdBotApp.getBot().getSuggestionCache().getSuggestion(thread.getId());
+                    Suggestion suggestion = NerdBotApp.getBot().getSuggestionCache().getSuggestion(thread.getId());
 
-            if (suggestion == null) {
-                TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "this suggestion in the cache! Please try again later.");
-                return;
-            }
-
-            Optional<Message> firstMessage = suggestion.getFirstMessage();
-            if (firstMessage.isEmpty()) {
-                TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "the first message in this thread");
-                return;
-            }
-
-            switch (action) {
-                case "accept" -> {
-                    if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || Util.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
-                        TranslationManager.send(event.getHook().setEphemeral(true), user, "curator.already_greenlit");
+                    if (suggestion == null) {
+                        TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "this suggestion in the cache! Please try again later.");
                         return;
                     }
-                    List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
-                    tags.add(Util.getTagByName(forum, suggestionConfig.getGreenlitTag()));
-                    ThreadChannelManager threadManager = getThreadChannelManager(thread, tags, suggestionConfig);
 
-                    // Send Changes
-                    threadManager.complete();
-                    GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(firstMessage.get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
-                    NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
-                    NerdBotApp.getBot().getSuggestionCache().updateSuggestion(thread); // Update Suggestion
-                    thread.sendMessage(TranslationManager.translate("commands.request_review.accepted")).queue();
-                    accepted = true;
+                    Optional<Message> firstMessage = suggestion.getFirstMessage();
+                    if (firstMessage.isEmpty()) {
+                        TranslationManager.send(event.getHook().setEphemeral(true), user, "generic.could_not_find", "the first message in this thread");
+                        return;
+                    }
+
+                    switch (action) {
+                        case "accept" -> {
+                            if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || DiscordUtils.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
+                                TranslationManager.send(event.getHook().setEphemeral(true), user, "curator.already_greenlit");
+                                return;
+                            }
+                            List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+                            tags.add(DiscordUtils.getTagByName(forum, suggestionConfig.getGreenlitTag()));
+                            ThreadChannelManager threadManager = getThreadChannelManager(thread, tags, suggestionConfig);
+
+                            // Send Changes
+                            threadManager.complete();
+                            GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(firstMessage.get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
+                            NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
+                            NerdBotApp.getBot().getSuggestionCache().updateSuggestion(thread); // Update Suggestion
+                            thread.sendMessage(TranslationManager.translate("commands.request_review.accepted")).queue();
+                            accepted = true;
+                        }
+                        case "deny" ->
+                            thread.sendMessage(TranslationManager.translate("commands.request_review.changes_requested")).queue();
+                        case "lock" -> thread.getManager().setLocked(true).queue(unused -> {
+                            event.getHook().sendMessage("Thread locked!").setEphemeral(true).queue();
+                            thread.sendMessage(TranslationManager.translate("commands.request_review.locked")).queue();
+                        }, throwable -> event.getHook().sendMessage("Unable to lock thread!").setEphemeral(true).queue());
+                        default -> {
+                            event.getHook().sendMessage("Invalid action!").setEphemeral(true).queue();
+                            action = "n/a";
+                        }
+                    }
+
+                    event.getHook().editOriginalComponents(ActionRow.of(
+                            Button.of(
+                                (accepted ? ButtonStyle.SUCCESS : ButtonStyle.DANGER),
+                                "suggestion-review-completed",
+                                (accepted ? "Greenlit" : "Denied")
+                            ).asDisabled()
+                        ))
+                        .queue();
+
+                    PrometheusMetrics.REVIEW_REQUEST_STATISTICS.labels(firstMessage.get().getId(), firstMessage.get().getAuthor().getId(), suggestion.getThreadName(), action).inc();
                 }
-                case "deny" ->
-                    thread.sendMessage(TranslationManager.translate("commands.request_review.changes_requested")).queue();
-                case "lock" -> thread.getManager().setLocked(true).queue(unused -> {
-                    event.getHook().sendMessage("Thread locked!").setEphemeral(true).queue();
-                    thread.sendMessage(TranslationManager.translate("commands.request_review.locked")).queue();
-                }, throwable -> event.getHook().sendMessage("Unable to lock thread!").setEphemeral(true).queue());
-                default -> {
-                    event.getHook().sendMessage("Invalid action!").setEphemeral(true).queue();
-                    action = "n/a";
-                }
-            }
-
-            event.getHook().editOriginalComponents(ActionRow.of(
-                    Button.of(
-                        (accepted ? ButtonStyle.SUCCESS : ButtonStyle.DANGER),
-                        "suggestion-review-completed",
-                        (accepted ? "Greenlit" : "Denied")
-                    ).asDisabled()
-                ))
-                .queue();
-
-            PrometheusMetrics.REVIEW_REQUEST_STATISTICS.labels(firstMessage.get().getId(), firstMessage.get().getAuthor().getId(), suggestion.getThreadName(), action).inc();
-        }
+            });
     }
 
     @NotNull
@@ -170,7 +176,7 @@ public class SuggestionListener {
     @SubscribeEvent
     public void onChannelDelete(ChannelDeleteEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            Suggestion.ChannelType channelType = Util.getForumSuggestionType(event.getChannel().asForumChannel());
+            Suggestion.ChannelType channelType = DiscordUtils.getForumSuggestionType(event.getChannel().asForumChannel());
 
             if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
                 BotConfig botConfig = NerdBotApp.getBot().getConfig();
@@ -186,7 +192,7 @@ public class SuggestionListener {
 
     private void updateConfigForumIds(GenericChannelEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            Suggestion.ChannelType channelType = Util.getForumSuggestionType(event.getChannel().asForumChannel());
+            Suggestion.ChannelType channelType = DiscordUtils.getForumSuggestionType(event.getChannel().asForumChannel());
 
             if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
                 BotConfig botConfig = NerdBotApp.getBot().getConfig();
@@ -216,8 +222,8 @@ public class SuggestionListener {
             String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
 
             return forumChannelId.equals(suggestionConfig.getForumChannelId())
-                || Util.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equals)
-                || Util.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equals);
+                || ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equals)
+                || ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equals);
         }
 
         return false;

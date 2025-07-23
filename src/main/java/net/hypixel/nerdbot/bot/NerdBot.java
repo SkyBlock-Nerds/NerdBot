@@ -4,7 +4,6 @@ import com.freya02.botcommands.api.CommandsBuilder;
 import com.freya02.botcommands.api.components.DefaultComponentManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mongodb.bulk.BulkWriteResult;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
@@ -27,7 +26,7 @@ import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.api.repository.Repository;
-import net.hypixel.nerdbot.urlwatcher.URLWatcher;
+import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.EmojiCache;
@@ -44,7 +43,7 @@ import net.hypixel.nerdbot.listener.ActivityListener;
 import net.hypixel.nerdbot.listener.FunListener;
 import net.hypixel.nerdbot.listener.MetricsListener;
 import net.hypixel.nerdbot.listener.ModLogListener;
-import net.hypixel.nerdbot.listener.ModMailListener;
+import net.hypixel.nerdbot.modmail.ModMailListener;
 import net.hypixel.nerdbot.listener.PinListener;
 import net.hypixel.nerdbot.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;
@@ -56,8 +55,8 @@ import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.urlwatcher.handler.firesale.FireSaleDataHandler;
 import net.hypixel.nerdbot.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.urlwatcher.handler.status.StatusPageDataHandler;
-import net.hypixel.nerdbot.util.JsonUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.JsonUtils;
+import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
 import net.hypixel.nerdbot.util.discord.resolver.SuggestionTypeResolver;
 import net.hypixel.nerdbot.util.discord.resolver.UserLanguageResolver;
@@ -65,7 +64,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -110,13 +108,18 @@ public class NerdBot implements Bot {
 
         DiscordUserRepository discordUserRepository = database.getRepositoryManager().getRepository(DiscordUserRepository.class);
         if (discordUserRepository != null) {
-            discordUserRepository.loadAllDocumentsIntoCache();
+            discordUserRepository.loadAllDocumentsIntoCacheAsync()
+                .thenRun(() -> log.info("Successfully loaded all Discord users into cache"))
+                .exceptionally(throwable -> {
+                    log.error("Failed to load Discord users into cache", throwable);
+                    return null;
+                });
         }
 
         loadRemindersFromDatabase();
         startUrlWatchers();
 
-        Util.getMainGuild().loadMembers()
+        DiscordUtils.getMainGuild().loadMembers()
             .onSuccess(members -> PrometheusMetrics.TOTAL_USERS_AMOUNT.set(members.size()))
             .onError(throwable -> log.error("Failed to load members!", throwable));
 
@@ -150,20 +153,29 @@ public class NerdBot implements Bot {
 
             repositories.forEach((aClass, o) -> {
                 Repository<?> repository = (Repository<?>) o;
-                BulkWriteResult result = repository.saveAllToDatabase();
-
-                if (result != null && result.wasAcknowledged()) {
-                    int total = result.getInsertedCount() + result.getModifiedCount();
-                    log.info("Saved " + total + " documents to database for repository " + repository.getClass().getSimpleName() + " (" + result.getInsertedCount() + " inserted, " + result.getModifiedCount() + " modified, " + result.getDeletedCount() + " deleted)");
-                } else {
-                    log.info("Saved 0 documents to database for repository " + repository.getClass().getSimpleName());
-                }
+                repository.saveAllToDatabaseAsync()
+                    .thenAccept(result -> {
+                        if (result != null && result.wasAcknowledged()) {
+                            int total = result.getInsertedCount() + result.getModifiedCount();
+                            log.info("Saved {} documents to database for repository {} ({} inserted, {} modified, {} deleted)",
+                                total, repository.getClass().getSimpleName(), result.getInsertedCount(), result.getModifiedCount(), result.getDeletedCount());
+                        } else {
+                            log.info("Saved 0 documents to database for repository {}", repository.getClass().getSimpleName());
+                        }
+                    })
+                    .exceptionally(throwable -> {
+                        log.error("Failed to save documents for repository {}", repository.getClass().getSimpleName(), throwable);
+                        return null;
+                    })
+                    .join(); // Wait for completion during shutdown
             });
         } catch (Exception exception) {
             log.error("Error while saving data: " + exception.getMessage(), exception);
         } finally {
             database.getMongoClient().close();
         }
+
+        JsonUtils.shutdown();
 
         log.info("Bot shutdown complete!");
     }
@@ -250,22 +262,27 @@ public class NerdBot implements Bot {
             return;
         }
 
-        reminderRepository.loadAllDocumentsIntoCache();
+        reminderRepository.loadAllDocumentsIntoCacheAsync()
+            .thenRun(() -> {
+                reminderRepository.forEach(reminder -> {
+                    Date now = new Date();
 
-        reminderRepository.forEach(reminder -> {
-            Date now = new Date();
+                    if (now.after(reminder.getTime())) {
+                        reminder.sendReminder(true);
+                        log.info("Sent reminder {} because it was not sent yet!", reminder);
+                        return;
+                    }
 
-            if (now.after(reminder.getTime())) {
-                reminder.sendReminder(true);
-                log.info("Sent reminder " + reminder + " because it was not sent yet!");
-                return;
-            }
+                    reminder.schedule();
+                    log.info("Loaded reminder: {}", reminder);
+                });
 
-            reminder.schedule();
-            log.info("Loaded reminder: " + reminder);
-        });
-
-        log.info("Loaded " + reminderRepository.getCache().estimatedSize() + " reminders!");
+                log.info("Loaded {} reminders!", reminderRepository.getCache().estimatedSize());
+            })
+            .exceptionally(throwable -> {
+                log.error("Failed to load reminders from database", throwable);
+                return null;
+            });
     }
 
     private void startUrlWatchers() {
@@ -337,16 +354,19 @@ public class NerdBot implements Bot {
             fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
         }
 
-        try {
-            log.info("Loading config file from '" + fileName + "'");
-            File file = new File(fileName);
-            config = (BotConfig) JsonUtil.jsonToObject(file, BotConfig.class);
-
-            log.info("Loaded config from " + file.getAbsolutePath());
-        } catch (FileNotFoundException exception) {
-            log.error("Could not find config file " + fileName);
-            System.exit(-1);
-        }
+        log.info("Loading config file from '{}'", fileName);
+        File file = new File(fileName);
+        JsonUtils.jsonToObjectAsync(file, BotConfig.class)
+            .thenAccept(loadedConfig -> {
+                config = (BotConfig) loadedConfig;
+                log.info("Loaded config from {}", file.getAbsolutePath());
+            })
+            .exceptionally(throwable -> {
+                log.error("Failed to load config from {}", file.getAbsolutePath(), throwable);
+                System.exit(-1);
+                return null;
+            })
+            .join(); // Wait for completion during startup
     }
 
     @Override

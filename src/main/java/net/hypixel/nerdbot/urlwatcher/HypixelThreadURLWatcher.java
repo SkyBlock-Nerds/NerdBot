@@ -17,6 +17,9 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Log4j2
 public class HypixelThreadURLWatcher {
@@ -31,6 +34,7 @@ public class HypixelThreadURLWatcher {
     private int lastGuid;
     @Getter
     private boolean active;
+    private final ExecutorService executorService;
 
     public HypixelThreadURLWatcher(String url) {
         this(url, null);
@@ -41,6 +45,7 @@ public class HypixelThreadURLWatcher {
         this.url = url;
         this.headers = headers;
         this.timer = new Timer();
+        this.executorService = Executors.newCachedThreadPool();
         this.lastGuid = getHighestGuid();
     }
 
@@ -48,18 +53,24 @@ public class HypixelThreadURLWatcher {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                List<HypixelThread> hypixelThreads = fetchAndParseContent();
-                if (hypixelThreads == null) {
-                    return;
-                }
+                fetchAndParseContentAsync()
+                    .thenAccept(hypixelThreads -> {
+                        if (hypixelThreads == null) {
+                            return;
+                        }
 
-                for (HypixelThread thread : hypixelThreads) {
-                    if (thread.getGuid() > lastGuid) {
-                        log.debug("Watched " + url + " and found newest GUID!\nOld GUID: " + lastGuid + "\nNew GUID: " + thread.getGuid());
-                        lastGuid = thread.getGuid();
-                        SkyBlockUpdateDataHandler.handleThread(thread);
-                    }
-                }
+                        for (HypixelThread thread : hypixelThreads) {
+                            if (thread.getGuid() > lastGuid) {
+                                log.debug("Watched " + url + " and found newest GUID!\nOld GUID: " + lastGuid + "\nNew GUID: " + thread.getGuid());
+                                lastGuid = thread.getGuid();
+                                SkyBlockUpdateDataHandler.handleThread(thread);
+                            }
+                        }
+                    })
+                    .exceptionally(throwable -> {
+                        log.error("Error fetching and parsing content asynchronously from " + url, throwable);
+                        return null;
+                    });
             }
         }, 0, unit.toMillis(interval));
 
@@ -68,33 +79,44 @@ public class HypixelThreadURLWatcher {
     }
 
     public void watchOnce() {
-        List<HypixelThread> hypixelThreads = fetchAndParseContent();
         active = true;
+        
+        fetchAndParseContentAsync()
+            .thenAccept(hypixelThreads -> {
+                if (hypixelThreads == null) {
+                    active = false;
+                    return;
+                }
 
-        if (hypixelThreads == null) {
-            return;
-        }
-
-        for (HypixelThread thread : hypixelThreads) {
-            if (thread.getGuid() > lastGuid) {
-                log.debug("Watched " + url + " and found newest Guid!\nOld Guid: " + lastGuid + "\nNew Guid: " + thread.getGuid());
-                lastGuid = thread.getGuid();
-                SkyBlockUpdateDataHandler.handleThread(thread);
-            }
-        }
-
-        active = false;
+                for (HypixelThread thread : hypixelThreads) {
+                    if (thread.getGuid() > lastGuid) {
+                        log.debug("Watched " + url + " and found newest Guid!\nOld Guid: " + lastGuid + "\nNew Guid: " + thread.getGuid());
+                        lastGuid = thread.getGuid();
+                        SkyBlockUpdateDataHandler.handleThread(thread);
+                    }
+                }
+                active = false;
+            })
+            .exceptionally(throwable -> {
+                log.error("Error fetching and parsing content asynchronously from " + url, throwable);
+                active = false;
+                return null;
+            });
     }
 
     public int getHighestGuid() {
         List<HypixelThread> hypixelThreads = fetchAndParseContent();
+        if (hypixelThreads == null || hypixelThreads.isEmpty()) {
+            return 0;
+        }
+        
         int[] guidList = new int[hypixelThreads.size()];
 
         for (int x = 0; x < hypixelThreads.size(); x++) {
             guidList[x] = hypixelThreads.get(x).getGuid();
         }
 
-        return Arrays.stream(guidList).max().getAsInt();
+        return Arrays.stream(guidList).max().orElse(0);
     }
 
     public List<HypixelThread> fetchAndParseContent() {
@@ -123,5 +145,52 @@ public class HypixelThreadURLWatcher {
         }
 
         return null;
+    }
+
+    public CompletableFuture<List<HypixelThread>> fetchAndParseContentAsync() {
+        return CompletableFuture.supplyAsync(() -> {
+            log.debug("Fetching content asynchronously from " + url);
+
+            Request.Builder requestBuilder = new Request.Builder().url(url);
+
+            if (headers != null) {
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    requestBuilder.header(entry.getKey(), entry.getValue());
+                }
+            }
+
+            Request request = requestBuilder.build();
+
+            try (Response response = client.newCall(request).execute()) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String content = response.body().string();
+                    log.debug("Successfully fetched content asynchronously from " + url + "!" + " (Content: " + content + ")");
+                    return SkyBlockThreadParser.parseSkyBlockThreads(content);
+                } else {
+                    log.error("Failed to fetch content asynchronously from " + url + "! (Response: " + response + ")");
+                    return null;
+                }
+            } catch (IOException e) {
+                log.error("Failed to fetch content asynchronously from " + url, e);
+                return null;
+            }
+        }, executorService);
+    }
+
+    public void shutdown() {
+        log.info("Shutting down HypixelThreadURLWatcher for " + url);
+        timer.cancel();
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                log.warn("ExecutorService did not terminate gracefully, forcing shutdown");
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            log.warn("Interrupted while waiting for ExecutorService termination");
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+        active = false;
     }
 }

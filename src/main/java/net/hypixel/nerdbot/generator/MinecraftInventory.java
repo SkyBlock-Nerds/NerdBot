@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
+import net.hypixel.nerdbot.util.FontUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;
@@ -15,8 +16,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-
-import static net.hypixel.nerdbot.util.Util.initFont;
 
 @Log4j2
 public class MinecraftInventory {
@@ -31,7 +30,7 @@ public class MinecraftInventory {
 
     static {
         // Register Minecraft Font
-        MINECRAFT_FONT = initFont("/minecraft/assets/fonts/minecraft.otf", PIXELS_PER_PIXEL * PIXELS_PER_PIXEL);
+        MINECRAFT_FONT = FontUtils.initFont("/minecraft/assets/fonts/minecraft.otf", PIXELS_PER_PIXEL * PIXELS_PER_PIXEL);
         if (MINECRAFT_FONT != null) {
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(MINECRAFT_FONT);
         }
@@ -100,8 +99,9 @@ public class MinecraftInventory {
      */
     private void drawRecipeItems() {
         for (RecipeParser.RecipeItem item : this.recipe.values()) {
-            if (item.getSlot() < 1 || item.getSlot() > 9)
+            if (item.getSlot() < 1 || item.getSlot() > 9) {
                 continue;
+            }
 
             // converts the index into an x and y coordinates bottom right hand corner
             int itemSlotIndex = item.getSlot() - 1;
@@ -116,8 +116,9 @@ public class MinecraftInventory {
                 -offset, 0, itemToDraw.getWidth() + offset, itemToDraw.getHeight(), null);
 
             // checking if numbers should be written
-            if (item.getAmount() == 1)
+            if (item.getAmount() == 1) {
                 continue;
+            }
 
             // writes the text and drop shadow in the bottom right
             int textX = x + SLOT_DIMENSION - PIXELS_PER_PIXEL;

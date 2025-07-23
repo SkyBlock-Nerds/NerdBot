@@ -38,10 +38,9 @@ import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.exception.HttpException;
-import net.hypixel.nerdbot.util.exception.MojangProfileException;
-import net.hypixel.nerdbot.util.exception.MojangProfileMismatchException;
 import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
@@ -53,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 @Log4j2
@@ -77,70 +77,76 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
 
-        if (VERIFY_CACHE.getIfPresent(event.getMember().getId()) != null) {
-            TranslationManager.edit(event.getHook(), discordUser, "commands.verify.already_requested");
-            return;
-        }
+        discordUserRepository.findOrCreateByIdAsync(event.getMember().getId())
+            .thenCompose(discordUser -> {
+                if (VERIFY_CACHE.getIfPresent(event.getMember().getId()) != null) {
+                    TranslationManager.edit(event.getHook(), discordUser, "commands.verify.already_requested");
+                    return CompletableFuture.completedFuture(null);
+                }
 
-        try {
-            MojangProfile mojangProfile = requestMojangProfile(event.getMember(), username, true);
+                return requestMojangProfileAsync(event.getMember(), username, true)
+                    .thenAccept(mojangProfile -> {
+                        if (mojangProfile == null) {
+                            return;
+                        }
 
-            if (mojangProfile.getErrorMessage() != null) {
-                throw new MojangProfileException(mojangProfile.getErrorMessage());
-            }
+                        if (mojangProfile.getErrorMessage() != null) {
+                            event.getHook().editOriginal(mojangProfile.getErrorMessage()).queue();
+                            return;
+                        }
 
-            VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
-            TranslationManager.edit(event.getHook(), discordUser, "commands.verify.request_sent");
+                        VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
+                        TranslationManager.edit(event.getHook(), discordUser, "commands.verify.request_sent");
 
-            ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessage("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">").addEmbeds(
-                    new EmbedBuilder()
-                        .appendDescription("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">")
-                        .setTitle("Mojang Profile Verification")
-                        .setDescription(event.getMember().getAsMention() + " has sent a Mojang verification request. This discord account matches the social set for this Mojang Profile.")
-                        .setColor(Color.PINK)
-                        .setThumbnail(event.getMember().getEffectiveAvatarUrl())
-                        .setFooter("This request expires in 1 day.")
-                        .addField("Username", mojangProfile.getUsername(), false)
-                        .addField(
-                            "UUID / SkyCrypt",
-                            String.format(
-                                "[%s](https://sky.shiiyu.moe/stats/%s)",
-                                mojangProfile.getUniqueId(),
-                                mojangProfile.getUniqueId()
-                            ),
-                            false
-                        )
-                        .build()
-                )
-                .addActionRow(
-                    Button.of(
-                        ButtonStyle.SUCCESS,
-                        String.format(
-                            "verification-accept-%s",
-                            event.getMember().getId()
-                        ),
-                        "Accept"
-                    ),
-                    Button.of(
-                        ButtonStyle.DANGER,
-                        String.format(
-                            "verification-deny-%s",
-                            event.getMember().getId()
-                        ),
-                        "Deny"
-                    )
-                )
-                .queue(), () -> {
-                log.warn("Profile verification log channel not found!");
+                        ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessage("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">").addEmbeds(
+                                new EmbedBuilder()
+                                    .appendDescription("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">")
+                                    .setTitle("Mojang Profile Verification")
+                                    .setDescription(event.getMember().getAsMention() + " has sent a Mojang verification request. This discord account matches the social set for this Mojang Profile.")
+                                    .setColor(Color.PINK)
+                                    .setThumbnail(event.getMember().getEffectiveAvatarUrl())
+                                    .setFooter("This request expires in 1 day.")
+                                    .addField("Username", mojangProfile.getUsername(), false)
+                                    .addField(
+                                        "UUID / SkyCrypt",
+                                        String.format(
+                                            "[%s](https://sky.shiiyu.moe/stats/%s)",
+                                            mojangProfile.getUniqueId(),
+                                            mojangProfile.getUniqueId()
+                                        ),
+                                        false
+                                    )
+                                    .build()
+                            )
+                            .addActionRow(
+                                Button.of(
+                                    ButtonStyle.SUCCESS,
+                                    String.format(
+                                        "verification-accept-%s",
+                                        event.getMember().getId()
+                                    ),
+                                    "Accept"
+                                ),
+                                Button.of(
+                                    ButtonStyle.DANGER,
+                                    String.format(
+                                        "verification-deny-%s",
+                                        event.getMember().getId()
+                                    ),
+                                    "Deny"
+                                )
+                            )
+                            .queue(), () -> {
+                            log.warn("Profile verification log channel not found!");
+                        });
+                    });
+            })
+            .exceptionally(throwable -> {
+                log.error("Error during profile verification request", throwable);
+                event.getHook().editOriginal("Failed to process verification request: " + throwable.getMessage()).queue();
+                return null;
             });
-        } catch (HttpException | MojangProfileException exception) {
-            event.getHook().sendMessage(exception.getMessage()).queue();
-        } catch (Exception exception) {
-            log.error("Encountered an error while requesting verification for " + event.getMember().getUser().getName() + " (ID: " + event.getMember().getId() + ") with username " + username + "!", exception);
-            TranslationManager.edit(event.getHook(), discordUser, "commands.verify.error");
-        }
     }
 
     @JDASlashCommand(
@@ -157,48 +163,61 @@ public class ProfileCommands extends ApplicationCommand {
             return;
         }
 
-        Member member = Util.getMainGuild().retrieveMemberById(event.getUser().getId()).complete();
-        if (member == null) {
-            event.getHook().editOriginal("You must be in SkyBlock Nerds to use this command!").queue();
-            return;
-        }
+        DiscordUtils.getMainGuild().retrieveMemberById(event.getUser().getId())
+            .submit()
+            .thenCompose(member -> {
+                if (member == null) {
+                    event.getHook().editOriginal("You must be in SkyBlock Nerds to use this command!").queue();
+                    return CompletableFuture.completedFuture(null);
+                }
 
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getUser().getId());
+                DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+                return discordUserRepository.findOrCreateByIdAsync(event.getUser().getId())
+                    .thenCompose(discordUser ->
+                        requestMojangProfileAsync(member, username, true)
+                            .thenAccept(mojangProfile -> {
+                                if (mojangProfile == null) {
+                                    return;
+                                }
 
-        try {
-            MojangProfile mojangProfile = requestMojangProfile(member, username, true);
-            updateMojangProfile(member, mojangProfile);
+                                if (mojangProfile.getErrorMessage() != null) {
+                                    event.getHook().editOriginal(mojangProfile.getErrorMessage()).queue();
+                                    return;
+                                }
 
-            TranslationManager.edit(event.getHook(), discordUser, "commands.verify.profile_updated", mojangProfile.getUsername(), mojangProfile.getUniqueId());
+                                updateMojangProfile(member, mojangProfile);
 
-            ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
-                textChannel.sendMessageEmbeds(
-                        new EmbedBuilder()
-                            .setTitle("Mojang Profile Link")
-                            .setDescription(member.getAsMention() + " has linked their Mojang Profile.")
-                            .setThumbnail(member.getEffectiveAvatarUrl())
-                            .setColor(Color.GREEN)
-                            .addField("Username", mojangProfile.getUsername(), false)
-                            .addField(
-                                "UUID / SkyCrypt",
-                                String.format(
-                                    "[%s](https://sky.shiiyu.moe/stats/%s)",
-                                    mojangProfile.getUniqueId(),
-                                    mojangProfile.getUniqueId()
-                                ),
-                                false
-                            )
-                            .build()
-                    )
-                    .queue();
-            }, () -> log.warn("Log channel not found!"));
+                                TranslationManager.edit(event.getHook(), discordUser, "commands.verify.profile_updated", mojangProfile.getUsername(), mojangProfile.getUniqueId());
 
-        } catch (HttpException | MojangProfileMismatchException exception) {
-            event.getHook().sendMessage(exception.getMessage()).queue();
-        } catch (Exception exception) {
-            log.error("Encountered an error while linking " + member.getUser().getName() + " (ID: " + member.getId() + ") to " + username + "!", exception);
-        }
+                                ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
+                                    textChannel.sendMessageEmbeds(
+                                            new EmbedBuilder()
+                                                .setTitle("Mojang Profile Link")
+                                                .setDescription(member.getAsMention() + " has linked their Mojang Profile.")
+                                                .setThumbnail(member.getEffectiveAvatarUrl())
+                                                .setColor(Color.GREEN)
+                                                .addField("Username", mojangProfile.getUsername(), false)
+                                                .addField(
+                                                    "UUID / SkyCrypt",
+                                                    String.format(
+                                                        "[%s](https://sky.shiiyu.moe/stats/%s)",
+                                                        mojangProfile.getUniqueId(),
+                                                        mojangProfile.getUniqueId()
+                                                    ),
+                                                    false
+                                                )
+                                                .build()
+                                        )
+                                        .queue();
+                                }, () -> log.warn("Log channel not found!"));
+                            })
+                    );
+            })
+            .exceptionally(throwable -> {
+                log.error("Error during profile linking", throwable);
+                event.getHook().editOriginal("Failed to link profile: " + throwable.getMessage()).queue();
+                return null;
+            });
     }
 
     @JDASlashCommand(
@@ -232,24 +251,36 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
-        String profile = discordUser.isProfileAssigned() ?
-            discordUser.getMojangProfile().getUsername() + " (" + discordUser.getMojangProfile().getUniqueId().toString() + ")" :
-            "*Missing Data*";
+        discordUserRepository.findByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    return;
+                }
 
-        event.getHook().editOriginalEmbeds(
-            new EmbedBuilder()
-                .setAuthor(event.getMember().getEffectiveName() + " (ID: " + event.getMember().getId() + ")")
-                .setTitle("Your Profile")
-                .setThumbnail(event.getMember().getEffectiveAvatarUrl())
-                .setColor(event.getMember().getColor())
-                .addField("Mojang Profile", profile, false)
-                .addField("Badges", discordUser.getBadges().isEmpty() ? "None" : String.valueOf(discordUser.getBadges().size()), true)
-                .addField("Language", discordUser.getLanguage().getName(), true)
-                .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), true)
-                .build()
-        ).queue();
+                String profile = discordUser.isProfileAssigned() ?
+                    discordUser.getMojangProfile().getUsername() + " (" + discordUser.getMojangProfile().getUniqueId().toString() + ")" :
+                    "*Missing Data*";
+
+                event.getHook().editOriginalEmbeds(
+                    new EmbedBuilder()
+                        .setAuthor(event.getMember().getEffectiveName() + " (ID: " + event.getMember().getId() + ")")
+                        .setTitle("Your Profile")
+                        .setThumbnail(event.getMember().getEffectiveAvatarUrl())
+                        .setColor(event.getMember().getColor())
+                        .addField("Mojang Profile", profile, false)
+                        .addField("Badges", discordUser.getBadges().isEmpty() ? "None" : String.valueOf(discordUser.getBadges().size()), true)
+                        .addField("Language", discordUser.getLanguage().getName(), true)
+                        .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), true)
+                        .build()
+                ).queue();
+            })
+            .exceptionally(throwable -> {
+                log.error("Error loading user profile", throwable);
+                event.getHook().editOriginal("Failed to load profile: " + throwable.getMessage()).queue();
+                return null;
+            });
     }
 
     @JDASlashCommand(
@@ -267,9 +298,21 @@ public class ProfileCommands extends ApplicationCommand {
         event.deferReply(showPublicly).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
-        event.getHook().editOriginalEmbeds(createBadgesEmbed(event.getMember(), discordUser, true)).queue();
+        discordUserRepository.findByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    return;
+                }
+
+                event.getHook().editOriginalEmbeds(createBadgesEmbed(event.getMember(), discordUser, true)).queue();
+            })
+            .exceptionally(throwable -> {
+                log.error("Error loading user badges", throwable);
+                event.getHook().editOriginal("Failed to load badges: " + throwable.getMessage()).queue();
+                return null;
+            });
     }
 
     @JDASlashCommand(
@@ -292,25 +335,31 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findOrCreateById(event.getMember().getId());
 
-        page = (page == null) ? 1 : page;
-        final int pageNum = Math.max(page, 1);
-        type = (type == null ? Suggestion.ChannelType.NORMAL : type);
+        discordUserRepository.findOrCreateByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                final int pageNum = Math.max(page == null ? 1 : page, 1);
+                final Suggestion.ChannelType finalType = (type == null ? Suggestion.ChannelType.NORMAL : type);
 
-        List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember(), event.getMember().getIdLong(), tags, title, type);
+                List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember(), event.getMember().getIdLong(), tags, title, finalType);
 
-        if (suggestions.isEmpty()) {
-            TranslationManager.edit(event.getHook(), discordUser, "cache.suggestions.filtered_none_found");
-            return;
-        }
+                if (suggestions.isEmpty()) {
+                    TranslationManager.edit(event.getHook(), discordUser, "cache.suggestions.filtered_none_found");
+                    return;
+                }
 
-        event.getHook().editOriginalEmbeds(
-            SuggestionCommands.buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, type, pageNum, false, true)
-                .setAuthor(event.getMember().getEffectiveName())
-                .setThumbnail(event.getMember().getEffectiveAvatarUrl())
-                .build()
-        ).queue();
+                event.getHook().editOriginalEmbeds(
+                    SuggestionCommands.buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, finalType, pageNum, false, true)
+                        .setAuthor(event.getMember().getEffectiveName())
+                        .setThumbnail(event.getMember().getEffectiveAvatarUrl())
+                        .build()
+                ).queue();
+            })
+            .exceptionally(throwable -> {
+                log.error("Error loading user suggestions", throwable);
+                event.getHook().editOriginal("Failed to load suggestions: " + throwable.getMessage()).queue();
+                return null;
+            });
     }
 
     @JDASlashCommand(
@@ -328,16 +377,28 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
-        if (discordUser.getBirthdayData().getTimer() != null) {
-            discordUser.getBirthdayData().getTimer().cancel();
-        }
+        discordUserRepository.findByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    return;
+                }
 
-        discordUser.setBirthdayData(new BirthdayData());
-        discordUserRepository.cacheObject(discordUser);
+                if (discordUser.getBirthdayData().getTimer() != null) {
+                    discordUser.getBirthdayData().getTimer().cancel();
+                }
 
-        TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.removed");
+                discordUser.setBirthdayData(new BirthdayData());
+                discordUserRepository.cacheObject(discordUser);
+
+                TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.removed");
+            })
+            .exceptionally(throwable -> {
+                log.error("Error removing birthday", throwable);
+                event.getHook().editOriginal("Failed to remove birthday: " + throwable.getMessage()).queue();
+                return null;
+            });
     }
 
     @JDASlashCommand(
@@ -356,23 +417,35 @@ public class ProfileCommands extends ApplicationCommand {
 
         Member member = event.getMember();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(member.getId());
 
-        try {
-            BirthdayData birthdayData = discordUser.getBirthdayData();
+        discordUserRepository.findByIdAsync(member.getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    return;
+                }
 
-            if (birthdayData.getTimer() != null) {
-                birthdayData.getTimer().cancel();
-            }
+                try {
+                    BirthdayData birthdayData = discordUser.getBirthdayData();
 
-            Date date = DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"});
-            discordUser.setBirthday(date);
-            birthdayData.setShouldAnnounceAge(announceAge != null && announceAge);
-            discordUser.scheduleBirthdayReminder(birthdayData.getBirthdayThisYear());
-            TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.set", DateFormatUtils.format(date, "dd MMMM yyyy"));
-        } catch (Exception exception) {
-            TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.bad_date");
-        }
+                    if (birthdayData.getTimer() != null) {
+                        birthdayData.getTimer().cancel();
+                    }
+
+                    Date date = DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"});
+                    discordUser.setBirthday(date);
+                    birthdayData.setShouldAnnounceAge(announceAge != null && announceAge);
+                    discordUser.scheduleBirthdayReminder(birthdayData.getBirthdayThisYear());
+                    TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.set", DateFormatUtils.format(date, "dd MMMM yyyy"));
+                } catch (Exception exception) {
+                    TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.bad_date");
+                }
+            })
+            .exceptionally(throwable -> {
+                log.error("Error setting birthday", throwable);
+                event.getHook().editOriginal("Failed to set birthday: " + throwable.getMessage()).queue();
+                return null;
+            });
     }
 
     @JDASlashCommand(
@@ -389,15 +462,22 @@ public class ProfileCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser user = repository.findById(event.getMember().getId());
 
-        if (user == null) {
-            TranslationManager.edit(event.getHook(), "generic.user_not_found");
-            return;
-        }
+        repository.findByIdAsync(event.getMember().getId())
+            .thenAccept(user -> {
+                if (user == null) {
+                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    return;
+                }
 
-        user.setLanguage(language);
-        TranslationManager.edit(event.getHook(), user, "commands.language.language_set", language.getName());
+                user.setLanguage(language);
+                TranslationManager.edit(event.getHook(), user, "commands.language.language_set", language.getName());
+            })
+            .exceptionally(throwable -> {
+                log.error("Error setting language", throwable);
+                event.getHook().editOriginal("Failed to set language: " + throwable.getMessage()).queue();
+                return null;
+            });
     }
 
     @AutocompletionHandler(name = "languages")
@@ -454,36 +534,49 @@ public class ProfileCommands extends ApplicationCommand {
         return embedBuilder.build();
     }
 
+    public static CompletableFuture<MojangProfile> requestMojangProfileAsync(Member member, String username, boolean enforceSocial) {
+        return HttpUtils.getMojangProfileAsync(username)
+            .thenCompose(mojangProfile -> {
+                if (mojangProfile == null) {
+                    return CompletableFuture.completedFuture(null);
+                }
 
-    public static MojangProfile requestMojangProfile(Member member, String username, boolean enforceSocial) throws HttpException, MojangProfileException {
-        MojangProfile mojangProfile = Util.getMojangProfile(username);
+                if (mojangProfile.getErrorMessage() != null) {
+                    MojangProfile errorProfile = new MojangProfile();
+                    errorProfile.setErrorMessage(mojangProfile.getErrorMessage());
+                    return CompletableFuture.completedFuture(errorProfile);
+                }
 
-        if (mojangProfile.getErrorMessage() != null) {
-            throw new MojangProfileException(mojangProfile.getErrorMessage());
-        }
+                return HttpUtils.getHypixelPlayerAsync(mojangProfile.getUniqueId())
+                    .thenApply(hypixelPlayerResponse -> {
+                        if (!hypixelPlayerResponse.isSuccess()) {
+                            MojangProfile errorProfile = new MojangProfile();
+                            errorProfile.setErrorMessage("Unable to look up `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
+                            return errorProfile;
+                        }
 
-        HypixelPlayerResponse hypixelPlayerResponse = Util.getHypixelPlayer(mojangProfile.getUniqueId());
+                        if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
+                            MojangProfile errorProfile = new MojangProfile();
+                            errorProfile.setErrorMessage("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
+                            return errorProfile;
+                        }
 
-        if (!hypixelPlayerResponse.isSuccess()) {
-            throw new HttpException("Unable to look up `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());
-        }
+                        String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
+                        String discordName = member.getUser().getName();
 
-        if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
-            throw new MojangProfileMismatchException("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
-        }
+                        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0000")) {
+                            discordName += "#" + member.getUser().getDiscriminator();
+                        }
 
-        String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
-        String discordName = member.getUser().getName();
+                        if (enforceSocial && !discordName.equalsIgnoreCase(discord)) {
+                            MojangProfile errorProfile = new MojangProfile();
+                            errorProfile.setErrorMessage("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
+                            return errorProfile;
+                        }
 
-        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0000")) {
-            discordName += "#" + member.getUser().getDiscriminator();
-        }
-
-        if (enforceSocial && !discordName.equalsIgnoreCase(discord)) {
-            throw new MojangProfileMismatchException("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
-        }
-
-        return mojangProfile;
+                        return mojangProfile;
+                    });
+            });
     }
 
     public static void updateMojangProfile(Member member, MojangProfile mojangProfile) throws HttpException {

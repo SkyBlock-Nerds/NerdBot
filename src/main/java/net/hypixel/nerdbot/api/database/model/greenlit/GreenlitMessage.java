@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.StringUtils;
 import org.bson.types.ObjectId;
 
 import java.awt.Color;
@@ -45,7 +45,7 @@ public class GreenlitMessage {
     }
 
     public void setSuggestionTitle(String suggestionTitle) {
-        this.suggestionTitle = suggestionTitle.replaceAll(Util.SUGGESTION_TITLE_REGEX.pattern(), "");
+        this.suggestionTitle = suggestionTitle.replaceAll(StringUtils.SUGGESTION_TITLE_REGEX.pattern(), "");
     }
 
     public void setSuggestionContent(String suggestionContent) {

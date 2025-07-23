@@ -11,9 +11,9 @@ import net.hypixel.nerdbot.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.JsonUtil;
+import net.hypixel.nerdbot.util.JsonUtils;
+import net.hypixel.nerdbot.util.StringUtils;
 import net.hypixel.nerdbot.util.Tuple;
-import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.awt.Color;
@@ -32,8 +32,8 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
         ChannelCache.getTextChannelById(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             log.debug("Changed values: " + changedValues);
 
-            JsonArray oldSaleData = JsonUtil.parseString(oldContent).getAsJsonObject().getAsJsonArray("sales");
-            JsonArray newSaleData = JsonUtil.parseString(newContent).getAsJsonObject().getAsJsonArray("sales");
+            JsonArray oldSaleData = JsonUtils.parseString(oldContent).getAsJsonObject().getAsJsonArray("sales");
+            JsonArray newSaleData = JsonUtils.parseString(newContent).getAsJsonObject().getAsJsonArray("sales");
 
             for (int i = 0; i < oldSaleData.size(); i++) {
                 for (int j = 0; j < newSaleData.size(); j++) {
@@ -73,8 +73,8 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
                         " (" + startTime.toRelativeTimestamp() + ")" + "\n" +
                         "End Time: " + endTime.toLongDateTime() +
                         " (" + endTime.toRelativeTimestamp() + ")" + "\n" +
-                        "Amount: " + Util.COMMA_SEPARATED_FORMAT.format(amount) + "x\n" +
-                        "Price: " + Util.COMMA_SEPARATED_FORMAT.format(price) + " SkyBlock Gems";
+                        "Amount: " + StringUtils.COMMA_SEPARATED_FORMAT.format(amount) + "x\n" +
+                        "Price: " + StringUtils.COMMA_SEPARATED_FORMAT.format(price) + " SkyBlock Gems";
 
                     embedBuilder.addField(itemId, stringBuilder, false);
                 });
