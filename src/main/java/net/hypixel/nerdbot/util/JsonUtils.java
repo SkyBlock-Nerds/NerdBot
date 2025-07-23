@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @Log4j2
 public class JsonUtils {
 
-    private static final ExecutorService jsonExecutor = Executors.newCachedThreadPool();
+    private static final ExecutorService jsonExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     private JsonUtils() {
     }
