@@ -223,7 +223,8 @@ public class AdminCommands extends ApplicationCommand {
                     log.warn("Log channel not found!");
                 });
 
-                TranslationManager.edit(event.getHook(), discordUser, "commands.invite.deleted", invites.size());            })
+                TranslationManager.edit(event.getHook(), discordUser, "commands.invite.deleted", invites.size());
+            })
             .exceptionally(throwable -> {
                 log.error("Error loading user for invite deletion", throwable);
                 event.getHook().editOriginal("Failed to load user data").queue();
