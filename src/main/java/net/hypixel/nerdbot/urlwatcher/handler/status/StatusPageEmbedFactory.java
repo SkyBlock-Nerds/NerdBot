@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.hypixel.nerdbot.bot.config.StatusPageConfig;
-import net.hypixel.nerdbot.util.TimeUtil;
+import net.hypixel.nerdbot.util.TimeUtils;
 
 import java.awt.Color;
 import java.time.Instant;
@@ -78,7 +78,7 @@ public class StatusPageEmbedFactory {
                 long endTime = Date.from(maintenance.getScheduledUntilInstant()).getTime();
                 long duration = endTime - startTime;
 
-                description.append("**Estimated Duration:** ").append(TimeUtil.formatMsLong(duration)).append("\n");
+                description.append("**Estimated Duration:** ").append(TimeUtils.formatMsLong(duration)).append("\n");
             }
         }
 
