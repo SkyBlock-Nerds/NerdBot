@@ -189,7 +189,8 @@ public class AdminCommands extends ApplicationCommand {
 
                 StringBuilder stringBuilder = new StringBuilder("**" + TranslationManager.translate(discordUser, "commands.invite.header", invites.size()) + "**\n");
                 invites.forEach(invite -> stringBuilder.append(invite.getUrl()).append("\n"));
-                event.getHook().editOriginal(stringBuilder.toString()).queue();            })
+                event.getHook().editOriginal(stringBuilder.toString()).queue();
+            })
             .exceptionally(throwable -> {
                 log.error("Error loading user for invite creation", throwable);
                 TranslationManager.reply(event, "Failed to load user data");
