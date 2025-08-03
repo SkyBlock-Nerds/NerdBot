@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.generator;
 
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
@@ -18,9 +19,7 @@ import net.hypixel.nerdbot.util.skyblock.Rarity;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Image;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
