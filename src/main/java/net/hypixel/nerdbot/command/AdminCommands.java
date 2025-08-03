@@ -1,21 +1,16 @@
 package net.hypixel.nerdbot.command;
 
-import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
-import net.aerh.slashcommands.api.annotations.SlashCommand;
-import net.aerh.slashcommands.api.annotations.SlashOption;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
+import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Invite;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.PermissionOverride;
-import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -25,8 +20,14 @@ import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -49,28 +50,16 @@ import net.hypixel.nerdbot.feature.UserNominationFeature;
 import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.DiscordUtils;
-import net.hypixel.nerdbot.util.FileUtils;
-import net.hypixel.nerdbot.util.HttpUtils;
-import net.hypixel.nerdbot.util.JsonUtils;
-import net.hypixel.nerdbot.util.TimeUtils;
-import net.hypixel.nerdbot.util.Utils;
+import net.hypixel.nerdbot.util.*;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.commons.lang.time.DateFormatUtils;
 
-import java.awt.Color;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -738,93 +727,372 @@ public class AdminCommands {
         }
     }
 
-    @SlashCommand(name = "transfer-tag", description = "Transfer forum tag to another.", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
-    public void transferForumTag(
-        SlashCommandInteractionEvent event,
-        @SlashOption(name = "channel", description = "Forum channel to transfer tags in.") ForumChannel channel,
-        @SlashOption(name = "from", description = "Transfer from this tag.", autocompleteId = "forumtags") String from,
-        @SlashOption(name = "to", description = "Transfer to this tag.", autocompleteId = "forumtags") String to
-    ) {
+    @SlashCommand(name = "admin", subcommand = "transfer-tag", description = "Interactive forum tag transfer panel", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    public void transferForumTag(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
+        createTagTransferPanel(event.getHook(), event.getUser().getId());
+    }
 
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
 
-        if (discordUser == null) {
-            event.getHook().editOriginal("User not found").queue();
+    @SlashComponentHandler(id = "tag-channel-select", patterns = {"tag-channel-select-*"})
+    public void handleChannelSelect(StringSelectInteractionEvent event) {
+        String userId = event.getComponentId().split("-")[3];
+        if (!event.getUser().getId().equals(userId)) {
+            event.reply("You can only use your own tag transferring interface!").setEphemeral(true).queue();
             return;
         }
 
-        ForumTag fromTag;
-        ForumTag toTag;
+        event.deferEdit().queue();
+        String channelId = event.getValues().get(0);
+        createTagSelectionStep(event.getHook(), userId, channelId);
+    }
 
-        try {
-            // Autocomplete Support
-            fromTag = Objects.requireNonNull(channel.getAvailableTagById(from));
-            toTag = Objects.requireNonNull(channel.getAvailableTagById(to));
-        } catch (NumberFormatException nfex) {
-            try {
-                // "I can type it myself" Support
-                fromTag = channel.getAvailableTagsByName(from, true).get(0);
-                toTag = channel.getAvailableTagsByName(to, true).get(0);
-            } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
-                event.getHook().editOriginal("You have entered invalid from/to tags, please try again!").queue();
-                return;
-            }
+    @SlashComponentHandler(id = "tag-from-select", patterns = {"tag-from-select-*"})
+    public void handleFromTagSelect(StringSelectInteractionEvent event) {
+        String[] parts = event.getComponentId().split("-");
+        String userId = parts[3];
+        String channelId = parts[4];
+        
+        if (!event.getUser().getId().equals(userId)) {
+            event.reply("You can only use your own tag transferring interface!").setEphemeral(true).queue();
+            return;
         }
 
-        // Load Threads
-        ForumTag searchTag = fromTag;
+        event.deferEdit().queue();
+        String fromTagId = event.getValues().get(0);
+        createToTagSelectionStep(event.getHook(), userId, channelId, fromTagId);
+    }
+
+    @SlashComponentHandler(id = "tag-to-select", patterns = {"tag-to-select-*"})
+    public void handleToTagSelect(StringSelectInteractionEvent event) {
+        String[] parts = event.getComponentId().split("-");
+        String userId = parts[3];
+        String channelId = parts[4];
+        String fromTagId = parts[5];
+        
+        if (!event.getUser().getId().equals(userId)) {
+            event.reply("You can only use your own tag transfer panel!").setEphemeral(true).queue();
+            return;
+        }
+
+        event.deferEdit().queue();
+        String toTagId = event.getValues().get(0);
+        createConfirmationStep(event.getHook(), userId, channelId, fromTagId, toTagId);
+    }
+
+    @SlashComponentHandler(id = "tag-confirm", patterns = {"tag-confirm-*"})
+    public void handleTagConfirm(ButtonInteractionEvent event) {
+        String[] parts = event.getComponentId().split("-");
+        String action = parts[2]; // "execute" or "cancel"
+        String userId = parts[3];
+        String channelId = parts[4];
+        String fromTagId = parts[5];
+        String toTagId = parts[6];
+        
+        if (!event.getUser().getId().equals(userId)) {
+            event.reply("You can only use your own tag transferring interface!").setEphemeral(true).queue();
+            return;
+        }
+
+        event.deferEdit().queue();
+
+        if (action.equals("cancel")) {
+            createTagTransferPanel(event.getHook(), userId, "❌ Tag transfer cancelled.");
+            return;
+        }
+
+        executeTagTransfer(event.getHook(), userId, channelId, fromTagId, toTagId);
+    }
+
+    @SlashComponentHandler(id = "tag-back", patterns = {"tag-back-*"})
+    public void handleTagBack(ButtonInteractionEvent event) {
+        String userId = event.getComponentId().split("-")[2];
+        if (!event.getUser().getId().equals(userId)) {
+            event.reply("You can only use your own tag transferring interface!").setEphemeral(true).queue();
+            return;
+        }
+
+        event.deferEdit().queue();
+        createTagTransferPanel(event.getHook(), userId);
+    }
+
+    private void createTagTransferPanel(InteractionHook hook, String userId) {
+        createTagTransferPanel(hook, userId, null);
+    }
+
+    private void createTagTransferPanel(InteractionHook hook, String userId, String message) {
+        List<ForumChannel> forumChannels = DiscordUtils.getMainGuild().getForumChannels();
+        
+        if (forumChannels.isEmpty()) {
+            hook.editOriginal("❌ No forum channels found in this server!").setComponents().queue();
+            return;
+        }
+
+        StringBuilder content = new StringBuilder();
+        content.append("🏷️ **Tag Transfer Panel**\n\n");
+        
+        if (message != null) {
+            content.append(message).append("\n\n");
+        }
+        
+        content.append("**Step 1:** Select the forum channel where you want to transfer tags.\n\n");
+        content.append("📊 **Available Forum Channels:** ").append(forumChannels.size());
+
+        StringSelectMenu.Builder channelSelect = StringSelectMenu.create("tag-channel-select-" + userId)
+            .setPlaceholder("🏛️ Select Forum Channel")
+            .setRequiredRange(1, 1);
+
+        forumChannels.stream()
+            .limit(25)
+            .forEach(channel -> channelSelect.addOption(
+                channel.getName(), 
+                channel.getId(), 
+                "Transfer tags in " + channel.getName()
+            ));
+
+        ActionRow selectRow = ActionRow.of(channelSelect.build());
+
+        hook.editOriginal(content.toString())
+            .setComponents(selectRow)
+            .queue();
+    }
+
+    private void createTagSelectionStep(InteractionHook hook, String userId, String channelId) {
+        ForumChannel channel = DiscordUtils.getMainGuild().getForumChannelById(channelId);
+        if (channel == null) {
+            createTagTransferPanel(hook, userId, "❌ Forum channel not found!");
+            return;
+        }
+
+        List<ForumTag> tags = channel.getAvailableTags();
+        if (tags.isEmpty()) {
+            createTagTransferPanel(hook, userId, "❌ No tags found in " + channel.getName() + "!");
+            return;
+        }
+
+        String content = "🏷️ **Tag Transfer Panel**\n\n" +
+                "**Step 2:** Select the source tag to transfer FROM.\n\n" +
+                "📍 **Selected Channel:** " + channel.getName() + "\n" +
+                "🏷️ **Available Tags:** " + tags.size() + "\n\n";
+
+        StringSelectMenu.Builder tagSelect = StringSelectMenu.create("tag-from-select-" + userId + "-" + channelId)
+            .setPlaceholder("🏷️ Select Source Tag (FROM)")
+            .setRequiredRange(1, 1);
+
+        tags.stream()
+            .limit(25)
+            .forEach(tag -> tagSelect.addOption(
+                tag.getName(), 
+                tag.getId(), 
+                "Transfer FROM this tag"
+            ));
+
+        ActionRow selectRow = ActionRow.of(tagSelect.build());
+        ActionRow backRow = ActionRow.of(
+            Button.secondary("tag-back-" + userId, "⬅️ Back to Channel Selection")
+        );
+
+        hook.editOriginal(content)
+            .setComponents(selectRow, backRow)
+            .queue();
+    }
+
+    private void createToTagSelectionStep(InteractionHook hook, String userId, String channelId, String fromTagId) {
+        ForumChannel channel = DiscordUtils.getMainGuild().getForumChannelById(channelId);
+        if (channel == null) {
+            createTagTransferPanel(hook, userId, "❌ Forum channel not found!");
+            return;
+        }
+
+        ForumTag fromTag = channel.getAvailableTagById(fromTagId);
+        if (fromTag == null) {
+            createTagSelectionStep(hook, userId, channelId);
+            return;
+        }
+
+        List<ForumTag> tags = channel.getAvailableTags().stream()
+            .filter(tag -> !tag.getId().equals(fromTagId))
+            .toList();
+
+        if (tags.isEmpty()) {
+            createTagSelectionStep(hook, userId, channelId);
+            return;
+        }
+
+        String content = "🏷️ **Tag Transfer Panel**\n\n" +
+                "**Step 3:** Select the destination tag to transfer TO.\n\n" +
+                "📍 **Channel:** " + channel.getName() + "\n" +
+                "📤 **From Tag:** " + fromTag.getName() + "\n" +
+                "🏷️ **Available Destination Tags:** " + tags.size() + "\n\n";
+
+        StringSelectMenu.Builder tagSelect = StringSelectMenu.create("tag-to-select-" + userId + "-" + channelId + "-" + fromTagId)
+            .setPlaceholder("🎯 Select Destination Tag (TO)")
+            .setRequiredRange(1, 1);
+
+        tags.stream()
+            .limit(25)
+            .forEach(tag -> tagSelect.addOption(
+                tag.getName(), 
+                tag.getId(), 
+                "Transfer TO this tag"
+            ));
+
+        ActionRow selectRow = ActionRow.of(tagSelect.build());
+        ActionRow backRow = ActionRow.of(
+            Button.secondary("tag-back-" + userId, "⬅️ Back to Channel Selection")
+        );
+
+        hook.editOriginal(content)
+            .setComponents(selectRow, backRow)
+            .queue();
+    }
+
+    private void createConfirmationStep(InteractionHook hook, String userId, String channelId, String fromTagId, String toTagId) {
+        ForumChannel channel = DiscordUtils.getMainGuild().getForumChannelById(channelId);
+        ForumTag fromTag = channel != null ? channel.getAvailableTagById(fromTagId) : null;
+        ForumTag toTag = channel != null ? channel.getAvailableTagById(toTagId) : null;
+
+        if (channel == null || fromTag == null || toTag == null) {
+            createTagTransferPanel(hook, userId, "❌ Invalid channel or tags!");
+            return;
+        }
+
+        // Count affected threads
+        List<ThreadChannel> affectedThreads = Stream.concat(
+                channel.getThreadChannels().stream(),
+                channel.retrieveArchivedPublicThreadChannels().stream()
+            )
+            .filter(thread -> thread.getAppliedTags().contains(fromTag))
+            .distinct()
+            .toList();
+
+        StringBuilder content = new StringBuilder();
+        content.append("🏷️ **Tag Transfer Confirmation**\n\n");
+        content.append("⚠️ **Please confirm the following transfer:**\n\n");
+        content.append("📍 **Channel:** ").append(channel.getName()).append("\n");
+        content.append("📤 **From Tag:** `").append(fromTag.getName()).append("`\n");
+        content.append("📥 **To Tag:** `").append(toTag.getName()).append("`\n");
+        content.append("📊 **Affected Threads:** ").append(affectedThreads.size()).append("\n\n");
+
+        if (affectedThreads.isEmpty()) {
+            content.append("⚠️ **Warning:** No threads found with the source tag!\n\n");
+        } else {
+            content.append("🔄 **This will:**\n");
+            content.append("• Remove `").append(fromTag.getName()).append("` from ").append(affectedThreads.size()).append(" threads\n");
+            content.append("• Add `").append(toTag.getName()).append("` to those threads\n\n");
+        }
+
+        content.append("**Are you sure you want to proceed?**");
+
+        ActionRow confirmRow = ActionRow.of(
+            Button.success("tag-confirm-execute-" + userId + "-" + channelId + "-" + fromTagId + "-" + toTagId, "✅ Execute Transfer"),
+            Button.danger("tag-confirm-cancel-" + userId + "-" + channelId + "-" + fromTagId + "-" + toTagId, "❌ Cancel")
+        );
+
+        ActionRow backRow = ActionRow.of(
+            Button.secondary("tag-back-" + userId, "⬅️ Start Over")
+        );
+
+        hook.editOriginal(content.toString())
+            .setComponents(confirmRow, backRow)
+            .queue();
+    }
+
+    private void executeTagTransfer(InteractionHook hook, String userId, String channelId, String fromTagId, String toTagId) {
+        ForumChannel channel = DiscordUtils.getMainGuild().getForumChannelById(channelId);
+        ForumTag fromTag = channel != null ? channel.getAvailableTagById(fromTagId) : null;
+        ForumTag toTag = channel != null ? channel.getAvailableTagById(toTagId) : null;
+
+        if (channel == null || fromTag == null || toTag == null) {
+            createTagTransferPanel(hook, userId, "❌ Invalid channel or tags!");
+            return;
+        }
+
+        StringBuilder content = new StringBuilder();
+        content.append("🏷️ **Tag Transfer in Progress**\n\n");
+        content.append("📍 **Channel:** ").append(channel.getName()).append("\n");
+        content.append("📤 **From:** `").append(fromTag.getName()).append("`\n");
+        content.append("📥 **To:** `").append(toTag.getName()).append("`\n\n");
+        content.append("🔄 **Status:** Loading threads...");
+
+        hook.editOriginal(content.toString()).setComponents().queue();
+
+        // Load affected threads
         List<ThreadChannel> threadChannels = Stream.concat(
                 channel.getThreadChannels().stream(),
                 channel.retrieveArchivedPublicThreadChannels().stream()
             )
-            .filter(threadChannel -> threadChannel.getAppliedTags().contains(searchTag))
-            .distinct() // Prevent Duplicates
+            .filter(thread -> thread.getAppliedTags().contains(fromTag))
+            .distinct()
             .toList();
 
         int total = threadChannels.size();
         if (total == 0) {
-            event.getHook().editOriginal(String.format("No threads were found with the tag %s!", fromTag.getName())).queue();
+            createTagTransferPanel(hook, userId, "❌ No threads found with the source tag!");
             return;
         }
 
+        // Update status with progress
+        content = new StringBuilder();
+        content.append("🏷️ **Tag Transfer in Progress**\n\n");
+        content.append("📍 **Channel:** ").append(channel.getName()).append("\n");
+        content.append("📤 **From:** `").append(fromTag.getName()).append("`\n");
+        content.append("📥 **To:** `").append(toTag.getName()).append("`\n\n");
+        content.append("📊 **Found:** ").append(total).append(" threads to update\n");
+        content.append("🔄 **Status:** Processing threads...");
+
+        hook.editOriginal(content.toString()).queue();
+
+        // Process threads
         int processed = 0;
-        int modulo = Math.min(total, 10);
-        event.getHook().editOriginal(String.format("Updated %d/%d threads ...", 0, total)).queue();
-
-        // Process Threads
+        int errors = 0;
+        
         for (ThreadChannel threadChannel : threadChannels) {
-            List<ForumTag> threadTags = new ArrayList<>(threadChannel.getAppliedTags());
-            threadTags.remove(fromTag);
-
-            // Prevent Duplicates
-            if (!threadTags.contains(toTag)) {
-                threadTags.add(toTag);
-            }
-
-            boolean archived = threadChannel.isArchived();
-
-            if (archived) {
-                threadChannel.getManager().setArchived(false).complete();
-            }
-
             try {
+                List<ForumTag> threadTags = new ArrayList<>(threadChannel.getAppliedTags());
+                threadTags.remove(fromTag);
+
+                if (!threadTags.contains(toTag)) {
+                    threadTags.add(toTag);
+                }
+
+                boolean wasArchived = threadChannel.isArchived();
+                if (wasArchived) {
+                    threadChannel.getManager().setArchived(false).complete();
+                }
+
                 threadChannel.getManager().setAppliedTags(threadTags).complete();
-            } catch (Exception exception) {
-                log.warn("Unable to set applied tags for [" + threadChannel.getId() + "] " + threadChannel.getName(), exception);
-            }
 
-            if (archived) {
-                threadChannel.getManager().setArchived(true).complete();
-            }
+                if (wasArchived) {
+                    threadChannel.getManager().setArchived(true).complete();
+                }
 
-            if (++processed % modulo == 0 && processed != total) {
-                event.getHook().editOriginal(String.format("Updated %d/%d threads ...", processed, total)).queue();
+                processed++;
+            } catch (Exception e) {
+                errors++;
+                log.warn("Failed to update thread {}: {}", threadChannel.getId(), e.getMessage());
             }
         }
 
-        event.getHook().editOriginal(String.format("Finished transferring %s to %s in %d threads!", fromTag.getName(), toTag.getName(), total)).queue();
+        // Final result
+        content = new StringBuilder();
+        content.append("🏷️ **Tag Transfer Complete**\n\n");
+        content.append("📍 **Channel:** ").append(channel.getName()).append("\n");
+        content.append("📤 **From:** `").append(fromTag.getName()).append("`\n");
+        content.append("📥 **To:** `").append(toTag.getName()).append("`\n\n");
+        content.append("✅ **Successfully processed:** ").append(processed).append(" threads\n");
+        if (errors > 0) {
+            content.append("❌ **Errors:** ").append(errors).append(" threads\n");
+        }
+        content.append("\n**Transfer completed successfully!**");
+
+        ActionRow newTransferRow = ActionRow.of(
+            Button.primary("tag-back-" + userId, "🔄 Start New Transfer")
+        );
+
+        hook.editOriginal(content.toString())
+            .setComponents(newTransferRow)
+            .queue();
     }
 
     @SlashAutocompleteHandler(id = "forumchannels")
