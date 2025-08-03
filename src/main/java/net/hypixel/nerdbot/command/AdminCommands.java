@@ -771,7 +771,7 @@ public class AdminCommands {
         String fromTagId = parts[5];
         
         if (!event.getUser().getId().equals(userId)) {
-            event.reply("You can only use your own tag transfer panel!").setEphemeral(true).queue();
+            event.reply("You can only use your own tag transferring interface!").setEphemeral(true).queue();
             return;
         }
 
