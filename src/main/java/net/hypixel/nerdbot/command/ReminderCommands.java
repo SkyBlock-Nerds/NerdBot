@@ -284,7 +284,7 @@ public class ReminderCommands {
                 }
 
                 if (descriptionInput.length() > 4_000) {
-                    hook.editOriginal("❌ Description is too long! Please keep it under 4,096 characters.").queue();
+                    hook.editOriginal("❌ Description is too long! Please keep it under 4,000 characters.").queue();
                     return;
                 }
 
