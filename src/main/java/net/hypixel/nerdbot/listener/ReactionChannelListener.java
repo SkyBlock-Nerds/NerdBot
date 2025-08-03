@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.listener;
 
 import com.vdurmont.emoji.EmojiParser;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -12,7 +12,7 @@ import net.hypixel.nerdbot.bot.config.objects.ReactionChannel;
 import java.util.List;
 import java.util.Optional;
 
-@Log4j2
+@Slf4j
 public class ReactionChannelListener {
 
     @SubscribeEvent

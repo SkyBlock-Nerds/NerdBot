@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.feature;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
@@ -16,7 +16,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.TimerTask;
 
-@Log4j2
+@Slf4j
 public class ProfileUpdateFeature extends BotFeature {
 
     public static void updateNickname(DiscordUser discordUser) {

@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.generator;
 
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.google.gson.JsonObject;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
@@ -53,7 +53,7 @@ import static net.hypixel.nerdbot.generator.util.GeneratorStrings.REQUEST_PLAYER
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.UNKNOWN_EXTRA_DETAILS;
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.stripString;
 
-@Log4j2
+@Slf4j
 public class GeneratorBuilder {
 
     public static final int IMAGE_HEIGHT = 512;

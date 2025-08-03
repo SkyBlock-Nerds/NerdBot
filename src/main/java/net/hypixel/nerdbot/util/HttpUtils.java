@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.util;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import io.prometheus.client.Summary;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-@Log4j2
+@Slf4j
 public class HttpUtils {
 
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()

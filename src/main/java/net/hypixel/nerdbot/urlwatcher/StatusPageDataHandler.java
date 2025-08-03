@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.urlwatcher;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
@@ -8,10 +8,9 @@ import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.util.FileUtils;
 import net.hypixel.nerdbot.util.Tuple;
 
-import java.io.IOException;
 import java.util.List;
 
-@Log4j2
+@Slf4j
 public class StatusPageDataHandler implements URLWatcher.DataHandler {
 
     @Override

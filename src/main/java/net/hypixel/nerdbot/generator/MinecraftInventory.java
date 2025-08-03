@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.generator;
 
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.util.FontUtils;
@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
-@Log4j2
+@Slf4j
 public class MinecraftInventory {
     private static final boolean RESOURCES_INITIALISED;
     private static final Font MINECRAFT_FONT;

@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.api.urlwatcher;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.util.JsonUtils;
 import net.hypixel.nerdbot.util.Tuple;
 import okhttp3.OkHttpClient;
@@ -22,7 +22,7 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import org.jetbrains.annotations.NotNull;
 
-@Log4j2
+@Slf4j
 public class URLWatcher {
 
     @Getter

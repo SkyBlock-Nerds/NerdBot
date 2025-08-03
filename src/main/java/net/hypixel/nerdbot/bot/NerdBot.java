@@ -5,7 +5,7 @@ import com.freya02.botcommands.api.components.DefaultComponentManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -73,7 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-@Log4j2
+@Slf4j
 public class NerdBot implements Bot {
 
     private static final List<BotFeature> FEATURES = Arrays.asList(
