@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.repository;
 
 import com.mongodb.client.MongoClient;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
@@ -14,7 +14,7 @@ import net.hypixel.nerdbot.util.DiscordUtils;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-@Log4j2
+@Slf4j
 public class DiscordUserRepository extends Repository<DiscordUser> {
 
     public DiscordUserRepository(MongoClient mongoClient, String databaseName) {

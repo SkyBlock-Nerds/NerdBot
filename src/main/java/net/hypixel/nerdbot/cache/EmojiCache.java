@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.cache;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.emoji.EmojiAddedEvent;
 import net.dv8tion.jda.api.events.emoji.EmojiRemovedEvent;
@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-@Log4j2
+@Slf4j
 public class EmojiCache {
 
     private static final Map<String, Emoji> EMOJI_CACHE = new HashMap<>();

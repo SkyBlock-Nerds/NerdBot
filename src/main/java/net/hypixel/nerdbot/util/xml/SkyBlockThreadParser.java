@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.util.xml;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -14,7 +14,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
-@Log4j2
+@Slf4j
 public class SkyBlockThreadParser {
 
     private SkyBlockThreadParser() {

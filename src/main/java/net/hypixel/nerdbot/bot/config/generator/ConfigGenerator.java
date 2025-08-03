@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Activity;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
@@ -26,7 +26,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
-@Log4j2
+@Slf4j
 public class ConfigGenerator {
 
     private static final String EXAMPLE_NAME_ID = "example_name";

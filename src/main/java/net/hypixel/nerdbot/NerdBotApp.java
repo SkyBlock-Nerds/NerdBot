@@ -3,7 +3,7 @@ package net.hypixel.nerdbot;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.MongoException;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.bot.NerdBot;
@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-@Log4j2
+@Slf4j
 public class NerdBotApp {
 
     public static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(

@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.modmail;
 
 import club.minnced.discord.webhook.external.JDAWebhookClient;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.User;
@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
-@Log4j2
+@Slf4j
 public class ModMailService {
 
     private static final int MAX_CONTENT_CHUNK_SIZE = 1_024;

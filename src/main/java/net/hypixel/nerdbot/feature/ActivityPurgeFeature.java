@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.feature;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -9,7 +9,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.TimerTask;
 
-@Log4j2
+@Slf4j
 public class ActivityPurgeFeature extends BotFeature {
 
     @Override

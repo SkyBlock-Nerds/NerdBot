@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
-import com.mongodb.client.result.DeleteResult;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
@@ -37,7 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-@Log4j2
+@Slf4j
 public class ActivityListener {
     private final Map<Long, Long> voiceActivity = new HashMap<>();
 

@@ -1,12 +1,12 @@
 package net.hypixel.nerdbot.api.badge;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@Log4j2
+@Slf4j
 public class BadgeManager {
     private static final Map<String, Badge> BADGE_MAP = new HashMap<>();
 
