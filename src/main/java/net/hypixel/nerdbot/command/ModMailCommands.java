@@ -17,7 +17,7 @@ import java.util.Optional;
 @Slf4j
 public class ModMailCommands {
 
-    @SlashCommand(name = "modmail", subcommand = "find", description = "Find a Mod Mail thread", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "modmail", subcommand = "find", description = "Find a Mod Mail thread", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void findModMailThread(SlashCommandInteractionEvent event, @SlashOption Member member) {
         event.deferReply(true).complete();
 
@@ -41,7 +41,7 @@ public class ModMailCommands {
         }, () -> event.getHook().editOriginal("Could not find the Mod Mail channel! Is there one configured?").queue());
     }
 
-    @SlashCommand(name = "modmail", subcommand = "new", description = "Create a new Mod Mail thread for the specified member", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "modmail", subcommand = "new", description = "Create a new Mod Mail thread for the specified member", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void createNewModMail(SlashCommandInteractionEvent event, @SlashOption Member member) {
         event.deferReply(true).complete();
 

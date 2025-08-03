@@ -1,26 +1,22 @@
 package net.hypixel.nerdbot.command;
 
+import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import lombok.extern.slf4j.Slf4j;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.TimeUtils;
 import net.hypixel.nerdbot.util.FileUtils;
 import net.hypixel.nerdbot.util.StringUtils;
+import net.hypixel.nerdbot.util.TimeUtils;
 import net.hypixel.nerdbot.util.Utils;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.jetbrains.annotations.NotNull;
@@ -90,7 +86,7 @@ public class InfoCommands {
         return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
     }
 
-    @SlashCommand(name = "info", subcommand = "bot", description = "View information about the bot", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "info", subcommand = "bot", description = "View information about the bot", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void botInfo(SlashCommandInteractionEvent event) {
         StringBuilder builder = new StringBuilder();
         SelfUser bot = NerdBotApp.getBot().getJDA().getSelfUser();
@@ -118,7 +114,7 @@ public class InfoCommands {
 
     // TODO: /info greenlit command to view greenlit messages, pagination + selection menu handling
 
-    @SlashCommand(name = "info", subcommand = "server", description = "View some information about the server", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "info", subcommand = "server", description = "View some information about the server", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void serverInfo(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         StringBuilder builder = new StringBuilder();
@@ -164,7 +160,7 @@ public class InfoCommands {
         event.reply(serverInfo).setEphemeral(true).queue();
     }
 
-    @SlashCommand(name = "info", subcommand = "activity", description = "View information regarding user activity", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "info", subcommand = "activity", description = "View information regarding user activity", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void userActivityInfo(SlashCommandInteractionEvent event, @SlashOption int page) {
         if (!database.isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();
@@ -191,7 +187,7 @@ public class InfoCommands {
         event.reply(stringBuilder.toString()).setEphemeral(true).queue();
     }
 
-    @SlashCommand(name = "info", subcommand = "messages", description = "View an ordered list of users with the most messages", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "info", subcommand = "messages", description = "View an ordered list of users with the most messages", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void userMessageInfo(SlashCommandInteractionEvent event, @SlashOption int page) {
         if (!database.isConnected()) {
             event.reply("Couldn't connect to the database!").setEphemeral(true).queue();

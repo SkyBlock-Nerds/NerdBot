@@ -1,9 +1,9 @@
 package net.hypixel.nerdbot.command;
 
+import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
-import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -14,19 +14,16 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.FileUtils;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
 public class BadgeCommands {
 
-    @SlashCommand(name = "badge", subcommand = "give", description = "Award a badge to a user", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "badge", subcommand = "give", description = "Award a badge to a user", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void badgeAward(SlashCommandInteractionEvent event, @SlashOption Member member, @SlashOption(autocompleteId = "available_badges") String badgeId, @SlashOption(required = false) int tier) {
         event.deferReply(true).complete();
 
@@ -76,7 +73,7 @@ public class BadgeCommands {
             });
     }
 
-    @SlashCommand(name = "badge", subcommand = "revoke", description = "Remove a badge from a user", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "badge", subcommand = "revoke", description = "Remove a badge from a user", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void badgeRemove(SlashCommandInteractionEvent event, @SlashOption Member member, @SlashOption(autocompleteId = "available_badges") String badgeId, @SlashOption(required = false) int tier) {
         event.deferReply(true).complete();
 
@@ -115,7 +112,7 @@ public class BadgeCommands {
             });
     }
 
-    @SlashCommand(name = "badge", subcommand = "list", description = "List all available badges", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "badge", subcommand = "list", description = "List all available badges", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void badgeList(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 

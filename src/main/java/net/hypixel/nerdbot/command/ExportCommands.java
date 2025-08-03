@@ -1,11 +1,10 @@
 package net.hypixel.nerdbot.command;
 
-import net.aerh.slashcommands.api.annotations.SlashCommand;
-import net.aerh.slashcommands.api.annotations.SlashOption;
 import com.google.gson.JsonArray;
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.Role;
@@ -13,6 +12,7 @@ import net.dv8tion.jda.api.entities.ThreadMember;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -24,12 +24,11 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.ChannelActivityEntry;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
-
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.FileUtils;
 import net.hypixel.nerdbot.util.ArrayUtils;
+import net.hypixel.nerdbot.util.FileUtils;
 import net.hypixel.nerdbot.util.Utils;
 import net.hypixel.nerdbot.util.csv.CSVData;
 
@@ -143,7 +142,7 @@ public class ExportCommands {
         }
     }
 
-    @SlashCommand(name = PARENT_COMMAND, subcommand = "greenlit", description = "Exports all greenlit forum posts into a CSV file", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "greenlit", description = "Exports all greenlit forum posts into a CSV file", guildOnly = true, requiredPermissions = {"MANAGE_CHANNEL", "MANAGE_THREADS"})
     public void exportGreenlitThreads(SlashCommandInteractionEvent event, @SlashOption(description = "Disregards any post before this UNIX timestamp (Default: 0)", required = false) long suggestionsAfter) {
         event.deferReply(true).complete();
 
@@ -232,7 +231,7 @@ public class ExportCommands {
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
 
-    @SlashCommand(name = PARENT_COMMAND, subcommand = "roles", description = "Export a list of users with the given roles", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "roles", description = "Export a list of users with the given roles", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void exportRoles(SlashCommandInteractionEvent event, @SlashOption(description = "Comma-separated list of role names (e.g. Role 1, Role 2, Role 3)") String roles) {
         event.deferReply(true).complete();
 
@@ -271,7 +270,7 @@ public class ExportCommands {
         }
     }
 
-    @SlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void exportMemberActivity(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "The number of days of inactivity to consider", required = false) int inactivityDays,

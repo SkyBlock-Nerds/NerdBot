@@ -79,7 +79,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class AdminCommands {
 
-    @SlashCommand(name = "curate", description = "Manually run the curation process", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "curate", description = "Manually run the curation process", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void curate(SlashCommandInteractionEvent event, @SlashOption ForumChannel channel, @SlashOption(description = "Run the curator without greenlighting suggestions", required = false) Boolean readOnly) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         final boolean finalReadOnly = readOnly != null && readOnly;
@@ -142,7 +142,7 @@ public class AdminCommands {
             });
     }
 
-    @SlashCommand(name = "invites", subcommand = "create", description = "Generate a bunch of invites for a specific channel.", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "invites", subcommand = "create", description = "Generate a bunch of invites for a specific channel.", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void createInvites(SlashCommandInteractionEvent event, @SlashOption int amount, @SlashOption(required = false) TextChannel channel) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
@@ -193,7 +193,7 @@ public class AdminCommands {
             });
     }
 
-    @SlashCommand(name = "invites", subcommand = "delete", description = "Delete all active invites.", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "invites", subcommand = "delete", description = "Delete all active invites.", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void deleteInvites(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
@@ -341,7 +341,7 @@ public class AdminCommands {
         subcommand = "link",
         description = "Link a Mojang Profile to a member's account.",
         guildOnly = true,
-        requiredPermissions = {"ADMINISTRATOR"}
+        requiredPermissions = {"BAN_MEMBERS"}
     )
     public void linkProfile(
         SlashCommandInteractionEvent event,
@@ -421,7 +421,7 @@ public class AdminCommands {
         subcommand = "missing",
         description = "List any user with no assigned Mojang Profile.",
         guildOnly = true,
-        requiredPermissions = {"ADMINISTRATOR"}
+        requiredPermissions = {"BAN_MEMBERS"}
     )
     public void userMissingProfile(SlashCommandInteractionEvent event) {
         event.deferReply(true).queue();
@@ -480,7 +480,7 @@ public class AdminCommands {
         subcommand = "info",
         description = "View information about a user",
         guildOnly = true,
-        requiredPermissions = {"ADMINISTRATOR"}
+        requiredPermissions = {"BAN_MEMBERS"}
     )
     public void userInfo(SlashCommandInteractionEvent event, @SlashOption(description = "The user to search") Member member) {
         event.deferReply(true).queue();
@@ -509,7 +509,7 @@ public class AdminCommands {
         subcommand = "badges",
         description = "View the badges of a user",
         guildOnly = true,
-        requiredPermissions = {"ADMINISTRATOR"}
+        requiredPermissions = {"BAN_MEMBERS"}
     )
     public void viewUserBadges(SlashCommandInteractionEvent event, @SlashOption(description = "The user to search") Member member) {
         event.deferReply(true).queue();
