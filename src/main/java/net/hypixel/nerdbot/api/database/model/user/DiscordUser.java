@@ -11,7 +11,6 @@ import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
 import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
-import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.ChannelCache;
@@ -34,7 +33,6 @@ public class DiscordUser {
 
     private String discordId;
     private List<BadgeEntry> badges;
-    private UserLanguage language;
     private LastActivity lastActivity;
     private BirthdayData birthdayData;
     private MojangProfile mojangProfile;
@@ -43,11 +41,11 @@ public class DiscordUser {
     }
 
     public DiscordUser(String discordId) {
-        this(discordId, new ArrayList<>(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
+        this(discordId, new ArrayList<>(), new LastActivity(), new BirthdayData(), new MojangProfile());
     }
 
     public DiscordUser(Member member) {
-        this(member.getId(), new ArrayList<>(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
+        this(member.getId(), new ArrayList<>(), new LastActivity(), new BirthdayData(), new MojangProfile());
     }
 
     public boolean isProfileAssigned() {

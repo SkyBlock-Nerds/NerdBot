@@ -52,10 +52,6 @@ public class UserGrabberFeature extends BotFeature {
                     discordUser.setLastActivity(new LastActivity());
                 }
 
-                if (discordUser.getLanguage() == null) {
-                    log.info("Setting language for " + member.getEffectiveName() + " to ENGLISH");
-                    discordUser.setLanguage(UserLanguage.ENGLISH);
-                }
 
                 if (discordUser.getBadges() == null) {
                     log.info("Badges for " + member.getEffectiveName() + " was null. Setting to default values!");

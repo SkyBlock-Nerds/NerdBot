@@ -1,13 +1,12 @@
 package net.hypixel.nerdbot.command;
 
-import com.freya02.botcommands.api.application.ApplicationCommand;
-import com.freya02.botcommands.api.application.annotations.AppOption;
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
-import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashOption;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import com.joestelmach.natty.DateGroup;
 import com.joestelmach.natty.Parser;
 import com.mongodb.client.result.DeleteResult;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
@@ -16,7 +15,7 @@ import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.language.TranslationManager;
+
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
@@ -33,8 +32,8 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Log4j2
-public class ReminderCommands extends ApplicationCommand {
+@Slf4j
+public class ReminderCommands {
 
     private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
 
@@ -98,8 +97,8 @@ public class ReminderCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "remind", subcommand = "create", description = "Set a reminder")
-    public void createReminder(GuildSlashEvent event, @AppOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @AppOption String description) {
+    @SlashCommand(name = "remind", subcommand = "create", description = "Set a reminder", guildOnly = true)
+    public void createReminder(SlashCommandInteractionEvent event, @SlashOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @SlashOption String description) {
         event.deferReply(true).complete();
 
         DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -107,28 +106,28 @@ public class ReminderCommands extends ApplicationCommand {
         userRepository.findByIdAsync(event.getUser().getId())
             .thenAccept(user -> {
                 if (user == null) {
-                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    event.getHook().editOriginal("User not found").queue();
                     return;
                 }
 
                 // Check if the bot has permission to send messages in the channel
                 if (!event.getGuild().getSelfMember().hasPermission(event.getGuildChannel(), Permission.MESSAGE_SEND)) {
-                    TranslationManager.edit(event.getHook(), user, "permissions.cannot_send_messages");
+                    event.getHook().editOriginal("I do not have the correct permission to send messages in this channel!").queue();
                     return;
                 }
 
                 if (event.getChannel() instanceof ThreadChannel && !event.getGuild().getSelfMember().hasPermission(event.getGuildChannel(), Permission.MESSAGE_SEND_IN_THREADS)) {
-                    TranslationManager.edit(event.getHook(), user, "permissions.cannot_send_messages_in_threads");
+                    event.getHook().editOriginal("I do not have the correct permission to send messages in threads!").queue();
                     return;
                 }
 
                 if (description == null) {
-                    TranslationManager.edit(event.getHook(), user, "commands.reminders.no_description");
+                    event.getHook().editOriginal("You need to provide a description for the reminder!").queue();
                     return;
                 }
 
                 if (description.length() > 4_096) {
-                    TranslationManager.edit(event.getHook(), user, "commands.reminders.description_too_long", 4_096);
+                    event.getHook().editOriginal(String.format("Your description is too long! Please keep it under %d characters.", 4_096)).queue();
                     return;
                 }
 
@@ -139,14 +138,14 @@ public class ReminderCommands extends ApplicationCommand {
                     try {
                         date = parseWithNatty(time);
                     } catch (DateTimeParseException | NumberFormatException exception) {
-                        TranslationManager.edit(event.getHook(), user, "commands.reminders.invalid_time_format");
+                        event.getHook().editOriginal("I could not parse that date/time format, please try again!").queue();
                         return;
                     }
                 }
 
                 // Check if the provided time is in the past
                 if (date.before(new Date())) {
-                    TranslationManager.edit(event.getHook(), user, "commands.reminders.time_in_past");
+                    event.getHook().editOriginal("You cannot set a reminder in the past!").queue();
                     return;
                 }
 
@@ -163,7 +162,7 @@ public class ReminderCommands extends ApplicationCommand {
                         if (result != null && result.wasAcknowledged() && result.getUpsertedId() != null) {
                             MessageEditBuilder builder = new MessageEditBuilder();
                             builder.setEmbeds(new EmbedBuilder().setDescription(description).build())
-                                .setContent(TranslationManager.translate(user, "commands.reminders.reminder_set", DiscordTimestamp.toLongDateTime(finalDate.getTime())));
+                                .setContent(String.format("I will remind you at %s about:", DiscordTimestamp.toLongDateTime(finalDate.getTime())));
 
                             event.getHook().editOriginal(builder.build()).complete();
                             reminder.schedule();
@@ -182,19 +181,19 @@ public class ReminderCommands extends ApplicationCommand {
                                     .queue();
                             } catch (Exception e) {
                                 log.error("Failed to send reminder DM to user: " + event.getUser().getId(), e);
-                                TranslationManager.edit(event.getHook(), user, "commands.reminders.dm_error");
+                                event.getHook().editOriginal("Failed to send reminder DM!").queue();
                             }
                         } else {
                             // If the reminder could not be saved, send an error message and log the error too
-                            TranslationManager.edit(event.getHook(), user, "commands.reminders.save_error");
+                            event.getHook().editOriginal("An error occurred while saving that reminder! Please try again!").queue();
                             log.error("Could not save reminder: " + reminder + " for user: " + event.getUser().getId() + " (" + result + ")");
                         }
                     });
             });
     }
 
-    @JDASlashCommand(name = "remind", subcommand = "list", description = "View your reminders")
-    public void listReminders(GuildSlashEvent event) {
+    @SlashCommand(name = "remind", subcommand = "list", description = "View your reminders", guildOnly = true)
+    public void listReminders(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
         DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -202,7 +201,7 @@ public class ReminderCommands extends ApplicationCommand {
         userRepository.findByIdAsync(event.getUser().getId())
             .thenAccept(user -> {
                 if (user == null) {
-                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    event.getHook().editOriginal("User not found").queue();
                     return;
                 }
 
@@ -213,7 +212,7 @@ public class ReminderCommands extends ApplicationCommand {
                     .toList());
 
                 if (reminders.isEmpty()) {
-                    TranslationManager.edit(event.getHook(), user, "commands.reminders.no_reminders");
+                    event.getHook().editOriginal("You do not have any reminders set!").queue();
                     return;
                 }
 
@@ -221,7 +220,7 @@ public class ReminderCommands extends ApplicationCommand {
                 reminders.sort(Comparator.comparing(Reminder::getTime));
 
                 EmbedBuilder embedBuilder = new EmbedBuilder();
-                embedBuilder.setTitle(TranslationManager.translate(user, "commands.reminders.your_reminders"));
+                embedBuilder.setTitle(String.format("Your Reminders"));
                 embedBuilder.setColor(Color.BLUE);
                 
                 for (int i = 0; i < Math.min(reminders.size(), 25); i++) {
@@ -235,22 +234,22 @@ public class ReminderCommands extends ApplicationCommand {
                 }
                 
                 if (reminders.size() > 25) {
-                    embedBuilder.setFooter(TranslationManager.translate(user, "commands.reminders.showing_first_25", reminders.size()));
+                    embedBuilder.setFooter(String.format("Showing first 25 of %d reminders", reminders.size()));
                 }
                 
                 event.getHook().editOriginalEmbeds(embedBuilder.build()).queue();
             });
     }
 
-    @JDASlashCommand(name = "remind", subcommand = "delete", description = "Delete a reminder")
-    public void deleteReminder(GuildSlashEvent event, @AppOption String uuid) {
+    @SlashCommand(name = "remind", subcommand = "delete", description = "Delete a reminder", guildOnly = true)
+    public void deleteReminder(SlashCommandInteractionEvent event, @SlashOption String uuid) {
         event.deferReply(true).complete();
 
         DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser user = userRepository.findById(event.getUser().getId());
 
         if (user == null) {
-            TranslationManager.edit(event.getHook(), "generic.user_not_found");
+            event.getHook().editOriginal("User not found").queue();
             return;
         }
 
@@ -261,7 +260,7 @@ public class ReminderCommands extends ApplicationCommand {
 
             // Check if the reminder exists first
             if (reminder == null || !reminder.getUserId().equalsIgnoreCase(event.getUser().getId())) {
-                TranslationManager.edit(event.getHook(), user, "commands.reminders.reminder_not_found");
+                event.getHook().editOriginal("I could not find a reminder with that UUID!").queue();
                 return;
             }
 
@@ -273,15 +272,15 @@ public class ReminderCommands extends ApplicationCommand {
                     reminder.getTimer().cancel();
                 }
 
-                TranslationManager.edit(event.getHook(), user, "commands.reminders.reminder_deleted", reminder.getUuid());
+                event.getHook().editOriginal(String.format("Deleted reminder %s!", reminder.getUuid())).queue();
                 log.info("Deleted reminder: " + uuid + " for user: " + event.getUser().getId());
             } else {
                 // If the reminder could not be deleted, send an error message and log the error
-                TranslationManager.edit(event.getHook(), user, "commands.reminders.delete_error", uuid);
+                event.getHook().editOriginal(String.format("An error occurred while deleting that reminder! Please try again!")).queue();
                 log.info("Could not delete reminder " + uuid + " for user: " + event.getUser().getId() + " (" + result + ")");
             }
         } catch (IllegalArgumentException exception) {
-            TranslationManager.edit(event.getHook(), user, "commands.invalid_uuid");
+            event.getHook().editOriginal("Invalid UUID!").queue();
         }
     }
 }

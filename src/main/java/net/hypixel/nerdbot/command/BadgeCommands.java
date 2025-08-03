@@ -1,14 +1,13 @@
 package net.hypixel.nerdbot.command;
 
-import com.freya02.botcommands.api.annotations.Optional;
-import com.freya02.botcommands.api.application.ApplicationCommand;
-import com.freya02.botcommands.api.application.annotations.AppOption;
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
-import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import lombok.extern.log4j.Log4j2;
+import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashOption;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -16,7 +15,7 @@ import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.language.TranslationManager;
+
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.FileUtils;
 
@@ -24,11 +23,11 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-@Log4j2
-public class BadgeCommands extends ApplicationCommand {
+@Slf4j
+public class BadgeCommands {
 
-    @JDASlashCommand(name = "badge", subcommand = "give", description = "Award a badge to a user", defaultLocked = true)
-    public void badgeAward(GuildSlashEvent event, @AppOption Member member, @AppOption(autocomplete = "available_badges") String badgeId, @AppOption @Optional int tier) {
+    @SlashCommand(name = "badge", subcommand = "give", description = "Award a badge to a user", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    public void badgeAward(SlashCommandInteractionEvent event, @SlashOption Member member, @SlashOption(autocompleteId = "available_badges") String badgeId, @SlashOption(required = false) int tier) {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -36,14 +35,14 @@ public class BadgeCommands extends ApplicationCommand {
         discordUserRepository.findByIdAsync(member.getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
-                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    event.getHook().editOriginal("User not found").queue();
                     return;
                 }
 
                 Badge badge = BadgeManager.getBadgeById(badgeId);
 
                 if (badge == null) {
-                    TranslationManager.edit(event.getHook(), "commands.badge.invalid_id", badgeId);
+                    event.getHook().editOriginal(String.format("%s is an invalid Badge ID!", badgeId)).queue();
                     return;
                 }
 
@@ -51,34 +50,34 @@ public class BadgeCommands extends ApplicationCommand {
                     int finalTier = tier < 1 ? 1 : tier;
 
                     if (finalTier > tieredBadge.getTiers().size()) {
-                        TranslationManager.edit(event.getHook(), "commands.badge.invalid_tier", badge.getName(), tieredBadge.getTiers().size());
+                        event.getHook().editOriginal(String.format("%s is an invalid Badge Tier! It only has %d tiers.", badge.getName(), tieredBadge.getTiers().size())).queue();
                         return;
                     }
 
                     if (discordUser.addBadge(tieredBadge, finalTier)) {
-                        TranslationManager.edit(event.getHook(), "commands.badge.gave_tier", finalTier, badge.getName(), member.getEffectiveName());
+                        event.getHook().editOriginal(String.format("Gave Tier %d of the %s badge to %s!", finalTier, badge.getName(), member.getEffectiveName())).queue();
                         log.info("{} gave {} tier {} of badge '{}' (ID: {})", event.getMember().getEffectiveName(), member.getEffectiveName(), finalTier, badge.getName(), badge.getId());
                     } else {
-                        TranslationManager.edit(event.getHook(), "commands.badge.already_has_tier", member.getEffectiveName(), finalTier, badge.getName());
+                        event.getHook().editOriginal(String.format("%s already has Tier %d of the %s badge!", member.getEffectiveName(), finalTier, badge.getName())).queue();
                     }
                 } else {
                     if (discordUser.hasBadge(badge)) {
-                        TranslationManager.edit(event.getHook(), "commands.badge.already_has_badge", member.getEffectiveName(), badge.getName());
+                        event.getHook().editOriginal(String.format("%s already has the %s badge!", member.getEffectiveName(), badge.getName())).queue();
                         return;
                     }
 
                     if (discordUser.addBadge(badge)) {
-                        TranslationManager.edit(event.getHook(), "commands.badge.gave_badge", badge.getName(), member.getEffectiveName());
+                        event.getHook().editOriginal(String.format("Gave badge %s to %s!", badge.getName(), member.getEffectiveName())).queue();
                         log.info("{} gave {} badge '{}' (ID: {})", event.getMember().getEffectiveName(), member.getEffectiveName(), badge.getName(), badge.getId());
                     } else {
-                        TranslationManager.edit(event.getHook(), "commands.badge.failed_to_give_badge", badge.getName(), member.getEffectiveName());
+                        event.getHook().editOriginal(String.format("Failed to give the %s badge to %s!", badge.getName(), member.getEffectiveName())).queue();
                     }
                 }
             });
     }
 
-    @JDASlashCommand(name = "badge", subcommand = "revoke", description = "Remove a badge from a user", defaultLocked = true)
-    public void badgeRemove(GuildSlashEvent event, @AppOption Member member, @AppOption(autocomplete = "available_badges") String badgeId, @AppOption @Optional int tier) {
+    @SlashCommand(name = "badge", subcommand = "revoke", description = "Remove a badge from a user", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    public void badgeRemove(SlashCommandInteractionEvent event, @SlashOption Member member, @SlashOption(autocompleteId = "available_badges") String badgeId, @SlashOption(required = false) int tier) {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -86,38 +85,38 @@ public class BadgeCommands extends ApplicationCommand {
         discordUserRepository.findByIdAsync(member.getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
-                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    event.getHook().editOriginal("User not found").queue();
                     return;
                 }
 
                 Badge badge = BadgeManager.getBadgeById(badgeId);
 
                 if (badge == null) {
-                    TranslationManager.edit(event.getHook(), "commands.badge.invalid_badge", badgeId);
+                    event.getHook().editOriginal(String.format("%s is an invalid Badge ID!", badgeId)).queue();
                     return;
                 }
 
                 if (badge instanceof TieredBadge tieredBadge) {
                     int finalTier = Math.max(tier, 1);
                     if (discordUser.removeBadge(tieredBadge, finalTier)) {
-                        TranslationManager.edit(event.getHook(), "commands.badge.removed_tier", finalTier, badge.getName(), member.getEffectiveName());
+                        event.getHook().editOriginal(String.format("Removed Tier %d of the %s badge from %s!", finalTier, badge.getName(), member.getEffectiveName())).queue();
                         log.info("{} removed tier {} of badge '{}' (ID: {}) from {}", event.getMember().getEffectiveName(), finalTier, badge.getName(), badge.getId(), member.getEffectiveName());
                     } else {
-                        TranslationManager.edit(event.getHook(), "commands.badge.does_not_have_tier", member.getEffectiveName(), finalTier, badge.getName());
+                        event.getHook().editOriginal(String.format("%s does not have Tier %d of the %s badge!", member.getEffectiveName(), finalTier, badge.getName())).queue();
                     }
                 } else {
                     if (discordUser.removeBadge(badge)) {
-                        TranslationManager.edit(event.getHook(), "commands.badge.removed_badge", badge.getName(), member.getEffectiveName());
+                        event.getHook().editOriginal(String.format("Removed the %s badge from %s!", badge.getName(), member.getEffectiveName())).queue();
                         log.info("{} removed badge '{}' (ID: {}) from {}", event.getMember().getEffectiveName(), badge.getName(), badge.getId(), member.getEffectiveName());
                     } else {
-                        TranslationManager.edit(event.getHook(), "commands.badge.does_not_have_badge", member.getEffectiveName(), badge.getName());
+                        event.getHook().editOriginal(String.format("%s does not have the %s badge!", member.getEffectiveName(), badge.getName())).queue();
                     }
                 }
             });
     }
 
-    @JDASlashCommand(name = "badge", subcommand = "list", description = "List all available badges", defaultLocked = true)
-    public void badgeList(GuildSlashEvent event) {
+    @SlashCommand(name = "badge", subcommand = "list", description = "List all available badges", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    public void badgeList(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
         StringBuilder sb = new StringBuilder("Available Badges (" + BadgeManager.getBadgeMap().size() + "):\n");
@@ -144,15 +143,18 @@ public class BadgeCommands extends ApplicationCommand {
                 return;
             } catch (IOException exception) {
                 log.error("Failed to create temp file listing all badges!", exception);
-                TranslationManager.edit(event.getHook(), "commands.badge.failed_to_list");
+                event.getHook().editOriginal("Failed to list all available badges! Please try again later!").queue();
             }
         }
 
         event.getHook().editOriginal(sb.toString()).queue();
     }
 
-    @AutocompletionHandler(name = "available_badges", showUserInput = false)
-    public List<String> getAvailableBadges(CommandAutoCompleteInteractionEvent event) {
-        return Arrays.asList(BadgeManager.getBadgeMap().keySet().toArray(new String[0]));
+    @SlashAutocompleteHandler(id = "available_badges")
+    public List<Command.Choice> getAvailableBadges(CommandAutoCompleteInteractionEvent event) {
+        return BadgeManager.getBadgeMap().entrySet().stream()
+            .map(entry -> new Command.Choice(entry.getValue().getName(), entry.getKey()))
+            .filter(choice -> choice.getName().contains(event.getFocusedOption().getName()))
+            .toList();
     }
 }

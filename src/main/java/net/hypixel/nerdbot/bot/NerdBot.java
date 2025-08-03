@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.bot;
 
-import com.freya02.botcommands.api.CommandsBuilder;
-import com.freya02.botcommands.api.components.DefaultComponentManager;
+import net.aerh.slashcommands.SlashCommandManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.Getter;
@@ -22,7 +21,6 @@ import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.api.repository.Repository;
@@ -47,8 +45,6 @@ import net.hypixel.nerdbot.modmail.ModMailListener;
 import net.hypixel.nerdbot.listener.PinListener;
 import net.hypixel.nerdbot.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;
-import net.hypixel.nerdbot.listener.SuggestionListener;
-import net.hypixel.nerdbot.listener.VerificationListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
@@ -57,16 +53,12 @@ import net.hypixel.nerdbot.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
 import net.hypixel.nerdbot.util.JsonUtils;
 import net.hypixel.nerdbot.util.DiscordUtils;
-import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
-import net.hypixel.nerdbot.util.discord.resolver.SuggestionTypeResolver;
-import net.hypixel.nerdbot.util.discord.resolver.UserLanguageResolver;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -191,8 +183,6 @@ public class NerdBot implements Bot {
                 new FeatureEventListener(),
                 new ActivityListener(),
                 new ReactionChannelListener(),
-                new SuggestionListener(),
-                new VerificationListener(),
                 new PinListener(),
                 new MetricsListener(),
                 new FunListener(),
@@ -220,25 +210,10 @@ public class NerdBot implements Bot {
         messageCache = new MessageCache();
         suggestionCache = new SuggestionCache();
 
-        CommandsBuilder commandsBuilder = CommandsBuilder
-            .newBuilder()
-            .addOwners(config.getOwnerIds().stream().mapToLong(Long::parseLong).toArray())
-            .extensionsBuilder(extensionsBuilder -> extensionsBuilder
-                .registerParameterResolver(new UserLanguageResolver())
-                .registerParameterResolver(new SuggestionTypeResolver())
-                .registerAutocompletionTransformer(UserLanguage.class, userLanguage -> new Command.Choice(userLanguage.getName(), userLanguage.name()))
-                .registerAutocompletionTransformer(Suggestion.ChannelType.class, suggestionType -> new Command.Choice(suggestionType.getName(), suggestionType.name()))
-                .registerAutocompletionTransformer(ForumChannel.class, forumChannel -> new Command.Choice(forumChannel.getName(), forumChannel.getId()))
-                .registerAutocompletionTransformer(ForumTag.class, forumTag -> new Command.Choice(forumTag.getName(), forumTag.getId()))
-            );
-
-        try {
-            commandsBuilder.setComponentManager(new DefaultComponentManager(new ComponentDatabaseConnection()::getConnection));
-        } catch (SQLException exception) {
-            log.error("Failed to connect to the SQL database! Components will not work correctly!", exception);
-        }
-
-        commandsBuilder.build(jda, "net.hypixel.nerdbot.command");
+        SlashCommandManager.builder()
+            .withJDA(jda)
+            .scanPackage("net.hypixel.nerdbot.command")
+            .build();
 
         NerdBotApp.getBot().onStart();
         log.info("Bot is ready!");

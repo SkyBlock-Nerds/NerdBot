@@ -1,29 +1,28 @@
 package net.hypixel.nerdbot.command;
 
-import com.freya02.botcommands.api.application.ApplicationCommand;
-import com.freya02.botcommands.api.application.annotations.AppOption;
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
-import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashOption;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.language.TranslationManager;
+
 import net.hypixel.nerdbot.modmail.ModMailService;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 
 import java.util.Optional;
 
-@Log4j2
-public class ModMailCommands extends ApplicationCommand {
+@Slf4j
+public class ModMailCommands {
 
-    @JDASlashCommand(name = "modmail", subcommand = "find", description = "Find a Mod Mail thread", defaultLocked = true)
-    public void findModMailThread(GuildSlashEvent event, @AppOption Member member) {
+    @SlashCommand(name = "modmail", subcommand = "find", description = "Find a Mod Mail thread", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    public void findModMailThread(SlashCommandInteractionEvent event, @SlashOption Member member) {
         event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
+            event.getHook().editOriginal("Could not connect to database!").queue();
             return;
         }
 
@@ -34,20 +33,20 @@ public class ModMailCommands extends ApplicationCommand {
         modMailService.getModMailChannel().ifPresentOrElse(forumChannel -> {
             Optional<ThreadChannel> modMailThread = modMailService.findExistingThread(member.getUser());
             if (modMailThread.isEmpty()) {
-                TranslationManager.edit(event.getHook(), discordUser, "commands.mod_mail.thread_not_found", member.getAsMention());
+                event.getHook().editOriginal(String.format("Could not find a Mod Mail thread for %s!", member.getAsMention())).queue();
                 return;
             }
 
-            TranslationManager.edit(event.getHook(), discordUser, "commands.mod_mail.thread_found", member.getAsMention(), modMailThread.get().getAsMention());
-        }, () -> TranslationManager.edit(event.getHook(), discordUser, "commands.mod_mail.channel_not_found"));
+            event.getHook().editOriginal(String.format("Found Mod Mail thread for %s: %s", member.getAsMention(), modMailThread.get().getAsMention())).queue();
+        }, () -> event.getHook().editOriginal("Could not find the Mod Mail channel! Is there one configured?").queue());
     }
 
-    @JDASlashCommand(name = "modmail", subcommand = "new", description = "Create a new Mod Mail thread for the specified member", defaultLocked = true)
-    public void createNewModMail(GuildSlashEvent event, @AppOption Member member) {
+    @SlashCommand(name = "modmail", subcommand = "new", description = "Create a new Mod Mail thread for the specified member", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    public void createNewModMail(SlashCommandInteractionEvent event, @SlashOption Member member) {
         event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
+            event.getHook().editOriginal("Could not connect to database!").queue();
             return;
         }
 
@@ -58,17 +57,17 @@ public class ModMailCommands extends ApplicationCommand {
         modMailService.getModMailChannel().ifPresentOrElse(forumChannel -> {
             Optional<ThreadChannel> modMailThread = modMailService.findExistingThread(member.getUser());
             if (modMailThread.isPresent()) {
-                TranslationManager.edit(event.getHook(), commandSender, "commands.mod_mail.already_exists", member.getAsMention(), modMailThread.get().getAsMention());
+                event.getHook().editOriginal(String.format("A Mod Mail thread for %s already exists: %s", member.getAsMention(), modMailThread.get().getAsMention())).queue();
                 return;
             }
 
             try {
                 ThreadChannel thread = modMailService.createNewThread(member.getUser(), event.getUser());
-                TranslationManager.edit(event.getHook(), commandSender, "commands.mod_mail.created", member.getAsMention(), thread.getAsMention());
+                event.getHook().editOriginal(String.format("Created new Mod Mail thread for %s: %s", member.getAsMention(), thread.getAsMention())).queue();
             } catch (IllegalStateException e) {
                 log.error("Failed to create mod mail thread", e);
-                TranslationManager.edit(event.getHook(), commandSender, "commands.mod_mail.channel_not_found");
+                event.getHook().editOriginal("Could not find the Mod Mail channel! Is there one configured?").queue();
             }
-        }, () -> TranslationManager.edit(event.getHook(), commandSender, "commands.mod_mail.channel_not_found"));
+        }, () -> event.getHook().editOriginal("Could not find the Mod Mail channel! Is there one configured?").queue());
     }
 }

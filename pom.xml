@@ -40,10 +40,10 @@
             <artifactId>discord-webhooks</artifactId>
             <version>0.8.4</version>
         </dependency>
-        <dependency>
-            <groupId>io.github.freya022</groupId>
-            <artifactId>BotCommands</artifactId>
-            <version>2.10.4</version>
+       <dependency>
+            <groupId>com.github.Aerhhh</groupId>
+            <artifactId>SlashCommands</artifactId>
+            <version>v1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

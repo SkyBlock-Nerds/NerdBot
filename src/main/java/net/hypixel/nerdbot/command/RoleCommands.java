@@ -1,17 +1,17 @@
 package net.hypixel.nerdbot.command;
 
-import com.freya02.botcommands.api.application.ApplicationCommand;
-import com.freya02.botcommands.api.application.annotations.AppOption;
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
-import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import lombok.extern.log4j.Log4j2;
+import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashOption;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.language.TranslationManager;
+
 import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -22,11 +22,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Log4j2
-public class RoleCommands extends ApplicationCommand {
+@Slf4j
+public class RoleCommands {
 
-    @JDASlashCommand(name = "role", description = "Toggle a role")
-    public void toggleRole(GuildSlashEvent event, @AppOption(autocomplete = "pingable-roles") String role) {
+    @SlashCommand(name = "role", description = "Toggle a role", guildOnly = true)
+    public void toggleRole(SlashCommandInteractionEvent event, @SlashOption(autocompleteId = "pingable-roles") String role) {
         event.deferReply().setEphemeral(true).complete();
 
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -36,19 +36,19 @@ public class RoleCommands extends ApplicationCommand {
                 RoleManager.getPingableRoleByName(role).ifPresentOrElse(pingableRole -> {
                     Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
                     if (discordRole == null) {
-                        TranslationManager.edit(event.getHook(), user, "commands.role.invalid_role");
+                        event.getHook().editOriginal(String.format("Could not find a role with ID `%s`!", role)).queue();
                         return;
                     }
 
                     Member member = event.getMember();
                     if (RoleManager.hasRoleByName(member, role)) {
                         event.getGuild().removeRoleFromMember(member, discordRole).queue();
-                        TranslationManager.edit(event.getHook(), user, "commands.role.removed_role", discordRole.getAsMention());
+                        event.getHook().editOriginal(String.format("Removed role %s from you! Use the same command to add it back.", discordRole.getAsMention())).queue();
                     } else {
                         event.getGuild().addRoleToMember(member, discordRole).queue();
-                        TranslationManager.edit(event.getHook(), user, "commands.role.added_role", discordRole.getAsMention());
+                        event.getHook().editOriginal(String.format("Added role %s to you! Use the same command to remove it.", discordRole.getAsMention())).queue();
                     }
-                }, () -> TranslationManager.edit(event.getHook(), user, "commands.role.invalid_role", role));
+                }, () -> event.getHook().editOriginal(String.format("Could not find a role with ID `%s`!", role)).queue());
             })
             .exceptionally(throwable -> {
                 log.error("Error loading user for role toggle", throwable);
@@ -57,15 +57,15 @@ public class RoleCommands extends ApplicationCommand {
             });
     }
 
-    @AutocompletionHandler(name = "pingable-roles", showUserInput = false)
-    public List<String> listPingableRoles(CommandAutoCompleteInteractionEvent event) {
+    @SlashAutocompleteHandler(id = "pingable-roles")
+    public List<Command.Choice> listPingableRoles(CommandAutoCompleteInteractionEvent event) {
         return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
-            .map(PingableRole::name)
+            .map(role -> new Command.Choice(role.name(), role.name()))
             .toList();
     }
 
-    @JDASlashCommand(name = "roles", description = "List all roles that can be assigned")
-    public void listRoles(GuildSlashEvent event) {
+    @SlashCommand(name = "roles", description = "List all roles that can be assigned", guildOnly = true)
+    public void listRoles(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -73,7 +73,7 @@ public class RoleCommands extends ApplicationCommand {
         repository.findByIdAsync(event.getMember().getId())
             .thenAccept(user -> {
                 if (user == null) {
-                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    event.getHook().editOriginal("User not found").queue();
                     return;
                 }
 
@@ -81,7 +81,7 @@ public class RoleCommands extends ApplicationCommand {
                     .map(PingableRole::name)
                     .collect(Collectors.joining("\n"));
 
-                TranslationManager.edit(event.getHook(), user, "commands.role.list_roles", roles);
+                event.getHook().editOriginal(String.format("**Assignable Roles:**\n%s\n\n**Use /role <name> to toggle the role!**", roles)).queue();
             })
             .exceptionally(throwable -> {
                 log.error("Error loading user for role list", throwable);
@@ -90,13 +90,13 @@ public class RoleCommands extends ApplicationCommand {
             });
     }
 
-    @JDASlashCommand(name = "promotion", description = "Check if you are eligible for a promotion to a higher role")
-    public void checkForPromotionEligibility(GuildSlashEvent event) {
+    @SlashCommand(name = "promotion", description = "Check if you are eligible for a promotion to a higher role", guildOnly = true)
+    public void checkForPromotionEligibility(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
         RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
         if (!roleConfig.isCurrentlyPromotingUsers()) {
-            TranslationManager.edit(event.getHook(), "commands.role.not_currently_accepting_promotions");
+            event.getHook().editOriginal("We are not currently assessing promotion eligibility, please check back later!").queue();
             return;
         }
 
@@ -105,24 +105,24 @@ public class RoleCommands extends ApplicationCommand {
         repository.findByIdAsync(event.getMember().getId())
             .thenAccept(user -> {
                 if (user == null) {
-                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    event.getHook().editOriginal("User not found").queue();
                     return;
                 }
 
                 if (!RoleManager.getHighestRole(event.getMember()).equals(RoleManager.getRoleById(roleConfig.getMemberRoleId()).orElseThrow())) {
-                    TranslationManager.edit(event.getHook(), user, "commands.role.cannot_progress_further");
+                    event.getHook().editOriginal("You are already at the highest role!").queue();
                     return;
                 }
 
                 if (isEligibleForPromotion(user)) {
-                    TranslationManager.edit(event.getHook(), user, "commands.role.eligible_promotion");
+                    event.getHook().editOriginal("You are currently eligible for a promotion! This is not a guarantee that you will be promoted. Thanks for contributing to SkyBlock Nerds!").queue();
                 } else {
-                    TranslationManager.edit(event.getHook(), user, "commands.role.not_eligible_promotion",
+                    event.getHook().editOriginal(String.format("You have %s/%s required suggestion votes and %s/%s required suggestion comments to be nominated for the Orange role!",
                         StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
                         StringUtils.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion()),
                         StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalComments(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
                         StringUtils.COMMA_SEPARATED_FORMAT.format(NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion())
-                    );
+                    )).queue();
                 }
             })
             .exceptionally(throwable -> {

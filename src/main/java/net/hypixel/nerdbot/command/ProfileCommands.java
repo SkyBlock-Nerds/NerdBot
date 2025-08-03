@@ -1,25 +1,27 @@
 package net.hypixel.nerdbot.command;
 
-import com.freya02.botcommands.api.annotations.Optional;
-import com.freya02.botcommands.api.application.ApplicationCommand;
-import com.freya02.botcommands.api.application.CommandScope;
-import com.freya02.botcommands.api.application.annotations.AppOption;
-import com.freya02.botcommands.api.application.slash.GlobalSlashEvent;
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
-import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
+import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
+import net.aerh.slashcommands.api.annotations.SlashOption;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.UserSnowflake;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.badge.Badge;
@@ -28,10 +30,9 @@ import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
 import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
-import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.api.language.TranslationManager;
+
 import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.cache.ChannelCache;
@@ -47,16 +48,18 @@ import org.apache.commons.lang.time.DateUtils;
 
 import java.awt.Color;
 import java.time.Duration;
+import java.awt.Color;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
-@Log4j2
-public class ProfileCommands extends ApplicationCommand {
+@Slf4j
+public class ProfileCommands {
 
     public static final Cache<String, MojangProfile> VERIFY_CACHE = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofDays(1L))
@@ -64,15 +67,16 @@ public class ProfileCommands extends ApplicationCommand {
         .build();
     private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
 
-    @JDASlashCommand(
+    @SlashCommand(
         name = "verify",
-        description = "Send a request to link your Mojang Profile to your account."
+        description = "Send a request to link your Mojang Profile to your account.",
+        guildOnly = true
     )
-    public void requestLinkProfile(GuildSlashEvent event, @AppOption(description = "Your Minecraft IGN to link. Use the account you applied with.") String username) {
+    public void requestLinkProfile(SlashCommandInteractionEvent event, @SlashOption(description = "Your Minecraft IGN to link. Use the account you applied with.") String username) {
         event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
+            event.getHook().editOriginal("Could not connect to database!").queue();
             return;
         }
 
@@ -81,7 +85,7 @@ public class ProfileCommands extends ApplicationCommand {
         discordUserRepository.findOrCreateByIdAsync(event.getMember().getId())
             .thenCompose(discordUser -> {
                 if (VERIFY_CACHE.getIfPresent(event.getMember().getId()) != null) {
-                    TranslationManager.edit(event.getHook(), discordUser, "commands.verify.already_requested");
+                    event.getHook().editOriginal("Your previous verification request has not been reviewed. You will be contacted via DM if any further information is required.").queue();
                     return CompletableFuture.completedFuture(null);
                 }
 
@@ -97,7 +101,7 @@ public class ProfileCommands extends ApplicationCommand {
                         }
 
                         VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
-                        TranslationManager.edit(event.getHook(), discordUser, "commands.verify.request_sent");
+                        event.getHook().editOriginal("Your verification request has been sent. You will be contacted via DM if any further information is required.").queue();
 
                         ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessage("<@&" + NerdBotApp.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">").addEmbeds(
                                 new EmbedBuilder()
@@ -149,17 +153,16 @@ public class ProfileCommands extends ApplicationCommand {
             });
     }
 
-    @JDASlashCommand(
+    @SlashCommand(
         name = "profile",
         subcommand = "link",
-        description = "Change your linked Mojang Profile.",
-        scope = CommandScope.GLOBAL
+        description = "Change your linked Mojang Profile."
     )
-    public void linkProfile(GlobalSlashEvent event, @AppOption(description = "Your Minecraft IGN to link.") String username) {
+    public void linkProfile(SlashCommandInteractionEvent event, @SlashOption(description = "Your Minecraft IGN to link.") String username) {
         event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
+            event.getHook().editOriginal("Could not connect to database!").queue();
             return;
         }
 
@@ -187,7 +190,7 @@ public class ProfileCommands extends ApplicationCommand {
 
                                 updateMojangProfile(member, mojangProfile);
 
-                                TranslationManager.edit(event.getHook(), discordUser, "commands.verify.profile_updated", mojangProfile.getUsername(), mojangProfile.getUniqueId());
+                                event.getHook().editOriginal(String.format("Updated your Mojang profile to %s (`%s`)", mojangProfile.getUsername(), mojangProfile.getUniqueId())).queue();
 
                                 ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
                                     textChannel.sendMessageEmbeds(
@@ -220,16 +223,17 @@ public class ProfileCommands extends ApplicationCommand {
             });
     }
 
-    @JDASlashCommand(
+    @SlashCommand(
         name = "profile",
         subcommand = "activity",
-        description = "View your activity."
+        description = "View your activity.",
+        guildOnly = true
     )
-    public void myActivity(GuildSlashEvent event) {
+    public void myActivity(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
+            event.getHook().editOriginal("Could not connect to database!").queue();
             return;
         }
 
@@ -237,16 +241,17 @@ public class ProfileCommands extends ApplicationCommand {
         event.getHook().editOriginalEmbeds(activityEmbeds.toArray(new MessageEmbed[]{})).queue();
     }
 
-    @JDASlashCommand(
+    @SlashCommand(
         name = "profile",
         subcommand = "view",
-        description = "View your profile."
+        description = "View your profile.",
+        guildOnly = true
     )
-    public void myInfo(GuildSlashEvent event) {
+    public void myInfo(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
+            event.getHook().editOriginal("Could not connect to database!").queue();
             return;
         }
 
@@ -255,7 +260,7 @@ public class ProfileCommands extends ApplicationCommand {
         discordUserRepository.findByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
-                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    event.getHook().editOriginal("User not found").queue();
                     return;
                 }
 
@@ -271,7 +276,6 @@ public class ProfileCommands extends ApplicationCommand {
                         .setColor(event.getMember().getColor())
                         .addField("Mojang Profile", profile, false)
                         .addField("Badges", discordUser.getBadges().isEmpty() ? "None" : String.valueOf(discordUser.getBadges().size()), true)
-                        .addField("Language", discordUser.getLanguage().getName(), true)
                         .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), true)
                         .build()
                 ).queue();
@@ -283,14 +287,15 @@ public class ProfileCommands extends ApplicationCommand {
             });
     }
 
-    @JDASlashCommand(
+    @SlashCommand(
         name = "profile",
         subcommand = "badges",
-        description = "View your badges."
+        description = "View your badges.",
+        guildOnly = true
     )
-    public void myBadges(GuildSlashEvent event, @AppOption @Optional Boolean showPublicly) {
+    public void myBadges(SlashCommandInteractionEvent event, @SlashOption(required = false) Boolean showPublicly) {
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
+            event.getHook().editOriginal("Could not connect to database!").queue();
             return;
         }
 
@@ -302,7 +307,7 @@ public class ProfileCommands extends ApplicationCommand {
         discordUserRepository.findByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
-                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    event.getHook().editOriginal("User not found").queue();
                     return;
                 }
 
@@ -315,22 +320,23 @@ public class ProfileCommands extends ApplicationCommand {
             });
     }
 
-    @JDASlashCommand(
+    @SlashCommand(
         name = "profile",
         subcommand = "suggestions",
-        description = "View your suggestions."
+        description = "View your suggestions.",
+        guildOnly = true
     )
     public void mySuggestions(
-        GuildSlashEvent event,
-        @AppOption @Optional Integer page,
-        @AppOption(description = "Tags to filter for (comma separated).") @Optional String tags,
-        @AppOption(description = "Words to filter title for.") @Optional String title,
-        @AppOption(description = "Show suggestions from a specific category.", autocomplete = "suggestion-types") @Optional Suggestion.ChannelType type
+        SlashCommandInteractionEvent event,
+        @SlashOption(required = false) Integer page,
+        @SlashOption(description = "Tags to filter for (comma separated).", required = false) String tags,
+        @SlashOption(description = "Words to filter title for.", required = false) String title,
+        @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) Suggestion.ChannelType type
     ) {
         event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
+            event.getHook().editOriginal("Could not connect to database!").queue();
             return;
         }
 
@@ -344,7 +350,7 @@ public class ProfileCommands extends ApplicationCommand {
                 List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember(), event.getMember().getIdLong(), tags, title, finalType);
 
                 if (suggestions.isEmpty()) {
-                    TranslationManager.edit(event.getHook(), discordUser, "cache.suggestions.filtered_none_found");
+                    event.getHook().editOriginal("No suggestions found matching that filter!").queue();
                     return;
                 }
 
@@ -362,17 +368,18 @@ public class ProfileCommands extends ApplicationCommand {
             });
     }
 
-    @JDASlashCommand(
+    @SlashCommand(
         name = "profile",
         group = "birthday",
         subcommand = "remove",
-        description = "Remove your birthday."
+        description = "Remove your birthday.",
+        guildOnly = true
     )
-    public void removeBirthday(GuildSlashEvent event) {
+    public void removeBirthday(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
+            event.getHook().editOriginal("Could not connect to database!").queue();
             return;
         }
 
@@ -381,7 +388,7 @@ public class ProfileCommands extends ApplicationCommand {
         discordUserRepository.findByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
-                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    event.getHook().editOriginal("User not found").queue();
                     return;
                 }
 
@@ -392,7 +399,7 @@ public class ProfileCommands extends ApplicationCommand {
                 discordUser.setBirthdayData(new BirthdayData());
                 discordUserRepository.cacheObject(discordUser);
 
-                TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.removed");
+                event.getHook().editOriginal("Your birthday has been removed!").queue();
             })
             .exceptionally(throwable -> {
                 log.error("Error removing birthday", throwable);
@@ -401,17 +408,18 @@ public class ProfileCommands extends ApplicationCommand {
             });
     }
 
-    @JDASlashCommand(
+    @SlashCommand(
         name = "profile",
         group = "birthday",
         subcommand = "set",
-        description = "Set your birthday."
+        description = "Set your birthday.",
+        guildOnly = true
     )
-    public void setBirthday(GuildSlashEvent event, @AppOption(description = "Your birthday in the format MM/DD/YYYY.") String birthday, @AppOption(description = "Whether to announce your age.") @Optional Boolean announceAge) {
+    public void setBirthday(SlashCommandInteractionEvent event, @SlashOption(description = "Your birthday in the format MM/DD/YYYY.") String birthday, @SlashOption(description = "Whether to announce your age.", required = false) Boolean announceAge) {
         event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
+            event.getHook().editOriginal("Could not connect to database!").queue();
             return;
         }
 
@@ -421,7 +429,7 @@ public class ProfileCommands extends ApplicationCommand {
         discordUserRepository.findByIdAsync(member.getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
-                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
+                    event.getHook().editOriginal("User not found").queue();
                     return;
                 }
 
@@ -436,9 +444,9 @@ public class ProfileCommands extends ApplicationCommand {
                     discordUser.setBirthday(date);
                     birthdayData.setShouldAnnounceAge(announceAge != null && announceAge);
                     discordUser.scheduleBirthdayReminder(birthdayData.getBirthdayThisYear());
-                    TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.set", DateFormatUtils.format(date, "dd MMMM yyyy"));
+                    event.getHook().editOriginal(String.format("Set your birthday to %s!", DateFormatUtils.format(date, "dd MMMM yyyy"))).queue();
                 } catch (Exception exception) {
-                    TranslationManager.edit(event.getHook(), discordUser, "commands.birthday.bad_date");
+                    event.getHook().editOriginal("That doesn't seem to be a valid date. Please try again or contact a bot developer!").queue();
                 }
             })
             .exceptionally(throwable -> {
@@ -448,42 +456,7 @@ public class ProfileCommands extends ApplicationCommand {
             });
     }
 
-    @JDASlashCommand(
-        name = "profile",
-        subcommand = "language",
-        description = "Set your language."
-    )
-    public void setLanguage(GuildSlashEvent event, @AppOption(autocomplete = "languages") UserLanguage language) {
-        event.deferReply(true).complete();
 
-        if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
-            return;
-        }
-
-        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        repository.findByIdAsync(event.getMember().getId())
-            .thenAccept(user -> {
-                if (user == null) {
-                    TranslationManager.edit(event.getHook(), "generic.user_not_found");
-                    return;
-                }
-
-                user.setLanguage(language);
-                TranslationManager.edit(event.getHook(), user, "commands.language.language_set", language.getName());
-            })
-            .exceptionally(throwable -> {
-                log.error("Error setting language", throwable);
-                event.getHook().editOriginal("Failed to set language: " + throwable.getMessage()).queue();
-                return null;
-            });
-    }
-
-    @AutocompletionHandler(name = "languages")
-    public List<UserLanguage> getLanguages(CommandAutoCompleteInteractionEvent event) {
-        return List.of(UserLanguage.VALUES);
-    }
 
     public static MessageEmbed createBadgesEmbed(Member member, DiscordUser discordUser, boolean viewingSelf) {
         List<BadgeEntry> badges = discordUser.getBadges().stream()
@@ -619,6 +592,77 @@ public class ProfileCommands extends ApplicationCommand {
             }
         } else {
             log.warn("Role with ID " + newMemberRoleId + " does not exist.");
+        }
+    }
+
+    @SlashComponentHandler(id = "verification", patterns = {"verification-*"})
+    public void handleVerificationButtons(ButtonInteractionEvent event) {
+        String[] parts = event.getComponentId().split("-");
+        String action = parts[1];
+        String memberId = parts[2];
+
+        switch (action) {
+            case "kick" -> {
+                int remainingClicks = Integer.parseInt(parts[3]) - 1;
+                
+                if (remainingClicks == 0) {
+                    event.reply("Are you sure you want to kick <@" + memberId + ">?")
+                        .setEphemeral(true)
+                        .addComponents(ActionRow.of(
+                            Button.danger("verification-kicknow-" + memberId, "Kick Now")
+                        ))
+                        .queue();
+                } else {
+                    event.editComponents(ActionRow.of(
+                        Button.danger("verification-kick-" + memberId + "-" + remainingClicks, "Kick (" + remainingClicks + ")"),
+                        Button.secondary("verification-done", "Denied").asDisabled()
+                    )).queue();
+                }
+            }
+            case "kicknow" -> {
+                Guild guild = DiscordUtils.getMainGuild();
+                Member member = guild.retrieveMemberById(memberId).complete();
+                String displayName = DiscordUtils.getDisplayName(member.getUser());
+                guild.kick(UserSnowflake.fromId(memberId)).complete();
+
+                event.replyEmbeds(new EmbedBuilder()
+                    .setTitle("Member Kicked")
+                    .setDescription(displayName + " has been kicked from the server after failing verification.")
+                    .setColor(Color.RED)
+                    .build()
+                ).queue();
+            }
+            case "deny" -> {
+                event.editComponents(ActionRow.of(
+                    Button.danger("verification-kick-" + memberId + "-3", "Kick (3)"),
+                    Button.danger("verification-done", "Denied").asDisabled()
+                )).queue();
+            }
+            case "accept" -> {
+                MojangProfile mojangProfile = VERIFY_CACHE.getIfPresent(memberId);
+                
+                if (mojangProfile == null) {
+                    event.editComponents(ActionRow.of(
+                        Button.danger("verification-done", "Expired").asDisabled()
+                    )).queue();
+                } else {
+                    Guild guild = DiscordUtils.getMainGuild();
+                    Member member = guild.retrieveMemberById(memberId).complete();
+
+                    if (member == null) {
+                        event.editComponents(ActionRow.of(
+                            Button.secondary("verification-done", "Left Server").asDisabled()
+                        )).queue();
+                    } else {
+                        updateMojangProfile(member, mojangProfile);
+                        event.editComponents(ActionRow.of(
+                            Button.success("verification-done", "Accepted").asDisabled()
+                        )).queue();
+                    }
+                }
+                
+                VERIFY_CACHE.invalidate(memberId);
+            }
         }
     }
 

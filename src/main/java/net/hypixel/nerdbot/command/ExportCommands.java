@@ -1,13 +1,11 @@
 package net.hypixel.nerdbot.command;
 
-import com.freya02.botcommands.api.annotations.Optional;
-import com.freya02.botcommands.api.application.ApplicationCommand;
-import com.freya02.botcommands.api.application.annotations.AppOption;
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
-import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashOption;
 import com.google.gson.JsonArray;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.Role;
@@ -26,7 +24,7 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.ChannelActivityEntry;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.api.language.TranslationManager;
+
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
@@ -49,18 +47,18 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class ExportCommands extends ApplicationCommand {
+public class ExportCommands {
 
     private static final String PARENT_COMMAND = "export";
 
-    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "threads", description = "Export threads from a Forum Channel", defaultLocked = true)
-    public void exportForumThreads(GuildSlashEvent event, @AppOption ForumChannel forumChannel) {
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "threads", description = "Export threads from a Forum Channel", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    public void exportForumThreads(SlashCommandInteractionEvent event, @SlashOption ForumChannel forumChannel) {
         event.deferReply(true).queue();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser commandSender = discordUserRepository.findOrCreateById(event.getMember().getId());
 
-        TranslationManager.edit(event.getHook(), commandSender, "commands.export.exporting_threads", forumChannel.getAsMention());
+        event.getHook().editOriginal(String.format("Exporting threads from %s...", forumChannel.getAsMention())).queue();
 
         CSVData csvData = new CSVData(List.of("Username", "Thread", "Content", "Agrees", "Disagrees"), ";");
         List<ThreadChannel> threads = ArrayUtils.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
@@ -96,7 +94,7 @@ public class ExportCommands extends ApplicationCommand {
             }
 
             int index = threads.indexOf(threadChannel);
-            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exporting_thread", index + 1, threads.size(), threadChannel.getName(), username);
+            event.getHook().editOriginal(String.format("Exporting thread %d/%d: %s by %s", index + 1, threads.size(), threadChannel.getName(), username)).queue();
 
             Message startMessage = threadChannel.retrieveStartMessage().complete();
             List<MessageReaction> reactions = startMessage.getReactions().stream()
@@ -130,27 +128,27 @@ public class ExportCommands extends ApplicationCommand {
                 String.valueOf(disagrees)
             ));
 
-            TranslationManager.edit(event.getHook(), commandSender, "commands.export.exported_thread", index + 1, threads.size(), threadChannel.getName(), username);
+            event.getHook().editOriginal(String.format("Finished exporting thread %d/%d: %s by %s", index + 1, threads.size(), threadChannel.getName(), username)).queue();
 
             // Check if all threads have been exported
             if ((index + 1) == threads.size()) {
                 try {
                     File file = FileUtils.createTempFile("export-threads-" + forumChannel.getName() + "-" + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now()) + ".csv", csvData.toCSV());
-                    event.getHook().editOriginal(TranslationManager.translate("commands.export.complete", forumChannel.getAsMention())).setFiles(FileUpload.fromData(file)).queue();
+                    event.getHook().editOriginal(String.format("Finished exporting all threads from %s!", forumChannel.getAsMention())).setFiles(FileUpload.fromData(file)).queue();
                 } catch (IOException exception) {
                     log.error("Failed to create temp file!", exception);
-                    TranslationManager.edit(event.getHook(), commandSender, "commands.temp_file_error", exception.getMessage());
+                    event.getHook().editOriginal(String.format("Failed to create temporary file: %s", exception.getMessage())).queue();
                 }
             }
         }
     }
 
-    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "greenlit", description = "Exports all greenlit forum posts into a CSV file", defaultLocked = true)
-    public void exportGreenlitThreads(GuildSlashEvent event, @Optional @AppOption(description = "Disregards any post before this UNIX timestamp (Default: 0)") long suggestionsAfter) {
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "greenlit", description = "Exports all greenlit forum posts into a CSV file", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    public void exportGreenlitThreads(SlashCommandInteractionEvent event, @SlashOption(description = "Disregards any post before this UNIX timestamp (Default: 0)", required = false) long suggestionsAfter) {
         event.deferReply(true).complete();
 
         if (!NerdBotApp.getBot().getDatabase().isConnected()) {
-            TranslationManager.edit(event.getHook(), "database.not_connected");
+            event.getHook().editOriginal("Could not connect to database!").queue();
             log.error("Couldn't connect to the database!");
             return;
         }
@@ -159,7 +157,7 @@ public class ExportCommands extends ApplicationCommand {
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
         if (discordUser == null) {
-            TranslationManager.edit(event.getHook(), "generic.user_not_found");
+            event.getHook().editOriginal("User not found").queue();
             return;
         }
 
@@ -171,7 +169,7 @@ public class ExportCommands extends ApplicationCommand {
 
         if (output.isEmpty()) {
             log.info("No greenlit suggestions found for " + event.getMember().getEffectiveName() + "'s export (after: " + formatTimestampLog(suggestionsAfter) + ", current time: " + formatTimestampLog(System.currentTimeMillis()) + ")");
-            TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
+            event.getHook().editOriginal("No suggestions were greenlit").queue();
             return;
         }
 
@@ -196,24 +194,24 @@ public class ExportCommands extends ApplicationCommand {
 
         if (!csvData.hasContent()) {
             log.info("No greenlit suggestions found for " + event.getMember().getEffectiveName() + "'s export (after: " + formatTimestampLog(suggestionsAfter) + ")");
-            TranslationManager.edit(event.getHook(), discordUser, "curator.no_greenlit_messages");
+            event.getHook().editOriginal("No suggestions were greenlit").queue();
             return;
         }
 
         try {
-            MessageEditData data = MessageEditBuilder.from(MessageEditData.fromContent(TranslationManager.translate("curator.greenlit_import_instructions", discordUser)))
+            MessageEditData data = MessageEditBuilder.from(MessageEditData.fromContent(String.format("To import into Google Sheets, go to File -> Import, Upload the `.csv` document shown below.\nChange `Import Location` to `Append to current sheet` and `Separator Type` should be defaulted to Automatic detection if not, change it to tabs.)")))
                 .setFiles(FileUpload.fromData(FileUtils.createTempFile(String.format("export-greenlit-%s.csv", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
                 .build();
 
             event.getHook().editOriginal(data).queue();
         } catch (IOException exception) {
-            TranslationManager.edit(event.getHook(), discordUser, "commands.temp_file_error", exception.getMessage());
+            event.getHook().editOriginal(String.format("Failed to create temporary file: %s", exception.getMessage())).queue();
             log.error("Failed to create temp file!", exception);
         }
     }
 
-    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "uuids", description = "Get all assigned Minecraft Names/UUIDs from all specified roles (requires Member) in the server.", defaultLocked = true)
-    public void userList(GuildSlashEvent event, @Optional @AppOption(description = "Comma-separated role names to search for (Default: Member)") String roles) throws IOException {
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "uuids", description = "Get all assigned Minecraft Names/UUIDs from all specified roles (requires Member) in the server.", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    public void userList(SlashCommandInteractionEvent event, @SlashOption(description = "Comma-separated role names to search for (Default: Member)", required = false) String roles) throws IOException {
         event.deferReply(true).complete();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         String[] roleArray = roles != null ? roles.split(", ?") : new String[]{"Member"};
@@ -234,8 +232,8 @@ public class ExportCommands extends ApplicationCommand {
         event.getHook().sendFiles(FileUpload.fromData(file)).queue();
     }
 
-    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "roles", description = "Export a list of users with the given roles", defaultLocked = true)
-    public void exportRoles(GuildSlashEvent event, @AppOption(description = "Comma-separated list of role names (e.g. Role 1, Role 2, Role 3)") String roles) {
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "roles", description = "Export a list of users with the given roles", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    public void exportRoles(SlashCommandInteractionEvent event, @SlashOption(description = "Comma-separated list of role names (e.g. Role 1, Role 2, Role 3)") String roles) {
         event.deferReply(true).complete();
 
         String[] roleArray = roles.split(", ?");
@@ -252,7 +250,7 @@ public class ExportCommands extends ApplicationCommand {
         });
 
         if (members.values().stream().allMatch(List::isEmpty)) {
-            TranslationManager.edit(event.getHook(), "commands.export.none_found");
+            event.getHook().editOriginal("Nothing found to export!").queue();
             return;
         }
 
@@ -269,16 +267,16 @@ public class ExportCommands extends ApplicationCommand {
             event.getHook().sendFiles(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             log.error("Failed to create temp file!", exception);
-            TranslationManager.reply(event, "commands.temp_file_error", exception.getMessage());
+            event.getHook().editOriginal("An error occurred while creating the temp file: " + exception.getMessage()).queue();
         }
     }
 
-    @JDASlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", defaultLocked = true)
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
     public void exportMemberActivity(
-        GuildSlashEvent event,
-        @AppOption(description = "The number of days of inactivity to consider") @Optional int inactivityDays,
-        @AppOption(description = "The number of messages to consider as active") @Optional int inactivityMessages,
-        @AppOption(description = "Role to consider when exporting") @Optional String role
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = "The number of days of inactivity to consider", required = false) int inactivityDays,
+        @SlashOption(description = "The number of messages to consider as active", required = false) int inactivityMessages,
+        @SlashOption(description = "Role to consider when exporting", required = false) String role
     ) {
         event.deferReply(true).complete();
 
@@ -305,7 +303,7 @@ public class ExportCommands extends ApplicationCommand {
         ), ";");
 
         if (discordUserRepository.isEmpty()) {
-            TranslationManager.edit(event.getHook(), "commands.export.none_found");
+            event.getHook().editOriginal("Nothing found to export!").queue();
             return;
         }
 
@@ -400,7 +398,7 @@ public class ExportCommands extends ApplicationCommand {
             event.getHook().sendFiles(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             log.error("Failed to create temp file!", exception);
-            TranslationManager.reply(event, "commands.temp_file_error", exception.getMessage());
+            event.getHook().editOriginal("An error occurred while creating the temp file: " + exception.getMessage()).queue();
         }
     }
 
