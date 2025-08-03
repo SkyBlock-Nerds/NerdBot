@@ -43,7 +43,7 @@
         <dependency>
             <groupId>com.github.Aerhhh</groupId>
             <artifactId>SlashCommands</artifactId>
-            <version>option-warning-SNAPSHOT</version>
+            <version>v1.0.3</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
