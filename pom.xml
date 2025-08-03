@@ -40,7 +40,7 @@
             <artifactId>discord-webhooks</artifactId>
             <version>0.8.4</version>
         </dependency>
-       <dependency>
+        <dependency>
             <groupId>com.github.Aerhhh</groupId>
             <artifactId>SlashCommands</artifactId>
             <version>v1.0.1</version>
