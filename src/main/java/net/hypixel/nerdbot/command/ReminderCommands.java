@@ -1,26 +1,39 @@
 package net.hypixel.nerdbot.command;
 
-import net.aerh.slashcommands.api.annotations.SlashCommand;
-import net.aerh.slashcommands.api.annotations.SlashOption;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import com.joestelmach.natty.DateGroup;
 import com.joestelmach.natty.Parser;
 import com.mongodb.client.result.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
+import net.aerh.slashcommands.api.annotations.SlashModalHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
-import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
-import java.awt.Color;
+import java.awt.*;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -97,190 +110,386 @@ public class ReminderCommands {
         }
     }
 
-    @SlashCommand(name = "remind", subcommand = "create", description = "Set a reminder", guildOnly = true)
-    public void createReminder(SlashCommandInteractionEvent event, @SlashOption(description = "Use a format such as \"in 1 hour\" or \"1w3d7h\"") String time, @SlashOption String description) {
+    @SlashCommand(name = "reminders", subcommand = "view", description = "Create, view, and delete reminders", guildOnly = true)
+    public void reminders(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
+        createReminderPanel(event.getHook(), event.getUser().getId(), 1);
+    }
 
+    @SlashCommand(name = "reminders", subcommand = "create", description = "Quick shortcut to create a new reminder", guildOnly = true)
+    public void remindersCreate(SlashCommandInteractionEvent event) {
+        String userId = event.getUser().getId();
+        Modal modal = createReminderModal(userId);
+        event.replyModal(modal).queue();
+    }
+
+    @SlashComponentHandler(id = "reminder-nav", patterns = {"reminder-nav-*"})
+    public void handleReminderNavigation(ButtonInteractionEvent event) {
+        String[] parts = event.getComponentId().split("-");
+        String action = parts[2]; // "prev", "next"
+        int page = Integer.parseInt(parts[3]);
+        String userId = parts[4];
+
+        if (!event.getUser().getId().equals(userId)) {
+            event.reply("You can only use your own reminder interface!").setEphemeral(true).queue();
+            return;
+        }
+
+        event.deferEdit().queue();
+
+        int newPage = switch (action) {
+            case "prev" -> Math.max(1, page - 1);
+            case "next" -> page + 1;
+            default -> page;
+        };
+
+        createReminderPanel(event.getHook(), userId, newPage);
+    }
+
+    @SlashComponentHandler(id = "reminder-manage", patterns = {"reminder-manage-*"})
+    public void handleReminderManage(StringSelectInteractionEvent event) {
+        String userId = event.getComponentId().split("-")[2];
+        if (!event.getUser().getId().equals(userId)) {
+            event.reply("You can only use your own reminder interface!").setEphemeral(true).queue();
+            return;
+        }
+
+        event.deferEdit().queue();
+
+        String reminderUuid = event.getValues().get(0);
+        showReminderDetail(event.getHook(), userId, reminderUuid);
+    }
+
+    @SlashComponentHandler(id = "reminder-detail", patterns = {"reminder-detail-*"})
+    public void handleReminderDetail(ButtonInteractionEvent event) {
+        String componentId = event.getComponentId();
+        
+        // Parse: reminder-detail-{action}-{uuid}-{userId}
+        // We need to be careful because UUIDs contain dashes
+        String[] parts = componentId.split("-");
+        if (parts.length < 8) { // reminder-detail-action + 5 UUID parts + userId = 8
+            event.reply("Invalid component ID format!").setEphemeral(true).queue();
+            return;
+        }
+        
+        String action = parts[2]; // "delete", "back"
+        
+        // UUID is parts[3] to parts[7]
+        String reminderUuid = String.join("-", parts[3], parts[4], parts[5], parts[6], parts[7]);
+        
+        // userId is the last part
+        String userId = parts[parts.length - 1];
+
+        if (!event.getUser().getId().equals(userId)) {
+            event.reply("You can only use your own reminder interface!").setEphemeral(true).queue();
+            return;
+        }
+
+        event.deferEdit().queue();
+
+        switch (action) {
+            case "delete" -> {
+                try {
+                    UUID parsed = UUID.fromString(reminderUuid);
+                    ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
+                    Reminder reminder = reminderRepository.findById(parsed.toString());
+
+                    if (reminder == null || !reminder.getUserId().equalsIgnoreCase(userId)) {
+                        createReminderPanel(event.getHook(), userId, 1, "❌ Reminder not found!");
+                        return;
+                    }
+
+                    DeleteResult result = reminderRepository.deleteFromDatabase(reminder.getUuid().toString());
+
+                    if (result != null && result.wasAcknowledged()) {
+                        if (reminder.getTimer() != null) {
+                            reminder.getTimer().cancel();
+                        }
+                        createReminderPanel(event.getHook(), userId, 1, "✅ Successfully deleted reminder!");
+                        log.info("Deleted reminder: {} for user: {}", reminderUuid, userId);
+                    } else {
+                        createReminderPanel(event.getHook(), userId, 1, "❌ Failed to delete reminder. Please try again!");
+                        log.error("Could not delete reminder {} for user: {} ({})", reminderUuid, userId, result);
+                    }
+                } catch (IllegalArgumentException exception) {
+                    createReminderPanel(event.getHook(), userId, 1, "❌ Invalid reminder ID!");
+                }
+            }
+            case "back" -> createReminderPanel(event.getHook(), userId, 1);
+        }
+    }
+
+    @SlashComponentHandler(id = "reminder-create", patterns = {"reminder-create-*"})
+    public void handleReminderCreate(ButtonInteractionEvent event) {
+        String userId = event.getComponentId().split("-")[2];
+        if (!event.getUser().getId().equals(userId)) {
+            event.reply("You can only use your own reminder interface!").setEphemeral(true).queue();
+            return;
+        }
+
+        // Create and show the modal
+        Modal modal = createReminderModal(userId);
+        event.replyModal(modal).queue();
+    }
+
+    @SlashModalHandler(id = "reminder-modal", patterns = {"reminder-modal-*"})
+    public void handleReminderModal(ModalInteractionEvent event) {
+        String userId = event.getModalId().split("-")[2];
+        if (!event.getUser().getId().equals(userId)) {
+            event.reply("You can only use your own reminder interface!").setEphemeral(true).queue();
+            return;
+        }
+
+        event.deferReply(true).queue();
+
+        if (event.getValues().isEmpty()) {
+            event.getHook().editOriginal("❌ No input provided! Please try again.").queue();
+            return;
+        }
+
+        if (event.getValues().size() < 2) {
+            event.getHook().editOriginal("❌ Missing required fields! Please fill out all fields.").queue();
+            return;
+        }
+
+        String timeInput = event.getValue("time").getAsString();
+        String descriptionInput = event.getValue("description").getAsString();
+
+        createReminderFromModalReply(event.getHook(), userId, timeInput, descriptionInput, event.getGuild(), event.getChannel(), event.getMember());
+    }
+
+    private void createReminderFromModalReply(InteractionHook hook, String userId, String timeInput, String descriptionInput, Guild guild, MessageChannelUnion channel, Member member) {
         DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         
-        userRepository.findByIdAsync(event.getUser().getId())
+        userRepository.findByIdAsync(userId)
             .thenAccept(user -> {
                 if (user == null) {
-                    event.getHook().editOriginal("User not found").queue();
+                    hook.editOriginal("❌ User not found!").queue();
                     return;
                 }
 
-                // Check if the bot has permission to send messages in the channel
-                if (!event.getGuild().getSelfMember().hasPermission(event.getGuildChannel(), Permission.MESSAGE_SEND)) {
-                    event.getHook().editOriginal("I do not have the correct permission to send messages in this channel!").queue();
+                if (!guild.getSelfMember().hasPermission(channel.asGuildMessageChannel(), Permission.MESSAGE_SEND)) {
+                    hook.editOriginal("❌ I don't have permission to send messages in this channel!").queue();
                     return;
                 }
 
-                if (event.getChannel() instanceof ThreadChannel && !event.getGuild().getSelfMember().hasPermission(event.getGuildChannel(), Permission.MESSAGE_SEND_IN_THREADS)) {
-                    event.getHook().editOriginal("I do not have the correct permission to send messages in threads!").queue();
+                if (channel instanceof ThreadChannel && !guild.getSelfMember().hasPermission(channel.asGuildMessageChannel(), Permission.MESSAGE_SEND_IN_THREADS)) {
+                    hook.editOriginal("❌ I don't have permission to send messages in threads!").queue();
                     return;
                 }
 
-                if (description == null) {
-                    event.getHook().editOriginal("You need to provide a description for the reminder!").queue();
+                if (descriptionInput == null || descriptionInput.trim().isEmpty()) {
+                    hook.editOriginal("❌ You need to provide a description for the reminder!").queue();
                     return;
                 }
 
-                if (description.length() > 4_096) {
-                    event.getHook().editOriginal(String.format("Your description is too long! Please keep it under %d characters.", 4_096)).queue();
+                if (descriptionInput.length() > 4_000) {
+                    hook.editOriginal("❌ Description is too long! Please keep it under 4,096 characters.").queue();
                     return;
                 }
 
                 Date date;
                 try {
-                    date = parseLong(time);
+                    date = parseLong(timeInput);
                 } catch (NumberFormatException numberFormatException) {
                     try {
-                        date = parseWithNatty(time);
+                        date = parseWithNatty(timeInput);
                     } catch (DateTimeParseException | NumberFormatException exception) {
-                        event.getHook().editOriginal("I could not parse that date/time format, please try again!").queue();
+                        hook.editOriginal("❌ I could not parse that date/time format! Please try again.").queue();
                         return;
                     }
                 }
 
                 // Check if the provided time is in the past
                 if (date.before(new Date())) {
-                    event.getHook().editOriginal("You cannot set a reminder in the past!").queue();
+                    hook.editOriginal("❌ You cannot set a reminder in the past!").queue();
                     return;
                 }
 
-                // Create a new reminder and save it to the database
                 ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-                Reminder reminder = new Reminder(description, date, event.getChannel().getId(), event.getUser().getId());
+                Reminder reminder = new Reminder(descriptionInput, date, channel.getId(), userId);
+                
+                final Date finalDate = date;
+                final String finalDescription = descriptionInput;
 
                 reminderRepository.cacheObject(reminder);
 
-                final Date finalDate = date;
                 reminderRepository.saveToDatabaseAsync(reminder)
                     .thenAccept(result -> {
-                        // Check if the reminder was saved successfully, schedule it and send a confirmation message
                         if (result != null && result.wasAcknowledged() && result.getUpsertedId() != null) {
-                            MessageEditBuilder builder = new MessageEditBuilder();
-                            builder.setEmbeds(new EmbedBuilder().setDescription(description).build())
-                                .setContent(String.format("I will remind you at %s about:", DiscordTimestamp.toLongDateTime(finalDate.getTime())));
-
-                            event.getHook().editOriginal(builder.build()).complete();
                             reminder.schedule();
 
+                            // Send confirmation DM
                             try {
-                                // Sending a nice confirmation message within the dms, so it doesn't disappear.
-                                PrivateChannel channel = event.getMember().getUser().openPrivateChannel().complete();
-                                EmbedBuilder embedBuilder = new EmbedBuilder().setDescription(description)
+                                PrivateChannel privateChannel = member.getUser().openPrivateChannel().complete();
+                                EmbedBuilder embedBuilder = new EmbedBuilder()
+                                    .setDescription(finalDescription)
                                     .setTimestamp(Instant.now())
                                     .setFooter(reminder.getUuid().toString())
                                     .setColor(Color.GREEN);
 
-                                channel.sendMessage("Reminder set for: " + DiscordTimestamp.toLongDateTime(finalDate.getTime()))
+                                privateChannel.sendMessage("Reminder set for: " + DiscordTimestamp.toLongDateTime(finalDate.getTime()))
                                     .addEmbeds(embedBuilder.build())
                                     .setSuppressedNotifications(true)
                                     .queue();
                             } catch (Exception e) {
-                                log.error("Failed to send reminder DM to user: " + event.getUser().getId(), e);
-                                event.getHook().editOriginal("Failed to send reminder DM!").queue();
+                                log.error("Failed to send reminder DM to user: {}", userId, e);
                             }
+
+                            hook.editOriginal("✅ Successfully created reminder for " + DiscordTimestamp.toLongDateTime(finalDate.getTime()) + "!\n\n" +
+                                "📱 Use `/reminders view` to view and manage all your reminders.").queue();
                         } else {
-                            // If the reminder could not be saved, send an error message and log the error too
-                            event.getHook().editOriginal("An error occurred while saving that reminder! Please try again!").queue();
-                            log.error("Could not save reminder: " + reminder + " for user: " + event.getUser().getId() + " (" + result + ")");
+                            hook.editOriginal("❌ An error occurred while saving the reminder! Please try again.").queue();
+                            log.error("Could not save reminder: {} for user: {} ({})", reminder, userId, result);
                         }
                     });
             });
     }
 
-    @SlashCommand(name = "remind", subcommand = "list", description = "View your reminders", guildOnly = true)
-    public void listReminders(SlashCommandInteractionEvent event) {
-        event.deferReply(true).complete();
-
-        DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
-        userRepository.findByIdAsync(event.getUser().getId())
-            .thenAccept(user -> {
-                if (user == null) {
-                    event.getHook().editOriginal("User not found").queue();
-                    return;
-                }
-
-                ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-                List<Reminder> reminders = new ArrayList<>(reminderRepository
-                    .filter(reminder -> reminder.getUserId().equalsIgnoreCase(event.getUser().getId()))
-                    .stream()
-                    .toList());
-
-                if (reminders.isEmpty()) {
-                    event.getHook().editOriginal("You do not have any reminders set!").queue();
-                    return;
-                }
-
-                // Sort reminders by date (earliest first)
-                reminders.sort(Comparator.comparing(Reminder::getTime));
-
-                EmbedBuilder embedBuilder = new EmbedBuilder();
-                embedBuilder.setTitle(String.format("Your Reminders"));
-                embedBuilder.setColor(Color.BLUE);
-                
-                for (int i = 0; i < Math.min(reminders.size(), 25); i++) {
-                    Reminder reminder = reminders.get(i);
-                    embedBuilder.addField(
-                        String.format("%d. %s", i + 1, DiscordTimestamp.toShortDateTime(reminder.getTime().getTime())),
-                        reminder.getDescription().substring(0, Math.min(reminder.getDescription().length(), 1000)) + 
-                        (reminder.getDescription().length() > 1000 ? "..." : ""),
-                        false
-                    );
-                }
-                
-                if (reminders.size() > 25) {
-                    embedBuilder.setFooter(String.format("Showing first 25 of %d reminders", reminders.size()));
-                }
-                
-                event.getHook().editOriginalEmbeds(embedBuilder.build()).queue();
-            });
-    }
-
-    @SlashCommand(name = "remind", subcommand = "delete", description = "Delete a reminder", guildOnly = true)
-    public void deleteReminder(SlashCommandInteractionEvent event, @SlashOption String uuid) {
-        event.deferReply(true).complete();
-
-        DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser user = userRepository.findById(event.getUser().getId());
-
-        if (user == null) {
-            event.getHook().editOriginal("User not found").queue();
-            return;
-        }
-
+    private void showReminderDetail(InteractionHook hook, String userId, String reminderUuid) {
         try {
-            UUID parsed = UUID.fromString(uuid);
+            UUID parsed = UUID.fromString(reminderUuid);
             ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
             Reminder reminder = reminderRepository.findById(parsed.toString());
 
-            // Check if the reminder exists first
-            if (reminder == null || !reminder.getUserId().equalsIgnoreCase(event.getUser().getId())) {
-                event.getHook().editOriginal("I could not find a reminder with that UUID!").queue();
+            if (reminder == null || !reminder.getUserId().equalsIgnoreCase(userId)) {
+                createReminderPanel(hook, userId, 1, "❌ Reminder not found!");
                 return;
             }
 
-            DeleteResult result = reminderRepository.deleteFromDatabase(reminder.getUuid().toString());
+            String content = "📋 **Reminder Details**\n\n" +
+                "🕐 **Time:** " + DiscordTimestamp.toLongDateTime(reminder.getTime().getTime()) + "\n" +
+                "⏰ **Relative:** " + DiscordTimestamp.toRelativeTimestamp(reminder.getTime().getTime()) + "\n\n" +
+                "📝 **Description:**\n" + reminder.getDescription() + "\n\n" +
+                "📍 **Channel:** <#" + reminder.getChannelId() + ">";
 
-            // Check if the reminder was deleted successfully, cancel the timer and send a confirmation message
-            if (result != null && result.wasAcknowledged()) {
-                if (reminder.getTimer() != null) {
-                    reminder.getTimer().cancel();
-                }
+            ActionRow actionRow = ActionRow.of(
+                Button.danger("reminder-detail-delete-" + reminderUuid + "-" + userId, "🗑️ Delete Reminder"),
+                Button.secondary("reminder-detail-back-" + reminderUuid + "-" + userId, "⬅️ Back to List")
+            );
 
-                event.getHook().editOriginal(String.format("Deleted reminder %s!", reminder.getUuid())).queue();
-                log.info("Deleted reminder: " + uuid + " for user: " + event.getUser().getId());
-            } else {
-                // If the reminder could not be deleted, send an error message and log the error
-                event.getHook().editOriginal(String.format("An error occurred while deleting that reminder! Please try again!")).queue();
-                log.info("Could not delete reminder " + uuid + " for user: " + event.getUser().getId() + " (" + result + ")");
-            }
+            hook.editOriginal(content)
+                .setComponents(actionRow)
+                .queue();
         } catch (IllegalArgumentException exception) {
-            event.getHook().editOriginal("Invalid UUID!").queue();
+            createReminderPanel(hook, userId, 1, "❌ Invalid reminder ID!");
         }
+    }
+
+    private void createReminderPanel(InteractionHook hook, String userId, int page) {
+        createReminderPanel(hook, userId, page, null);
+    }
+
+    private void createReminderPanel(InteractionHook hook, String userId, int page, String message) {
+        DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser user = userRepository.findById(userId);
+
+        if (user == null) {
+            hook.editOriginal("❌ User not found!").queue();
+            return;
+        }
+
+        ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
+        List<Reminder> allReminders = new ArrayList<>(reminderRepository
+            .filter(reminder -> reminder.getUserId().equalsIgnoreCase(userId))
+            .stream()
+            .sorted(Comparator.comparing(Reminder::getTime))
+            .toList());
+
+        if (allReminders.isEmpty()) {
+            String content = "⏰ **Your Reminders**\n\n" +
+                           (message != null ? message + "\n\n" : "") +
+                           "You don't have any reminders set!\n\n";
+            
+            ActionRow createButton = ActionRow.of(
+                Button.primary("reminder-create-" + userId, "Create New Reminder")
+            );
+            
+            hook.editOriginal(content).setComponents(createButton).queue();
+            return;
+        }
+
+        // Pagination
+        int remindersPerPage = 25;
+        int totalPages = (int) Math.ceil((double) allReminders.size() / remindersPerPage);
+        page = Math.min(Math.max(1, page), totalPages);
+
+        List<Reminder> pageReminders = allReminders.stream()
+            .skip((long) (page - 1) * remindersPerPage)
+            .limit(remindersPerPage)
+            .toList();
+
+        StringBuilder content = new StringBuilder();
+        content.append("⏰ **Your Reminders**\n\n");
+        
+        if (message != null) {
+            content.append(message).append("\n\n");
+        }
+
+        content.append("📊 **Total:** ").append(allReminders.size()).append(" reminders");
+        if (totalPages > 1) {
+            content.append(" (Page ").append(page).append("/").append(totalPages).append(")");
+        }
+        content.append("\n\n");
+        content.append("Use the dropdown below to select a reminder to view details and manage it.");
+
+        // Build action rows
+        List<ActionRow> actionRows = new ArrayList<>();
+
+        // Add reminder management dropdown
+        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create("reminder-manage-" + userId)
+            .setPlaceholder("Select a reminder to manage...")
+            .setRequiredRange(1, 1);
+
+        for (int i = 0; i < pageReminders.size(); i++) {
+            Reminder reminder = pageReminders.get(i);
+            int globalIndex = (page - 1) * remindersPerPage + i + 1;
+            
+            // Use plain text date format instead of Discord timestamp for selection menu
+            SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy 'at' h:mm a z");
+            String readableDate = dateFormat.format(reminder.getTime());
+            
+            String optionLabel = "#" + globalIndex + " - " + readableDate;
+            String optionDescription = reminder.getDescription().length() > 50 
+                ? reminder.getDescription().substring(0, 47) + "..." 
+                : reminder.getDescription();
+            
+            selectBuilder.addOption(optionLabel, reminder.getUuid().toString(), optionDescription);
+        }
+
+        actionRows.add(ActionRow.of(selectBuilder.build()));
+
+        // Add navigation and create buttons
+        List<Button> navButtons = new ArrayList<>();
+        
+        if (totalPages > 1) {
+            navButtons.add(Button.secondary("reminder-nav-prev-" + page + "-" + userId, "◀️ Previous")
+                .withDisabled(page <= 1));
+            navButtons.add(Button.secondary("reminder-nav-next-" + page + "-" + userId, "Next ▶️")
+                .withDisabled(page >= totalPages));
+        }
+        
+        navButtons.add(Button.primary("reminder-create-" + userId, "Create New Reminder"));
+        actionRows.add(ActionRow.of(navButtons));
+
+        hook.editOriginal(content.toString())
+            .setComponents(actionRows)
+            .queue();
+    }
+
+    private Modal createReminderModal(String userId) {
+        TextInput timeInput = TextInput.create("time", "Time", TextInputStyle.SHORT)
+            .setPlaceholder("e.g., \"in 1 hour\", \"1w3d7h\", \"tomorrow at 3pm\"")
+            .setRequiredRange(1, 100)
+            .build();
+
+        TextInput descriptionInput = TextInput.create("description", "Description", TextInputStyle.PARAGRAPH)
+            .setPlaceholder("What should I remind you about?")
+            .setRequiredRange(1, 4_000)
+            .build();
+
+        return Modal.create("reminder-modal-" + userId, "⏰ Create New Reminder")
+            .addComponents(ActionRow.of(timeInput), ActionRow.of(descriptionInput))
+            .build();
     }
 }
