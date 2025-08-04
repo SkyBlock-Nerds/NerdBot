@@ -1,14 +1,13 @@
 package net.hypixel.nerdbot.command;
 
-import lombok.extern.slf4j.Slf4j;
-import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
-import net.aerh.slashcommands.api.annotations.SlashCommand;
-import net.aerh.slashcommands.api.annotations.SlashOption;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -32,17 +31,14 @@ import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.COMMAND_PREFIX;
@@ -122,14 +118,21 @@ public class GeneratorCommands {
                              @SlashOption(description = DESC_ALPHA, required = false) Integer alpha,
                              @SlashOption(description = DESC_PADDING, required = false) Integer padding,
                              @SlashOption(description = DESC_MAX_LINE_LENGTH, required = false) Integer maxLineLength,
+                             @SlashOption(description = "Render backgrounds", required = false) Boolean renderBackground,
                              @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) {
         if (isIncorrectChannel(event)) {
             return;
         }
         final boolean hide = (hidden != null && hidden);
+        renderBackground = Objects.requireNonNullElse(renderBackground, true);
+        alpha = (alpha != null && alpha != 0) ? alpha : 245;
+        padding = (padding != null && padding != 0) ? padding : 1;
+        maxLineLength = (maxLineLength != null && maxLineLength != 0) ? maxLineLength : StringColorParser.MAX_STANDARD_LINE_LENGTH;
+
         event.deferReply(hide).complete();
+
         // building the item's description
-        builder.buildItemAsync(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false)
+        builder.buildItemAsync(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false, renderBackground)
             .thenCompose(generatedImage -> {
                 if (generatedImage == null) {
                     return CompletableFuture.completedFuture(null);
@@ -160,10 +163,10 @@ public class GeneratorCommands {
         }
         final boolean hide = (hidden != null && hidden);
         centered = (centered != null && centered);
-        alpha = alpha == null ? 128 : Math.max(0, Math.min(alpha, 255));
+        alpha = alpha == null ? 245 : Math.max(0, Math.min(alpha, 255));
         event.deferReply(hide).complete();
         // building the chat message
-        builder.buildItemAsync(event, "NONE", "NONE", message, "", true, alpha, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered)
+        builder.buildItemAsync(event, "NONE", "NONE", message, "", true, alpha, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered, false)
             .thenCompose(generatedImage -> {
                 if (generatedImage == null) {
                     return CompletableFuture.completedFuture(null);
@@ -227,7 +230,7 @@ public class GeneratorCommands {
                                  @SlashOption(description = DESC_ITEM_ID, required = false) String itemId,
                                  @SlashOption(description = DESC_EXTRA_ITEM_MODIFIERS, required = false) String extraModifiers,
                                  @SlashOption(description = DESC_RECIPE, required = false) String recipe,
-                                 @SlashOption(description = DESC_RENDER_INVENTORY, required = false) Boolean renderBackground,
+                                 @SlashOption(description = "Render backgrounds for tooltips and inventories", required = false) Boolean renderBackground,
                                  @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) {
         if (isIncorrectChannel(event)) {
             return;
@@ -236,18 +239,23 @@ public class GeneratorCommands {
         event.deferReply(hide).complete();
 
         // checking that there are two or more different items to merge the images
-        if ((itemName == null || rarity == null || itemLore == null) && itemId == null && recipe == null) {
+        if ((itemName == null || rarity == null || itemLore == null) && itemId == null
+            && (recipe == null || recipe.trim().isEmpty())) {
             event.getHook().sendMessage(MISSING_FULL_GEN_ITEM).queue();
             return;
         }
 
         extraModifiers = Objects.requireNonNullElse(extraModifiers, "");
         renderBackground = Objects.requireNonNullElse(renderBackground, true);
+        alpha = (alpha != null && alpha != 0) ? alpha : 245;
+        padding = (padding != null && padding != 0) ? padding : 1;
+        maxLineLength = (maxLineLength != null && maxLineLength != 0) ? maxLineLength : StringColorParser.MAX_STANDARD_LINE_LENGTH;
+        disableRarityLinebreak = Objects.requireNonNullElse(disableRarityLinebreak, false);
 
         // Create futures for all async operations
         CompletableFuture<BufferedImage> descriptionFuture =
             (itemName != null && rarity != null && itemLore != null)
-                ? builder.buildItemAsync(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false)
+                ? builder.buildItemAsync(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false, renderBackground)
                 : CompletableFuture.completedFuture(null);
 
         CompletableFuture<BufferedImage> itemFuture =
@@ -256,7 +264,7 @@ public class GeneratorCommands {
                 : CompletableFuture.completedFuture(null);
 
         CompletableFuture<BufferedImage> recipeFuture =
-            (recipe != null)
+            (recipe != null && !recipe.trim().isEmpty())
                 ? builder.buildRecipeAsync(event, recipe, renderBackground)
                 : CompletableFuture.completedFuture(null);
 
@@ -296,10 +304,10 @@ public class GeneratorCommands {
         if (isIncorrectChannel(event)) {
             return;
         }
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).complete();
+        final boolean hide = (hidden != null && hidden);
+        event.deferReply(hide).complete();
 
-        renderBackground = (renderBackground == null || renderBackground);
+        renderBackground = Objects.requireNonNullElse(renderBackground, true);
 
         // building the Minecraft recipe
         builder.buildRecipeAsync(event, recipe, renderBackground)
@@ -363,7 +371,7 @@ public class GeneratorCommands {
 
         CommandData commandData = buildCommandAndText(itemName, itemLoreArray, shouldIncludeItem, itemData.itemID(), itemData.extraModifiers());
 
-        builder.buildItemAsync(event, "NONE", "NONE", commandData.itemText(), "NONE", false, 255, 0, commandData.maxLineLength(), true, false)
+        builder.buildItemAsync(event, "NONE", "NONE", commandData.itemText(), "NONE", false, 255, 0, commandData.maxLineLength(), true, false, true)
             .thenCompose(generatedDescription -> {
                 if (generatedDescription == null) {
                     event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();

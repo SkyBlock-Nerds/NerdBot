@@ -175,12 +175,13 @@ public class GeneratorBuilder {
      * @param padding        if there is any extra padding around the edges to prevent Discord from rounding the corners
      * @param maxLineLength  the maximum length before content overflows onto the next
      * @param isNormalItem   if the item should add an extra line between the title and first line
+     * @param renderBackground if the tooltip should render with a background
      *
      * @return a Minecraft item description
      */
     @Nullable
     public BufferedImage buildItem(SlashCommandInteractionEvent event, String name, String rarity, String itemLoreString, String type,
-                                   Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered) {
+                                   Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered, boolean renderBackground) {
         // Checking that the fonts have been loaded correctly
         if (!MinecraftImage.isFontsRegistered()) {
             event.getHook().sendMessage(FONTS_NOT_REGISTERED).setEphemeral(true).queue();
@@ -224,6 +225,7 @@ public class GeneratorBuilder {
         }
 
         itemLore = new StringBuilder(itemLore.toString().replace("§", "&"));
+        maxLineLength = Objects.requireNonNullElse(maxLineLength, StringColorParser.MAX_STANDARD_LINE_LENGTH);
 
         // creating a string parser to convert the string into color flagged text
         StringColorParser colorParser = new StringColorParser(maxLineLength);
@@ -250,16 +252,17 @@ public class GeneratorBuilder {
             alpha,
             padding,
             isNormalItem,
-            isCentered
+            isCentered,
+            renderBackground
         )
             .render(event.getChannel())
             .getImage();
     }
 
     public CompletableFuture<BufferedImage> buildItemAsync(SlashCommandInteractionEvent event, String name, String rarity, String itemLoreString, String type,
-                                                           Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered) {
+                                                           Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered, boolean renderBackground) {
         return CompletableFuture.supplyAsync(() -> 
-            buildItem(event, name, rarity, itemLoreString, type, addEmptyLine, alpha, padding, maxLineLength, isNormalItem, isCentered), 
+            buildItem(event, name, rarity, itemLoreString, type, addEmptyLine, alpha, padding, maxLineLength, isNormalItem, isCentered, renderBackground), 
             generatorExecutor);
     }
 
