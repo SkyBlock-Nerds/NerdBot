@@ -11,7 +11,7 @@ import com.freya02.botcommands.api.application.slash.autocomplete.annotations.Au
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
-@Log4j2
+@Slf4j
 public class ProfileCommands extends ApplicationCommand {
 
     public static final Cache<String, MojangProfile> VERIFY_CACHE = Caffeine.newBuilder()

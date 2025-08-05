@@ -11,7 +11,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -98,7 +98,7 @@ import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_BA
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_EXAMPLES;
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.stripString;
 
-@Log4j2
+@Slf4j
 public class GeneratorCommands extends ApplicationCommand {
     private static final Color[] EMBED_COLORS = new Color[]{
         new Color(167, 65, 92),
