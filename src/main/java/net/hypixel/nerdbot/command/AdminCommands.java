@@ -10,7 +10,7 @@ import com.freya02.botcommands.api.application.slash.autocomplete.annotations.Au
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
@@ -57,12 +57,10 @@ import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.FileUtils;
 import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.JsonUtils;
-import net.hypixel.nerdbot.util.LoggingUtils;
 import net.hypixel.nerdbot.util.TimeUtils;
 import net.hypixel.nerdbot.util.Utils;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.commons.lang.time.DateFormatUtils;
-import org.apache.logging.log4j.Level;
 
 import java.awt.Color;
 import java.io.File;
@@ -81,7 +79,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Log4j2
+@Slf4j
 public class AdminCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "curate", description = "Manually run the curation process", defaultLocked = true)
@@ -862,34 +860,6 @@ public class AdminCommands extends ApplicationCommand {
         });
 
         return forumTags;
-    }
-
-    @JDASlashCommand(name = "loglevel", description = "Set the log level", defaultLocked = true)
-    public void setLogLevel(GuildSlashEvent event, @AppOption(name = "level", description = "Log level to set", autocomplete = "loglevels") String level) {
-        event.deferReply(true).complete();
-
-        DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
-
-        if (discordUser == null) {
-            TranslationManager.edit(event.getHook(), "generic.user_not_found");
-            return;
-        }
-
-        Level logLevel = Level.toLevel(level.toUpperCase());
-
-        if (logLevel == null) {
-            TranslationManager.edit(event.getHook(), discordUser, "commands.log_level.invalid_level");
-            return;
-        }
-
-        LoggingUtils.setGlobalLogLevel(logLevel);
-        TranslationManager.edit(event.getHook(), discordUser, "commands.log_level.set_level", logLevel);
-    }
-
-    @AutocompletionHandler(name = "loglevels", mode = AutocompletionMode.FUZZY, showUserInput = false)
-    public List<String> listLogLevels(CommandAutoCompleteInteractionEvent event) {
-        return Arrays.stream(Level.values()).map(Level::toString).toList();
     }
 
     @JDASlashCommand(name = "force", subcommand = "nominations", description = "Forcefully run the nomination process", defaultLocked = true)

@@ -9,7 +9,7 @@ import com.freya02.botcommands.api.application.slash.autocomplete.annotations.Au
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Log4j2
+@Slf4j
 public class SuggestionCommands extends ApplicationCommand {
 
     private final Cache<String, Long> lastReviewRequestCache = Caffeine.newBuilder()

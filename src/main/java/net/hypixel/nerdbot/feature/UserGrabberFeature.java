@@ -4,9 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.badge.BadgeManager;
-import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
+import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
+import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.api.feature.BotFeature;
@@ -43,7 +44,7 @@ public class UserGrabberFeature extends BotFeature {
 
                 DiscordUser discordUser = discordUserRepository.findById(member.getId());
                 if (discordUser == null) {
-                    discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new LastActivity(), new BirthdayData(), new MojangProfile());
+                    discordUser = new DiscordUser(member.getId(), new ArrayList<>(), UserLanguage.ENGLISH, new LastActivity(), new BirthdayData(), new MojangProfile());
                     log.info("Creating new DiscordUser for user " + member.getId());
                 }
 

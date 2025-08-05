@@ -4,7 +4,7 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -15,7 +15,7 @@ import net.hypixel.nerdbot.repository.DiscordUserRepository;
 
 import java.util.Optional;
 
-@Log4j2
+@Slf4j
 public class ModMailCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "modmail", subcommand = "find", description = "Find a Mod Mail thread", defaultLocked = true)
