@@ -6,7 +6,6 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
-import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.util.DiscordUtils;
@@ -41,10 +40,6 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
                         discordUser.setBirthdayData(new BirthdayData());
                     }
 
-                    if (discordUser.getLanguage() == null) {
-                        log.info("Language for " + discordUser.getDiscordId() + " was null. Setting to default values!");
-                        discordUser.setLanguage(UserLanguage.ENGLISH);
-                    }
 
                     cacheObject(discordUser);
 
