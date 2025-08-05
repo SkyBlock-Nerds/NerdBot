@@ -111,6 +111,11 @@
             <artifactId>caffeine</artifactId>
             <version>3.2.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.7</version>
+        </dependency>
     </dependencies>
 
     <build>

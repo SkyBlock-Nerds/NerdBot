@@ -7,7 +7,7 @@ import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand
 import com.joestelmach.natty.DateGroup;
 import com.joestelmach.natty.Parser;
 import com.mongodb.client.result.DeleteResult;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
@@ -33,7 +33,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Log4j2
+@Slf4j
 public class ReminderCommands extends ApplicationCommand {
 
     private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
