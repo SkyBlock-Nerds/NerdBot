@@ -534,7 +534,7 @@
     },
     {
         "icon": "༕",
-        "name": "undead",
+        "name": "undead_item",
         "stat": "This armor piece is undead ༕!",
         "display": "༕ This armor piece is undead ༕!",
         "color": "DARK_GREEN",
@@ -817,6 +817,213 @@
         "stat": "Pull",
         "display": "ᛷ Pull",
         "color": "AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "✈",
+        "name": "airborne",
+        "stat": "Airborne",
+        "display": "✈ Airborne",
+        "color": "GRAY",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☮",
+        "name": "animal",
+        "stat": "Animal",
+        "display": "☮ Animal",
+        "color": "GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⚓",
+        "name": "aquatic",
+        "stat": "Aquatic",
+        "display": "⚓ Aquatic",
+        "color": "BLUE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "♃",
+        "name": "arcane",
+        "stat": "Arcane",
+        "display": "♃ Arcane",
+        "color": "DARK_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "Ж",
+        "name": "arthropod",
+        "stat": "Arthropod",
+        "display": "Ж Arthropod",
+        "color": "DARK_RED",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⚙",
+        "name": "construct",
+        "stat": "Construct",
+        "display": "⚙ Construct",
+        "color": "GRAY",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⚂",
+        "name": "cubic",
+        "stat": "Cubic",
+        "display": "⚂ Cubic",
+        "color": "GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "♣",
+        "name": "elusive",
+        "stat": "Elusive",
+        "display": "♣ Elusive",
+        "color": "LIGHT_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⊙",
+        "name": "ender",
+        "stat": "Ender",
+        "display": "⊙ Ender",
+        "color": "DARK_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☃",
+        "name": "frozen",
+        "stat": "Frozen",
+        "display": "☃ Frozen",
+        "color": "WHITE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "❄",
+        "name": "glacial",
+        "stat": "Glacial",
+        "display": "❄ Glacial",
+        "color": "AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "✰",
+        "name": "humanoid",
+        "stat": "Humanoid",
+        "display": "✰ Humanoid",
+        "color": "YELLOW",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "♨",
+        "name": "infernal",
+        "stat": "Infernal",
+        "display": "♨ Infernal",
+        "color": "DARK_RED",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "♆",
+        "name": "magmatic",
+        "stat": "Magmatic",
+        "display": "♆ Magmatic",
+        "color": "RED",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "✿",
+        "name": "mythological",
+        "stat": "Mythological",
+        "display": "✿ Mythological",
+        "color": "DARK_GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "ൠ",
+        "name": "pest",
+        "stat": "Pest",
+        "display": "ൠ Pest",
+        "color": "DARK_GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⛨",
+        "name": "shielded",
+        "stat": "Shielded",
+        "display": "⛨ Shielded",
+        "color": "YELLOW",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "🦴",
+        "name": "skeletal",
+        "stat": "Skeletal",
+        "display": "🦴 Skeletal",
+        "color": "WHITE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☽",
+        "name": "spooky",
+        "stat": "Spooky",
+        "display": "☽ Spooky",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⛏",
+        "name": "subterranean",
+        "stat": "Subterranean",
+        "display": "⛏ Subterranean",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "༕",
+        "name": "undead",
+        "stat": "Undead",
+        "display": "༕ Undead",
+        "color": "DARK_GREEN",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☠",
+        "name": "wither",
+        "stat": "Wither",
+        "display": "☠ Wither",
+        "color": "DARK_GRAY",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⸙",
+        "name": "woodland",
+        "stat": "Woodland",
+        "display": "⸙ Woodland",
+        "color": "DARK_GREEN",
         "subColor": null,
         "parseType": "NORMAL"
     }
