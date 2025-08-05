@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.command;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
@@ -31,12 +32,14 @@ import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
@@ -101,6 +104,15 @@ public class GeneratorCommands {
         new Color(137, 222, 74),
         new Color(151, 150, 164)
     };
+    
+    private static final Map<String, String> FORMATTING_CODES = Map.of(
+        "bold", "&l",
+        "italic", "&o", 
+        "underlined", "&n",
+        "strikethrough", "&m",
+        "obfuscated", "&k"
+    );
+    
     private final GeneratorBuilder builder;
 
     public GeneratorCommands() {
@@ -428,9 +440,14 @@ public class GeneratorCommands {
     }
 
     private DisplayData validateDisplayData(SlashCommandInteractionEvent event, JsonObject itemJSON) {
+        JsonObject componentsJSON = JsonUtils.isJsonObject(itemJSON, "components");
+        if (componentsJSON != null) {
+            return validateComponentsFormat(event, itemJSON, componentsJSON);
+        }
+        
         JsonObject tagJSON = JsonUtils.isJsonObject(itemJSON, "tag");
         if (tagJSON == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag")).queue();
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag or components")).queue();
             return null;
         }
 
@@ -456,6 +473,111 @@ public class GeneratorCommands {
         return new DisplayData(itemName, itemLoreArray, displayJSON, tagJSON);
     }
 
+    private DisplayData validateComponentsFormat(SlashCommandInteractionEvent event, JsonObject itemJSON, JsonObject componentsJSON) {
+        JsonElement customNameElement = componentsJSON.get("minecraft:custom_name");
+        String itemName = null;
+        if (customNameElement != null) {
+            itemName = convertComponentToString(customNameElement);
+        }
+
+        JsonElement loreElement = componentsJSON.get("minecraft:lore");
+        JsonArray itemLoreArray = null;
+        if (loreElement != null && loreElement.isJsonArray()) {
+            JsonArray originalLoreArray = loreElement.getAsJsonArray();
+            itemLoreArray = new JsonArray();
+            
+            for (JsonElement loreLineElement : originalLoreArray) {
+                String convertedLore = convertComponentToString(loreLineElement);
+                itemLoreArray.add(convertedLore);
+            }
+        }
+
+        if (itemName == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("minecraft:custom_name")).queue();
+            return null;
+        }
+
+        if (itemLoreArray == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("minecraft:lore")).queue();
+            return null;
+        }
+
+        itemName = itemName.replaceAll("§", "&");
+        return new DisplayData(itemName, itemLoreArray, componentsJSON, componentsJSON);
+    }
+
+    private String convertComponentToString(JsonElement element) {
+        if (element.isJsonPrimitive()) {
+            return element.getAsString();
+        } else if (element.isJsonObject()) {
+            return processComponentObject(element.getAsJsonObject());
+        } else if (element.isJsonArray()) {
+            return processComponentArray(element.getAsJsonArray());
+        }
+
+        return "";
+    }
+
+    private String processComponentObject(JsonObject component) {
+        StringBuilder result = new StringBuilder();
+        
+        if (component.has("color")) {
+            String minecraftColor = component.get("color").getAsString();
+            String colorCode = Arrays.stream(MCColor.VALUES)
+                .filter(mcColor -> mcColor.name().equalsIgnoreCase(minecraftColor))
+                .findFirst()
+                .map(mcColor -> "&" + mcColor.getColorCode())
+                .orElse("&f");
+            result.append(colorCode);
+        }
+        
+        FORMATTING_CODES.forEach((key, code) -> {
+            if (component.has(key)) {
+                JsonElement element = component.get(key);
+                if (element.isJsonPrimitive()) {
+                    JsonPrimitive primitive = element.getAsJsonPrimitive();
+                    boolean enabled = false;
+                    
+                    if (primitive.isBoolean()) {
+                        enabled = primitive.getAsBoolean();
+                    } else if (primitive.isNumber()) {
+                        enabled = primitive.getAsInt() != 0;
+                    } else if (primitive.isString()) {
+                        String value = primitive.getAsString();
+                        enabled = "1b".equals(value) || "1".equals(value);
+                    }
+                    
+                    if (enabled) {
+                        result.append(code);
+                    }
+                }
+            }
+        });
+        
+        // Add text content
+        if (component.has("text")) {
+            result.append(component.get("text").getAsString());
+        }
+        
+        // Process extra array
+        if (component.has("extra")) {
+            JsonArray extraArray = component.getAsJsonArray("extra");
+            for (JsonElement extra : extraArray) {
+                result.append(convertComponentToString(extra));
+            }
+        }
+        
+        return result.toString();
+    }
+
+    private String processComponentArray(JsonArray componentArray) {
+        StringBuilder result = new StringBuilder();
+        for (JsonElement element : componentArray) {
+            result.append(convertComponentToString(element));
+        }
+        return result.toString();
+    }
+
     private record ItemData(String itemID, String extraModifiers) {
     }
 
@@ -467,14 +589,25 @@ public class GeneratorCommands {
         }
         itemID = itemID.replace("minecraft:", "");
 
-        String extraModifiers = "";
-        if (itemID.equals("skull")) {
-            extraModifiers = processSkullData(event, tagJSON);
+        String extraModifiers;
+        
+        boolean isComponentsFormat = itemJSON.has("components");
+        
+        if (itemID.equals("skull") || itemID.equals("player_head")) {
+            if (isComponentsFormat) {
+                extraModifiers = processSkullDataComponents(event, itemJSON);
+            } else {
+                extraModifiers = processSkullData(event, tagJSON);
+            }
             if (extraModifiers == null) {
                 return null;
             }
         } else {
-            extraModifiers = processNonSkullModifiers(tagJSON, displayJSON);
+            if (isComponentsFormat) {
+                extraModifiers = processNonSkullModifiersComponents(itemJSON);
+            } else {
+                extraModifiers = processNonSkullModifiers(tagJSON, displayJSON);
+            }
         }
 
         return new ItemData(itemID, extraModifiers);
@@ -550,6 +683,78 @@ public class GeneratorCommands {
         JsonArray enchantJson = JsonUtils.isJsonArray(tagJSON, "ench");
         if (enchantJson != null) {
             extraModifiers = extraModifiers.isEmpty() ? "enchant" : extraModifiers + ",enchant";
+        }
+
+        return extraModifiers;
+    }
+
+    private String processSkullDataComponents(SlashCommandInteractionEvent event, JsonObject itemJSON) {
+        JsonObject componentsJSON = JsonUtils.isJsonObject(itemJSON, "components");
+        if (componentsJSON == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("components")).queue();
+            return null;
+        }
+
+        JsonObject profileJSON = JsonUtils.isJsonObject(componentsJSON, "minecraft:profile");
+        if (profileJSON == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("minecraft:profile")).queue();
+            return null;
+        }
+
+        JsonArray propertiesArray = JsonUtils.isJsonArray(profileJSON, "properties");
+        if (propertiesArray == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("properties")).queue();
+            return null;
+        }
+
+        if (propertiesArray.size() != 1) {
+            event.getHook().sendMessage(MULTIPLE_ITEM_SKULL_DATA).queue();
+            return null;
+        }
+
+        if (!propertiesArray.get(0).isJsonObject()) {
+            event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
+            return null;
+        }
+
+        JsonObject propertyObject = propertiesArray.get(0).getAsJsonObject();
+        String base64String = JsonUtils.isJsonString(propertyObject, "value");
+        if (base64String == null) {
+            event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
+            return null;
+        }
+
+        try {
+            return builder.base64ToSkinURL(base64String);
+        } catch (NullPointerException | IllegalArgumentException exception) {
+            event.getHook().sendMessage(INVALID_BASE_64_SKIN_URL).queue();
+            return null;
+        }
+    }
+
+    private String processNonSkullModifiersComponents(JsonObject itemJSON) {
+        String extraModifiers = "";
+        
+        JsonObject componentsJSON = JsonUtils.isJsonObject(itemJSON, "components");
+        if (componentsJSON == null) {
+            return extraModifiers;
+        }
+
+        if (componentsJSON.has("minecraft:dyed_color")) {
+            try {
+                int colorValue = componentsJSON.get("minecraft:dyed_color").getAsInt();
+                if (colorValue >= 0) {
+                    extraModifiers = String.format("#%06X", colorValue);
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        if (componentsJSON.has("minecraft:enchantments")) {
+            JsonObject enchantmentsJSON = componentsJSON.getAsJsonObject("minecraft:enchantments");
+            if (!enchantmentsJSON.isEmpty()) {
+                extraModifiers = extraModifiers.isEmpty() ? "enchant" : extraModifiers + ",enchant";
+            }
         }
 
         return extraModifiers;
