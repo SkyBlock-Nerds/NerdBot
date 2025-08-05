@@ -4,7 +4,7 @@ import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -18,7 +18,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-@Log4j2
+@Slf4j
 public class TranslationManager {
 
     private static final UserLanguage DEFAULT_LANGUAGE = UserLanguage.ENGLISH;

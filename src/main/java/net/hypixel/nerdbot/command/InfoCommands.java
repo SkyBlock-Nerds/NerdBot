@@ -11,7 +11,7 @@ import com.freya02.botcommands.api.components.builder.selects.PersistentStringSe
 import com.freya02.botcommands.api.components.event.StringSelectionEvent;
 import com.freya02.botcommands.api.pagination.paginator.Paginator;
 import com.freya02.botcommands.api.pagination.paginator.PaginatorBuilder;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
@@ -26,9 +26,9 @@ import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.TimeUtils;
 import net.hypixel.nerdbot.util.FileUtils;
 import net.hypixel.nerdbot.util.StringUtils;
+import net.hypixel.nerdbot.util.TimeUtils;
 import net.hypixel.nerdbot.util.Utils;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Log4j2
+@Slf4j
 public class InfoCommands extends ApplicationCommand {
 
     private static final String GREENLIT_SELECTION_MENU_HANDLER_NAME = "greenlit";
