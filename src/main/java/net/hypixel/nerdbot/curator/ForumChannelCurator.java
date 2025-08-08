@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.curator;
 
 import io.prometheus.client.Summary;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
@@ -23,7 +23,7 @@ import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Log4j2
+@Slf4j
 public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
 
     public ForumChannelCurator(boolean readOnly) {
@@ -95,7 +95,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                 return output;
             }
 
-            ForumTag greenlitTag = Util.getTagByName(forumChannel, suggestionConfig.getGreenlitTag());
+            ForumTag greenlitTag = DiscordUtils.getTagByName(forumChannel, suggestionConfig.getGreenlitTag());
 
             if (greenlitTag == null) {
                 log.error("Couldn't find the greenlit tag for the forum channel " + forumChannel.getName() + " (ID: " + forumChannel.getId() + ")!");
@@ -175,7 +175,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                     ThreadChannelManager threadManager = thread.getManager();
 
                     // Upsert into database if already greenlit
-                    if (Util.hasTagByName(thread, suggestionConfig.getGreenlitTag())) {
+                    if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag())) {
                         log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is already greenlit/reviewed!");
                         GreenlitMessage greenlitMessage = createGreenlitMessage(message, thread, agree, neutral, disagree);
                         database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);

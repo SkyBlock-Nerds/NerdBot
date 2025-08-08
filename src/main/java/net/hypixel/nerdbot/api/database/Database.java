@@ -16,7 +16,8 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.event.ServerHeartbeatFailedEvent;
 import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
-import lombok.extern.log4j.Log4j2;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.api.repository.RepositoryManager;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.bson.Document;
@@ -29,15 +30,23 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-@Log4j2
+@Slf4j
 public class Database implements ServerMonitorListener {
 
     private static final FindOneAndReplaceOptions REPLACE_OPTIONS = new FindOneAndReplaceOptions().upsert(true);
+    @Getter
     private final ConnectionString connectionString;
+    @Getter
     private final RepositoryManager repositoryManager = new RepositoryManager();
+    @Getter
     private MongoClient mongoClient = null;
+    @Getter
     private boolean connected;
+    private final ExecutorService databaseExecutor = Executors.newCachedThreadPool();
 
     public Database(String uri, String databaseName) {
         if (uri == null || uri.isBlank() || databaseName == null || databaseName.isBlank()) {
@@ -84,20 +93,9 @@ public class Database implements ServerMonitorListener {
         connected = false;
     }
 
-    public MongoClient getMongoClient() {
-        return mongoClient;
-    }
-
-    public ConnectionString getConnectionString() {
-        return connectionString;
-    }
-
-    public boolean isConnected() {
-        return connected;
-    }
-
     public void disconnect() {
         mongoClient.close();
+        databaseExecutor.shutdown();
         connected = false;
     }
 
@@ -109,12 +107,30 @@ public class Database implements ServerMonitorListener {
         return collection.insertOne(object);
     }
 
+    public <T> CompletableFuture<InsertOneResult> insertDocumentAsync(MongoCollection<T> collection, T object) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (collection == null) {
+                return null;
+            }
+            return collection.insertOne(object);
+        }, databaseExecutor);
+    }
+
     @Nullable
     public <T> InsertManyResult insertDocuments(MongoCollection<T> collection, List<T> objects) {
         if (collection == null) {
             return null;
         }
         return collection.insertMany(objects);
+    }
+
+    public <T> CompletableFuture<InsertManyResult> insertDocumentsAsync(MongoCollection<T> collection, List<T> objects) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (collection == null) {
+                return null;
+            }
+            return collection.insertMany(objects);
+        }, databaseExecutor);
     }
 
     public <T> void upsertDocument(MongoCollection<T> collection, String key, Object value, T object) {
@@ -124,12 +140,30 @@ public class Database implements ServerMonitorListener {
         collection.findOneAndReplace(Filters.eq(key, value), object, REPLACE_OPTIONS);
     }
 
+    public <T> CompletableFuture<T> upsertDocumentAsync(MongoCollection<T> collection, String key, Object value, T object) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (collection == null) {
+                return null;
+            }
+            return collection.findOneAndReplace(Filters.eq(key, value), object, REPLACE_OPTIONS);
+        }, databaseExecutor);
+    }
+
     @Nullable
     public <T> UpdateResult updateDocument(MongoCollection<T> collection, String key, Object value, Object clazz) {
         if (collection == null) {
             return null;
         }
         return collection.updateOne(Filters.eq(key, value), new Document("$set", clazz));
+    }
+
+    public <T> CompletableFuture<UpdateResult> updateDocumentAsync(MongoCollection<T> collection, String key, Object value, Object clazz) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (collection == null) {
+                return null;
+            }
+            return collection.updateOne(Filters.eq(key, value), new Document("$set", clazz));
+        }, databaseExecutor);
     }
 
     @Nullable
@@ -148,6 +182,15 @@ public class Database implements ServerMonitorListener {
         return collection.find(Filters.eq(key, value));
     }
 
+    public <T> CompletableFuture<FindIterable<T>> findDocumentAsync(MongoCollection<T> collection, String key, Object value) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (collection == null) {
+                return null;
+            }
+            return collection.find(Filters.eq(key, value));
+        }, databaseExecutor);
+    }
+
     @Nullable
     public <T> FindIterable<T> findDocument(MongoCollection<T> collection, Bson filter) {
         if (collection == null || filter == null) {
@@ -163,6 +206,15 @@ public class Database implements ServerMonitorListener {
             return null;
         }
         return collection.find();
+    }
+
+    public <T> CompletableFuture<FindIterable<T>> findAllDocumentsAsync(MongoCollection<T> collection) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (collection == null) {
+                return null;
+            }
+            return collection.find();
+        }, databaseExecutor);
     }
 
     public <T> long countDocuments(MongoCollection<T> collection) {
@@ -187,6 +239,15 @@ public class Database implements ServerMonitorListener {
         return collection.deleteOne(Filters.eq(key, value));
     }
 
+    public <T> CompletableFuture<DeleteResult> deleteDocumentAsync(MongoCollection<T> collection, String key, Object value) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (collection == null) {
+                return null;
+            }
+            return collection.deleteOne(Filters.eq(key, value));
+        }, databaseExecutor);
+    }
+
     @Nullable
     public <T> DeleteResult deleteDocuments(MongoCollection<T> collection, String key, Object value) {
         if (collection == null) {
@@ -195,7 +256,12 @@ public class Database implements ServerMonitorListener {
         return collection.deleteMany(Filters.eq(key, value));
     }
 
-    public RepositoryManager getRepositoryManager() {
-        return repositoryManager;
+    public <T> CompletableFuture<DeleteResult> deleteDocumentsAsync(MongoCollection<T> collection, String key, Object value) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (collection == null) {
+                return null;
+            }
+            return collection.deleteMany(Filters.eq(key, value));
+        }, databaseExecutor);
     }
 }

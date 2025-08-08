@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.PermissionOverride;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Log4j2
+@Slf4j
 public class RoleRestrictedChannelListener {
 
     @SubscribeEvent

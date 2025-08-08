@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.api.urlwatcher;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.api.urlwatcher.handler.SkyBlockUpdateDataHandler;
 import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser;
 import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser.HypixelThread;
@@ -18,7 +18,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-@Log4j2
+@Slf4j
 public class HypixelThreadURLWatcher {
 
     @Getter

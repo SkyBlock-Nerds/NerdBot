@@ -3,8 +3,8 @@ package net.hypixel.nerdbot.api.repository;
 import com.mongodb.client.MongoClient;
 import lombok.Getter;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
-import net.hypixel.nerdbot.util.ClassUtil;
+import lombok.extern.slf4j.Slf4j;
+import net.hypixel.nerdbot.util.ClassUtils;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 
 import java.lang.reflect.Constructor;
@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Getter
-@Log4j2
+@Slf4j
 public class RepositoryManager {
 
     private final Map<Class<?>, Object> repositories = new HashMap<>();
@@ -41,7 +41,7 @@ public class RepositoryManager {
         log.info("Registering repositories from package: " + packageName);
 
         try {
-            Set<Class<?>> classes = ClassUtil.findClasses(packageName, Repository.class);
+            Set<Class<?>> classes = ClassUtils.findClasses(packageName, Repository.class);
 
             for (Class<?> clazz : classes) {
                 log.debug("Found class: " + clazz.getName());

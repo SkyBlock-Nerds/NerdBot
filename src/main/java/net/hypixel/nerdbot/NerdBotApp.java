@@ -3,16 +3,17 @@ package net.hypixel.nerdbot;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.MongoException;
-import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.bot.NerdBot;
-import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.json.adapter.BadgeTypeAdapter;
 import net.hypixel.nerdbot.util.json.adapter.ColorTypeAdapter;
 import net.hypixel.nerdbot.util.json.adapter.InstantTypeAdapter;
 import net.hypixel.nerdbot.util.json.adapter.UUIDTypeAdapter;
+import net.hypixel.nerdbot.util.UUIDUtils;
+import org.jetbrains.annotations.NotNull;
 import sun.misc.Signal;
 
 import javax.security.auth.login.LoginException;
@@ -23,11 +24,28 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
-@Log4j2
+@Slf4j
 public class NerdBotApp {
 
-    public static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
+    public static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(
+        Runtime.getRuntime().availableProcessors() * 2,
+        createThreadFactory()
+    );
+
+    private static ThreadFactory createThreadFactory() {
+        return new ThreadFactory() {
+            private int counter = 0;
+
+            @Override
+            public Thread newThread(@NotNull Runnable r) {
+                Thread thread = new Thread(r, "nerdbot-worker-" + (++counter));
+                thread.setDaemon(true);
+                return thread;
+            }
+        };
+    }
     public static final Gson GSON = new GsonBuilder()
         .setPrettyPrinting()
         .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
@@ -61,8 +79,8 @@ public class NerdBotApp {
             System.exit(-1);
         } catch (MongoException exception) {
             log.error("Failed to connect to MongoDB!");
-        } catch (Exception exception) {
-            log.error("Failed to create bot!", exception);
+        } catch (RuntimeException exception) {
+            log.error("Unexpected runtime error during bot creation!", exception);
             System.exit(-1);
         }
 
@@ -70,7 +88,7 @@ public class NerdBotApp {
     }
 
     public static Optional<UUID> getHypixelAPIKey() {
-        return Optional.ofNullable(System.getProperty("hypixel.key")).map(Util::toUUID);
+        return Optional.ofNullable(System.getProperty("hypixel.key")).map(UUIDUtils::toUUID);
     }
 
     public static NerdBot getBot() {

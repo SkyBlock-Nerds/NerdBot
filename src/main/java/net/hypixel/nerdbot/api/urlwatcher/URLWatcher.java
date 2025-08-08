@@ -2,8 +2,8 @@ package net.hypixel.nerdbot.api.urlwatcher;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j2;
-import net.hypixel.nerdbot.util.JsonUtil;
+import lombok.extern.slf4j.Slf4j;
+import net.hypixel.nerdbot.util.JsonUtils;
 import net.hypixel.nerdbot.util.Tuple;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -15,8 +15,14 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import okhttp3.Call;
+import okhttp3.Callback;
+import org.jetbrains.annotations.NotNull;
 
-@Log4j2
+@Slf4j
 public class URLWatcher {
 
     @Getter
@@ -29,6 +35,7 @@ public class URLWatcher {
     private String lastContent;
     @Getter
     private boolean active;
+    private final ExecutorService executorService;
 
     public URLWatcher(String url) {
         this(url, null);
@@ -43,6 +50,7 @@ public class URLWatcher {
         this.url = url;
         this.headers = headers;
         this.timer = new Timer();
+        this.executorService = Executors.newCachedThreadPool();
         this.lastContent = fetchContent();
     }
 
@@ -50,12 +58,18 @@ public class URLWatcher {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                String newContent = fetchContent();
-                if (newContent != null && !newContent.equals(lastContent)) {
-                    log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
-                    handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseStringToMap(lastContent), JsonUtil.parseStringToMap(newContent), ""));
-                    lastContent = newContent;
-                }
+                fetchContentAsync()
+                    .thenAccept(newContent -> {
+                        if (newContent != null && !newContent.equals(lastContent)) {
+                            log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
+                            handler.handleData(lastContent, newContent, JsonUtils.findChangedValues(JsonUtils.parseStringToMap(lastContent), JsonUtils.parseStringToMap(newContent), ""));
+                            lastContent = newContent;
+                        }
+                    })
+                    .exceptionally(throwable -> {
+                        log.error("Error fetching content asynchronously from " + url, throwable);
+                        return null;
+                    });
             }
         }, 0, unit.toMillis(interval));
 
@@ -64,27 +78,34 @@ public class URLWatcher {
     }
 
     public void simulateDataChange(String oldData, String newData, DataHandler handler) {
-        List<Tuple<String, Object, Object>> changedValues = JsonUtil.findChangedValues(JsonUtil.parseStringToMap(oldData), JsonUtil.parseStringToMap(newData), "");
+        List<Tuple<String, Object, Object>> changedValues = JsonUtils.findChangedValues(JsonUtils.parseStringToMap(oldData), JsonUtils.parseStringToMap(newData), "");
         handler.handleData(oldData, newData, changedValues);
         lastContent = newData;
         log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newData);
     }
 
     public void watchOnce(DataHandler handler) {
-        String newContent = fetchContent();
         active = true;
 
-        if (newContent != null && !newContent.equals(lastContent)) {
-            handler.handleData(lastContent, newContent, JsonUtil.findChangedValues(JsonUtil.parseStringToMap(lastContent), JsonUtil.parseStringToMap(newContent), ""));
-            lastContent = newContent;
-            log.debug("Watched " + url + " once, found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
-        }
-
-        active = false;
+        fetchContentAsync()
+            .thenAccept(newContent -> {
+                if (newContent != null && !newContent.equals(lastContent)) {
+                    handler.handleData(lastContent, newContent, JsonUtils.findChangedValues(JsonUtils.parseStringToMap(lastContent), JsonUtils.parseStringToMap(newContent), ""));
+                    lastContent = newContent;
+                    log.debug("Watched " + url + " once, found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
+                }
+                active = false;
+            })
+            .exceptionally(throwable -> {
+                log.error("Error fetching content asynchronously from " + url, throwable);
+                active = false;
+                return null;
+            });
     }
 
     public void stopWatching() {
         timer.cancel();
+        executorService.shutdown();
         log.info("Stopped watching " + url);
         active = false;
     }
@@ -115,6 +136,48 @@ public class URLWatcher {
         }
 
         return null;
+    }
+
+    public CompletableFuture<String> fetchContentAsync() {
+        log.debug("Fetching content asynchronously from " + url);
+
+        Request.Builder requestBuilder = new Request.Builder().url(url);
+
+        if (headers != null) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                requestBuilder.header(entry.getKey(), entry.getValue());
+            }
+        }
+
+        Request request = requestBuilder.build();
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Failed to fetch content asynchronously from " + url, e);
+                future.complete(null);
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) {
+                try (response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        String content = response.body().string();
+                        log.debug("Successfully fetched content asynchronously from " + url + "!" + " (Content: " + content + ")");
+                        future.complete(content);
+                    } else {
+                        log.error("Failed to fetch content asynchronously from " + url + "! (Response: " + response + ")");
+                        future.complete(null);
+                    }
+                } catch (IOException e) {
+                    log.error("Error reading response body from " + url, e);
+                    future.complete(null);
+                }
+            }
+        });
+
+        return future;
     }
 
     public interface DataHandler {

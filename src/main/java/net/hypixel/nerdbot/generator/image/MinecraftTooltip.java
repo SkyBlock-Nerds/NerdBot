@@ -3,13 +3,13 @@ package net.hypixel.nerdbot.generator.image;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.generator.text.segment.ColorSegment;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
+import net.hypixel.nerdbot.util.FontUtils;
 import net.hypixel.nerdbot.util.Range;
-import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-@Log4j2
+@Slf4j
 public class MinecraftTooltip {
 
     private static final Map<Integer, Map<Integer, List<Character>>> OBFUSCATION_WIDTH_MAPS = new HashMap<>(); // Integer key represents font style index (0: regular, 1: bold, 2: italic, 3: bold-italic)
@@ -53,10 +53,10 @@ public class MinecraftTooltip {
 
         MINECRAFT_FONTS.addAll(
             Arrays.asList(
-                Util.initFont("/minecraft/fonts/minecraft.otf", 15.5f),
-                Util.initFont("/minecraft/fonts/3_Minecraft-Bold.otf", 20.0f),
-                Util.initFont("/minecraft/fonts/2_Minecraft-Italic.otf", 20.5f),
-                Util.initFont("/minecraft/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
+                FontUtils.initFont("/minecraft/fonts/minecraft.otf", 15.5f),
+                FontUtils.initFont("/minecraft/fonts/3_Minecraft-Bold.otf", 20.0f),
+                FontUtils.initFont("/minecraft/fonts/2_Minecraft-Italic.otf", 20.5f),
+                FontUtils.initFont("/minecraft/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
             )
         );
 

@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.api.database.model.user;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -16,7 +16,7 @@ import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.ChannelCache;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.time.DateTimeException;
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ import java.util.TimerTask;
 @AllArgsConstructor
 @Getter
 @Setter
-@Log4j2
+@Slf4j
 public class DiscordUser {
 
     private String discordId;
@@ -190,10 +190,10 @@ public class DiscordUser {
     }
 
     public Optional<Member> getMember() {
-        return Optional.of(Util.getMainGuild().retrieveMemberById(discordId).complete());
+        return Optional.of(DiscordUtils.getMainGuild().retrieveMemberById(discordId).complete());
     }
 
     public Optional<User> getUser() {
-        return Optional.of(Util.getMainGuild().getJDA().retrieveUserById(discordId).complete());
+        return Optional.of(DiscordUtils.getMainGuild().getJDA().retrieveUserById(discordId).complete());
     }
 }

@@ -1,12 +1,13 @@
 package net.hypixel.nerdbot.generator.impl;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.image.ImageCoordinates;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.item.InventoryItem;
 import net.hypixel.nerdbot.generator.parser.inventory.InventoryStringParser;
+import net.hypixel.nerdbot.util.FontUtils;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Range;
 
@@ -22,9 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static net.hypixel.nerdbot.util.Util.initFont;
-
-@Log4j2
+@Slf4j
 public class MinecraftInventoryGenerator implements Generator {
 
     public static final int MAX_ROWS_GENERATED = 100;
@@ -50,7 +49,7 @@ public class MinecraftInventoryGenerator implements Generator {
             throw new RuntimeException(e);
         }
 
-        MINECRAFT_FONT = initFont("/minecraft/fonts/minecraft.otf", PIXELS_PER_PIXEL * 8);
+        MINECRAFT_FONT = FontUtils.initFont("/minecraft/fonts/minecraft.otf", PIXELS_PER_PIXEL * 8);
         if (MINECRAFT_FONT != null) {
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(MINECRAFT_FONT);
         }

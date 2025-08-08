@@ -12,7 +12,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
@@ -33,8 +33,9 @@ import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.util.FileUtils;
 import net.hypixel.nerdbot.util.ImageUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.StringUtils;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -46,7 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-@Log4j2
+@Slf4j
 public class GeneratorCommands extends ApplicationCommand {
 
     public static final String BASE_COMMAND = "gen2"; // TODO change this back to "gen" when released
@@ -202,7 +203,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     throw new GeneratorException("`" + statName + "` is not a valid stat");
                 }
 
-                scalingStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, Util.COMMA_SEPARATED_FORMAT.format(calculatePowerStoneStat(stat, magicalPower, basePower))));
+                scalingStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, StringUtils.COMMA_SEPARATED_FORMAT.format(calculatePowerStoneStat(stat, magicalPower, basePower))));
             }
 
             if (!scalingStatsFormatted.isEmpty()) {
@@ -223,7 +224,7 @@ public class GeneratorCommands extends ApplicationCommand {
                     throw new GeneratorException("'" + statName + "' is not a valid stat");
                 }
 
-                bonusStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, Util.COMMA_SEPARATED_FORMAT.format(statAmount)));
+                bonusStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, StringUtils.COMMA_SEPARATED_FORMAT.format(statAmount)));
             }
 
             if (!bonusStatsFormatted.isEmpty()) {
@@ -245,7 +246,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 PowerStrength.byName(powerStrength) == null ? powerStrength : PowerStrength.byName(powerStrength).getFormattedDisplay(),
                 scalingStatsFormatted,
                 bonusStatsFormatted,
-                Util.COMMA_SEPARATED_FORMAT.format(magicalPower)
+                StringUtils.COMMA_SEPARATED_FORMAT.format(magicalPower)
             );
 
             try {
@@ -321,7 +322,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         List<Map.Entry<String, BufferedImage>> topResults = results.subList(0, Math.min(10, results.size()));
-        StringBuilder message = new StringBuilder("Top results for `" + itemId + "` (" + Util.COMMA_SEPARATED_FORMAT.format(results.size()) + " total):\n");
+        StringBuilder message = new StringBuilder("Top results for `" + itemId + "` (" + StringUtils.COMMA_SEPARATED_FORMAT.format(results.size()) + " total):\n");
 
         for (Map.Entry<String, BufferedImage> entry : topResults) {
             message.append(" - `").append(entry.getKey()).append("`\n");
@@ -467,7 +468,6 @@ public class GeneratorCommands extends ApplicationCommand {
 
         try {
             JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
-            JsonObject tagObject = jsonObject.get("tag").getAsJsonObject();
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
 
             if (jsonObject.get("id").getAsString().contains("skull")) {
@@ -477,8 +477,11 @@ public class GeneratorCommands extends ApplicationCommand {
                 jsonObject.addProperty("id", value);
             }
 
-            if (jsonObject.get("id").getAsString().equalsIgnoreCase("player_head")
-                && tagObject.get("SkullOwner") != null) {
+            // Handle player head for both legacy and component formats
+            boolean isPlayerHead = jsonObject.get("id").getAsString().equalsIgnoreCase("player_head");
+            JsonObject tagObject = jsonObject.has("tag") ? jsonObject.get("tag").getAsJsonObject() : null;
+            
+            if (isPlayerHead && tagObject != null && tagObject.get("SkullOwner") != null) {
                 JsonArray textures = tagObject.get("SkullOwner").getAsJsonObject()
                     .get("Properties").getAsJsonObject()
                     .get("textures").getAsJsonArray();
@@ -502,13 +505,45 @@ public class GeneratorCommands extends ApplicationCommand {
                     .build());
             }
 
-            int maxLineLength = Util.getLongestLine(jsonObject.get("tag").getAsJsonObject()
-                .get("display").getAsJsonObject()
-                .get("Lore").getAsJsonArray()
-                .asList()
-                .stream()
-                .map(JsonElement::getAsString)
-                .toList()).getRight();
+            int maxLineLength;
+            
+            // Calculate max line length based on format
+            if (jsonObject.has("components")) {
+                JsonObject components = jsonObject.getAsJsonObject("components");
+                if (components.has("minecraft:lore")) {
+                    JsonArray loreArray = components.getAsJsonArray("minecraft:lore");
+                    List<String> loreLines = new ArrayList<>();
+                    
+                    for (JsonElement loreElement : loreArray) {
+                        JsonObject loreEntry = loreElement.getAsJsonObject();
+                        String parsedLine = parseTextComponentForLength(loreEntry);
+                        loreLines.add(parsedLine);
+                    }
+                    
+                    maxLineLength = StringUtils.getLongestLine(loreLines).getRight();
+                } else {
+                    maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
+                }
+            } else if (jsonObject.has("tag")) {
+                // Legacy format
+                JsonObject tag = jsonObject.getAsJsonObject("tag");
+                if (tag.has("display")) {
+                    JsonObject display = tag.getAsJsonObject("display");
+                    if (display.has("Lore")) {
+                        maxLineLength = StringUtils.getLongestLine(display.get("Lore").getAsJsonArray()
+                            .asList()
+                            .stream()
+                            .map(JsonElement::getAsString)
+                            .toList()).getRight();
+                    } else {
+                        maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
+                    }
+                } else {
+                    maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
+                }
+            } else {
+                maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
+            }
 
             MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .parseNbtJson(jsonObject)
@@ -517,6 +552,18 @@ public class GeneratorCommands extends ApplicationCommand {
                 .withRenderBorder(true)
                 .isPaddingFirstLine(true)
                 .withMaxLineLength(maxLineLength);
+
+            // Extract dye color and apply to item generator if it exists
+            String dyeColor = tooltipGenerator.getDyeColor(jsonObject);
+            if (dyeColor != null && !isPlayerHead) {
+                // Update the item generator with dye color
+                generatorImageBuilder = new GeneratorImageBuilder();
+                generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                    .withItem(jsonObject.get("id").getAsString())
+                    .withData(dyeColor)
+                    .isBigImage()
+                    .build());
+            }
 
             GeneratedObject generatedObject = generatorImageBuilder.addGenerator(tooltipGenerator.build()).build();
             MessageEditBuilder builder = new MessageEditBuilder()
@@ -539,6 +586,33 @@ public class GeneratorCommands extends ApplicationCommand {
             event.getHook().editOriginal("An error occurred while parsing the NBT!").queue();
             log.error("Encountered an error while parsing NBT", e);
         }
+    }
+
+    private static String parseTextComponentForLength(JsonObject textComponent) {
+        StringBuilder result = new StringBuilder();
+        
+        // Handle base text
+        if (textComponent.has("text")) {
+            String text = textComponent.get("text").getAsString();
+            if (!text.isEmpty()) {
+                result.append(text);
+            }
+        }
+        
+        // Handle extra components array
+        if (textComponent.has("extra")) {
+            JsonArray extraArray = textComponent.getAsJsonArray("extra");
+            for (JsonElement extraElement : extraArray) {
+                JsonObject extraComponent = extraElement.getAsJsonObject();
+                
+                // Only add the text content for length calculation
+                if (extraComponent.has("text")) {
+                    result.append(extraComponent.get("text").getAsString());
+                }
+            }
+        }
+        
+        return result.toString();
     }
 
     @JDASlashCommand(name = BASE_COMMAND, subcommand = "full", description = "Generate a full item image. Supports displaying items, recipes, and tooltips")
@@ -878,7 +952,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         try {
-            File file = Util.createTempFile("generator_history.txt", String.join("\n\n", embedBuilders.stream().map(EmbedBuilder::getDescriptionBuilder).toList()));
+            File file = FileUtils.createTempFile("generator_history.txt", String.join("\n\n", embedBuilders.stream().map(EmbedBuilder::getDescriptionBuilder).toList()));
             event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
         } catch (IOException e) {
             event.getHook().editOriginal("An error occurred while fetching your generator command history!").queue();

@@ -1,13 +1,17 @@
 package net.hypixel.nerdbot.util;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
-public class TimeUtil {
+@Slf4j
+public class TimeUtils {
 
     public static final SimpleDateFormat GLOBAL_DATE_TIME_FORMAT = new SimpleDateFormat("d MMMM yyyy HH:mm a");
 
-    private TimeUtil() {
+    private TimeUtils() {
     }
 
     public static String formatNow() {
@@ -48,5 +52,13 @@ public class TimeUtil {
         } else {
             return String.format("%ds", seconds);
         }
+    }
+
+    public static boolean isAprilFirst() {
+        return Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
+    }
+
+    public static boolean isDayOfMonth(int dayOfMonth) {
+        return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == dayOfMonth;
     }
 }

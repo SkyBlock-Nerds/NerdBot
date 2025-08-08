@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.generator.impl;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
@@ -16,7 +17,9 @@ import net.hypixel.nerdbot.util.ImageUtil;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 
+@Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftItemGenerator implements Generator {
 
@@ -57,32 +60,58 @@ public class MinecraftItemGenerator implements Generator {
     }
 
     private BufferedImage applyOverlay(ItemOverlay overlay) {
-        BufferedImage overlaidItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D overlaidItemGraphics = overlaidItem.createGraphics();
-        overlaidItemGraphics.drawImage(itemImage, 0, 0, null);
-
+        BufferedImage overlayImage = overlay.getImage();
+        BufferedImage coloredBaseItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        
         String options = (data != null ? data : "");
+        log.debug("Overlay type: {}, Color options: {}, Data: {}", overlay.getType(), overlay.getOverlayColorOptions(), options);
+        
         switch (overlay.getType()) {
             case NORMAL -> {
                 int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
+                log.debug("Retrieved overlay colors: {}", overlayColors != null ? Arrays.toString(overlayColors) : "null");
                 if (overlayColors != null) {
-                    OverlayType.normalOverlay(overlaidItem, overlay.getImage(), overlayColors[0]);
+                    log.debug("Applying color {} to base item", Integer.toHexString(overlayColors[0]));
+                    OverlayType.normalOverlay(coloredBaseItem, itemImage, overlayColors[0]);
+                    log.debug("Colored base item created");
+                } else {
+                    log.debug("No colors found, copying base item as-is");
+                    Graphics2D g = coloredBaseItem.createGraphics();
+                    g.drawImage(itemImage, 0, 0, null);
+                    g.dispose();
                 }
             }
             case MAPPED -> {
                 int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
                 if (overlayColors != null) {
-                    OverlayType.mappedOverlay(overlaidItem, overlay.getImage(), overlay.getOverlayColorOptions().getMap(), overlayColors);
+                    OverlayType.mappedOverlay(coloredBaseItem, itemImage, overlay.getOverlayColorOptions().getMap(), overlayColors);
+                } else {
+                    Graphics2D g = coloredBaseItem.createGraphics();
+                    g.drawImage(itemImage, 0, 0, null);
+                    g.dispose();
                 }
             }
             case DUAL_LAYER -> {
                 int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
                 if (overlayColors != null) {
-                    OverlayType.normalOverlay(overlaidItem, overlaidItem, overlayColors[1]);
-                    OverlayType.normalOverlay(overlaidItem, overlay.getImage(), overlayColors[0]);
+                    OverlayType.normalOverlay(coloredBaseItem, itemImage, overlayColors[1]);
+                    OverlayType.normalOverlay(coloredBaseItem, itemImage, overlayColors[0]);
+                } else {
+                    Graphics2D g = coloredBaseItem.createGraphics();
+                    g.drawImage(itemImage, 0, 0, null);
+                    g.dispose();
                 }
             }
         }
+
+        BufferedImage overlaidItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D overlaidItemGraphics = overlaidItem.createGraphics();
+        
+        overlaidItemGraphics.drawImage(coloredBaseItem, 0, 0, null);
+        
+        log.debug("Drawing uncolored overlay at position: (0, 0)");
+        overlaidItemGraphics.drawImage(overlayImage, 0, 0, null);
+        overlaidItemGraphics.dispose();
 
         return overlaidItem;
     }

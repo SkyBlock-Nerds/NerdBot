@@ -4,15 +4,16 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.skull.RenderedPlayerSkull;
+import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.ImageUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.StringUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -24,7 +25,7 @@ import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Log4j2
+@Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MinecraftPlayerHeadGenerator implements Generator {
 
@@ -94,7 +95,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
 
         JsonObject userUUID;
         try {
-            userUUID = Util.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
+            userUUID = HttpUtils.makeHttpRequest(String.format("https://api.mojang.com/users/profiles/minecraft/%s", playerName));
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new GeneratorException("Could not find player with name: `%s`", playerName);
@@ -106,7 +107,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
 
         JsonObject userProfile;
         try {
-            userProfile = Util.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
+            userProfile = HttpUtils.makeHttpRequest(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new GeneratorException("Could not find player with name: `%s`", playerName);
@@ -125,7 +126,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
             return false;
         }
 
-        if (!Util.SKIN_BASE64_REGEX.matcher(string).matches()) {
+        if (!StringUtils.SKIN_BASE64_REGEX.matcher(string).matches()) {
             return false;
         }
 

@@ -9,7 +9,7 @@ import com.freya02.botcommands.api.application.slash.autocomplete.annotations.Au
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
@@ -29,7 +29,7 @@ import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Log4j2
+@Slf4j
 public class SuggestionCommands extends ApplicationCommand {
 
     private final Cache<String, Long> lastReviewRequestCache = Caffeine.newBuilder()
@@ -78,7 +78,7 @@ public class SuggestionCommands extends ApplicationCommand {
             .filter(Suggestion::notDeleted)
             .filter(suggestion -> {
                 if (userId != null) {
-                    Member user = Util.getMainGuild().retrieveMemberById(userId).complete();
+                    Member user = DiscordUtils.getMainGuild().retrieveMemberById(userId).complete();
                     return user != null && suggestion.getOwnerIdLong() == userId && suggestion.canSee(member);
                 }
                 return true;
@@ -183,13 +183,24 @@ public class SuggestionCommands extends ApplicationCommand {
         }
 
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = repository.findOrCreateById(event.getMember().getId());
-
-        if (event.getChannel().getType() != net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
-            TranslationManager.edit(event.getHook(), discordUser, "commands.cannot_be_used_here");
-            return;
-        }
-
+        
+        repository.findOrCreateByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                if (event.getChannel().getType() != net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
+                    TranslationManager.edit(event.getHook(), discordUser, "commands.cannot_be_used_here");
+                    return;
+                }
+                
+                processReviewRequest(event, discordUser);
+            })
+            .exceptionally(throwable -> {
+                log.error("Error loading user for review request", throwable);
+                event.getHook().editOriginal("Failed to load user data").queue();
+                return null;
+            });
+    }
+    
+    private void processReviewRequest(GuildSlashEvent event, DiscordUser discordUser) {
         SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
         EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
         String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();

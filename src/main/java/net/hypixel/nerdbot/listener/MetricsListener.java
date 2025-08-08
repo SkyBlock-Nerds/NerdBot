@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.channel.forum.ForumTagAddEvent;
@@ -16,9 +16,9 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.ArrayUtils;
 
-@Log4j2
+@Slf4j
 public class MetricsListener {
 
     @SubscribeEvent
@@ -37,7 +37,7 @@ public class MetricsListener {
             BotConfig botConfig = NerdBotApp.getBot().getConfig();
 
             if (forumChannelId.equals(botConfig.getSuggestionConfig().getForumChannelId())
-                || Util.safeArrayStream(botConfig.getAlphaProjectConfig().getAlphaForumIds(), botConfig.getAlphaProjectConfig().getProjectForumIds()).anyMatch(forumChannelId::equals)) {
+                || ArrayUtils.safeArrayStream(botConfig.getAlphaProjectConfig().getAlphaForumIds(), botConfig.getAlphaProjectConfig().getProjectForumIds()).anyMatch(forumChannelId::equals)) {
                 PrometheusMetrics.TOTAL_SUGGESTIONS_AMOUNT.inc();
             }
         }

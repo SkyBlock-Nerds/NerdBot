@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator.text.wrapper;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.parser.Parser;
 import net.hypixel.nerdbot.generator.parser.text.ColorCodeParser;
 import net.hypixel.nerdbot.generator.parser.text.GemstoneParser;
@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-@Log4j2
+@Slf4j
 public class TextWrapper {
 
     private static final Pattern STRIP_COLOR_PATTERN = Pattern.compile("[&§][0-9a-fA-FK-ORk-or]");
@@ -66,11 +66,9 @@ public class TextWrapper {
                         log.debug("Found color code: '{}'", codeStr);
                     } else if ("klmnor".indexOf(code) != -1) {
                         // Append formatting codes to the formatting string
-                        if (colorFoundInSegment || initialState.lastColor.equals(lastColor)) {
-                            if (formatting.indexOf(codeStr) == -1) {
-                                formatting.append(codeStr);
-                                log.debug("Found formatting code: '{}'", codeStr);
-                            }
+                        if (formatting.indexOf(codeStr) == -1) {
+                            formatting.append(codeStr);
+                            log.debug("Found formatting code: '{}'", codeStr);
                         }
                         i++;
                     }

@@ -1,21 +1,22 @@
 package net.hypixel.nerdbot.feature;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
+import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.history.GeneratorHistory;
 import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.util.ArrayList;
 
-@Log4j2
+@Slf4j
 public class UserGrabberFeature extends BotFeature {
 
     @Override
@@ -31,7 +32,7 @@ public class UserGrabberFeature extends BotFeature {
         }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        Guild guild = Util.getMainGuild();
+        Guild guild = DiscordUtils.getMainGuild();
         log.info("Grabbing users from guild " + guild.getName());
 
         guild.loadMembers(member -> {

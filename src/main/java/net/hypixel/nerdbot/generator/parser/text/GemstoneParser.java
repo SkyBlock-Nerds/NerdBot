@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.data.Gemstone;
 import net.hypixel.nerdbot.generator.parser.StringParser;
 import org.jetbrains.annotations.Nullable;
@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 import java.util.regex.Matcher;
 
-@Log4j2
+@Slf4j
 public class GemstoneParser implements StringParser {
 
     @Override

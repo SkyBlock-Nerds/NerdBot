@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.generator.text;
 
 import lombok.Getter;
-import net.hypixel.nerdbot.util.Util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.postgresql.shaded.com.ongres.scram.common.util.Preconditions;
@@ -9,6 +8,7 @@ import org.postgresql.shaded.com.ongres.scram.common.util.Preconditions;
 import java.awt.Color;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 public enum ChatFormat {
     BLACK('0', 0x000000, 0x000000),
@@ -37,6 +37,8 @@ public enum ChatFormat {
     public static final ChatFormat[] VALUES = values();
     public static final char SECTION_SYMBOL = '§';
     public static final char AMPERSAND_SYMBOL = '&';
+
+    public static final Pattern VANILLA_PATTERN = Pattern.compile(SECTION_SYMBOL + "+([0-9A-FK-OR])", Pattern.CASE_INSENSITIVE);
 
     @Getter
     private final char code;
@@ -103,7 +105,7 @@ public enum ChatFormat {
      * @return A copy of the input string, without any coloring
      */
     public static String stripColor(@NotNull String value) {
-        return Util.VANILLA_PATTERN.matcher(value).replaceAll("");
+        return VANILLA_PATTERN.matcher(value).replaceAll("");
     }
 
     public Color getColor() {

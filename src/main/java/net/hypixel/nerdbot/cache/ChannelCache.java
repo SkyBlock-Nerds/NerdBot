@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.cache;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
@@ -10,19 +10,19 @@ import net.dv8tion.jda.api.events.channel.forum.GenericForumTagEvent;
 import net.dv8tion.jda.api.events.channel.update.GenericChannelUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-@Log4j2
+@Slf4j
 public class ChannelCache {
 
     private static final Map<String, GuildChannel> CHANNEL_CACHE = new HashMap<>();
 
     public ChannelCache() {
-        Util.getMainGuild().getChannels().forEach(channel -> {
+        DiscordUtils.getMainGuild().getChannels().forEach(channel -> {
             CHANNEL_CACHE.put(channel.getId(), channel);
             log.debug("Cached channel '" + channel.getName() + "' (ID: " + channel.getId() + ")");
         });

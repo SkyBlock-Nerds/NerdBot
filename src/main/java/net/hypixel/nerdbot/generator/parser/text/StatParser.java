@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.data.ParseType;
 import net.hypixel.nerdbot.generator.data.Stat;
 import net.hypixel.nerdbot.generator.parser.StringParser;
@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Log4j2
+@Slf4j
 public class StatParser implements StringParser {
 
     private static final Map<String, String> BASE_PLACEHOLDERS = new HashMap<>();

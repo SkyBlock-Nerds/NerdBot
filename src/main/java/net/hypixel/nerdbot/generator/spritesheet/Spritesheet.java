@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.generator.spritesheet;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 
 import javax.imageio.ImageIO;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Log4j2
+@Slf4j
 public class Spritesheet {
 
     private static final Map<String, BufferedImage> IMAGE_MAP = new HashMap<>();

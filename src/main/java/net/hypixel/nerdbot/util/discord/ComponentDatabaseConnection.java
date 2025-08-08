@@ -1,13 +1,13 @@
 package net.hypixel.nerdbot.util.discord;
 
 import com.zaxxer.hikari.HikariDataSource;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.postgresql.ds.PGSimpleDataSource;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
-@Log4j2
+@Slf4j
 public class ComponentDatabaseConnection {
 
     private final HikariDataSource source;

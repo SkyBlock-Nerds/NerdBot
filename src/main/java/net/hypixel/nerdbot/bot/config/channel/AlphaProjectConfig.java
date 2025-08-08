@@ -3,21 +3,21 @@ package net.hypixel.nerdbot.bot.config.channel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.ISnowflake;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
-@Log4j2
+@Slf4j
 @ToString
 public class AlphaProjectConfig {
 
@@ -69,7 +69,7 @@ public class AlphaProjectConfig {
             // Update Alpha Forum IDs (Alpha Takes Priority)
             log.info("Updating Alpha Forum IDs");
             this.alphaForumIds = forumChannels.stream()
-                .filter(forumChannel -> Util.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.ALPHA)
+                .filter(forumChannel -> DiscordUtils.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.ALPHA)
                 .map(ISnowflake::getId)
                 .toList()
                 .toArray(new String[]{});
@@ -79,7 +79,7 @@ public class AlphaProjectConfig {
             // Update Project Forum IDs
             log.info("Updating Project Forum IDs");
             this.projectForumIds = forumChannels.stream()
-                .filter(forumChannel -> Util.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.PROJECT)
+                .filter(forumChannel -> DiscordUtils.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.PROJECT)
                 .map(ISnowflake::getId)
                 .toList()
                 .toArray(new String[]{});

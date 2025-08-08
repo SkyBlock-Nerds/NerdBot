@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator.image;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
@@ -19,7 +19,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-@Log4j2
+@Slf4j
 public class GeneratorImageBuilder {
 
     private static final int IMAGE_PADDING_PX = 25;

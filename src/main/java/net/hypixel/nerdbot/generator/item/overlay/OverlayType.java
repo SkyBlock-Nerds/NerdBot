@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.generator.item.overlay;
 
+import net.hypixel.nerdbot.util.ImageUtil;
+
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
@@ -17,14 +19,9 @@ public enum OverlayType {
 
         for (int y = 0; y < targetImage.getHeight(); y++) {
             for (int x = 0; x < targetImage.getWidth(); x++) {
-                // checking if the pixel has a color
+                // checking if the source pixel has a color (non-transparent)
                 int rgb = sourceImage.getRGB(x, y);
-                if (rgb == 0) {
-                    continue;
-                }
-
-                int targetRGB = targetImage.getRGB(x, y);
-                if (((targetRGB >> 24) & 0xff) > 0) {
+                if (((rgb >> 24) & 0xff) == 0) {
                     continue;
                 }
 

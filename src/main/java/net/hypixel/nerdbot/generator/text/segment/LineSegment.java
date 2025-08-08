@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -26,7 +26,7 @@ public final class LineSegment {
     }
 
     public static @NotNull List<LineSegment> fromLegacy(@NotNull String legacyText, char symbolSubstitute) {
-        return Util.safeArrayStream(legacyText.split("(\n|\\\\n)"))
+        return ArrayUtils.safeArrayStream(legacyText.split("(\n|\\\\n)"))
             .map(line -> TextSegment.fromLegacy(line, symbolSubstitute))
             .toList();
     }

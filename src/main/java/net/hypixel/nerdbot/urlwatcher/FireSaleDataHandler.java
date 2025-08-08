@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.urlwatcher;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -11,16 +11,16 @@ import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.JsonUtil;
+import net.hypixel.nerdbot.util.JsonUtils;
+import net.hypixel.nerdbot.util.StringUtils;
 import net.hypixel.nerdbot.util.Tuple;
-import net.hypixel.nerdbot.util.Util;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
 import java.awt.Color;
 import java.time.Instant;
 import java.util.List;
 
-@Log4j2
+@Slf4j
 public class FireSaleDataHandler implements URLWatcher.DataHandler {
 
     @Override
@@ -32,8 +32,8 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
         ChannelCache.getTextChannelById(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             log.debug("Changed values: " + changedValues);
 
-            JsonArray oldSaleData = JsonUtil.parseString(oldContent).getAsJsonObject().getAsJsonArray("sales");
-            JsonArray newSaleData = JsonUtil.parseString(newContent).getAsJsonObject().getAsJsonArray("sales");
+            JsonArray oldSaleData = JsonUtils.parseString(oldContent).getAsJsonObject().getAsJsonArray("sales");
+            JsonArray newSaleData = JsonUtils.parseString(newContent).getAsJsonObject().getAsJsonArray("sales");
 
             for (int i = 0; i < oldSaleData.size(); i++) {
                 for (int j = 0; j < newSaleData.size(); j++) {
@@ -73,8 +73,8 @@ public class FireSaleDataHandler implements URLWatcher.DataHandler {
                         " (" + startTime.toRelativeTimestamp() + ")" + "\n" +
                         "End Time: " + endTime.toLongDateTime() +
                         " (" + endTime.toRelativeTimestamp() + ")" + "\n" +
-                        "Amount: " + Util.COMMA_SEPARATED_FORMAT.format(amount) + "x\n" +
-                        "Price: " + Util.COMMA_SEPARATED_FORMAT.format(price) + " SkyBlock Gems";
+                        "Amount: " + StringUtils.COMMA_SEPARATED_FORMAT.format(amount) + "x\n" +
+                        "Price: " + StringUtils.COMMA_SEPARATED_FORMAT.format(price) + " SkyBlock Gems";
 
                     embedBuilder.addField(itemId, stringBuilder, false);
                 });

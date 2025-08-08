@@ -4,15 +4,11 @@ import com.freya02.botcommands.api.application.ApplicationCommand;
 import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-
-import java.util.List;
 
 public class UserCommands extends ApplicationCommand {
 
@@ -38,11 +34,6 @@ public class UserCommands extends ApplicationCommand {
 
         user.setLanguage(language);
         TranslationManager.edit(event.getHook(), user, "commands.language.language_set", language.getName());
-    }
-
-    @AutocompletionHandler(name = "languages")
-    public List<UserLanguage> getLanguages(CommandAutoCompleteInteractionEvent event) {
-        return List.of(UserLanguage.VALUES);
     }
 
     @JDASlashCommand(name = SETTING_BASE_COMMAND, group = GEN_GROUP_COMMAND, subcommand = "autohide", description = "Change if your gen commands are automatically hidden")

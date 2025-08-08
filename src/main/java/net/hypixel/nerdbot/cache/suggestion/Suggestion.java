@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.cache.suggestion;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.BotConfig;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Getter
-@Log4j2
+@Slf4j
 public class Suggestion {
 
     private final String threadId;
@@ -57,8 +57,8 @@ public class Suggestion {
         this.guildId = thread.getGuild().getId();
         this.timeCreated = thread.getTimeCreated();
         this.jumpUrl = String.format("https://discord.com/channels/%s/%s", this.getGuildId(), this.getThreadId());
-        this.greenlit = channelType == ChannelType.NORMAL && Util.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
-        this.channelType = channelType == null ? Util.getThreadSuggestionType(thread) : channelType;
+        this.greenlit = channelType == ChannelType.NORMAL && DiscordUtils.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
+        this.channelType = channelType == null ? DiscordUtils.getThreadSuggestionType(thread) : channelType;
         this.expired = false;
 
         // Activity
@@ -105,6 +105,15 @@ public class Suggestion {
         }
     }
 
+    public List<ForumTag> getAppliedTags() {
+        ThreadChannel threadChannel = NerdBotApp.getBot().getJDA().getThreadChannelById(this.getThreadId());
+        return threadChannel == null ? List.of() : threadChannel.getAppliedTags();
+    }
+
+    public Optional<Message> getFirstMessage() {
+        return DiscordUtils.getFirstMessage(this.getThreadId());
+    }
+
     public static int getReactionCount(Message message, String emojiId) {
         return message.getReactions()
             .stream()
@@ -113,15 +122,6 @@ public class Suggestion {
             .mapToInt(MessageReaction::getCount)
             .findFirst()
             .orElse(0);
-    }
-
-    public List<ForumTag> getAppliedTags() {
-        ThreadChannel threadChannel = NerdBotApp.getBot().getJDA().getThreadChannelById(this.getThreadId());
-        return threadChannel == null ? List.of() : threadChannel.getAppliedTags();
-    }
-
-    public Optional<Message> getFirstMessage() {
-        return Util.getFirstMessage(this.getThreadId());
     }
 
     public double getRatio() {

@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.feature;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TimerTask;
 
-@Log4j2
+@Slf4j
 public class CurateFeature extends BotFeature {
 
     @Override

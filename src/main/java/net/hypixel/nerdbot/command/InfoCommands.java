@@ -11,7 +11,7 @@ import com.freya02.botcommands.api.components.builder.selects.PersistentStringSe
 import com.freya02.botcommands.api.components.event.StringSelectionEvent;
 import com.freya02.botcommands.api.pagination.paginator.Paginator;
 import com.freya02.botcommands.api.pagination.paginator.PaginatorBuilder;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
@@ -26,8 +26,10 @@ import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
-import net.hypixel.nerdbot.util.TimeUtil;
-import net.hypixel.nerdbot.util.Util;
+import net.hypixel.nerdbot.util.FileUtils;
+import net.hypixel.nerdbot.util.StringUtils;
+import net.hypixel.nerdbot.util.TimeUtils;
+import net.hypixel.nerdbot.util.Utils;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,7 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Log4j2
+@Slf4j
 public class InfoCommands extends ApplicationCommand {
 
     private static final String GREENLIT_SELECTION_MENU_HANDLER_NAME = "greenlit";
@@ -57,7 +59,7 @@ public class InfoCommands extends ApplicationCommand {
             DiscordUser user = iterator.next();
 
             user.getMember().ifPresent(member -> {
-                if (member.getUser().isBot() || Arrays.stream(Util.SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
+                if (member.getUser().isBot() || Arrays.stream(Utils.SPECIAL_ROLES).anyMatch(s -> member.getRoles().stream().map(Role::getName).toList().contains(s))) {
                     iterator.remove();
                     log.debug("Removed " + user.getDiscordId() + " from the list of users because they are a bot or have a special role");
                 }
@@ -103,14 +105,23 @@ public class InfoCommands extends ApplicationCommand {
         long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         long totalMemory = Runtime.getRuntime().totalMemory();
 
-        builder.append("- Bot name: ").append(bot.getName()).append(" (ID: ").append(bot.getId()).append(")").append("\n")
-            .append("- Branch: `").append(Util.getBranchName()).append("`\n")
-            .append("- Container ID: `").append(Util.getDockerContainerId()).append("`\n")
-            .append("- Environment: ").append(Environment.getEnvironment()).append("\n")
-            .append("- Uptime: ").append(TimeUtil.formatMsCompact(NerdBotApp.getBot().getUptime())).append("\n")
-            .append("- Memory: ").append(Util.formatSize(usedMemory)).append(" / ").append(Util.formatSize(totalMemory)).append("\n");
+        String botInfo = """
+            - Bot name: %s (ID: %s)
+            - Branch: `%s`
+            - Container ID: `%s`
+            - Environment: %s
+            - Uptime: %s
+            - Memory: %s / %s
+            """.formatted(
+                bot.getName(), bot.getId(),
+                FileUtils.getBranchName(),
+                FileUtils.getDockerContainerId(),
+                Environment.getEnvironment(),
+                TimeUtils.formatMsCompact(NerdBotApp.getBot().getUptime()),
+                StringUtils.formatSize(usedMemory), StringUtils.formatSize(totalMemory)
+            );
 
-        event.reply(builder.toString()).setEphemeral(true).queue();
+        event.reply(botInfo).setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "greenlit", description = "Get a list of all unreviewed greenlit messages. May not be 100% accurate!", defaultLocked = true)
@@ -178,18 +189,11 @@ public class InfoCommands extends ApplicationCommand {
         AtomicInteger grapes = new AtomicInteger();
         AtomicInteger nerds = new AtomicInteger();
 
-        for (String roleName : Util.SPECIAL_ROLES) {
+        for (String roleName : Utils.SPECIAL_ROLES) {
             RoleManager.getRole(roleName).ifPresentOrElse(role -> staff.addAndGet(guild.getMembersWithRoles(role).size()),
                 () -> log.warn("Role {} not found", roleName)
             );
         }
-
-        builder.append("Server name: ").append(guild.getName()).append(" (Server ID: ").append(guild.getId()).append(")\n")
-            .append("Created at: ").append(DiscordTimestamp.toRelativeTimestamp(guild.getTimeCreated().toInstant().toEpochMilli())).append("\n")
-            .append("Boosters: ").append(guild.getBoostCount()).append(" (").append(guild.getBoostTier().name()).append(")\n")
-            .append("Channels: ").append(guild.getChannels().size()).append("\n")
-            .append("Members: ").append(guild.getMembers().size()).append("/").append(guild.getMaxMembers()).append("\n")
-            .append("- Staff: ").append(staff.get()).append("\n");
 
         RoleConfig roleConfig = NerdBotApp.getBot().getConfig().getRoleConfig();
 
@@ -199,10 +203,27 @@ public class InfoCommands extends ApplicationCommand {
         RoleManager.getRoleById(roleConfig.getOrangeRoleId()).ifPresentOrElse(role -> nerds.set(guild.getMembersWithRoles(role).size()),
             () -> log.warn("Role {} not found", "Orange"));
 
-        builder.append("- Grapes: ").append(grapes.get()).append("\n")
-            .append("- Nerds: ").append(nerds.get());
+        String serverInfo = """
+            Server name: %s (Server ID: %s)
+            Created at: %s
+            Boosters: %s (%s)
+            Channels: %s
+            Members: %s/%s
+            - Staff: %s
+            - Grapes: %s
+            - Nerds: %s
+            """.formatted(
+                guild.getName(), guild.getId(),
+                DiscordTimestamp.toRelativeTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()),
+                guild.getBoostCount(), guild.getBoostTier().name(),
+                guild.getChannels().size(),
+                guild.getMembers().size(), guild.getMaxMembers(),
+                staff.get(),
+                grapes.get(),
+                nerds.get()
+            );
 
-        event.reply(builder.toString()).setEphemeral(true).queue();
+        event.reply(serverInfo).setEphemeral(true).queue();
     }
 
     @JDASlashCommand(name = "info", subcommand = "activity", description = "View information regarding user activity", defaultLocked = true)
@@ -246,7 +267,7 @@ public class InfoCommands extends ApplicationCommand {
 
         getPage(users, page, 10).forEach(discordUser -> {
             discordUser.getMember().ifPresentOrElse(member -> {
-                stringBuilder.append(" • ").append(member.getAsMention()).append(" (").append(Util.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount())).append(")").append("\n");
+                stringBuilder.append(" • ").append(member.getAsMention()).append(" (").append(StringUtils.COMMA_SEPARATED_FORMAT.format(discordUser.getLastActivity().getTotalMessageCount())).append(")").append("\n");
             }, () -> log.error("Couldn't find member " + discordUser.getDiscordId()));
         });
 
