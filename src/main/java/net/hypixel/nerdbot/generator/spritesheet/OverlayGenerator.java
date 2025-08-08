@@ -21,7 +21,7 @@ import java.util.List;
 
 public class OverlayGenerator {
 
-    public static final int OVERLAY_OUTPUT_SIZE = SpritesheetGenerator.IMAGE_HEIGHT; // Match item size from actual spritesheet
+    public static final int OVERLAY_OUTPUT_SIZE = SpritesheetGenerator.IMAGE_SIZE; // Match item size from actual spritesheet
     private static final int ATLAS_WIDTH = 1_024;
     
     private static final List<OverlayInfo> overlayInfo = new ArrayList<>();
@@ -162,7 +162,6 @@ public class OverlayGenerator {
             jsonObject.addProperty("y", info.getY());
             jsonObject.addProperty("size", OVERLAY_OUTPUT_SIZE);
             jsonObject.addProperty("type", "NORMAL"); // Default type
-            jsonObject.addProperty("isBig", false); // All overlays are now standardized
             jsonObject.addProperty("colorOptions", "leather_armor"); // Default color options
             jsonArray.add(jsonObject);
         }

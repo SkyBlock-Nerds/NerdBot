@@ -21,11 +21,8 @@ import java.util.List;
 
 public class SpritesheetGenerator {
 
-    public static final int IMAGE_HEIGHT = 16;
-    public static final int IMAGE_WIDTH = 16;
-    public static final int LARGE_IMAGE_WIDTH = 128;
-    public static final int LARGE_IMAGE_HEIGHT = 128;
-    private static final int ATLAS_WIDTH = 1_024;
+    public static final int IMAGE_SIZE = 256;
+    private static final int ATLAS_WIDTH = IMAGE_SIZE * 16;
 
     private static final List<TextureInfo> textureInfo = new ArrayList<>();
 
@@ -69,8 +66,8 @@ public class SpritesheetGenerator {
                     BufferedImage texture = ImageIO.read(file);
                     System.out.println("Loaded texture: " + file.getName());
 
-                    if (texture.getWidth() != IMAGE_WIDTH || texture.getHeight() != IMAGE_HEIGHT) {
-                        System.out.println("Resizing texture: " + file.getName() + " to " + IMAGE_WIDTH + "x" + IMAGE_HEIGHT);
+                    if (texture.getWidth() != IMAGE_SIZE || texture.getHeight() != IMAGE_SIZE) {
+                        System.out.println("Resizing texture: " + file.getName() + " to " + IMAGE_SIZE + "x" + IMAGE_SIZE);
                         texture = resizeImage(texture);
                     }
 
@@ -87,10 +84,10 @@ public class SpritesheetGenerator {
     }
 
     private static BufferedImage resizeImage(BufferedImage originalImage) {
-        BufferedImage resizedImage = new BufferedImage(IMAGE_WIDTH, IMAGE_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage resizedImage = new BufferedImage(IMAGE_SIZE, IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics2D = resizedImage.createGraphics();
         graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-        graphics2D.drawImage(originalImage, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT, null);
+        graphics2D.drawImage(originalImage, 0, 0, IMAGE_SIZE, IMAGE_SIZE, null);
         graphics2D.dispose();
         return resizedImage;
     }
@@ -112,7 +109,7 @@ public class SpritesheetGenerator {
         double progress = 0.0;
 
         for (TextureInfo textureInfo : textureInfo) {
-            int frameWidth = IMAGE_WIDTH;
+            int frameWidth = IMAGE_SIZE;
 
             // Move to the next row
             if (x + frameWidth > ATLAS_WIDTH) {
@@ -120,10 +117,10 @@ public class SpritesheetGenerator {
                 y += atlasHeight;
             }
 
-            atlasHeight = IMAGE_HEIGHT;
+            atlasHeight = IMAGE_SIZE;
 
-            for (int yPos = 0; yPos < textureInfo.getImage().getHeight(); yPos += IMAGE_HEIGHT) {
-                BufferedImage frame = textureInfo.getImage().getSubimage(0, yPos, frameWidth, Math.min(IMAGE_HEIGHT, textureInfo.getImage().getHeight() - yPos));
+            for (int yPos = 0; yPos < textureInfo.getImage().getHeight(); yPos += IMAGE_SIZE) {
+                BufferedImage frame = textureInfo.getImage().getSubimage(0, yPos, frameWidth, Math.min(IMAGE_SIZE, textureInfo.getImage().getHeight() - yPos));
 
                 atlas = extendTextureAtlas(atlas, x, y, frame);
 
@@ -204,7 +201,7 @@ public class SpritesheetGenerator {
             jsonObject.addProperty("name", info.name.split("\\.")[0]);
             jsonObject.addProperty("x", info.getX());
             jsonObject.addProperty("y", info.getY());
-            jsonObject.addProperty("size", IMAGE_WIDTH);
+            jsonObject.addProperty("size", IMAGE_SIZE);
             jsonArray.add(jsonObject);
         }
 

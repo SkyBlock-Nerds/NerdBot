@@ -61,59 +61,92 @@ public class MinecraftItemGenerator implements Generator {
 
     private BufferedImage applyOverlay(ItemOverlay overlay) {
         BufferedImage overlayImage = overlay.getImage();
-        BufferedImage coloredBaseItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        
         String options = (data != null ? data : "");
         log.debug("Overlay type: {}, Color options: {}, Data: {}", overlay.getType(), overlay.getOverlayColorOptions(), options);
         
+        log.debug("Processing overlay with name: '{}'", overlay.getName());
+        log.debug("Overlay image dimensions: {}x{}, Base image dimensions: {}x{}", 
+                 overlayImage.getWidth(), overlayImage.getHeight(),
+                 itemImage.getWidth(), itemImage.getHeight());
+
+        boolean isLeatherArmor = isLeatherArmorOverlay(overlay.getName());
+
+        BufferedImage coloredImage;
+        BufferedImage baseForFinal;
+        BufferedImage overlayForFinal;
+        
+        if (isLeatherArmor) {
+            coloredImage = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            applyColoring(coloredImage, itemImage, overlay, options);
+            baseForFinal = coloredImage;
+            overlayForFinal = overlayImage;
+            log.debug("Applied coloring to base item for leather armor");
+        } else {
+            // For other overlays: color the overlay, leave base item uncolored
+            coloredImage = new BufferedImage(overlayImage.getWidth(), overlayImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            applyColoring(coloredImage, overlayImage, overlay, options);
+            baseForFinal = itemImage; // Uncolored base
+            overlayForFinal = coloredImage; // Colored overlay
+            log.debug("Applied coloring to overlay for non-leather item");
+        }
+
+        BufferedImage overlaidItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D overlaidItemGraphics = overlaidItem.createGraphics();
+        
+        overlaidItemGraphics.drawImage(baseForFinal, 0, 0, null);
+        log.debug("Drawing overlay on top. Overlay dimensions: {}x{}, Base dimensions: {}x{}", 
+                 overlayForFinal.getWidth(), overlayForFinal.getHeight(),
+                 baseForFinal.getWidth(), baseForFinal.getHeight());
+        overlaidItemGraphics.drawImage(overlayForFinal, 0, 0, null);
+        overlaidItemGraphics.dispose();
+
+        return overlaidItem;
+    }
+    
+    private boolean isLeatherArmorOverlay(String overlayName) {
+        boolean isLeather = overlayName != null && overlayName.contains("leather");
+        log.debug("Checking overlay name '{}' for leather: {}", overlayName, isLeather);
+        return isLeather;
+    }
+
+    private void applyColoring(BufferedImage target, BufferedImage source, ItemOverlay overlay, String options) {
         switch (overlay.getType()) {
             case NORMAL -> {
                 int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
                 log.debug("Retrieved overlay colors: {}", overlayColors != null ? Arrays.toString(overlayColors) : "null");
                 if (overlayColors != null) {
-                    log.debug("Applying color {} to base item", Integer.toHexString(overlayColors[0]));
-                    OverlayType.normalOverlay(coloredBaseItem, itemImage, overlayColors[0]);
-                    log.debug("Colored base item created");
+                    log.debug("Applying color {} to image", Integer.toHexString(overlayColors[0]));
+                    OverlayType.normalOverlay(target, source, overlayColors[0]);
+                    log.debug("Colored image created");
                 } else {
-                    log.debug("No colors found, copying base item as-is");
-                    Graphics2D g = coloredBaseItem.createGraphics();
-                    g.drawImage(itemImage, 0, 0, null);
+                    log.debug("No colors found, copying image as-is");
+                    Graphics2D g = target.createGraphics();
+                    g.drawImage(source, 0, 0, null);
                     g.dispose();
                 }
             }
             case MAPPED -> {
                 int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
                 if (overlayColors != null) {
-                    OverlayType.mappedOverlay(coloredBaseItem, itemImage, overlay.getOverlayColorOptions().getMap(), overlayColors);
+                    OverlayType.mappedOverlay(target, source, overlay.getOverlayColorOptions().getMap(), overlayColors);
                 } else {
-                    Graphics2D g = coloredBaseItem.createGraphics();
-                    g.drawImage(itemImage, 0, 0, null);
+                    Graphics2D g = target.createGraphics();
+                    g.drawImage(source, 0, 0, null);
                     g.dispose();
                 }
             }
             case DUAL_LAYER -> {
                 int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
                 if (overlayColors != null) {
-                    OverlayType.normalOverlay(coloredBaseItem, itemImage, overlayColors[1]);
-                    OverlayType.normalOverlay(coloredBaseItem, itemImage, overlayColors[0]);
+                    OverlayType.normalOverlay(target, source, overlayColors[1]);
+                    OverlayType.normalOverlay(target, source, overlayColors[0]);
                 } else {
-                    Graphics2D g = coloredBaseItem.createGraphics();
-                    g.drawImage(itemImage, 0, 0, null);
+                    Graphics2D g = target.createGraphics();
+                    g.drawImage(source, 0, 0, null);
                     g.dispose();
                 }
             }
         }
-
-        BufferedImage overlaidItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D overlaidItemGraphics = overlaidItem.createGraphics();
-        
-        overlaidItemGraphics.drawImage(coloredBaseItem, 0, 0, null);
-        
-        log.debug("Drawing uncolored overlay at position: (0, 0)");
-        overlaidItemGraphics.drawImage(overlayImage, 0, 0, null);
-        overlaidItemGraphics.dispose();
-
-        return overlaidItem;
     }
 
     public static class Builder implements ClassBuilder<MinecraftItemGenerator> {

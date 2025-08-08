@@ -49,7 +49,7 @@ public class OverlaySheet {
                     ItemOverlay[] itemOverlayCoordinates = NerdBotApp.GSON.fromJson(new InputStreamReader(overlayCoordinatesStream), ItemOverlay[].class);
                     HashMap<String, ItemOverlay> foundOverlays = new HashMap<>();
                     for (ItemOverlay itemOverlay : itemOverlayCoordinates) {
-                        int imageDimensions = itemOverlay.isBig() ? SpritesheetGenerator.LARGE_IMAGE_WIDTH : 16;
+                        int imageDimensions = SpritesheetGenerator.IMAGE_SIZE;
                         itemOverlay.setImage(overlaySpriteSheet.getSubimage(itemOverlay.getX(), itemOverlay.getY(), imageDimensions, imageDimensions));
                         if (itemOverlay.getName().contains("enchant")) {
                             if (itemOverlay.getName().contains("large")) {
