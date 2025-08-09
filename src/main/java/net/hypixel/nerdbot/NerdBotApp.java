@@ -3,18 +3,21 @@ package net.hypixel.nerdbot;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.MongoException;
+import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.bot.Bot;
 import net.hypixel.nerdbot.bot.NerdBot;
+import net.hypixel.nerdbot.util.json.adapter.BadgeTypeAdapter;
+import net.hypixel.nerdbot.util.json.adapter.ColorTypeAdapter;
+import net.hypixel.nerdbot.util.json.adapter.InstantTypeAdapter;
+import net.hypixel.nerdbot.util.json.adapter.UUIDTypeAdapter;
 import net.hypixel.nerdbot.util.UUIDUtils;
-import net.hypixel.nerdbot.util.gson.adapter.BadgeTypeAdapter;
-import net.hypixel.nerdbot.util.gson.adapter.InstantTypeAdapter;
-import net.hypixel.nerdbot.util.gson.adapter.UUIDTypeAdapter;
 import org.jetbrains.annotations.NotNull;
 import sun.misc.Signal;
 
 import javax.security.auth.login.LoginException;
+import java.awt.Color;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
@@ -34,7 +37,7 @@ public class NerdBotApp {
     private static ThreadFactory createThreadFactory() {
         return new ThreadFactory() {
             private int counter = 0;
-            
+
             @Override
             public Thread newThread(@NotNull Runnable r) {
                 Thread thread = new Thread(r, "nerdbot-worker-" + (++counter));
@@ -48,6 +51,7 @@ public class NerdBotApp {
         .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
         .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
         .registerTypeAdapter(Badge.class, new BadgeTypeAdapter())
+        .registerTypeAdapter(Color.class, new ColorTypeAdapter())
         .create();
 
     private static Bot bot;
@@ -70,8 +74,8 @@ public class NerdBotApp {
 
         try {
             nerdBot.create(args);
-        } catch (LoginException exception) {
-            log.error("Failed to log into the bot with the given credentials!");
+        } catch (LoginException | InvalidTokenException exception) {
+            log.error("Failed to log into the bot with the given credentials: " + exception.getMessage());
             System.exit(-1);
         } catch (MongoException exception) {
             log.error("Failed to connect to MongoDB!");

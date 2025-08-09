@@ -159,5 +159,6 @@
   "nominationsEnabled": true,
   "inactivityCheckEnabled": true,
   "inactivityDays": 7,
-  "inactivityMessages": 10
+  "inactivityMessages": 10,
+  "imageGeneratorTimeoutMs": 3000
 }
