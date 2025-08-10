@@ -1,17 +1,18 @@
 package net.hypixel.nerdbot.command;
 
-import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
-import net.aerh.slashcommands.api.annotations.SlashCommand;
-import net.aerh.slashcommands.api.annotations.SlashOption;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.Command;
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-
 import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.objects.PingableRole;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
@@ -25,69 +26,56 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RoleCommands {
 
-    @SlashCommand(name = "role", description = "Toggle a role", guildOnly = true)
-    public void toggleRole(SlashCommandInteractionEvent event, @SlashOption(autocompleteId = "pingable-roles") String role) {
-        event.deferReply().setEphemeral(true).complete();
-
-        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        repository.findOrCreateByIdAsync(event.getUser().getId())
-            .thenAccept(user -> {
-                RoleManager.getPingableRoleByName(role).ifPresentOrElse(pingableRole -> {
-                    Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
-                    if (discordRole == null) {
-                        event.getHook().editOriginal(String.format("Could not find a role with ID `%s`!", role)).queue();
-                        return;
-                    }
-
-                    Member member = event.getMember();
-                    if (RoleManager.hasRoleByName(member, role)) {
-                        event.getGuild().removeRoleFromMember(member, discordRole).queue();
-                        event.getHook().editOriginal(String.format("Removed role %s from you! Use the same command to add it back.", discordRole.getAsMention())).queue();
-                    } else {
-                        event.getGuild().addRoleToMember(member, discordRole).queue();
-                        event.getHook().editOriginal(String.format("Added role %s to you! Use the same command to remove it.", discordRole.getAsMention())).queue();
-                    }
-                }, () -> event.getHook().editOriginal(String.format("Could not find a role with ID `%s`!", role)).queue());
-            })
-            .exceptionally(throwable -> {
-                log.error("Error loading user for role toggle", throwable);
-                event.getHook().editOriginal("Failed to load user data").queue();
-                return null;
-            });
-    }
-
-    @SlashAutocompleteHandler(id = "pingable-roles")
-    public List<Command.Choice> listPingableRoles(CommandAutoCompleteInteractionEvent event) {
-        return Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
-            .map(role -> new Command.Choice(role.name(), role.name()))
-            .toList();
-    }
-
-    @SlashCommand(name = "roles", description = "List all roles that can be assigned", guildOnly = true)
-    public void listRoles(SlashCommandInteractionEvent event) {
+    @SlashCommand(name = "roles", description = "View and manage your assignable roles", guildOnly = true)
+    public void roleMenu(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
-        DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        if (event.getGuild() == null) {
+            event.getHook().editOriginal("This command can only be used in a server!").queue();
+            return;
+        }
 
-        repository.findByIdAsync(event.getMember().getId())
-            .thenAccept(user -> {
-                if (user == null) {
-                    event.getHook().editOriginal("User not found").queue();
-                    return;
-                }
+        PingableRole[] pingableRoles = NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles();
+        Member member = event.getMember();
 
-                String roles = Arrays.stream(NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles())
-                    .map(PingableRole::name)
-                    .collect(Collectors.joining("\n"));
+        if (pingableRoles.length == 0) {
+            event.getHook().editOriginal("No roles are currently available.").queue();
+            return;
+        }
 
-                event.getHook().editOriginal(String.format("**Assignable Roles:**\n%s\n\n**Use /role <name> to toggle the role!**", roles)).queue();
-            })
-            .exceptionally(throwable -> {
-                log.error("Error loading user for role list", throwable);
-                event.getHook().editOriginal("Failed to load user data").queue();
-                return null;
-            });
+        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create("role-select-" + member.getId())
+            .setPlaceholder("Select a role to toggle")
+            .setRequiredRange(1, 1);
+
+        for (PingableRole pingableRole : pingableRoles) {
+            Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
+            if (discordRole != null) {
+                boolean hasRole = RoleManager.hasRoleById(member, pingableRole.roleId());
+                String emoji = hasRole ? "✅" : "❌";
+                String description = hasRole ? "Currently assigned - click to remove" : "Not assigned - click to add";
+                
+                selectBuilder.addOption(emoji + " " + pingableRole.name(), pingableRole.name(), description);
+            }
+        }
+
+        ActionRow selectRow = ActionRow.of(selectBuilder.build());
+
+        List<String> currentRoles = Arrays.stream(pingableRoles)
+            .filter(role -> RoleManager.hasRoleById(member, role.roleId()))
+            .map(PingableRole::name)
+            .collect(Collectors.toList());
+
+        String statusMessage = currentRoles.isEmpty() 
+            ? "**Your Current Roles:** None\n\n" +
+              "**Available Roles:** " + pingableRoles.length + "\n" +
+              "Use the dropdown below to add or remove roles."
+            : "**Your Current Roles:** " + String.join(", ", currentRoles) + "\n\n" +
+              "**Available Roles:** " + pingableRoles.length + "\n" +
+              "Use the dropdown below to add or remove roles.";
+
+        event.getHook().editOriginal(statusMessage)
+            .setComponents(selectRow)
+            .queue();
     }
 
     @SlashCommand(name = "promotion", description = "Check if you are eligible for a promotion to a higher role", guildOnly = true)
@@ -134,5 +122,94 @@ public class RoleCommands {
 
     private boolean isEligibleForPromotion(DiscordUser user) {
         return user.getLastActivity().getTotalVotes(NerdBotApp.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()) >= NerdBotApp.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
+    }
+
+    @SlashComponentHandler(id = "role-select", patterns = {"role-select-*"})
+    public void handleRoleSelect(StringSelectInteractionEvent event) {
+        String userId = event.getComponentId().split("-")[2];
+        if (!event.getUser().getId().equals(userId)) {
+            event.reply("You can only use your own role menu!").setEphemeral(true).queue();
+            return;
+        }
+
+        if (event.getGuild() == null) {
+            event.reply("This command can only be used in a server!").setEphemeral(true).queue();
+            return;
+        }
+
+        event.deferEdit().queue();
+
+        String selectedRole = event.getValues().get(0);
+        Member member = event.getMember();
+
+        if (member == null) {
+            event.getHook().sendMessage("An error occurred, please try again later.").setEphemeral(true).queue();
+            return;
+        }
+        
+        RoleManager.getPingableRoleByName(selectedRole).ifPresentOrElse(pingableRole -> {
+            Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
+            if (discordRole == null) {
+                event.getHook().sendMessage("❌ Could not find role: " + selectedRole).setEphemeral(true).queue();
+                return;
+            }
+
+            boolean hadRole = RoleManager.hasRoleById(member, pingableRole.roleId());
+            
+            if (hadRole) {
+                event.getGuild().removeRoleFromMember(member, discordRole).queue(success -> {
+                    updateRoleMenuInternal(event.getHook(), member, event.getGuild(), "✅ Removed role: " + discordRole.getAsMention());
+                }, error -> {
+                    event.getHook().sendMessage("❌ Failed to remove role: " + selectedRole).setEphemeral(true).queue();
+                });
+            } else {
+                event.getGuild().addRoleToMember(member, discordRole).queue(success -> {
+                    updateRoleMenuInternal(event.getHook(), member, event.getGuild(), "✅ Added role: " + discordRole.getAsMention());
+                }, error -> {
+                    event.getHook().sendMessage("❌ Failed to add role: " + selectedRole).setEphemeral(true).queue();
+                });
+            }
+        }, () -> {
+            event.getHook().sendMessage("❌ Role not found: " + selectedRole).setEphemeral(true).queue();
+        });
+    }
+
+    private void updateRoleMenuInternal(InteractionHook hook, Member member, Guild guild, String message) {
+        PingableRole[] pingableRoles = NerdBotApp.getBot().getConfig().getRoleConfig().getPingableRoles();
+
+        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create("role-select-" + member.getId())
+            .setPlaceholder("Select a role to toggle")
+            .setRequiredRange(1, 1);
+
+        for (PingableRole pingableRole : pingableRoles) {
+            Role discordRole = guild.getRoleById(pingableRole.roleId());
+            if (discordRole != null) {
+                boolean hasRole = RoleManager.hasRoleById(member, pingableRole.roleId());
+                String emoji = hasRole ? "✅" : "❌";
+                String description = hasRole ? "Currently assigned - click to remove" : "Not assigned - click to add";
+                
+                selectBuilder.addOption(emoji + " " + pingableRole.name(), pingableRole.name(), description);
+            }
+        }
+
+        ActionRow selectRow = ActionRow.of(selectBuilder.build());
+
+        List<String> currentRoles = Arrays.stream(pingableRoles)
+            .filter(role -> RoleManager.hasRoleById(member, role.roleId()))
+            .map(PingableRole::name)
+            .collect(Collectors.toList());
+
+        String statusMessage = (message != null ? message + "\n\n" : "") +
+            (currentRoles.isEmpty() 
+                ? "**Your Current Roles:** None\n\n" +
+                  "**Available Roles:** " + pingableRoles.length + "\n" +
+                  "Use the dropdown below to add or remove roles."
+                : "**Your Current Roles:** " + String.join(", ", currentRoles) + "\n\n" +
+                  "**Available Roles:** " + pingableRoles.length + "\n" +
+                  "Use the dropdown below to add or remove roles.");
+
+        hook.editOriginal(statusMessage)
+            .setComponents(selectRow)
+            .queue();
     }
 }
