@@ -386,18 +386,18 @@ public class SuggestionCommands {
         @SlashOption(required = false) Integer page,
         @SlashOption(description = "Tags to filter for (comma separated).", required = false) String tags,
         @SlashOption(description = "Words to filter title for.", required = false) String title,
-        @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) Suggestion.ChannelType channelType
+        @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String channelType
     ) {
         event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         int pageNum = Math.max(page, 1);
-        channelType = (channelType == null ? Suggestion.ChannelType.NORMAL : channelType);
+        Suggestion.ChannelType channelTypeEnum = (channelType == null ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.valueOf(channelType));
 
         try {
             long userIdLong = Long.parseLong(userId);
             User searchUser = NerdBotApp.getBot().getJDA().getUserById(userIdLong);
             boolean showRatio = userIdLong == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
-            List<Suggestion> suggestions = getSuggestions(event.getMember(), userIdLong, tags, title, channelType);
+            List<Suggestion> suggestions = getSuggestions(event.getMember(), userIdLong, tags, title, channelTypeEnum);
 
             if (suggestions.isEmpty()) {
                 event.getHook().editOriginal("No suggestions found matching that filter!").queue();
@@ -405,7 +405,7 @@ public class SuggestionCommands {
             }
 
             event.getHook().editOriginalEmbeds(
-                buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, channelType, pageNum, false, showRatio)
+                buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, channelTypeEnum, pageNum, false, showRatio)
                     .setAuthor(searchUser != null ? searchUser.getName() : userId)
                     .setThumbnail(searchUser != null ? searchUser.getEffectiveAvatarUrl() : null)
                     .build()
@@ -427,15 +427,15 @@ public class SuggestionCommands {
         @SlashOption(required = false) Integer page,
         @SlashOption(description = "Tags to filter for (comma separated).", required = false) String tags,
         @SlashOption(description = "Words to filter title for.", required = false) String title,
-        @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) Suggestion.ChannelType type
+        @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String type
     ) {
         event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
-        type = (type == null ? Suggestion.ChannelType.NORMAL : type);
+        Suggestion.ChannelType typeEnum = (type == null ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.valueOf(type));
         boolean showRatio = member.getIdLong() == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
 
-        List<Suggestion> suggestions = getSuggestions(event.getMember(), member.getIdLong(), tags, title, type);
+        List<Suggestion> suggestions = getSuggestions(event.getMember(), member.getIdLong(), tags, title, typeEnum);
 
         if (suggestions.isEmpty()) {
             event.getHook().editOriginal("No suggestions found matching that filter!").queue();
@@ -443,7 +443,7 @@ public class SuggestionCommands {
         }
 
         event.getHook().editOriginalEmbeds(
-            buildSuggestionsEmbed(member, suggestions, tags, title, type, pageNum, false, showRatio)
+            buildSuggestionsEmbed(member, suggestions, tags, title, typeEnum, pageNum, false, showRatio)
                 .setAuthor(member.getEffectiveName())
                 .setThumbnail(member.getEffectiveAvatarUrl())
                 .build()
@@ -461,21 +461,21 @@ public class SuggestionCommands {
         @SlashOption(required = false) Integer page,
         @SlashOption(description = "Tags to filter for (comma separated).", required = false) String tags,
         @SlashOption(description = "Words to filter title for.", required = false) String title,
-        @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) Suggestion.ChannelType type
+        @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String type
     ) {
         event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
-        type = (type == null ? Suggestion.ChannelType.NORMAL : type);
+        Suggestion.ChannelType typeEnum = (type == null ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.valueOf(type));
 
-        List<Suggestion> suggestions = getSuggestions(event.getMember(), null, tags, title, type);
+        List<Suggestion> suggestions = getSuggestions(event.getMember(), null, tags, title, typeEnum);
 
         if (suggestions.isEmpty()) {
             event.getHook().editOriginal("No suggestions found matching that filter!").queue();
             return;
         }
 
-        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, type, pageNum, true, true).build()).queue();
+        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, typeEnum, pageNum, true, true).build()).queue();
     }
 
     @SlashAutocompleteHandler(id = "suggestion-types")

@@ -331,7 +331,7 @@ public class ProfileCommands {
         @SlashOption(required = false) Integer page,
         @SlashOption(description = "Tags to filter for (comma separated).", required = false) String tags,
         @SlashOption(description = "Words to filter title for.", required = false) String title,
-        @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) Suggestion.ChannelType type
+        @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String type
     ) {
         event.deferReply(true).complete();
 
@@ -345,7 +345,7 @@ public class ProfileCommands {
         discordUserRepository.findOrCreateByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 final int pageNum = Math.max(page == null ? 1 : page, 1);
-                final Suggestion.ChannelType finalType = (type == null ? Suggestion.ChannelType.NORMAL : type);
+                final Suggestion.ChannelType finalType = (type == null ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.valueOf(type));
 
                 List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember(), event.getMember().getIdLong(), tags, title, finalType);
 
