@@ -21,7 +21,6 @@ import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.cache.ChannelCache;
 
 import java.awt.Color;
@@ -60,7 +59,7 @@ public class ModLogListener {
         Member member = event.getMember();
 
         if (member == null) {
-            ChannelCache.getLogChannel().get().sendMessage(TranslationManager.translate("bot_logs.member_removed_not_found", event.getUser().getId())).queue();
+            ChannelCache.getLogChannel().get().sendMessage("Could not find member with ID: " + event.getUser().getId() + " who may have left the server.").queue();
             return;
         }
 

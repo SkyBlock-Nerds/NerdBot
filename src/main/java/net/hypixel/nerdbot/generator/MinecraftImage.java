@@ -13,11 +13,7 @@ import net.hypixel.nerdbot.util.TimeUtils;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,6 +72,8 @@ public class MinecraftImage {
     private final boolean isNormalItem;
     @Getter
     private final boolean isCentered;
+    @Getter
+    private final boolean renderBackground;
     @Getter(AccessLevel.PRIVATE)
     @Setter(AccessLevel.PRIVATE)
     private Graphics2D graphics;
@@ -89,12 +87,13 @@ public class MinecraftImage {
     private int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
     private int largestWidth = 0;
 
-    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem, boolean isCentered) {
+    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem, boolean isCentered, boolean renderBackground) {
         this.alpha = alpha;
         this.padding = padding;
         this.lines = lines;
         this.isNormalItem = isNormalItem;
         this.isCentered = isCentered;
+        this.renderBackground = renderBackground;
         this.graphics = this.initG2D(defaultWidth + 2 * START_XY, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4 - (this.lines.size() == 1 ? PIXEL_SIZE : 0));
         this.currentColor = defaultColor;
     }
@@ -114,17 +113,19 @@ public class MinecraftImage {
 
         // Draw Primary Background
         Graphics2D g2d = this.getImage().createGraphics();
-        if (isNormalItem) {
-            g2d.setColor(new Color(18, 3, 18, this.getAlpha()));
-            g2d.fillRect(
-                PIXEL_SIZE * 2,
-                PIXEL_SIZE * 2,
-                width - PIXEL_SIZE * 4,
-                height - PIXEL_SIZE * 4
-            );
-        } else {
-            g2d.setColor(new Color(0, 0, 0, this.getAlpha()));
-            g2d.fillRect(0, 0, width, height);
+        if (renderBackground) {
+            if (isNormalItem) {
+                g2d.setColor(new Color(18, 3, 18, this.getAlpha()));
+                g2d.fillRect(
+                    PIXEL_SIZE * 2,
+                    PIXEL_SIZE * 2,
+                    width - PIXEL_SIZE * 4,
+                    height - PIXEL_SIZE * 4
+                );
+            } else {
+                g2d.setColor(new Color(0, 0, 0, this.getAlpha()));
+                g2d.fillRect(0, 0, width, height);
+            }
         }
 
 
@@ -165,7 +166,7 @@ public class MinecraftImage {
      * Creates the inner and outer purple borders around the image.
      */
     public void drawBorders() {
-        if (!this.isNormalItem) {
+        if (!this.isNormalItem || !this.renderBackground) {
             return;
         }
 
