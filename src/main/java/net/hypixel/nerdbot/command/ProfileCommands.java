@@ -345,7 +345,12 @@ public class ProfileCommands {
         discordUserRepository.findOrCreateByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 final int pageNum = Math.max(page == null ? 1 : page, 1);
-                final Suggestion.ChannelType finalType = (type == null || type.isEmpty() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.valueOf(type));
+                final Suggestion.ChannelType finalType = (type == null || type.isEmpty() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.getType(type));
+
+                if (finalType == Suggestion.ChannelType.UNKNOWN) {
+                    event.getHook().editOriginal("Invalid channel type provided!").queue();
+                    return;
+                }
 
                 List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember(), event.getMember().getIdLong(), tags, title, finalType);
 
