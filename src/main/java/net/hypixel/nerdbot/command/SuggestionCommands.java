@@ -391,7 +391,7 @@ public class SuggestionCommands {
         event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         int pageNum = Math.max(page, 1);
-        Suggestion.ChannelType channelTypeEnum = (channelType == null ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.valueOf(channelType));
+        Suggestion.ChannelType channelTypeEnum = (channelType == null || channelType.isEmpty() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.valueOf(channelType));
 
         try {
             long userIdLong = Long.parseLong(userId);
@@ -432,7 +432,7 @@ public class SuggestionCommands {
         event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
-        Suggestion.ChannelType typeEnum = (type == null ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.valueOf(type));
+        Suggestion.ChannelType typeEnum = (type == null || type.isEmpty() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.valueOf(type));
         boolean showRatio = member.getIdLong() == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
 
         List<Suggestion> suggestions = getSuggestions(event.getMember(), member.getIdLong(), tags, title, typeEnum);
@@ -466,7 +466,7 @@ public class SuggestionCommands {
         event.deferReply(true).complete();
         page = (page == null) ? 1 : page;
         final int pageNum = Math.max(page, 1);
-        Suggestion.ChannelType typeEnum = (type == null ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.valueOf(type));
+        Suggestion.ChannelType typeEnum = (type == null || type.isEmpty() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.valueOf(type));
 
         List<Suggestion> suggestions = getSuggestions(event.getMember(), null, tags, title, typeEnum);
 
