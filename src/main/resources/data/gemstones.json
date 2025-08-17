@@ -1,0 +1,252 @@
+[
+    {
+        "name": "gem_ruby",
+        "icon": "❤",
+        "formattedIcon": "&c❤",
+        "color": "#FF5555",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_amethyst",
+        "icon": "❈",
+        "formattedIcon": "&5❈",
+        "color": "#AA00AA",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_opal",
+        "icon": "❂",
+        "formattedIcon": "&f❂",
+        "color": "#FFFFFF",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_sapphire",
+        "icon": "✎",
+        "formattedIcon": "&b✎",
+        "color": "#55FFFF",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_jasper",
+        "icon": "❁",
+        "formattedIcon": "&d❁",
+        "color": "#FF55FF",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_jade",
+        "icon": "☘",
+        "formattedIcon": "&a☘",
+        "color": "#55FF55",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_amber",
+        "icon": "⸕",
+        "formattedIcon": "&6⸕",
+        "color": "#FFAA00",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_topaz",
+        "icon": "✧",
+        "formattedIcon": "&e✧",
+        "color": "#FFFF55",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_onyx",
+        "icon": "☠",
+        "formattedIcon": "&8☠",
+        "color": "#555555",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_peridot",
+        "icon": "☘",
+        "formattedIcon": "&2☘",
+        "color": "#00AA00",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_citrine",
+        "icon": "☘",
+        "formattedIcon": "&4☘",
+        "color": "#AA0000",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_aquamarine",
+        "icon": "α",
+        "formattedIcon": "&9α",
+        "color": "#5555FF",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_combat",
+        "icon": "⚔",
+        "formattedIcon": "⚔",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_offensive",
+        "icon": "☠",
+        "formattedIcon": "☠",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_defensive",
+        "icon": "☤",
+        "formattedIcon": "☤",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_mining",
+        "icon": "✦",
+        "formattedIcon": "✦",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    },
+    {
+        "name": "gem_universal",
+        "icon": "❂",
+        "formattedIcon": "❂",
+        "formattedTiers": {
+            "locked": "&8[%s]&r",
+            "unlocked": "&8[&7%s&8]&r",
+            "rough": "&f[%s&f]&r",
+            "flawed": "&a[%s&a]&r",
+            "fine": "&9[%s&9]&r",
+            "flawless": "&5[%s&5]&r",
+            "perfect": "&6[%s&6]&r"
+        }
+    }
+]
