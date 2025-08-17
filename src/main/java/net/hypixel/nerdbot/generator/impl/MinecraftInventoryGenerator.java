@@ -246,14 +246,17 @@ public class MinecraftInventoryGenerator implements Generator {
             BufferedImage playerHeadImage = playerHeadGenerator.generate().getImage();
             item.setItemImage(playerHeadImage);
         } else if (!item.getItemName().equalsIgnoreCase("null")) {
-            BufferedImage generatedItem = new MinecraftItemGenerator.Builder()
+            MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
                 .withItem(item.getItemName())
                 .isEnchanted(item.getExtraContent() != null && item.getExtraContent().contains("enchant"))
                 .withHoverEffect(item.getExtraContent() != null && item.getExtraContent().contains("hover"))
-                .withData(item.getExtraContent())
-                .build()
-                .generate()
-                .getImage();
+                .withData(item.getExtraContent());
+            
+            if (item.getDurabilityPercent() != null) {
+                itemBuilder.withDurability(item.getDurabilityPercent());
+            }
+            
+            BufferedImage generatedItem = itemBuilder.build().generate().getImage();
             item.setItemImage(generatedItem);
         }
 
@@ -304,17 +307,24 @@ public class MinecraftInventoryGenerator implements Generator {
     private void drawStackCount(int amount, int slotX, int slotY) {
         String amountText = String.valueOf(amount);
 
+        Font originalFont = g2d.getFont();
+        Font stackFont = MINECRAFT_FONT.deriveFont(Font.PLAIN, (float) scaleFactor * 8);
+        g2d.setFont(stackFont);
+
         // Calculate text position (bottom-right of slot)
         int textWidth = g2d.getFontMetrics().stringWidth(amountText);
-        int textX = slotX + slotSize - textWidth - (2 * scaleFactor);
-        int textY = slotY + slotSize - (2 * scaleFactor);
+        int textX = slotX + slotSize - textWidth + 1;
+        int textY = slotY + slotSize - scaleFactor + 1;
 
         // Draw text with drop shadow
+        int shadowOffset = scaleFactor;
         g2d.setColor(DROP_SHADOW_COLOR);
-        g2d.drawString(amountText, textX + scaleFactor, textY + scaleFactor);
+        g2d.drawString(amountText, textX + shadowOffset - 1, textY + shadowOffset - 1);
 
         g2d.setColor(NORMAL_TEXT_COLOR);
-        g2d.drawString(amountText, textX, textY);
+        g2d.drawString(amountText, textX - 1, textY - 1);
+        
+        g2d.setFont(originalFont);
     }
 
     @Override

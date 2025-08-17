@@ -79,6 +79,7 @@ public class GeneratorCommands extends ApplicationCommand {
     private static final String RENDER_BORDER_DESCRIPTION = "Whether the inventory's border should be rendered";
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
+    private static final String DURABILITY_DESCRIPTION = "Item durability percentage (0-100, only shown if less than 100)";
     
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
@@ -90,6 +91,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
         @AppOption(description = "If the item should look as if it being hovered over") @Optional Boolean hoverEffect,
         @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
+        @AppOption(description = DURABILITY_DESCRIPTION) @Optional Integer durability,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
@@ -107,14 +109,18 @@ public class GeneratorCommands extends ApplicationCommand {
                     .withSkin(skinValue)
                     .build());
             } else {
-                item.addGenerator(new MinecraftItemGenerator.Builder()
+                MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
                     .withItem(itemId)
                     .withData(data)
                     .isEnchanted(enchanted)
                     .withHoverEffect(hoverEffect)
-                    .isBigImage()
-                    .build()
-                );
+                    .isBigImage();
+                
+                if (durability != null) {
+                    itemBuilder.withDurability(durability);
+                }
+                
+                item.addGenerator(itemBuilder.build());
             }
 
             GeneratedObject generatedObject = item.build();
@@ -639,6 +645,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
         @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide,
         @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean renderBorder,
+        @AppOption(description = DURABILITY_DESCRIPTION) @Optional Integer durability,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
@@ -683,11 +690,16 @@ public class GeneratorCommands extends ApplicationCommand {
 
                     generatorImageBuilder.addGenerator(generator.build());
                 } else {
-                    generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                    MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
                         .withItem(itemId)
                         .isEnchanted(enchanted)
-                        .isBigImage()
-                        .build());
+                        .isBigImage();
+                    
+                    if (durability != null) {
+                        itemBuilder.withDurability(durability);
+                    }
+                    
+                    generatorImageBuilder.addGenerator(itemBuilder.build());
                 }
             }
 

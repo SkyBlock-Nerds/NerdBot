@@ -42,26 +42,37 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
                 throw new GeneratorException("Incorrect amount of components present in item: `%s` (expected 2, found %d)".formatted(item, components.length));
             }
 
-            // getting the material data
+            // getting the material data and durability
             String material = components[0];
             String data = null;
+            Integer durability = null;
 
             if (material.contains(",")) {
-                String[] dataSplit = material.split(",", 2);
+                String[] dataSplit = material.split(",", 3); // material,data,durability
                 material = dataSplit[0];
+
                 if (dataSplit.length > 1) {
                     data = dataSplit[1];
+                }
+
+                if (dataSplit.length > 2 && !dataSplit[2].trim().isEmpty()) {
+                    try {
+                        durability = Integer.parseInt(dataSplit[2].trim());
+                        durability = Range.between(0, 100).fit(durability);
+                    } catch (NumberFormatException e) {
+                        throw new GeneratorException("Invalid durability value: `%s` (must be a number between 0 and 100)".formatted(dataSplit[2]));
+                    }
                 }
             }
 
             String slotData = components[1];
 
             if (slotData.contains("{")) {
-                result.add(itemFromMap(slotData, material, data));
+                result.add(itemFromMap(slotData, material, data, durability));
             } else if (components[1].contains("[")) {
-                result.add(itemFromArray(slotData, material, data));
+                result.add(itemFromArray(slotData, material, data, durability));
             } else {
-                result.add(itemFromAmount(slotData, material, data));
+                result.add(itemFromAmount(slotData, material, data, durability));
             }
         }
 
@@ -112,7 +123,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
      *
      * @return A mapped {@link InventoryItem}
      */
-    private InventoryItem itemFromMap(String slotMap, String material, String data) {
+    private InventoryItem itemFromMap(String slotMap, String material, String data, Integer durability) {
         int endingBracket = slotMap.indexOf("}");
         String slotData = slotMap.substring(1, endingBracket != -1 ? endingBracket : slotMap.length() - 1);
         String[] keyValuePairs = slotData.split(",");
@@ -139,7 +150,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         int[] slotArray = slots.stream().mapToInt(i -> i).toArray();
         int[] amountArray = amounts.stream().mapToInt(i -> i).toArray();
 
-        return new InventoryItem(slotArray, amountArray, material, data);
+        return new InventoryItem(slotArray, amountArray, material, data, durability);
     }
 
     /**
@@ -152,7 +163,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
      *
      * @return A mapped {@link InventoryItem}
      */
-    private InventoryItem itemFromArray(String slotArray, String material, String data) {
+    private InventoryItem itemFromArray(String slotArray, String material, String data, Integer durability) {
         String slotData = slotArray;
 
         int endingBracket = slotData.indexOf("]");
@@ -172,7 +183,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         int[] amountArray = new int[slotArrayResult.length];
         Arrays.fill(amountArray, amount);
 
-        return new InventoryItem(slotArrayResult, amountArray, material, data);
+        return new InventoryItem(slotArrayResult, amountArray, material, data, durability);
     }
 
     /**
@@ -185,7 +196,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
      *
      * @return A mapped {@link InventoryItem}
      */
-    private InventoryItem itemFromAmount(String slotAmount, String material, String data) {
+    private InventoryItem itemFromAmount(String slotAmount, String material, String data, Integer durability) {
         int amount = 1;
 
         String slotData = slotAmount;
@@ -208,7 +219,7 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
             throw new GeneratorException("Invalid slot or amount: `%s` for material: `%s,%s`", slotAmount, material, data);
         }
 
-        return new InventoryItem(slot, amount, material, data);
+        return new InventoryItem(slot, amount, material, data, durability);
     }
 
     /**

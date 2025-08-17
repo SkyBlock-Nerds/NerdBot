@@ -14,8 +14,9 @@ import net.hypixel.nerdbot.generator.item.overlay.OverlayType;
 import net.hypixel.nerdbot.generator.spritesheet.OverlaySheet;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import net.hypixel.nerdbot.util.ImageUtil;
+import net.hypixel.nerdbot.util.Range;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
@@ -28,6 +29,7 @@ public class MinecraftItemGenerator implements Generator {
     private final boolean enchanted;
     private final boolean hoverEffect;
     private final boolean bigImage;
+    private final Integer durabilityPercent;
 
     private BufferedImage itemImage;
 
@@ -54,6 +56,10 @@ public class MinecraftItemGenerator implements Generator {
 
         if (hoverEffect) {
             itemImage = HoverEffect.applyHoverEffect(itemImage);
+        }
+
+        if (durabilityPercent != null && shouldShowDurabilityBar()) {
+            itemImage = addDurabilityBar(itemImage);
         }
 
         return new GeneratedObject(itemImage);
@@ -149,12 +155,66 @@ public class MinecraftItemGenerator implements Generator {
         }
     }
 
+    private boolean shouldShowDurabilityBar() {
+        return durabilityPercent < 100;
+    }
+
+    private BufferedImage addDurabilityBar(BufferedImage item) {
+        BufferedImage result = new BufferedImage(item.getWidth(), item.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = result.createGraphics();
+        
+        // Draw the original item
+        g2d.drawImage(item, 0, 0, null);
+        
+        // The durability display is two separate bars stacked vertically
+        int scaleFactor = item.getWidth() / 16;
+        int barWidth = item.getWidth() - (4 * scaleFactor) + scaleFactor;
+        int barHeight = scaleFactor;
+        int barX = 2 * scaleFactor;
+        
+        // Position the bars
+        int colorBarY = item.getHeight() - (3 * scaleFactor); // Top bar (colored durability)
+        int blackBarY = item.getHeight() - (2 * scaleFactor); // Bottom bar (permanently black)
+        
+        // Draw the bottom bar
+        g2d.setColor(Color.BLACK);
+        g2d.fillRect(barX, blackBarY, barWidth, barHeight);
+        
+        // Draw the top durability bar
+        g2d.setColor(Color.BLACK);
+        g2d.fillRect(barX, colorBarY, barWidth, barHeight);
+        
+        // Draw the colored portion
+        if (durabilityPercent > 0) {
+            int filledWidth = (int) (barWidth * durabilityPercent / 100.0);
+            Color barColor = getDurabilityColor(durabilityPercent);
+            g2d.setColor(barColor);
+            g2d.fillRect(barX, colorBarY, filledWidth, barHeight);
+        }
+        
+        g2d.dispose();
+        return result;
+    }
+
+    private Color getDurabilityColor(int durabilityPercent) {
+        if (durabilityPercent > 50) {
+            // Green to yellow (high to medium durability)
+            int red = (int) (255 * 2 * (100 - durabilityPercent) / 100.0);
+            return new Color(red, 255, 0);
+        } else {
+            // Yellow to red (medium to low durability)
+            int green = (int) (255 * 2 * durabilityPercent / 100.0);
+            return new Color(255, green, 0);
+        }
+    }
+
     public static class Builder implements ClassBuilder<MinecraftItemGenerator> {
         private String itemId;
         private String data;
         private boolean enchanted;
         private boolean hoverEffect;
         private boolean bigImage;
+        private Integer durabilityPercent;
 
         public MinecraftItemGenerator.Builder withItem(String itemId) {
             this.itemId = itemId
@@ -187,9 +247,14 @@ public class MinecraftItemGenerator implements Generator {
             return isBigImage(true);
         }
 
+        public MinecraftItemGenerator.Builder withDurability(int durabilityPercent) {
+            this.durabilityPercent = Range.between(0, 100).fit(durabilityPercent);
+            return this;
+        }
+
         @Override
         public MinecraftItemGenerator build() {
-            return new MinecraftItemGenerator(itemId, data, enchanted, hoverEffect, bigImage);
+            return new MinecraftItemGenerator(itemId, data, enchanted, hoverEffect, bigImage, durabilityPercent);
         }
     }
 }
