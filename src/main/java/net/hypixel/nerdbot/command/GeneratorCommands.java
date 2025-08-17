@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.api.database.model.user.history.GeneratorHistory;
 import net.hypixel.nerdbot.generator.data.PowerStrength;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.data.Stat;
@@ -401,6 +402,7 @@ public class GeneratorCommands extends ApplicationCommand {
         @AppOption(description = "Optional item lore displayed beside the inventory") @Optional String hoveredItemString,
         @AppOption(description = INVENTORY_NAME_DESCRIPTION) @Optional String containerName,
         @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean drawBorder,
+        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
         @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
@@ -408,6 +410,7 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply(hidden).complete();
 
         drawBorder = drawBorder == null || drawBorder;
+        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
         try {
             GeneratorImageBuilder generatedObject = new GeneratorImageBuilder()
@@ -427,6 +430,8 @@ public class GeneratorCommands extends ApplicationCommand {
                     .withPadding(MinecraftTooltip.DEFAULT_PADDING)
                     .isPaddingFirstLine(false)
                     .disableRarityLineBreak(false)
+                    .withMaxLineLength(maxLineLength)
+                    .withScaleFactor(Math.min(2, MinecraftInventoryGenerator.getScaleFactor()))
                     .withRenderBorder(true)
                     .build();
 
@@ -995,6 +1000,12 @@ public class GeneratorCommands extends ApplicationCommand {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
         if (discordUserRepository.findById(user.getId()) != null) {
+            DiscordUser discordUser = discordUserRepository.findById(user.getId());
+
+            if (discordUser.getGeneratorHistory() == null) {
+                discordUser.setGeneratorHistory(new GeneratorHistory());
+            }
+
             discordUserRepository.findById(user.getId()).getGeneratorHistory().addCommand(command);
         }
     }

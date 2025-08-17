@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.generator.impl;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
@@ -13,11 +14,7 @@ import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Range;
 
 import javax.imageio.ImageIO;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
-import java.awt.RenderingHints;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +38,7 @@ public class MinecraftInventoryGenerator implements Generator {
     private static final int SLOT_BORDER_THICKNESS = 1;
     private static final int SLOT_INNER_BORDER_OFFSET = 1;
     private static final int SLOT_INNER_BORDER_REDUCTION = 3;
-
+    @Getter
     private static final int scaleFactor;
     private static final int slotSize;
     private static final int itemSize;

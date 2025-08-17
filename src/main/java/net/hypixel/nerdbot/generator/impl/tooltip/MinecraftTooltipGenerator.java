@@ -43,6 +43,7 @@ public class MinecraftTooltipGenerator implements Generator {
     private final boolean centeredText;
     private final int maxLineLength;
     private final boolean renderBorder;
+    private final int scaleFactor;
 
     @Override
     public GeneratedObject generate() throws GeneratorException {
@@ -55,7 +56,8 @@ public class MinecraftTooltipGenerator implements Generator {
             normalItem,
             maxLineLength,
             renderBorder,
-            centeredText
+            centeredText,
+            scaleFactor
         );
 
         MinecraftTooltip tooltip = parseLore(itemLore, settings).render();
@@ -88,7 +90,8 @@ public class MinecraftTooltipGenerator implements Generator {
             .isPaddingFirstLine(settings.isPaddingFirstLine())
             .setRenderBorder(settings.isRenderBorder())
             .isTextCentered(settings.isCenteredText())
-            .withAlpha(Range.between(0, 255).fit(settings.getAlpha()));
+            .withAlpha(Range.between(0, 255).fit(settings.getAlpha()))
+            .withScaleFactor(settings.getScaleFactor());
 
         if (settings.getName() != null && !settings.getName().isEmpty()) {
             String name = settings.getName();
@@ -140,6 +143,7 @@ public class MinecraftTooltipGenerator implements Generator {
         private transient boolean bypassMaxLineLength;
         private boolean centered;
         private boolean renderBorder = true;
+        private int scaleFactor = 1;
 
         public MinecraftTooltipGenerator.Builder withName(String name) {
             this.name = name;
@@ -202,6 +206,11 @@ public class MinecraftTooltipGenerator implements Generator {
 
         public MinecraftTooltipGenerator.Builder withRenderBorder(boolean renderBorder) {
             this.renderBorder = renderBorder;
+            return this;
+        }
+
+        public MinecraftTooltipGenerator.Builder withScaleFactor(int scaleFactor) {
+            this.scaleFactor = Math.max(1, scaleFactor);
             return this;
         }
 
@@ -438,7 +447,8 @@ public class MinecraftTooltipGenerator implements Generator {
                 !paddingFirstLine, // normalItem is inverse of paddingFirstLine
                 centered,
                 maxLineLength,
-                renderBorder
+                renderBorder,
+                scaleFactor
             );
         }
     }

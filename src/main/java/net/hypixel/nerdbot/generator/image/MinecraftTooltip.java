@@ -12,11 +12,7 @@ import net.hypixel.nerdbot.util.FontUtils;
 import net.hypixel.nerdbot.util.Range;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,9 +36,9 @@ public class MinecraftTooltip {
     public static final int DEFAULT_ALPHA = 245;
     public static final Range<Integer> LINE_LENGTH = Range.between(1, 128);
 
-    private static final int PIXEL_SIZE = 2;
-    private static final int START_XY = PIXEL_SIZE * 5;
-    private static final int Y_INCREMENT = PIXEL_SIZE * 10;
+    private static final int DEFAULT_PIXEL_SIZE = 2;
+    private static final int DEFAULT_START_XY = DEFAULT_PIXEL_SIZE * 5;
+    private static final int DEFAULT_Y_INCREMENT = DEFAULT_PIXEL_SIZE * 10;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
     private static final @NotNull List<Font> MINECRAFT_FONTS = new ArrayList<>();
@@ -82,6 +78,14 @@ public class MinecraftTooltip {
     @Getter
     private final boolean centeredText;
     @Getter
+    private final int scaleFactor;
+    
+    // Scaled values based on scale factor
+    private final int pixelSize;
+    private final int startXY;
+    private final int yIncrement;
+    
+    @Getter
     private BufferedImage image;
     @Getter
     private boolean isAnimated = false;
@@ -92,8 +96,8 @@ public class MinecraftTooltip {
 
     private transient ChatFormat currentColor;
     private transient Font currentFont;
-    private transient int locationX = START_XY;
-    private transient int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
+    private transient int locationX;
+    private transient int locationY;
     private transient int largestWidth = 0;
     private transient Map<Integer, Integer> lineMetrics;
 
@@ -109,8 +113,9 @@ public class MinecraftTooltip {
      * @param centeredText        Whether to center the text within the tooltip.
      * @param frameDelayMs        The delay in milliseconds between animation frames.
      * @param animationFrameCount The number of frames to generate for the animation.
+     * @param scaleFactor         The scale factor to apply to all pixel sizes.
      */
-    private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean paddingFirstLine, boolean renderBorder, boolean centeredText, int frameDelayMs, int animationFrameCount) {
+    private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean paddingFirstLine, boolean renderBorder, boolean centeredText, int frameDelayMs, int animationFrameCount, int scaleFactor) {
         this.lines = lines;
         this.currentColor = defaultColor;
         this.alpha = alpha;
@@ -120,6 +125,14 @@ public class MinecraftTooltip {
         this.centeredText = centeredText;
         this.frameDelayMs = frameDelayMs;
         this.animationFrameCount = animationFrameCount;
+        this.scaleFactor = scaleFactor;
+        
+        this.pixelSize = DEFAULT_PIXEL_SIZE * scaleFactor;
+        this.startXY = pixelSize * 5;
+        this.yIncrement = pixelSize * 10;
+        
+        this.locationX = startXY;
+        this.locationY = startXY + pixelSize * 2 + yIncrement / 2;
     }
 
     /**
@@ -223,15 +236,15 @@ public class MinecraftTooltip {
     private void drawBorders(Graphics2D frameGraphics, int width, int height) {
         // Draw Darker Purple Border
         frameGraphics.setColor(new Color(18, 3, 18, this.isAnimated ? 255 : this.getAlpha()));
-        frameGraphics.fillRect(0, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2); // Left
-        frameGraphics.fillRect(PIXEL_SIZE, 0, width - PIXEL_SIZE * 2, PIXEL_SIZE); // Top
-        frameGraphics.fillRect(width - PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE, height - PIXEL_SIZE * 2); // Right
-        frameGraphics.fillRect(PIXEL_SIZE, height - PIXEL_SIZE, width - PIXEL_SIZE * 2, PIXEL_SIZE); // Bottom
+        frameGraphics.fillRect(0, pixelSize, pixelSize, height - pixelSize * 2); // Left
+        frameGraphics.fillRect(pixelSize, 0, width - pixelSize * 2, pixelSize); // Top
+        frameGraphics.fillRect(width - pixelSize, pixelSize, pixelSize, height - pixelSize * 2); // Right
+        frameGraphics.fillRect(pixelSize, height - pixelSize, width - pixelSize * 2, pixelSize); // Bottom
 
         // Draw Purple Border
         frameGraphics.setColor(new Color(37, 0, 94, this.isAnimated ? 255 : this.getAlpha()));
-        frameGraphics.drawRect(PIXEL_SIZE, PIXEL_SIZE, width - PIXEL_SIZE * 2 - 1, height - PIXEL_SIZE * 2 - 1);
-        frameGraphics.drawRect(PIXEL_SIZE + 1, PIXEL_SIZE + 1, width - PIXEL_SIZE * 3 - 1, height - PIXEL_SIZE * 3 - 1);
+        frameGraphics.drawRect(pixelSize, pixelSize, width - pixelSize * 2 - 1, height - pixelSize * 2 - 1);
+        frameGraphics.drawRect(pixelSize + 1, pixelSize + 1, width - pixelSize * 3 - 1, height - pixelSize * 3 - 1);
     }
 
     /**
@@ -245,7 +258,8 @@ public class MinecraftTooltip {
     private int calculateLineWidth(Graphics2D graphics, LineSegment line) {
         int lineWidth = 0;
         for (ColorSegment segment : line.getSegments()) {
-            Font font = MINECRAFT_FONTS.get((segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0));
+            Font baseFont = MINECRAFT_FONTS.get((segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0));
+            Font font = scaleFactor > 1 ? baseFont.deriveFont(baseFont.getSize2D() * scaleFactor) : baseFont;
             graphics.setFont(font);
             FontMetrics metrics = graphics.getFontMetrics(font);
             String segmentText = segment.getText();
@@ -275,14 +289,14 @@ public class MinecraftTooltip {
      */
     private void measureLines(Graphics2D measureGraphics) {
         this.lineMetrics = new HashMap<>();
-        this.locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
+        this.locationY = startXY + pixelSize * 2 + yIncrement / 2;
 
         for (int lineIndex = 0; lineIndex < this.getLines().size(); lineIndex++) {
             LineSegment line = this.getLines().get(lineIndex);
             int lineWidth = calculateLineWidth(measureGraphics, line);
             this.lineMetrics.put(lineIndex, lineWidth);
 
-            this.locationY += Y_INCREMENT + (lineIndex == 0 && this.isPaddingFirstLine() ? PIXEL_SIZE * 2 : 0);
+            this.locationY += yIncrement + (lineIndex == 0 && this.isPaddingFirstLine() ? pixelSize * 2 : 0);
         }
 
         this.largestWidth = this.lineMetrics.values().stream().mapToInt(Integer::intValue).max().orElse(0);
@@ -294,7 +308,7 @@ public class MinecraftTooltip {
      * @param frameGraphics The {@link Graphics2D} object to draw on.
      */
     private void drawLinesInternal(Graphics2D frameGraphics) {
-        this.locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
+        this.locationY = startXY + pixelSize * 2 + yIncrement / 2;
         this.isAnimated = false;
 
         for (int lineIndex = 0; lineIndex < this.getLines().size(); lineIndex++) {
@@ -303,9 +317,9 @@ public class MinecraftTooltip {
 
             // Adjust X position based on if text is centered
             if (this.centeredText) {
-                this.locationX = START_XY + (this.largestWidth - lineWidth) / 2;
+                this.locationX = startXY + (this.largestWidth - lineWidth) / 2;
             } else {
-                this.locationX = START_XY;
+                this.locationX = startXY;
             }
 
             // Draw segments for the line
@@ -317,7 +331,7 @@ public class MinecraftTooltip {
             }
 
             // Increment Y position for the next line
-            this.locationY += Y_INCREMENT + (lineIndex == 0 && this.isPaddingFirstLine() ? PIXEL_SIZE * 2 : 0);
+            this.locationY += yIncrement + (lineIndex == 0 && this.isPaddingFirstLine() ? pixelSize * 2 : 0);
         }
     }
 
@@ -328,7 +342,8 @@ public class MinecraftTooltip {
      * @param colorSegment The {@link ColorSegment} containing formatted text.
      */
     private void drawString(Graphics2D graphics, @NotNull ColorSegment colorSegment) {
-        this.currentFont = MINECRAFT_FONTS.get((colorSegment.isBold() ? 1 : 0) + (colorSegment.isItalic() ? 2 : 0));
+        Font baseFont = MINECRAFT_FONTS.get((colorSegment.isBold() ? 1 : 0) + (colorSegment.isItalic() ? 2 : 0));
+        this.currentFont = scaleFactor > 1 ? baseFont.deriveFont(baseFont.getSize2D() * scaleFactor) : baseFont;
         this.currentColor = colorSegment.getColor().orElse(ChatFormat.GRAY);
         graphics.setFont(this.currentFont);
         FontMetrics metrics = graphics.getFontMetrics(this.currentFont);
@@ -447,17 +462,17 @@ public class MinecraftTooltip {
     private void drawTextWithEffects(Graphics2D frameGraphics, String textToDraw, ColorSegment colorSegment, int width) {
         // Draw Strikethrough Drop Shadow
         if (colorSegment.isStrikethrough()) {
-            this.drawThickLineInternal(frameGraphics, width, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, true);
+            this.drawThickLineInternal(frameGraphics, width, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET * scaleFactor, true);
         }
 
         // Draw Underlined Drop Shadow
         if (colorSegment.isUnderlined()) {
-            this.drawThickLineInternal(frameGraphics, width, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, true);
+            this.drawThickLineInternal(frameGraphics, width, this.locationX - pixelSize, this.locationY, 1, UNDERLINE_OFFSET * scaleFactor, true);
         }
 
         // Draw Drop Shadow Text
         frameGraphics.setColor(this.currentColor.getBackgroundColor());
-        frameGraphics.drawString(textToDraw, this.locationX + PIXEL_SIZE, this.locationY + PIXEL_SIZE);
+        frameGraphics.drawString(textToDraw, this.locationX + pixelSize, this.locationY + pixelSize);
 
         // Draw Text
         frameGraphics.setColor(this.currentColor.getColor());
@@ -465,12 +480,12 @@ public class MinecraftTooltip {
 
         // Draw Strikethrough
         if (colorSegment.isStrikethrough()) {
-            this.drawThickLineInternal(frameGraphics, width, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET, false);
+            this.drawThickLineInternal(frameGraphics, width, this.locationX, this.locationY, -1, STRIKETHROUGH_OFFSET * scaleFactor, false);
         }
 
         // Draw Underlined
         if (colorSegment.isUnderlined()) {
-            this.drawThickLineInternal(frameGraphics, width, this.locationX - PIXEL_SIZE, this.locationY, 1, UNDERLINE_OFFSET, false);
+            this.drawThickLineInternal(frameGraphics, width, this.locationX - pixelSize, this.locationY, 1, UNDERLINE_OFFSET * scaleFactor, false);
         }
     }
 
@@ -483,9 +498,9 @@ public class MinecraftTooltip {
         yPosition += yOffset;
 
         if (dropShadow) {
-            xPosition1 += PIXEL_SIZE;
-            xPosition2 += PIXEL_SIZE;
-            yPosition += PIXEL_SIZE;
+            xPosition1 += pixelSize;
+            xPosition2 += pixelSize;
+            yPosition += pixelSize;
         }
 
         frameGraphics.setColor(dropShadow ? this.currentColor.getBackgroundColor() : this.currentColor.getColor());
@@ -507,8 +522,8 @@ public class MinecraftTooltip {
         measureGraphics.dispose();
 
         // Calculate final dimensions based on the measured largestWidth and height
-        int finalWidth = START_XY + this.largestWidth + START_XY;
-        int finalHeight = measuredHeight - (Y_INCREMENT + (this.lines.isEmpty() || !this.paddingFirstLine ? 0 : PIXEL_SIZE * 2)) + START_XY + PIXEL_SIZE * 2;
+        int finalWidth = startXY + this.largestWidth + startXY;
+        int finalHeight = measuredHeight - (yIncrement + (this.lines.isEmpty() || !this.paddingFirstLine ? 0 : pixelSize * 2)) + startXY + pixelSize * 2;
 
         // Determine if we need to animate the image beforehand
         BufferedImage tempImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
@@ -529,10 +544,10 @@ public class MinecraftTooltip {
             // Draw background first
             graphics.setColor(new Color(18, 3, 18, this.isAnimated ? 255 : this.getAlpha()));
             graphics.fillRect(
-                PIXEL_SIZE * 2, // Inner edge of border
-                PIXEL_SIZE * 2,
-                frameWidth - PIXEL_SIZE * 4, // Width inside borders
-                frameHeight - PIXEL_SIZE * 4 // Height inside borders
+                pixelSize * 2, // Inner edge of border
+                pixelSize * 2,
+                frameWidth - pixelSize * 4, // Width inside borders
+                frameHeight - pixelSize * 4 // Height inside borders
             );
 
             drawLinesInternal(graphics);
@@ -569,6 +584,7 @@ public class MinecraftTooltip {
         private boolean centeredText = false;
         private int frameDelayMs = 50;
         private int animationFrameCount = 10;
+        private int scaleFactor = 1;
 
         public Builder isPaddingFirstLine() {
             return this.isPaddingFirstLine(true);
@@ -642,6 +658,11 @@ public class MinecraftTooltip {
             return this;
         }
 
+        public Builder withScaleFactor(int scaleFactor) {
+            this.scaleFactor = Math.max(1, scaleFactor);
+            return this;
+        }
+
         @Override
         public @NotNull MinecraftTooltip build() {
             return new MinecraftTooltip(
@@ -653,7 +674,8 @@ public class MinecraftTooltip {
                 this.renderBorder,
                 this.centeredText,
                 this.frameDelayMs,
-                this.animationFrameCount
+                this.animationFrameCount,
+                this.scaleFactor
             );
         }
     }

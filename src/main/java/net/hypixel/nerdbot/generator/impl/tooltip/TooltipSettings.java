@@ -20,5 +20,6 @@ public class TooltipSettings {
     private final int maxLineLength;
     private final boolean renderBorder;
     private final boolean centeredText;
+    private final int scaleFactor;
 
 }
