@@ -243,7 +243,7 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         extraModifiers = Objects.requireNonNullElse(extraModifiers, "");
-        renderBackground = Objects.requireNonNullElse(renderBackground, true);
+        renderBackground = renderBackground == null || renderBackground;
 
         // Create futures for all async operations
         CompletableFuture<BufferedImage> descriptionFuture =
@@ -300,7 +300,7 @@ public class GeneratorCommands extends ApplicationCommand {
         hidden = (hidden != null && hidden);
         event.deferReply(hidden).complete();
 
-        renderBackground = (renderBackground == null || renderBackground);
+        renderBackground = renderBackground == null || renderBackground;
 
         // building the Minecraft recipe
         builder.buildRecipeAsync(event, recipe, renderBackground)
