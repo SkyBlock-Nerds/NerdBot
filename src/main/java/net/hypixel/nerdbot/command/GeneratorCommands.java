@@ -136,7 +136,7 @@ public class GeneratorCommands {
             return;
         }
         final boolean hide = (hidden != null && hidden);
-        renderBackground = Objects.requireNonNullElse(renderBackground, true);
+        renderBackground = renderBackground == null || renderBackground;
         alpha = (alpha != null && alpha != 0) ? alpha : 245;
         padding = (padding != null && padding != 0) ? padding : 1;
         maxLineLength = (maxLineLength != null && maxLineLength != 0) ? maxLineLength : StringColorParser.MAX_STANDARD_LINE_LENGTH;
@@ -258,7 +258,7 @@ public class GeneratorCommands {
         }
 
         extraModifiers = Objects.requireNonNullElse(extraModifiers, "");
-        renderBackground = Objects.requireNonNullElse(renderBackground, true);
+        renderBackground = renderBackground == null || renderBackground;
         alpha = (alpha != null && alpha != 0) ? alpha : 245;
         padding = (padding != null && padding != 0) ? padding : 1;
         maxLineLength = (maxLineLength != null && maxLineLength != 0) ? maxLineLength : StringColorParser.MAX_STANDARD_LINE_LENGTH;
@@ -319,7 +319,7 @@ public class GeneratorCommands {
         final boolean hide = (hidden != null && hidden);
         event.deferReply(hide).complete();
 
-        renderBackground = Objects.requireNonNullElse(renderBackground, true);
+        renderBackground = renderBackground == null || renderBackground;
 
         // building the Minecraft recipe
         builder.buildRecipeAsync(event, recipe, renderBackground)
