@@ -37,6 +37,7 @@ public class HttpUtils {
     public static MojangProfile getMojangProfile(String username) throws HttpException {
         String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
         //String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
+        // TODO: Implement Crafted's ashcon replacement when available
 
         if (UUIDUtils.isUUID(username)) {
             mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", username);
@@ -55,6 +56,7 @@ public class HttpUtils {
     public static CompletableFuture<MojangProfile> getMojangProfileAsync(String username) {
         String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
         //String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
+        // TODO: Implement Crafted's ashcon replacement when available
 
         if (UUIDUtils.isUUID(username)) {
             mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", mojangUrl);
