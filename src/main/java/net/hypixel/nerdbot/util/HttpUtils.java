@@ -36,14 +36,14 @@ public class HttpUtils {
 
     public static MojangProfile getMojangProfile(String username) throws HttpException {
         String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
-        String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
+        //String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
 
         if (UUIDUtils.isUUID(username)) {
             mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", username);
         }
 
         try {
-            String body = sendRequestWithFallback(mojangUrl, ashconUrl);
+            String body = getHttpResponse(mojangUrl).body();
             return NerdBotApp.GSON.fromJson(body, MojangProfile.class);
         } catch (IOException | InterruptedException exception) {
             throw new HttpException("Network error fetching profile for `" + username + "`", exception);
@@ -54,16 +54,16 @@ public class HttpUtils {
 
     public static CompletableFuture<MojangProfile> getMojangProfileAsync(String username) {
         String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
-        String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
+        //String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
 
         if (UUIDUtils.isUUID(username)) {
             mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", mojangUrl);
         }
 
-        return sendRequestWithFallbackAsync(mojangUrl, ashconUrl)
-            .thenApply(body -> {
+        return getHttpResponseAsync(mojangUrl)
+            .thenApply(response -> {
                 try {
-                    return NerdBotApp.GSON.fromJson(body, MojangProfile.class);
+                    return NerdBotApp.GSON.fromJson(response.body(), MojangProfile.class);
                 } catch (JsonSyntaxException exception) {
                     throw new RuntimeException(new HttpException("Invalid JSON response from Mojang API for `" + username + "`", exception));
                 } catch (IllegalStateException exception) {
