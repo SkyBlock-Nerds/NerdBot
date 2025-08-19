@@ -78,8 +78,7 @@
     "autoPinFirstMessage": true,
     "autoPinBlacklistedChannels": [
       "1234567890123456789"
-    ],
-    "projectChannelNames": []
+    ]
   },
   "roleConfig": {
     "botManagerRoleId": "1234567890123456789",
