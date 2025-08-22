@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.ThreadMember;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
@@ -31,6 +32,7 @@ import net.hypixel.nerdbot.util.ArrayUtils;
 import net.hypixel.nerdbot.util.FileUtils;
 import net.hypixel.nerdbot.util.Utils;
 import net.hypixel.nerdbot.util.csv.CSVData;
+import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 
 import java.io.File;
 import java.io.IOException;
@@ -415,5 +417,98 @@ public class ExportCommands {
         }
 
         return new Date(timestamp) + "/" + timestamp;
+    }
+
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "user-suggestions", description = "Export all suggestions made by a specific user ID", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    public void exportUserSuggestions(SlashCommandInteractionEvent event, @SlashOption(description = "User ID to export suggestions for") String userId) {
+        event.deferReply(true).queue();
+
+        try {
+            long userIdLong = Long.parseLong(userId);
+            
+            List<Suggestion> userSuggestions = NerdBotApp.getBot().getSuggestionCache()
+                .getSuggestions()
+                .stream()
+                .filter(suggestion -> suggestion.getOwnerIdLong() == userIdLong)
+                .filter(Suggestion::notDeleted)
+                .toList();
+
+            if (userSuggestions.isEmpty()) {
+                event.getHook().editOriginal("No suggestions found for user ID: " + userId).queue();
+                return;
+            }
+
+            event.getHook().editOriginal(String.format("Found %d suggestions for user ID %s. Starting export...", userSuggestions.size(), userId)).queue();
+
+            CSVData csvData = new CSVData(List.of(
+                "Title", 
+                "Content",
+                "Channel Type", 
+                "Creation Date", 
+                "Jump URL", 
+                "Agrees", 
+                "Disagrees", 
+                "Neutrals", 
+                "Ratio", 
+                "Greenlit", 
+                "Tags"
+            ), ";");
+
+            int totalSuggestions = userSuggestions.size();
+            for (int i = 0; i < userSuggestions.size(); i++) {
+                Suggestion suggestion = userSuggestions.get(i);
+                
+                int progress = i + 1;
+                event.getHook().editOriginal(String.format("Processing suggestion %d/%d: \"%s\"", 
+                    progress, totalSuggestions, 
+                    suggestion.getThreadName().length() > 50 ? 
+                        suggestion.getThreadName().substring(0, 50) + "..." : 
+                        suggestion.getThreadName()
+                )).queue();
+                
+                String content = suggestion.getFirstMessage()
+                    .map(Message::getContentRaw)
+                    .orElse("Content not available");
+                
+                content = content.replace("\"", "\"\"").replace("\n", " ").replace("\r", "");
+                
+                csvData.addRow(List.of(
+                    "\"" + suggestion.getThreadName().replace("\"", "\"\"") + "\"",
+                    "\"" + content + "\"",
+                    suggestion.getChannelType().getName(),
+                    formatTimestampSheets(suggestion.getTimeCreated().toInstant().toEpochMilli()),
+                    "=HYPERLINK(\"" + suggestion.getJumpUrl() + "\", \"View\")",
+                    String.valueOf(suggestion.getAgrees()),
+                    String.valueOf(suggestion.getDisagrees()),
+                    String.valueOf(suggestion.getNeutrals()),
+                    String.format("%.1f%%", suggestion.getRatio()),
+                    suggestion.isGreenlit() ? "YES" : "NO",
+                    "\"" + suggestion.getAppliedTags().stream()
+                        .map(BaseForumTag::getName)
+                        .reduce((a, b) -> a + ", " + b)
+                        .orElse("") + "\""
+                ));
+            }
+
+            event.getHook().editOriginal("Creating export file...").queue();
+
+            FileUtils.createTempFileAsync(
+                String.format("export-user-suggestions-%s-%s.csv", 
+                    userId, 
+                    FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), 
+                csvData.toCSV()
+            ).thenAccept(file -> {
+                event.getHook().editOriginal(String.format("Successfully exported %d suggestions for user ID %s", userSuggestions.size(), userId))
+                    .setFiles(FileUpload.fromData(file))
+                    .queue();
+            }).exceptionally(throwable -> {
+                log.error("Failed to create temp file for user suggestions export", throwable);
+                event.getHook().editOriginal("Failed to create temporary file: " + throwable.getMessage()).queue();
+                return null;
+            });
+
+        } catch (NumberFormatException e) {
+            event.getHook().editOriginal("Please provide a valid user ID").queue();
+        }
     }
 }
