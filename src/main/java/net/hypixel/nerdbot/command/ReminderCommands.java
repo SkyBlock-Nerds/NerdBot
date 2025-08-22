@@ -163,7 +163,7 @@ public class ReminderCommands {
     @SlashComponentHandler(id = "reminder-detail", patterns = {"reminder-detail-*"})
     public void handleReminderDetail(ButtonInteractionEvent event) {
         String componentId = event.getComponentId();
-        
+
         // Parse: reminder-detail-{action}-{uuid}-{userId}
         // We need to be careful because UUIDs contain dashes
         String[] parts = componentId.split("-");
@@ -171,12 +171,12 @@ public class ReminderCommands {
             event.reply("Invalid component ID format!").setEphemeral(true).queue();
             return;
         }
-        
+
         String action = parts[2]; // "delete", "back"
-        
+
         // UUID is parts[3] to parts[7]
         String reminderUuid = String.join("-", parts[3], parts[4], parts[5], parts[6], parts[7]);
-        
+
         // userId is the last part
         String userId = parts[parts.length - 1];
 
@@ -260,7 +260,7 @@ public class ReminderCommands {
 
     private void createReminderFromModalReply(InteractionHook hook, String userId, String timeInput, String descriptionInput, Guild guild, MessageChannelUnion channel, Member member) {
         DiscordUserRepository userRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         userRepository.findByIdAsync(userId)
             .thenAccept(user -> {
                 if (user == null) {
@@ -308,7 +308,7 @@ public class ReminderCommands {
 
                 ReminderRepository reminderRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
                 Reminder reminder = new Reminder(descriptionInput, date, channel.getId(), userId);
-                
+
                 final Date finalDate = date;
                 final String finalDescription = descriptionInput;
 
@@ -398,13 +398,13 @@ public class ReminderCommands {
 
         if (allReminders.isEmpty()) {
             String content = "⏰ **Your Reminders**\n\n" +
-                           (message != null ? message + "\n\n" : "") +
-                           "You don't have any reminders set!\n\n";
-            
+                (message != null ? message + "\n\n" : "") +
+                "You don't have any reminders set!\n\n";
+
             ActionRow createButton = ActionRow.of(
                 Button.primary("reminder-create-" + userId, "Create New Reminder")
             );
-            
+
             hook.editOriginal(content).setComponents(createButton).queue();
             return;
         }
@@ -421,7 +421,7 @@ public class ReminderCommands {
 
         StringBuilder content = new StringBuilder();
         content.append("⏰ **Your Reminders**\n\n");
-        
+
         if (message != null) {
             content.append(message).append("\n\n");
         }
@@ -444,16 +444,16 @@ public class ReminderCommands {
         for (int i = 0; i < pageReminders.size(); i++) {
             Reminder reminder = pageReminders.get(i);
             int globalIndex = (page - 1) * remindersPerPage + i + 1;
-            
+
             // Use plain text date format instead of Discord timestamp for selection menu
             SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy 'at' h:mm a z");
             String readableDate = dateFormat.format(reminder.getTime());
-            
+
             String optionLabel = "#" + globalIndex + " - " + readableDate;
-            String optionDescription = reminder.getDescription().length() > 50 
-                ? reminder.getDescription().substring(0, 47) + "..." 
+            String optionDescription = reminder.getDescription().length() > 50
+                ? reminder.getDescription().substring(0, 47) + "..."
                 : reminder.getDescription();
-            
+
             selectBuilder.addOption(optionLabel, reminder.getUuid().toString(), optionDescription);
         }
 
@@ -461,14 +461,14 @@ public class ReminderCommands {
 
         // Add navigation and create buttons
         List<Button> navButtons = new ArrayList<>();
-        
+
         if (totalPages > 1) {
             navButtons.add(Button.secondary("reminder-nav-prev-" + page + "-" + userId, "◀️ Previous")
                 .withDisabled(page <= 1));
             navButtons.add(Button.secondary("reminder-nav-next-" + page + "-" + userId, "Next ▶️")
                 .withDisabled(page >= totalPages));
         }
-        
+
         navButtons.add(Button.primary("reminder-create-" + userId, "Create New Reminder"));
         actionRows.add(ActionRow.of(navButtons));
 

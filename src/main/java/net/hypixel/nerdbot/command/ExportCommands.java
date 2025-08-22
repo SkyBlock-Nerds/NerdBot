@@ -25,6 +25,7 @@ import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.ChannelActivityEntry;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.role.RoleManager;
@@ -32,7 +33,6 @@ import net.hypixel.nerdbot.util.ArrayUtils;
 import net.hypixel.nerdbot.util.FileUtils;
 import net.hypixel.nerdbot.util.Utils;
 import net.hypixel.nerdbot.util.csv.CSVData;
-import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 
 import java.io.File;
 import java.io.IOException;
@@ -200,7 +200,7 @@ public class ExportCommands {
         }
 
         try {
-            MessageEditData data = MessageEditBuilder.from(MessageEditData.fromContent(String.format("To import into Google Sheets, go to File -> Import, Upload the `.csv` document shown below.\nChange `Import Location` to `Append to current sheet` and `Separator Type` should be defaulted to Automatic detection if not, change it to tabs.)")))
+            MessageEditData data = MessageEditBuilder.from(MessageEditData.fromContent("To import into Google Sheets, go to File -> Import, Upload the `.csv` document shown below.\nChange `Import Location` to `Append to current sheet` and `Separator Type` should be defaulted to Automatic detection if not, change it to tabs.)"))
                 .setFiles(FileUpload.fromData(FileUtils.createTempFile(String.format("export-greenlit-%s.csv", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
                 .build();
 
@@ -425,7 +425,7 @@ public class ExportCommands {
 
         try {
             long userIdLong = Long.parseLong(userId);
-            
+
             List<Suggestion> userSuggestions = NerdBotApp.getBot().getSuggestionCache()
                 .getSuggestions()
                 .stream()
@@ -441,37 +441,37 @@ public class ExportCommands {
             event.getHook().editOriginal(String.format("Found %d suggestions for user ID %s. Starting export...", userSuggestions.size(), userId)).queue();
 
             CSVData csvData = new CSVData(List.of(
-                "Title", 
+                "Title",
                 "Content",
-                "Channel Type", 
-                "Creation Date", 
-                "Jump URL", 
-                "Agrees", 
-                "Disagrees", 
-                "Neutrals", 
-                "Ratio", 
-                "Greenlit", 
+                "Channel Type",
+                "Creation Date",
+                "Jump URL",
+                "Agrees",
+                "Disagrees",
+                "Neutrals",
+                "Ratio",
+                "Greenlit",
                 "Tags"
             ), ";");
 
             int totalSuggestions = userSuggestions.size();
             for (int i = 0; i < userSuggestions.size(); i++) {
                 Suggestion suggestion = userSuggestions.get(i);
-                
+
                 int progress = i + 1;
-                event.getHook().editOriginal(String.format("Processing suggestion %d/%d: \"%s\"", 
-                    progress, totalSuggestions, 
-                    suggestion.getThreadName().length() > 50 ? 
-                        suggestion.getThreadName().substring(0, 50) + "..." : 
+                event.getHook().editOriginal(String.format("Processing suggestion %d/%d: \"%s\"",
+                    progress, totalSuggestions,
+                    suggestion.getThreadName().length() > 50 ?
+                        suggestion.getThreadName().substring(0, 50) + "..." :
                         suggestion.getThreadName()
                 )).queue();
-                
+
                 String content = suggestion.getFirstMessage()
                     .map(Message::getContentRaw)
                     .orElse("Content not available");
-                
+
                 content = content.replace("\"", "\"\"").replace("\n", " ").replace("\r", "");
-                
+
                 csvData.addRow(List.of(
                     "\"" + suggestion.getThreadName().replace("\"", "\"\"") + "\"",
                     "\"" + content + "\"",
@@ -493,9 +493,9 @@ public class ExportCommands {
             event.getHook().editOriginal("Creating export file...").queue();
 
             FileUtils.createTempFileAsync(
-                String.format("export-user-suggestions-%s-%s.csv", 
-                    userId, 
-                    FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), 
+                String.format("export-user-suggestions-%s-%s.csv",
+                    userId,
+                    FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())),
                 csvData.toCSV()
             ).thenAccept(file -> {
                 event.getHook().editOriginal(String.format("Successfully exported %d suggestions for user ID %s", userSuggestions.size(), userId))

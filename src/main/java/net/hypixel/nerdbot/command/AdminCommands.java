@@ -10,7 +10,13 @@ import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Invite;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.PermissionOverride;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -50,7 +56,12 @@ import net.hypixel.nerdbot.feature.UserNominationFeature;
 import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.util.*;
+import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.FileUtils;
+import net.hypixel.nerdbot.util.HttpUtils;
+import net.hypixel.nerdbot.util.JsonUtils;
+import net.hypixel.nerdbot.util.TimeUtils;
+import net.hypixel.nerdbot.util.Utils;
 import net.hypixel.nerdbot.util.exception.RepositoryException;
 import org.apache.commons.lang.time.DateFormatUtils;
 
@@ -58,8 +69,15 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -752,7 +770,7 @@ public class AdminCommands {
         String[] parts = event.getComponentId().split("-");
         String userId = parts[3];
         String channelId = parts[4];
-        
+
         if (!event.getUser().getId().equals(userId)) {
             event.reply("You can only use your own tag transferring interface!").setEphemeral(true).queue();
             return;
@@ -769,7 +787,7 @@ public class AdminCommands {
         String userId = parts[3];
         String channelId = parts[4];
         String fromTagId = parts[5];
-        
+
         if (!event.getUser().getId().equals(userId)) {
             event.reply("You can only use your own tag transferring interface!").setEphemeral(true).queue();
             return;
@@ -788,7 +806,7 @@ public class AdminCommands {
         String channelId = parts[4];
         String fromTagId = parts[5];
         String toTagId = parts[6];
-        
+
         if (!event.getUser().getId().equals(userId)) {
             event.reply("You can only use your own tag transferring interface!").setEphemeral(true).queue();
             return;
@@ -822,7 +840,7 @@ public class AdminCommands {
 
     private void createTagTransferPanel(InteractionHook hook, String userId, String message) {
         List<ForumChannel> forumChannels = DiscordUtils.getMainGuild().getForumChannels();
-        
+
         if (forumChannels.isEmpty()) {
             hook.editOriginal("❌ No forum channels found in this server!").setComponents().queue();
             return;
@@ -830,11 +848,11 @@ public class AdminCommands {
 
         StringBuilder content = new StringBuilder();
         content.append("🏷️ **Tag Transfer Panel**\n\n");
-        
+
         if (message != null) {
             content.append(message).append("\n\n");
         }
-        
+
         content.append("**Step 1:** Select the forum channel where you want to transfer tags.\n\n");
         content.append("📊 **Available Forum Channels:** ").append(forumChannels.size());
 
@@ -845,8 +863,8 @@ public class AdminCommands {
         forumChannels.stream()
             .limit(25)
             .forEach(channel -> channelSelect.addOption(
-                channel.getName(), 
-                channel.getId(), 
+                channel.getName(),
+                channel.getId(),
                 "Transfer tags in " + channel.getName()
             ));
 
@@ -871,9 +889,9 @@ public class AdminCommands {
         }
 
         String content = "🏷️ **Tag Transfer Panel**\n\n" +
-                "**Step 2:** Select the source tag to transfer FROM.\n\n" +
-                "📍 **Selected Channel:** " + channel.getName() + "\n" +
-                "🏷️ **Available Tags:** " + tags.size() + "\n\n";
+            "**Step 2:** Select the source tag to transfer FROM.\n\n" +
+            "📍 **Selected Channel:** " + channel.getName() + "\n" +
+            "🏷️ **Available Tags:** " + tags.size() + "\n\n";
 
         StringSelectMenu.Builder tagSelect = StringSelectMenu.create("tag-from-select-" + userId + "-" + channelId)
             .setPlaceholder("🏷️ Select Source Tag (FROM)")
@@ -882,8 +900,8 @@ public class AdminCommands {
         tags.stream()
             .limit(25)
             .forEach(tag -> tagSelect.addOption(
-                tag.getName(), 
-                tag.getId(), 
+                tag.getName(),
+                tag.getId(),
                 "Transfer FROM this tag"
             ));
 
@@ -920,10 +938,10 @@ public class AdminCommands {
         }
 
         String content = "🏷️ **Tag Transfer Panel**\n\n" +
-                "**Step 3:** Select the destination tag to transfer TO.\n\n" +
-                "📍 **Channel:** " + channel.getName() + "\n" +
-                "📤 **From Tag:** " + fromTag.getName() + "\n" +
-                "🏷️ **Available Destination Tags:** " + tags.size() + "\n\n";
+            "**Step 3:** Select the destination tag to transfer TO.\n\n" +
+            "📍 **Channel:** " + channel.getName() + "\n" +
+            "📤 **From Tag:** " + fromTag.getName() + "\n" +
+            "🏷️ **Available Destination Tags:** " + tags.size() + "\n\n";
 
         StringSelectMenu.Builder tagSelect = StringSelectMenu.create("tag-to-select-" + userId + "-" + channelId + "-" + fromTagId)
             .setPlaceholder("🎯 Select Destination Tag (TO)")
@@ -932,8 +950,8 @@ public class AdminCommands {
         tags.stream()
             .limit(25)
             .forEach(tag -> tagSelect.addOption(
-                tag.getName(), 
-                tag.getId(), 
+                tag.getName(),
+                tag.getId(),
                 "Transfer TO this tag"
             ));
 
@@ -1046,7 +1064,7 @@ public class AdminCommands {
         // Process threads
         int processed = 0;
         int errors = 0;
-        
+
         for (ThreadChannel threadChannel : threadChannels) {
             try {
                 List<ForumTag> threadTags = new ArrayList<>(threadChannel.getAppliedTags());
@@ -1521,7 +1539,7 @@ public class AdminCommands {
             embedBuilder.addField(String.format("🔧 Other Channels (%d)", ungroupedOtherChannels.size()),
                 otherChannels.toString(), false);
         }
-        
+
         embedBuilder.setTimestamp(Instant.now());
         event.getHook().editOriginalEmbeds(embedBuilder.build()).queue();
     }

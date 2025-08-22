@@ -53,7 +53,7 @@ public class RoleCommands {
                 boolean hasRole = RoleManager.hasRoleById(member, pingableRole.roleId());
                 String emoji = hasRole ? "✅" : "❌";
                 String description = hasRole ? "Currently assigned - click to remove" : "Not assigned - click to add";
-                
+
                 selectBuilder.addOption(emoji + " " + pingableRole.name(), pingableRole.name(), description);
             }
         }
@@ -65,13 +65,13 @@ public class RoleCommands {
             .map(PingableRole::name)
             .collect(Collectors.toList());
 
-        String statusMessage = currentRoles.isEmpty() 
+        String statusMessage = currentRoles.isEmpty()
             ? "**Your Current Roles:** None\n\n" +
-              "**Available Roles:** " + pingableRoles.length + "\n" +
-              "Use the dropdown below to add or remove roles."
+            "**Available Roles:** " + pingableRoles.length + "\n" +
+            "Use the dropdown below to add or remove roles."
             : "**Your Current Roles:** " + String.join(", ", currentRoles) + "\n\n" +
-              "**Available Roles:** " + pingableRoles.length + "\n" +
-              "Use the dropdown below to add or remove roles.";
+            "**Available Roles:** " + pingableRoles.length + "\n" +
+            "Use the dropdown below to add or remove roles.";
 
         event.getHook().editOriginal(statusMessage)
             .setComponents(selectRow)
@@ -146,7 +146,7 @@ public class RoleCommands {
             event.getHook().sendMessage("An error occurred, please try again later.").setEphemeral(true).queue();
             return;
         }
-        
+
         RoleManager.getPingableRoleByName(selectedRole).ifPresentOrElse(pingableRole -> {
             Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
             if (discordRole == null) {
@@ -155,7 +155,7 @@ public class RoleCommands {
             }
 
             boolean hadRole = RoleManager.hasRoleById(member, pingableRole.roleId());
-            
+
             if (hadRole) {
                 event.getGuild().removeRoleFromMember(member, discordRole).queue(success -> {
                     updateRoleMenuInternal(event.getHook(), member, event.getGuild(), "✅ Removed role: " + discordRole.getAsMention());
@@ -187,7 +187,7 @@ public class RoleCommands {
                 boolean hasRole = RoleManager.hasRoleById(member, pingableRole.roleId());
                 String emoji = hasRole ? "✅" : "❌";
                 String description = hasRole ? "Currently assigned - click to remove" : "Not assigned - click to add";
-                
+
                 selectBuilder.addOption(emoji + " " + pingableRole.name(), pingableRole.name(), description);
             }
         }
@@ -200,13 +200,13 @@ public class RoleCommands {
             .collect(Collectors.toList());
 
         String statusMessage = (message != null ? message + "\n\n" : "") +
-            (currentRoles.isEmpty() 
+            (currentRoles.isEmpty()
                 ? "**Your Current Roles:** None\n\n" +
-                  "**Available Roles:** " + pingableRoles.length + "\n" +
-                  "Use the dropdown below to add or remove roles."
+                "**Available Roles:** " + pingableRoles.length + "\n" +
+                "Use the dropdown below to add or remove roles."
                 : "**Your Current Roles:** " + String.join(", ", currentRoles) + "\n\n" +
-                  "**Available Roles:** " + pingableRoles.length + "\n" +
-                  "Use the dropdown below to add or remove roles.");
+                "**Available Roles:** " + pingableRoles.length + "\n" +
+                "Use the dropdown below to add or remove roles.");
 
         hook.editOriginal(statusMessage)
             .setComponents(selectRow)

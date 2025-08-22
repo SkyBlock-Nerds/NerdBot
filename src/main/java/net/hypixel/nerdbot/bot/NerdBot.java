@@ -1,17 +1,14 @@
 package net.hypixel.nerdbot.bot;
 
-import net.aerh.slashcommands.SlashCommandManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.SlashCommandManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
-import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
-import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -29,7 +26,6 @@ import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.MessageCache;
-import net.hypixel.nerdbot.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.cache.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.feature.ActivityPurgeFeature;
 import net.hypixel.nerdbot.feature.CurateFeature;
@@ -41,18 +37,19 @@ import net.hypixel.nerdbot.listener.ActivityListener;
 import net.hypixel.nerdbot.listener.FunListener;
 import net.hypixel.nerdbot.listener.MetricsListener;
 import net.hypixel.nerdbot.listener.ModLogListener;
-import net.hypixel.nerdbot.modmail.ModMailListener;
+import net.hypixel.nerdbot.listener.PaginationListener;
 import net.hypixel.nerdbot.listener.PinListener;
 import net.hypixel.nerdbot.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.modmail.ModMailListener;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.urlwatcher.FireSaleDataHandler;
 import net.hypixel.nerdbot.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
-import net.hypixel.nerdbot.util.JsonUtils;
 import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.util.JsonUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
@@ -186,7 +183,8 @@ public class NerdBot implements Bot {
                 new PinListener(),
                 new MetricsListener(),
                 new FunListener(),
-                new RoleRestrictedChannelListener()
+                new RoleRestrictedChannelListener(),
+                new PaginationListener()
             )
             .setActivity(Activity.of(config.getActivityType(), config.getActivity()));
 

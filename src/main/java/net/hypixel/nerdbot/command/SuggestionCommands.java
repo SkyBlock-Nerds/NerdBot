@@ -1,15 +1,12 @@
 package net.hypixel.nerdbot.command;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashOption;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.Command;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.Scheduler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
@@ -18,46 +15,51 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
-import net.hypixel.nerdbot.curator.ForumChannelCurator;
-import net.hypixel.nerdbot.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.cache.suggestion.Suggestion;
+import net.hypixel.nerdbot.curator.ForumChannelCurator;
+import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
+import net.hypixel.nerdbot.util.pagination.PaginatedResponse;
+import net.hypixel.nerdbot.util.pagination.PaginationManager;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class SuggestionCommands {
 
     private static final Logger log = LoggerFactory.getLogger(SuggestionCommands.class);
 
-    private final Cache<String, Long> lastReviewRequestCache = Caffeine.newBuilder()
+    private final Cache<@NotNull String, Long> lastReviewRequestCache = Caffeine.newBuilder()
         .expireAfterWrite(1, TimeUnit.HOURS)
         .scheduler(Scheduler.systemScheduler())
         .removalListener((o, o2, removalCause) -> log.info("Removed {} from last review request cache", o))
@@ -75,16 +77,17 @@ public class SuggestionCommands {
      * @return A list of suggestions that match the provided filters.
      */
     public static List<Suggestion> getSuggestions(Member member, @Nullable Long userId, String tags, String title, Suggestion.ChannelType channelType) {
-        final List<String> searchTags = Arrays.asList(tags != null ? tags.split(", ?") : new String[0]);
+        final List<String> searchTags = (tags == null || tags.trim().isEmpty())
+            ? Collections.emptyList()
+            : Arrays.asList(tags.split(", ?"));
 
-        if (NerdBotApp.getBot().getSuggestionCache().getSuggestions().isEmpty()) {
+        List<Suggestion> allSuggestions = NerdBotApp.getBot().getSuggestionCache().getSuggestions();
+        if (allSuggestions.isEmpty()) {
             log.warn("Suggestions cache is empty!");
             return Collections.emptyList();
         }
 
-        return NerdBotApp.getBot().getSuggestionCache()
-            .getSuggestions()
-            .stream()
+        return allSuggestions.stream()
             .filter(suggestion -> suggestion.getChannelType() == channelType)
             .filter(Suggestion::notDeleted)
             .filter(suggestion -> {
@@ -98,26 +101,38 @@ public class SuggestionCommands {
                 .stream()
                 .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
             ))
-            .filter(suggestion -> title == null || suggestion.getThreadName()
+            .filter(suggestion -> title == null || title.isEmpty() || suggestion.getThreadName()
                 .toLowerCase()
                 .contains(title.toLowerCase())
             )
             .toList();
     }
 
-    public static EmbedBuilder buildSuggestionsEmbed(Member member, List<Suggestion> suggestions, String tags, String title, Suggestion.ChannelType channelType, int pageNum, boolean showNames, boolean showRatio) {
-        List<Suggestion> list = suggestions.stream().filter(suggestion -> suggestion.canSee(member)).toList();
-        List<Suggestion> pages = InfoCommands.getPage(list, pageNum, 10);
-        int totalPages = (int) Math.ceil(suggestions.size() / 10.0);
+    public static EmbedBuilder buildSuggestionsEmbed(Member member, List<Suggestion> pageItems, String tags, String title, Suggestion.ChannelType channelType, boolean showNames, boolean showRatio) {
+        List<Suggestion> list = pageItems.stream().filter(suggestion -> suggestion.canSee(member)).toList();
 
         StringJoiner links = new StringJoiner("\n");
         double total = list.size();
-        double greenlit = suggestions.stream().filter(Suggestion::isGreenlit).count();
-        String filters = (tags != null ? "- Filtered by tags: `" + tags + "`\n" : "") + (title != null ? "- Filtered by title: `" + title + "`\n" : "") + (channelType != Suggestion.ChannelType.NORMAL ? "- Filtered by Type: `" + channelType.getName() + "`" : "");
+        double greenlit = list.stream().filter(Suggestion::isGreenlit).count();
+        StringBuilder filtersBuilder = new StringBuilder();
 
-        pages.forEach(suggestion -> {
+        if (tags != null && !tags.isEmpty()) {
+            filtersBuilder.append("- Filtered by tags: `").append(tags).append("`\n");
+        }
+
+        if (title != null && !title.isEmpty()) {
+            filtersBuilder.append("- Filtered by title: `").append(title).append("`\n");
+        }
+
+        if (channelType != Suggestion.ChannelType.NORMAL) {
+            filtersBuilder.append("- Filtered by type: `").append(channelType.getName()).append("`");
+        }
+
+        String filters = filtersBuilder.toString();
+
+        list.forEach(suggestion -> {
             String link = "[" + suggestion.getThreadName().replaceAll("`", "") + "](" + suggestion.getJumpUrl() + ")";
-            link += (suggestion.isGreenlit() ? " " + getEmojiFormat(EmojiConfig::getGreenlitEmojiId) : "") + "\n";
+            link += (suggestion.isGreenlit() ? " " + EmojiCache.getFormattedEmoji(EmojiConfig::getGreenlitEmojiId) : "") + "\n";
 
             if (!suggestion.getAppliedTags().isEmpty()) {
                 link += "Tags: `" + suggestion.getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "`\n";
@@ -135,7 +150,7 @@ public class SuggestionCommands {
             }
 
             link += "\n";
-            link += getEmojiFormat(EmojiConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + getEmojiFormat(EmojiConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
+            link += EmojiCache.getFormattedEmoji(EmojiConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + EmojiCache.getFormattedEmoji(EmojiConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
             links.add(link);
         });
 
@@ -154,7 +169,7 @@ public class SuggestionCommands {
         if (showRatio && channelType == Suggestion.ChannelType.NORMAL) {
             blankFields--;
             embedBuilder.addField(
-                getEmojiFormat(EmojiConfig::getGreenlitEmojiId),
+                EmojiCache.getFormattedEmoji(EmojiConfig::getGreenlitEmojiId),
                 (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
                 true
             );
@@ -164,25 +179,18 @@ public class SuggestionCommands {
             embedBuilder.addBlankField(true);
         }
 
-        embedBuilder.setFooter("Page: " + pageNum + "/" + totalPages);
-
         if (!filters.isEmpty()) {
             embedBuilder.addField("Filters", filters, false);
         }
 
         long minutesSinceStart = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - NerdBotApp.getBot().getStartTime());
         if (minutesSinceStart <= 30) {
-            embedBuilder.setFooter("Page: " + pageNum + "/" + totalPages + " (The bot recently started so results may be inaccurate!)");
+            embedBuilder.setFooter("The bot recently started so results may be inaccurate!");
         }
 
         return embedBuilder;
     }
 
-    private static String getEmojiFormat(Function<EmojiConfig, String> emojiIdFunction) {
-        return EmojiCache.getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getEmojiConfig()))
-            .orElseGet(() -> Emoji.fromUnicode("❓"))
-            .getFormatted();
-    }
 
     @SlashCommand(name = "request-review", description = "Request a greenlit review of your suggestion.", guildOnly = true)
     public void requestSuggestionReview(SlashCommandInteractionEvent event) {
@@ -194,14 +202,14 @@ public class SuggestionCommands {
         }
 
         DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         repository.findOrCreateByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (event.getChannel().getType() != net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
                     event.getHook().editOriginal("This command cannot be used here!").queue();
                     return;
                 }
-                
+
                 processReviewRequest(event, discordUser);
             })
             .exceptionally(throwable -> {
@@ -210,7 +218,7 @@ public class SuggestionCommands {
                 return null;
             });
     }
-    
+
     private void processReviewRequest(SlashCommandInteractionEvent event, DiscordUser discordUser) {
         SuggestionConfig suggestionConfig = NerdBotApp.getBot().getConfig().getSuggestionConfig();
         EmojiConfig emojiConfig = NerdBotApp.getBot().getConfig().getEmojiConfig();
@@ -383,16 +391,13 @@ public class SuggestionCommands {
     public void viewMemberSuggestions(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "User ID to view.") String userId,
-        @SlashOption(required = false) Integer page,
         @SlashOption(description = "Tags to filter for (comma separated).", required = false) String tags,
         @SlashOption(description = "Words to filter title for.", required = false) String title,
         @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String channelType
     ) {
         event.deferReply(true).complete();
-        page = (page == null) ? 1 : page;
-        int pageNum = Math.max(page, 1);
         Suggestion.ChannelType channelTypeEnum = (channelType == null || channelType.isEmpty() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.getType(channelType));
-        
+
         if (channelTypeEnum == Suggestion.ChannelType.UNKNOWN) {
             event.getHook().editOriginal("Invalid channel type provided!").queue();
             return;
@@ -409,12 +414,20 @@ public class SuggestionCommands {
                 return;
             }
 
-            event.getHook().editOriginalEmbeds(
-                buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, channelTypeEnum, pageNum, false, showRatio)
+            PaginatedResponse<Suggestion> pagination = PaginatedResponse.forEmbeds(
+                suggestions,
+                10,
+                pageItems -> buildSuggestionsEmbed(event.getMember(), pageItems, tags, title, channelTypeEnum, false, showRatio)
                     .setAuthor(searchUser != null ? searchUser.getName() : userId)
                     .setThumbnail(searchUser != null ? searchUser.getEffectiveAvatarUrl() : null)
-                    .build()
-            ).queue();
+                    .build(),
+                "suggestions-page"
+            );
+
+            pagination.sendMessage(event);
+            event.getHook().retrieveOriginal().queue(message ->
+                PaginationManager.registerPagination(message.getId(), pagination)
+            );
         } catch (NumberFormatException exception) {
             event.getHook().editOriginal("Invalid user ID!").queue();
         }
@@ -429,21 +442,18 @@ public class SuggestionCommands {
     public void viewMemberSuggestions(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "Member to view.") Member member,
-        @SlashOption(required = false) Integer page,
         @SlashOption(description = "Tags to filter for (comma separated).", required = false) String tags,
         @SlashOption(description = "Words to filter title for.", required = false) String title,
         @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String type
     ) {
         event.deferReply(true).complete();
-        page = (page == null) ? 1 : page;
-        final int pageNum = Math.max(page, 1);
         Suggestion.ChannelType typeEnum = (type == null || type.isEmpty() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.getType(type));
-        
+
         if (typeEnum == Suggestion.ChannelType.UNKNOWN) {
             event.getHook().editOriginal("Invalid channel type provided!").queue();
             return;
         }
-        
+
         boolean showRatio = member.getIdLong() == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
 
         List<Suggestion> suggestions = getSuggestions(event.getMember(), member.getIdLong(), tags, title, typeEnum);
@@ -453,12 +463,20 @@ public class SuggestionCommands {
             return;
         }
 
-        event.getHook().editOriginalEmbeds(
-            buildSuggestionsEmbed(member, suggestions, tags, title, typeEnum, pageNum, false, showRatio)
+        PaginatedResponse<Suggestion> pagination = PaginatedResponse.forEmbeds(
+            suggestions,
+            10,
+            pageItems -> buildSuggestionsEmbed(member, pageItems, tags, title, typeEnum, false, showRatio)
                 .setAuthor(member.getEffectiveName())
                 .setThumbnail(member.getEffectiveAvatarUrl())
-                .build()
-        ).queue();
+                .build(),
+            "suggestions-page"
+        );
+
+        pagination.sendMessage(event);
+        event.getHook().retrieveOriginal().queue(message ->
+            PaginationManager.registerPagination(message.getId(), pagination)
+        );
     }
 
     @SlashCommand(
@@ -469,16 +487,13 @@ public class SuggestionCommands {
     )
     public void viewAllSuggestions(
         SlashCommandInteractionEvent event,
-        @SlashOption(required = false) Integer page,
         @SlashOption(description = "Tags to filter for (comma separated).", required = false) String tags,
         @SlashOption(description = "Words to filter title for.", required = false) String title,
         @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String type
     ) {
         event.deferReply(true).complete();
-        page = (page == null) ? 1 : page;
-        final int pageNum = Math.max(page, 1);
         Suggestion.ChannelType typeEnum = (type == null || type.isEmpty() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.getType(type));
-        
+
         if (typeEnum == Suggestion.ChannelType.UNKNOWN) {
             event.getHook().editOriginal("Invalid channel type provided!").queue();
             return;
@@ -491,7 +506,17 @@ public class SuggestionCommands {
             return;
         }
 
-        event.getHook().editOriginalEmbeds(buildSuggestionsEmbed(event.getMember(), suggestions, tags, title, typeEnum, pageNum, true, true).build()).queue();
+        PaginatedResponse<Suggestion> pagination = PaginatedResponse.forEmbeds(
+            suggestions,
+            10,
+            pageItems -> buildSuggestionsEmbed(event.getMember(), pageItems, tags, title, typeEnum, true, true).build(),
+            "suggestions-page"
+        );
+
+        pagination.sendMessage(event);
+        event.getHook().retrieveOriginal().queue(message ->
+            PaginationManager.registerPagination(message.getId(), pagination)
+        );
     }
 
     @SlashAutocompleteHandler(id = "suggestion-types")
@@ -541,7 +566,7 @@ public class SuggestionCommands {
 
             boolean accepted = switch (action) {
                 case "accept" -> {
-                    if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || 
+                    if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag()) ||
                         DiscordUtils.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
                         event.getHook().editOriginal("This suggestion has already been greenlit or reviewed!").queue();
                         yield false;
@@ -549,9 +574,9 @@ public class SuggestionCommands {
 
                     List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
                     tags.add(DiscordUtils.getTagByName(forum, suggestionConfig.getGreenlitTag()));
-                    
+
                     applyThreadChanges(thread, tags, suggestionConfig);
-                    
+
                     GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(
                         firstMessage.get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
                     NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
@@ -581,14 +606,14 @@ public class SuggestionCommands {
             };
 
             event.getHook().editOriginalComponents(ActionRow.of(
-                (accepted ? Button.success("suggestion-review-completed", "Greenlit") 
-                         : Button.danger("suggestion-review-completed", "Denied")).asDisabled()
+                (accepted ? Button.success("suggestion-review-completed", "Greenlit")
+                    : Button.danger("suggestion-review-completed", "Denied")).asDisabled()
             )).queue();
 
             PrometheusMetrics.REVIEW_REQUEST_STATISTICS.labels(
-                firstMessage.get().getId(), 
-                firstMessage.get().getAuthor().getId(), 
-                suggestion.getThreadName(), 
+                firstMessage.get().getId(),
+                firstMessage.get().getAuthor().getId(),
+                suggestion.getThreadName(),
                 action
             ).inc();
         });
