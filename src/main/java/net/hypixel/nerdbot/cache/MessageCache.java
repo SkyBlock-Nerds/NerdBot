@@ -26,7 +26,7 @@ public class MessageCache implements EventListener {
         .maximumSize(5_000)
         .expireAfterWrite(3, TimeUnit.DAYS)
         .expireAfterAccess(1, TimeUnit.DAYS)
-        .removalListener((key, value, cause) -> 
+        .removalListener((key, value, cause) ->
             log.debug("Message {} removed from cache due to {}", key, cause))
         .recordStats()
         .build();

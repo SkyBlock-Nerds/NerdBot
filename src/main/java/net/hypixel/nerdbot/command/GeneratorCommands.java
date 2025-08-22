@@ -32,7 +32,7 @@ import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -104,15 +104,15 @@ public class GeneratorCommands {
         new Color(137, 222, 74),
         new Color(151, 150, 164)
     };
-    
+
     private static final Map<String, String> FORMATTING_CODES = Map.of(
         "bold", "&l",
-        "italic", "&o", 
+        "italic", "&o",
         "underlined", "&n",
         "strikethrough", "&m",
         "obfuscated", "&k"
     );
-    
+
     private final GeneratorBuilder builder;
 
     public GeneratorCommands() {
@@ -436,15 +436,12 @@ public class GeneratorCommands {
         }
     }
 
-    private record DisplayData(String itemName, JsonArray itemLoreArray, JsonObject displayJSON, JsonObject tagJSON) {
-    }
-
     private DisplayData validateDisplayData(SlashCommandInteractionEvent event, JsonObject itemJSON) {
         JsonObject componentsJSON = JsonUtils.isJsonObject(itemJSON, "components");
         if (componentsJSON != null) {
             return validateComponentsFormat(event, itemJSON, componentsJSON);
         }
-        
+
         JsonObject tagJSON = JsonUtils.isJsonObject(itemJSON, "tag");
         if (tagJSON == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag or components")).queue();
@@ -485,7 +482,7 @@ public class GeneratorCommands {
         if (loreElement != null && loreElement.isJsonArray()) {
             JsonArray originalLoreArray = loreElement.getAsJsonArray();
             itemLoreArray = new JsonArray();
-            
+
             for (JsonElement loreLineElement : originalLoreArray) {
                 String convertedLore = convertComponentToString(loreLineElement);
                 itemLoreArray.add(convertedLore);
@@ -520,7 +517,7 @@ public class GeneratorCommands {
 
     private String processComponentObject(JsonObject component) {
         StringBuilder result = new StringBuilder();
-        
+
         if (component.has("color")) {
             String minecraftColor = component.get("color").getAsString();
             String colorCode = Arrays.stream(MCColor.VALUES)
@@ -530,14 +527,14 @@ public class GeneratorCommands {
                 .orElse("&f");
             result.append(colorCode);
         }
-        
+
         FORMATTING_CODES.forEach((key, code) -> {
             if (component.has(key)) {
                 JsonElement element = component.get(key);
                 if (element.isJsonPrimitive()) {
                     JsonPrimitive primitive = element.getAsJsonPrimitive();
                     boolean enabled = false;
-                    
+
                     if (primitive.isBoolean()) {
                         enabled = primitive.getAsBoolean();
                     } else if (primitive.isNumber()) {
@@ -546,19 +543,19 @@ public class GeneratorCommands {
                         String value = primitive.getAsString();
                         enabled = "1b".equals(value) || "1".equals(value);
                     }
-                    
+
                     if (enabled) {
                         result.append(code);
                     }
                 }
             }
         });
-        
+
         // Add text content
         if (component.has("text")) {
             result.append(component.get("text").getAsString());
         }
-        
+
         // Process extra array
         if (component.has("extra")) {
             JsonArray extraArray = component.getAsJsonArray("extra");
@@ -566,7 +563,7 @@ public class GeneratorCommands {
                 result.append(convertComponentToString(extra));
             }
         }
-        
+
         return result.toString();
     }
 
@@ -578,9 +575,6 @@ public class GeneratorCommands {
         return result.toString();
     }
 
-    private record ItemData(String itemID, String extraModifiers) {
-    }
-
     private ItemData processItemData(SlashCommandInteractionEvent event, JsonObject itemJSON, JsonObject tagJSON, JsonObject displayJSON) {
         String itemID = JsonUtils.isJsonString(itemJSON, "id");
         if (itemID == null) {
@@ -590,9 +584,9 @@ public class GeneratorCommands {
         itemID = itemID.replace("minecraft:", "");
 
         String extraModifiers;
-        
+
         boolean isComponentsFormat = itemJSON.has("components");
-        
+
         if (itemID.equals("skull") || itemID.equals("player_head")) {
             if (isComponentsFormat) {
                 extraModifiers = processSkullDataComponents(event, itemJSON);
@@ -672,7 +666,7 @@ public class GeneratorCommands {
                         colorValue = -1;
                     }
                 }
-                
+
                 if (colorValue >= 0) {
                     extraModifiers = String.format("#%06X", colorValue);
                 }
@@ -734,7 +728,7 @@ public class GeneratorCommands {
 
     private String processNonSkullModifiersComponents(JsonObject itemJSON) {
         String extraModifiers = "";
-        
+
         JsonObject componentsJSON = JsonUtils.isJsonObject(itemJSON, "components");
         if (componentsJSON == null) {
             return extraModifiers;
@@ -758,9 +752,6 @@ public class GeneratorCommands {
         }
 
         return extraModifiers;
-    }
-
-    private record CommandData(String itemGenCommand, String itemText, int maxLineLength) {
     }
 
     private CommandData buildCommandAndText(String itemName, JsonArray itemLoreArray, boolean includeItem, String itemID, String extraModifiers) {
@@ -1072,6 +1063,15 @@ public class GeneratorCommands {
         }
 
         return false;
+    }
+
+    private record DisplayData(String itemName, JsonArray itemLoreArray, JsonObject displayJSON, JsonObject tagJSON) {
+    }
+
+    private record ItemData(String itemID, String extraModifiers) {
+    }
+
+    private record CommandData(String itemGenCommand, String itemText, int maxLineLength) {
     }
 }
 

@@ -59,9 +59,9 @@ public class GeneratorBuilder {
     private static final Pattern TEXTURE_URL = Pattern.compile("(?:https?://textures.minecraft.net/texture/)?([a-zA-Z0-9]+)");
 
     private final HashMap<String, Item> items;
+    private final ExecutorService generatorExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private boolean itemsInitialized = true;
     private BufferedImage itemSpriteSheet;
-    private final ExecutorService generatorExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public GeneratorBuilder() {
         this.items = new HashMap<>();
@@ -165,16 +165,16 @@ public class GeneratorBuilder {
     /**
      * Converts text into a Minecraft Item tooltip into a rendered image
      *
-     * @param event          the SlashCommandInteractionEvent which the command is triggered from
-     * @param name           the name of the item
-     * @param rarity         the rarity of the item
-     * @param itemLoreString the lore of the item
-     * @param type           the type of the item
-     * @param addEmptyLine   if there should be an extra line added between the lore and the final type line
-     * @param alpha          the transparency of the generated image
-     * @param padding        if there is any extra padding around the edges to prevent Discord from rounding the corners
-     * @param maxLineLength  the maximum length before content overflows onto the next
-     * @param isNormalItem   if the item should add an extra line between the title and first line
+     * @param event            the SlashCommandInteractionEvent which the command is triggered from
+     * @param name             the name of the item
+     * @param rarity           the rarity of the item
+     * @param itemLoreString   the lore of the item
+     * @param type             the type of the item
+     * @param addEmptyLine     if there should be an extra line added between the lore and the final type line
+     * @param alpha            the transparency of the generated image
+     * @param padding          if there is any extra padding around the edges to prevent Discord from rounding the corners
+     * @param maxLineLength    the maximum length before content overflows onto the next
+     * @param isNormalItem     if the item should add an extra line between the title and first line
      * @param renderBackground if the tooltip should render with a background
      *
      * @return a Minecraft item description
@@ -261,8 +261,8 @@ public class GeneratorBuilder {
 
     public CompletableFuture<BufferedImage> buildItemAsync(SlashCommandInteractionEvent event, String name, String rarity, String itemLoreString, String type,
                                                            Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered, boolean renderBackground) {
-        return CompletableFuture.supplyAsync(() -> 
-            buildItem(event, name, rarity, itemLoreString, type, addEmptyLine, alpha, padding, maxLineLength, isNormalItem, isCentered, renderBackground), 
+        return CompletableFuture.supplyAsync(() ->
+                buildItem(event, name, rarity, itemLoreString, type, addEmptyLine, alpha, padding, maxLineLength, isNormalItem, isCentered, renderBackground),
             generatorExecutor);
     }
 
@@ -315,7 +315,7 @@ public class GeneratorBuilder {
                     if (resolvedTextureID == null) {
                         return CompletableFuture.completedFuture(null);
                     }
-                    
+
                     return CompletableFuture.supplyAsync(() -> {
                         // checking if there is the has added the full url to the texture ID
                         String finalTextureID = resolvedTextureID;
@@ -344,7 +344,7 @@ public class GeneratorBuilder {
         } else {
             return CompletableFuture.supplyAsync(() -> {
                 String finalTextureID = textureID;
-                
+
                 // checking if there is the has added the full url to the texture ID
                 Matcher textureMatcher = TEXTURE_URL.matcher(finalTextureID);
                 if (textureMatcher.matches()) {
@@ -493,8 +493,8 @@ public class GeneratorBuilder {
     }
 
     public CompletableFuture<BufferedImage> buildItemStackAsync(SlashCommandInteractionEvent event, String itemName, String extraDetails) {
-        return CompletableFuture.supplyAsync(() -> 
-            buildItemStack(event, itemName, extraDetails), 
+        return CompletableFuture.supplyAsync(() ->
+                buildItemStack(event, itemName, extraDetails),
             generatorExecutor);
     }
 
@@ -537,7 +537,7 @@ public class GeneratorBuilder {
 
     public CompletableFuture<BufferedImage> buildUnspecifiedItemAsync(SlashCommandInteractionEvent event, String itemName, String extraDetails, boolean scaleImage) {
         String finalExtraDetails = extraDetails == null ? "" : extraDetails;
-        
+
         // checking if the user wanted to build something that isn't a skull
         if (itemName.equalsIgnoreCase("player_head") || itemName.equalsIgnoreCase("skull")) {
             if (!finalExtraDetails.isEmpty()) {
@@ -617,7 +617,7 @@ public class GeneratorBuilder {
 
         // Create list of futures for all recipe items
         List<CompletableFuture<Void>> itemFutures = new ArrayList<>();
-        
+
         for (RecipeParser.RecipeItem item : parser.getRecipeData().values()) {
             CompletableFuture<Void> itemFuture = buildUnspecifiedItemAsync(event, item.getItemName(), item.getExtraDetails(), false)
                 .thenAccept(itemImage -> {

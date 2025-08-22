@@ -58,12 +58,13 @@ public class UserGrabberFeature extends BotFeature {
                 }
 
                 for (BadgeEntry s : discordUser.getBadges()) {
-                    if (BadgeManager.getBadgeById(s.getBadgeId()) == null && BadgeManager.getTieredBadgeById(s.getBadgeId()) == null) {
+                    if (BadgeManager.getBadgeById(s.badgeId()) == null && BadgeManager.getTieredBadgeById(s.badgeId()) == null) {
                         log.error("Badge '" + s + "' for " + member.getEffectiveName() + " was not found in the badge map! Removing...");
                     }
                 }
 
-                discordUser.getBadges().removeIf(badgeEntry -> BadgeManager.getBadgeById(badgeEntry.getBadgeId()) == null && BadgeManager.getTieredBadgeById(badgeEntry.getBadgeId()) == null);
+                discordUser.getBadges().removeIf(badgeEntry -> BadgeManager.getBadgeById(badgeEntry.badgeId()) == null
+                    && BadgeManager.getTieredBadgeById(badgeEntry.badgeId()) == null);
                 discordUserRepository.cacheObject(discordUser);
             })
             .onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName()))

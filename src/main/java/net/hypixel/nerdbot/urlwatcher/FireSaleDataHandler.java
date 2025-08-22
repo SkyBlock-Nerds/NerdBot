@@ -16,7 +16,7 @@ import net.hypixel.nerdbot.util.StringUtils;
 import net.hypixel.nerdbot.util.Tuple;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
 
-import java.awt.Color;
+import java.awt.*;
 import java.time.Instant;
 import java.util.List;
 

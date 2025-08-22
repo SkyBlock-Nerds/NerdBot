@@ -379,7 +379,7 @@ public class SuggestionCommands {
 
         lastReviewRequestCache.put(event.getChannel().getId(), System.currentTimeMillis());
         event.getHook().deleteOriginal().complete();
-        event.getChannel().sendMessage(String.format("This suggestion has been sent for review!")).queue();
+        event.getChannel().sendMessage("This suggestion has been sent for review!").queue();
     }
 
     @SlashCommand(

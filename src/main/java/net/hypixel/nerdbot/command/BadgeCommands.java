@@ -28,7 +28,7 @@ public class BadgeCommands {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findByIdAsync(member.getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
@@ -78,7 +78,7 @@ public class BadgeCommands {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        
+
         discordUserRepository.findByIdAsync(member.getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {

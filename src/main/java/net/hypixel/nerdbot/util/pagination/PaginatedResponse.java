@@ -69,7 +69,7 @@ public class PaginatedResponse<T> {
             // Interaction not acknowledged, reply directly
             List<T> pageItems = getCurrentPageItems();
             MessageEditData editData = responseBuilder.apply(pageItems);
-            
+
             if (getTotalPages() <= 1) {
                 if (editData.getEmbeds().isEmpty()) {
                     event.reply(editData.getContent()).queue();

@@ -42,11 +42,11 @@ public class Database implements ServerMonitorListener {
     private final ConnectionString connectionString;
     @Getter
     private final RepositoryManager repositoryManager = new RepositoryManager();
+    private final ExecutorService databaseExecutor = Executors.newCachedThreadPool();
     @Getter
     private MongoClient mongoClient = null;
     @Getter
     private boolean connected;
-    private final ExecutorService databaseExecutor = Executors.newCachedThreadPool();
 
     public Database(String uri, String databaseName) {
         if (uri == null || uri.isBlank() || databaseName == null || databaseName.isBlank()) {

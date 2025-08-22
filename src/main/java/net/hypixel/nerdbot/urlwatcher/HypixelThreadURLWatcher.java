@@ -16,10 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class HypixelThreadURLWatcher {
@@ -29,12 +29,12 @@ public class HypixelThreadURLWatcher {
     private final Timer timer;
     private final OkHttpClient client;
     private final Map<String, String> headers;
+    private final ExecutorService executorService;
     @Getter
     @Setter
     private int lastGuid;
     @Getter
     private boolean active;
-    private final ExecutorService executorService;
 
     public HypixelThreadURLWatcher(String url) {
         this(url, null);
@@ -80,7 +80,7 @@ public class HypixelThreadURLWatcher {
 
     public void watchOnce() {
         active = true;
-        
+
         fetchAndParseContentAsync()
             .thenAccept(hypixelThreads -> {
                 if (hypixelThreads == null) {
@@ -109,7 +109,7 @@ public class HypixelThreadURLWatcher {
         if (hypixelThreads == null || hypixelThreads.isEmpty()) {
             return 0;
         }
-        
+
         int[] guidList = new int[hypixelThreads.size()];
 
         for (int x = 0; x < hypixelThreads.size(); x++) {

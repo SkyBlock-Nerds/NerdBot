@@ -5,22 +5,22 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.util.JsonUtils;
 import net.hypixel.nerdbot.util.Tuple;
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import okhttp3.Call;
-import okhttp3.Callback;
-import org.jetbrains.annotations.NotNull;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class URLWatcher {
@@ -30,12 +30,12 @@ public class URLWatcher {
     private final Timer timer;
     private final OkHttpClient client;
     private final Map<String, String> headers;
+    private final ExecutorService executorService;
     @Getter
     @Setter
     private String lastContent;
     @Getter
     private boolean active;
-    private final ExecutorService executorService;
 
     public URLWatcher(String url) {
         this(url, null);
