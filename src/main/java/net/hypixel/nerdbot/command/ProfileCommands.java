@@ -913,4 +913,21 @@ public class ProfileCommands {
             }
         }
     }
+
+    @SlashComponentHandler(id = "profile-pagination", patterns = {"profile-page:*"})
+    public void handleProfilePagination(ButtonInteractionEvent event) {
+        try {
+            event.deferEdit().queue();
+
+            boolean handled = PaginationManager.handleButtonInteraction(event);
+
+            if (!handled) {
+                log.warn("Could not find pagination for message ID: {}", event.getMessageId());
+                event.getHook().editOriginal("This pagination has expired. Please run the command again.").queue();
+            }
+        } catch (Exception e) {
+            log.error("Error handling profile pagination button interaction", e);
+            event.getHook().editOriginal("An error occurred while navigating pages.").queue();
+        }
+    }
 }

@@ -90,9 +90,9 @@ public class PaginatedResponse<T> {
         MessageEditData response = buildCurrentPageResponse();
 
         if (getTotalPages() <= 1) {
-            event.editMessage(response).setComponents().queue();
+            event.getHook().editOriginal(response).setComponents().queue();
         } else {
-            event.editMessage(response).setComponents(buildActionRow()).queue();
+            event.getHook().editOriginal(response).setComponents(buildActionRow()).queue();
         }
     }
 

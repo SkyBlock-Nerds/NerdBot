@@ -639,4 +639,21 @@ public class SuggestionCommands {
 
         threadManager.complete();
     }
+
+    @SlashComponentHandler(id = "suggestions-pagination", patterns = {"suggestions-page:*"})
+    public void handleSuggestionsPagination(ButtonInteractionEvent event) {
+        try {
+            event.deferEdit().queue();
+
+            boolean handled = PaginationManager.handleButtonInteraction(event);
+
+            if (!handled) {
+                log.warn("Could not find pagination for message ID: {}", event.getMessageId());
+                event.getHook().editOriginal("This pagination has expired. Please run the command again.").queue();
+            }
+        } catch (Exception e) {
+            log.error("Error handling suggestions pagination button interaction", e);
+            event.getHook().editOriginal("An error occurred while navigating pages.").queue();
+        }
+    }
 }

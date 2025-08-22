@@ -2,10 +2,12 @@ package net.hypixel.nerdbot.command;
 
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
@@ -102,8 +104,7 @@ public class InfoCommands {
     private EmbedBuilder buildGreenlitEmbed(List<GreenlitMessage> greenlitMessages) {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setColor(Color.GREEN)
-            .setTitle("Greenlit Suggestions")
-            .setDescription("Recent greenlit suggestions");
+            .setTitle("Greenlit Suggestions");
 
         for (GreenlitMessage message : greenlitMessages) {
             String title = message.getSuggestionTitle();
@@ -180,5 +181,22 @@ public class InfoCommands {
         );
 
         event.reply(serverInfo).setEphemeral(true).queue();
+    }
+
+    @SlashComponentHandler(id = "info-pagination", patterns = {"info-page:*"})
+    public void handleInfoPagination(ButtonInteractionEvent event) {
+        try {
+            event.deferEdit().queue();
+
+            boolean handled = PaginationManager.handleButtonInteraction(event);
+
+            if (!handled) {
+                log.warn("Could not find pagination for message ID: {}", event.getMessageId());
+                event.getHook().editOriginal("This pagination has expired. Please run the command again.").queue();
+            }
+        } catch (Exception e) {
+            log.error("Error handling info pagination button interaction", e);
+            event.getHook().editOriginal("An error occurred while navigating pages.").queue();
+        }
     }
 }

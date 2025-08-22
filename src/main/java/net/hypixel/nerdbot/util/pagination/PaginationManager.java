@@ -5,11 +5,15 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
 public class PaginationManager {
 
+    private static final Logger log = LoggerFactory.getLogger(PaginationManager.class);
+    
     private static final Cache<@NotNull String, PaginatedResponse<?>> activePages = Caffeine.newBuilder()
         .expireAfterWrite(15, TimeUnit.MINUTES)
         .maximumSize(1000)
@@ -36,9 +40,15 @@ public class PaginationManager {
             return false;
         }
 
-        if (pagination.handleButtonInteraction(event)) {
-            pagination.editMessage(event);
-            return true;
+        try {
+            boolean buttonHandled = pagination.handleButtonInteraction(event);
+            
+            if (buttonHandled) {
+                pagination.editMessage(event);
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("Error during pagination handling", e);
         }
 
         return false;
