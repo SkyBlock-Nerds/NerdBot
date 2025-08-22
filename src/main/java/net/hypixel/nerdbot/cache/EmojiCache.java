@@ -7,10 +7,12 @@ import net.dv8tion.jda.api.events.emoji.EmojiRemovedEvent;
 import net.dv8tion.jda.api.events.emoji.update.GenericEmojiUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.NerdBotApp;
+import net.hypixel.nerdbot.bot.config.EmojiConfig;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 @Slf4j
 public class EmojiCache {
@@ -38,6 +40,12 @@ public class EmojiCache {
 
     public static Map<String, Emoji> getEmojiCache() {
         return EMOJI_CACHE;
+    }
+
+    public static String getFormattedEmoji(Function<EmojiConfig, String> emojiIdFunction) {
+        return getEmojiById(emojiIdFunction.apply(NerdBotApp.getBot().getConfig().getEmojiConfig()))
+            .orElseGet(() -> Emoji.fromUnicode("❓"))
+            .getFormatted();
     }
 
     @SubscribeEvent

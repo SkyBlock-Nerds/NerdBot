@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -28,26 +29,26 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 @Slf4j
 public abstract class Repository<T> {
 
+    private static final ExecutorService SHARED_EXECUTOR = Executors.newFixedThreadPool(10);
     @Getter
-    private final Cache<String, T> cache;
+    private final Cache<@NotNull String, T> cache;
     @Getter
     private final MongoCollection<Document> mongoCollection;
     private final Class<T> entityClass;
     private final String identifierFieldName;
-    private Field field;
-    private static final ExecutorService SHARED_EXECUTOR = Executors.newFixedThreadPool(10);
-
     private final ExecutorService repositoryExecutor = SHARED_EXECUTOR;
+    private Field field;
+
     protected Repository(MongoClient mongoClient, String databaseName, String collectionName, String identifierFieldName) {
         this(mongoClient, databaseName, collectionName, identifierFieldName, 0, null);
     }
@@ -71,7 +72,7 @@ public abstract class Repository<T> {
 
         this.cache = builder
             .removalListener((String key, T value, RemovalCause cause) -> {
-                debug("Removing document with ID " + key + " from cache for reason " + cause.toString());
+                debug("Removing document with ID " + key + " from cache for reason " + cause);
 
                 if (cause != RemovalCause.EXPLICIT && cause != RemovalCause.REPLACED) {
                     saveToDatabase(value);
@@ -99,28 +100,28 @@ public abstract class Repository<T> {
 
     public CompletableFuture<Void> loadAllDocumentsIntoCacheAsync() {
         return CompletableFuture.supplyAsync(() -> {
-            log("Loading ALL documents from database into cache asynchronously");
-            
-            List<Document> documents = new ArrayList<>();
-            mongoCollection.find().into(documents);
-            return documents;
-        }, repositoryExecutor)
-        .thenCompose(documents -> {
-            List<CompletableFuture<Void>> futures = documents.stream()
-                .map(document -> CompletableFuture.runAsync(() -> {
-                    T object = documentToEntity(document);
+                log("Loading ALL documents from database into cache asynchronously");
 
-                    if (cache.getIfPresent(getId(object)) != null) {
-                        debug("Document with ID " + getId(object) + " already exists in cache");
-                        return;
-                    }
+                List<Document> documents = new ArrayList<>();
+                mongoCollection.find().into(documents);
+                return documents;
+            }, repositoryExecutor)
+            .thenCompose(documents -> {
+                List<CompletableFuture<Void>> futures = documents.stream()
+                    .map(document -> CompletableFuture.runAsync(() -> {
+                        T object = documentToEntity(document);
 
-                    cacheObject(object);
-                }, repositoryExecutor))
-                .toList();
-                
-            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-        });
+                        if (cache.getIfPresent(getId(object)) != null) {
+                            debug("Document with ID " + getId(object) + " already exists in cache");
+                            return;
+                        }
+
+                        cacheObject(object);
+                    }, repositoryExecutor))
+                    .toList();
+
+                return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            });
     }
 
     public List<T> getAllDocuments() {

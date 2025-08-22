@@ -24,7 +24,7 @@ public class ReactionChannelListener {
         }
 
         Optional<ReactionChannel> reactionChannel = reactionChannels.stream()
-            .filter(channel -> channel.getDiscordChannelId().equals(event.getChannel().getId()))
+            .filter(channel -> channel.discordChannelId().equals(event.getChannel().getId()))
             .findFirst();
 
         if (reactionChannel.isPresent()) {
@@ -33,12 +33,12 @@ public class ReactionChannelListener {
             reactionChannel.get().getEmojis()
                 .forEach(emoji -> {
                     message.addReaction(emoji).queue();
-                    log.info("[Reaction Channel] Added reaction '" + emoji.getName() + "' to message " + message.getId() + " in reaction channel " + reactionChannel.get().getName());
+                    log.info("[Reaction Channel] Added reaction '" + emoji.getName() + "' to message " + message.getId() + " in reaction channel " + reactionChannel.get().name());
                 });
 
-            if (reactionChannel.get().isThread()) {
+            if (reactionChannel.get().thread()) {
                 message.createThreadChannel("Related messages here").queue(thread -> {
-                    log.info("[Reaction Channel] Created thread for message " + message.getId() + " in reaction channel " + reactionChannel.get().getName());
+                    log.info("[Reaction Channel] Created thread for message " + message.getId() + " in reaction channel " + reactionChannel.get().name());
                 });
             }
             return;

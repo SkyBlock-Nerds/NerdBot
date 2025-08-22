@@ -1,8 +1,8 @@
 package net.hypixel.nerdbot.generator;
 
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
@@ -19,9 +19,7 @@ import net.hypixel.nerdbot.util.skyblock.Rarity;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Image;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -61,9 +59,9 @@ public class GeneratorBuilder {
     private static final Pattern TEXTURE_URL = Pattern.compile("(?:https?://textures.minecraft.net/texture/)?([a-zA-Z0-9]+)");
 
     private final HashMap<String, Item> items;
+    private final ExecutorService generatorExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private boolean itemsInitialized = true;
     private BufferedImage itemSpriteSheet;
-    private final ExecutorService generatorExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public GeneratorBuilder() {
         this.items = new HashMap<>();
@@ -167,22 +165,23 @@ public class GeneratorBuilder {
     /**
      * Converts text into a Minecraft Item tooltip into a rendered image
      *
-     * @param event          the GuildSlashEvent which the command is triggered from
-     * @param name           the name of the item
-     * @param rarity         the rarity of the item
-     * @param itemLoreString the lore of the item
-     * @param type           the type of the item
-     * @param addEmptyLine   if there should be an extra line added between the lore and the final type line
-     * @param alpha          the transparency of the generated image
-     * @param padding        if there is any extra padding around the edges to prevent Discord from rounding the corners
-     * @param maxLineLength  the maximum length before content overflows onto the next
-     * @param isNormalItem   if the item should add an extra line between the title and first line
+     * @param event            the SlashCommandInteractionEvent which the command is triggered from
+     * @param name             the name of the item
+     * @param rarity           the rarity of the item
+     * @param itemLoreString   the lore of the item
+     * @param type             the type of the item
+     * @param addEmptyLine     if there should be an extra line added between the lore and the final type line
+     * @param alpha            the transparency of the generated image
+     * @param padding          if there is any extra padding around the edges to prevent Discord from rounding the corners
+     * @param maxLineLength    the maximum length before content overflows onto the next
+     * @param isNormalItem     if the item should add an extra line between the title and first line
+     * @param renderBackground if the tooltip should render with a background
      *
      * @return a Minecraft item description
      */
     @Nullable
-    public BufferedImage buildItem(GuildSlashEvent event, String name, String rarity, String itemLoreString, String type,
-                                   Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered) {
+    public BufferedImage buildItem(SlashCommandInteractionEvent event, String name, String rarity, String itemLoreString, String type,
+                                   Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered, boolean renderBackground) {
         // Checking that the fonts have been loaded correctly
         if (!MinecraftImage.isFontsRegistered()) {
             event.getHook().sendMessage(FONTS_NOT_REGISTERED).setEphemeral(true).queue();
@@ -226,6 +225,7 @@ public class GeneratorBuilder {
         }
 
         itemLore = new StringBuilder(itemLore.toString().replace("§", "&"));
+        maxLineLength = Objects.requireNonNullElse(maxLineLength, StringColorParser.MAX_STANDARD_LINE_LENGTH);
 
         // creating a string parser to convert the string into color flagged text
         StringColorParser colorParser = new StringColorParser(maxLineLength);
@@ -252,29 +252,30 @@ public class GeneratorBuilder {
             alpha,
             padding,
             isNormalItem,
-            isCentered
+            isCentered,
+            renderBackground
         )
             .render(event.getChannel())
             .getImage();
     }
 
-    public CompletableFuture<BufferedImage> buildItemAsync(GuildSlashEvent event, String name, String rarity, String itemLoreString, String type,
-                                                           Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered) {
-        return CompletableFuture.supplyAsync(() -> 
-            buildItem(event, name, rarity, itemLoreString, type, addEmptyLine, alpha, padding, maxLineLength, isNormalItem, isCentered), 
+    public CompletableFuture<BufferedImage> buildItemAsync(SlashCommandInteractionEvent event, String name, String rarity, String itemLoreString, String type,
+                                                           Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered, boolean renderBackground) {
+        return CompletableFuture.supplyAsync(() ->
+                buildItem(event, name, rarity, itemLoreString, type, addEmptyLine, alpha, padding, maxLineLength, isNormalItem, isCentered, renderBackground),
             generatorExecutor);
     }
 
     /**
      * Renders a Minecraft Head into an image
      *
-     * @param event     the GuildSlashEvent which the command is triggered from
+     * @param event     the SlashCommandInteractionEvent which the command is triggered from
      * @param textureID the skin id/player name of the target skin
      *
      * @return a rendered Minecraft head
      */
     @Nullable
-    public BufferedImage buildHead(GuildSlashEvent event, String textureID) {
+    public BufferedImage buildHead(SlashCommandInteractionEvent event, String textureID) {
         // checking if the skin is supposed to be for a player
         if (textureID.length() <= 16) {
             textureID = getPlayerHeadURL(event, textureID);
@@ -306,7 +307,7 @@ public class GeneratorBuilder {
         return new MinecraftHead(skin).generate().getImage();
     }
 
-    public CompletableFuture<BufferedImage> buildHeadAsync(GuildSlashEvent event, String textureID) {
+    public CompletableFuture<BufferedImage> buildHeadAsync(SlashCommandInteractionEvent event, String textureID) {
         // checking if the skin is supposed to be for a player
         if (textureID.length() <= 16) {
             return getPlayerHeadURLAsync(event, textureID)
@@ -314,7 +315,7 @@ public class GeneratorBuilder {
                     if (resolvedTextureID == null) {
                         return CompletableFuture.completedFuture(null);
                     }
-                    
+
                     return CompletableFuture.supplyAsync(() -> {
                         // checking if there is the has added the full url to the texture ID
                         String finalTextureID = resolvedTextureID;
@@ -343,7 +344,7 @@ public class GeneratorBuilder {
         } else {
             return CompletableFuture.supplyAsync(() -> {
                 String finalTextureID = textureID;
-                
+
                 // checking if there is the has added the full url to the texture ID
                 Matcher textureMatcher = TEXTURE_URL.matcher(finalTextureID);
                 if (textureMatcher.matches()) {
@@ -372,13 +373,13 @@ public class GeneratorBuilder {
     /**
      * Converts a player name into a skin id
      *
-     * @param event      the GuildSlashEvent which the command is triggered from
+     * @param event      the SlashCommandInteractionEvent which the command is triggered from
      * @param playerName the name of the player
      *
      * @return the skin id for the player's skin
      */
     @Nullable
-    private String getPlayerHeadURL(GuildSlashEvent event, String playerName) {
+    private String getPlayerHeadURL(SlashCommandInteractionEvent event, String playerName) {
         playerName = playerName.replaceAll("[^a-zA-Z0-9_]", "");
 
         JsonObject userUUID;
@@ -414,12 +415,12 @@ public class GeneratorBuilder {
     /**
      * Converts a player name into a skin id asynchronously
      *
-     * @param event      the GuildSlashEvent which the command is triggered from
+     * @param event      the SlashCommandInteractionEvent which the command is triggered from
      * @param playerName the name of the player
      *
      * @return CompletableFuture containing the skin id for the player's skin
      */
-    private CompletableFuture<String> getPlayerHeadURLAsync(GuildSlashEvent event, String playerName) {
+    private CompletableFuture<String> getPlayerHeadURLAsync(SlashCommandInteractionEvent event, String playerName) {
         String cleanPlayerName = playerName.replaceAll("[^a-zA-Z0-9_]", "");
 
         return HttpUtils.makeHttpRequestAsync(String.format("https://api.mojang.com/users/profiles/minecraft/%s", cleanPlayerName))
@@ -468,7 +469,7 @@ public class GeneratorBuilder {
      * @return a rendered minecraft image
      */
     @Nullable
-    public BufferedImage buildItemStack(GuildSlashEvent event, String itemName, String extraDetails) {
+    public BufferedImage buildItemStack(SlashCommandInteractionEvent event, String itemName, String extraDetails) {
         // checks that all the textures required to render the items were loaded correctly
         if (!itemsInitialized) {
             event.getHook().sendMessage(ITEM_RESOURCE_NOT_LOADED).queue();
@@ -491,9 +492,9 @@ public class GeneratorBuilder {
         return itemStack;
     }
 
-    public CompletableFuture<BufferedImage> buildItemStackAsync(GuildSlashEvent event, String itemName, String extraDetails) {
-        return CompletableFuture.supplyAsync(() -> 
-            buildItemStack(event, itemName, extraDetails), 
+    public CompletableFuture<BufferedImage> buildItemStackAsync(SlashCommandInteractionEvent event, String itemName, String extraDetails) {
+        return CompletableFuture.supplyAsync(() ->
+                buildItemStack(event, itemName, extraDetails),
             generatorExecutor);
     }
 
@@ -507,7 +508,7 @@ public class GeneratorBuilder {
      * @return a rendered minecraft image
      */
     @Nullable
-    public BufferedImage buildUnspecifiedItem(GuildSlashEvent event, String itemName, String extraDetails, boolean scaleImage) {
+    public BufferedImage buildUnspecifiedItem(SlashCommandInteractionEvent event, String itemName, String extraDetails, boolean scaleImage) {
         BufferedImage itemImage;
         if (extraDetails == null) {
             extraDetails = "";
@@ -534,9 +535,9 @@ public class GeneratorBuilder {
         return itemImage;
     }
 
-    public CompletableFuture<BufferedImage> buildUnspecifiedItemAsync(GuildSlashEvent event, String itemName, String extraDetails, boolean scaleImage) {
+    public CompletableFuture<BufferedImage> buildUnspecifiedItemAsync(SlashCommandInteractionEvent event, String itemName, String extraDetails, boolean scaleImage) {
         String finalExtraDetails = extraDetails == null ? "" : extraDetails;
-        
+
         // checking if the user wanted to build something that isn't a skull
         if (itemName.equalsIgnoreCase("player_head") || itemName.equalsIgnoreCase("skull")) {
             if (!finalExtraDetails.isEmpty()) {
@@ -569,7 +570,7 @@ public class GeneratorBuilder {
      * @return a rendered minecraft crafting recipe
      */
     @Nullable
-    public BufferedImage buildRecipe(GuildSlashEvent event, String recipeString, boolean renderBackground) {
+    public BufferedImage buildRecipe(SlashCommandInteractionEvent event, String recipeString, boolean renderBackground) {
         // checking that the resources were correctly loaded into memory
         if (!MinecraftInventory.resourcesRegistered()) {
             event.getHook().sendMessage(ITEM_RESOURCE_NOT_LOADED).queue();
@@ -599,7 +600,7 @@ public class GeneratorBuilder {
         return inventory.getImage();
     }
 
-    public CompletableFuture<BufferedImage> buildRecipeAsync(GuildSlashEvent event, String recipeString, boolean renderBackground) {
+    public CompletableFuture<BufferedImage> buildRecipeAsync(SlashCommandInteractionEvent event, String recipeString, boolean renderBackground) {
         // checking that the resources were correctly loaded into memory
         if (!MinecraftInventory.resourcesRegistered()) {
             event.getHook().sendMessage(ITEM_RESOURCE_NOT_LOADED).queue();
@@ -616,7 +617,7 @@ public class GeneratorBuilder {
 
         // Create list of futures for all recipe items
         List<CompletableFuture<Void>> itemFutures = new ArrayList<>();
-        
+
         for (RecipeParser.RecipeItem item : parser.getRecipeData().values()) {
             CompletableFuture<Void> itemFuture = buildUnspecifiedItemAsync(event, item.getItemName(), item.getExtraDetails(), false)
                 .thenAccept(itemImage -> {
