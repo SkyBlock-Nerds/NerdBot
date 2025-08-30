@@ -218,8 +218,7 @@ public class MinecraftItemGenerator implements Generator {
 
         public MinecraftItemGenerator.Builder withItem(String itemId) {
             this.itemId = itemId
-                .replace("minecraft:", "")
-                .replace("skull", "player_head");
+                .replace("minecraft:", "");
             return this;
         }
 
