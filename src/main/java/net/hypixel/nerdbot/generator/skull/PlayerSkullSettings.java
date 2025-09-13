@@ -28,5 +28,5 @@ public class PlayerSkullSettings {
     public static final double DEFAULT_X_ROTATION = Math.PI / 6;
     public static final double DEFAULT_Y_ROTATION = -Math.PI / 4;
     public static final double DEFAULT_Z_ROTATION = 0f;
-    public static final int HEAD_SCALE_DOWN = 2;
+    public static final int HEAD_SCALE_DOWN = 3;
 }
