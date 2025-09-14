@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageType;
@@ -14,7 +14,7 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.util.ArrayUtils;
 
-@Log4j2
+@Slf4j
 public class PinListener {
 
     private final Emoji pushpin = Emoji.fromUnicode("\uD83D\uDCCC");

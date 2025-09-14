@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.util;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import io.prometheus.client.Summary;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-@Log4j2
+@Slf4j
 public class HttpUtils {
 
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
@@ -36,14 +36,15 @@ public class HttpUtils {
 
     public static MojangProfile getMojangProfile(String username) throws HttpException {
         String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
-        String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
+        //String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
+        // TODO: Implement Crafted's ashcon replacement when available
 
         if (UUIDUtils.isUUID(username)) {
             mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", username);
         }
 
         try {
-            String body = sendRequestWithFallback(mojangUrl, ashconUrl);
+            String body = getHttpResponse(mojangUrl).body();
             return NerdBotApp.GSON.fromJson(body, MojangProfile.class);
         } catch (IOException | InterruptedException exception) {
             throw new HttpException("Network error fetching profile for `" + username + "`", exception);
@@ -54,16 +55,17 @@ public class HttpUtils {
 
     public static CompletableFuture<MojangProfile> getMojangProfileAsync(String username) {
         String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
-        String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
+        //String ashconUrl = String.format("https://api.ashcon.app/mojang/v2/user/%s", username);
+        // TODO: Implement Crafted's ashcon replacement when available
 
         if (UUIDUtils.isUUID(username)) {
             mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", mojangUrl);
         }
 
-        return sendRequestWithFallbackAsync(mojangUrl, ashconUrl)
-            .thenApply(body -> {
+        return getHttpResponseAsync(mojangUrl)
+            .thenApply(response -> {
                 try {
-                    return NerdBotApp.GSON.fromJson(body, MojangProfile.class);
+                    return NerdBotApp.GSON.fromJson(response.body(), MojangProfile.class);
                 } catch (JsonSyntaxException exception) {
                     throw new RuntimeException(new HttpException("Invalid JSON response from Mojang API for `" + username + "`", exception));
                 } catch (IllegalStateException exception) {

@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.bot.config.channel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.ISnowflake;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -17,7 +17,7 @@ import java.util.List;
 
 @Getter
 @Setter
-@Log4j2
+@Slf4j
 @ToString
 public class AlphaProjectConfig {
 

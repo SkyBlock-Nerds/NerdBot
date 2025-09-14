@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.listener;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.channel.forum.ForumTagAddEvent;
@@ -18,7 +18,7 @@ import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.ArrayUtils;
 
-@Log4j2
+@Slf4j
 public class MetricsListener {
 
     @SubscribeEvent

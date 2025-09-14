@@ -6,7 +6,7 @@ import com.freya02.botcommands.api.application.annotations.AppOption;
 import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
 import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -15,7 +15,6 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.BadgeManager;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
-import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.FileUtils;
@@ -24,7 +23,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-@Log4j2
+@Slf4j
 public class BadgeCommands extends ApplicationCommand {
 
     @JDASlashCommand(name = "badge", subcommand = "give", description = "Award a badge to a user", defaultLocked = true)

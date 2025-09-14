@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.generator;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@Log4j2
+@Slf4j
 public class MinecraftImage {
 
     private static final int PIXEL_SIZE = 2;

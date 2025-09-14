@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.util;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import org.jetbrains.annotations.Nullable;
 
@@ -8,7 +8,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 
-@Log4j2
+@Slf4j
 public class FontUtils {
 
     /**

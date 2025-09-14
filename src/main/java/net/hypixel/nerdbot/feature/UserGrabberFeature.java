@@ -1,12 +1,12 @@
 package net.hypixel.nerdbot.feature;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.badge.BadgeManager;
-import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
+import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
@@ -16,7 +16,7 @@ import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.util.ArrayList;
 
-@Log4j2
+@Slf4j
 public class UserGrabberFeature extends BotFeature {
 
     @Override
