@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.urlwatcher.handler.status;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.bot.config.StatusPageConfig;
 
 import java.util.ArrayList;
@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Log4j2
+@Slf4j
 @RequiredArgsConstructor
 public class StatusPageChangeDetector {
 

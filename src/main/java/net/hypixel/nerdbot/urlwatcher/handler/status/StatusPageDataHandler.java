@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.urlwatcher.handler.status;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -14,7 +14,7 @@ import net.hypixel.nerdbot.util.Tuple;
 import java.util.List;
 import java.util.stream.Stream;
 
-@Log4j2
+@Slf4j
 public class StatusPageDataHandler implements URLWatcher.DataHandler {
 
     private final StatusPageConfig config;
