@@ -589,8 +589,17 @@
     {
         "icon": "☘",
         "name": "melon_fortune",
-        "stat": "Melon Fortune",
-        "display": "☘ Melon Fortune",
+        "stat": "Melon Slice Fortune",
+        "display": "☘ Melon Slice Fortune",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "☘",
+        "name": "melon_slice_fortune",
+        "stat": "Melon Slice Fortune",
+        "display": "☘ Melon Slice Fortune",
         "color": "GOLD",
         "subColor": null,
         "parseType": "NORMAL"
