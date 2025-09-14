@@ -146,6 +146,19 @@
   "funConfig": {
     "autoReactions": {}
   },
+  "statusPageConfig": {
+    "operationalColor": "00C851",
+    "degradedColor": "FFBB33",
+    "partialOutageColor": "FF4444",
+    "majorOutageColor": "8B0000",
+    "maintenanceColor": "3498DB",
+    "maxDescriptionLength": 200,
+    "includeResolvedIncidents": true,
+    "includeCompletedMaintenances": true,
+    "enableStatusAlerts": true,
+    "statusAlertRoleName": "Status Alerts",
+    "enableMaintenanceAlerts": false
+  },
   "guildId": "1234567890123456789",
   "ownerIds": [
     "1234567890123456789"
