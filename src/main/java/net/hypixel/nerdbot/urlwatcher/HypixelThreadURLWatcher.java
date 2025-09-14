@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.urlwatcher;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.urlwatcher.handler.SkyBlockUpdateDataHandler;
+import net.hypixel.nerdbot.urlwatcher.handler.update.SkyBlockUpdateDataHandler;
 import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser;
 import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser.HypixelThread;
 import okhttp3.OkHttpClient;
@@ -16,10 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class HypixelThreadURLWatcher {
