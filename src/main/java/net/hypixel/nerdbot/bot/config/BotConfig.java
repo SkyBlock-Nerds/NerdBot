@@ -65,6 +65,11 @@ public class BotConfig {
     private FunConfig funConfig = new FunConfig();
 
     /**
+     * Configuration for status page monitoring
+     */
+    private StatusPageConfig statusPageConfig = new StatusPageConfig();
+
+    /**
      * The {@link Guild} ID that the bot will be running in
      */
     private String guildId = "";

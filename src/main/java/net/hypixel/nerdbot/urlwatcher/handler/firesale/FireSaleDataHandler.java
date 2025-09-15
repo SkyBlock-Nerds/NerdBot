@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.urlwatcher;
+package net.hypixel.nerdbot.urlwatcher.handler.firesale;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
-import net.hypixel.nerdbot.api.urlwatcher.URLWatcher;
+import net.hypixel.nerdbot.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.role.RoleManager;
