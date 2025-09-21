@@ -1,17 +1,21 @@
 package net.hypixel.nerdbot.generator.impl;
 
 import lombok.Getter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
+import net.hypixel.nerdbot.generator.cache.GeneratorCache;
 import net.hypixel.nerdbot.generator.image.ImageCoordinates;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.item.InventoryItem;
 import net.hypixel.nerdbot.generator.parser.inventory.InventoryStringParser;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
+import net.hypixel.nerdbot.generator.validation.ValidationUtils;
+import net.hypixel.nerdbot.bot.config.GeneratorConfig;
 import net.hypixel.nerdbot.util.FontUtils;
 import net.hypixel.nerdbot.util.ImageUtil;
-import net.hypixel.nerdbot.util.Range;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -20,13 +24,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
+@ToString
 public class MinecraftInventoryGenerator implements Generator {
-
-    public static final int MAX_ROWS_GENERATED = 100;
-    public static final int MAX_COLUMNS_GENERATED = 100;
 
     private static final Color NORMAL_TEXT_COLOR = new Color(255, 255, 255);
     private static final Color DROP_SHADOW_COLOR = new Color(63, 63, 63);
@@ -223,15 +227,15 @@ public class MinecraftInventoryGenerator implements Generator {
         ArrayList<InventoryItem> items = parser.parse(inventoryString);
 
         // Remove duplicate items by slot, keeping the last occurrence
-        for (int i = 0; i < items.size(); i++) {
-            InventoryItem currentItem = items.get(i);
-            for (int j = i + 1; j < items.size(); j++) {
-                InventoryItem laterItem = items.get(j);
-                if (Arrays.equals(currentItem.getSlot(), laterItem.getSlot())) {
-                    items.set(i, laterItem);
-                }
+        Map<String, InventoryItem> slotToItemMap = new LinkedHashMap<>();
+        for (InventoryItem item : items) {
+            if (item.getSlot() != null) {
+                String slotKey = Arrays.toString(item.getSlot());
+                slotToItemMap.put(slotKey, item);
             }
         }
+        items.clear();
+        items.addAll(slotToItemMap.values());
 
         for (InventoryItem item : items) {
             processAndDrawItem(item);
@@ -329,12 +333,23 @@ public class MinecraftInventoryGenerator implements Generator {
 
     @Override
     public GeneratedObject generate() {
+        String cacheKey = this.toString();
+
+        BufferedImage cachedImage = GeneratorCache.getImage(cacheKey);
+        if (cachedImage != null) {
+            log.debug("Using cached inventory image");
+            return new GeneratedObject(cachedImage);
+        }
+
         drawInventoryBackground();
         drawSlots();
         drawTitle();
         drawItems();
 
         g2d.dispose();
+
+        GeneratorCache.putImage(cacheKey, inventoryImage);
+
         return new GeneratedObject(inventoryImage);
     }
 
@@ -347,12 +362,14 @@ public class MinecraftInventoryGenerator implements Generator {
         private String inventoryString;
 
         public Builder withRows(int rows) {
-            this.rows = Range.between(1, MAX_ROWS_GENERATED).fit(rows);
+            GeneratorConfig config = NerdBotApp.getBot().getConfig().getGeneratorConfig();
+            this.rows = ValidationUtils.requireInRange(rows, config.getInventory().getMinRows(), config.getInventory().getMaxRows(), "rows");
             return this;
         }
 
         public Builder withSlotsPerRow(int slotsPerRow) {
-            this.slotsPerRow = Range.between(1, MAX_COLUMNS_GENERATED).fit(slotsPerRow);
+            GeneratorConfig config = NerdBotApp.getBot().getConfig().getGeneratorConfig();
+            this.slotsPerRow = ValidationUtils.requireInRange(slotsPerRow, config.getInventory().getMinColumns(), config.getInventory().getMaxColumns(), "slotsPerRow");
             return this;
         }
 
@@ -378,6 +395,8 @@ public class MinecraftInventoryGenerator implements Generator {
 
         @Override
         public MinecraftInventoryGenerator build() {
+            ValidationUtils.requirePositive(rows, "rows");
+            ValidationUtils.requirePositive(slotsPerRow, "slotsPerRow");
             return new MinecraftInventoryGenerator(rows, slotsPerRow, containerTitle, inventoryString, drawBorder, drawBackground);
         }
     }

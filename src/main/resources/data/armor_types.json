@@ -1,0 +1,26 @@
+[
+    {
+        "materialName": "leather",
+        "supportsCustomColoring": true
+    },
+    {
+        "materialName": "chainmail",
+        "supportsCustomColoring": false
+    },
+    {
+        "materialName": "iron",
+        "supportsCustomColoring": false
+    },
+    {
+        "materialName": "golden",
+        "supportsCustomColoring": false
+    },
+    {
+        "materialName": "diamond",
+        "supportsCustomColoring": false
+    },
+    {
+        "materialName": "netherite",
+        "supportsCustomColoring": false
+    }
+]

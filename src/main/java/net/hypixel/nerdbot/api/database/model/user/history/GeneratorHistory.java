@@ -2,12 +2,14 @@ package net.hypixel.nerdbot.api.database.model.user.history;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
+@ToString
 public class GeneratorHistory {
 
     private static final int MAX_COMMANDS = 25;
@@ -25,7 +27,7 @@ public class GeneratorHistory {
      */
     public void addCommand(String command) {
         if (commandHistory.size() >= MAX_COMMANDS) {
-            commandHistory.remove(0);
+            commandHistory.removeFirst();
         }
 
         commandHistory.remove(command);

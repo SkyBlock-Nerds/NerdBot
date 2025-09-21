@@ -4,13 +4,17 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
+import net.hypixel.nerdbot.generator.cache.GeneratorCache;
+import net.hypixel.nerdbot.bot.config.GeneratorConfig;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.skull.RenderedPlayerSkull;
+import net.hypixel.nerdbot.generator.validation.ValidationUtils;
 import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.StringUtils;
@@ -27,9 +31,9 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@ToString
 public class MinecraftPlayerHeadGenerator implements Generator {
 
-    private static final String DEFAULT_SKIN_VALUE = "31f477eb1a7beee631c2ca64d06f8f68fa93a3386d04452ab27f43acdf1b60cb"; // TODO find better value
     private static final Pattern TEXTURE_URL = Pattern.compile("(?:https?://textures.minecraft.net/texture/)?([a-zA-Z0-9]+)");
 
     private final String textureId;
@@ -52,12 +56,23 @@ public class MinecraftPlayerHeadGenerator implements Generator {
 
     @Override
     public GeneratedObject generate() {
-        return new GeneratedObject(createHead(textureId));
+        String cacheKey = this.toString();
+
+        BufferedImage cachedImage = GeneratorCache.getImage(cacheKey);
+        if (cachedImage != null) {
+            log.debug("Using cached player head for: {}", textureId);
+            return new GeneratedObject(cachedImage);
+        }
+
+        BufferedImage headImage = createHead(textureId);
+        GeneratorCache.putImage(cacheKey, headImage);
+
+        return new GeneratedObject(headImage);
     }
 
     private BufferedImage createHead(String textureId) {
         if (textureId == null) {
-            textureId = DEFAULT_SKIN_VALUE;
+            textureId = NerdBotApp.getBot().getConfig().getGeneratorConfig().getPlayerHead().getDefaultSkinTexture();
         }
 
         if (isSkinBase64(textureId)) {
@@ -156,6 +171,8 @@ public class MinecraftPlayerHeadGenerator implements Generator {
         }
 
         public Builder withScale(int scale) {
+            GeneratorConfig config = NerdBotApp.getBot().getConfig().getGeneratorConfig();
+            ValidationUtils.requireInRange(scale, config.getPlayerHead().getMinScale(), config.getPlayerHead().getMaxScale(), "scale");
             this.scale = scale;
             return this;
         }

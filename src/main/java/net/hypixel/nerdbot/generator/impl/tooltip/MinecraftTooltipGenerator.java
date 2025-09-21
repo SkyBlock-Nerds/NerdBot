@@ -5,10 +5,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
+import net.hypixel.nerdbot.generator.cache.GeneratorCache;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
@@ -20,6 +22,7 @@ import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Range;
 import org.apache.commons.lang.StringUtils;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -28,6 +31,7 @@ import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@ToString
 public class MinecraftTooltipGenerator implements Generator {
 
     public static final int DEFAULT_MAX_LINE_LENGTH = 36;
@@ -47,6 +51,9 @@ public class MinecraftTooltipGenerator implements Generator {
 
     @Override
     public GeneratedObject generate() throws GeneratorException {
+        String cacheKey = this.toString();
+
+        // Only cache static (non-animated) tooltips since animated ones are more complex
         TooltipSettings settings = new TooltipSettings(
             name,
             disableRarityLineBreak,
@@ -63,6 +70,7 @@ public class MinecraftTooltipGenerator implements Generator {
         MinecraftTooltip tooltip = parseLore(itemLore, settings).render();
 
         if (tooltip.isAnimated()) {
+            // Don't cache animated tooltips - they're more complex with GIF data
             try {
                 byte[] gifData = ImageUtil.toGifBytes(tooltip.getAnimationFrames(), tooltip.getFrameDelayMs(), true);
                 return new GeneratedObject(gifData, tooltip.getAnimationFrames(), tooltip.getFrameDelayMs());
@@ -70,7 +78,16 @@ public class MinecraftTooltipGenerator implements Generator {
                 throw new GeneratorException("Failed to generate animated tooltip GIF", e);
             }
         } else {
-            return new GeneratedObject(tooltip.getImage());
+            // Cache static tooltip images
+            BufferedImage cachedImage = GeneratorCache.getImage(cacheKey);
+            if (cachedImage != null) {
+                log.debug("Using cached tooltip image");
+                return new GeneratedObject(cachedImage);
+            }
+
+            BufferedImage tooltipImage = tooltip.getImage();
+            GeneratorCache.putImage(cacheKey, tooltipImage);
+            return new GeneratedObject(tooltipImage);
         }
     }
 

@@ -2,9 +2,12 @@ package net.hypixel.nerdbot.generator.impl;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
+import net.hypixel.nerdbot.generator.cache.GeneratorCache;
+import net.hypixel.nerdbot.generator.data.ArmorType;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.item.overlay.EnchantmentGlint;
@@ -13,8 +16,8 @@ import net.hypixel.nerdbot.generator.item.overlay.ItemOverlay;
 import net.hypixel.nerdbot.generator.item.overlay.OverlayType;
 import net.hypixel.nerdbot.generator.spritesheet.OverlaySheet;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
+import net.hypixel.nerdbot.generator.validation.ValidationUtils;
 import net.hypixel.nerdbot.util.ImageUtil;
-import net.hypixel.nerdbot.util.Range;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -22,6 +25,7 @@ import java.util.Arrays;
 
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@ToString
 public class MinecraftItemGenerator implements Generator {
 
     private final String itemId;
@@ -35,6 +39,14 @@ public class MinecraftItemGenerator implements Generator {
 
     @Override
     public GeneratedObject generate() {
+        String cacheKey = this.toString();
+
+        BufferedImage cachedImage = GeneratorCache.getImage(cacheKey);
+        if (cachedImage != null) {
+            log.debug("Using cached image for item: {}", itemId);
+            return new GeneratedObject(cachedImage);
+        }
+
         itemImage = Spritesheet.getTexture(itemId.toLowerCase());
 
         if (itemImage == null) {
@@ -62,6 +74,8 @@ public class MinecraftItemGenerator implements Generator {
             itemImage = addDurabilityBar(itemImage);
         }
 
+        GeneratorCache.putImage(this.toString(), itemImage);
+
         return new GeneratedObject(itemImage);
     }
 
@@ -75,25 +89,25 @@ public class MinecraftItemGenerator implements Generator {
                  overlayImage.getWidth(), overlayImage.getHeight(),
                  itemImage.getWidth(), itemImage.getHeight());
 
-        boolean isLeatherArmor = isLeatherArmorOverlay(overlay.getName());
+        boolean isColorableArmor = ArmorType.isColorableArmor(overlay.getName());
 
         BufferedImage coloredImage;
         BufferedImage baseForFinal;
         BufferedImage overlayForFinal;
-        
-        if (isLeatherArmor) {
+
+        if (isColorableArmor) {
             coloredImage = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
             applyColoring(coloredImage, itemImage, overlay, options);
             baseForFinal = coloredImage;
             overlayForFinal = overlayImage;
-            log.debug("Applied coloring to base item for leather armor");
+            log.debug("Applied coloring to base item for colorable armor");
         } else {
             // For other overlays: color the overlay, leave base item uncolored
             coloredImage = new BufferedImage(overlayImage.getWidth(), overlayImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
             applyColoring(coloredImage, overlayImage, overlay, options);
             baseForFinal = itemImage; // Uncolored base
             overlayForFinal = coloredImage; // Colored overlay
-            log.debug("Applied coloring to overlay for non-leather item");
+            log.debug("Applied coloring to overlay for non-colorable item");
         }
 
         BufferedImage overlaidItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
@@ -107,12 +121,6 @@ public class MinecraftItemGenerator implements Generator {
         overlaidItemGraphics.dispose();
 
         return overlaidItem;
-    }
-    
-    private boolean isLeatherArmorOverlay(String overlayName) {
-        boolean isLeather = overlayName != null && overlayName.contains("leather");
-        log.debug("Checking overlay name '{}' for leather: {}", overlayName, isLeather);
-        return isLeather;
     }
 
     private void applyColoring(BufferedImage target, BufferedImage source, ItemOverlay overlay, String options) {
@@ -217,8 +225,8 @@ public class MinecraftItemGenerator implements Generator {
         private Integer durabilityPercent;
 
         public MinecraftItemGenerator.Builder withItem(String itemId) {
-            this.itemId = itemId
-                .replace("minecraft:", "");
+            ValidationUtils.requireNonBlank(itemId, "itemId");
+            this.itemId = itemId.replace("minecraft:", "");
             return this;
         }
 
@@ -247,12 +255,14 @@ public class MinecraftItemGenerator implements Generator {
         }
 
         public MinecraftItemGenerator.Builder withDurability(int durabilityPercent) {
-            this.durabilityPercent = Range.between(0, 100).fit(durabilityPercent);
+            ValidationUtils.requireInRange(durabilityPercent, 0, 100, "durabilityPercent");
+            this.durabilityPercent = durabilityPercent;
             return this;
         }
 
         @Override
         public MinecraftItemGenerator build() {
+            ValidationUtils.requireNonBlank(itemId, "itemId");
             return new MinecraftItemGenerator(itemId, data, enchanted, hoverEffect, bigImage, durabilityPercent);
         }
     }

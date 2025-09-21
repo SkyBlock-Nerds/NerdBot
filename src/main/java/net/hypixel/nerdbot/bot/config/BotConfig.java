@@ -70,6 +70,11 @@ public class BotConfig {
     private StatusPageConfig statusPageConfig = new StatusPageConfig();
 
     /**
+     * Configuration for generators (item, inventory, player head, tooltip, etc.)
+     */
+    private GeneratorConfig generatorConfig = new GeneratorConfig();
+
+    /**
      * The {@link Guild} ID that the bot will be running in
      */
     private String guildId = "";
