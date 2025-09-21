@@ -18,12 +18,16 @@ public class StatParser implements StringParser {
     private static final Map<String, String> BASE_PLACEHOLDERS = new HashMap<>();
 
     static {
-        Arrays.stream(ChatFormat.values()).forEach(format -> {
-            BASE_PLACEHOLDERS.put(format.name().toLowerCase(), String.valueOf(format.getCode()));
-            log.debug("Added placeholder for: " + format.name().toLowerCase() + " with code: " + format.getCode());
-        });
-        BASE_PLACEHOLDERS.put("ampersand", String.valueOf(ChatFormat.AMPERSAND_SYMBOL));
-        log.debug("Added placeholder for: ampersand with code: " + ChatFormat.AMPERSAND_SYMBOL);
+        try {
+            Arrays.stream(ChatFormat.values()).forEach(format -> {
+                BASE_PLACEHOLDERS.put(format.name().toLowerCase(), String.valueOf(format.getCode()));
+            });
+            BASE_PLACEHOLDERS.put("ampersand", String.valueOf(ChatFormat.AMPERSAND_SYMBOL));
+            log.info("Initialized StatParser with {} placeholders", BASE_PLACEHOLDERS.size());
+        } catch (Exception e) {
+            log.error("Failed to initialize StatParser placeholders", e);
+            throw new ExceptionInInitializerError(e);
+        }
     }
 
     @Override

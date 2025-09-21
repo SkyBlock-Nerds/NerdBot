@@ -13,12 +13,10 @@ public class ComponentDatabaseConnection {
     private final HikariDataSource source;
 
     public ComponentDatabaseConnection() throws SQLException {
+        String uri = System.getProperty("db.postgres.uri", "jdbc:postgresql://username:password@localhost:5432/skyblock_nerds");
+
         PGSimpleDataSource pgSource = new PGSimpleDataSource();
-        pgSource.setServerNames(new String[]{System.getProperty("db.postgres.host", "localhost")});
-        pgSource.setPortNumbers(new int[]{Integer.parseInt(System.getProperty("db.postgres.port", "5432"))});
-        pgSource.setUser(System.getProperty("db.postgres.user", "postgres"));
-        pgSource.setPassword(System.getProperty("db.postgres.password", "password"));
-        pgSource.setDatabaseName(System.getProperty("db.postgres.database", "postgres"));
+        pgSource.setUrl(uri);
 
         source = new HikariDataSource();
         source.setDataSource(pgSource);
