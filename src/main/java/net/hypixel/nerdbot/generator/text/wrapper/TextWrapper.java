@@ -130,7 +130,7 @@ public class TextWrapper {
                 if (wordVisibleLength > maxLineLength) {
                     // Finish the current line before splitting the long word
                     if (!currentLineBuilder.isEmpty()) {
-                        String finishedLine = currentLineBuilder.toString().trim();
+                        String finishedLine = currentLineBuilder.toString();
 
                         lines.add(currentFormatState.prefix() + finishedLine);
                         log.debug("Adding line before splitting long word: '{}'", lines.get(lines.size() - 1));
@@ -157,7 +157,7 @@ public class TextWrapper {
                         log.debug("Added word to current line: '{}'", word);
                     } else {
                         // Doesn't fit so lets stop and add the current line to the list
-                        String finishedLine = currentLineBuilder.toString().trim();
+                        String finishedLine = currentLineBuilder.toString();
 
                         lines.add(currentFormatState.prefix() + finishedLine);
                         log.debug("Adding line due to length: '{}' (" + "currentVisibleLength: {}, wordVisibleLength: {})",
@@ -175,7 +175,7 @@ public class TextWrapper {
 
             // Add any remaining text
             if (!currentLineBuilder.isEmpty()) {
-                String finishedLine = currentLineBuilder.toString().trim();
+                String finishedLine = currentLineBuilder.toString();
 
                 lines.add(currentFormatState.prefix() + finishedLine);
                 log.debug("Adding last line: '{}'", lines.get(lines.size() - 1));
