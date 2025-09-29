@@ -13,7 +13,7 @@ RUN mvn clean install -f pom.xml \
     && rm -f /app/target/original-*.jar
 
 # Use a minimal eclipse-temurin image for running the bot
-FROM eclipse-temurin:24-jdk-alpine
+FROM eclipse-temurin:25-jdk-alpine
 
 # Set the working directory
 WORKDIR /app
