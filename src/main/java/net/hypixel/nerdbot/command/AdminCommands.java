@@ -25,7 +25,10 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTagData;
+import net.dv8tion.jda.api.managers.channel.concrete.ForumChannelManager;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
@@ -45,8 +48,11 @@ import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.api.repository.Repository;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.MetricsConfig;
+import net.hypixel.nerdbot.bot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.bot.config.channel.ChannelConfig;
+import net.hypixel.nerdbot.bot.config.objects.ForumAutoTag;
 import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
+import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.feature.UserNominationFeature;
@@ -1295,5 +1301,143 @@ public class AdminCommands extends ApplicationCommand {
         } else {
             return "Public";
         }
+    }
+
+    @JDASlashCommand(name = "setup-forum-autotags", description = "Setup auto-tagging for all existing forums", defaultLocked = true)
+    public void setupForumAutoTags(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        BotConfig botConfig = NerdBotApp.getBot().getConfig();
+        AlphaProjectConfig alphaProjectConfig = botConfig.getAlphaProjectConfig();
+        SuggestionConfig suggestionConfig = botConfig.getSuggestionConfig();
+        Guild guild = event.getGuild();
+
+        int forumsProcessed = 0;
+        int tagsCreated = 0;
+        int configsAdded = 0;
+        StringBuilder report = new StringBuilder();
+        report.append("**Forum Auto-Tag Setup Report**\n\n");
+
+        // Process Alpha Forums
+        String[] alphaForumIds = alphaProjectConfig.getAlphaForumIds();
+        if (alphaForumIds != null && alphaForumIds.length > 0) {
+            report.append("**Alpha Forums:**\n");
+            for (String forumId : alphaForumIds) {
+                ForumChannel forumChannel = guild.getForumChannelById(forumId);
+                if (forumChannel == null) {
+                    report.append("⚠️ Forum ID ").append(forumId).append(" not found\n");
+                    continue;
+                }
+
+                String result = processForumAutoTagSetup(forumChannel, botConfig, suggestionConfig);
+                report.append(result);
+
+                if (result.contains("✅")) {
+                    forumsProcessed++;
+                }
+                if (result.contains("Created tags")) {
+                    tagsCreated += 2; // Submitted + Reviewed
+                }
+                if (result.contains("Added config")) {
+                    configsAdded++;
+                }
+            }
+        }
+
+        // Process Project Forums
+        String[] projectForumIds = alphaProjectConfig.getProjectForumIds();
+        if (projectForumIds != null && projectForumIds.length > 0) {
+            report.append("\n**Project Forums:**\n");
+            for (String forumId : projectForumIds) {
+                ForumChannel forumChannel = guild.getForumChannelById(forumId);
+                if (forumChannel == null) {
+                    report.append("⚠️ Forum ID ").append(forumId).append(" not found\n");
+                    continue;
+                }
+
+                String result = processForumAutoTagSetup(forumChannel, botConfig, suggestionConfig);
+                report.append(result);
+
+                if (result.contains("✅")) {
+                    forumsProcessed++;
+                }
+                if (result.contains("Created tags")) {
+                    tagsCreated += 2; // Submitted + Reviewed
+                }
+                if (result.contains("Added config")) {
+                    configsAdded++;
+                }
+            }
+        }
+
+        if (configsAdded > 0) {
+            NerdBotApp.getBot().writeConfig(botConfig);
+            report.append("\n✅ **Config saved to file**");
+        }
+
+        report.append("\n\n**Summary:**\n");
+        report.append("- Forums processed: ").append(forumsProcessed).append("\n");
+        report.append("- Tags created: ").append(tagsCreated).append("\n");
+        report.append("- Configs added: ").append(configsAdded);
+
+        event.getHook().editOriginal(report.toString()).queue();
+    }
+
+    private String processForumAutoTagSetup(ForumChannel forumChannel, BotConfig botConfig, SuggestionConfig suggestionConfig) {
+        StringBuilder result = new StringBuilder();
+        result.append("**").append(forumChannel.getName()).append("** (").append(forumChannel.getId()).append(")\n");
+
+        String submittedTag = "Submitted";
+        String reviewedTag = suggestionConfig.getReviewedTag();
+        boolean tagsCreated = false;
+
+        ForumChannelManager forumChannelManager = forumChannel.getManager();
+        List<BaseForumTag> currentTags = new ArrayList<>(forumChannel.getAvailableTags());
+
+        boolean needsSubmittedTag = currentTags.stream().noneMatch(tag -> tag.getName().equalsIgnoreCase(submittedTag));
+        boolean needsReviewedTag = currentTags.stream().noneMatch(tag -> tag.getName().equalsIgnoreCase(reviewedTag));
+
+        if (needsSubmittedTag) {
+            currentTags.add(new ForumTagData(submittedTag).setModerated(true));
+            tagsCreated = true;
+        }
+
+        if (needsReviewedTag) {
+            currentTags.add(new ForumTagData(reviewedTag).setModerated(true));
+            tagsCreated = true;
+        }
+
+        if (tagsCreated) {
+            try {
+                forumChannelManager.setAvailableTags(currentTags).complete();
+                result.append("  ✅ Created tags: ");
+                if (needsSubmittedTag && needsReviewedTag) {
+                    result.append("Submitted, Reviewed\n");
+                } else if (needsSubmittedTag) {
+                    result.append("Submitted\n");
+                } else {
+                    result.append("Reviewed\n");
+                }
+            } catch (Exception e) {
+                result.append("  ❌ Failed to create tags: ").append(e.getMessage()).append("\n");
+                return result.toString();
+            }
+        } else {
+            result.append("  ℹ️ Tags already exist\n");
+        }
+
+        boolean added = botConfig.getChannelConfig().addOrUpdateForumAutoTagConfig(
+            forumChannel.getId(),
+            submittedTag,
+            reviewedTag
+        );
+
+        if (added) {
+            result.append("  ✅ Added config: Submitted → ").append(reviewedTag).append("\n");
+        } else {
+            result.append("  ℹ️ Config already exists\n");
+        }
+
+        return result.toString();
     }
 }
