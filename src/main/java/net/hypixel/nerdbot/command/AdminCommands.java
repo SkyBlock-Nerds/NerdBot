@@ -1380,7 +1380,22 @@ public class AdminCommands extends ApplicationCommand {
         report.append("- Tags created: ").append(tagsCreated).append("\n");
         report.append("- Configs added: ").append(configsAdded);
 
-        event.getHook().editOriginal(report.toString()).queue();
+        String reportText = report.toString();
+
+        // If report is too long, send as file
+        if (reportText.length() > 2_000) {
+            try {
+                File reportFile = FileUtils.createTempFile("forum-autotag-setup-report.txt", reportText);
+                event.getHook().editOriginal("✅ Setup completed! Report attached.")
+                    .setFiles(FileUpload.fromData(reportFile))
+                    .queue();
+            } catch (IOException e) {
+                log.error("Failed to create report file", e);
+                event.getHook().editOriginal("✅ Setup completed but failed to generate report file: " + e.getMessage()).queue();
+            }
+        } else {
+            event.getHook().editOriginal(reportText).queue();
+        }
     }
 
     private String processForumAutoTagSetup(ForumChannel forumChannel, BotConfig botConfig, SuggestionConfig suggestionConfig) {
@@ -1439,5 +1454,131 @@ public class AdminCommands extends ApplicationCommand {
         }
 
         return result.toString();
+    }
+
+    @JDASlashCommand(name = "apply-submitted-tags", description = "Apply Submitted tag to all unlocked posts in configured forums", defaultLocked = true)
+    public void applySubmittedTags(GuildSlashEvent event) {
+        event.deferReply(true).complete();
+
+        BotConfig botConfig = NerdBotApp.getBot().getConfig();
+        ChannelConfig channelConfig = botConfig.getChannelConfig();
+        Guild guild = event.getGuild();
+
+        int totalThreadsProcessed = 0;
+        int totalThreadsTagged = 0;
+        int totalThreadsSkipped = 0;
+        int totalErrors = 0;
+        StringBuilder report = new StringBuilder();
+        report.append("**Apply Submitted Tags Report**\n\n");
+        report.append("Processing all unlocked posts in configured forums...\n\n");
+
+        List<ForumAutoTag> forumAutoTags = channelConfig.getForumAutoTags();
+
+        if (forumAutoTags.isEmpty()) {
+            event.getHook().editOriginal("❌ No forums are configured for auto-tagging. Run `/setup-forum-autotags` first.").queue();
+            return;
+        }
+
+        for (ForumAutoTag autoTag : forumAutoTags) {
+            ForumChannel forumChannel = guild.getForumChannelById(autoTag.getForumChannelId());
+
+            if (forumChannel == null) {
+                report.append("⚠️ Forum ID ").append(autoTag.getForumChannelId()).append(" not found\n");
+                continue;
+            }
+
+            report.append("**").append(forumChannel.getName()).append("** (").append(forumChannel.getId()).append(")\n");
+
+            ForumTag submittedTag;
+            ForumTag reviewedTag;
+
+            try {
+                submittedTag = forumChannel.getAvailableTags().stream()
+                    .filter(tag -> tag.getName().equalsIgnoreCase(autoTag.getDefaultTagName()))
+                    .findFirst()
+                    .orElse(null);
+
+                reviewedTag = forumChannel.getAvailableTags().stream()
+                    .filter(tag -> tag.getName().equalsIgnoreCase(autoTag.getReviewTagName()))
+                    .findFirst()
+                    .orElse(null);
+            } catch (Exception e) {
+                report.append("  ❌ Error getting tags: ").append(e.getMessage()).append("\n");
+                totalErrors++;
+                continue;
+            }
+
+            if (submittedTag == null) {
+                report.append("  ⚠️ Submitted tag '").append(autoTag.getDefaultTagName()).append("' not found\n");
+                continue;
+            }
+
+            int forumThreadsProcessed = 0;
+            int forumThreadsTagged = 0;
+            int forumThreadsSkipped = 0;
+
+            List<ThreadChannel> threads = forumChannel.getThreadChannels();
+
+            for (ThreadChannel thread : threads) {
+                forumThreadsProcessed++;
+                totalThreadsProcessed++;
+
+                if (thread.isLocked()) {
+                    forumThreadsSkipped++;
+                    totalThreadsSkipped++;
+                    continue;
+                }
+
+                if (reviewedTag != null && thread.getAppliedTags().contains(reviewedTag)) {
+                    forumThreadsSkipped++;
+                    totalThreadsSkipped++;
+                    continue;
+                }
+
+                if (thread.getAppliedTags().contains(submittedTag)) {
+                    forumThreadsSkipped++;
+                    totalThreadsSkipped++;
+                    continue;
+                }
+
+                try {
+                    List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+                    tags.add(submittedTag);
+                    thread.getManager().setAppliedTags(tags).queue();
+
+                    forumThreadsTagged++;
+                    totalThreadsTagged++;
+                } catch (Exception e) {
+                    log.error("Failed to apply tag to thread {} in forum {}", thread.getId(), forumChannel.getId(), e);
+                    totalErrors++;
+                }
+            }
+
+            report.append("  ✅ Processed: ").append(forumThreadsProcessed)
+                .append(" | Tagged: ").append(forumThreadsTagged)
+                .append(" | Skipped: ").append(forumThreadsSkipped).append("\n");
+        }
+
+        report.append("\n**Summary:**\n");
+        report.append("- Total threads processed: ").append(totalThreadsProcessed).append("\n");
+        report.append("- Total threads tagged: ").append(totalThreadsTagged).append("\n");
+        report.append("- Total threads skipped: ").append(totalThreadsSkipped).append("\n");
+        report.append("- Total errors: ").append(totalErrors);
+
+        String reportText = report.toString();
+
+        if (reportText.length() > 2_000) {
+            try {
+                File reportFile = FileUtils.createTempFile("apply-submitted-tags-report.txt", reportText);
+                event.getHook().editOriginal("Tag application completed!")
+                    .setFiles(FileUpload.fromData(reportFile))
+                    .queue();
+            } catch (IOException e) {
+                log.error("Failed to create report file", e);
+                event.getHook().editOriginal("Tag application completed but failed to generate report file: " + e.getMessage()).queue();
+            }
+        } else {
+            event.getHook().editOriginal(reportText).queue();
+        }
     }
 }
