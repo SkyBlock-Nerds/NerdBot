@@ -79,7 +79,8 @@
     "autoPinBlacklistedChannels": [
       "1234567890123456789"
     ],
-    "projectChannelNames": []
+    "projectChannelNames": [],
+    "forumAutoTags": []
   },
   "roleConfig": {
     "botManagerRoleId": "1234567890123456789",
