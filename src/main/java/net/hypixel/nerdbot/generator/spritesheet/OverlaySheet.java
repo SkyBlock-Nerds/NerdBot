@@ -19,9 +19,6 @@ public class OverlaySheet {
 
     private static final Map<String, ItemOverlay> itemOverlays = new HashMap<>();
 
-    private static BufferedImage smallEnchantGlint;
-    private static BufferedImage largeEnchantGlint;
-
     static {
         try (InputStream overlayStream = OverlaySheet.class.getResourceAsStream("/minecraft/spritesheets/overlays.png")) {
             if (overlayStream == null) {
@@ -52,11 +49,6 @@ public class OverlaySheet {
                         int imageDimensions = SpritesheetGenerator.IMAGE_SIZE;
                         itemOverlay.setImage(overlaySpriteSheet.getSubimage(itemOverlay.getX(), itemOverlay.getY(), imageDimensions, imageDimensions));
                         if (itemOverlay.getName().contains("enchant")) {
-                            if (itemOverlay.getName().contains("large")) {
-                                largeEnchantGlint = itemOverlay.getImage();
-                            } else if (itemOverlay.getName().contains("small")) {
-                                smallEnchantGlint = itemOverlay.getImage();
-                            }
                             continue;
                         }
 
@@ -88,9 +80,4 @@ public class OverlaySheet {
     public static ItemOverlay getOverlay(String overlayId) {
         return itemOverlays.get(overlayId);
     }
-
-    public static BufferedImage getEnchantGlint(boolean isSmall) {
-        return isSmall ? smallEnchantGlint : largeEnchantGlint;
-    }
-
 }

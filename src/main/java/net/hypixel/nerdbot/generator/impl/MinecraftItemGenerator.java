@@ -21,7 +21,11 @@ import net.hypixel.nerdbot.util.ImageUtil;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.function.UnaryOperator;
 
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -41,10 +45,12 @@ public class MinecraftItemGenerator implements Generator {
     public GeneratedObject generate() {
         String cacheKey = this.toString();
 
-        BufferedImage cachedImage = GeneratorCache.getImage(cacheKey);
-        if (cachedImage != null) {
-            log.debug("Using cached image for item: {}", itemId);
-            return new GeneratedObject(cachedImage);
+        if (!enchanted) {
+            BufferedImage cachedImage = GeneratorCache.getImage(cacheKey);
+            if (cachedImage != null) {
+                log.debug("Using cached image for item: {}", itemId);
+                return new GeneratedObject(cachedImage);
+            }
         }
 
         itemImage = Spritesheet.getTexture(itemId.toLowerCase());
@@ -62,19 +68,48 @@ public class MinecraftItemGenerator implements Generator {
             itemImage = ImageUtil.upscaleImage(itemImage, 10);
         }
 
+        List<BufferedImage> animationFrames = null;
+        int animationFrameDelay = 0;
+
         if (enchanted) {
-            itemImage = EnchantmentGlint.applyEnchantGlint(itemImage);
+            EnchantmentGlint.GlintAnimation glintAnimation = EnchantmentGlint.applyEnchantGlint(itemImage);
+            itemImage = glintAnimation.firstFrame();
+            if (glintAnimation.isAnimated()) {
+                animationFrames = new ArrayList<>(glintAnimation.frames());
+                animationFrameDelay = glintAnimation.frameDelayMs();
+            }
         }
 
         if (hoverEffect) {
-            itemImage = HoverEffect.applyHoverEffect(itemImage);
+            if (animationFrames != null) {
+                animationFrames = transformFrames(animationFrames, HoverEffect::applyHoverEffect);
+                itemImage = animationFrames.getFirst();
+            } else {
+                itemImage = HoverEffect.applyHoverEffect(itemImage);
+            }
         }
 
         if (durabilityPercent != null && shouldShowDurabilityBar()) {
-            itemImage = addDurabilityBar(itemImage);
+            if (animationFrames != null) {
+                animationFrames = transformFrames(animationFrames, this::addDurabilityBar);
+                itemImage = animationFrames.getFirst();
+            } else {
+                itemImage = addDurabilityBar(itemImage);
+            }
         }
 
-        GeneratorCache.putImage(this.toString(), itemImage);
+        if (animationFrames == null) {
+            GeneratorCache.putImage(this.toString(), itemImage);
+        }
+
+        if (animationFrames != null) {
+            try {
+                byte[] gifData = ImageUtil.toGifBytes(animationFrames, animationFrameDelay, true);
+                return new GeneratedObject(gifData, animationFrames, animationFrameDelay);
+            } catch (IOException e) {
+                throw new GeneratorException("Failed to encode enchantment glint animation", e);
+            }
+        }
 
         return new GeneratedObject(itemImage);
     }
@@ -165,6 +200,16 @@ public class MinecraftItemGenerator implements Generator {
 
     private boolean shouldShowDurabilityBar() {
         return durabilityPercent < 100;
+    }
+
+    private List<BufferedImage> transformFrames(List<BufferedImage> frames, UnaryOperator<BufferedImage> transformer) {
+        List<BufferedImage> transformed = new ArrayList<>(frames.size());
+
+        for (BufferedImage frame : frames) {
+            transformed.add(transformer.apply(frame));
+        }
+
+        return transformed;
     }
 
     private BufferedImage addDurabilityBar(BufferedImage item) {
