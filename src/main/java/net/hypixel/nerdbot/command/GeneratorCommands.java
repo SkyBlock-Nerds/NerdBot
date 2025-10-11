@@ -1,21 +1,20 @@
 package net.hypixel.nerdbot.command;
 
-import com.freya02.botcommands.api.annotations.Optional;
-import com.freya02.botcommands.api.application.ApplicationCommand;
-import com.freya02.botcommands.api.application.annotations.AppOption;
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
-import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
-import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.cache.ChannelCache;
@@ -33,17 +32,16 @@ import net.hypixel.nerdbot.util.skyblock.MCColor;
 import net.hypixel.nerdbot.util.skyblock.Rarity;
 import net.hypixel.nerdbot.util.skyblock.Stat;
 
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.COMMAND_PREFIX;
@@ -99,13 +97,22 @@ import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_EX
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.stripString;
 
 @Slf4j
-public class GeneratorCommands extends ApplicationCommand {
+public class GeneratorCommands {
     private static final Color[] EMBED_COLORS = new Color[]{
         new Color(167, 65, 92),
         new Color(26, 107, 124),
         new Color(137, 222, 74),
         new Color(151, 150, 164)
     };
+
+    private static final Map<String, String> FORMATTING_CODES = Map.of(
+        "bold", "&l",
+        "italic", "&o",
+        "underlined", "&n",
+        "strikethrough", "&m",
+        "obfuscated", "&k"
+    );
+
     private final GeneratorBuilder builder;
 
     public GeneratorCommands() {
@@ -113,24 +120,31 @@ public class GeneratorCommands extends ApplicationCommand {
         this.builder = new GeneratorBuilder();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "item", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock")
-    public void generateItem(GuildSlashEvent event,
-                             @AppOption(description = DESC_ITEM_NAME) String itemName,
-                             @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
-                             @AppOption(description = DESC_ITEM_LORE) String itemLore,
-                             @Optional @AppOption(description = DESC_TYPE) String type,
-                             @Optional @AppOption(description = DESC_DISABLE_RARITY_LINEBREAK) Boolean disableRarityLinebreak,
-                             @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
-                             @Optional @AppOption(description = DESC_PADDING) Integer padding,
-                             @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
-                             @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) {
+    @SlashCommand(name = COMMAND_PREFIX, subcommand = "item", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock", guildOnly = true)
+    public void generateItem(SlashCommandInteractionEvent event,
+                             @SlashOption(description = DESC_ITEM_NAME) String itemName,
+                             @SlashOption(description = DESC_RARITY, autocompleteId = "rarities") String rarity,
+                             @SlashOption(description = DESC_ITEM_LORE) String itemLore,
+                             @SlashOption(description = DESC_TYPE, required = false) String type,
+                             @SlashOption(description = DESC_DISABLE_RARITY_LINEBREAK, required = false) Boolean disableRarityLinebreak,
+                             @SlashOption(description = DESC_ALPHA, required = false) Integer alpha,
+                             @SlashOption(description = DESC_PADDING, required = false) Integer padding,
+                             @SlashOption(description = DESC_MAX_LINE_LENGTH, required = false) Integer maxLineLength,
+                             @SlashOption(description = "Render backgrounds", required = false) Boolean renderBackground,
+                             @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) {
         if (isIncorrectChannel(event)) {
             return;
         }
         final boolean hide = (hidden != null && hidden);
+        renderBackground = renderBackground == null || renderBackground;
+        alpha = (alpha != null && alpha != 0) ? alpha : 245;
+        padding = (padding != null && padding != 0) ? padding : 1;
+        maxLineLength = (maxLineLength != null && maxLineLength != 0) ? maxLineLength : StringColorParser.MAX_STANDARD_LINE_LENGTH;
+
         event.deferReply(hide).complete();
+
         // building the item's description
-        builder.buildItemAsync(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false)
+        builder.buildItemAsync(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false, renderBackground)
             .thenCompose(generatedImage -> {
                 if (generatedImage == null) {
                     return CompletableFuture.completedFuture(null);
@@ -150,21 +164,21 @@ public class GeneratorCommands extends ApplicationCommand {
         logItemGenActivity(event);
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock")
-    public void generateText(GuildSlashEvent event,
-                             @AppOption(description = DESC_TEXT) String message,
-                             @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
-                             @Optional @AppOption(description = DESC_CENTERED) Boolean centered,
-                             @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) throws IOException {
+    @SlashCommand(name = COMMAND_PREFIX, subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock", guildOnly = true)
+    public void generateText(SlashCommandInteractionEvent event,
+                             @SlashOption(description = DESC_TEXT) String message,
+                             @SlashOption(description = DESC_ALPHA, required = false) Integer alpha,
+                             @SlashOption(description = DESC_CENTERED, required = false) Boolean centered,
+                             @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) throws IOException {
         if (isIncorrectChannel(event)) {
             return;
         }
         final boolean hide = (hidden != null && hidden);
         centered = (centered != null && centered);
-        alpha = alpha == null ? 128 : Math.max(0, Math.min(alpha, 255));
+        alpha = alpha == null ? 245 : Math.max(0, Math.min(alpha, 255));
         event.deferReply(hide).complete();
         // building the chat message
-        builder.buildItemAsync(event, "NONE", "NONE", message, "", true, alpha, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered)
+        builder.buildItemAsync(event, "NONE", "NONE", message, "", true, alpha, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered, false)
             .thenCompose(generatedImage -> {
                 if (generatedImage == null) {
                     return CompletableFuture.completedFuture(null);
@@ -184,11 +198,11 @@ public class GeneratorCommands extends ApplicationCommand {
         logItemGenActivity(event);
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "display", description = "Draws a Minecraft item into a file")
-    public void generateItemImage(GuildSlashEvent event,
-                                  @AppOption(description = DESC_ITEM_ID, name = "item_id") String itemID,
-                                  @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraModifiers,
-                                  @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) {
+    @SlashCommand(name = COMMAND_PREFIX, subcommand = "display", description = "Draws a Minecraft item into a file", guildOnly = true)
+    public void generateItemImage(SlashCommandInteractionEvent event,
+                                  @SlashOption(description = DESC_ITEM_ID, name = "item_id") String itemID,
+                                  @SlashOption(description = DESC_EXTRA_ITEM_MODIFIERS, required = false) String extraModifiers,
+                                  @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) {
         if (isIncorrectChannel(event)) {
             return;
         }
@@ -215,21 +229,21 @@ public class GeneratorCommands extends ApplicationCommand {
         logItemGenActivity(event);
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Creates an image that looks like an item from Minecraft, complete with lore and a display item.")
-    public void generateFullItem(GuildSlashEvent event,
-                                 @AppOption(description = DESC_ITEM_NAME) String itemName,
-                                 @AppOption(description = DESC_RARITY, autocomplete = "rarities") String rarity,
-                                 @AppOption(description = DESC_ITEM_LORE) String itemLore,
-                                 @Optional @AppOption(description = DESC_TYPE) String type,
-                                 @Optional @AppOption(description = DESC_DISABLE_RARITY_LINEBREAK) Boolean disableRarityLinebreak,
-                                 @Optional @AppOption(description = DESC_ALPHA) Integer alpha,
-                                 @Optional @AppOption(description = DESC_PADDING) Integer padding,
-                                 @Optional @AppOption(description = DESC_MAX_LINE_LENGTH) Integer maxLineLength,
-                                 @Optional @AppOption(description = DESC_ITEM_ID) String itemId,
-                                 @Optional @AppOption(description = DESC_EXTRA_ITEM_MODIFIERS) String extraModifiers,
-                                 @Optional @AppOption(description = DESC_RECIPE) String recipe,
-                                 @Optional @AppOption(description = DESC_RENDER_INVENTORY) Boolean renderBackground,
-                                 @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) {
+    @SlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Creates an image that looks like an item from Minecraft, complete with lore and a display item.", guildOnly = true)
+    public void generateFullItem(SlashCommandInteractionEvent event,
+                                 @SlashOption(description = DESC_ITEM_NAME) String itemName,
+                                 @SlashOption(description = DESC_RARITY, autocompleteId = "rarities") String rarity,
+                                 @SlashOption(description = DESC_ITEM_LORE) String itemLore,
+                                 @SlashOption(description = DESC_TYPE, required = false) String type,
+                                 @SlashOption(description = DESC_DISABLE_RARITY_LINEBREAK, required = false) Boolean disableRarityLinebreak,
+                                 @SlashOption(description = DESC_ALPHA, required = false) Integer alpha,
+                                 @SlashOption(description = DESC_PADDING, required = false) Integer padding,
+                                 @SlashOption(description = DESC_MAX_LINE_LENGTH, required = false) Integer maxLineLength,
+                                 @SlashOption(description = DESC_ITEM_ID, required = false) String itemId,
+                                 @SlashOption(description = DESC_EXTRA_ITEM_MODIFIERS, required = false) String extraModifiers,
+                                 @SlashOption(description = DESC_RECIPE, required = false) String recipe,
+                                 @SlashOption(description = "Render backgrounds for tooltips and inventories", required = false) Boolean renderBackground,
+                                 @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) {
         if (isIncorrectChannel(event)) {
             return;
         }
@@ -237,18 +251,23 @@ public class GeneratorCommands extends ApplicationCommand {
         event.deferReply(hide).complete();
 
         // checking that there are two or more different items to merge the images
-        if ((itemName == null || rarity == null || itemLore == null) && itemId == null && recipe == null) {
+        if ((itemName == null || rarity == null || itemLore == null) && itemId == null
+            && (recipe == null || recipe.trim().isEmpty())) {
             event.getHook().sendMessage(MISSING_FULL_GEN_ITEM).queue();
             return;
         }
 
         extraModifiers = Objects.requireNonNullElse(extraModifiers, "");
         renderBackground = renderBackground == null || renderBackground;
+        alpha = (alpha != null && alpha != 0) ? alpha : 245;
+        padding = (padding != null && padding != 0) ? padding : 1;
+        maxLineLength = (maxLineLength != null && maxLineLength != 0) ? maxLineLength : StringColorParser.MAX_STANDARD_LINE_LENGTH;
+        disableRarityLinebreak = Objects.requireNonNullElse(disableRarityLinebreak, false);
 
         // Create futures for all async operations
         CompletableFuture<BufferedImage> descriptionFuture =
             (itemName != null && rarity != null && itemLore != null)
-                ? builder.buildItemAsync(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false)
+                ? builder.buildItemAsync(event, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false, renderBackground)
                 : CompletableFuture.completedFuture(null);
 
         CompletableFuture<BufferedImage> itemFuture =
@@ -257,7 +276,7 @@ public class GeneratorCommands extends ApplicationCommand {
                 : CompletableFuture.completedFuture(null);
 
         CompletableFuture<BufferedImage> recipeFuture =
-            (recipe != null)
+            (recipe != null && !recipe.trim().isEmpty())
                 ? builder.buildRecipeAsync(event, recipe, renderBackground)
                 : CompletableFuture.completedFuture(null);
 
@@ -289,16 +308,16 @@ public class GeneratorCommands extends ApplicationCommand {
         logItemGenActivity(event);
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "recipe", description = "Generates a Minecraft Recipe Image")
-    public void generateRecipe(GuildSlashEvent event,
-                               @AppOption(description = DESC_RECIPE) String recipe,
-                               @Optional @AppOption(description = DESC_RENDER_INVENTORY) Boolean renderBackground,
-                               @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden) {
+    @SlashCommand(name = COMMAND_PREFIX, subcommand = "recipe", description = "Generates a Minecraft Recipe Image", guildOnly = true)
+    public void generateRecipe(SlashCommandInteractionEvent event,
+                               @SlashOption(description = DESC_RECIPE) String recipe,
+                               @SlashOption(description = DESC_RENDER_INVENTORY, required = false) Boolean renderBackground,
+                               @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) {
         if (isIncorrectChannel(event)) {
             return;
         }
-        hidden = (hidden != null && hidden);
-        event.deferReply(hidden).complete();
+        final boolean hide = (hidden != null && hidden);
+        event.deferReply(hide).complete();
 
         renderBackground = renderBackground == null || renderBackground;
 
@@ -323,11 +342,11 @@ public class GeneratorCommands extends ApplicationCommand {
         logItemGenActivity(event);
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!")
-    public void parseItemDescription(GuildSlashEvent event,
-                                     @AppOption(description = DESC_PARSE_ITEM, name = "item_nbt") String itemNBT,
-                                     @Optional @AppOption(description = DESC_INCLUDE_ITEM) Boolean includeItem,
-                                     @Optional @AppOption(description = DESC_HIDDEN) Boolean hidden
+    @SlashCommand(name = COMMAND_PREFIX, subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!", guildOnly = true)
+    public void parseItemDescription(SlashCommandInteractionEvent event,
+                                     @SlashOption(description = DESC_PARSE_ITEM, name = "item_nbt") String itemNBT,
+                                     @SlashOption(description = DESC_INCLUDE_ITEM, required = false) Boolean includeItem,
+                                     @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden
     ) {
         if (isIncorrectChannel(event)) {
             return;
@@ -364,7 +383,7 @@ public class GeneratorCommands extends ApplicationCommand {
 
         CommandData commandData = buildCommandAndText(itemName, itemLoreArray, shouldIncludeItem, itemData.itemID(), itemData.extraModifiers());
 
-        builder.buildItemAsync(event, "NONE", "NONE", commandData.itemText(), "NONE", false, 255, 0, commandData.maxLineLength(), true, false)
+        builder.buildItemAsync(event, "NONE", "NONE", commandData.itemText(), "NONE", false, 255, 0, commandData.maxLineLength(), true, false, true)
             .thenCompose(generatedDescription -> {
                 if (generatedDescription == null) {
                     event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();
@@ -408,7 +427,7 @@ public class GeneratorCommands extends ApplicationCommand {
         logItemGenActivity(event);
     }
 
-    private JsonObject validateAndParseItemJSON(GuildSlashEvent event, String itemNBT) {
+    private JsonObject validateAndParseItemJSON(SlashCommandInteractionEvent event, String itemNBT) {
         try {
             return NerdBotApp.GSON.fromJson(itemNBT, JsonObject.class);
         } catch (JsonSyntaxException exception) {
@@ -417,13 +436,15 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    private record DisplayData(String itemName, JsonArray itemLoreArray, JsonObject displayJSON, JsonObject tagJSON) {
-    }
+    private DisplayData validateDisplayData(SlashCommandInteractionEvent event, JsonObject itemJSON) {
+        JsonObject componentsJSON = JsonUtils.isJsonObject(itemJSON, "components");
+        if (componentsJSON != null) {
+            return validateComponentsFormat(event, itemJSON, componentsJSON);
+        }
 
-    private DisplayData validateDisplayData(GuildSlashEvent event, JsonObject itemJSON) {
         JsonObject tagJSON = JsonUtils.isJsonObject(itemJSON, "tag");
         if (tagJSON == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag")).queue();
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag or components")).queue();
             return null;
         }
 
@@ -449,10 +470,112 @@ public class GeneratorCommands extends ApplicationCommand {
         return new DisplayData(itemName, itemLoreArray, displayJSON, tagJSON);
     }
 
-    private record ItemData(String itemID, String extraModifiers) {
+    private DisplayData validateComponentsFormat(SlashCommandInteractionEvent event, JsonObject itemJSON, JsonObject componentsJSON) {
+        JsonElement customNameElement = componentsJSON.get("minecraft:custom_name");
+        String itemName = null;
+        if (customNameElement != null) {
+            itemName = convertComponentToString(customNameElement);
+        }
+
+        JsonElement loreElement = componentsJSON.get("minecraft:lore");
+        JsonArray itemLoreArray = null;
+        if (loreElement != null && loreElement.isJsonArray()) {
+            JsonArray originalLoreArray = loreElement.getAsJsonArray();
+            itemLoreArray = new JsonArray();
+
+            for (JsonElement loreLineElement : originalLoreArray) {
+                String convertedLore = convertComponentToString(loreLineElement);
+                itemLoreArray.add(convertedLore);
+            }
+        }
+
+        if (itemName == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("minecraft:custom_name")).queue();
+            return null;
+        }
+
+        if (itemLoreArray == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("minecraft:lore")).queue();
+            return null;
+        }
+
+        itemName = itemName.replaceAll("§", "&");
+        return new DisplayData(itemName, itemLoreArray, componentsJSON, componentsJSON);
     }
 
-    private ItemData processItemData(GuildSlashEvent event, JsonObject itemJSON, JsonObject tagJSON, JsonObject displayJSON) {
+    private String convertComponentToString(JsonElement element) {
+        if (element.isJsonPrimitive()) {
+            return element.getAsString();
+        } else if (element.isJsonObject()) {
+            return processComponentObject(element.getAsJsonObject());
+        } else if (element.isJsonArray()) {
+            return processComponentArray(element.getAsJsonArray());
+        }
+
+        return "";
+    }
+
+    private String processComponentObject(JsonObject component) {
+        StringBuilder result = new StringBuilder();
+
+        if (component.has("color")) {
+            String minecraftColor = component.get("color").getAsString();
+            String colorCode = Arrays.stream(MCColor.VALUES)
+                .filter(mcColor -> mcColor.name().equalsIgnoreCase(minecraftColor))
+                .findFirst()
+                .map(mcColor -> "&" + mcColor.getColorCode())
+                .orElse("&f");
+            result.append(colorCode);
+        }
+
+        FORMATTING_CODES.forEach((key, code) -> {
+            if (component.has(key)) {
+                JsonElement element = component.get(key);
+                if (element.isJsonPrimitive()) {
+                    JsonPrimitive primitive = element.getAsJsonPrimitive();
+                    boolean enabled = false;
+
+                    if (primitive.isBoolean()) {
+                        enabled = primitive.getAsBoolean();
+                    } else if (primitive.isNumber()) {
+                        enabled = primitive.getAsInt() != 0;
+                    } else if (primitive.isString()) {
+                        String value = primitive.getAsString();
+                        enabled = "1b".equals(value) || "1".equals(value);
+                    }
+
+                    if (enabled) {
+                        result.append(code);
+                    }
+                }
+            }
+        });
+
+        // Add text content
+        if (component.has("text")) {
+            result.append(component.get("text").getAsString());
+        }
+
+        // Process extra array
+        if (component.has("extra")) {
+            JsonArray extraArray = component.getAsJsonArray("extra");
+            for (JsonElement extra : extraArray) {
+                result.append(convertComponentToString(extra));
+            }
+        }
+
+        return result.toString();
+    }
+
+    private String processComponentArray(JsonArray componentArray) {
+        StringBuilder result = new StringBuilder();
+        for (JsonElement element : componentArray) {
+            result.append(convertComponentToString(element));
+        }
+        return result.toString();
+    }
+
+    private ItemData processItemData(SlashCommandInteractionEvent event, JsonObject itemJSON, JsonObject tagJSON, JsonObject displayJSON) {
         String itemID = JsonUtils.isJsonString(itemJSON, "id");
         if (itemID == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("id")).queue();
@@ -460,20 +583,31 @@ public class GeneratorCommands extends ApplicationCommand {
         }
         itemID = itemID.replace("minecraft:", "");
 
-        String extraModifiers = "";
-        if (itemID.equals("skull")) {
-            extraModifiers = processSkullData(event, tagJSON);
+        String extraModifiers;
+
+        boolean isComponentsFormat = itemJSON.has("components");
+
+        if (itemID.equals("skull") || itemID.equals("player_head")) {
+            if (isComponentsFormat) {
+                extraModifiers = processSkullDataComponents(event, itemJSON);
+            } else {
+                extraModifiers = processSkullData(event, tagJSON);
+            }
             if (extraModifiers == null) {
                 return null;
             }
         } else {
-            extraModifiers = processNonSkullModifiers(tagJSON, displayJSON);
+            if (isComponentsFormat) {
+                extraModifiers = processNonSkullModifiersComponents(itemJSON);
+            } else {
+                extraModifiers = processNonSkullModifiers(tagJSON, displayJSON);
+            }
         }
 
         return new ItemData(itemID, extraModifiers);
     }
 
-    private String processSkullData(GuildSlashEvent event, JsonObject tagJSON) {
+    private String processSkullData(SlashCommandInteractionEvent event, JsonObject tagJSON) {
         JsonObject skullOwnerJSON = JsonUtils.isJsonObject(tagJSON, "SkullOwner");
         if (skullOwnerJSON == null) {
             event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("SkullOwner")).queue();
@@ -532,7 +666,7 @@ public class GeneratorCommands extends ApplicationCommand {
                         colorValue = -1;
                     }
                 }
-                
+
                 if (colorValue >= 0) {
                     extraModifiers = String.format("#%06X", colorValue);
                 }
@@ -548,7 +682,76 @@ public class GeneratorCommands extends ApplicationCommand {
         return extraModifiers;
     }
 
-    private record CommandData(String itemGenCommand, String itemText, int maxLineLength) {
+    private String processSkullDataComponents(SlashCommandInteractionEvent event, JsonObject itemJSON) {
+        JsonObject componentsJSON = JsonUtils.isJsonObject(itemJSON, "components");
+        if (componentsJSON == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("components")).queue();
+            return null;
+        }
+
+        JsonObject profileJSON = JsonUtils.isJsonObject(componentsJSON, "minecraft:profile");
+        if (profileJSON == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("minecraft:profile")).queue();
+            return null;
+        }
+
+        JsonArray propertiesArray = JsonUtils.isJsonArray(profileJSON, "properties");
+        if (propertiesArray == null) {
+            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("properties")).queue();
+            return null;
+        }
+
+        if (propertiesArray.size() != 1) {
+            event.getHook().sendMessage(MULTIPLE_ITEM_SKULL_DATA).queue();
+            return null;
+        }
+
+        if (!propertiesArray.get(0).isJsonObject()) {
+            event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
+            return null;
+        }
+
+        JsonObject propertyObject = propertiesArray.get(0).getAsJsonObject();
+        String base64String = JsonUtils.isJsonString(propertyObject, "value");
+        if (base64String == null) {
+            event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
+            return null;
+        }
+
+        try {
+            return builder.base64ToSkinURL(base64String);
+        } catch (NullPointerException | IllegalArgumentException exception) {
+            event.getHook().sendMessage(INVALID_BASE_64_SKIN_URL).queue();
+            return null;
+        }
+    }
+
+    private String processNonSkullModifiersComponents(JsonObject itemJSON) {
+        String extraModifiers = "";
+
+        JsonObject componentsJSON = JsonUtils.isJsonObject(itemJSON, "components");
+        if (componentsJSON == null) {
+            return extraModifiers;
+        }
+
+        if (componentsJSON.has("minecraft:dyed_color")) {
+            try {
+                int colorValue = componentsJSON.get("minecraft:dyed_color").getAsInt();
+                if (colorValue >= 0) {
+                    extraModifiers = String.format("#%06X", colorValue);
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        if (componentsJSON.has("minecraft:enchantments")) {
+            JsonObject enchantmentsJSON = componentsJSON.getAsJsonObject("minecraft:enchantments");
+            if (!enchantmentsJSON.isEmpty()) {
+                extraModifiers = extraModifiers.isEmpty() ? "enchant" : extraModifiers + ",enchant";
+            }
+        }
+
+        return extraModifiers;
     }
 
     private CommandData buildCommandAndText(String itemName, JsonArray itemLoreArray, boolean includeItem, String itemID, String extraModifiers) {
@@ -578,7 +781,7 @@ public class GeneratorCommands extends ApplicationCommand {
         return new CommandData(itemGenCommand.toString(), itemText.toString(), maxLineLength);
     }
 
-    private void logItemGenActivity(GuildSlashEvent event) {
+    private void logItemGenActivity(SlashCommandInteractionEvent event) {
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         long currentTime = System.currentTimeMillis();
 
@@ -595,8 +798,8 @@ public class GeneratorCommands extends ApplicationCommand {
             });
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "general", description = "Show some general tips for using the Item Generation commands.")
-    public void askForGeneralHelp(GuildSlashEvent event) {
+    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "general", description = "Show some general tips for using the Item Generation commands.", guildOnly = true)
+    public void askForGeneralHelp(SlashCommandInteractionEvent event) {
         EmbedBuilder infoBuilder = new EmbedBuilder();
         EmbedBuilder helpPointerBuilder = new EmbedBuilder();
 
@@ -613,8 +816,8 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "item", description = "Show help related to the Item Generation command.")
-    public void askForItemRenderHelp(GuildSlashEvent event) {
+    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "item", description = "Show help related to the Item Generation command.", guildOnly = true)
+    public void askForItemRenderHelp(SlashCommandInteractionEvent event) {
         EmbedBuilder infoBuilder = new EmbedBuilder();
         EmbedBuilder colorsBuilder = new EmbedBuilder();
         EmbedBuilder otherInfoBuilder = new EmbedBuilder();
@@ -644,8 +847,8 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "text", description = "Show help related to the Item Generation Text command.")
-    public void askForTextRenderHelp(GuildSlashEvent event) {
+    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "text", description = "Show help related to the Item Generation Text command.", guildOnly = true)
+    public void askForTextRenderHelp(SlashCommandInteractionEvent event) {
         EmbedBuilder infoBuilder = new EmbedBuilder()
             .setColor(EMBED_COLORS[0])
             .setTitle("Text Generation")
@@ -656,8 +859,8 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(infoBuilder.build()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "full", description = "Show a full help page for the Item Generation command.")
-    public void askForFullRenderHelp(GuildSlashEvent event) {
+    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "full", description = "Show a full help page for the Item Generation command.", guildOnly = true)
+    public void askForFullRenderHelp(SlashCommandInteractionEvent event) {
         EmbedBuilder infoBuilder = new EmbedBuilder();
 
         infoBuilder.setColor(EMBED_COLORS[0])
@@ -667,8 +870,8 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(infoBuilder.build()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "display", description = "Show help related to the Display Item Generation command.")
-    public void askForRenderHelp(GuildSlashEvent event) {
+    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "display", description = "Show help related to the Display Item Generation command.", guildOnly = true)
+    public void askForRenderHelp(SlashCommandInteractionEvent event) {
         EmbedBuilder infoBuilder = new EmbedBuilder();
         EmbedBuilder itemModifiersBuilder = new EmbedBuilder();
         EmbedBuilder headModifiersBuilder = new EmbedBuilder();
@@ -695,8 +898,8 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "recipe", description = "Show help related to the Recipe Generation command.")
-    public void askForRecipeRenderHelp(GuildSlashEvent event) {
+    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "recipe", description = "Show help related to the Recipe Generation command.", guildOnly = true)
+    public void askForRecipeRenderHelp(SlashCommandInteractionEvent event) {
         EmbedBuilder infoBuilder = new EmbedBuilder();
         EmbedBuilder extraInfoBuilder = new EmbedBuilder();
 
@@ -715,8 +918,8 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "parse", description = "Show help related to the Parse Generation command.")
-    public void askForParseRenderHelp(GuildSlashEvent event) {
+    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "parse", description = "Show help related to the Parse Generation command.", guildOnly = true)
+    public void askForParseRenderHelp(SlashCommandInteractionEvent event) {
         EmbedBuilder infoBuilder = new EmbedBuilder();
 
         infoBuilder.setColor(EMBED_COLORS[0])
@@ -731,8 +934,8 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embeds).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "symbols", description = "Show a list of all stats symbols")
-    public void showAllStats(GuildSlashEvent event) {
+    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "symbols", description = "Show a list of all stats symbols", guildOnly = true)
+    public void showAllStats(SlashCommandInteractionEvent event) {
         List<EmbedBuilder> embedBuilders = new ArrayList<>();
         EmbedBuilder currentEmbed = new EmbedBuilder().setTitle("All Available Symbols").setColor(EMBED_COLORS[0]);
         StringBuilder idBuilder = new StringBuilder();
@@ -778,8 +981,8 @@ public class GeneratorCommands extends ApplicationCommand {
             .queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "icons", description = "Show a list of all other icons")
-    public void showAllIcons(GuildSlashEvent event) {
+    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "icons", description = "Show a list of all other icons", guildOnly = true)
+    public void showAllIcons(SlashCommandInteractionEvent event) {
         EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Icons").setColor(EMBED_COLORS[0]);
         StringBuilder idBuilder = new StringBuilder();
         StringBuilder symbolBuilder = new StringBuilder();
@@ -795,8 +998,8 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "colors", description = "Show a list of all colors")
-    public void showAllColors(GuildSlashEvent event) {
+    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "colors", description = "Show a list of all colors", guildOnly = true)
+    public void showAllColors(SlashCommandInteractionEvent event) {
         EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Colors").setColor(EMBED_COLORS[0]);
         StringBuilder idBuilder = new StringBuilder();
         StringBuilder colorBuilder = new StringBuilder();
@@ -812,8 +1015,8 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
 
-    @JDASlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "flavors", description = "Show a list of all flavor texts")
-    public void showAllFlavorTexts(GuildSlashEvent event) {
+    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "flavors", description = "Show a list of all flavor texts", guildOnly = true)
+    public void showAllFlavorTexts(SlashCommandInteractionEvent event) {
         EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Flavor texts").setColor(EMBED_COLORS[0]);
         StringBuilder idBuilder = new StringBuilder();
         StringBuilder textBuilder = new StringBuilder();
@@ -829,12 +1032,14 @@ public class GeneratorCommands extends ApplicationCommand {
         event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
     }
 
-    @AutocompletionHandler(name = "rarities", mode = AutocompletionMode.CONTINUITY, showUserInput = false)
-    public Queue<String> listRarities(CommandAutoCompleteInteractionEvent event) {
-        return Stream.of(Rarity.VALUES).map(Enum::name).collect(Collectors.toCollection(ArrayDeque::new));
+    @SlashAutocompleteHandler(id = "rarities")
+    public List<Command.Choice> listRarities(CommandAutoCompleteInteractionEvent event) {
+        return Stream.of(Rarity.VALUES)
+            .map(rarity -> new Command.Choice(rarity.name(), rarity.name()))
+            .toList();
     }
 
-    private boolean isIncorrectChannel(GuildSlashEvent event) {
+    private boolean isIncorrectChannel(SlashCommandInteractionEvent event) {
         String senderChannelId = event.getChannel().getId();
         String[] itemGenChannelIds = NerdBotApp.getBot().getConfig().getChannelConfig().getGenChannelIds();
 
@@ -858,6 +1063,15 @@ public class GeneratorCommands extends ApplicationCommand {
         }
 
         return false;
+    }
+
+    private record DisplayData(String itemName, JsonArray itemLoreArray, JsonObject displayJSON, JsonObject tagJSON) {
+    }
+
+    private record ItemData(String itemID, String extraModifiers) {
+    }
+
+    private record CommandData(String itemGenCommand, String itemText, int maxLineLength) {
     }
 }
 

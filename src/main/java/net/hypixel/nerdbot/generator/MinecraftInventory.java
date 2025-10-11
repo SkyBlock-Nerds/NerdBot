@@ -7,10 +7,7 @@ import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.util.FontUtils;
 
 import javax.imageio.ImageIO;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
 import java.io.IOException;

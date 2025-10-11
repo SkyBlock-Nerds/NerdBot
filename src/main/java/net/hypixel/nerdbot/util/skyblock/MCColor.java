@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.util.skyblock;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.HashMap;
 
 @Getter

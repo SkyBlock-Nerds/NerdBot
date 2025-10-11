@@ -44,7 +44,7 @@ public class ModMailListener {
 
         ThreadChannel threadChannel = event.getChannel().asThreadChannel();
         ModMailService modMailService = ModMailService.getInstance();
-        
+
         if (!modMailService.isModMailThread(threadChannel)) {
             return;
         }

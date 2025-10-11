@@ -2,8 +2,8 @@ package net.hypixel.nerdbot.api.badge;
 
 import com.vdurmont.emoji.EmojiManager;
 import lombok.Getter;
-import lombok.ToString;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.cache.EmojiCache;
 

@@ -1,21 +1,19 @@
 package net.hypixel.nerdbot.command;
 
-import com.freya02.botcommands.api.application.ApplicationCommand;
-import com.freya02.botcommands.api.application.annotations.AppOption;
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
-import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.api.language.TranslationManager;
 import net.hypixel.nerdbot.bot.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.bot.config.objects.ForumAutoTag;
 import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
@@ -35,12 +33,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class ChannelCommands extends ApplicationCommand {
+public class ChannelCommands {
 
-    @JDASlashCommand(name = "archive", subcommand = "channel", description = "Archives a channel and exports its contents to a file", defaultLocked = true)
-    public void archive(GuildSlashEvent event, @AppOption TextChannel channel) {
+    @SlashCommand(name = "archive", subcommand = "channel", description = "Archives a channel and exports its contents to a file", guildOnly = true, requiredPermissions = {"MANAGE_CHANNEL"})
+    public void archive(SlashCommandInteractionEvent event, @SlashOption TextChannel channel) {
         event.deferReply(true).complete();
-        TranslationManager.edit(event.getHook(), "commands.archive.start", channel.getAsMention());
+        event.getHook().editOriginal(String.format("Archiving channel %s! If no file appears here, please contact a bot developer.", channel.getAsMention())).queue();
 
         CSVData csvData = new CSVData(List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Message Content"));
 
@@ -96,35 +94,35 @@ public class ChannelCommands extends ApplicationCommand {
                 log.info("Finished archiving channel " + channel.getName() + " (ID: " + channel.getId() + ")! File located at: " + file.getAbsolutePath());
 
                 if (!event.getHook().isExpired()) {
-                    event.getHook().editOriginal(TranslationManager.translate("commands.archive.complete", channel.getAsMention()))
+                    event.getHook().editOriginal(String.format("Finished archiving channel %s! The file should appear below.", channel.getAsMention()))
                         .setFiles(FileUpload.fromData(file))
                         .queue();
                 }
             } catch (IOException exception) {
-                TranslationManager.reply(event, "commands.archive.error", channel.getAsMention());
+                event.reply(String.format("An error occurred while archiving channel %s! Please check the logs for more information.", channel.getAsMention())).queue();
                 log.error("An error occurred when archiving the channel " + channel.getId() + "!", exception);
             }
         });
     }
 
-    @JDASlashCommand(name = "lock", description = "Locks the thread that the command is executed in", defaultLocked = true)
-    public void lockThread(GuildSlashEvent event) {
+    @SlashCommand(name = "lock", description = "Locks the thread that the command is executed in", guildOnly = true, requiredPermissions = {"MANAGE_THREADS"})
+    public void lockThread(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
         InteractionHook hook = event.getHook();
 
-        TranslationManager.edit(hook, "commands.lock.start");
+        hook.editOriginal("Locking...").queue();
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
         discordUserRepository.findByIdAsync(event.getMember().getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
-                    TranslationManager.edit(hook, "generic.user_not_found");
+                    hook.editOriginal("User not found").queue();
                     return;
                 }
 
                 if (!(event.getChannel() instanceof ThreadChannel threadChannel) || !(threadChannel.getParentChannel() instanceof ForumChannel)) {
-                    TranslationManager.edit(hook, discordUser, "commands.only_available_in_threads");
+                    hook.editOriginal("This command is only available in threads!").queue();
                     return;
                 }
 
@@ -134,7 +132,7 @@ public class ChannelCommands extends ApplicationCommand {
 
                 if (isSuggestion) {
                     if (!DiscordUtils.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) {
-                        TranslationManager.edit(hook, discordUser, "commands.lock.no_tag", suggestionConfig.getReviewedTag());
+                        hook.editOriginal(String.format("I could not find a tag with the name `%s`!", suggestionConfig.getReviewedTag())).queue();
                         return;
                     }
 
@@ -153,16 +151,16 @@ public class ChannelCommands extends ApplicationCommand {
             })
             .exceptionally(throwable -> {
                 log.error("Error loading user for channel lock", throwable);
-                TranslationManager.edit(hook, "Failed to load user data");
+                hook.editOriginal("Failed to load user data").queue();
                 return null;
             });
     }
 
-    private void handleTagAndLock(GuildSlashEvent event, DiscordUser discordUser, ThreadChannel threadChannel, ForumChannel forumChannel, String tagName) {
+    private void handleTagAndLock(SlashCommandInteractionEvent event, DiscordUser discordUser, ThreadChannel threadChannel, ForumChannel forumChannel, String tagName) {
         InteractionHook hook = event.getHook();
 
         if (!DiscordUtils.hasTagByName(forumChannel, tagName)) {
-            TranslationManager.edit(hook, discordUser, "commands.lock.no_tag", tagName);
+            hook.editOriginal(String.format("I could not find a tag with the name `%s`!", tagName)).queue();
             return;
         }
 
@@ -186,9 +184,9 @@ public class ChannelCommands extends ApplicationCommand {
             threadManager.setAppliedTags(appliedTags).complete();
             threadManager.setLocked(true).complete();
             event.getChannel().sendMessage(String.format("%s applied the %s tag and locked this suggestion!", event.getUser().getAsMention(), tag.getName())).queue();
-            TranslationManager.edit(hook, discordUser, "commands.lock.success");
+            hook.editOriginal("Successfully locked thread!").queue();
         } else {
-            TranslationManager.edit(hook, discordUser, "commands.lock.already_tagged");
+            hook.editOriginal("This thread is already tagged!").queue();
         }
     }
 }

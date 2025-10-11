@@ -30,11 +30,21 @@ public class NerdBotApp {
         Runtime.getRuntime().availableProcessors() * 2,
         createThreadFactory()
     );
+    public static final Gson GSON = new GsonBuilder()
+        .setPrettyPrinting()
+        .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
+        .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
+        .registerTypeAdapter(Badge.class, new BadgeTypeAdapter())
+        .create();
+    private static Bot bot;
+
+    public NerdBotApp() throws IOException {
+    }
 
     private static ThreadFactory createThreadFactory() {
         return new ThreadFactory() {
             private int counter = 0;
-            
+
             @Override
             public Thread newThread(@NotNull Runnable r) {
                 Thread thread = new Thread(r, "nerdbot-worker-" + (++counter));
@@ -42,17 +52,6 @@ public class NerdBotApp {
                 return thread;
             }
         };
-    }
-    public static final Gson GSON = new GsonBuilder()
-        .setPrettyPrinting()
-        .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
-        .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
-        .registerTypeAdapter(Badge.class, new BadgeTypeAdapter())
-        .create();
-
-    private static Bot bot;
-
-    public NerdBotApp() throws IOException {
     }
 
     public static void main(String[] args) {

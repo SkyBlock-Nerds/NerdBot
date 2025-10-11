@@ -105,15 +105,6 @@ public class Suggestion {
         }
     }
 
-    public List<ForumTag> getAppliedTags() {
-        ThreadChannel threadChannel = NerdBotApp.getBot().getJDA().getThreadChannelById(this.getThreadId());
-        return threadChannel == null ? List.of() : threadChannel.getAppliedTags();
-    }
-
-    public Optional<Message> getFirstMessage() {
-        return DiscordUtils.getFirstMessage(this.getThreadId());
-    }
-
     public static int getReactionCount(Message message, String emojiId) {
         return message.getReactions()
             .stream()
@@ -122,6 +113,15 @@ public class Suggestion {
             .mapToInt(MessageReaction::getCount)
             .findFirst()
             .orElse(0);
+    }
+
+    public List<ForumTag> getAppliedTags() {
+        ThreadChannel threadChannel = NerdBotApp.getBot().getJDA().getThreadChannelById(this.getThreadId());
+        return threadChannel == null ? List.of() : threadChannel.getAppliedTags();
+    }
+
+    public Optional<Message> getFirstMessage() {
+        return DiscordUtils.getFirstMessage(this.getThreadId());
     }
 
     public double getRatio() {

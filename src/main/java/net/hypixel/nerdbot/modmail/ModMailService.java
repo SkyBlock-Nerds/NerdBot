@@ -32,8 +32,8 @@ import java.util.stream.Stream;
 @Slf4j
 public class ModMailService {
 
-    private static final int MAX_CONTENT_CHUNK_SIZE = 1_024;
     public static final String TITLE_TEMPLATE = "%s (%s)";
+    private static final int MAX_CONTENT_CHUNK_SIZE = 1_024;
     private static final String SLASH_COMMAND_LINK_ID = "1142633400537186409";
 
     private static volatile ModMailService instance;
@@ -384,7 +384,7 @@ public class ModMailService {
         user.openPrivateChannel()
             .flatMap(channel -> channel.sendMessage(
                 "You must link your Minecraft account before using Mod Mail.\n" +
-                "Please link your account using </link:" + SLASH_COMMAND_LINK_ID + "> and try again."
+                    "Please link your account using </link:" + SLASH_COMMAND_LINK_ID + "> and try again."
             ))
             .queue();
     }

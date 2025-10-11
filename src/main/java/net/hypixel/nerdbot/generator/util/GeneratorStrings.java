@@ -38,11 +38,11 @@ public class GeneratorStrings {
     public static final String GENERAL_INFO = """
                                               Welcome to the Item Generation Bot!
                                               Here you can use different commands to generate Minecraft related images which can help with designing content within Minecraft.
-                                                                     
+                                              
                                               You can click the blue `/%1$s` command above anyone's image to see what command they're using to create their image.
                                               All of the item generator commands also have a `hidden` parameter. This can be set to `True` which will only send the image to you so that you can get some practice at making items, or design items in secret! If you do run commands as `hidden`, the image will disappear from chat whenever you restart your Discord client.
                                               The item generation bot is maintained by the Bot Contributors. Feel free to tag them with any issues, or ideas for improvements
-                                                                     
+                                          
                                               But most importantly, have fun making items!
                                               """.formatted(COMMAND_PREFIX);
     public static final String GENERAL_HELP = """
@@ -90,7 +90,7 @@ public class GeneratorStrings {
     public static final String ITEM_EXAMPLES = """
                                                **Creating a Pancake Maker**
                                                `/%1$s item item_name: Pancake Maker rarity: legendary item_lore: Creates pancakes! \\n\\n %%%%gold%%%%Item Ability: Batter Up! %%%%yellow%%%%%%%%bold%%%%RIGHT CLICK\\n%%%%gray%%%%Generates %%%%red%%%% 2 %%%%gray%%%%pancakes. When consumed, heal for %%%%health:+150%%%%%%%%gray%%%% and gain %%%%strength:20%%%% for 3 seconds.\\n%%%%dark_gray%%%%Mana Cost: %%%%dark_aqua%%%%75 hidden: true`
-                                                                      
+                                               
                                                **Creating a Aspect of the Pancake**
                                                `/%1$s item item_name: Aspect of the Waffle rarity: EPIC item_lore: %%%%GEM_COMBAT%%%% %%%%GEM_COMBAT%%%%\\n&7Damage: &c+100\\n&7Strength: &c+100\\n &7Magic Find: &a+5\\n\\n%%%%ABILITY:Electro Waffle:RIGHT CLICK%%%%\\n&7Launch a &aWaffle &7at your enemies dealing &c50,000 &7damage and electrifiying them dealing &c1,000 &7damage per second.\\n%%%%MANA_COST:30%%%%\\n%%%%COOLDOWN:10s%%%%\\n\\n&8&oWait 'till the music begins.\\n\\n%%%%REFORGABLE%%%% type: SWORD disable_rarity_linebreak: true max_line_length: 37 hidden: true`
                                                """.formatted(COMMAND_PREFIX);
@@ -141,15 +141,15 @@ public class GeneratorStrings {
                                                             """;
     public static final String DISPLAY_ITEM_INFO_PLAYER_HEAD = """
                                                                As mentioned previously the `display_item` command can render Player Heads as well! Firstly set the `item_id` to `player_head` so that the command knows you want to display a player head. Inside the `extra_modifiers` parameters, you would need to supply how you want the skin to be retrieved, which are as follows.
-
+                                                               
                                                                **By Player Name**
                                                                Simply type the Minecraft name of the player that you want the skin of.
                                                                Example: `%s` as the extra modifier will render your Minecraft skin as a head!
-
+                                                               
                                                                **By Skin ID**
                                                                This is used if you find a Minecraft Skin online somewhere. Simply copy the Minecraft Skin ID for the skin you want to render. If they give you a Skin Texture value, you can convert it from a Base64 string and grab that ID.
                                                                Example: `82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c` as the extra modifier will render a Mana Flux Power Orb head!
-
+                                                               
                                                                *Note*: You do not need to include the `http://textures.minecraft.net/texture/` at the start.
                                                                """;
 
@@ -180,20 +180,20 @@ public class GeneratorStrings {
     public static final String RECIPE_INFO_ARGUMENTS = """
                                                        `recipe`: A string containing all of the recipe data for slot number, amount and the item name, separated by a `%%%%` between different slots.
                                                        `render_background (true/false)`: If you want to display the Minecraft inventory in the background or leave it transparent.
-                                                                                      
+                                                       
                                                        Each recipe item should be separated with `%%%%`.
                                                        `slot_number`: The slot you want the item displayed in (`1-9` starting in the top left).
                                                        `amount`: The number of that item you want displayed.
                                                        `item_id`: The id of the item with spaces replaced with underscores.
                                                        `extra_modifiers` (optional): Any extra modifiers that the item may have.
-                                                                                      
+                                                       
                                                        The `item_id` and `extra_modifiers` work the same as displaying an item through the `/%1$s display` command. Run the `/%1$s help display` to get more information about it!
                                                        """.formatted(COMMAND_PREFIX);
     public static final String RECIPE_INFO_EXAMPLES = """
                                                       Overflux Power Orb Recipe Command
                                                       (Showcases enchanted items and player head fetched from a skin id)
                                                       `/%1$s recipe recipe: 1,32,gold_nugget,enchant %%%% 3,32,gold_nugget,enchant%%%% 7,32,gold_nugget,enchant%%%% 9,32,gold_nugget,enchant %%%% 2,1,quartz %%%% 4,8,redstone_block,enchant %%%% 6,8,redstone_block,enchant %%%% 8,8,redstone_block,enchant %%%% 5,1,PLAYER_HEAD,82ada1c7fcc8cf35defeb944a4f8ffa9a9d260560fc7f5f5826de8085435967c hidden: true`
-                                                                                     
+                                                      
                                                       Goldor Chestplate Recipe Command
                                                       (Showcases items with overlays and how to customise them)
                                                       `/%1$s recipe recipe: 1,1,firework_star,pink %%%% 2,1,firework_star,pink %%%% 3,1,firework_star,pink %%%% 4,1,firework_star,pink %%%% 6,1,firework_star,pink %%%% 7,1,firework_star,pink %%%% 8,1,firework_star,pink %%%% 9,1,firework_star,pink %%%% 5,1,leather_chestplate,#e7413c hidden: true`
@@ -213,7 +213,7 @@ public class GeneratorStrings {
     // item gen full help messages
     public static final String FULL_GEN_INFO = """
                                                The `/%1$s full` command allows you to combine multiple renders together to create one full image showing all information about it.
-                                                                       
+                                               
                                                Follow the guide for `/%1$s help item` for more information about creating an item.
                                                Follow the guide for `/%1$s help display` for more information about putting a item next to the item lore.
                                                Follow the guide for `/%1$s help recipe` for more information about putting a recipe next to the item lore.
