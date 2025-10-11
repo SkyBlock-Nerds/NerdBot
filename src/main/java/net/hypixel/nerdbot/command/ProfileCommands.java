@@ -551,8 +551,13 @@ public class ProfileCommands {
 
                 DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
                 return discordUserRepository.findOrCreateByIdAsync(event.getUser().getId())
-                    .thenCompose(discordUser ->
-                        requestMojangProfileAsync(member, username, true)
+                    .thenCompose(discordUser -> {
+                        if (discordUser.noProfileAssigned()) {
+                            event.getHook().editOriginal("You have not yet verified your account. Please do so before attempting to change it.").queue();
+                            return CompletableFuture.completedFuture(null);
+                        }
+
+                        return requestMojangProfileAsync(member, username, true)
                             .thenAccept(mojangProfile -> {
                                 if (mojangProfile == null) {
                                     return;
@@ -588,8 +593,8 @@ public class ProfileCommands {
                                         )
                                         .queue();
                                 }, () -> log.warn("Log channel not found!"));
-                            })
-                    );
+                            });
+                    });
             })
             .exceptionally(throwable -> {
                 log.error("Error during profile linking", throwable);
