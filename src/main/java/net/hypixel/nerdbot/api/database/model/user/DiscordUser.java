@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.api.database.model.user;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
@@ -11,6 +12,7 @@ import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
 import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
+import net.hypixel.nerdbot.api.database.model.user.history.GeneratorHistory;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.ChannelCache;
@@ -29,6 +31,7 @@ import java.util.TimerTask;
 @Getter
 @Setter
 @Slf4j
+@ToString
 public class DiscordUser {
 
     private String discordId;
@@ -36,16 +39,34 @@ public class DiscordUser {
     private LastActivity lastActivity;
     private BirthdayData birthdayData;
     private MojangProfile mojangProfile;
+    private GeneratorHistory generatorHistory;
+    private boolean autoHideGenCommands;
 
     public DiscordUser() {
     }
 
     public DiscordUser(String discordId) {
-        this(discordId, new ArrayList<>(), new LastActivity(), new BirthdayData(), new MojangProfile());
+        this(
+            discordId,
+            new ArrayList<>(),
+            new LastActivity(),
+            new BirthdayData(),
+            new MojangProfile(),
+            new GeneratorHistory(),
+            false
+        );
     }
 
     public DiscordUser(Member member) {
-        this(member.getId(), new ArrayList<>(), new LastActivity(), new BirthdayData(), new MojangProfile());
+        this(
+            member.getId(),
+            new ArrayList<>(),
+            new LastActivity(),
+            new BirthdayData(),
+            new MojangProfile(),
+            new GeneratorHistory(),
+            false
+        );
     }
 
     public boolean isProfileAssigned() {
