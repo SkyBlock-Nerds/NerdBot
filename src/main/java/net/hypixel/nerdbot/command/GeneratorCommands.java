@@ -1,21 +1,18 @@
 package net.hypixel.nerdbot.command;
 
-import com.freya02.botcommands.api.annotations.Optional;
-import com.freya02.botcommands.api.application.ApplicationCommand;
-import com.freya02.botcommands.api.application.annotations.AppOption;
-import com.freya02.botcommands.api.application.slash.GuildSlashEvent;
-import com.freya02.botcommands.api.application.slash.annotations.JDASlashCommand;
-import com.freya02.botcommands.api.application.slash.autocomplete.AutocompletionMode;
-import com.freya02.botcommands.api.application.slash.autocomplete.annotations.AutocompletionHandler;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -49,7 +46,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Slf4j
-public class GeneratorCommands extends ApplicationCommand {
+public class GeneratorCommands {
 
     public static final String BASE_COMMAND = "gen2"; // TODO change this back to "gen" when released
 
@@ -83,16 +80,16 @@ public class GeneratorCommands extends ApplicationCommand {
     
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "display", description = "Display an item")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "display", description = "Display an item")
     public void generateItem(
-        GuildSlashEvent event,
-        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) String itemId,
-        @AppOption(description = EXTRA_DATA_DESCRIPTION) @Optional String data,
-        @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
-        @AppOption(description = "If the item should look as if it being hovered over") @Optional Boolean hoverEffect,
-        @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
-        @AppOption(description = DURABILITY_DESCRIPTION) @Optional Integer durability,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        SlashCommandInteractionEvent event,
+        @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION) String itemId,
+        @SlashOption(description = EXTRA_DATA_DESCRIPTION, required = false) String data,
+        @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
+        @SlashOption(description = "If the item should look as if it being hovered over", required = false) Boolean hoverEffect,
+        @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
+        @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
@@ -141,22 +138,22 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate an image of a Power Stone")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate an image of a Power Stone")
     public void generatePowerstone(
-        GuildSlashEvent event,
-        @AppOption(description = "The name of your Power Stone") String powerName,
-        @AppOption(autocomplete = "power-strengths", description = "The strength of the Power Stone") String powerStrength,
-        @AppOption(description = "The Magical Power to use in the stat calculations") int magicalPower,
-        @AppOption(description = "The stats that scale with the given Magical Power") @Optional String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
-        @AppOption(description = "The stats that do not scale with the given Magical Power") @Optional String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
-        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
-        @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
-        @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
-        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
-        @AppOption(description = "Includes a slash command for you to edit") @Optional Boolean includeGenFullCommand,
-        @AppOption(description = "Whether the Power Stone shows as selected") @Optional Boolean selected,
-        @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = "The name of your Power Stone") String powerName,
+        @SlashOption(autocompleteId = "power-strengths", description = "The strength of the Power Stone") String powerStrength,
+        @SlashOption(description = "The Magical Power to use in the stat calculations") int magicalPower,
+        @SlashOption(description = "The stats that scale with the given Magical Power", required = false) String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
+        @SlashOption(description = "The stats that do not scale with the given Magical Power", required = false) String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
+        @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION, required = false) String itemId,
+        @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
+        @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
+        @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
+        @SlashOption(description = "Includes a slash command for you to edit", required = false) Boolean includeGenFullCommand,
+        @SlashOption(description = "Whether the Power Stone shows as selected", required = false) Boolean selected,
+        @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
@@ -315,8 +312,8 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "search", description = "Search for an item")
-    public void searchItem(GuildSlashEvent event, @AppOption(description = "The ID of the item to search for") String itemId, @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden) {
+    @SlashCommand(name = BASE_COMMAND, subcommand = "search", description = "Search for an item")
+    public void searchItem(SlashCommandInteractionEvent event, @SlashOption(description = "The ID of the item to search for") String itemId, @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
@@ -338,11 +335,11 @@ public class GeneratorCommands extends ApplicationCommand {
         event.getHook().editOriginal(message.toString()).queue();
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "head", description = "Generate a player head")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "head", description = "Generate a player head")
     public void generateHead(
-        GuildSlashEvent event,
-        @AppOption(description = TEXTURE_DESCRIPTION) String texture,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = TEXTURE_DESCRIPTION) String texture,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
@@ -364,12 +361,12 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "recipe", description = "Generate a recipe")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "recipe", description = "Generate a recipe")
     public void generateRecipe(
-        GuildSlashEvent event,
-        @AppOption(description = RECIPE_STRING_DESCRIPTION) String recipe,
-        @AppOption(description = RENDER_BACKGROUND_DESCRIPTION) @Optional Boolean renderBackground,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = RECIPE_STRING_DESCRIPTION) String recipe,
+        @SlashOption(description = RENDER_BACKGROUND_DESCRIPTION, required = false) Boolean renderBackground,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
@@ -399,17 +396,17 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "inventory", description = "Generate an inventory")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "inventory", description = "Generate an inventory")
     public void generateInventory(
-        GuildSlashEvent event,
-        @AppOption(description = INVENTORY_ROWS_DESCRIPTION) int rows,
-        @AppOption(description = INVENTORY_COLUMNS_DESCRIPTION) int slotsPerRow,
-        @AppOption(description = INVENTORY_CONTENTS_DESCRIPTION) String inventoryString,
-        @AppOption(description = "Optional item lore displayed beside the inventory") @Optional String hoveredItemString,
-        @AppOption(description = INVENTORY_NAME_DESCRIPTION) @Optional String containerName,
-        @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean drawBorder,
-        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = INVENTORY_ROWS_DESCRIPTION) int rows,
+        @SlashOption(description = INVENTORY_COLUMNS_DESCRIPTION) int slotsPerRow,
+        @SlashOption(description = INVENTORY_CONTENTS_DESCRIPTION) String inventoryString,
+        @SlashOption(description = "Optional item lore displayed beside the inventory", required = false) String hoveredItemString,
+        @SlashOption(description = INVENTORY_NAME_DESCRIPTION, required = false) String containerName,
+        @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean drawBorder,
+        @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
@@ -462,13 +459,13 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "parse", description = "Parse an NBT string")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "parse", description = "Parse an NBT string")
     public void parseNbtString(
-        GuildSlashEvent event,
-        @AppOption(description = NBT_DESCRIPTION) String nbt,
-        @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
-        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = NBT_DESCRIPTION) String nbt,
+        @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
+        @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
@@ -626,27 +623,27 @@ public class GeneratorCommands extends ApplicationCommand {
         return result.toString();
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "full", description = "Generate a full item image. Supports displaying items, recipes, and tooltips")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "full", description = "Generate a full item image. Supports displaying items, recipes, and tooltips")
     public void generateTooltip(
-        GuildSlashEvent event,
-        @AppOption(description = NAME_DESCRIPTION) String itemName,
-        @AppOption(description = LORE_DESCRIPTION) String itemLore,
-        @AppOption(description = TYPE_DESCRIPTION) @Optional String type,
-        @AppOption(autocomplete = "item-rarities", description = RARITY_DESCRIPTION) @Optional String rarity,
-        @AppOption(autocomplete = "item-names", description = ITEM_DESCRIPTION) @Optional String itemId,
-        @AppOption(description = SKIN_VALUE_DESCRIPTION) @Optional String skinValue,
-        @AppOption(description = RECIPE_STRING_DESCRIPTION) @Optional String recipe,
-        @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
-        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
-        @AppOption(description = RARITY_LINE_BREAK_DESCRIPTION) @Optional Boolean disableRarityLineBreak,
-        @AppOption(description = ENCHANTED_DESCRIPTION) @Optional Boolean enchanted,
-        @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
-        @AppOption(description = LINE_PADDING_DESCRIPTION) @Optional Boolean paddingFirstLine,
-        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
-        @AppOption(autocomplete = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION) @Optional String tooltipSide,
-        @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean renderBorder,
-        @AppOption(description = DURABILITY_DESCRIPTION) @Optional Integer durability,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = NAME_DESCRIPTION) String itemName,
+        @SlashOption(description = LORE_DESCRIPTION) String itemLore,
+        @SlashOption(description = TYPE_DESCRIPTION, required = false) String type,
+        @SlashOption(autocompleteId = "item-rarities", description = RARITY_DESCRIPTION, required = false) String rarity,
+        @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION, required = false) String itemId,
+        @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
+        @SlashOption(description = RECIPE_STRING_DESCRIPTION, required = false) String recipe,
+        @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
+        @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
+        @SlashOption(description = RARITY_LINE_BREAK_DESCRIPTION, required = false) Boolean disableRarityLineBreak,
+        @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
+        @SlashOption(description = CENTERED_DESCRIPTION, required = false) Boolean centered,
+        @SlashOption(description = LINE_PADDING_DESCRIPTION, required = false) Boolean paddingFirstLine,
+        @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(autocompleteId = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION, required = false) String tooltipSide,
+        @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean renderBorder,
+        @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
@@ -737,16 +734,16 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "text", description = "Generate some text")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "text", description = "Generate some text")
     public void generateText(
-        GuildSlashEvent event,
-        @AppOption(description = TEXT_DESCRIPTION) String text,
-        @AppOption(description = CENTERED_DESCRIPTION) @Optional Boolean centered,
-        @AppOption(description = ALPHA_DESCRIPTION) @Optional Integer alpha,
-        @AppOption(description = PADDING_DESCRIPTION) @Optional Integer padding,
-        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
-        @AppOption(description = RENDER_BORDER_DESCRIPTION) @Optional Boolean renderBorder,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = TEXT_DESCRIPTION) String text,
+        @SlashOption(description = CENTERED_DESCRIPTION, required = false) Boolean centered,
+        @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
+        @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
+        @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean renderBorder,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
@@ -790,15 +787,15 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "single", description = "Generate dialogue for a single NPC")
+    @SlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "single", description = "Generate dialogue for a single NPC")
     public void generateSingleDialogue(
-        GuildSlashEvent event,
-        @AppOption(description = "Name of your NPC") String npcName,
-        @AppOption(description = "NPC dialogue, lines separated by \\n") String dialogue,
-        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
-        @AppOption(description = "If the Abiphone symbol should be shown next to the dialogue") @Optional Boolean abiphone,
-        @AppOption(description = "Player head texture (username, URL, etc.)") @Optional String skinValue,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = "Name of your NPC") String npcName,
+        @SlashOption(description = "NPC dialogue, lines separated by \\n") String dialogue,
+        @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(description = "If the Abiphone symbol should be shown next to the dialogue", required = false) Boolean abiphone,
+        @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
@@ -864,15 +861,15 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "multi", description = "Generate dialogue for multiple NPCs")
+    @SlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "multi", description = "Generate dialogue for multiple NPCs")
     public void generateMultiDialogue(
-        GuildSlashEvent event,
-        @AppOption(description = "Names of your NPCs, separated by a comma") String npcNames,
-        @AppOption(description = "NPC dialogue, lines separated by \\n") String dialogue,
-        @AppOption(description = MAX_LINE_LENGTH_DESCRIPTION) @Optional Integer maxLineLength,
-        @AppOption(description = "If the Abiphone symbol should be shown next to the dialogue") @Optional Boolean abiphone,
-        @AppOption(description = "Player head texture (username, URL, etc.)") @Optional String skinValue,
-        @AppOption(description = HIDDEN_OUTPUT_DESCRIPTION) @Optional Boolean hidden
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = "Names of your NPCs, separated by a comma") String npcNames,
+        @SlashOption(description = "NPC dialogue, lines separated by \\n") String dialogue,
+        @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(description = "If the Abiphone symbol should be shown next to the dialogue", required = false) Boolean abiphone,
+        @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
@@ -951,8 +948,8 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = BASE_COMMAND, subcommand = "history", description = "View your command history")
-    public void viewHistory(GuildSlashEvent event) {
+    @SlashCommand(name = BASE_COMMAND, subcommand = "history", description = "View your command history")
+    public void viewHistory(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
         List<EmbedBuilder> embedBuilders = new ArrayList<>();
@@ -977,24 +974,24 @@ public class GeneratorCommands extends ApplicationCommand {
         }
     }
 
-    @AutocompletionHandler(name = "power-strengths", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
+    @SlashAutocompleteHandler(id = "power-strengths")
     public List<String> powerStrengths(CommandAutoCompleteInteractionEvent event) {
         return PowerStrength.getPowerStrengthNames();
     }
 
-    @AutocompletionHandler(name = "item-names", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
+    @SlashAutocompleteHandler(id = "item-names")
     public List<String> itemNames(CommandAutoCompleteInteractionEvent event) {
         return Spritesheet.getImageMap().keySet()
             .stream()
             .toList();
     }
 
-    @AutocompletionHandler(name = "item-rarities", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
+    @SlashAutocompleteHandler(id = "item-rarities")
     public List<String> itemRarities(CommandAutoCompleteInteractionEvent event) {
         return Rarity.getRarityNames();
     }
 
-    @AutocompletionHandler(name = "tooltip-side", showUserInput = false, mode = AutocompletionMode.CONTINUITY)
+    @SlashAutocompleteHandler(id = "tooltip-side")
     public List<String> tooltipSide(CommandAutoCompleteInteractionEvent event) {
         return Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values())
             .map(MinecraftTooltipGenerator.TooltipSide::name)
@@ -1023,13 +1020,13 @@ public class GeneratorCommands extends ApplicationCommand {
     }
 
     /**
-     * Gets the gen command auto hide preference from a {@link GuildSlashEvent}.
+     * Gets the gen command auto hide preference from a {@link SlashCommandInteractionEvent}.
      *
-     * @param event The {@link GuildSlashEvent} triggered by the user you want to get the auto hide preference from.
+     * @param event The {@link SlashCommandInteractionEvent} triggered by the user you want to get the auto hide preference from.
      *
      * @return The auto hide preference from the user.
      */
-    private boolean getUserAutoHideSetting(GuildSlashEvent event) {
+    private boolean getUserAutoHideSetting(SlashCommandInteractionEvent event) {
         try {
             DiscordUserRepository repository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
             DiscordUser user = repository.findById(event.getMember().getId());

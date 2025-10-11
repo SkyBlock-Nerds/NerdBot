@@ -13,7 +13,6 @@ import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.badge.BadgeEntry;
 import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.api.database.model.user.history.GeneratorHistory;
-import net.hypixel.nerdbot.api.database.model.user.language.UserLanguage;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.cache.ChannelCache;
