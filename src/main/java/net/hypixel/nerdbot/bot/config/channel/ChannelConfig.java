@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildChannel;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.bot.config.objects.CustomForumTag;
+import net.hypixel.nerdbot.bot.config.objects.ForumAutoTag;
 import net.hypixel.nerdbot.bot.config.objects.ReactionChannel;
 import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
 
@@ -147,6 +148,70 @@ public class ChannelConfig {
      * Channel name patterns that identify project channels for suggestion categorization
      */
     private String[] projectChannelNames = {};
+
+    /**
+     * Configuration for automatic forum tag management.
+     * Allows forums to automatically apply a default tag to new posts which get removed
+     * when a reviewed tag is added.
+     */
+    private List<ForumAutoTag> forumAutoTags = List.of();
+
+    /**
+     * Get the auto-tag configuration for a specific forum channel
+     *
+     * @param forumChannelId The ID of the forum channel
+     * @return The {@link ForumAutoTag} if configured, otherwise null
+     */
+    public ForumAutoTag getForumAutoTagConfig(String forumChannelId) {
+        return forumAutoTags.stream()
+            .filter(config -> config.getForumChannelId().equals(forumChannelId))
+            .findFirst()
+            .orElse(null);
+    }
+
+    /**
+     * Add or update auto-tag configuration for a forum channel
+     *
+     * @param forumChannelId The ID of the forum channel
+     * @param defaultTagName The default tag to auto-apply
+     * @param reviewTagName The review tag that triggers tag swap
+     * @return True if a new config was added, false if existing was updated
+     */
+    public boolean addOrUpdateForumAutoTagConfig(String forumChannelId, String defaultTagName, String reviewTagName) {
+        List<ForumAutoTag> autoTags = new ArrayList<>(forumAutoTags);
+
+        // Check if config already exists
+        for (int i = 0; i < autoTags.size(); i++) {
+            if (autoTags.get(i).getForumChannelId().equals(forumChannelId)) {
+                // Update existing
+                autoTags.set(i, new ForumAutoTag(forumChannelId, defaultTagName, reviewTagName));
+                this.forumAutoTags = autoTags;
+                return false;
+            }
+        }
+
+        // Add new config
+        autoTags.add(new ForumAutoTag(forumChannelId, defaultTagName, reviewTagName));
+        this.forumAutoTags = autoTags;
+        return true;
+    }
+
+    /**
+     * Remove auto-tag configuration for a forum channel
+     *
+     * @param forumChannelId The ID of the forum channel
+     * @return True if config was removed, false if not found
+     */
+    public boolean removeForumAutoTagConfig(String forumChannelId) {
+        List<ForumAutoTag> configs = new ArrayList<>(forumAutoTags);
+        boolean removed = configs.removeIf(config -> config.getForumChannelId().equals(forumChannelId));
+
+        if (removed) {
+            this.forumAutoTags = configs;
+        }
+
+        return removed;
+    }
 
     /**
      * Find or create a role-restricted channel group for the given roles

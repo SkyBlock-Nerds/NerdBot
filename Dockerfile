@@ -1,5 +1,5 @@
 # Use Eclipse Temurin with Maven as the builder image
-FROM maven:3-eclipse-temurin-24-alpine AS builder
+FROM maven:3-eclipse-temurin-25-alpine AS builder
 
 # Set the working directory
 WORKDIR /app
@@ -13,7 +13,7 @@ RUN mvn clean install -f pom.xml \
     && rm -f /app/target/original-*.jar
 
 # Use a minimal eclipse-temurin image for running the bot
-FROM eclipse-temurin:24-jdk-alpine
+FROM eclipse-temurin:25-jdk-alpine
 
 # Set the working directory
 WORKDIR /app

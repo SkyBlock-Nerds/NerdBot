@@ -37,7 +37,6 @@ public class DiscordUser {
 
     private String discordId;
     private List<BadgeEntry> badges;
-    private UserLanguage language;
     private LastActivity lastActivity;
     private BirthdayData birthdayData;
     private MojangProfile mojangProfile;
@@ -51,7 +50,6 @@ public class DiscordUser {
         this(
             discordId,
             new ArrayList<>(),
-            UserLanguage.ENGLISH,
             new LastActivity(),
             new BirthdayData(),
             new MojangProfile(),
@@ -64,7 +62,6 @@ public class DiscordUser {
         this(
             member.getId(),
             new ArrayList<>(),
-            UserLanguage.ENGLISH,
             new LastActivity(),
             new BirthdayData(),
             new MojangProfile(),
@@ -165,7 +162,7 @@ public class DiscordUser {
     }
 
     public boolean addBadge(TieredBadge badge, int tier) {
-        badges.removeIf(badgeEntry -> badgeEntry.getBadgeId().equals(badge.getId()));
+        badges.removeIf(badgeEntry -> badgeEntry.badgeId().equals(badge.getId()));
         log.debug("Removed existing tiered badge for " + discordId + " with ID " + badge.getId() + " and tier " + tier);
 
         if (tier > 0 && tier <= badge.getTiers().size()) {
@@ -176,19 +173,19 @@ public class DiscordUser {
     }
 
     public boolean hasBadge(Badge badge) {
-        return badges.stream().map(BadgeEntry::getBadgeId).anyMatch(s -> s.equals(badge.getId()));
+        return badges.stream().map(BadgeEntry::badgeId).anyMatch(s -> s.equals(badge.getId()));
     }
 
     public boolean hasBadge(TieredBadge badge, int tier) {
-        return badges.stream().anyMatch(badgeEntry -> badgeEntry.getBadgeId().equals(badge.getId()) && badgeEntry.getTier() == tier);
+        return badges.stream().anyMatch(badgeEntry -> badgeEntry.badgeId().equals(badge.getId()) && badgeEntry.tier() == tier);
     }
 
     public boolean removeBadge(Badge badge) {
-        return badges.removeIf(badgeEntry -> badgeEntry.getBadgeId().equals(badge.getId()));
+        return badges.removeIf(badgeEntry -> badgeEntry.badgeId().equals(badge.getId()));
     }
 
     public boolean removeBadge(TieredBadge badge, int tier) {
-        return badges.removeIf(badgeEntry -> badgeEntry.getBadgeId().equals(badge.getId()) && badgeEntry.getTier() == tier);
+        return badges.removeIf(badgeEntry -> badgeEntry.badgeId().equals(badge.getId()) && badgeEntry.tier() == tier);
     }
 
     public Optional<Member> getMember() {

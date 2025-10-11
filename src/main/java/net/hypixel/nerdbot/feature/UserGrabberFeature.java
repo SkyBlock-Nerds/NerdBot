@@ -40,16 +40,17 @@ public class UserGrabberFeature extends BotFeature {
                     return;
                 }
 
+                log.info("Found user " + member.getEffectiveName() + " (" + member.getId() + ")");
+
                 DiscordUser discordUser = discordUserRepository.findOrCreateById(member.getId());
+                if (discordUser == null) {
+                    discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new LastActivity(), new BirthdayData(), new MojangProfile());
+                    log.info("Creating new DiscordUser for user " + member.getId());
+                }
 
                 if (discordUser.getLastActivity() == null) {
                     log.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
                     discordUser.setLastActivity(new LastActivity());
-                }
-
-                if (discordUser.getLanguage() == null) {
-                    log.info("Setting language for " + member.getEffectiveName() + " to ENGLISH");
-                    discordUser.setLanguage(UserLanguage.ENGLISH);
                 }
 
                 if (discordUser.getBadges() == null) {
@@ -63,12 +64,13 @@ public class UserGrabberFeature extends BotFeature {
                 }
 
                 for (BadgeEntry s : discordUser.getBadges()) {
-                    if (BadgeManager.getBadgeById(s.getBadgeId()) == null && BadgeManager.getTieredBadgeById(s.getBadgeId()) == null) {
+                    if (BadgeManager.getBadgeById(s.badgeId()) == null && BadgeManager.getTieredBadgeById(s.badgeId()) == null) {
                         log.error("Badge '" + s + "' for " + member.getEffectiveName() + " was not found in the badge map! Removing...");
                     }
                 }
 
-                discordUser.getBadges().removeIf(badgeEntry -> BadgeManager.getBadgeById(badgeEntry.getBadgeId()) == null && BadgeManager.getTieredBadgeById(badgeEntry.getBadgeId()) == null);
+                discordUser.getBadges().removeIf(badgeEntry -> BadgeManager.getBadgeById(badgeEntry.badgeId()) == null
+                    && BadgeManager.getTieredBadgeById(badgeEntry.badgeId()) == null);
                 discordUserRepository.cacheObject(discordUser);
             })
             .onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName()))

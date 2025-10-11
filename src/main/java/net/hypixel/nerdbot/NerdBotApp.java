@@ -37,7 +37,7 @@ public class NerdBotApp {
     private static ThreadFactory createThreadFactory() {
         return new ThreadFactory() {
             private int counter = 0;
-
+            
             @Override
             public Thread newThread(@NotNull Runnable r) {
                 Thread thread = new Thread(r, "nerdbot-worker-" + (++counter));
@@ -57,6 +57,19 @@ public class NerdBotApp {
     private static Bot bot;
 
     public NerdBotApp() throws IOException {
+    }
+
+    private static ThreadFactory createThreadFactory() {
+        return new ThreadFactory() {
+            private int counter = 0;
+
+            @Override
+            public Thread newThread(@NotNull Runnable r) {
+                Thread thread = new Thread(r, "nerdbot-worker-" + (++counter));
+                thread.setDaemon(true);
+                return thread;
+            }
+        };
     }
 
     public static void main(String[] args) {

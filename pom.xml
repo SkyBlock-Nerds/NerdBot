@@ -41,9 +41,9 @@
             <version>0.8.4</version>
         </dependency>
         <dependency>
-            <groupId>io.github.freya022</groupId>
-            <artifactId>BotCommands</artifactId>
-            <version>2.10.4</version>
+            <groupId>com.github.Aerhhh</groupId>
+            <artifactId>SlashCommands</artifactId>
+            <version>v1.0.5</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -64,7 +64,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.5.18</version>
+            <version>1.5.19</version>
         </dependency>
         <dependency>
             <groupId>com.joestelmach</groupId>
@@ -125,7 +125,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.14.0</version>
+                <version>3.14.1</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -188,7 +188,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.6.1</version>
                 <executions>
                     <execution>
                         <phase>compile</phase>

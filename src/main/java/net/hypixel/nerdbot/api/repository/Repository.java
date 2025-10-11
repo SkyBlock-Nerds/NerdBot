@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -29,26 +30,26 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 @Slf4j
 public abstract class Repository<T> {
 
+    private static final ExecutorService SHARED_EXECUTOR = Executors.newFixedThreadPool(10);
     @Getter
-    private final Cache<String, T> cache;
+    private final Cache<@NotNull String, T> cache;
     @Getter
     private final MongoCollection<Document> mongoCollection;
     private final Class<T> entityClass;
     private final String identifierFieldName;
-    private Field field;
-    private static final ExecutorService SHARED_EXECUTOR = Executors.newFixedThreadPool(10);
-
     private final ExecutorService repositoryExecutor = SHARED_EXECUTOR;
+    private Field field;
+
     protected Repository(MongoClient mongoClient, String databaseName, String collectionName, String identifierFieldName) {
         this(mongoClient, databaseName, collectionName, identifierFieldName, 0, null);
     }
@@ -72,7 +73,7 @@ public abstract class Repository<T> {
 
         this.cache = builder
             .removalListener((String key, T value, RemovalCause cause) -> {
-                debug("Removing document with ID " + key + " from cache for reason " + cause.toString());
+                debug("Removing document with ID " + key + " from cache for reason " + cause);
 
                 if (cause != RemovalCause.EXPLICIT && cause != RemovalCause.REPLACED) {
                     saveToDatabase(value);
@@ -105,33 +106,33 @@ public abstract class Repository<T> {
 
     public CompletableFuture<Void> loadAllDocumentsIntoCacheAsync() {
         return CompletableFuture.supplyAsync(() -> {
-            log("Loading ALL documents from database into cache asynchronously");
-            
-            List<Document> documents = new ArrayList<>();
-            mongoCollection.find().into(documents);
-            return documents;
-        }, repositoryExecutor)
-        .thenCompose(documents -> {
-            List<CompletableFuture<Void>> futures = documents.stream()
-                .map(document -> CompletableFuture.runAsync(() -> {
-                    T object = documentToEntity(document);
-                    String id = getId(object);
+                log("Loading ALL documents from database into cache asynchronously");
 
-                    if (id == null) {
-                        throw new IllegalStateException("Document has null ID, cannot cache object: " + document.toJson());
-                    }
+                List<Document> documents = new ArrayList<>();
+                mongoCollection.find().into(documents);
+                return documents;
+            }, repositoryExecutor)
+            .thenCompose(documents -> {
+                List<CompletableFuture<Void>> futures = documents.stream()
+                    .map(document -> CompletableFuture.runAsync(() -> {
+                        T object = documentToEntity(document);
+                        String id = getId(object);
 
-                    if (cache.getIfPresent(id) != null) {
-                        debug("Document with ID " + id + " already exists in cache");
-                        return;
-                    }
+                        if (id == null) {
+                            throw new IllegalStateException("Document has null ID, cannot cache object: " + document.toJson());
+                        }
 
-                    cacheObject(object);
-                }, repositoryExecutor))
-                .toList();
-                
-            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-        });
+                        if (cache.getIfPresent(getId(object)) != null) {
+                            debug("Document with ID " + getId(object) + " already exists in cache");
+                            return;
+                        }
+
+                        cacheObject(object);
+                    }, repositoryExecutor))
+                    .toList();
+
+                return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            });
     }
 
     public List<T> getAllDocuments() {
@@ -172,6 +173,7 @@ public abstract class Repository<T> {
             if (document != null) {
                 T object = documentToEntity(document);
                 cacheObject(id, object);
+
                 return object;
             }
         } catch (MongoException e) {
@@ -195,6 +197,7 @@ public abstract class Repository<T> {
             if (document != null) {
                 T object = documentToEntity(document);
                 cacheObject(id, object);
+
                 return object;
             }
 
@@ -253,7 +256,34 @@ public abstract class Repository<T> {
     }
 
     public CompletableFuture<T> findOrCreateByIdAsync(String id, Object... parameters) {
-        return CompletableFuture.supplyAsync(() -> findOrCreateById(id, parameters), repositoryExecutor);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                T existingObject = findById(id);
+
+                if (existingObject != null) {
+                    return existingObject;
+                }
+
+                List<Class<?>> constructorParameters = new ArrayList<>();
+                for (Object param : parameters) {
+                    constructorParameters.add(param != null ? param.getClass() : Object.class);
+                }
+                T object = entityClass.getConstructor(constructorParameters.toArray(new Class[0])).newInstance(parameters);
+
+                log.debug("Created new instance of " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+
+                cacheObject(id, object);
+                saveToDatabase(object);
+
+                return object;
+            } catch (NoSuchMethodException e) {
+                log.error("Could not find constructor for " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+            } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+                log.error("Error creating new instance of " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+            }
+
+            return null;
+        }, repositoryExecutor);
     }
 
     public T getByIndex(int index) {
@@ -272,9 +302,11 @@ public abstract class Repository<T> {
 
     public void cacheObject(T object) {
         String id = getId(object);
+
         if (id == null) {
             throw new IllegalStateException("Cannot cache object with null ID: " + object);
         }
+
         cacheObject(id, object);
     }
 
@@ -305,12 +337,15 @@ public abstract class Repository<T> {
 
         getAll().stream().map(this::entityToDocument).forEach(doc -> {
             Object idValue = doc.get(identifierFieldName);
+
             if (idValue == null) {
                 log.warn("Document has null identifier field '{}': {}", identifierFieldName, doc.toJson());
                 return;
             }
+
             Bson filter = Filters.eq(identifierFieldName, idValue);
             Bson update = new Document("$set", doc);
+
             updates.add(new UpdateOneModel<>(filter, update, new UpdateOptions().upsert(true)));
         });
 
@@ -331,12 +366,15 @@ public abstract class Repository<T> {
 
             getAll().stream().map(this::entityToDocument).forEach(doc -> {
                 Object idValue = doc.get(identifierFieldName);
+
                 if (idValue == null) {
                     log.warn("Document has null identifier field '{}': {}", identifierFieldName, doc.toJson());
                     return;
                 }
+
                 Bson filter = Filters.eq(identifierFieldName, idValue);
                 Bson update = new Document("$set", doc);
+
                 updates.add(new UpdateOneModel<>(filter, update, new UpdateOptions().upsert(true)));
             });
 

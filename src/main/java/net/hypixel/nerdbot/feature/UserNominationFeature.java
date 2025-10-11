@@ -10,10 +10,10 @@ import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.api.feature.BotFeature;
-import net.hypixel.nerdbot.modmail.ModMailService;
 import net.hypixel.nerdbot.bot.config.RoleConfig;
 import net.hypixel.nerdbot.bot.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.cache.ChannelCache;
+import net.hypixel.nerdbot.modmail.ModMailService;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.DiscordUtils;
@@ -21,7 +21,7 @@ import net.hypixel.nerdbot.util.StringUtils;
 import net.hypixel.nerdbot.util.TimeUtils;
 import net.hypixel.nerdbot.util.Utils;
 
-import java.awt.Color;
+import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.Month;
@@ -34,30 +34,6 @@ import java.util.TimerTask;
 
 @Slf4j
 public class UserNominationFeature extends BotFeature {
-
-    @Override
-    public void onFeatureStart() {
-        this.timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if (TimeUtils.isDayOfMonth(1) && NerdBotApp.getBot().getConfig().isNominationsEnabled()) {
-                    log.info("Running nomination check");
-                    nominateUsers();
-                }
-
-                if (TimeUtils.isDayOfMonth(15) && NerdBotApp.getBot().getConfig().isInactivityCheckEnabled()) {
-                    log.info("Running inactivity check");
-                    findInactiveUsers();
-                    findInactiveUsersInRoleRestrictedChannels();
-                }
-            }
-        }, 0, Duration.ofHours(1).toMillis());
-    }
-
-    @Override
-    public void onFeatureEnd() {
-
-    }
 
     public static void nominateUsers() {
         Guild guild = DiscordUtils.getMainGuild();
@@ -455,5 +431,29 @@ public class UserNominationFeature extends BotFeature {
         }, () -> {
             throw new IllegalStateException("Cannot find voting channel to send role-restricted inactivity warning message into!");
         });
+    }
+
+    @Override
+    public void onFeatureStart() {
+        this.timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (TimeUtils.isDayOfMonth(1) && NerdBotApp.getBot().getConfig().isNominationsEnabled()) {
+                    log.info("Running nomination check");
+                    nominateUsers();
+                }
+
+                if (TimeUtils.isDayOfMonth(15) && NerdBotApp.getBot().getConfig().isInactivityCheckEnabled()) {
+                    log.info("Running inactivity check");
+                    findInactiveUsers();
+                    findInactiveUsersInRoleRestrictedChannels();
+                }
+            }
+        }, 0, Duration.ofHours(1).toMillis());
+    }
+
+    @Override
+    public void onFeatureEnd() {
+
     }
 }
