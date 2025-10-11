@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.urlwatcher;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.urlwatcher.handler.SkyBlockUpdateDataHandler;
+import net.hypixel.nerdbot.urlwatcher.handler.update.SkyBlockUpdateDataHandler;
 import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser;
 import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser.HypixelThread;
 import okhttp3.OkHttpClient;
@@ -135,7 +135,7 @@ public class HypixelThreadURLWatcher {
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 String content = response.body().string();
-                log.debug("Successfully fetched content from " + url + "!" + " (Content: " + content + ")");
+                log.debug("Successfully fetched content from " + url + "!" + " (Content: " + content.replace("\n", "") + ")");
                 return SkyBlockThreadParser.parseSkyBlockThreads(content);
             } else {
                 log.error("Failed to fetch content from " + url + "! (Response: " + response + ")");

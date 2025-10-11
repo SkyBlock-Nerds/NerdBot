@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.bot.config.objects.CustomForumTag;
+import net.hypixel.nerdbot.bot.config.objects.ForumAutoTag;
 import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.util.DiscordUtils;
@@ -169,6 +170,17 @@ public class ChannelCommands {
         if (!threadChannel.getAppliedTags().contains(tag)) {
             List<ForumTag> appliedTags = new ArrayList<>(threadChannel.getAppliedTags());
             appliedTags.add(tag);
+
+            // Check for auto-tag swap configuration
+            ForumAutoTag autoTagConfig = NerdBotApp.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
+            if (autoTagConfig != null && autoTagConfig.getReviewTagName().equalsIgnoreCase(tagName)) {
+                ForumTag defaultTag = DiscordUtils.getTagByName(forumChannel, autoTagConfig.getDefaultTagName());
+                if (defaultTag != null && appliedTags.contains(defaultTag)) {
+                    appliedTags.remove(defaultTag);
+                    log.info("Removed auto-tag '{}' from thread '{}' (ID: {}) when '{}' tag was applied via /lock", autoTagConfig.getDefaultTagName(), threadChannel.getName(), threadChannel.getId(), tagName);
+                }
+            }
+
             threadManager.setAppliedTags(appliedTags).complete();
             threadManager.setLocked(true).complete();
             event.getChannel().sendMessage(String.format("%s applied the %s tag and locked this suggestion!", event.getUser().getAsMention(), tag.getName())).queue();

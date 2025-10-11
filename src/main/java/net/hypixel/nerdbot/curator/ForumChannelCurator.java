@@ -19,6 +19,7 @@ import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.bot.config.BotConfig;
 import net.hypixel.nerdbot.bot.config.EmojiConfig;
+import net.hypixel.nerdbot.bot.config.objects.ForumAutoTag;
 import net.hypixel.nerdbot.bot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.cache.EmojiCache;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
@@ -201,6 +202,16 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
 
                     if (!tags.contains(greenlitTag)) {
                         tags.add(greenlitTag);
+                    }
+
+                    ForumAutoTag autoTagConfig = NerdBotApp.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
+                    if (autoTagConfig != null && autoTagConfig.getReviewTagName().equalsIgnoreCase(suggestionConfig.getGreenlitTag())) {
+                        // Remove the default tag if it exists
+                        ForumTag defaultTag = DiscordUtils.getTagByName(forumChannel, autoTagConfig.getDefaultTagName());
+                        if (defaultTag != null && tags.contains(defaultTag)) {
+                            tags.remove(defaultTag);
+                            log.info("Removed auto-tag '{}' from thread '{}' (ID: {}) when greenlit via curator", autoTagConfig.getDefaultTagName(), thread.getName(), thread.getId());
+                        }
                     }
 
                     boolean wasArchived = thread.isArchived();
