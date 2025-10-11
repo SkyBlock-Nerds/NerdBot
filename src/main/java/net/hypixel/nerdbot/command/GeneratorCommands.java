@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -975,26 +977,48 @@ public class GeneratorCommands {
     }
 
     @SlashAutocompleteHandler(id = "power-strengths")
-    public List<String> powerStrengths(CommandAutoCompleteInteractionEvent event) {
-        return PowerStrength.getPowerStrengthNames();
+    public List<Command.Choice> powerStrengths(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
+
+        return PowerStrength.getPowerStrengthNames().stream()
+            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
+            .limit(25)
+            .map(name -> new Command.Choice(name, name))
+            .toList();
     }
 
     @SlashAutocompleteHandler(id = "item-names")
-    public List<String> itemNames(CommandAutoCompleteInteractionEvent event) {
+    public List<Command.Choice> itemNames(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
+
         return Spritesheet.getImageMap().keySet()
             .stream()
+            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
+            .limit(25)
+            .map(name -> new Command.Choice(name, name))
             .toList();
     }
 
     @SlashAutocompleteHandler(id = "item-rarities")
-    public List<String> itemRarities(CommandAutoCompleteInteractionEvent event) {
-        return Rarity.getRarityNames();
+    public List<Command.Choice> itemRarities(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
+
+        return Rarity.getRarityNames().stream()
+            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
+            .limit(25)
+            .map(name -> new Command.Choice(name, name))
+            .toList();
     }
 
     @SlashAutocompleteHandler(id = "tooltip-side")
-    public List<String> tooltipSide(CommandAutoCompleteInteractionEvent event) {
+    public List<Command.Choice> tooltipSide(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
+
         return Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values())
             .map(MinecraftTooltipGenerator.TooltipSide::name)
+            .filter(side -> side.toLowerCase(Locale.ROOT).contains(userInput))
+            .limit(25)
+            .map(side -> new Command.Choice(side, side))
             .toList();
     }
 

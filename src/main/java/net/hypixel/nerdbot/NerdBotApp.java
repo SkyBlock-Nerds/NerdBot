@@ -33,19 +33,7 @@ public class NerdBotApp {
         Runtime.getRuntime().availableProcessors() * 2,
         createThreadFactory()
     );
-
-    private static ThreadFactory createThreadFactory() {
-        return new ThreadFactory() {
-            private int counter = 0;
-            
-            @Override
-            public Thread newThread(@NotNull Runnable r) {
-                Thread thread = new Thread(r, "nerdbot-worker-" + (++counter));
-                thread.setDaemon(true);
-                return thread;
-            }
-        };
-    }
+    
     public static final Gson GSON = new GsonBuilder()
         .setPrettyPrinting()
         .registerTypeAdapter(UUID.class, new UUIDTypeAdapter())
