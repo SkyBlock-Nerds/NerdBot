@@ -39,22 +39,17 @@ import net.hypixel.nerdbot.listener.ModLogListener;
 import net.hypixel.nerdbot.listener.PinListener;
 import net.hypixel.nerdbot.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.listener.RoleRestrictedChannelListener;
+import net.hypixel.nerdbot.listener.SuggestionListener;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.modmail.ModMailListener;
 import net.hypixel.nerdbot.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.repository.ReminderRepository;
 import net.hypixel.nerdbot.urlwatcher.HypixelThreadURLWatcher;
-import net.hypixel.nerdbot.urlwatcher.StatusPageDataHandler;
-import net.hypixel.nerdbot.util.DiscordUtils;
-import net.hypixel.nerdbot.util.JsonUtils;
 import net.hypixel.nerdbot.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.urlwatcher.handler.firesale.FireSaleDataHandler;
 import net.hypixel.nerdbot.urlwatcher.handler.status.StatusPageDataHandler;
 import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.JsonUtils;
-import net.hypixel.nerdbot.util.discord.ComponentDatabaseConnection;
-import net.hypixel.nerdbot.util.discord.resolver.SuggestionTypeResolver;
-import net.hypixel.nerdbot.util.discord.resolver.UserLanguageResolver;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
@@ -184,6 +179,7 @@ public class NerdBot implements Bot {
                 new ModLogListener(),
                 new FeatureEventListener(),
                 new ActivityListener(),
+                new SuggestionListener(),
                 new ReactionChannelListener(),
                 new PinListener(),
                 new MetricsListener(),
