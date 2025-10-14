@@ -79,7 +79,7 @@ public class GeneratorCommands {
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
     private static final String DURABILITY_DESCRIPTION = "Item durability percentage (0-100, only shown if less than 100)";
-    
+
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "display", description = "Display an item")
@@ -114,11 +114,11 @@ public class GeneratorCommands {
                     .isEnchanted(enchanted)
                     .withHoverEffect(hoverEffect)
                     .isBigImage();
-                
+
                 if (durability != null) {
                     itemBuilder.withDurability(durability);
                 }
-                
+
                 item.addGenerator(itemBuilder.build());
             }
 
@@ -165,11 +165,20 @@ public class GeneratorCommands {
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         enchanted = enchanted != null && enchanted;
 
-        Function<String, HashMap<String, Integer>> parseStatsToMap = stats -> {
-            HashMap<String, Integer> map = new HashMap<>();
+        Function<String, Map<String, Integer>> parseStatsToMap = stats -> {
+            Map<String, Integer> map = new HashMap<>();
+
+            if (stats == null || stats.trim().isEmpty()) {
+                return map;
+            }
+
             String[] entries = stats.split(",");
 
             for (String entry : entries) {
+                if (entry == null || entry.trim().isEmpty()) {
+                    continue;
+                }
+
                 String[] stat = entry.split(":");
 
                 if (stat.length != 2 || stat[0].trim().isEmpty() || stat[1].trim().isEmpty()) {
@@ -177,10 +186,6 @@ public class GeneratorCommands {
                 }
 
                 String statName = stat[0].trim();
-
-                if (map.containsKey(statName)) {
-                    map.put(statName, map.get(statName) + Integer.parseInt(stat[1].trim()));
-                }
 
                 int statValue;
 
@@ -190,7 +195,7 @@ public class GeneratorCommands {
                     throw new GeneratorException("Invalid number for stat `" + statName + "`: " + stat[1].trim());
                 }
 
-                map.put(statName, statValue);
+                map.merge(statName, statValue, Integer::sum);
             }
 
             return map;
@@ -198,7 +203,7 @@ public class GeneratorCommands {
 
         try {
             StringBuilder scalingStatsFormatted = new StringBuilder();
-            Map<String, Integer> scalingStatsMap = scalingStats != null ? parseStatsToMap.apply(scalingStats) : new HashMap<>();
+            Map<String, Integer> scalingStatsMap = parseStatsToMap.apply(scalingStats);
 
             for (Map.Entry<String, Integer> entry : scalingStatsMap.entrySet()) {
                 String statName = entry.getKey();
@@ -209,7 +214,7 @@ public class GeneratorCommands {
                     throw new GeneratorException("`" + statName + "` is not a valid stat");
                 }
 
-                scalingStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, StringUtils.COMMA_SEPARATED_FORMAT.format(calculatePowerStoneStat(stat, magicalPower, basePower))));
+                scalingStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, StringUtils.COMMA_SEPARATED_FORMAT.format(calculatePowerStoneStat(stat, basePower, magicalPower))));
             }
 
             if (!scalingStatsFormatted.isEmpty()) {
@@ -219,7 +224,7 @@ public class GeneratorCommands {
             }
 
             StringBuilder bonusStatsFormatted = new StringBuilder();
-            HashMap<String, Integer> bonusStats = parseStatsToMap.apply(uniqueBonus);
+            Map<String, Integer> bonusStats = parseStatsToMap.apply(uniqueBonus);
 
             for (Map.Entry<String, Integer> entry : bonusStats.entrySet()) {
                 String statName = entry.getKey();
@@ -490,7 +495,7 @@ public class GeneratorCommands {
             // Handle player head for both legacy and component formats
             boolean isPlayerHead = jsonObject.get("id").getAsString().equalsIgnoreCase("player_head");
             JsonObject tagObject = jsonObject.has("tag") ? jsonObject.get("tag").getAsJsonObject() : null;
-            
+
             if (isPlayerHead && tagObject != null && tagObject.get("SkullOwner") != null) {
                 JsonArray textures = tagObject.get("SkullOwner").getAsJsonObject()
                     .get("Properties").getAsJsonObject()
@@ -516,20 +521,20 @@ public class GeneratorCommands {
             }
 
             int maxLineLength;
-            
+
             // Calculate max line length based on format
             if (jsonObject.has("components")) {
                 JsonObject components = jsonObject.getAsJsonObject("components");
                 if (components.has("minecraft:lore")) {
                     JsonArray loreArray = components.getAsJsonArray("minecraft:lore");
                     List<String> loreLines = new ArrayList<>();
-                    
+
                     for (JsonElement loreElement : loreArray) {
                         JsonObject loreEntry = loreElement.getAsJsonObject();
                         String parsedLine = parseTextComponentForLength(loreEntry);
                         loreLines.add(parsedLine);
                     }
-                    
+
                     maxLineLength = StringUtils.getLongestLine(loreLines).getRight();
                 } else {
                     maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
@@ -576,8 +581,18 @@ public class GeneratorCommands {
             }
 
             GeneratedObject generatedObject = generatorImageBuilder.addGenerator(tooltipGenerator.build()).build();
+
+            String slashCommand = tooltipGenerator.buildSlashCommand();
+            String parsedItemId = jsonObject.get("id").getAsString();
+            if (parsedItemId != null && !parsedItemId.isEmpty()) {
+                if (parsedItemId.startsWith("minecraft:")) {
+                    parsedItemId = parsedItemId.substring("minecraft:".length());
+                }
+                slashCommand += " item_id: " + parsedItemId;
+            }
+
             MessageEditBuilder builder = new MessageEditBuilder()
-                .setContent("Your NBT input has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + tooltipGenerator.buildSlashCommand() + "```");
+                .setContent("Your NBT input has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + slashCommand + "```");
 
             if (generatedObject.isAnimated()) {
                 builder.setFiles(FileUpload.fromData(generatedObject.getGifData(), "parsed_nbt.gif"));
@@ -600,7 +615,7 @@ public class GeneratorCommands {
 
     private static String parseTextComponentForLength(JsonObject textComponent) {
         StringBuilder result = new StringBuilder();
-        
+
         // Handle base text
         if (textComponent.has("text")) {
             String text = textComponent.get("text").getAsString();
@@ -608,20 +623,20 @@ public class GeneratorCommands {
                 result.append(text);
             }
         }
-        
+
         // Handle extra components array
         if (textComponent.has("extra")) {
             JsonArray extraArray = textComponent.getAsJsonArray("extra");
             for (JsonElement extraElement : extraArray) {
                 JsonObject extraComponent = extraElement.getAsJsonObject();
-                
+
                 // Only add the text content for length calculation
                 if (extraComponent.has("text")) {
                     result.append(extraComponent.get("text").getAsString());
                 }
             }
         }
-        
+
         return result.toString();
     }
 
@@ -693,11 +708,11 @@ public class GeneratorCommands {
                         .withItem(itemId)
                         .isEnchanted(enchanted)
                         .isBigImage();
-                    
+
                     if (durability != null) {
                         itemBuilder.withDurability(durability);
                     }
-                    
+
                     generatorImageBuilder.addGenerator(itemBuilder.build());
                 }
             }

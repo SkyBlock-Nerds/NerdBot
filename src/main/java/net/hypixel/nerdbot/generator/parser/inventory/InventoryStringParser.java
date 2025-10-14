@@ -9,6 +9,7 @@ import net.hypixel.nerdbot.util.Range;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,42 +35,49 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         String[] split = input.split("%%");
         ArrayList<InventoryItem> result = new ArrayList<>();
 
-        for (String item : split) {
-            item = item.trim();
-            String[] components = item.split(":", 2);
+        for (String rawItem : split) {
+            String item = rawItem.trim();
+            int slotSeparatorIndex = findSlotSeparatorIndex(item);
 
-            if (components.length != 2) {
-                throw new GeneratorException("Incorrect amount of components present in item: `%s` (expected 2, found %d)".formatted(item, components.length));
+            if (slotSeparatorIndex == -1) {
+                throw new GeneratorException("Incorrect amount of components present in item: `%s` (missing a valid slot separator `:`)".formatted(item));
             }
 
-            // getting the material data and durability
-            String material = components[0];
+            // Split the material/modifier section from slot data
+            String material = item.substring(0, slotSeparatorIndex).trim();
+            String slotData = item.substring(slotSeparatorIndex + 1).trim();
             String data = null;
             Integer durability = null;
 
             if (material.contains(",")) {
-                String[] dataSplit = material.split(",", 3); // material,data,durability
-                material = dataSplit[0];
+                String[] dataSplit = material.split(",");
+                material = dataSplit[0].trim();
 
                 if (dataSplit.length > 1) {
-                    data = dataSplit[1];
-                }
+                    List<String> modifiers = new ArrayList<>();
+                    for (int i = 1; i < dataSplit.length; i++) {
+                        String part = dataSplit[i].trim();
+                        if (part.isEmpty()) {
+                            continue;
+                        }
 
-                if (dataSplit.length > 2 && !dataSplit[2].trim().isEmpty()) {
-                    try {
-                        durability = Integer.parseInt(dataSplit[2].trim());
-                        durability = Range.between(0, 100).fit(durability);
-                    } catch (NumberFormatException e) {
-                        throw new GeneratorException("Invalid durability value: `%s` (must be a number between 0 and 100)".formatted(dataSplit[2]));
+                        boolean isPotentialDurability = i == dataSplit.length - 1 && isInteger(part);
+                        if (isPotentialDurability) {
+                            durability = Range.between(0, 100).fit(Integer.parseInt(part));
+                        } else {
+                            modifiers.add(part);
+                        }
+                    }
+
+                    if (!modifiers.isEmpty()) {
+                        data = String.join(",", modifiers);
                     }
                 }
             }
 
-            String slotData = components[1];
-
             if (slotData.contains("{")) {
                 result.add(itemFromMap(slotData, material, data, durability));
-            } else if (components[1].contains("[")) {
+            } else if (slotData.contains("[")) {
                 result.add(itemFromArray(slotData, material, data, durability));
             } else {
                 result.add(itemFromAmount(slotData, material, data, durability));
@@ -220,6 +228,57 @@ public class InventoryStringParser implements Parser<ArrayList<InventoryItem>> {
         }
 
         return new InventoryItem(slot, amount, material, data, durability);
+    }
+
+    private int findSlotSeparatorIndex(String item) {
+        int braceDepth = 0;
+        int bracketDepth = 0;
+
+        for (int i = 0; i < item.length(); i++) {
+            char current = item.charAt(i);
+
+            switch (current) {
+                case '{' -> braceDepth++;
+                case '}' -> braceDepth = Math.max(0, braceDepth - 1);
+                case '[' -> bracketDepth++;
+                case ']' -> bracketDepth = Math.max(0, bracketDepth - 1);
+                case ':' -> {
+                    if (braceDepth > 0 || bracketDepth > 0) {
+                        continue;
+                    }
+
+                    int j = i + 1;
+                    while (j < item.length() && Character.isWhitespace(item.charAt(j))) {
+                        j++;
+                    }
+
+                    if (j >= item.length()) {
+                        return -1;
+                    }
+
+                    char next = item.charAt(j);
+                    if (Character.isLetter(next)) {
+                        // Likely part of a namespaced ID (e.g., minecraft:stone)
+                        continue;
+                    }
+
+                    return i;
+                }
+                default -> {
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    private boolean isInteger(String value) {
+        try {
+            Integer.parseInt(value);
+            return true;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
     }
 
     /**

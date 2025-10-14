@@ -148,7 +148,7 @@ public class MinecraftTooltipGenerator implements Generator {
     }
 
     public static class Builder implements ClassBuilder<MinecraftTooltipGenerator> {
-        private String name;
+        private String itemName;
         private Rarity rarity;
         private String itemLore;
         private String type;
@@ -160,10 +160,10 @@ public class MinecraftTooltipGenerator implements Generator {
         private transient boolean bypassMaxLineLength;
         private boolean centered;
         private boolean renderBorder = true;
-        private int scaleFactor = 1;
+        private transient int scaleFactor = 1;
 
-        public MinecraftTooltipGenerator.Builder withName(String name) {
-            this.name = name;
+        public MinecraftTooltipGenerator.Builder withName(String itemName) {
+            this.itemName = itemName;
             return this;
         }
 
@@ -249,10 +249,10 @@ public class MinecraftTooltipGenerator implements Generator {
                 JsonObject tagObject = nbtJson.get("tag").getAsJsonObject();
                 if (tagObject.has("display")) {
                     JsonObject displayObject = tagObject.get("display").getAsJsonObject();
-                    
+
                     // Parse Name if present
                     if (displayObject.has("Name")) {
-                        this.name = displayObject.get("Name").getAsString();
+                        this.itemName = displayObject.get("Name").getAsString();
                     }
 
                     // Parse Lore if present
@@ -273,14 +273,14 @@ public class MinecraftTooltipGenerator implements Generator {
             // Parse minecraft:custom_name component
             if (components.has("minecraft:custom_name")) {
                 JsonObject customName = components.getAsJsonObject("minecraft:custom_name");
-                this.name = parseTextComponent(customName);
+                this.itemName = parseTextComponent(customName);
             }
 
             // Parse minecraft:lore component
             if (components.has("minecraft:lore")) {
                 JsonArray loreArray = components.getAsJsonArray("minecraft:lore");
                 StringBuilder loreBuilder = new StringBuilder();
-                
+
                 for (int i = 0; i < loreArray.size(); i++) {
                     JsonObject loreEntry = loreArray.get(i).getAsJsonObject();
                     String parsedLine = parseTextComponent(loreEntry);
@@ -289,7 +289,7 @@ public class MinecraftTooltipGenerator implements Generator {
                         loreBuilder.append("\\n");
                     }
                 }
-                
+
                 this.itemLore = loreBuilder.toString();
             }
         }
@@ -297,7 +297,7 @@ public class MinecraftTooltipGenerator implements Generator {
         public String getDyeColor(JsonObject nbtJson) {
             return extractDyeColor(nbtJson);
         }
-        
+
         private String extractDyeColor(JsonObject nbtJson) {
             // Try components format first (1.20.5+)
             if (nbtJson.has("components")) {
@@ -306,7 +306,7 @@ public class MinecraftTooltipGenerator implements Generator {
                     return convertToHexColor(components.get("minecraft:dyed_color").getAsInt(), "component");
                 }
             }
-            
+
             // Try legacy format
             if (nbtJson.has("tag")) {
                 JsonObject tag = nbtJson.getAsJsonObject("tag");
@@ -314,16 +314,16 @@ public class MinecraftTooltipGenerator implements Generator {
                     return convertToHexColor(tag.getAsJsonObject("display").get("color").getAsInt(), "legacy");
                 }
             }
-            
+
             return null;
         }
-        
+
         private String convertToHexColor(int dyeColor, String format) {
             String hexColor = "#" + String.format("%06X", dyeColor & 0xFFFFFF);
             log.debug("Extracted {} dye color: {} -> {}", format, dyeColor, hexColor);
             return hexColor;
         }
-        
+
         private void addFormattingCode(StringBuilder result, JsonObject component, String key, ChatFormat format) {
             if (component.has(key)) {
                 boolean isFormatted = parseBooleanValue(component.get(key));
@@ -332,7 +332,7 @@ public class MinecraftTooltipGenerator implements Generator {
                 }
             }
         }
-        
+
         private boolean parseBooleanValue(JsonElement element) {
             if (element.isJsonPrimitive()) {
                 if (element.getAsJsonPrimitive().isBoolean()) {
@@ -348,7 +348,7 @@ public class MinecraftTooltipGenerator implements Generator {
 
         private String parseTextComponent(JsonObject textComponent) {
             StringBuilder result = new StringBuilder();
-            
+
             // Handle base text
             if (textComponent.has("text")) {
                 String text = textComponent.get("text").getAsString();
@@ -356,13 +356,13 @@ public class MinecraftTooltipGenerator implements Generator {
                     result.append(text);
                 }
             }
-            
+
             // Handle extra components array
             if (textComponent.has("extra")) {
                 JsonArray extraArray = textComponent.getAsJsonArray("extra");
                 for (JsonElement extraElement : extraArray) {
                     JsonObject extraComponent = extraElement.getAsJsonObject();
-                    
+
                     // Add color formatting if present
                     if (extraComponent.has("color")) {
                         String colorName = extraComponent.get("color").getAsString();
@@ -371,21 +371,21 @@ public class MinecraftTooltipGenerator implements Generator {
                             result.append("&").append(colorFormat.getCode());
                         }
                     }
-                    
+
                     // Add formatting codes - handle both boolean and "1b"/"0b" format
                     addFormattingCode(result, extraComponent, "bold", ChatFormat.BOLD);
                     addFormattingCode(result, extraComponent, "italic", ChatFormat.ITALIC);
                     addFormattingCode(result, extraComponent, "underlined", ChatFormat.UNDERLINE);
                     addFormattingCode(result, extraComponent, "strikethrough", ChatFormat.STRIKETHROUGH);
                     addFormattingCode(result, extraComponent, "obfuscated", ChatFormat.OBFUSCATED);
-                    
+
                     // Add the text content
                     if (extraComponent.has("text")) {
                         result.append(extraComponent.get("text").getAsString());
                     }
                 }
             }
-            
+
             return result.toString();
         }
 
@@ -454,7 +454,7 @@ public class MinecraftTooltipGenerator implements Generator {
         @Override
         public MinecraftTooltipGenerator build() {
             return new MinecraftTooltipGenerator(
-                name,
+                itemName,
                 rarity,
                 itemLore,
                 type,
