@@ -484,6 +484,7 @@ public class GeneratorCommands {
         try {
             JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            String skinValueForCommand = null;
 
             if (jsonObject.get("id").getAsString().contains("skull")) {
                 String value = jsonObject.get("id").getAsString();
@@ -495,26 +496,57 @@ public class GeneratorCommands {
             // Handle player head for both legacy and component formats
             boolean isPlayerHead = jsonObject.get("id").getAsString().equalsIgnoreCase("player_head");
             JsonObject tagObject = jsonObject.has("tag") ? jsonObject.get("tag").getAsJsonObject() : null;
+            String parsedItemId = jsonObject.get("id").getAsString();
 
-            if (isPlayerHead && tagObject != null && tagObject.get("SkullOwner") != null) {
-                JsonArray textures = tagObject.get("SkullOwner").getAsJsonObject()
-                    .get("Properties").getAsJsonObject()
-                    .get("textures").getAsJsonArray();
+            if (isPlayerHead) {
+                String base64Texture = null;
 
-                if (textures.size() > 1) {
-                    event.getHook().editOriginal("There seems to be more than 1 texture in the player head's NBT data. Please double-check it is correct!").queue();
-                    return;
+                if (tagObject != null && tagObject.get("SkullOwner") != null) {
+                    JsonArray textures = tagObject.get("SkullOwner").getAsJsonObject()
+                        .get("Properties").getAsJsonObject()
+                        .get("textures").getAsJsonArray();
+
+                    if (textures.size() > 1) {
+                        event.getHook().editOriginal("There seems to be more than 1 texture in the player head's NBT data. Please double-check it is correct!").queue();
+                        return;
+                    }
+
+                    base64Texture = textures.get(0).getAsJsonObject().get("Value").getAsString();
                 }
 
-                String base64 = textures.get(0).getAsJsonObject().get("Value").getAsString();
+                if (base64Texture == null && jsonObject.has("components")) {
+                    JsonObject components = jsonObject.getAsJsonObject("components");
+                    if (components.has("minecraft:profile")) {
+                        JsonObject profile = components.getAsJsonObject("minecraft:profile");
+                        if (profile.has("properties")) {
+                            JsonArray properties = profile.getAsJsonArray("properties");
+                            for (JsonElement propertyElement : properties) {
+                                JsonObject property = propertyElement.getAsJsonObject();
+                                if (property.has("name") && "textures".equalsIgnoreCase(property.get("name").getAsString()) && property.has("value")) {
+                                    base64Texture = property.get("value").getAsString();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
 
-                generatorImageBuilder.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
-                    .withSkin(base64)
-                    .build()
-                );
+                if (base64Texture != null) {
+                    skinValueForCommand = base64Texture;
+
+                    generatorImageBuilder.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
+                        .withSkin(base64Texture)
+                        .build()
+                    );
+                } else {
+                    generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                        .withItem(parsedItemId)
+                        .isBigImage()
+                        .build());
+                }
             } else {
                 generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
-                    .withItem(jsonObject.get("id").getAsString())
+                    .withItem(parsedItemId)
                     //.isEnchanted(enchanted) TODO: determine if the item is enchanted
                     .isBigImage()
                     .build());
@@ -583,12 +615,17 @@ public class GeneratorCommands {
             GeneratedObject generatedObject = generatorImageBuilder.addGenerator(tooltipGenerator.build()).build();
 
             String slashCommand = tooltipGenerator.buildSlashCommand();
-            String parsedItemId = jsonObject.get("id").getAsString();
-            if (parsedItemId != null && !parsedItemId.isEmpty()) {
-                if (parsedItemId.startsWith("minecraft:")) {
-                    parsedItemId = parsedItemId.substring("minecraft:".length());
+            String commandItemId = parsedItemId;
+
+            if (commandItemId != null && !commandItemId.isEmpty()) {
+                if (commandItemId.startsWith("minecraft:")) {
+                    commandItemId = commandItemId.substring("minecraft:".length());
                 }
-                slashCommand += " item_id: " + parsedItemId;
+                slashCommand += " item_id: " + commandItemId;
+            }
+
+            if (skinValueForCommand != null && !skinValueForCommand.isEmpty()) {
+                slashCommand += " skin_value: " + skinValueForCommand;
             }
 
             MessageEditBuilder builder = new MessageEditBuilder()
