@@ -797,9 +797,9 @@ public class GeneratorCommands {
         event.deferReply(hidden).complete();
 
         centered = centered != null && centered;
-        alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
+        alpha = alpha == null ? 0 : alpha;
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
-        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
+        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH * 3 : maxLineLength;
         renderBorder = renderBorder != null && renderBorder;
 
         try {
