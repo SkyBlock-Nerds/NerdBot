@@ -49,7 +49,7 @@ public class MinecraftTooltip {
 
         MINECRAFT_FONTS.addAll(
             Arrays.asList(
-                FontUtils.initFont("/minecraft/fonts/minecraft.otf", 15.5f),
+                FontUtils.initFont("/minecraft/fonts/Minecraft-Regular.otf", 15.5f),
                 FontUtils.initFont("/minecraft/fonts/3_Minecraft-Bold.otf", 20.0f),
                 FontUtils.initFont("/minecraft/fonts/2_Minecraft-Italic.otf", 20.5f),
                 FontUtils.initFont("/minecraft/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
@@ -526,11 +526,9 @@ public class MinecraftTooltip {
         int finalHeight = measuredHeight - (yIncrement + (this.lines.isEmpty() || !this.paddingFirstLine ? 0 : pixelSize * 2)) + startXY + pixelSize * 2;
 
         // Determine if we need to animate the image beforehand
-        BufferedImage tempImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D tempGraphics = tempImage.createGraphics();
-        this.isAnimated = false;
-        drawLinesInternal(tempGraphics);
-        tempGraphics.dispose();
+        this.isAnimated = this.lines.stream()
+            .flatMap(line -> line.getSegments().stream())
+            .anyMatch(ColorSegment::isObfuscated);
 
         int framesToGenerate = this.isAnimated ? this.animationFrameCount : 1;
 
