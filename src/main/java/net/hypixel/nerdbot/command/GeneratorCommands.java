@@ -470,16 +470,11 @@ public class GeneratorCommands {
     public void parseNbtString(
         SlashCommandInteractionEvent event,
         @SlashOption(description = NBT_DESCRIPTION) String nbt,
-        @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
-        @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
-
-        alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
-        padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
 
         try {
             JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
@@ -594,8 +589,6 @@ public class GeneratorCommands {
 
             MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .parseNbtJson(jsonObject)
-                .withAlpha(alpha)
-                .withPadding(padding)
                 .withRenderBorder(true)
                 .isPaddingFirstLine(true)
                 .withMaxLineLength(maxLineLength);
