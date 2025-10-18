@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.generator.cache.GeneratorCache;
 import net.hypixel.nerdbot.bot.config.GeneratorConfig;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
@@ -18,6 +17,7 @@ import net.hypixel.nerdbot.generator.validation.ValidationUtils;
 import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -55,18 +55,11 @@ public class MinecraftPlayerHeadGenerator implements Generator {
     }
 
     @Override
-    public GeneratedObject generate() {
-        String cacheKey = this.toString();
-
-        BufferedImage cachedImage = GeneratorCache.getImage(cacheKey);
-        if (cachedImage != null) {
-            log.debug("Using cached player head for: {}", textureId);
-            return new GeneratedObject(cachedImage);
-        }
+    public @NotNull GeneratedObject render() {
+        log.debug("Rendering player head for texture '{}' (scale={})", textureId, scale);
 
         BufferedImage headImage = createHead(textureId);
-        GeneratorCache.putImage(cacheKey, headImage);
-
+        log.debug("Rendered player head image (dimensions {}x{})", headImage.getWidth(), headImage.getHeight());
         return new GeneratedObject(headImage);
     }
 

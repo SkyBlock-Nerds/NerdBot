@@ -6,7 +6,6 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.generator.cache.GeneratorCache;
 import net.hypixel.nerdbot.generator.data.ArmorType;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
@@ -18,6 +17,7 @@ import net.hypixel.nerdbot.generator.spritesheet.OverlaySheet;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import net.hypixel.nerdbot.generator.validation.ValidationUtils;
 import net.hypixel.nerdbot.util.ImageUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -42,27 +42,8 @@ public class MinecraftItemGenerator implements Generator {
     private BufferedImage itemImage;
 
     @Override
-    public GeneratedObject generate() {
-        String cacheKey = this.toString();
-
-        if (enchanted) {
-            GeneratorCache.GifCacheEntry cachedGif = GeneratorCache.getGif(cacheKey);
-            if (cachedGif != null) {
-                log.debug("Using cached animated item for: {}", itemId);
-                try {
-                    List<BufferedImage> cachedFrames = ImageUtil.readGifFrames(cachedGif.gifData());
-                    return new GeneratedObject(cachedGif.gifData(), cachedFrames, cachedGif.frameDelayMs());
-                } catch (IOException exception) {
-                    log.warn("Failed to decode cached GIF for item {}, regenerating animation", itemId, exception);
-                }
-            }
-        } else {
-            BufferedImage cachedImage = GeneratorCache.getImage(cacheKey);
-            if (cachedImage != null) {
-                log.debug("Using cached image for item: {}", itemId);
-                return new GeneratedObject(cachedImage);
-            }
-        }
+    public @NotNull GeneratedObject render() {
+        log.debug("Rendering item '{}' ({})", itemId, this);
 
         itemImage = Spritesheet.getTexture(itemId.toLowerCase());
 
@@ -109,20 +90,17 @@ public class MinecraftItemGenerator implements Generator {
             }
         }
 
-        if (animationFrames == null) {
-            GeneratorCache.putImage(this.toString(), itemImage);
-        }
-
         if (animationFrames != null) {
             try {
                 byte[] gifData = ImageUtil.toGifBytes(animationFrames, animationFrameDelay, true);
-                GeneratorCache.putGif(cacheKey, gifData, animationFrames, animationFrameDelay);
+                log.debug("Rendered animated item '{}' ({} frames, delay {}ms)", itemId, animationFrames.size(), animationFrameDelay);
                 return new GeneratedObject(gifData, animationFrames, animationFrameDelay);
             } catch (IOException e) {
                 throw new GeneratorException("Failed to encode enchantment glint animation", e);
             }
         }
 
+        log.debug("Rendered static item '{}' (dimensions {}x{})", itemId, itemImage.getWidth(), itemImage.getHeight());
         return new GeneratedObject(itemImage);
     }
 

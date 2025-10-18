@@ -3,17 +3,12 @@ package net.hypixel.nerdbot.util;
 import net.hypixel.nerdbot.generator.image.GifSequenceWriter;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class ImageUtil {
@@ -169,47 +164,5 @@ public class ImageUtil {
         }
 
         return baos.toByteArray();
-    }
-
-    /**
-     * Decodes a GIF byte array into a list of {@link BufferedImage} frames
-     *
-     * @param gifData The GIF data to decode
-     *
-     * @return A list of frames extracted from the GIF
-     *
-     * @throws IOException If an error occurs while decoding the GIF data
-     */
-    public static List<BufferedImage> readGifFrames(byte[] gifData) throws IOException {
-        if (gifData == null || gifData.length == 0) {
-            throw new IllegalArgumentException("GIF data cannot be null or empty");
-        }
-
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(gifData);
-             ImageInputStream imageInputStream = ImageIO.createImageInputStream(inputStream)) {
-            if (imageInputStream == null) {
-                throw new IOException("Failed to create ImageInputStream for GIF data");
-            }
-
-            Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("gif");
-            if (!readers.hasNext()) {
-                throw new IOException("No GIF reader available");
-            }
-
-            ImageReader reader = readers.next();
-            try {
-                reader.setInput(imageInputStream, false, false);
-                int frameCount = reader.getNumImages(true);
-                List<BufferedImage> frames = new ArrayList<>(frameCount);
-
-                for (int frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-                    frames.add(reader.read(frameIndex));
-                }
-
-                return frames;
-            } finally {
-                reader.dispose();
-            }
-        }
     }
 }

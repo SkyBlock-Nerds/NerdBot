@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.NerdBotApp;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.generator.cache.GeneratorCache;
 import net.hypixel.nerdbot.generator.image.ImageCoordinates;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.item.InventoryItem;
@@ -16,6 +15,7 @@ import net.hypixel.nerdbot.generator.validation.ValidationUtils;
 import net.hypixel.nerdbot.bot.config.GeneratorConfig;
 import net.hypixel.nerdbot.util.FontUtils;
 import net.hypixel.nerdbot.util.ImageUtil;
+import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -332,14 +332,8 @@ public class MinecraftInventoryGenerator implements Generator {
     }
 
     @Override
-    public GeneratedObject generate() {
-        String cacheKey = this.toString();
-
-        BufferedImage cachedImage = GeneratorCache.getImage(cacheKey);
-        if (cachedImage != null) {
-            log.debug("Using cached inventory image");
-            return new GeneratedObject(cachedImage);
-        }
+    public @NotNull GeneratedObject render() {
+        log.debug("Rendering inventory ({})", this);
 
         drawInventoryBackground();
         drawSlots();
@@ -348,8 +342,7 @@ public class MinecraftInventoryGenerator implements Generator {
 
         g2d.dispose();
 
-        GeneratorCache.putImage(cacheKey, inventoryImage);
-
+        log.debug("Rendered inventory image (dimensions {}x{})", inventoryImage.getWidth(), inventoryImage.getHeight());
         return new GeneratedObject(inventoryImage);
     }
 

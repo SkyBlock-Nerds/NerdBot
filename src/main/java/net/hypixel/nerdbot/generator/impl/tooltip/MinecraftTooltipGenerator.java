@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.command.GeneratorCommands;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.generator.cache.GeneratorCache;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
@@ -21,6 +20,7 @@ import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
 import net.hypixel.nerdbot.util.ImageUtil;
 import net.hypixel.nerdbot.util.Range;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -50,10 +50,10 @@ public class MinecraftTooltipGenerator implements Generator {
     private final int scaleFactor;
 
     @Override
-    public GeneratedObject generate() throws GeneratorException {
-        String cacheKey = this.toString();
+    public @NotNull GeneratedObject render() throws GeneratorException {
+        log.debug("Rendering tooltip for '{}'", name);
 
-        // Only cache static (non-animated) tooltips since animated ones are more complex
+        // Configure tooltip rendering before generating
         TooltipSettings settings = new TooltipSettings(
             name,
             disableRarityLineBreak,
@@ -70,34 +70,16 @@ public class MinecraftTooltipGenerator implements Generator {
         MinecraftTooltip tooltip = parseLore(itemLore, settings).render();
 
         if (tooltip.isAnimated()) {
-            GeneratorCache.GifCacheEntry cachedGif = GeneratorCache.getGif(cacheKey);
-            if (cachedGif != null) {
-                log.debug("Using cached tooltip gif");
-                try {
-                    List<BufferedImage> frames = ImageUtil.readGifFrames(cachedGif.gifData());
-                    return new GeneratedObject(cachedGif.gifData(), frames, cachedGif.frameDelayMs());
-                } catch (IOException decodeException) {
-                    log.warn("Failed to decode cached tooltip gif, regenerating frames", decodeException);
-                }
-            }
-
             try {
                 byte[] gifData = ImageUtil.toGifBytes(tooltip.getAnimationFrames(), tooltip.getFrameDelayMs(), true);
-                GeneratorCache.putGif(cacheKey, gifData, tooltip.getAnimationFrames(), tooltip.getFrameDelayMs());
+                log.debug("Rendered animated tooltip for '{}' ({} frames, delay {}ms)", name, tooltip.getAnimationFrames().size(), tooltip.getFrameDelayMs());
                 return new GeneratedObject(gifData, tooltip.getAnimationFrames(), tooltip.getFrameDelayMs());
             } catch (IOException e) {
                 throw new GeneratorException("Failed to generate animated tooltip GIF", e);
             }
         } else {
-            // Cache static tooltip images
-            BufferedImage cachedImage = GeneratorCache.getImage(cacheKey);
-            if (cachedImage != null) {
-                log.debug("Using cached tooltip image");
-                return new GeneratedObject(cachedImage);
-            }
-
             BufferedImage tooltipImage = tooltip.getImage();
-            GeneratorCache.putImage(cacheKey, tooltipImage);
+            log.debug("Rendered static tooltip for '{}' (dimensions {}x{})", name, tooltipImage.getWidth(), tooltipImage.getHeight());
             return new GeneratedObject(tooltipImage);
         }
     }
