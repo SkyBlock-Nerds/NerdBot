@@ -73,7 +73,12 @@ public class MinecraftTooltipGenerator implements Generator {
             GeneratorCache.GifCacheEntry cachedGif = GeneratorCache.getGif(cacheKey);
             if (cachedGif != null) {
                 log.debug("Using cached tooltip gif");
-                return new GeneratedObject(cachedGif.gifData(), cachedGif.frames(), cachedGif.frameDelayMs());
+                try {
+                    List<BufferedImage> frames = ImageUtil.readGifFrames(cachedGif.gifData());
+                    return new GeneratedObject(cachedGif.gifData(), frames, cachedGif.frameDelayMs());
+                } catch (IOException decodeException) {
+                    log.warn("Failed to decode cached tooltip gif, regenerating frames", decodeException);
+                }
             }
 
             try {

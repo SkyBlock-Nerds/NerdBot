@@ -52,10 +52,10 @@ public class GeneratedObject {
             throw new IllegalArgumentException("Frame delay must be greater than 0 for GIF output");
         }
 
-        this.image = frames.get(0);
+        this.image = frames.getFirst();
         this.gifData = gifData;
         this.outputType = OutputType.GIF;
-        this.animationFrames = frames;
+        this.animationFrames = List.copyOf(frames);
         this.frameDelayMs = frameDelayMs;
     }
 

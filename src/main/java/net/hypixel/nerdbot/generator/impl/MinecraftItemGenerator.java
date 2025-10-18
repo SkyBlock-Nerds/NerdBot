@@ -45,7 +45,18 @@ public class MinecraftItemGenerator implements Generator {
     public GeneratedObject generate() {
         String cacheKey = this.toString();
 
-        if (!enchanted) {
+        if (enchanted) {
+            GeneratorCache.GifCacheEntry cachedGif = GeneratorCache.getGif(cacheKey);
+            if (cachedGif != null) {
+                log.debug("Using cached animated item for: {}", itemId);
+                try {
+                    List<BufferedImage> cachedFrames = ImageUtil.readGifFrames(cachedGif.gifData());
+                    return new GeneratedObject(cachedGif.gifData(), cachedFrames, cachedGif.frameDelayMs());
+                } catch (IOException exception) {
+                    log.warn("Failed to decode cached GIF for item {}, regenerating animation", itemId, exception);
+                }
+            }
+        } else {
             BufferedImage cachedImage = GeneratorCache.getImage(cacheKey);
             if (cachedImage != null) {
                 log.debug("Using cached image for item: {}", itemId);
@@ -105,6 +116,7 @@ public class MinecraftItemGenerator implements Generator {
         if (animationFrames != null) {
             try {
                 byte[] gifData = ImageUtil.toGifBytes(animationFrames, animationFrameDelay, true);
+                GeneratorCache.putGif(cacheKey, gifData, animationFrames, animationFrameDelay);
                 return new GeneratedObject(gifData, animationFrames, animationFrameDelay);
             } catch (IOException e) {
                 throw new GeneratorException("Failed to encode enchantment glint animation", e);

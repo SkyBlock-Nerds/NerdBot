@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -59,7 +60,7 @@ public final class GeneratorCache {
             return;
         }
 
-        CACHE.put(key, new CacheEntry(image, null, null, 0));
+        CACHE.put(key, new CacheEntry(image, null, 0));
         log.debug("Cached image with key: {}", key);
     }
 
@@ -75,7 +76,7 @@ public final class GeneratorCache {
             return null;
         }
 
-        return new GifCacheEntry(entry.gifData(), entry.frames(), entry.frameDelayMs());
+        return new GifCacheEntry(entry.gifData(), entry.image(), entry.frameDelayMs());
     }
 
     /**
@@ -91,7 +92,7 @@ public final class GeneratorCache {
             return;
         }
 
-        CACHE.put(key, new CacheEntry(frames.getFirst(), gifData, List.copyOf(frames), frameDelayMs));
+        CACHE.put(key, new CacheEntry(frames.getFirst(), gifData, frameDelayMs));
         log.debug("Cached gif with key: {}", key);
     }
 
@@ -107,7 +108,8 @@ public final class GeneratorCache {
         int gifCount = 0;
 
         if (CACHE != null) {
-            for (CacheEntry entry : CACHE.asMap().values()) {
+            for (Map.Entry<String, CacheEntry> cacheEntry : CACHE.asMap().entrySet()) {
+                CacheEntry entry = cacheEntry.getValue();
                 if (entry.image() != null) {
                     imageCount++;
                 }
@@ -136,7 +138,7 @@ public final class GeneratorCache {
     /**
      * Cached GIF entry
      */
-    public record GifCacheEntry(byte[] gifData, List<BufferedImage> frames, int frameDelayMs) {
+    public record GifCacheEntry(byte[] gifData, BufferedImage firstFrame, int frameDelayMs) {
     }
 
     private static CacheEntry getEntry(String key) {
@@ -152,6 +154,6 @@ public final class GeneratorCache {
         return entry;
     }
 
-    private record CacheEntry(BufferedImage image, byte[] gifData, List<BufferedImage> frames, int frameDelayMs) {
+    private record CacheEntry(BufferedImage image, byte[] gifData, int frameDelayMs) {
     }
 }
