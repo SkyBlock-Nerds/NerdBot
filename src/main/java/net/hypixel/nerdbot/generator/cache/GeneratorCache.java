@@ -8,27 +8,28 @@ import net.hypixel.nerdbot.bot.config.GeneratorConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.image.BufferedImage;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public final class GeneratorCache {
 
-    private static final Cache<@NotNull String, BufferedImage> IMAGE_CACHE;
+    private static final Cache<@NotNull String, CacheEntry> CACHE;
 
     static {
         GeneratorConfig.CacheConfig config = NerdBotApp.getBot().getConfig().getGeneratorConfig().getCache();
 
         if (config.isEnabled()) {
-            IMAGE_CACHE = Caffeine.newBuilder()
+            CACHE = Caffeine.newBuilder()
                 .maximumSize(config.getMaxSize())
                 .expireAfterWrite(config.getTtlMinutes(), TimeUnit.MINUTES)
                 .build();
 
-            log.info("Generator image cache initialized with max size: {}, TTL: {} minutes",
+            log.info("Generator cache initialized with max size: {}, TTL: {} minutes",
                 config.getMaxSize(), config.getTtlMinutes());
         } else {
-            IMAGE_CACHE = null;
-            log.info("Generator image cache is disabled");
+            CACHE = null;
+            log.info("Generator cache is disabled");
         }
     }
 
@@ -43,30 +44,55 @@ public final class GeneratorCache {
      * @return The cached image or null if not found/expired
      */
     public static BufferedImage getImage(String key) {
-        if (IMAGE_CACHE == null) {
-            return null;
-        }
-
-        BufferedImage image = IMAGE_CACHE.getIfPresent(key);
-        if (image != null) {
-            log.debug("Cache hit for image key: {}", key);
-        }
-        return image;
+        CacheEntry entry = getEntry(key);
+        return entry == null ? null : entry.image();
     }
 
     /**
      * Caches an image
      *
-     * @param key The cache key
+     * @param key   The cache key
      * @param image The image to cache
      */
     public static void putImage(String key, BufferedImage image) {
-        if (IMAGE_CACHE == null || image == null) {
+        if (CACHE == null || image == null) {
             return;
         }
 
-        IMAGE_CACHE.put(key, image);
+        CACHE.put(key, new CacheEntry(image, null, null, 0));
         log.debug("Cached image with key: {}", key);
+    }
+
+    /**
+     * Gets a cached GIF entry
+     *
+     * @param key The cache key
+     * @return The cached GIF entry or null if not found/expired
+     */
+    public static GifCacheEntry getGif(String key) {
+        CacheEntry entry = getEntry(key);
+        if (entry == null || entry.gifData() == null) {
+            return null;
+        }
+
+        return new GifCacheEntry(entry.gifData(), entry.frames(), entry.frameDelayMs());
+    }
+
+    /**
+     * Caches a GIF entry
+     *
+     * @param key          The cache key
+     * @param gifData      The GIF data to cache
+     * @param frames       The animation frames to cache
+     * @param frameDelayMs The frame delay in milliseconds
+     */
+    public static void putGif(String key, byte[] gifData, List<BufferedImage> frames, int frameDelayMs) {
+        if (CACHE == null || gifData == null || gifData.length == 0 || frames == null || frames.isEmpty() || frameDelayMs <= 0) {
+            return;
+        }
+
+        CACHE.put(key, new CacheEntry(frames.getFirst(), gifData, List.copyOf(frames), frameDelayMs));
+        log.debug("Cached gif with key: {}", key);
     }
 
     /**
@@ -77,10 +103,24 @@ public final class GeneratorCache {
     public static CacheStats getStats() {
         var config = NerdBotApp.getBot().getConfig().getGeneratorConfig().getCache();
 
-        int imageCount = IMAGE_CACHE != null ? (int) IMAGE_CACHE.estimatedSize() : 0;
+        int imageCount = 0;
+        int gifCount = 0;
+
+        if (CACHE != null) {
+            for (CacheEntry entry : CACHE.asMap().values()) {
+                if (entry.image() != null) {
+                    imageCount++;
+                }
+
+                if (entry.gifData() != null) {
+                    gifCount++;
+                }
+            }
+        }
 
         return new CacheStats(
             imageCount,
+            gifCount,
             config.getMaxSize(),
             config.getTtlMinutes(),
             config.isEnabled()
@@ -88,8 +128,30 @@ public final class GeneratorCache {
     }
 
     /**
-     * Cache statistics data class
+     * Cache statistics data class.
      */
-    public record CacheStats(int imageCount, int maxSize, int ttlMinutes, boolean enabled) {
+    public record CacheStats(int imageCount, int gifCount, int maxSize, int ttlMinutes, boolean enabled) {
+    }
+
+    /**
+     * Cached GIF entry
+     */
+    public record GifCacheEntry(byte[] gifData, List<BufferedImage> frames, int frameDelayMs) {
+    }
+
+    private static CacheEntry getEntry(String key) {
+        if (CACHE == null) {
+            return null;
+        }
+
+        CacheEntry entry = CACHE.getIfPresent(key);
+        if (entry != null) {
+            log.debug("Cache hit for key: {}", key);
+        }
+
+        return entry;
+    }
+
+    private record CacheEntry(BufferedImage image, byte[] gifData, List<BufferedImage> frames, int frameDelayMs) {
     }
 }

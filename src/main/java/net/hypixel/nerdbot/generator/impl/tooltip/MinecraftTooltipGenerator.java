@@ -70,9 +70,15 @@ public class MinecraftTooltipGenerator implements Generator {
         MinecraftTooltip tooltip = parseLore(itemLore, settings).render();
 
         if (tooltip.isAnimated()) {
-            // Don't cache animated tooltips - they're more complex with GIF data
+            GeneratorCache.GifCacheEntry cachedGif = GeneratorCache.getGif(cacheKey);
+            if (cachedGif != null) {
+                log.debug("Using cached tooltip gif");
+                return new GeneratedObject(cachedGif.gifData(), cachedGif.frames(), cachedGif.frameDelayMs());
+            }
+
             try {
                 byte[] gifData = ImageUtil.toGifBytes(tooltip.getAnimationFrames(), tooltip.getFrameDelayMs(), true);
+                GeneratorCache.putGif(cacheKey, gifData, tooltip.getAnimationFrames(), tooltip.getFrameDelayMs());
                 return new GeneratedObject(gifData, tooltip.getAnimationFrames(), tooltip.getFrameDelayMs());
             } catch (IOException e) {
                 throw new GeneratorException("Failed to generate animated tooltip GIF", e);
