@@ -259,6 +259,7 @@ public class MinecraftTooltipGenerator implements Generator {
                     // Parse Name if present
                     if (displayObject.has("Name")) {
                         this.itemName = displayObject.get("Name").getAsString();
+                        this.itemName = this.itemName.replace(ChatFormat.SECTION_SYMBOL, ChatFormat.AMPERSAND_SYMBOL);
                     }
 
                     // Parse Lore if present
