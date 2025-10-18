@@ -60,7 +60,7 @@ public class MinecraftTooltipGenerator implements Generator {
             type,
             alpha,
             padding,
-            normalItem,
+            !normalItem,
             maxLineLength,
             renderBorder,
             centeredText,
