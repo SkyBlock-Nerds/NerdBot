@@ -62,6 +62,27 @@ public class MinecraftTooltip {
         precomputeCharacterWidths();
     }
 
+    private void drawSolidBorder(Graphics2D graphics, int width, int height, int inset, int stroke) {
+        if (stroke <= 0) {
+            return;
+        }
+
+        int horizontalLength = width - inset * 2;
+        int verticalLength = height - inset * 2;
+        if (horizontalLength <= 0 || verticalLength <= 0) {
+            return;
+        }
+
+        // Top
+        graphics.fillRect(inset, inset, horizontalLength, stroke);
+        // Bottom
+        graphics.fillRect(inset, height - inset - stroke, horizontalLength, stroke);
+        // Left
+        graphics.fillRect(inset, inset + stroke, stroke, verticalLength - stroke * 2);
+        // Right
+        graphics.fillRect(width - inset - stroke, inset + stroke, stroke, verticalLength - stroke * 2);
+    }
+
     @Getter
     private List<BufferedImage> animationFrames = new ArrayList<>();
 
@@ -243,8 +264,44 @@ public class MinecraftTooltip {
 
         // Draw Purple Border
         frameGraphics.setColor(new Color(37, 0, 94, this.isAnimated ? 255 : this.getAlpha()));
-        frameGraphics.drawRect(pixelSize, pixelSize, width - pixelSize * 2 - 1, height - pixelSize * 2 - 1);
-        frameGraphics.drawRect(pixelSize + 1, pixelSize + 1, width - pixelSize * 3 - 1, height - pixelSize * 3 - 1);
+
+        int outerInset = pixelSize;
+        int outerThickness = Math.max(1, pixelSize / 2);
+        drawBorderWithThickness(frameGraphics, width, height, outerInset, outerThickness);
+
+        int gapBetweenBorders = 0;
+        int innerInset = outerInset + outerThickness + gapBetweenBorders;
+        int innerThickness = Math.max(1, (int) Math.round(pixelSize / 2.0));
+        if (innerInset * 2 < width && innerInset * 2 < height) {
+            drawBorderWithThickness(frameGraphics, width, height, innerInset, innerThickness);
+        }
+    }
+
+    private void drawBorderWithThickness(Graphics2D graphics, int width, int height, int inset, int thickness) {
+        if (thickness <= 0) {
+            return;
+        }
+
+        int innerWidth = width - inset * 2;
+        int innerHeight = height - inset * 2;
+        if (innerWidth <= 0 || innerHeight <= 0) {
+            return;
+        }
+
+        // Top edge
+        graphics.fillRect(inset, inset, innerWidth, thickness);
+        // Bottom edge
+        graphics.fillRect(inset, height - inset - thickness, innerWidth, thickness);
+
+        int verticalHeight = innerHeight - thickness * 2;
+        if (verticalHeight <= 0) {
+            return;
+        }
+
+        // Left edge
+        graphics.fillRect(inset, inset + thickness, thickness, verticalHeight);
+        // Right edge
+        graphics.fillRect(width - inset - thickness, inset + thickness, thickness, verticalHeight);
     }
 
     /**
