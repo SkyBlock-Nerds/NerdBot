@@ -358,8 +358,8 @@ public class ReminderCommands {
             }
 
             String content = "📋 **Reminder Details**\n\n" +
-                "🕐 **Time:** " + DiscordTimestamp.toLongDateTime(reminder.getTime().getTime()) + "\n" +
-                "⏰ **Relative:** " + DiscordTimestamp.toRelativeTimestamp(reminder.getTime().getTime()) + "\n\n" +
+                "🕐 **Time:** " + DiscordTimestamp.toLongDateTime(reminder.getTime()) + "\n" +
+                "⏰ **Relative:** " + DiscordTimestamp.toRelativeTimestamp(reminder.getTime()) + "\n\n" +
                 "📝 **Description:**\n" + reminder.getDescription() + "\n\n" +
                 "📍 **Channel:** <#" + reminder.getChannelId() + ">";
 
@@ -393,7 +393,7 @@ public class ReminderCommands {
         List<Reminder> allReminders = new ArrayList<>(reminderRepository
             .filter(reminder -> reminder.getUserId().equalsIgnoreCase(userId))
             .stream()
-            .sorted(Comparator.comparing(Reminder::getTime))
+            .sorted(Comparator.comparingLong(Reminder::getTime))
             .toList());
 
         if (allReminders.isEmpty()) {

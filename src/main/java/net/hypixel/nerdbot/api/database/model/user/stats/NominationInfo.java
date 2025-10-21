@@ -1,11 +1,13 @@
 package net.hypixel.nerdbot.api.database.model.user.stats;
 
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.hypixel.nerdbot.util.discord.DiscordTimestamp;
+import net.hypixel.nerdbot.util.json.adapter.EpochMillisAdapter;
 
-import java.util.Date;
 import java.util.Optional;
 
 @Getter
@@ -14,60 +16,67 @@ import java.util.Optional;
 public class NominationInfo {
 
     private int totalNominations = 0;
-    private Date lastNominationDate = null;
+    @JsonAdapter(EpochMillisAdapter.class)
+    @SerializedName(value = "lastNominationTimestamp", alternate = {"lastNominationDate"})
+    private Long lastNominationTimestamp = null;
     private int totalInactivityWarnings = 0;
-    private Date lastInactivityWarningDate = null;
+    @JsonAdapter(EpochMillisAdapter.class)
+    @SerializedName(value = "lastInactivityWarningTimestamp", alternate = {"lastInactivityWarningDate"})
+    private Long lastInactivityWarningTimestamp = null;
     private int totalRoleRestrictedInactivityWarnings = 0;
-    private Date lastRoleRestrictedInactivityWarningDate = null;
+    @JsonAdapter(EpochMillisAdapter.class)
+    @SerializedName(value = "lastRoleRestrictedInactivityWarningTimestamp", alternate = {"lastRoleRestrictedInactivityWarningDate"})
+    private Long lastRoleRestrictedInactivityWarningTimestamp = null;
 
     public void increaseNominations() {
         this.totalNominations++;
-        this.lastNominationDate = new Date();
+        this.lastNominationTimestamp = System.currentTimeMillis();
     }
 
     public String getLastNominationDateString() {
-        if (lastNominationDate == null) {
+        if (lastNominationTimestamp == null) {
             return "Never";
         }
 
-        return DiscordTimestamp.toShortDate(lastNominationDate.getTime());
+        return DiscordTimestamp.toShortDate(lastNominationTimestamp);
     }
 
-    public Optional<Date> getLastNominationDate() {
-        return Optional.ofNullable(lastNominationDate);
+    public Optional<Long> getLastNominationTimestamp() {
+        return Optional.ofNullable(lastNominationTimestamp);
     }
 
     public void increaseInactivityWarnings() {
         this.totalInactivityWarnings++;
-        this.lastInactivityWarningDate = new Date();
+        this.lastInactivityWarningTimestamp = System.currentTimeMillis();
     }
 
     public String getLastInactivityWarningDateString() {
-        if (lastInactivityWarningDate == null) {
+        if (lastInactivityWarningTimestamp == null) {
             return "Never";
         }
 
-        return DiscordTimestamp.toShortDate(lastInactivityWarningDate.getTime());
+        return DiscordTimestamp.toShortDate(lastInactivityWarningTimestamp);
     }
 
-    public Optional<Date> getLastInactivityWarningDate() {
-        return Optional.ofNullable(lastInactivityWarningDate);
+    public Optional<Long> getLastInactivityWarningTimestamp() {
+        return Optional.ofNullable(lastInactivityWarningTimestamp);
     }
 
     public void increaseRoleRestrictedInactivityWarnings() {
         this.totalRoleRestrictedInactivityWarnings++;
-        this.lastRoleRestrictedInactivityWarningDate = new Date();
+        this.lastRoleRestrictedInactivityWarningTimestamp = System.currentTimeMillis();
     }
 
     public String getLastRoleRestrictedInactivityWarningDateString() {
-        if (lastRoleRestrictedInactivityWarningDate == null) {
+        if (lastRoleRestrictedInactivityWarningTimestamp == null) {
             return "Never";
         }
 
-        return DiscordTimestamp.toShortDate(lastRoleRestrictedInactivityWarningDate.getTime());
+        return DiscordTimestamp.toShortDate(lastRoleRestrictedInactivityWarningTimestamp);
     }
 
-    public Optional<Date> getLastRoleRestrictedInactivityWarningDate() {
-        return Optional.ofNullable(lastRoleRestrictedInactivityWarningDate);
+    public Optional<Long> getLastRoleRestrictedInactivityWarningTimestamp() {
+        return Optional.ofNullable(lastRoleRestrictedInactivityWarningTimestamp);
     }
+
 }
