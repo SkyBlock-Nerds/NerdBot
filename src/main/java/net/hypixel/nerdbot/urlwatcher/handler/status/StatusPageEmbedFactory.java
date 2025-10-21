@@ -8,7 +8,6 @@ import net.hypixel.nerdbot.util.TimeUtils;
 
 import java.awt.Color;
 import java.time.Instant;
-import java.util.Date;
 
 @RequiredArgsConstructor
 public class StatusPageEmbedFactory {
@@ -74,8 +73,8 @@ public class StatusPageEmbedFactory {
             }
 
             if (maintenance.getScheduledFor() != null && maintenance.getScheduledUntil() != null) {
-                long startTime = Date.from(maintenance.getScheduledForInstant()).getTime();
-                long endTime = Date.from(maintenance.getScheduledUntilInstant()).getTime();
+                long startTime = maintenance.getScheduledForInstant().toEpochMilli();
+                long endTime = maintenance.getScheduledUntilInstant().toEpochMilli();
                 long duration = endTime - startTime;
 
                 description.append("**Estimated Duration:** ").append(TimeUtils.formatMsLong(duration)).append("\n");

@@ -57,7 +57,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -238,9 +237,9 @@ public class NerdBot implements Bot {
         reminderRepository.loadAllDocumentsIntoCacheAsync()
             .thenRun(() -> {
                 reminderRepository.forEach(reminder -> {
-                    Date now = new Date();
+                    long now = System.currentTimeMillis();
 
-                    if (now.after(reminder.getTime())) {
+                    if (now > reminder.getTime()) {
                         reminder.sendReminder(true);
                         log.info("Sent reminder {} because it was not sent yet!", reminder);
                         return;

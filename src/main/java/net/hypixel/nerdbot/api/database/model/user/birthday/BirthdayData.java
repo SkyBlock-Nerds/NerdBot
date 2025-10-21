@@ -1,40 +1,101 @@
 package net.hypixel.nerdbot.api.database.model.user.birthday;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.annotations.SerializedName;
+import net.hypixel.nerdbot.util.json.adapter.EpochMillisAdapter;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Timer;
 
-@AllArgsConstructor
-@Getter
-@Setter
 public class BirthdayData {
 
-    private Date birthday;
+    @JsonAdapter(EpochMillisAdapter.class)
+    @SerializedName(value = "birthdayTimestamp", alternate = {"birthday"})
+    private long birthdayTimestamp;
     private boolean shouldAnnounceAge;
     private transient Timer timer;
 
     public BirthdayData() {
+        this(-1L, false, null);
     }
 
-    public Date getBirthdayThisYear() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(birthday);
-        calendar.set(Calendar.YEAR, Calendar.getInstance().get(Calendar.YEAR));
-
-        return calendar.getTime();
+    public BirthdayData(long birthdayTimestamp, boolean shouldAnnounceAge, Timer timer) {
+        this.birthdayTimestamp = birthdayTimestamp;
+        this.shouldAnnounceAge = shouldAnnounceAge;
+        this.timer = timer;
     }
 
-    public int getAge() {
-        Date now = new Date();
-        long diff = now.getTime() - birthday.getTime();
-        return (int) (diff / (1000L * 60L * 60L * 24L * 365L));
+    public long getBirthdayTimestamp() {
+        return birthdayTimestamp;
+    }
+
+    public void setBirthdayTimestamp(long birthdayTimestamp) {
+        this.birthdayTimestamp = birthdayTimestamp;
+    }
+
+    public boolean isShouldAnnounceAge() {
+        return shouldAnnounceAge;
+    }
+
+    public void setShouldAnnounceAge(boolean shouldAnnounceAge) {
+        this.shouldAnnounceAge = shouldAnnounceAge;
+    }
+
+    public Timer getTimer() {
+        return timer;
+    }
+
+    public void setTimer(Timer timer) {
+        this.timer = timer;
     }
 
     public boolean isBirthdaySet() {
-        return birthday != null;
+        return birthdayTimestamp > 0;
+    }
+
+    public Date getBirthday() {
+        return getBirthdayDate();
+    }
+
+    public Date getBirthdayDate() {
+        return isBirthdaySet() ? new Date(birthdayTimestamp) : null;
+    }
+
+    public void setBirthday(Date birthday) {
+        this.birthdayTimestamp = birthday != null ? birthday.getTime() : -1L;
+    }
+
+    public long getBirthdayThisYearTimestamp() {
+        if (!isBirthdaySet()) {
+            return -1L;
+        }
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(birthdayTimestamp);
+        calendar.set(Calendar.YEAR, Calendar.getInstance().get(Calendar.YEAR));
+
+        long thisYear = calendar.getTimeInMillis();
+
+        if (thisYear < System.currentTimeMillis()) {
+            calendar.add(Calendar.YEAR, 1);
+            thisYear = calendar.getTimeInMillis();
+        }
+
+        return thisYear;
+    }
+
+    public Date getBirthdayThisYear() {
+        long thisYearTimestamp = getBirthdayThisYearTimestamp();
+        return thisYearTimestamp > 0 ? new Date(thisYearTimestamp) : null;
+    }
+
+    public int getAge() {
+        if (!isBirthdaySet()) {
+            return 0;
+        }
+
+        long diff = System.currentTimeMillis() - birthdayTimestamp;
+        return (int) (diff / (1000L * 60L * 60L * 24L * 365L));
     }
 }
