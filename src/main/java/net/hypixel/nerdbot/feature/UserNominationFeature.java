@@ -72,9 +72,9 @@ public class UserNominationFeature extends BotFeature {
 
             log.info("Checking if " + member.getEffectiveName() + " should be nominated for promotion (total comments: " + totalComments + ", total votes: " + totalVotes + ", meets comments requirement: " + hasRequiredComments + ", meets votes requirement: " + hasRequiredVotes + ")");
 
-            lastActivity.getNominationInfo().getLastNominationDate().ifPresentOrElse(date -> {
-                Month lastNominationMonth = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
-                Month now = Calendar.getInstance().toInstant().atZone(ZoneId.systemDefault()).getMonth();
+            lastActivity.getNominationInfo().getLastNominationTimestamp().ifPresentOrElse(timestamp -> {
+                Month lastNominationMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
+                Month now = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
 
                 if (lastNominationMonth != now && (totalComments >= requiredComments && totalVotes >= requiredVotes)) {
                     log.info("Last nomination was not this month (last: " + lastNominationMonth + ", now: " + now + "), sending nomination message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
@@ -131,9 +131,9 @@ public class UserNominationFeature extends BotFeature {
 
             log.info("Checking if " + member.getEffectiveName() + " should be flagged for inactivity (total messages: " + totalMessages + ", total comments: " + totalComments + ", total votes: " + totalVotes + ") (has min. comments: " + hasRequiredComments + ", has min. votes: " + hasRequiredVotes + ", has min. messages: " + hasRequiredMessages + ", requirements met: " + requirementsMet + "/3)");
 
-            lastActivity.getNominationInfo().getLastInactivityWarningDate().ifPresentOrElse(date -> {
-                Month lastInactivityWarningMonth = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
-                Month monthNow = Calendar.getInstance().toInstant().atZone(ZoneId.systemDefault()).getMonth();
+            lastActivity.getNominationInfo().getLastInactivityWarningTimestamp().ifPresentOrElse(timestamp -> {
+                Month lastInactivityWarningMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
+                Month monthNow = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
 
                 if (lastInactivityWarningMonth != monthNow && requirementsMet < 2) {
                     log.debug("Last inactivity check was not this month (last: " + lastInactivityWarningMonth + ", now: " + monthNow + "), sending inactivity message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
@@ -330,9 +330,9 @@ public class UserNominationFeature extends BotFeature {
                     totalVotes, group.getMinimumVotesForActivity(),
                     requirementsMet);
 
-                lastActivity.getNominationInfo().getLastRoleRestrictedInactivityWarningDate().ifPresentOrElse(date -> {
-                    Month lastInactivityWarningMonth = date.toInstant().atZone(ZoneId.systemDefault()).getMonth();
-                    Month monthNow = Calendar.getInstance().toInstant().atZone(ZoneId.systemDefault()).getMonth();
+            lastActivity.getNominationInfo().getLastRoleRestrictedInactivityWarningTimestamp().ifPresentOrElse(timestamp -> {
+                Month lastInactivityWarningMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
+                Month monthNow = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
 
                     if (lastInactivityWarningMonth != monthNow && requirementsMet < 2) {
                         log.info("Last role-restricted inactivity check for group '{}' was not this month (last: {}, now: {}), sending inactivity message for {} (nomination info: {})",
