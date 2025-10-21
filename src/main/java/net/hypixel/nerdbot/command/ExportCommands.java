@@ -45,6 +45,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -55,6 +56,11 @@ public class ExportCommands {
     @SlashCommand(name = PARENT_COMMAND, subcommand = "threads", description = "Export threads from a Forum Channel", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
     public void exportForumThreads(SlashCommandInteractionEvent event, @SlashOption ForumChannel forumChannel) {
         event.deferReply(true).queue();
+
+        if (event.getMember() == null) {
+            event.getHook().editOriginal("This command can only be used in a server!").queue();
+            return;
+        }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser commandSender = discordUserRepository.findOrCreateById(event.getMember().getId());
@@ -154,6 +160,11 @@ public class ExportCommands {
             return;
         }
 
+        if (event.getMember() == null) {
+            event.getHook().editOriginal("This command can only be used in a server!").queue();
+            return;
+        }
+
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
@@ -212,64 +223,102 @@ public class ExportCommands {
     }
 
     @SlashCommand(name = PARENT_COMMAND, subcommand = "uuids", description = "Get all assigned Minecraft Names/UUIDs from all specified roles (requires Member) in the server.", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
-    public void userList(SlashCommandInteractionEvent event, @SlashOption(description = "Comma-separated role names to search for (Default: Member)", required = false) String roles) throws IOException {
-        event.deferReply(true).complete();
+    public void userList(SlashCommandInteractionEvent event, @SlashOption(description = "Comma-separated role names to search for (Default: Member)", required = false) String roles) {
+        event.deferReply(true).queue();
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         String[] roleArray = roles != null ? roles.split(", ?") : new String[]{"Member"};
-        JsonArray uuidArray = new JsonArray();
 
-        List<MojangProfile> profiles = event.getGuild().loadMembers().get()
-            .stream()
-            .filter(member -> !member.getUser().isBot())
-            .filter(member -> RoleManager.hasAnyRole(member, roleArray))
-            .map(member -> discordUserRepository.findById(member.getId()))
-            .filter(DiscordUser::isProfileAssigned)
-            .map(DiscordUser::getMojangProfile)
-            .toList();
+        if (event.getGuild() == null) {
+            event.getHook().editOriginal("This command can only be used in a server!").queue();
+            return;
+        }
 
-        log.info("Found " + profiles.size() + " members meeting requirements.");
-        profiles.forEach(profile -> uuidArray.add(profile.getUniqueId().toString()));
-        File file = FileUtils.createTempFile(String.format("export-uuids-%s.json", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), NerdBotApp.GSON.toJson(uuidArray));
-        event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+        event.getGuild().loadMembers().onSuccess(members -> {
+            List<MojangProfile> profiles = members.stream()
+                .filter(member -> !member.getUser().isBot())
+                .filter(member -> RoleManager.hasAnyRole(member, roleArray))
+                .map(member -> discordUserRepository.findById(member.getId()))
+                .filter(Objects::nonNull)
+                .filter(DiscordUser::isProfileAssigned)
+                .map(DiscordUser::getMojangProfile)
+                .toList();
+
+            log.info("Found " + profiles.size() + " members meeting requirements.");
+
+            if (profiles.isEmpty()) {
+                event.getHook().editOriginal("Nothing found to export!").queue();
+                return;
+            }
+
+            JsonArray uuidArray = new JsonArray();
+            profiles.forEach(profile -> uuidArray.add(profile.getUniqueId().toString()));
+
+            try {
+                File file = FileUtils.createTempFile(
+                    String.format("export-uuids-%s.json", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())),
+                    NerdBotApp.GSON.toJson(uuidArray)
+                );
+                event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+            } catch (IOException exception) {
+                log.error("Failed to create temp file!", exception);
+                event.getHook().editOriginal("An error occurred while creating the temp file: " + exception.getMessage()).queue();
+            }
+        }).onError(throwable -> {
+            log.error("Failed to load guild members for UUID export", throwable);
+            event.getHook().editOriginal("Failed to load guild members: " + throwable.getMessage()).queue();
+        });
     }
 
     @SlashCommand(name = PARENT_COMMAND, subcommand = "roles", description = "Export a list of users with the given roles", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
     public void exportRoles(SlashCommandInteractionEvent event, @SlashOption(description = "Comma-separated list of role names (e.g. Role 1, Role 2, Role 3)") String roles) {
-        event.deferReply(true).complete();
-
+        event.deferReply(true).queue();
         String[] roleArray = roles.split(", ?");
-        Map<String, List<String>> members = new HashMap<>();
 
-        // Group roles as key to a list of members with that role
-        event.getGuild().loadMembers().get().forEach(member -> {
-            List<String> memberRoles = member.getRoles().stream().map(role -> role.getName().toLowerCase()).toList();
-            for (String role : roleArray) {
-                if (memberRoles.contains(role.toLowerCase())) {
-                    members.computeIfAbsent(role, k -> new ArrayList<>()).add(member.getEffectiveName());
-                }
-            }
-        });
-
-        if (members.values().stream().allMatch(List::isEmpty)) {
-            event.getHook().editOriginal("Nothing found to export!").queue();
+        if (event.getGuild() == null) {
+            event.getHook().editOriginal("This command can only be used in a server!").queue();
             return;
         }
 
-        try {
-            StringBuilder stringBuilder = new StringBuilder();
+        event.getGuild().loadMembers().onSuccess(members -> {
+            Map<String, List<String>> membersByRole = new HashMap<>();
 
-            for (Map.Entry<String, List<String>> entry : members.entrySet()) {
-                stringBuilder.append(entry.getKey()).append(":\n");
-                entry.getValue().forEach(member -> stringBuilder.append(member).append("\n"));
-                stringBuilder.append("\n");
+            // Group roles as key to a list of members with that role
+            members.forEach(member -> {
+                List<String> memberRoles = member.getRoles().stream().map(role -> role.getName().toLowerCase()).toList();
+                for (String role : roleArray) {
+                    if (memberRoles.contains(role.toLowerCase())) {
+                        membersByRole.computeIfAbsent(role, k -> new ArrayList<>()).add(member.getEffectiveName());
+                    }
+                }
+            });
+
+            if (membersByRole.values().stream().allMatch(list -> list == null || list.isEmpty())) {
+                event.getHook().editOriginal("Nothing found to export!").queue();
+                return;
             }
 
-            File file = FileUtils.createTempFile(String.format("export-roles-%s.csv", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), stringBuilder.toString());
-            event.getHook().sendFiles(FileUpload.fromData(file)).queue();
-        } catch (IOException exception) {
-            log.error("Failed to create temp file!", exception);
-            event.getHook().editOriginal("An error occurred while creating the temp file: " + exception.getMessage()).queue();
-        }
+            try {
+                StringBuilder stringBuilder = new StringBuilder();
+
+                for (Map.Entry<String, List<String>> entry : membersByRole.entrySet()) {
+                    stringBuilder.append(entry.getKey()).append(":\n");
+                    entry.getValue().forEach(member -> stringBuilder.append(member).append("\n"));
+                    stringBuilder.append("\n");
+                }
+
+                File file = FileUtils.createTempFile(
+                    String.format("export-roles-%s.csv", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())),
+                    stringBuilder.toString()
+                );
+                event.getHook().sendFiles(FileUpload.fromData(file)).queue();
+            } catch (IOException exception) {
+                log.error("Failed to create temp file!", exception);
+                event.getHook().editOriginal("An error occurred while creating the temp file: " + exception.getMessage()).queue();
+            }
+        }).onError(throwable -> {
+            log.error("Failed to load guild members for role export", throwable);
+            event.getHook().editOriginal("Failed to load guild members: " + throwable.getMessage()).queue();
+        });
     }
 
     @SlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
@@ -279,7 +328,12 @@ public class ExportCommands {
         @SlashOption(description = "The number of messages to consider as active", required = false) int inactivityMessages,
         @SlashOption(description = "Role to consider when exporting", required = false) String role
     ) {
-        event.deferReply(true).complete();
+        event.deferReply(true).queue();
+
+        if (event.getGuild() == null || event.getMember() == null) {
+            event.getHook().editOriginal("This command can only be used in a server!").queue();
+            return;
+        }
 
         DiscordUserRepository discordUserRepository = NerdBotApp.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         CSVData csvData = new CSVData(List.of(
