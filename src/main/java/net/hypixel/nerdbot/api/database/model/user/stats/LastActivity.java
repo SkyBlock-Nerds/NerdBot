@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.api.database.model.user.stats;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.hypixel.nerdbot.NerdBotApp;
@@ -25,6 +26,7 @@ import java.util.function.ToLongFunction;
 @Getter
 @Setter
 @Slf4j
+@ToString
 public class LastActivity {
 
     // Global Activity

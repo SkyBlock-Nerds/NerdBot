@@ -37,14 +37,14 @@ import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.util.HttpUtils;
 import net.hypixel.nerdbot.util.exception.HttpException;
-import net.hypixel.nerdbot.util.gson.HypixelPlayerResponse;
+import net.hypixel.nerdbot.util.json.http.HypixelPlayerResponse;
 import net.hypixel.nerdbot.util.pagination.PaginatedResponse;
 import net.hypixel.nerdbot.util.pagination.PaginationManager;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
+import java.awt.Color;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;

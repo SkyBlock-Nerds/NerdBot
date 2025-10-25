@@ -70,6 +70,11 @@ public class BotConfig {
     private StatusPageConfig statusPageConfig = new StatusPageConfig();
 
     /**
+     * Configuration for generators (item, inventory, player head, tooltip, etc.)
+     */
+    private GeneratorConfig generatorConfig = new GeneratorConfig();
+
+    /**
      * The {@link Guild} ID that the bot will be running in
      */
     private String guildId = "";
@@ -142,4 +147,9 @@ public class BotConfig {
      * Default value is 10
      */
     private int inactivityMessages = 10;
+
+    /**
+     * The length of time in milliseconds that the bot will wait for an image to be generated before timing out
+     */
+    private long imageGeneratorTimeoutMs = 3_000;
 }
