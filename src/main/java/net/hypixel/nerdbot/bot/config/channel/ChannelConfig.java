@@ -182,7 +182,8 @@ public class ChannelConfig {
 
         // Check if config already exists
         for (int i = 0; i < autoTags.size(); i++) {
-            if (autoTags.get(i).getForumChannelId().equals(forumChannelId)) {
+            ForumAutoTag tag = autoTags.get(i);
+            if (tag != null && tag.getForumChannelId().equals(forumChannelId)) {
                 // Update existing
                 autoTags.set(i, new ForumAutoTag(forumChannelId, defaultTagName, reviewTagName));
                 this.forumAutoTags = autoTags;
@@ -204,7 +205,7 @@ public class ChannelConfig {
      */
     public boolean removeForumAutoTagConfig(String forumChannelId) {
         List<ForumAutoTag> configs = new ArrayList<>(forumAutoTags);
-        boolean removed = configs.removeIf(config -> config.getForumChannelId().equals(forumChannelId));
+        boolean removed = configs.removeIf(config -> config != null && config.getForumChannelId().equals(forumChannelId));
 
         if (removed) {
             this.forumAutoTags = configs;
