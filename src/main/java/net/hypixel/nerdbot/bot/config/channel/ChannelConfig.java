@@ -164,7 +164,7 @@ public class ChannelConfig {
      */
     public ForumAutoTag getForumAutoTagConfig(String forumChannelId) {
         return forumAutoTags.stream()
-            .filter(config -> config.getForumChannelId().equals(forumChannelId))
+            .filter(config -> config != null && config.getForumChannelId().equals(forumChannelId))
             .findFirst()
             .orElse(null);
     }
