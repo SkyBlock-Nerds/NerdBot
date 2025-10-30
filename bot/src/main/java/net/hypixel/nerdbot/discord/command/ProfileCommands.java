@@ -21,7 +21,6 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.BotEnvironment;
 import net.hypixel.nerdbot.api.badge.Badge;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.badge.BadgeManager;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
@@ -55,6 +54,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class ProfileCommands {
@@ -173,7 +173,7 @@ public class ProfileCommands {
         }
 
         Guild guild = member.getGuild();
-        String newMemberRoleId = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getNewMemberRoleId();
+        String newMemberRoleId = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getNewMemberRoleId();
         java.util.Optional<Role> newMemberRole = java.util.Optional.empty();
 
         if (newMemberRoleId != null) {
@@ -184,7 +184,7 @@ public class ProfileCommands {
             if (!RoleManager.hasHigherOrEqualRole(member, newMemberRole.get())) { // Ignore Existing Members
                 try {
                     guild.addRoleToMember(member, newMemberRole.get()).complete();
-                    String limboRoleId = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getLimboRoleId();
+                    String limboRoleId = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getLimboRoleId();
 
                     if (limboRoleId != null && !limboRoleId.isEmpty()) {
                         Role limboRole = guild.getRoleById(limboRoleId);
@@ -209,7 +209,7 @@ public class ProfileCommands {
 
         List<MessageEmbed> embeds = new ArrayList<>();
 
-        RoleConfig roleConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig();
+        RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
         int inactivityCheckDays = roleConfig.getDaysRequiredForInactivityCheck();
         int requiredMessages = roleConfig.getMessagesRequiredForInactivityCheck();
         int requiredVotes = roleConfig.getVotesRequiredForInactivityCheck();
@@ -358,7 +358,7 @@ public class ProfileCommands {
             .build());
 
         // Role-Restricted Channel Activity
-        List<RoleRestrictedChannelGroup> channelGroups = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getRoleRestrictedChannelGroups();
+        List<RoleRestrictedChannelGroup> channelGroups = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getRoleRestrictedChannelGroups();
 
         if (!channelGroups.isEmpty()) {
             Color[] restrictedChannelColors = {
@@ -480,9 +480,9 @@ public class ProfileCommands {
                         VERIFY_CACHE.put(event.getMember().getId(), mojangProfile);
                         event.getHook().editOriginal("Your verification request has been sent. You will be contacted via DM if any further information is required.").queue();
 
-                        ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessage("<@&" + ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getModeratorRoleId() + ">").addEmbeds(
+                        ChannelCache.getVerifyLogChannel().ifPresentOrElse(textChannel -> textChannel.sendMessage("<@&" + DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">").addEmbeds(
                                 new EmbedBuilder()
-                                    .appendDescription("<@&" + ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getModeratorRoleId() + ">")
+                                    .appendDescription("<@&" + DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getModeratorRoleId() + ">")
                                     .setTitle("Mojang Profile Verification")
                                     .setDescription(event.getMember().getAsMention() + " has sent a Mojang verification request. This discord account matches the social set for this Mojang Profile.")
                                     .setColor(Color.PINK)

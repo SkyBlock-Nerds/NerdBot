@@ -3,7 +3,6 @@ package net.hypixel.nerdbot.role;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.config.objects.PingableRole;
 import net.hypixel.nerdbot.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
@@ -11,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 public class RoleManager {
 
@@ -18,13 +18,13 @@ public class RoleManager {
     }
 
     public static Optional<PingableRole> getPingableRoleByName(String name) {
-        return Arrays.stream(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getPingableRoles())
+        return Arrays.stream(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getPingableRoles())
             .filter(pingableRole -> pingableRole.name().equalsIgnoreCase(name))
             .findFirst();
     }
 
     public static Optional<PingableRole> getPingableRoleById(String id) {
-        return Arrays.stream(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getPingableRoles())
+        return Arrays.stream(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getPingableRoles())
             .filter(pingableRole -> pingableRole.roleId().equalsIgnoreCase(id))
             .findFirst();
     }

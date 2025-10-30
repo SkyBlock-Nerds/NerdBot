@@ -8,6 +8,6 @@ import net.hypixel.nerdbot.api.bot.DiscordBot;
 public class DiscordBotEnvironment {
 
     public DiscordBot getBot() {
-        return (DiscordBot) BotEnvironment.getBot();
+        return BotEnvironment.getBot(DiscordBot.class);
     }
 }

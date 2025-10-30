@@ -11,9 +11,9 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.util.ArrayUtils;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class PinListener {
@@ -49,7 +49,7 @@ public class PinListener {
         }
 
         // Ignore if feature is globally turned off.
-        ChannelConfig channelConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig();
+        ChannelConfig channelConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig();
         if (!channelConfig.isAutoPinFirstMessage()) {
             return;
         }

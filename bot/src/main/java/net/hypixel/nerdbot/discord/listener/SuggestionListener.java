@@ -14,7 +14,6 @@ import net.dv8tion.jda.api.events.channel.update.ChannelUpdateNameEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.managers.channel.concrete.ForumChannelManager;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.bot.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.config.NerdBotConfig;
 import net.hypixel.nerdbot.config.channel.AlphaProjectConfig;
@@ -78,7 +77,7 @@ public class SuggestionListener {
 
                 boolean removed = botConfig.getChannelConfig().removeForumAutoTagConfig(event.getChannel().getId());
                 if (removed) {
-                    ((DiscordBot) BotEnvironment.getBot()).writeConfig(botConfig);
+                    DiscordBotEnvironment.getBot().writeConfig(botConfig);
                     log.info("Removed forum auto-tagging config for deleted forum '{}' (ID: {})", event.getChannel().getName(), event.getChannel().getId());
                 }
 
@@ -134,7 +133,7 @@ public class SuggestionListener {
                 );
 
                 if (added) {
-                    ((DiscordBot) BotEnvironment.getBot()).writeConfig(botConfig);
+                    DiscordBotEnvironment.getBot().writeConfig(botConfig);
                     log.info("Auto-configured forum auto-tagging for '{}' (ID: {}): Submitted -> {}",
                         forumChannel.getName(), forumChannel.getId(), botConfig.getSuggestionConfig().getReviewedTag());
                 }
@@ -146,8 +145,8 @@ public class SuggestionListener {
 
     private boolean isInSuggestionChannel(GenericChannelEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
-            SuggestionConfig suggestionConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getSuggestionConfig();
-            AlphaProjectConfig alphaProjectConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getAlphaProjectConfig();
+            SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
+            AlphaProjectConfig alphaProjectConfig = DiscordBotEnvironment.getBot().getConfig().getAlphaProjectConfig();
             String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
 
             return forumChannelId.equals(suggestionConfig.getForumChannelId())
@@ -163,7 +162,7 @@ public class SuggestionListener {
      */
     private void applyAutoTag(ThreadChannel thread) {
         ForumChannel forumChannel = thread.getParentChannel().asForumChannel();
-        ForumAutoTag autoTagConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
+        ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
 
         if (autoTagConfig == null) {
             return;
@@ -194,7 +193,7 @@ public class SuggestionListener {
      */
     private void swapAutoTag(ThreadChannel thread, String reviewTagName) {
         ForumChannel forumChannel = thread.getParentChannel().asForumChannel();
-        ForumAutoTag autoTagConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
+        ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
 
         if (autoTagConfig == null) {
             return;

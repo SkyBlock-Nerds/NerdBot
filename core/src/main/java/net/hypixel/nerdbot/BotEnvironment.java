@@ -47,6 +47,16 @@ public final class BotEnvironment {
         return bot;
     }
 
+    public static <T extends Bot> T getBot(@NotNull Class<T> type) {
+        Bot botInstance = getBot();
+
+        if (!type.isInstance(botInstance)) {
+            throw new IllegalStateException("Bot instance is not of type " + type.getName());
+        }
+
+        return type.cast(botInstance);
+    }
+
     public static Optional<UUID> getHypixelAPIKey() {
         return Optional.ofNullable(System.getProperty("hypixel.key")).map(UUIDUtils::toUUID);
     }

@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.bot.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.config.StatusPageConfig;
 import net.hypixel.nerdbot.config.channel.ChannelConfig;
@@ -15,6 +14,8 @@ import net.hypixel.nerdbot.util.Tuple;
 
 import java.util.List;
 import java.util.stream.Stream;
+
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class StatusPageDataHandler implements URLWatcher.DataHandler {
@@ -37,7 +38,7 @@ public class StatusPageDataHandler implements URLWatcher.DataHandler {
 
     @Override
     public void handleData(String oldContent, String newContent, List<Tuple<String, Object, Object>> changedValues) {
-        ChannelConfig channelConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig();
+        ChannelConfig channelConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig();
 
         log.info("Status page data changed!");
 
@@ -59,7 +60,7 @@ public class StatusPageDataHandler implements URLWatcher.DataHandler {
                 ).flatMap(List::stream).toList();
 
                 boolean shouldPingStatusAlerts = hasIncidentChanges(oldData, newData) && config.isEnableStatusAlerts() ||
-                                               hasMaintenanceChanges(oldData, newData) && config.isEnableMaintenanceAlerts();
+                    hasMaintenanceChanges(oldData, newData) && config.isEnableMaintenanceAlerts();
 
                 if (!embedsToSend.isEmpty()) {
                     sendNotification(embedsToSend, shouldPingStatusAlerts, textChannel);
@@ -138,12 +139,12 @@ public class StatusPageDataHandler implements URLWatcher.DataHandler {
 
     private boolean hasIncidentChanges(StatusPageResponse oldData, StatusPageResponse newData) {
         return !changeDetector.findNewIncidents(oldData, newData).isEmpty() ||
-               !changeDetector.findUpdatedIncidents(oldData, newData).isEmpty();
+            !changeDetector.findUpdatedIncidents(oldData, newData).isEmpty();
     }
 
     private boolean hasMaintenanceChanges(StatusPageResponse oldData, StatusPageResponse newData) {
         return !changeDetector.findNewMaintenances(oldData, newData).isEmpty() ||
-               !changeDetector.findUpdatedMaintenances(oldData, newData).isEmpty();
+            !changeDetector.findUpdatedMaintenances(oldData, newData).isEmpty();
     }
 
     private void sendNotification(List<MessageEmbed> embeds, boolean shouldPing, net.dv8tion.jda.api.entities.channel.concrete.TextChannel textChannel) {

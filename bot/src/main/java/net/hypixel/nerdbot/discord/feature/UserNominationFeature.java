@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.bot.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.stats.LastActivity;
@@ -32,6 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimerTask;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class UserNominationFeature extends BotFeature {
@@ -39,8 +39,8 @@ public class UserNominationFeature extends BotFeature {
     public static void nominateUsers() {
         Guild guild = DiscordUtils.getMainGuild();
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        int requiredVotes = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
-        int requiredComments = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion();
+        int requiredVotes = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
+        int requiredComments = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion();
 
         log.info("Checking for users to nominate for promotion (required votes: " + requiredVotes + ", required comments: " + requiredComments + ")");
 
@@ -59,14 +59,14 @@ public class UserNominationFeature extends BotFeature {
                 return;
             }
 
-            if (!highestRole.getId().equalsIgnoreCase(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getMemberRoleId())) {
+            if (!highestRole.getId().equalsIgnoreCase(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMemberRoleId())) {
                 log.info("Skipping nomination for " + member.getEffectiveName() + " as their highest role is: " + highestRole.getName());
                 return;
             }
 
             LastActivity lastActivity = discordUser.getLastActivity();
-            int totalComments = lastActivity.getTotalComments(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getDaysRequiredForVoteHistory());
-            int totalVotes = lastActivity.getTotalVotes(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getDaysRequiredForVoteHistory());
+            int totalComments = lastActivity.getTotalComments(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory());
+            int totalVotes = lastActivity.getTotalVotes(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory());
 
             boolean hasRequiredVotes = totalVotes >= requiredVotes;
             boolean hasRequiredComments = totalComments >= requiredComments;
@@ -94,9 +94,9 @@ public class UserNominationFeature extends BotFeature {
     public static void findInactiveUsers() {
         Guild guild = DiscordUtils.getMainGuild();
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        int requiredVotes = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getVotesRequiredForInactivityCheck();
-        int requiredComments = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getCommentsRequiredForInactivityCheck();
-        int requiredMessages = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getMessagesRequiredForInactivityCheck();
+        int requiredVotes = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getVotesRequiredForInactivityCheck();
+        int requiredComments = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getCommentsRequiredForInactivityCheck();
+        int requiredMessages = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMessagesRequiredForInactivityCheck();
 
         log.info("Checking for inactive users (required votes: " + requiredVotes + ", required comments: " + requiredComments + ", required messages: " + requiredMessages + ")");
 
@@ -121,9 +121,9 @@ public class UserNominationFeature extends BotFeature {
             }
 
             LastActivity lastActivity = discordUser.getLastActivity();
-            int totalMessages = lastActivity.getTotalMessageCount(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
-            int totalComments = lastActivity.getTotalComments(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
-            int totalVotes = lastActivity.getTotalVotes(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
+            int totalMessages = lastActivity.getTotalMessageCount(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
+            int totalComments = lastActivity.getTotalComments(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
+            int totalVotes = lastActivity.getTotalVotes(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForInactivityCheck());
 
             boolean hasRequiredVotes = totalVotes >= requiredVotes;
             boolean hasRequiredComments = totalComments >= requiredComments;
@@ -150,9 +150,9 @@ public class UserNominationFeature extends BotFeature {
     }
 
     private static void sendNominationMessage(Member member, DiscordUser discordUser) {
-        ChannelCache.getTextChannelById(((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
+        ChannelCache.getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             LastActivity lastActivity = discordUser.getLastActivity();
-            RoleConfig roleConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig();
+            RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
 
             int totalMessages = lastActivity.getTotalMessageCount(roleConfig.getDaysRequiredForVoteHistory());
             int totalVotes = lastActivity.getTotalVotes(roleConfig.getDaysRequiredForVoteHistory());
@@ -205,12 +205,12 @@ public class UserNominationFeature extends BotFeature {
 
     private static void sendInactiveUserMessage(Member member, DiscordUser discordUser, int requiredMessages, int requiredVotes, int requiredComments) {
         LastActivity lastActivity = discordUser.getLastActivity();
-        RoleConfig roleConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig();
+        RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
         int totalMessages = lastActivity.getTotalMessageCount(roleConfig.getDaysRequiredForInactivityCheck());
         int totalVotes = lastActivity.getTotalVotes(roleConfig.getDaysRequiredForInactivityCheck());
         int totalComments = lastActivity.getTotalComments(roleConfig.getDaysRequiredForInactivityCheck());
 
-        ChannelCache.getTextChannelById(((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
+        ChannelCache.getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             Optional<ThreadChannel> modMailThread = ModMailService.getInstance().findExistingThread(member.getUser());
 
             String messagesStatus = totalMessages >= requiredMessages ? "✅" : "⚠️";
@@ -274,7 +274,7 @@ public class UserNominationFeature extends BotFeature {
     public static void findInactiveUsersInRoleRestrictedChannels() {
         Guild guild = DiscordUtils.getMainGuild();
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        List<RoleRestrictedChannelGroup> channelGroups = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getRoleRestrictedChannelGroups();
+        List<RoleRestrictedChannelGroup> channelGroups = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getRoleRestrictedChannelGroups();
 
         if (channelGroups.isEmpty()) {
             log.debug("No role-restricted channel groups configured, skipping role-restricted inactivity check");
@@ -354,7 +354,7 @@ public class UserNominationFeature extends BotFeature {
     private static void sendRoleRestrictedInactiveUserMessage(Member member, DiscordUser discordUser, RoleRestrictedChannelGroup group, int totalMessages, int totalVotes, int totalComments) {
         LastActivity lastActivity = discordUser.getLastActivity();
 
-        ChannelCache.getTextChannelById(((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
+        ChannelCache.getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             Optional<ThreadChannel> modMailThread = ModMailService.getInstance().findExistingThread(member.getUser());
 
             String messagesStatus = totalMessages >= group.getMinimumMessagesForActivity() ? "✅" : "⚠️";

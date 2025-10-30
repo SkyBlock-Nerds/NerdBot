@@ -14,7 +14,6 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
@@ -56,7 +55,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
             .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
             .positiveVoterIds(
                 message.getReactions().stream()
-                    .filter(reaction -> EmojiConfigUtils.isReactionEquals(((DiscordBot) BotEnvironment.getBot()).getConfig().getEmojiConfig(), reaction, EmojiConfig::getAgreeEmojiId))
+                    .filter(reaction -> EmojiConfigUtils.isReactionEquals(DiscordBotEnvironment.getBot().getConfig().getEmojiConfig(), reaction, EmojiConfig::getAgreeEmojiId))
                     .flatMap(reaction -> reaction.retrieveUsers()
                         .complete()
                         .stream()
@@ -82,7 +81,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                 return output;
             }
 
-            DiscordBotConfig botConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig();
+            DiscordBotConfig botConfig = DiscordBotEnvironment.getBot().getConfig();
             SuggestionConfig suggestionConfig = botConfig.getSuggestionConfig();
 
             if (suggestionConfig == null) {
@@ -207,7 +206,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                         tags.add(greenlitTag);
                     }
 
-                    ForumAutoTag autoTagConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
+                    ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
                     if (autoTagConfig != null && autoTagConfig.getReviewTagName().equalsIgnoreCase(suggestionConfig.getGreenlitTag())) {
                         // Remove the default tag if it exists
                         ForumTag defaultTag = DiscordUtils.getTagByName(forumChannel, autoTagConfig.getDefaultTagName());

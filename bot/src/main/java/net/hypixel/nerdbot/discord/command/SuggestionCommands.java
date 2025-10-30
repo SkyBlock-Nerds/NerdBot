@@ -25,7 +25,6 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.config.EmojiConfig;
@@ -198,7 +197,7 @@ public class SuggestionCommands {
     public void requestSuggestionReview(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
-        if (!((DiscordBot) BotEnvironment.getBot()).getConfig().getSuggestionConfig().getReviewRequestConfig().isEnabled()) {
+        if (!DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig().getReviewRequestConfig().isEnabled()) {
             event.getHook().editOriginal("Review requests are currently disabled!").queue();
             return;
         }
@@ -222,8 +221,8 @@ public class SuggestionCommands {
     }
 
     private void processReviewRequest(SlashCommandInteractionEvent event, DiscordUser discordUser) {
-        SuggestionConfig suggestionConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getSuggestionConfig();
-        EmojiConfig emojiConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getEmojiConfig();
+        SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
+        EmojiConfig emojiConfig = DiscordBotEnvironment.getBot().getConfig().getEmojiConfig();
         String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
 
         // Handle Non-Suggestion Channels
@@ -546,7 +545,7 @@ public class SuggestionCommands {
                 return;
             }
 
-            SuggestionConfig suggestionConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getSuggestionConfig();
+            SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
             ForumChannel forum = thread.getParentChannel().asForumChannel();
 
             if (!DiscordUtils.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {

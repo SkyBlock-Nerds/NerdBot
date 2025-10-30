@@ -13,7 +13,6 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.config.objects.ForumAutoTag;
@@ -32,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class ChannelCommands {
@@ -128,7 +128,7 @@ public class ChannelCommands {
                 }
 
                 ForumChannel forumChannel = threadChannel.getParentChannel().asForumChannel();
-                SuggestionConfig suggestionConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getSuggestionConfig();
+                SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
                 boolean isSuggestion = threadChannel.getParentChannel().getId().equalsIgnoreCase(suggestionConfig.getForumChannelId());
 
                 if (isSuggestion) {
@@ -139,7 +139,7 @@ public class ChannelCommands {
 
                     handleTagAndLock(event, discordUser, threadChannel, forumChannel, suggestionConfig.getReviewedTag());
                 } else {
-                    Optional<CustomForumTag> customForumTag = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getCustomForumTags().stream()
+                    Optional<CustomForumTag> customForumTag = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getCustomForumTags().stream()
                         .filter(tag -> tag.getOwnerId() != null && tag.getOwnerId().equals(discordUser.getDiscordId()))
                         .findFirst();
 
@@ -173,7 +173,7 @@ public class ChannelCommands {
             appliedTags.add(tag);
 
             // Check for auto-tag swap configuration
-            ForumAutoTag autoTagConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
+            ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
             if (autoTagConfig != null && autoTagConfig.getReviewTagName().equalsIgnoreCase(tagName)) {
                 ForumTag defaultTag = DiscordUtils.getTagByName(forumChannel, autoTagConfig.getDefaultTagName());
                 if (defaultTag != null && appliedTags.contains(defaultTag)) {

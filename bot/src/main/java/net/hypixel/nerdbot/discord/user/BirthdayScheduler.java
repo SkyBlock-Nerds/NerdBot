@@ -3,7 +3,6 @@ package net.hypixel.nerdbot.discord.user;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.api.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.cache.ChannelCache;
@@ -12,6 +11,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @UtilityClass
 @Slf4j
@@ -50,7 +50,7 @@ public class BirthdayScheduler {
 
         @Override
         public void run() {
-            String channelId = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getBirthdayNotificationChannelId();
+            String channelId = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getBirthdayNotificationChannelId();
             BirthdayData birthdayData = user.getBirthdayData();
 
             if (channelId != null && !channelId.isBlank()) {

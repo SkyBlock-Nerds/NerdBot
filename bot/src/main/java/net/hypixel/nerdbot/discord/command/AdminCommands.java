@@ -250,7 +250,7 @@ public class AdminCommands {
         }
 
         try {
-            File file = FileUtils.createTempFile("config-" + System.currentTimeMillis() + ".json", BotEnvironment.GSON.toJson(((DiscordBot) BotEnvironment.getBot()).getConfig()));
+            File file = FileUtils.createTempFile("config-" + System.currentTimeMillis() + ".json", BotEnvironment.GSON.toJson(DiscordBotEnvironment.getBot().getConfig()));
             event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while reading the config file! Please check the logs for more information.").queue();
@@ -1262,7 +1262,7 @@ public class AdminCommands {
         boolean currentState = botConfig.getChannelConfig().isAutoManageRoleRestrictedChannels();
         botConfig.getChannelConfig().setAutoManageRoleRestrictedChannels(!currentState);
 
-        ((DiscordBot) BotEnvironment.getBot()).writeConfig(botConfig);
+        DiscordBotEnvironment.getBot().writeConfig(botConfig);
 
         String status = !currentState ? "enabled" : "disabled";
         event.reply("✅ Automatic management of role-restricted channel groups has been **" + status + "**.").setEphemeral(true).queue();
@@ -1351,7 +1351,7 @@ public class AdminCommands {
         BotEnvironment.EXECUTOR_SERVICE.execute(() -> {
             try {
                 botConfig.getChannelConfig().rebuildRoleRestrictedChannelGroups();
-                ((DiscordBot) BotEnvironment.getBot()).writeConfig(botConfig);
+                DiscordBotEnvironment.getBot().writeConfig(botConfig);
 
                 NerdBotConfig finalConfig = SkyBlockNerdsBot.config();
                 int groupsAfter = finalConfig.getChannelConfig().getRoleRestrictedChannelGroups().size();
@@ -1401,7 +1401,7 @@ public class AdminCommands {
         boolean removed = botConfig.getChannelConfig().removeEmptyRoleRestrictedGroups();
 
         if (removed) {
-            ((DiscordBot) BotEnvironment.getBot()).writeConfig(botConfig);
+            DiscordBotEnvironment.getBot().writeConfig(botConfig);
             int groupsAfter = botConfig.getChannelConfig().getRoleRestrictedChannelGroups().size();
             int removedCount = groupsBefore - groupsAfter;
 

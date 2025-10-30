@@ -14,7 +14,6 @@ import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.config.suggestion.SuggestionConfig;
@@ -42,7 +41,7 @@ public class DiscordUtils {
 
     @NotNull
     public static Guild getMainGuild() {
-        return Objects.requireNonNull(DiscordBotEnvironment.getBot().getJDA().getGuildById(((DiscordBot) BotEnvironment.getBot()).getConfig().getGuildId()));
+        return Objects.requireNonNull(DiscordBotEnvironment.getBot().getJDA().getGuildById(DiscordBotEnvironment.getBot().getConfig().getGuildId()));
     }
 
     public static int getReactionCountExcludingList(MessageReaction reaction, List<User> users) {
@@ -128,8 +127,8 @@ public class DiscordUtils {
     }
 
     public static Suggestion.ChannelType getForumSuggestionType(ForumChannel forumChannel) {
-        SuggestionConfig suggestionConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getSuggestionConfig();
-        AlphaProjectConfig alphaProjectConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getAlphaProjectConfig();
+        SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
+        AlphaProjectConfig alphaProjectConfig = DiscordBotEnvironment.getBot().getConfig().getAlphaProjectConfig();
         String parentChannelId = forumChannel.getId();
 
         if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
@@ -146,7 +145,7 @@ public class DiscordUtils {
             return getChannelSuggestionTypeFromName(parentCategory.getName());
         }
 
-        String[] projectChannelNames = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getProjectChannelNames();
+        String[] projectChannelNames = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getProjectChannelNames();
         String channelName = forumChannel.getName().toLowerCase();
 
         if (channelName.contains("alpha") || Arrays.stream(projectChannelNames).anyMatch(channelName::contains)) {
@@ -165,7 +164,7 @@ public class DiscordUtils {
             return Suggestion.ChannelType.ALPHA;
         }
 
-        String[] projectChannelNames = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getProjectChannelNames();
+        String[] projectChannelNames = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getProjectChannelNames();
         if (Arrays.stream(projectChannelNames).anyMatch(name.toLowerCase()::contains)) {
             return Suggestion.ChannelType.PROJECT;
         }

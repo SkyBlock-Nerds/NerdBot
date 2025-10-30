@@ -9,7 +9,6 @@ import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.api.bot.Environment;
 import net.hypixel.nerdbot.api.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.config.EmojiConfig;
@@ -154,7 +153,7 @@ public class InfoCommands {
             );
         }
 
-        RoleConfig roleConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig();
+        RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
 
         RoleManager.getRoleById(roleConfig.getModeratorRoleId()).ifPresentOrElse(role -> grapes.set(guild.getMembersWithRoles(role).size()),
             () -> log.warn("Role {} not found", "Grape"));

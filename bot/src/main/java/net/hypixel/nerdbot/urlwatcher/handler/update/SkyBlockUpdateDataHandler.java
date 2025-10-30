@@ -3,11 +3,11 @@ package net.hypixel.nerdbot.urlwatcher.handler.update;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.xml.SkyBlockThreadParser.HypixelThread;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class SkyBlockUpdateDataHandler {
@@ -16,7 +16,7 @@ public class SkyBlockUpdateDataHandler {
     }
 
     public static void handleThread(HypixelThread hypixelThread) {
-        ChannelConfig config = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig();
+        ChannelConfig config = DiscordBotEnvironment.getBot().getConfig().getChannelConfig();
 
         ChannelCache.getTextChannelById(config.getAnnouncementChannelId()).ifPresentOrElse(textChannel -> {
             // Simple Check to make sure only SkyBlock threads are sent.

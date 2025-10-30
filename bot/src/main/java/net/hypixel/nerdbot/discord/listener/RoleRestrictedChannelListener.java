@@ -15,7 +15,6 @@ import net.dv8tion.jda.api.events.guild.override.PermissionOverrideDeleteEvent;
 import net.dv8tion.jda.api.events.guild.override.PermissionOverrideUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.config.DiscordBotConfig;
 import net.hypixel.nerdbot.config.objects.RoleRestrictedChannelGroup;
 
@@ -24,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class RoleRestrictedChannelListener {
@@ -101,7 +101,7 @@ public class RoleRestrictedChannelListener {
      * @param isAdding True if adding to groups, false if removing from groups
      */
     public void updateChannelGroupMembership(GuildChannel channel, boolean isAdding) {
-        DiscordBotConfig botConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig();
+        DiscordBotConfig botConfig = DiscordBotEnvironment.getBot().getConfig();
         net.dv8tion.jda.api.entities.Guild guild = channel.getGuild();
 
         if (!botConfig.getChannelConfig().isAutoManageRoleRestrictedChannels()) {
@@ -153,7 +153,7 @@ public class RoleRestrictedChannelListener {
 
         if (configChanged) {
             log.info("Role-restricted channel configuration updated, writing to file");
-            ((DiscordBot) BotEnvironment.getBot()).writeConfig(botConfig);
+            DiscordBotEnvironment.getBot().writeConfig(botConfig);
         }
     }
 

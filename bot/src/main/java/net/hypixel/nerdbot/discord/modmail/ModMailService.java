@@ -15,7 +15,6 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.config.channel.ModMailConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
@@ -52,7 +51,7 @@ public class ModMailService {
         if (instance == null) {
             synchronized (ModMailService.class) {
                 if (instance == null) {
-                    ModMailConfig config = ((DiscordBot) BotEnvironment.getBot()).getConfig().getModMailConfig();
+                    ModMailConfig config = DiscordBotEnvironment.getBot().getConfig().getModMailConfig();
                     DiscordUserRepository userRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
                     instance = new ModMailService(config, userRepository);
                 }

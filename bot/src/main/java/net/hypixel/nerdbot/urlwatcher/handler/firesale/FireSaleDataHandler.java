@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
@@ -20,13 +19,14 @@ import net.hypixel.nerdbot.util.DiscordTimestamp;
 import java.awt.*;
 import java.time.Instant;
 import java.util.List;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class FireSaleDataHandler implements URLWatcher.DataHandler {
 
     @Override
     public void handleData(String oldContent, String newContent, List<Tuple<String, Object, Object>> changedValues) {
-        ChannelConfig config = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig();
+        ChannelConfig config = DiscordBotEnvironment.getBot().getConfig().getChannelConfig();
 
         log.info("Fire sale data changed!");
 

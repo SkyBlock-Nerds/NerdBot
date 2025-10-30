@@ -13,11 +13,11 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.config.DiscordBotConfig;
 import net.hypixel.nerdbot.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.role.RoleManager;
 import net.hypixel.nerdbot.util.ArrayUtils;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class MetricsListener {
@@ -35,7 +35,7 @@ public class MetricsListener {
 
         if (event.getChannel() instanceof ThreadChannel threadChannel) {
             String forumChannelId = threadChannel.getParentChannel().getId();
-            DiscordBotConfig botConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig();
+            DiscordBotConfig botConfig = DiscordBotEnvironment.getBot().getConfig();
 
             if (forumChannelId.equals(botConfig.getSuggestionConfig().getForumChannelId())
                 || ArrayUtils.safeArrayStream(botConfig.getAlphaProjectConfig().getAlphaForumIds(), botConfig.getAlphaProjectConfig().getProjectForumIds()).anyMatch(forumChannelId::equals)) {

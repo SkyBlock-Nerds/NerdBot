@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.bot.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.api.curator.Curator;
 import net.hypixel.nerdbot.api.database.Database;
@@ -19,13 +18,14 @@ import net.hypixel.nerdbot.repository.GreenlitMessageRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimerTask;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class CurateFeature extends BotFeature {
 
     @Override
     public void onFeatureStart() {
-        SuggestionConfig suggestionConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getSuggestionConfig();
+        SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
 
         if (suggestionConfig.getForumChannelId() == null) {
             log.info("Not starting CurateFeature as 'forumChannelId' could not be found in the configuration file!");

@@ -10,12 +10,12 @@ import net.dv8tion.jda.api.events.channel.forum.GenericForumTagEvent;
 import net.dv8tion.jda.api.events.channel.update.GenericChannelUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class ChannelCache {
@@ -60,22 +60,22 @@ public class ChannelCache {
     }
 
     public static Optional<ForumChannel> getModMailChannel() {
-        return getChannelById(((DiscordBot) BotEnvironment.getBot()).getConfig().getModMailConfig().getChannelId())
+        return getChannelById(DiscordBotEnvironment.getBot().getConfig().getModMailConfig().getChannelId())
             .map(ForumChannel.class::cast);
     }
 
     public static Optional<TextChannel> getLogChannel() {
-        return getChannelById(((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getLogChannelId())
+        return getChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getLogChannelId())
             .map(TextChannel.class::cast);
     }
 
     public static Optional<TextChannel> getVerifyLogChannel() {
-        return getChannelById(((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getVerifyLogChannelId())
+        return getChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getVerifyLogChannelId())
             .map(TextChannel.class::cast);
     }
 
     public static Optional<TextChannel> getRequestedReviewChannel() {
-        return getChannelById(((DiscordBot) BotEnvironment.getBot()).getConfig().getSuggestionConfig().getReviewRequestConfig().getChannelId())
+        return getChannelById(DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig().getReviewRequestConfig().getChannelId())
             .map(TextChannel.class::cast);
     }
 

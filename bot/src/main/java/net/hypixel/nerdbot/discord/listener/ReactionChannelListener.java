@@ -7,19 +7,19 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.config.objects.ReactionChannel;
 import net.hypixel.nerdbot.cache.EmojiCache;
 
 import java.util.List;
 import java.util.Optional;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class ReactionChannelListener {
 
     @SubscribeEvent
     public void onMessageReceive(MessageReceivedEvent event) {
-        List<ReactionChannel> reactionChannels = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getReactionChannels();
+        List<ReactionChannel> reactionChannels = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getReactionChannels();
 
         if (reactionChannels == null) {
             return;
@@ -49,7 +49,7 @@ public class ReactionChannelListener {
             return;
         }
 
-        String pollChannelId = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getPollChannelId();
+        String pollChannelId = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getPollChannelId();
 
         if (event.getChannel().getId().equalsIgnoreCase(pollChannelId)) {
             EmojiParser.extractEmojis(event.getMessage().getContentRaw()).stream()

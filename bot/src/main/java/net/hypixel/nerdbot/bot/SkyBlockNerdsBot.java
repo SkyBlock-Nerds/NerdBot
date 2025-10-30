@@ -6,8 +6,6 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.hypixel.nerdbot.activity.ActivityListener;
 import net.hypixel.nerdbot.activity.ActivityPurgeFeature;
 import net.hypixel.nerdbot.api.database.Database;
-import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.api.feature.BotFeature;
 import net.hypixel.nerdbot.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.badge.BadgeManager;
@@ -38,6 +36,7 @@ import net.hypixel.nerdbot.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.urlwatcher.handler.firesale.FireSaleDataHandler;
 import net.hypixel.nerdbot.urlwatcher.handler.status.StatusPageDataHandler;
 import net.hypixel.nerdbot.util.DiscordUtils;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -70,7 +69,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
      * @return The NerdBotConfig for the running bot instance
      */
     public static NerdBotConfig config() {
-        return (NerdBotConfig) ((DiscordBot) BotEnvironment.getBot()).getConfig();
+        return (NerdBotConfig) DiscordBotEnvironment.getBot().getConfig();
     }
 
     @Override

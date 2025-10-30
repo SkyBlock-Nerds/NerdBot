@@ -12,7 +12,6 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.api.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.config.RoleConfig;
 import net.hypixel.nerdbot.config.objects.PingableRole;
@@ -23,6 +22,7 @@ import net.hypixel.nerdbot.util.StringUtils;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class RoleCommands {
@@ -36,7 +36,7 @@ public class RoleCommands {
             return;
         }
 
-        PingableRole[] pingableRoles = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getPingableRoles();
+        PingableRole[] pingableRoles = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getPingableRoles();
         Member member = event.getMember();
 
         if (pingableRoles.length == 0) {
@@ -83,7 +83,7 @@ public class RoleCommands {
     public void checkForPromotionEligibility(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
-        RoleConfig roleConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig();
+        RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
         if (!roleConfig.isCurrentlyPromotingUsers()) {
             event.getHook().editOriginal("We are not currently assessing promotion eligibility, please check back later!").queue();
             return;
@@ -107,10 +107,10 @@ public class RoleCommands {
                     event.getHook().editOriginal("You are currently eligible for a promotion! This is not a guarantee that you will be promoted. Thanks for contributing to SkyBlock Nerds!").queue();
                 } else {
                     event.getHook().editOriginal(String.format("You have %s/%s required suggestion votes and %s/%s required suggestion comments to be nominated for the Orange role!",
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalVotes(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion()),
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalComments(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion())
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalVotes(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion()),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalComments(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion())
                     )).queue();
                 }
             })
@@ -122,7 +122,7 @@ public class RoleCommands {
     }
 
     private boolean isEligibleForPromotion(DiscordUser user) {
-        return user.getLastActivity().getTotalVotes(((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getDaysRequiredForVoteHistory()) >= ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
+        return user.getLastActivity().getTotalVotes(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()) >= DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
     }
 
     @SlashComponentHandler(id = "role-select", patterns = {"role-select-*"})
@@ -176,7 +176,7 @@ public class RoleCommands {
     }
 
     private void updateRoleMenuInternal(InteractionHook hook, Member member, Guild guild, String message) {
-        PingableRole[] pingableRoles = ((DiscordBot) BotEnvironment.getBot()).getConfig().getRoleConfig().getPingableRoles();
+        PingableRole[] pingableRoles = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getPingableRoles();
 
         StringSelectMenu.Builder selectBuilder = StringSelectMenu.create("role-select-" + member.getId())
             .setPlaceholder("Select a role to toggle")

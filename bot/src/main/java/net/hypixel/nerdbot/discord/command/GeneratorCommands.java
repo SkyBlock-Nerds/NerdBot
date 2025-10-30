@@ -17,7 +17,6 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.cache.ChannelCache;
 import net.hypixel.nerdbot.generator.GenerationContext;
 import net.hypixel.nerdbot.generator.GeneratorBuilder;
@@ -98,6 +97,7 @@ import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_AR
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_BASIC;
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_EXAMPLES;
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.stripString;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class GeneratorCommands {
@@ -1051,7 +1051,7 @@ public class GeneratorCommands {
 
     private boolean isIncorrectChannel(SlashCommandInteractionEvent event) {
         String senderChannelId = event.getChannel().getId();
-        String[] itemGenChannelIds = ((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getGenChannelIds();
+        String[] itemGenChannelIds = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getGenChannelIds();
 
         if (itemGenChannelIds == null) {
             event.reply("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
