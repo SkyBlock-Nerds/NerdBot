@@ -6,13 +6,14 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import net.hypixel.nerdbot.api.badge.Badge;
 import net.hypixel.nerdbot.api.badge.TieredBadge;
+import net.hypixel.nerdbot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.config.BadgeConfig;
-import net.hypixel.nerdbot.config.BotConfig;
+import net.hypixel.nerdbot.config.DiscordBotConfig;
 import net.hypixel.nerdbot.config.EmojiConfig;
 import net.hypixel.nerdbot.config.MetricsConfig;
+import net.hypixel.nerdbot.config.NerdBotConfig;
 import net.hypixel.nerdbot.config.RoleConfig;
 import net.hypixel.nerdbot.config.StatusPageConfig;
-import net.hypixel.nerdbot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.config.channel.ModMailConfig;
 import net.hypixel.nerdbot.config.objects.CustomForumTag;
@@ -36,14 +37,14 @@ public class ConfigGenerator {
     public static void main(String[] args) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-        BotConfig botConfig = new BotConfig();
+        NerdBotConfig botConfig = new NerdBotConfig();
         botConfig.setOwnerIds(List.of(EXAMPLE_ID));
         botConfig.setGuildId(EXAMPLE_ID);
         botConfig.setMessageLimit(100);
         botConfig.setMojangUsernameCacheTTL(12);
         botConfig.setVoiceThreshold(60);
         botConfig.setInterval(43_200_000);
-        botConfig.setActivityType(BotConfig.ActivityType.WATCHING);
+        botConfig.setActivityType(DiscordBotConfig.ActivityType.WATCHING);
         botConfig.setActivity("with an example message!");
         botConfig.setInactivityDays(7);
 

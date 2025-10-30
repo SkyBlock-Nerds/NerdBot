@@ -22,6 +22,16 @@
         </dependency>
         <dependency>
             <groupId>net.hypixel</groupId>
+            <artifactId>nerdbot-discord</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.hypixel</groupId>
+            <artifactId>nerdbot-bot</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.hypixel</groupId>
             <artifactId>nerdbot-generator</artifactId>
             <version>${project.version}</version>
         </dependency>

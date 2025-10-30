@@ -4,10 +4,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.BotEnvironment;
-import net.hypixel.nerdbot.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.generator.util.ColoredString;
-import net.hypixel.nerdbot.util.FontUtils;
+import net.hypixel.nerdbot.generator.util.FontUtils;
 import net.hypixel.nerdbot.util.TimeUtils;
 import net.hypixel.nerdbot.util.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -73,6 +70,8 @@ public class MinecraftImage {
     private final boolean isCentered;
     @Getter
     private final boolean renderBackground;
+    @Getter
+    private final boolean aprilFools;
     @Getter(AccessLevel.PRIVATE)
     @Setter(AccessLevel.PRIVATE)
     private Graphics2D graphics;
@@ -86,13 +85,14 @@ public class MinecraftImage {
     private int locationY = START_XY + PIXEL_SIZE * 2 + Y_INCREMENT / 2;
     private int largestWidth = 0;
 
-    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem, boolean isCentered, boolean renderBackground) {
+    public MinecraftImage(List<List<ColoredString>> lines, MCColor defaultColor, int defaultWidth, int alpha, int padding, boolean isNormalItem, boolean isCentered, boolean renderBackground, boolean aprilFools) {
         this.alpha = alpha;
         this.padding = padding;
         this.lines = lines;
         this.isNormalItem = isNormalItem;
         this.isCentered = isCentered;
         this.renderBackground = renderBackground;
+        this.aprilFools = aprilFools;
         this.graphics = this.initG2D(defaultWidth + 2 * START_XY, this.lines.size() * Y_INCREMENT + START_XY + PIXEL_SIZE * 4 - (this.lines.size() == 1 ? PIXEL_SIZE : 0));
         this.currentColor = defaultColor;
     }
@@ -188,7 +188,7 @@ public class MinecraftImage {
     /**
      * Draws the strings to the generated image.
      */
-    public void drawLines(String channelId) {
+    public void drawLines() {
         for (List<ColoredString> line : this.getLines()) {
             for (ColoredString segment : line) {
                 currentColor = segment.getCurrentColor();
@@ -205,9 +205,9 @@ public class MinecraftImage {
                         && !Character.isISOControl(character);
 
                     if (isSymbol) {
-                        this.drawString(subWord.toString(), segment, channelId);
+                        this.drawString(subWord.toString(), segment);
                         subWord.setLength(0);
-                        this.drawSymbol(character, segment, channelId);
+                        this.drawSymbol(character, segment);
                         continue;
                     }
 
@@ -215,7 +215,7 @@ public class MinecraftImage {
                     subWord.append(character);
                 }
 
-                this.drawString(subWord.toString(), segment, channelId);
+                this.drawString(subWord.toString(), segment);
             }
 
             // increase size of first line if there are more than one lines present
@@ -263,11 +263,11 @@ public class MinecraftImage {
      *
      * @param symbol The symbol to draw.
      */
-    private void drawSymbol(char symbol, @NotNull ColoredString segment, String channelId) {
-        this.drawString(Character.toString(symbol), segment, channelId);
+    private void drawSymbol(char symbol, @NotNull ColoredString segment) {
+        this.drawString(Character.toString(symbol), segment);
     }
 
-    private void drawString(@NotNull String value, @NotNull ColoredString segment, String channelId) {
+    private void drawString(@NotNull String value, @NotNull ColoredString segment) {
         // Get the Graphics object
         Graphics2D graphics = this.getGraphics();
 
@@ -279,13 +279,9 @@ public class MinecraftImage {
         graphics.setColor(this.currentColor.getBackgroundColor());
         Color textColor = this.currentColor.getColor();
 
-        ChannelConfig channelConfig = BotEnvironment.getBot().getConfig().getChannelConfig();
-        boolean aprilFoolsFiltered = channelId != null && Arrays.stream(channelConfig.getFilteredAprilFoolsGenChannelIds())
-            .anyMatch(s -> s.equalsIgnoreCase(channelId));
-
         // Loop through each character and draw it individually
         for (char c : value.toCharArray()) {
-            if (TimeUtils.isAprilFirst() && aprilFoolsFiltered) {
+            if (TimeUtils.isAprilFirst() && this.aprilFools) {
                 if (FontUtils.canRenderCharacter(COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)], c)) {
                     this.currentFont = COMIC_SANS[(segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0)];
                 } else {
@@ -363,8 +359,8 @@ public class MinecraftImage {
     /**
      * Draws the Lines, Resizes the Image and Draws the Borders.
      */
-    public MinecraftImage render(String channelId) {
-        this.drawLines(channelId);
+    public MinecraftImage render() {
+        this.drawLines();
         this.cropImage();
         this.centerLines();
         this.drawBorders();

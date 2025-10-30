@@ -11,7 +11,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
-import net.hypixel.nerdbot.config.BotConfig;
+import net.hypixel.nerdbot.config.DiscordBotConfig;
 import net.hypixel.nerdbot.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
@@ -48,7 +48,7 @@ public class Suggestion {
     }
 
     public Suggestion(ThreadChannel thread, ChannelType channelType) {
-        BotConfig botConfig = DiscordBotEnvironment.getBot().getConfig();
+        DiscordBotConfig botConfig = DiscordBotEnvironment.getBot().getConfig();
         this.threadId = thread.getId();
         this.parentId = thread.getParentChannel().asForumChannel().getId();
         this.threadName = thread.getName();

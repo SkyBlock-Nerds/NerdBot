@@ -3,7 +3,6 @@ package net.hypixel.nerdbot.api.database.model.user.stats;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.BotEnvironment;
 import net.hypixel.nerdbot.util.DiscordTimestamp;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
@@ -211,8 +210,8 @@ public class LastActivity {
         return entries;
     }
 
-    public boolean purgeOldHistory() {
-        long configuredDays = Duration.of(BotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory(), ChronoUnit.DAYS).toMillis();
+    public boolean purgeOldHistory(int daysRequiredForVoteHistory) {
+        long configuredDays = Duration.of(daysRequiredForVoteHistory, ChronoUnit.DAYS).toMillis();
         long currentTime = System.currentTimeMillis();
 
         return this.suggestionCreationHistory.removeIf(time -> time <= (currentTime - configuredDays)) ||

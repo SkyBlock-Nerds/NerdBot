@@ -4,7 +4,6 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.hypixel.nerdbot.BotEnvironment;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -26,9 +25,9 @@ public class MojangProfile {
         this.lastUpdated = System.currentTimeMillis();
     }
 
-    public boolean requiresCacheUpdate() {
+    public boolean requiresCacheUpdate(long cacheTTLHours) {
         return Duration.of(System.currentTimeMillis(), ChronoUnit.MILLIS)
-            .minus(BotEnvironment.getBot().getConfig().getMojangUsernameCacheTTL(), ChronoUnit.HOURS)
+            .minus(cacheTTLHours, ChronoUnit.HOURS)
             .toMillis() > this.lastUpdated;
     }
 }

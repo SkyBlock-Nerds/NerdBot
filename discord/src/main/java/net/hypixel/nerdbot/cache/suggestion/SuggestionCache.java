@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.BotEnvironment;
+import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.cache.ChannelCache;
@@ -44,8 +45,8 @@ public class SuggestionCache extends TimerTask {
             this.updating = true;
             this.cache.forEach((key, suggestion) -> suggestion.setExpired());
 
-            SuggestionConfig suggestionConfig = BotEnvironment.getBot().getConfig().getSuggestionConfig();
-            AlphaProjectConfig alphaProjectConfig = BotEnvironment.getBot().getConfig().getAlphaProjectConfig();
+            SuggestionConfig suggestionConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getSuggestionConfig();
+            AlphaProjectConfig alphaProjectConfig = ((DiscordBot) BotEnvironment.getBot()).getConfig().getAlphaProjectConfig();
 
             // Suggestions
             Optional<ForumChannel> suggestionChannel = ChannelCache.getForumChannelById(suggestionConfig.getForumChannelId());

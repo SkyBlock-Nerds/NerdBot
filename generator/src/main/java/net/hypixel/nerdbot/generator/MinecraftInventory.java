@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.generator;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
-import net.hypixel.nerdbot.util.FontUtils;
+import net.hypixel.nerdbot.generator.util.FontUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

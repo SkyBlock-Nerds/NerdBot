@@ -7,7 +7,7 @@ import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
 import net.hypixel.nerdbot.generator.skull.MinecraftHead;
 import net.hypixel.nerdbot.generator.util.Item;
-import net.hypixel.nerdbot.generator.util.SimpleHttpClient;
+import net.hypixel.nerdbot.util.HttpClient;
 import net.hypixel.nerdbot.generator.util.overlay.DualLayerOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.EnchantGlintOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.MappedOverlay;
@@ -244,7 +244,7 @@ public class GeneratorBuilder {
         alpha = Objects.requireNonNullElse(alpha, 255); // checks if the image transparency was set
         alpha = Math.min(255, Math.max(alpha, 0)); // ensure range between 0-254
 
-        // padding value validation
+        // padding validation
         padding = Objects.requireNonNullElse(padding, 0);
         padding = Math.max(0, padding);
 
@@ -256,12 +256,12 @@ public class GeneratorBuilder {
             padding,
             isNormalItem,
             isCentered,
-            renderBackground
+            renderBackground,
+            context.aprilFools()
         )
-            .render(channelId)
+            .render()
             .getImage();
     }
-
     public CompletableFuture<BufferedImage> buildItemAsync(GenerationContext context, String name, String rarity, String itemLoreString, String type,
                                                            Boolean addEmptyLine, Integer alpha, Integer padding, Integer maxLineLength, boolean isNormalItem, boolean isCentered, boolean renderBackground) {
         return CompletableFuture.supplyAsync(() ->
@@ -347,13 +347,13 @@ public class GeneratorBuilder {
         String cleanName = playerName.replaceAll("[^a-zA-Z0-9_]", "");
 
         try {
-            JsonObject userUUID = SimpleHttpClient.getJson(String.format("https://api.mojang.com/users/profiles/minecraft/%s", cleanName));
+            JsonObject userUUID = HttpClient.getJson(String.format("https://api.mojang.com/users/profiles/minecraft/%s", cleanName));
             if (userUUID == null || userUUID.get("id") == null) {
                 feedback.sendMessage(String.format(PLAYER_NOT_FOUND, cleanName), false);
                 return null;
             }
 
-            JsonObject userProfile = SimpleHttpClient.getJson(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
+            JsonObject userProfile = HttpClient.getJson(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
             if (userProfile == null || userProfile.get("properties") == null) {
                 feedback.sendMessage(String.format(MALFORMED_PLAYER_PROFILE, stripString(cleanName)), false);
                 return null;
@@ -361,7 +361,7 @@ public class GeneratorBuilder {
 
             String base64SkinData = userProfile.get("properties").getAsJsonArray().get(0).getAsJsonObject().get("value").getAsString();
             return base64ToSkinURL(base64SkinData);
-        } catch (IOException exception) {
+        } catch (IOException | InterruptedException exception) {
             feedback.sendMessage(REQUEST_PLAYER_UUID_ERROR, false);
             return null;
         }
@@ -379,14 +379,14 @@ public class GeneratorBuilder {
         GenerationFeedback feedback = context.feedback();
         String cleanPlayerName = playerName.replaceAll("[^a-zA-Z0-9_]", "");
 
-        return SimpleHttpClient.getJsonAsync(String.format("https://api.mojang.com/users/profiles/minecraft/%s", cleanPlayerName))
+        return HttpClient.getJsonAsync(String.format("https://api.mojang.com/users/profiles/minecraft/%s", cleanPlayerName))
             .thenCompose(userUUID -> {
                 if (userUUID == null || userUUID.get("id") == null) {
                     feedback.sendMessage(String.format(PLAYER_NOT_FOUND, cleanPlayerName), false);
                     return CompletableFuture.completedFuture(null);
                 }
 
-                return SimpleHttpClient.getJsonAsync(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
+                return HttpClient.getJsonAsync(String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", userUUID.get("id").getAsString()));
             })
             .thenApply(userProfile -> {
                 if (userProfile == null || userProfile.get("properties") == null) {

@@ -19,6 +19,7 @@
         <module>core</module>
         <module>generator</module>
         <module>discord</module>
+        <module>bot</module>
         <module>tooling</module>
     </modules>
 

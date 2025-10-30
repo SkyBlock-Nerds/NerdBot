@@ -45,7 +45,7 @@ public class StringUtils {
     public static String getFirstLine(Message message) {
         String firstLine = message.getContentRaw().split("\\n")[0];
 
-        if (firstLine.equals("")) {
+        if (firstLine.isEmpty()) {
             if (message.getEmbeds().get(0).getTitle() != null) {
                 firstLine = message.getEmbeds().get(0).getTitle();
             } else {

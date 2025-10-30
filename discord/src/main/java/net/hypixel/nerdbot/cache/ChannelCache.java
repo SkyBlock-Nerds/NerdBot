@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.events.channel.forum.GenericForumTagEvent;
 import net.dv8tion.jda.api.events.channel.update.GenericChannelUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.BotEnvironment;
+import net.hypixel.nerdbot.api.bot.DiscordBot;
 import net.hypixel.nerdbot.util.DiscordUtils;
 
 import java.util.HashMap;
@@ -59,22 +60,22 @@ public class ChannelCache {
     }
 
     public static Optional<ForumChannel> getModMailChannel() {
-        return getChannelById(BotEnvironment.getBot().getConfig().getModMailConfig().getChannelId())
+        return getChannelById(((DiscordBot) BotEnvironment.getBot()).getConfig().getModMailConfig().getChannelId())
             .map(ForumChannel.class::cast);
     }
 
     public static Optional<TextChannel> getLogChannel() {
-        return getChannelById(BotEnvironment.getBot().getConfig().getChannelConfig().getLogChannelId())
+        return getChannelById(((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getLogChannelId())
             .map(TextChannel.class::cast);
     }
 
     public static Optional<TextChannel> getVerifyLogChannel() {
-        return getChannelById(BotEnvironment.getBot().getConfig().getChannelConfig().getVerifyLogChannelId())
+        return getChannelById(((DiscordBot) BotEnvironment.getBot()).getConfig().getChannelConfig().getVerifyLogChannelId())
             .map(TextChannel.class::cast);
     }
 
     public static Optional<TextChannel> getRequestedReviewChannel() {
-        return getChannelById(BotEnvironment.getBot().getConfig().getSuggestionConfig().getReviewRequestConfig().getChannelId())
+        return getChannelById(((DiscordBot) BotEnvironment.getBot()).getConfig().getSuggestionConfig().getReviewRequestConfig().getChannelId())
             .map(TextChannel.class::cast);
     }
 
