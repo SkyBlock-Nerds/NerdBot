@@ -35,3 +35,4 @@ jobs:
           file_pattern: |
             src/main/java/**/*.java
             src/test/java/**/*.java
+            **/*.xml
