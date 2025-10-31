@@ -6,8 +6,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.util.ColoredString;
 import net.hypixel.nerdbot.generator.util.FontUtils;
-import net.hypixel.nerdbot.core.util.TimeUtils;
-import net.hypixel.nerdbot.core.util.skyblock.MCColor;
+import net.hypixel.nerdbot.core.TimeUtils;
+import net.hypixel.nerdbot.core.skyblock.MCColor;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;

@@ -6,23 +6,24 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
-import net.hypixel.nerdbot.core.BotEnvironment;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.discord.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.discord.database.model.user.stats.LastActivity;
-import net.hypixel.nerdbot.core.api.feature.BotFeature;
+import net.hypixel.nerdbot.app.modmail.ModMailService;
+import net.hypixel.nerdbot.app.role.RoleManager;
+import net.hypixel.nerdbot.core.TimeUtils;
+import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.discord.api.feature.BotFeature;
+import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
-import net.hypixel.nerdbot.discord.cache.ChannelCache;
-import net.hypixel.nerdbot.app.modmail.ModMailService;
-import net.hypixel.nerdbot.discord.database.model.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.app.role.RoleManager;
+import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.discord.storage.database.model.user.stats.LastActivity;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.StringUtils;
-import net.hypixel.nerdbot.core.util.TimeUtils;
 import net.hypixel.nerdbot.discord.util.Utils;
 
-import java.awt.*;
+import java.awt.Color;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.Month;
@@ -31,7 +32,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimerTask;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class UserNominationFeature extends BotFeature {

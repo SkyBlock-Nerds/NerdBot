@@ -9,7 +9,7 @@ import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.channel.forum.GenericForumTagEvent;
 import net.dv8tion.jda.api.events.channel.update.GenericChannelUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.hypixel.nerdbot.core.BotEnvironment;
+import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
 import java.util.HashMap;

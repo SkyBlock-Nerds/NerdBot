@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.discord.api.feature;
 
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.hypixel.nerdbot.core.BotEnvironment;
+import net.hypixel.nerdbot.discord.BotEnvironment;
 
 public class FeatureEventListener {
 

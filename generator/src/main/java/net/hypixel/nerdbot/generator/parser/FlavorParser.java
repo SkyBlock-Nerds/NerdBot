@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator.parser;
 
-import net.hypixel.nerdbot.core.util.skyblock.Flavor;
+import net.hypixel.nerdbot.core.skyblock.Flavor;
 
 public class FlavorParser {
 

@@ -1,10 +1,10 @@
 package net.hypixel.nerdbot.generator.util;
 
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
-import net.hypixel.nerdbot.core.util.skyblock.Icon;
-import net.hypixel.nerdbot.core.util.skyblock.MCColor;
-import net.hypixel.nerdbot.core.util.skyblock.Rarity;
-import net.hypixel.nerdbot.core.util.skyblock.Stat;
+import net.hypixel.nerdbot.core.skyblock.Icon;
+import net.hypixel.nerdbot.core.skyblock.MCColor;
+import net.hypixel.nerdbot.core.skyblock.Rarity;
+import net.hypixel.nerdbot.core.skyblock.Stat;
 
 import java.util.Arrays;
 

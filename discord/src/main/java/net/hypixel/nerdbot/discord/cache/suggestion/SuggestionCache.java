@@ -8,7 +8,7 @@ import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
-import net.hypixel.nerdbot.core.util.ArrayUtils;
+import net.hypixel.nerdbot.core.ArrayUtils;
 
 import java.time.Duration;
 import java.util.ArrayList;

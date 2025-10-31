@@ -3,22 +3,22 @@ package net.hypixel.nerdbot.app.feature;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
-import net.hypixel.nerdbot.core.BotEnvironment;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.discord.curator.Curator;
-import net.hypixel.nerdbot.core.api.database.Database;
-import net.hypixel.nerdbot.discord.database.model.greenlit.GreenlitMessage;
-import net.hypixel.nerdbot.core.api.feature.BotFeature;
-import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
-import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.discord.database.model.repository.GreenlitMessageRepository;
+import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.discord.api.feature.BotFeature;
+import net.hypixel.nerdbot.discord.cache.ChannelCache;
+import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.discord.storage.curator.Curator;
+import net.hypixel.nerdbot.discord.storage.database.Database;
+import net.hypixel.nerdbot.discord.storage.database.model.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.discord.storage.database.repository.GreenlitMessageRepository;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.TimerTask;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class CurateFeature extends BotFeature {

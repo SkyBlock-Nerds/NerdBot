@@ -16,25 +16,26 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.hypixel.nerdbot.core.BotEnvironment;
+import net.hypixel.nerdbot.app.generation.DiscordGenerationContext;
+import net.hypixel.nerdbot.core.ArrayUtils;
+import net.hypixel.nerdbot.core.FileUtils;
+import net.hypixel.nerdbot.core.JsonUtils;
+import net.hypixel.nerdbot.core.skyblock.Flavor;
+import net.hypixel.nerdbot.core.skyblock.Icon;
+import net.hypixel.nerdbot.core.skyblock.MCColor;
+import net.hypixel.nerdbot.core.skyblock.Rarity;
+import net.hypixel.nerdbot.core.skyblock.Stat;
+import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.generator.GenerationContext;
 import net.hypixel.nerdbot.generator.GeneratorBuilder;
 import net.hypixel.nerdbot.generator.ImageMerger;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
-import net.hypixel.nerdbot.discord.database.model.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.core.util.ArrayUtils;
-import net.hypixel.nerdbot.discord.util.DiscordUtils;
-import net.hypixel.nerdbot.core.util.FileUtils;
-import net.hypixel.nerdbot.core.util.JsonUtils;
-import net.hypixel.nerdbot.core.util.skyblock.Flavor;
-import net.hypixel.nerdbot.core.util.skyblock.Icon;
-import net.hypixel.nerdbot.core.util.skyblock.MCColor;
-import net.hypixel.nerdbot.core.util.skyblock.Rarity;
-import net.hypixel.nerdbot.core.util.skyblock.Stat;
-import net.hypixel.nerdbot.discord.util.DiscordGenerationContext;
 
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -97,7 +98,6 @@ import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_AR
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_BASIC;
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_EXAMPLES;
 import static net.hypixel.nerdbot.generator.util.GeneratorStrings.stripString;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class GeneratorCommands {

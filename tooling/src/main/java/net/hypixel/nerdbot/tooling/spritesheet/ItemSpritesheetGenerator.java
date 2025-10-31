@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.tooling.spritesheet;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.hypixel.nerdbot.core.BotEnvironment;
+import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.generator.GeneratorBuilder;
 
 import javax.imageio.ImageIO;

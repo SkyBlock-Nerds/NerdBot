@@ -5,15 +5,15 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
-import net.hypixel.nerdbot.core.BotEnvironment;
-import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
-import net.hypixel.nerdbot.discord.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.discord.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.core.api.feature.BotFeature;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.discord.database.model.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.app.util.HttpUtils;
+import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
+import net.hypixel.nerdbot.discord.api.feature.BotFeature;
+import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.discord.storage.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -76,11 +76,7 @@ public class ProfileUpdateFeature extends BotFeature {
 
     @Override
     public void onFeatureStart() {
-        if (!(BotEnvironment.getBot() instanceof DiscordBot discordBot)) {
-            log.error("Bot is not a DiscordBot instance, cannot start profile update feature");
-            return;
-        }
-
+        BotEnvironment.getBot(DiscordBot.class);
         long cacheTTLHours = SkyBlockNerdsBot.config().getMojangUsernameCacheTTL();
         long updateInterval = Duration.of(cacheTTLHours, ChronoUnit.HOURS).toMillis();
 

@@ -2,11 +2,11 @@ package net.hypixel.nerdbot.app.urlwatcher.handler.update;
 
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
-import net.hypixel.nerdbot.core.BotEnvironment;
+import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.app.role.RoleManager;
-import net.hypixel.nerdbot.core.util.xml.SkyBlockThreadParser.HypixelThread;
+import net.hypixel.nerdbot.core.xml.SkyBlockThreadParser.HypixelThread;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j

@@ -10,9 +10,9 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.hypixel.nerdbot.core.BotEnvironment;
+import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
-import net.hypixel.nerdbot.core.util.ArrayUtils;
+import net.hypixel.nerdbot.core.ArrayUtils;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j

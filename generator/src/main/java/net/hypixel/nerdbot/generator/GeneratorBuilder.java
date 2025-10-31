@@ -2,19 +2,20 @@ package net.hypixel.nerdbot.generator;
 
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.core.BotEnvironment;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import net.hypixel.nerdbot.generator.skull.MinecraftHead;
 import net.hypixel.nerdbot.generator.util.Item;
-import net.hypixel.nerdbot.core.util.HttpClient;
+import net.hypixel.nerdbot.core.HttpClient;
 import net.hypixel.nerdbot.generator.util.overlay.DualLayerOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.EnchantGlintOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.MappedOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.NormalOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.Overlay;
-import net.hypixel.nerdbot.core.util.skyblock.MCColor;
-import net.hypixel.nerdbot.core.util.skyblock.Rarity;
+import net.hypixel.nerdbot.core.skyblock.MCColor;
+import net.hypixel.nerdbot.core.skyblock.Rarity;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
@@ -52,6 +53,8 @@ import static net.hypixel.nerdbot.generator.util.GeneratorStrings.stripString;
 
 @Slf4j
 public class GeneratorBuilder {
+
+    private static final Gson GSON = new GsonBuilder().create();
 
     public static final int IMAGE_HEIGHT = 512;
     public static final int IMAGE_WIDTH = 512;
@@ -92,7 +95,7 @@ public class GeneratorBuilder {
                 currentLine = reader.readLine();
             }
 
-            Item[] itemsFound = BotEnvironment.GSON.fromJson(results.toString(), Item[].class);
+            Item[] itemsFound = GSON.fromJson(results.toString(), Item[].class);
             for (Item item : itemsFound) {
                 if (items.containsKey(item.getName())) {
                     log.error(item.getName() + " seems to be duplicated in the items list. It will be replaced for now, but you should probably look into why this happened.");
@@ -411,7 +414,7 @@ public class GeneratorBuilder {
      * @return the skin id
      */
     public String base64ToSkinURL(String base64SkinData) {
-        JsonObject skinData = BotEnvironment.GSON.fromJson(new String(Base64.getDecoder().decode(base64SkinData)), JsonObject.class);
+        JsonObject skinData = GSON.fromJson(new String(Base64.getDecoder().decode(base64SkinData)), JsonObject.class);
         return skinData.get("textures").getAsJsonObject().get("SKIN").getAsJsonObject().get("url").getAsString().replace("http://textures.minecraft.net/texture/", "");
     }
 

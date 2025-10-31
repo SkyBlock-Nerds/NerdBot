@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.events.channel.update.ChannelUpdateAppliedTagsEvent;
 import net.dv8tion.jda.api.events.channel.update.ChannelUpdateNameEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.managers.channel.concrete.ForumChannelManager;
-import net.hypixel.nerdbot.core.BotEnvironment;
+import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
@@ -22,7 +22,7 @@ import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.discord.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
-import net.hypixel.nerdbot.core.util.ArrayUtils;
+import net.hypixel.nerdbot.core.ArrayUtils;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
 

@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator.parser;
 
-import net.hypixel.nerdbot.core.util.skyblock.Icon;
+import net.hypixel.nerdbot.core.skyblock.Icon;
 
 public class IconParser {
 

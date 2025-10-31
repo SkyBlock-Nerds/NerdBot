@@ -11,18 +11,18 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
-import net.hypixel.nerdbot.core.BotEnvironment;
-import net.hypixel.nerdbot.discord.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.app.role.RoleManager;
+import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.objects.PingableRole;
-import net.hypixel.nerdbot.discord.database.model.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.app.role.RoleManager;
+import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class RoleCommands {

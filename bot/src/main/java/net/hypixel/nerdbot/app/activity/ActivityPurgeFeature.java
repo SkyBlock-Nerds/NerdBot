@@ -1,11 +1,11 @@
 package net.hypixel.nerdbot.app.activity;
 
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.core.BotEnvironment;
-import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.core.api.feature.BotFeature;
-import net.hypixel.nerdbot.discord.database.model.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
+import net.hypixel.nerdbot.discord.api.feature.BotFeature;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -16,11 +16,7 @@ public class ActivityPurgeFeature extends BotFeature {
 
     @Override
     public void onFeatureStart() {
-        if (!(BotEnvironment.getBot() instanceof DiscordBot)) {
-            log.error("Bot is not a DiscordBot instance, cannot start activity purge feature");
-            return;
-        }
-
+        DiscordBot discordBot = BotEnvironment.getBot(DiscordBot.class);
         long oneHour = Duration.of(SkyBlockNerdsBot.config().getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis();
         int daysRequiredForVoteHistory = SkyBlockNerdsBot.config().getRoleConfig().getDaysRequiredForVoteHistory();
 

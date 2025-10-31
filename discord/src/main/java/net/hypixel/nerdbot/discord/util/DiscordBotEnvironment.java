@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.discord.util;
 
 import lombok.experimental.UtilityClass;
-import net.hypixel.nerdbot.core.BotEnvironment;
+import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
 
 @UtilityClass

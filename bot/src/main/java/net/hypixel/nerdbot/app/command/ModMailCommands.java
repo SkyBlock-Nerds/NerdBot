@@ -6,10 +6,10 @@ import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.hypixel.nerdbot.core.BotEnvironment;
-import net.hypixel.nerdbot.discord.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.app.modmail.ModMailService;
-import net.hypixel.nerdbot.discord.database.model.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 
 import java.util.Optional;
 

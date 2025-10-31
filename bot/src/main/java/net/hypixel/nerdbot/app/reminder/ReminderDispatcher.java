@@ -5,9 +5,9 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
-import net.hypixel.nerdbot.discord.database.model.reminder.Reminder;
-import net.hypixel.nerdbot.discord.database.model.repository.ReminderRepository;
-import net.hypixel.nerdbot.core.util.DiscordTimestamp;
+import net.hypixel.nerdbot.core.DiscordTimestamp;
+import net.hypixel.nerdbot.discord.storage.database.model.reminder.Reminder;
+import net.hypixel.nerdbot.discord.storage.database.repository.ReminderRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 import java.util.Timer;

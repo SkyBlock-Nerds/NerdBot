@@ -12,16 +12,17 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.hypixel.nerdbot.core.BotEnvironment;
-import net.hypixel.nerdbot.discord.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.core.FileUtils;
+import net.hypixel.nerdbot.core.csv.CSVData;
+import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
 import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
-import net.hypixel.nerdbot.discord.database.model.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
-import net.hypixel.nerdbot.core.util.FileUtils;
 import net.hypixel.nerdbot.discord.util.StringUtils;
-import net.hypixel.nerdbot.core.util.csv.CSVData;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +32,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class ChannelCommands {

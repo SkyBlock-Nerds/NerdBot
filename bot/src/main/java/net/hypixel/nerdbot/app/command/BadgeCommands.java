@@ -10,12 +10,12 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
-import net.hypixel.nerdbot.core.BotEnvironment;
-import net.hypixel.nerdbot.core.api.badge.Badge;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
-import net.hypixel.nerdbot.core.api.badge.TieredBadge;
-import net.hypixel.nerdbot.discord.database.model.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.core.util.FileUtils;
+import net.hypixel.nerdbot.core.FileUtils;
+import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.discord.storage.badge.Badge;
+import net.hypixel.nerdbot.discord.storage.badge.TieredBadge;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 
 import java.io.IOException;
 import java.util.List;

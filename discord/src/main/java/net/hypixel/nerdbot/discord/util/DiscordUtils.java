@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.discord.util;
 
 import com.vdurmont.emoji.EmojiManager;
-import net.hypixel.nerdbot.core.util.ArrayUtils;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -14,13 +13,14 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.hypixel.nerdbot.core.BotEnvironment;
-import net.hypixel.nerdbot.discord.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
-import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.core.ArrayUtils;
+import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.EmojiCache;
 import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
-import net.hypixel.nerdbot.discord.database.model.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

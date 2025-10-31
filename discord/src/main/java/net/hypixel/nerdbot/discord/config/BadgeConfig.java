@@ -1,11 +1,10 @@
 package net.hypixel.nerdbot.discord.config;
 
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.hypixel.nerdbot.core.api.badge.Badge;
-
-import java.util.List;
+import net.hypixel.nerdbot.discord.storage.badge.Badge;
 
 @Getter
 @Setter

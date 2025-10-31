@@ -2,15 +2,15 @@ package net.hypixel.nerdbot.app.feature;
 
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
-import net.hypixel.nerdbot.core.BotEnvironment;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
-import net.hypixel.nerdbot.discord.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.discord.database.model.user.badge.BadgeEntry;
-import net.hypixel.nerdbot.discord.database.model.user.birthday.BirthdayData;
-import net.hypixel.nerdbot.discord.database.model.user.stats.LastActivity;
-import net.hypixel.nerdbot.discord.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.core.api.feature.BotFeature;
-import net.hypixel.nerdbot.discord.database.model.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.discord.api.feature.BotFeature;
+import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.discord.storage.database.model.user.badge.BadgeEntry;
+import net.hypixel.nerdbot.discord.storage.database.model.user.birthday.BirthdayData;
+import net.hypixel.nerdbot.discord.storage.database.model.user.stats.LastActivity;
+import net.hypixel.nerdbot.discord.storage.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
 import java.util.ArrayList;
