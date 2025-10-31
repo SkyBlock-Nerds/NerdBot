@@ -2,19 +2,19 @@ package net.hypixel.nerdbot.generator;
 
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.BotEnvironment;
+import net.hypixel.nerdbot.core.BotEnvironment;
 import net.hypixel.nerdbot.generator.parser.RecipeParser;
 import net.hypixel.nerdbot.generator.parser.StringColorParser;
 import net.hypixel.nerdbot.generator.skull.MinecraftHead;
 import net.hypixel.nerdbot.generator.util.Item;
-import net.hypixel.nerdbot.util.HttpClient;
+import net.hypixel.nerdbot.core.util.HttpClient;
 import net.hypixel.nerdbot.generator.util.overlay.DualLayerOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.EnchantGlintOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.MappedOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.NormalOverlay;
 import net.hypixel.nerdbot.generator.util.overlay.Overlay;
-import net.hypixel.nerdbot.util.skyblock.MCColor;
-import net.hypixel.nerdbot.util.skyblock.Rarity;
+import net.hypixel.nerdbot.core.util.skyblock.MCColor;
+import net.hypixel.nerdbot.core.util.skyblock.Rarity;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;

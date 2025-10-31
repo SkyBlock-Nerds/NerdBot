@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.generator.parser;
 
-import net.hypixel.nerdbot.util.skyblock.Stat;
+import net.hypixel.nerdbot.core.util.skyblock.Stat;
 
 public class StatColorParser {
 

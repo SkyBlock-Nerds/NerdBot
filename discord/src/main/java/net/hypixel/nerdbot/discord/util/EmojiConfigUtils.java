@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.discord.util;
 
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.hypixel.nerdbot.config.EmojiConfig;
+import net.hypixel.nerdbot.discord.config.EmojiConfig;
 
 import java.util.Objects;
 import java.util.function.Function;

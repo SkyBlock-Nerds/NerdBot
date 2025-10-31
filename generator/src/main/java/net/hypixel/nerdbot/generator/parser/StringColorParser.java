@@ -3,12 +3,12 @@ package net.hypixel.nerdbot.generator.parser;
 import lombok.Getter;
 import net.hypixel.nerdbot.generator.util.ColoredString;
 import net.hypixel.nerdbot.generator.util.GeneratorStrings;
-import net.hypixel.nerdbot.util.EnumUtils;
-import net.hypixel.nerdbot.util.skyblock.Flavor;
-import net.hypixel.nerdbot.util.skyblock.Gemstone;
-import net.hypixel.nerdbot.util.skyblock.Icon;
-import net.hypixel.nerdbot.util.skyblock.MCColor;
-import net.hypixel.nerdbot.util.skyblock.Stat;
+import net.hypixel.nerdbot.core.util.EnumUtils;
+import net.hypixel.nerdbot.core.util.skyblock.Flavor;
+import net.hypixel.nerdbot.core.util.skyblock.Gemstone;
+import net.hypixel.nerdbot.core.util.skyblock.Icon;
+import net.hypixel.nerdbot.core.util.skyblock.MCColor;
+import net.hypixel.nerdbot.core.util.skyblock.Stat;
 
 import java.util.ArrayList;
 import java.util.List;
