@@ -2,9 +2,8 @@ package net.hypixel.nerdbot.app;
 
 import com.mongodb.MongoException;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.core.api.bot.Bot;
 import net.hypixel.nerdbot.core.BotEnvironment;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.core.api.bot.Bot;
 import sun.misc.Signal;
 
 import javax.security.auth.login.LoginException;
