@@ -2,14 +2,15 @@ package net.hypixel.nerdbot.discord.storage;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import java.time.Instant;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import net.hypixel.nerdbot.core.gson.adapter.InstantTypeAdapter;
-import net.hypixel.nerdbot.core.gson.adapter.UUIDTypeAdapter;
+import net.hypixel.nerdbot.core.json.adapter.InstantTypeAdapter;
+import net.hypixel.nerdbot.core.json.adapter.UUIDTypeAdapter;
 import net.hypixel.nerdbot.discord.storage.badge.Badge;
 import net.hypixel.nerdbot.discord.storage.badge.BadgeTypeAdapter;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DataSerialization {

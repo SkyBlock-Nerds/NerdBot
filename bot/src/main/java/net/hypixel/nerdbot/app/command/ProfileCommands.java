@@ -24,7 +24,7 @@ import net.hypixel.nerdbot.app.role.RoleManager;
 import net.hypixel.nerdbot.app.user.BirthdayScheduler;
 import net.hypixel.nerdbot.app.util.HttpUtils;
 import net.hypixel.nerdbot.core.exception.HttpException;
-import net.hypixel.nerdbot.core.gson.HypixelPlayerResponse;
+import net.hypixel.nerdbot.core.json.HypixelPlayerResponse;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;

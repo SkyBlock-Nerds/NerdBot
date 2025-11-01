@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.hypixel.nerdbot.core.DiscordTimestamp;
-import net.hypixel.nerdbot.core.gson.adapter.EpochMillisAdapter;
+import net.hypixel.nerdbot.core.json.adapter.EpochMillisAdapter;
 
 import java.util.Optional;
 

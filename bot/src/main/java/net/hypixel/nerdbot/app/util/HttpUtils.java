@@ -11,7 +11,7 @@ import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.core.exception.HttpException;
 import net.hypixel.nerdbot.core.UUIDUtils;
 import net.hypixel.nerdbot.core.HttpClient;
-import net.hypixel.nerdbot.core.gson.HypixelPlayerResponse;
+import net.hypixel.nerdbot.core.json.HypixelPlayerResponse;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

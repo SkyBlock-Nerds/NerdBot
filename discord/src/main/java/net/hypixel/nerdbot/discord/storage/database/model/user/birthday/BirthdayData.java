@@ -4,7 +4,7 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
 import lombok.Setter;
-import net.hypixel.nerdbot.core.gson.adapter.EpochMillisAdapter;
+import net.hypixel.nerdbot.core.json.adapter.EpochMillisAdapter;
 
 import java.util.Calendar;
 import java.util.Date;

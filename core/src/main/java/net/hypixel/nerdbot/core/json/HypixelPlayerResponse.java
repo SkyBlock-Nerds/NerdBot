@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.core.gson;
+package net.hypixel.nerdbot.core.json;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
