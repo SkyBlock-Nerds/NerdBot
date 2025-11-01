@@ -32,6 +32,3 @@ jobs:
         with:
           commit_message: "Apply EditorConfig Formatting"
           branch: ${{ github.event.pull_request.head.ref }}
-          file_pattern: |
-            src/main/java/**/*.java
-            src/test/java/**/*.java

@@ -1,0 +1,203 @@
+package net.hypixel.nerdbot.app.command;
+
+import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.SelfUser;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.hypixel.nerdbot.app.role.RoleManager;
+import net.hypixel.nerdbot.core.DiscordTimestamp;
+import net.hypixel.nerdbot.core.FileUtils;
+import net.hypixel.nerdbot.core.TimeUtils;
+import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.discord.api.bot.Environment;
+import net.hypixel.nerdbot.discord.cache.EmojiCache;
+import net.hypixel.nerdbot.discord.config.EmojiConfig;
+import net.hypixel.nerdbot.discord.config.RoleConfig;
+import net.hypixel.nerdbot.discord.storage.database.model.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.discord.storage.database.repository.GreenlitMessageRepository;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.discord.util.StringUtils;
+import net.hypixel.nerdbot.discord.util.Utils;
+import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
+import net.hypixel.nerdbot.discord.util.pagination.PaginationManager;
+
+import java.awt.Color;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+@Slf4j
+public class InfoCommands {
+
+
+    @SlashCommand(name = "info", subcommand = "bot", description = "View information about the bot", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    public void botInfo(SlashCommandInteractionEvent event) {
+        StringBuilder builder = new StringBuilder();
+        SelfUser bot = DiscordBotEnvironment.getBot().getJDA().getSelfUser();
+        long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        long totalMemory = Runtime.getRuntime().totalMemory();
+
+        String botInfo = """
+                         - Bot name: %s (ID: %s)
+                         - Branch: `%s`
+                         - Container ID: `%s`
+                         - Environment: %s
+                         - Uptime: %s
+                         - Memory: %s / %s
+                         """.formatted(
+            bot.getName(), bot.getId(),
+            FileUtils.getBranchName(),
+            FileUtils.getDockerContainerId(),
+            Environment.getEnvironment(),
+            TimeUtils.formatMsCompact(BotEnvironment.getBot().getUptime()),
+            StringUtils.formatSize(usedMemory), StringUtils.formatSize(totalMemory)
+        );
+
+        event.reply(botInfo).setEphemeral(true).queue();
+    }
+
+    @SlashCommand(name = "info", subcommand = "greenlit", description = "View greenlit suggestions", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    public void greenlitInfo(SlashCommandInteractionEvent event) {
+        event.deferReply(true).complete();
+
+        if (!BotEnvironment.getBot().getDatabase().isConnected()) {
+            event.getHook().editOriginal("Could not connect to database!").queue();
+            return;
+        }
+
+        GreenlitMessageRepository greenlitRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class);
+
+        greenlitRepository.getAllDocumentsAsync().thenAccept(greenlitMessages -> {
+            if (greenlitMessages.isEmpty()) {
+                event.getHook().editOriginal("No greenlit suggestions found!").queue();
+                return;
+            }
+
+            // Sort by suggestion timestamp
+            List<GreenlitMessage> sortedMessages = greenlitMessages.stream()
+                .sorted(Comparator.comparingLong(GreenlitMessage::getSuggestionTimestamp).reversed())
+                .collect(Collectors.toList());
+
+            PaginatedResponse<GreenlitMessage> pagination = PaginatedResponse.forEmbeds(
+                sortedMessages,
+                5,
+                pageItems -> buildGreenlitEmbed(pageItems).build(),
+                "info-page"
+            );
+
+            pagination.sendMessage(event);
+
+            event.getHook().retrieveOriginal().queue(message ->
+                PaginationManager.registerPagination(message.getId(), pagination)
+            );
+        }).exceptionally(throwable -> {
+            log.error("Error loading greenlit messages", throwable);
+            event.getHook().editOriginal("Failed to load greenlit suggestions: " + throwable.getMessage()).queue();
+            return null;
+        });
+    }
+
+    private EmbedBuilder buildGreenlitEmbed(List<GreenlitMessage> greenlitMessages) {
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setColor(Color.GREEN)
+            .setTitle("Greenlit Suggestions");
+
+        for (GreenlitMessage message : greenlitMessages) {
+            String title = message.getSuggestionTitle();
+            if (title.length() > 100) {
+                title = title.substring(0, 97) + "...";
+            }
+
+            String content = message.getSuggestionContent();
+            if (content.length() > 200) {
+                content = content.substring(0, 197) + "...";
+            }
+
+            String tags = message.getTags().isEmpty() ? "No tags" : String.join(", ", message.getTags());
+            String votes = String.format("%s %d | %s %d | %s %d",
+                EmojiCache.getFormattedEmoji(EmojiConfig::getAgreeEmojiId), message.getAgrees(),
+                EmojiCache.getFormattedEmoji(EmojiConfig::getDisagreeEmojiId), message.getDisagrees(),
+                EmojiCache.getFormattedEmoji(EmojiConfig::getNeutralEmojiId), message.getNeutrals());
+
+            String fieldValue = String.format(
+                "%s\n\n**Tags:** %s\n**Votes:** %s\n**Date:** %s\n[View](%s)",
+                content,
+                tags,
+                votes,
+                DiscordTimestamp.toRelativeTimestamp(message.getSuggestionTimestamp()),
+                message.getSuggestionUrl()
+            );
+
+            embedBuilder.addField(title, fieldValue, false);
+        }
+
+        return embedBuilder;
+    }
+
+    @SlashCommand(name = "info", subcommand = "server", description = "View some information about the server", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    public void serverInfo(SlashCommandInteractionEvent event) {
+        Guild guild = event.getGuild();
+
+        AtomicInteger staff = new AtomicInteger();
+        AtomicInteger grapes = new AtomicInteger();
+        AtomicInteger nerds = new AtomicInteger();
+
+        for (String roleName : Utils.SPECIAL_ROLES) {
+            RoleManager.getRole(roleName).ifPresentOrElse(role -> staff.addAndGet(guild.getMembersWithRoles(role).size()),
+                () -> log.warn("Role {} not found", roleName)
+            );
+        }
+
+        RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
+
+        RoleManager.getRoleById(roleConfig.getModeratorRoleId()).ifPresentOrElse(role -> grapes.set(guild.getMembersWithRoles(role).size()),
+            () -> log.warn("Role {} not found", "Grape"));
+
+        RoleManager.getRoleById(roleConfig.getOrangeRoleId()).ifPresentOrElse(role -> nerds.set(guild.getMembersWithRoles(role).size()),
+            () -> log.warn("Role {} not found", "Orange"));
+
+        String serverInfo = """
+                            Server name: %s (Server ID: %s)
+                            Created at: %s
+                            Boosters: %s (%s)
+                            Channels: %s
+                            Members: %s/%s
+                            - Staff: %s
+                            - Grapes: %s
+                            - Nerds: %s
+                            """.formatted(
+            guild.getName(), guild.getId(),
+            DiscordTimestamp.toRelativeTimestamp(guild.getTimeCreated().toInstant().toEpochMilli()),
+            guild.getBoostCount(), guild.getBoostTier().name(),
+            guild.getChannels().size(),
+            guild.getMembers().size(), guild.getMaxMembers(),
+            staff.get(),
+            grapes.get(),
+            nerds.get()
+        );
+
+        event.reply(serverInfo).setEphemeral(true).queue();
+    }
+
+    @SlashComponentHandler(id = "info-pagination", patterns = {"info-page:*"})
+    public void handleInfoPagination(ButtonInteractionEvent event) {
+        try {
+            event.deferEdit().queue();
+
+            boolean handled = PaginationManager.handleButtonInteraction(event);
+
+            if (!handled) {
+                log.warn("Could not find pagination for message ID: {}", event.getMessageId());
+                event.getHook().editOriginal("This pagination has expired. Please run the command again.").queue();
+            }
+        } catch (Exception e) {
+            log.error("Error handling info pagination button interaction", e);
+            event.getHook().editOriginal("An error occurred while navigating pages.").queue();
+        }
+    }
+}
