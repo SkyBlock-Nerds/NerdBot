@@ -6,20 +6,19 @@ import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
-import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.app.urlwatcher.URLWatcher;
-import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
-import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.app.role.RoleManager;
-import net.hypixel.nerdbot.core.JsonUtils;
-import net.hypixel.nerdbot.discord.util.StringUtils;
-import net.hypixel.nerdbot.core.Tuple;
+import net.hypixel.nerdbot.app.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.core.DiscordTimestamp;
+import net.hypixel.nerdbot.core.JsonUtils;
+import net.hypixel.nerdbot.core.Tuple;
+import net.hypixel.nerdbot.discord.cache.ChannelCache;
+import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.discord.util.StringUtils;
 
-import java.awt.*;
+import java.awt.Color;
 import java.time.Instant;
 import java.util.List;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 @Slf4j
 public class FireSaleDataHandler implements URLWatcher.DataHandler {

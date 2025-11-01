@@ -1,13 +1,14 @@
 package net.hypixel.nerdbot.app.urlwatcher.handler.status;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.core.status.StatusPageResponse;
 import net.hypixel.nerdbot.discord.config.StatusPageConfig;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @RequiredArgsConstructor

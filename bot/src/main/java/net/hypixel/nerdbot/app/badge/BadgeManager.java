@@ -1,10 +1,10 @@
 package net.hypixel.nerdbot.app.badge;
 
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.discord.storage.badge.Badge;
-import net.hypixel.nerdbot.discord.storage.badge.TieredBadge;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
+import net.hypixel.nerdbot.discord.storage.badge.Badge;
+import net.hypixel.nerdbot.discord.storage.badge.TieredBadge;
 
 import java.util.HashMap;
 import java.util.Map;

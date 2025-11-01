@@ -4,7 +4,6 @@ import com.mongodb.client.MongoClient;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.discord.storage.repository.Repository;
 import net.hypixel.nerdbot.core.ClassUtils;
 import net.hypixel.nerdbot.core.exception.RepositoryException;
 

@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 
-import java.awt.*;
+import java.awt.Color;
 import java.time.OffsetDateTime;
 
 public class HelloGoodbyeFeature extends BotFeature {

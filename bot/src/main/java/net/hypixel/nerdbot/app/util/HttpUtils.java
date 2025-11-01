@@ -5,13 +5,13 @@ import com.google.gson.JsonSyntaxException;
 import io.prometheus.client.Summary;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
+import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.core.HttpClient;
+import net.hypixel.nerdbot.core.UUIDUtils;
+import net.hypixel.nerdbot.core.exception.HttpException;
+import net.hypixel.nerdbot.core.json.HypixelPlayerResponse;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.storage.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.core.exception.HttpException;
-import net.hypixel.nerdbot.core.UUIDUtils;
-import net.hypixel.nerdbot.core.HttpClient;
-import net.hypixel.nerdbot.core.json.HypixelPlayerResponse;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

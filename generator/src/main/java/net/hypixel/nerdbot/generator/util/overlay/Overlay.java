@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.generator.util.overlay;
 
 import lombok.Getter;
 
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 

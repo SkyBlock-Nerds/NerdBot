@@ -1,13 +1,14 @@
 package net.hypixel.nerdbot.app.urlwatcher.handler.status;
 
-import java.awt.Color;
-import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.hypixel.nerdbot.core.TimeUtils;
 import net.hypixel.nerdbot.core.status.StatusPageResponse;
 import net.hypixel.nerdbot.discord.config.StatusPageConfig;
+
+import java.awt.Color;
+import java.time.Instant;
 
 @RequiredArgsConstructor
 public class StatusPageEmbedFactory {

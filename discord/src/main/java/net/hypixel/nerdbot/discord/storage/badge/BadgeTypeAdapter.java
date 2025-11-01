@@ -6,8 +6,6 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import net.hypixel.nerdbot.discord.storage.badge.Badge;
-import net.hypixel.nerdbot.discord.storage.badge.TieredBadge;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;

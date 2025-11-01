@@ -3,7 +3,8 @@ package net.hypixel.nerdbot.generator.util;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
+import java.awt.Font;
+import java.awt.FontFormatException;
 import java.io.IOException;
 import java.io.InputStream;
 

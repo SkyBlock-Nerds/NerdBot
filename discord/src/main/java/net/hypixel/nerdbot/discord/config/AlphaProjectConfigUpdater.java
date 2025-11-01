@@ -3,9 +3,8 @@ package net.hypixel.nerdbot.discord.config;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
-import net.hypixel.nerdbot.discord.config.NerdBotConfig;
-import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
+import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
 import java.util.ArrayList;

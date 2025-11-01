@@ -1,10 +1,11 @@
 package net.hypixel.nerdbot.core.status;
 
 import com.google.gson.annotations.SerializedName;
-import java.time.Instant;
-import java.util.List;
 import lombok.Data;
 import net.hypixel.nerdbot.core.DiscordTimestamp;
+
+import java.time.Instant;
+import java.util.List;
 
 @Data
 public class StatusPageResponse {

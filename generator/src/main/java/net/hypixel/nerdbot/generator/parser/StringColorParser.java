@@ -1,14 +1,14 @@
 package net.hypixel.nerdbot.generator.parser;
 
 import lombok.Getter;
-import net.hypixel.nerdbot.generator.util.ColoredString;
-import net.hypixel.nerdbot.generator.util.GeneratorStrings;
 import net.hypixel.nerdbot.core.EnumUtils;
 import net.hypixel.nerdbot.core.skyblock.Flavor;
 import net.hypixel.nerdbot.core.skyblock.Gemstone;
 import net.hypixel.nerdbot.core.skyblock.Icon;
 import net.hypixel.nerdbot.core.skyblock.MCColor;
 import net.hypixel.nerdbot.core.skyblock.Stat;
+import net.hypixel.nerdbot.generator.util.ColoredString;
+import net.hypixel.nerdbot.generator.util.GeneratorStrings;
 
 import java.util.ArrayList;
 import java.util.List;
