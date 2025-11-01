@@ -7,12 +7,20 @@ on:
     paths:
       - '**.java'
       - 'pom.xml'
+      - 'core/pom.xml'
+      - 'generator/pom.xml'
+      - 'discord/pom.xml'
+      - 'tooling/pom.xml'
   push:
     branches:
       - '*'
     paths:
       - '**.java'
       - 'pom.xml'
+      - 'core/pom.xml'
+      - 'generator/pom.xml'
+      - 'discord/pom.xml'
+      - 'tooling/pom.xml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -34,4 +42,4 @@ jobs:
           distribution: 'adopt'
 
       - name: Build with Maven
-        run: mvn editorconfig:check clean package
+        run: mvn -pl discord -am org.ec4j.maven:editorconfig-maven-plugin:check clean package
