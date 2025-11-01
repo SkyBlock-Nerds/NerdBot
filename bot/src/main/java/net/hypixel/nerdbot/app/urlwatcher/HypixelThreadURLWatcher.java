@@ -1,196 +1,145 @@
 package net.hypixel.nerdbot.app.urlwatcher;
 
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.app.urlwatcher.handler.update.SkyBlockUpdateDataHandler;
 import net.hypixel.nerdbot.core.xml.SkyBlockThreadParser;
 import net.hypixel.nerdbot.core.xml.SkyBlockThreadParser.HypixelThread;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
-import java.io.IOException;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 @Slf4j
-public class HypixelThreadURLWatcher {
+public class HypixelThreadURLWatcher extends URLWatcher {
 
-    @Getter
-    private final String url;
-    private final Timer timer;
-    private final OkHttpClient client;
-    private final Map<String, String> headers;
-    private final ExecutorService executorService;
-    @Getter
-    @Setter
-    private int lastGuid;
-    @Getter
-    private boolean active;
+    private final AtomicInteger lastGuid = new AtomicInteger();
+    private final Consumer<HypixelThread> threadHandler;
+    private volatile boolean initialised;
+    private final CompletableFuture<Void> baselineFuture;
+    private final AtomicBoolean startScheduled = new AtomicBoolean(false);
 
     public HypixelThreadURLWatcher(String url) {
-        this(url, null);
+        this(url, null, 0, SkyBlockUpdateDataHandler::handleThread);
     }
 
     public HypixelThreadURLWatcher(String url, Map<String, String> headers) {
-        this.client = new OkHttpClient();
-        this.url = url;
-        this.headers = headers;
-        this.timer = new Timer();
-        this.executorService = Executors.newCachedThreadPool();
-        this.lastGuid = getHighestGuid();
+        this(url, headers, 0, SkyBlockUpdateDataHandler::handleThread);
+    }
+
+    public HypixelThreadURLWatcher(String url, Map<String, String> headers, int initialGuid) {
+        this(url, headers, initialGuid, SkyBlockUpdateDataHandler::handleThread);
+    }
+
+    public HypixelThreadURLWatcher(String url, Map<String, String> headers, int initialGuid, Consumer<HypixelThread> threadHandler) {
+        super(url, headers, false);
+        this.threadHandler = java.util.Objects.requireNonNull(threadHandler, "threadHandler");
+        this.lastGuid.set(Math.max(0, initialGuid));
+        this.initialised = initialGuid > 0;
+        this.baselineFuture = this.initialised ? CompletableFuture.completedFuture(null) : seedBaseline();
     }
 
     public void startWatching(long interval, TimeUnit unit) {
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                fetchAndParseContentAsync()
-                    .thenAccept(hypixelThreads -> {
-                        if (hypixelThreads == null) {
-                            return;
-                        }
+        if (!startScheduled.compareAndSet(false, true)) {
+            throw new IllegalStateException("Watcher for " + getUrl() + " has already been started");
+        }
 
-                        for (HypixelThread thread : hypixelThreads) {
-                            if (thread.getGuid() > lastGuid) {
-                                log.debug("Watched " + url + " and found newest GUID!\nOld GUID: " + lastGuid + "\nNew GUID: " + thread.getGuid());
-                                lastGuid = thread.getGuid();
-                                SkyBlockUpdateDataHandler.handleThread(thread);
-                            }
-                        }
-                    })
-                    .exceptionally(throwable -> {
-                        log.error("Error fetching and parsing content asynchronously from " + url, throwable);
-                        return null;
-                    });
+        baselineFuture.whenComplete((ignored, throwable) -> {
+            if (throwable != null) {
+                log.warn("Baseline initialisation for {} encountered an error", getUrl(), throwable);
             }
-        }, 0, unit.toMillis(interval));
 
-        log.info("Started watching " + url);
-        active = true;
+            try {
+                super.startWatching(interval, unit, (oldContent, newContent, changedValues) -> handleContent(newContent));
+            } catch (IllegalStateException exception) {
+                log.debug("Skipping start for {}: {}", getUrl(), exception.getMessage());
+            }
+        });
     }
 
     public void watchOnce() {
-        active = true;
+        baselineFuture.whenComplete((ignored, throwable) -> {
+            if (throwable != null) {
+                log.warn("Baseline initialisation for {} encountered an error", getUrl(), throwable);
+            }
+            super.watchOnce((oldContent, newContent, changedValues) -> handleContent(newContent));
+        });
+    }
 
-        fetchAndParseContentAsync()
-            .thenAccept(hypixelThreads -> {
-                if (hypixelThreads == null) {
-                    active = false;
-                    return;
+    private void handleContent(String newContent) {
+        List<HypixelThread> hypixelThreads = parseThreads(newContent);
+        if (hypixelThreads == null || hypixelThreads.isEmpty()) {
+            return;
+        }
+
+        if (!initialised) {
+            lastGuid.set(
+                hypixelThreads.stream()
+                    .mapToInt(HypixelThread::getGuid)
+                    .max()
+                    .orElse(lastGuid.get())
+            );
+            initialised = true;
+            return;
+        }
+
+        hypixelThreads.stream()
+            .sorted(Comparator.comparingInt(HypixelThread::getGuid))
+            .forEach(this::updateLastGuid);
+    }
+
+    private CompletableFuture<Void> seedBaseline() {
+        return fetchContentAsync()
+            .handle((content, throwable) -> {
+                if (throwable != null) {
+                    log.error("Failed to seed baseline for {}", getUrl(), throwable);
+                    return null;
                 }
-
-                for (HypixelThread thread : hypixelThreads) {
-                    if (thread.getGuid() > lastGuid) {
-                        log.debug("Watched " + url + " and found newest Guid!\nOld Guid: " + lastGuid + "\nNew Guid: " + thread.getGuid());
-                        lastGuid = thread.getGuid();
-                        SkyBlockUpdateDataHandler.handleThread(thread);
+                return content;
+            })
+            .thenAccept(content -> {
+                if (content != null) {
+                    List<HypixelThread> hypixelThreads = parseThreads(content);
+                    if (hypixelThreads != null && !hypixelThreads.isEmpty()) {
+                        lastGuid.set(
+                            hypixelThreads.stream()
+                                .mapToInt(HypixelThread::getGuid)
+                                .max()
+                                .orElse(lastGuid.get())
+                        );
+                        initialised = true;
+                        return;
                     }
                 }
-                active = false;
-            })
-            .exceptionally(throwable -> {
-                log.error("Error fetching and parsing content asynchronously from " + url, throwable);
-                active = false;
-                return null;
+                initialised = false;
             });
     }
 
-    public int getHighestGuid() {
-        List<HypixelThread> hypixelThreads = fetchAndParseContent();
-        if (hypixelThreads == null || hypixelThreads.isEmpty()) {
-            return 0;
+    private void updateLastGuid(HypixelThread thread) {
+        int candidateGuid = thread.getGuid();
+        while (true) {
+            int previousGuid = lastGuid.get();
+            if (candidateGuid <= previousGuid) {
+                return;
+            }
+
+            if (lastGuid.compareAndSet(previousGuid, candidateGuid)) {
+                log.debug("Watched {} and found newest GUID!\nOld GUID: {}\nNew GUID: {}", getUrl(), previousGuid, candidateGuid);
+                threadHandler.accept(thread);
+                return;
+            }
         }
-
-        int[] guidList = new int[hypixelThreads.size()];
-
-        for (int x = 0; x < hypixelThreads.size(); x++) {
-            guidList[x] = hypixelThreads.get(x).getGuid();
-        }
-
-        return Arrays.stream(guidList).max().orElse(0);
     }
 
-    public List<HypixelThread> fetchAndParseContent() {
-        log.debug("Fetching content from " + url);
-
-        Request.Builder requestBuilder = new Request.Builder().url(url);
-
-        if (headers != null) {
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
-                requestBuilder.header(entry.getKey(), entry.getValue());
-            }
+    private List<HypixelThread> parseThreads(String content) {
+        if (content == null || content.isBlank()) {
+            return null;
         }
 
-        Request request = requestBuilder.build();
-
-        try (Response response = client.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                String content = response.body().string();
-                log.debug("Successfully fetched content from " + url + "!" + " (Content: " + content.replace("\n", "") + ")");
-                return SkyBlockThreadParser.parseSkyBlockThreads(content);
-            } else {
-                log.error("Failed to fetch content from " + url + "! (Response: " + response + ")");
-            }
-        } catch (IOException exception) {
-            log.error("Failed to fetch content from " + url + "!", exception);
-        }
-
-        return null;
-    }
-
-    public CompletableFuture<List<HypixelThread>> fetchAndParseContentAsync() {
-        return CompletableFuture.supplyAsync(() -> {
-            log.debug("Fetching content asynchronously from " + url);
-
-            Request.Builder requestBuilder = new Request.Builder().url(url);
-
-            if (headers != null) {
-                for (Map.Entry<String, String> entry : headers.entrySet()) {
-                    requestBuilder.header(entry.getKey(), entry.getValue());
-                }
-            }
-
-            Request request = requestBuilder.build();
-
-            try (Response response = client.newCall(request).execute()) {
-                if (response.isSuccessful()) {
-                    String content = response.body().string();
-                    log.debug("Successfully fetched content asynchronously from " + url + "!" + " (Content: " + content + ")");
-                    return SkyBlockThreadParser.parseSkyBlockThreads(content);
-                } else {
-                    log.error("Failed to fetch content asynchronously from " + url + "! (Response: " + response + ")");
-                    return null;
-                }
-            } catch (IOException e) {
-                log.error("Failed to fetch content asynchronously from " + url, e);
-                return null;
-            }
-        }, executorService);
-    }
-
-    public void shutdown() {
-        log.info("Shutting down HypixelThreadURLWatcher for " + url);
-        timer.cancel();
-        executorService.shutdown();
-        try {
-            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-                log.warn("ExecutorService did not terminate gracefully, forcing shutdown");
-                executorService.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            log.warn("Interrupted while waiting for ExecutorService termination");
-            executorService.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
-        active = false;
+        return SkyBlockThreadParser.parseSkyBlockThreads(content);
     }
 }

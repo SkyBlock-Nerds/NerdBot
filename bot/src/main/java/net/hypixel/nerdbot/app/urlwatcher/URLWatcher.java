@@ -13,24 +13,26 @@ import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
-public class URLWatcher {
+public class URLWatcher implements AutoCloseable {
 
     @Getter
     private final String url;
-    private final Timer timer;
+    private final ScheduledExecutorService scheduler;
+    private ScheduledFuture<?> scheduledTask;
     private final OkHttpClient client;
     private final Map<String, String> headers;
-    private final ExecutorService executorService;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
     @Getter
     @Setter
     private String lastContent;
@@ -38,42 +40,65 @@ public class URLWatcher {
     private boolean active;
 
     public URLWatcher(String url) {
-        this(url, null);
+        this(url, null, true);
     }
 
     public URLWatcher(String url, Map<String, String> headers) {
+        this(url, headers, true);
+    }
+
+    protected URLWatcher(String url, Map<String, String> headers, boolean loadInitialContent) {
+        this.url = url;
+        this.headers = headers;
         this.client = new OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
             .writeTimeout(10, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build();
-        this.url = url;
-        this.headers = headers;
-        this.timer = new Timer();
-        this.executorService = Executors.newCachedThreadPool();
-        this.lastContent = fetchContent();
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "URLWatcher-" + sanitizeForThreadName(url));
+            thread.setDaemon(true);
+            return thread;
+        });
+
+        if (loadInitialContent) {
+            this.lastContent = fetchContent();
+        }
     }
 
     public void startWatching(long interval, TimeUnit unit, DataHandler handler) {
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                fetchContentAsync()
-                    .thenAccept(newContent -> {
-                        if (newContent != null && !newContent.equals(lastContent)) {
-                            log.debug("Watched " + url + " and found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
-                            handler.handleData(lastContent, newContent, JsonUtils.findChangedValues(JsonUtils.parseStringToMap(lastContent), JsonUtils.parseStringToMap(newContent), ""));
-                            lastContent = newContent;
-                        }
-                    })
-                    .exceptionally(throwable -> {
-                        log.error("Error fetching content asynchronously from " + url, throwable);
-                        return null;
-                    });
-            }
-        }, 0, unit.toMillis(interval));
+        if (closed.get()) {
+            throw new IllegalStateException("Watcher for " + url + " has been closed");
+        }
 
-        log.info("Started watching " + url);
+        if (scheduledTask != null && !scheduledTask.isDone()) {
+            throw new IllegalStateException("Watcher for " + url + " is already active");
+        }
+
+        scheduledTask = scheduler.scheduleAtFixedRate(() -> fetchContentAsync()
+            .thenAccept(newContent -> {
+                if (newContent != null && !newContent.equals(lastContent)) {
+                    log.debug("Watched {} and found changes!\nOld content: {}\nNew content: {}", url, lastContent, newContent);
+                    handler.handleData(
+                        lastContent,
+                        newContent,
+                        lastContent == null
+                            ? Collections.emptyList()
+                            : JsonUtils.findChangedValues(
+                                JsonUtils.parseStringToMap(lastContent),
+                                JsonUtils.parseStringToMap(newContent),
+                                ""
+                            )
+                    );
+                    lastContent = newContent;
+                }
+            })
+            .exceptionally(throwable -> {
+                log.error("Error fetching content asynchronously from {}", url, throwable);
+                return null;
+            }), 0, unit.toMillis(interval), TimeUnit.MILLISECONDS);
+
+        log.info("Started watching {}", url);
         active = true;
     }
 
@@ -90,7 +115,17 @@ public class URLWatcher {
         fetchContentAsync()
             .thenAccept(newContent -> {
                 if (newContent != null && !newContent.equals(lastContent)) {
-                    handler.handleData(lastContent, newContent, JsonUtils.findChangedValues(JsonUtils.parseStringToMap(lastContent), JsonUtils.parseStringToMap(newContent), ""));
+                    handler.handleData(
+                        lastContent,
+                        newContent,
+                        lastContent == null
+                            ? Collections.emptyList()
+                            : JsonUtils.findChangedValues(
+                                JsonUtils.parseStringToMap(lastContent),
+                                JsonUtils.parseStringToMap(newContent),
+                                ""
+                            )
+                    );
                     lastContent = newContent;
                     log.debug("Watched " + url + " once, found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
                 }
@@ -104,10 +139,29 @@ public class URLWatcher {
     }
 
     public void stopWatching() {
-        timer.cancel();
-        executorService.shutdown();
-        log.info("Stopped watching " + url);
+        if (!closed.compareAndSet(false, true)) {
+            return;
+        }
+
+        if (scheduledTask != null) {
+            scheduledTask.cancel(true);
+            scheduledTask = null;
+        }
+
+        scheduler.shutdown();
+        try {
+            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                log.warn("Scheduler for {} did not terminate gracefully, forcing shutdown", url);
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException exception) {
+            log.warn("Interrupted while waiting for scheduler termination for {}", url);
+            scheduler.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+
         active = false;
+        log.info("Stopped watching {}", url);
     }
 
     public String fetchContent() {
@@ -182,5 +236,14 @@ public class URLWatcher {
 
     public interface DataHandler {
         void handleData(String oldContent, String newContent, List<Tuple<String, Object, Object>> changedValues);
+    }
+
+    @Override
+    public void close() {
+        stopWatching();
+    }
+
+    private static String sanitizeForThreadName(String url) {
+        return url.replaceAll("[^a-zA-Z0-9_-]", "_");
     }
 }

@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -305,17 +306,19 @@ public abstract class AbstractDiscordBot implements DiscordBot {
         File file = new File(fileName);
         log.info("Loading config file from '{}'", file.getAbsolutePath());
 
-        JsonUtils.jsonToObjectAsync(file, getConfigClass())
-            .thenAccept(loadedConfig -> {
-                config = (DiscordBotConfig) loadedConfig;
-                log.info("Loaded config from {}", file.getAbsolutePath());
-            })
-            .exceptionally(throwable -> {
-                log.error("Failed to load config from {}", file.getAbsolutePath(), throwable);
-                System.exit(-1);
-                return null;
-            })
-            .join();
+        try {
+            Object loadedConfig = JsonUtils.jsonToObject(file, getConfigClass());
+            if (!(loadedConfig instanceof DiscordBotConfig discordBotConfig)) {
+                throw new IllegalStateException("Loaded config is not a DiscordBotConfig: " + file.getAbsolutePath());
+            }
+
+            config = discordBotConfig;
+            log.info("Loaded config from {}", file.getAbsolutePath());
+        } catch (FileNotFoundException exception) {
+            throw new IllegalStateException("Failed to load config from " + file.getAbsolutePath(), exception);
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException("Failed to parse config from " + file.getAbsolutePath(), exception);
+        }
     }
 
     @Override

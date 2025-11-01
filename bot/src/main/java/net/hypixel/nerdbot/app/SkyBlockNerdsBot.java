@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * SkyBlock Nerds Discord bot implementation.
@@ -51,6 +52,8 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class SkyBlockNerdsBot extends AbstractDiscordBot {
+
+    private final List<AutoCloseable> activeWatchers = new ArrayList<>();
 
     @Override
     protected @NotNull Class<? extends DiscordBotConfig> getConfigClass() {
@@ -175,6 +178,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     @Override
     protected void onShutdown() {
         PrometheusMetrics.setMetricsEnabled(false);
+        stopUrlWatchers();
     }
 
     private void loadRemindersFromDatabase() {
@@ -218,14 +222,31 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     }
 
     private void startUrlWatchers() {
-        URLWatcher statusPageWatcher = new URLWatcher("https://status.hypixel.net/api/v2/summary.json");
-        URLWatcher fireSaleWatcher = new URLWatcher("https://api.hypixel.net/skyblock/firesales");
-        HypixelThreadURLWatcher skyBlockPatchNotesWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss");
-        HypixelThreadURLWatcher hypixelNewsWatcher = new HypixelThreadURLWatcher("https://hypixel.net/forums/news-and-announcements.4/.rss");
+        stopUrlWatchers();
 
-        statusPageWatcher.startWatching(1, TimeUnit.MINUTES, new StatusPageDataHandler());
-        fireSaleWatcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler());
-        hypixelNewsWatcher.startWatching(1, TimeUnit.MINUTES);
-        skyBlockPatchNotesWatcher.startWatching(1, TimeUnit.MINUTES);
+        startWatcher(new URLWatcher("https://status.hypixel.net/api/v2/summary.json"),
+            watcher -> watcher.startWatching(1, TimeUnit.MINUTES, new StatusPageDataHandler()));
+        startWatcher(new URLWatcher("https://api.hypixel.net/skyblock/firesales"),
+            watcher -> watcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler()));
+        startWatcher(new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss"),
+            watcher -> watcher.startWatching(1, TimeUnit.MINUTES));
+        startWatcher(new HypixelThreadURLWatcher("https://hypixel.net/forums/news-and-announcements.4/.rss"),
+            watcher -> watcher.startWatching(1, TimeUnit.MINUTES));
+    }
+
+    private void stopUrlWatchers() {
+        activeWatchers.forEach(watcher -> {
+            try {
+                watcher.close();
+            } catch (Exception exception) {
+                log.warn("Failed to stop watcher {}", watcher.getClass().getSimpleName(), exception);
+            }
+        });
+        activeWatchers.clear();
+    }
+
+    private <T extends AutoCloseable> void startWatcher(T watcher, Consumer<T> starter) {
+        starter.accept(watcher);
+        activeWatchers.add(watcher);
     }
 }
