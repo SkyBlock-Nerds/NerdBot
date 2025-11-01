@@ -23,6 +23,17 @@ public class DiscordUserRepository extends Repository<DiscordUser> {
     }
 
     @Override
+    protected DiscordUser documentToEntity(org.bson.Document document) {
+        DiscordUser user = super.documentToEntity(document);
+
+        if (user.getDiscordId() == null) {
+            throw new IllegalStateException("Found DiscordUser document with null discordId: " + document.toJson());
+        }
+
+        return user;
+    }
+
+    @Override
     public CompletableFuture<Void> loadAllDocumentsIntoCacheAsync() {
         return super.loadAllDocumentsIntoCacheAsync().thenCompose(unused ->
             CompletableFuture.runAsync(() -> {
