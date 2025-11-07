@@ -117,7 +117,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
     @Override
     protected String getSlashCommandBasePackage() {
-        return "net.hypixel.nerdbot.discord.command";
+        return "net.hypixel.nerdbot.app.command";
     }
 
     @Override
