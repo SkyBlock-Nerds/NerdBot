@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.discord.util;
 
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.internal.utils.tuple.Pair;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -17,8 +18,27 @@ public class StringUtils {
     static final String MINECRAFT_USERNAME_REGEX = "^[a-zA-Z0-9_]{2,16}";
     @Deprecated
     static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
+    public static final Pattern SKIN_BASE64_REGEX = Pattern.compile("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$");
 
     private StringUtils() {
+    }
+
+    public static String convertCamelCaseToSnakeCase(String camelCase) {
+        return camelCase.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
+    }
+
+    public static Pair<String, Integer> getLongestLine(List<String> strings) {
+        String longest = "";
+        int length = 0;
+
+        for (String string : strings) {
+            if (string.length() > length) {
+                longest = string;
+                length = string.length();
+            }
+        }
+
+        return Pair.of(longest, length);
     }
 
     public static List<String> splitString(String text, int size) {

@@ -79,17 +79,21 @@ public class URLWatcher implements AutoCloseable {
             .thenAccept(newContent -> {
                 if (newContent != null && !newContent.equals(lastContent)) {
                     log.debug("Watched {} and found changes!\nOld content: {}\nNew content: {}", url, lastContent, newContent);
-                    handler.handleData(
-                        lastContent,
-                        newContent,
-                        lastContent == null
-                            ? Collections.emptyList()
-                            : JsonUtils.findChangedValues(
+
+                    List<Tuple<String, Object, Object>> changedValues = Collections.emptyList();
+                    if (lastContent != null && isJsonContent(lastContent) && isJsonContent(newContent)) {
+                        try {
+                            changedValues = JsonUtils.findChangedValues(
                                 JsonUtils.parseStringToMap(lastContent),
                                 JsonUtils.parseStringToMap(newContent),
                                 ""
-                            )
-                    );
+                            );
+                        } catch (Exception e) {
+                            log.debug("Failed to parse content as JSON for {}, skipping change detection", url);
+                        }
+                    }
+
+                    handler.handleData(lastContent, newContent, changedValues);
                     lastContent = newContent;
                 }
             })
@@ -115,17 +119,20 @@ public class URLWatcher implements AutoCloseable {
         fetchContentAsync()
             .thenAccept(newContent -> {
                 if (newContent != null && !newContent.equals(lastContent)) {
-                    handler.handleData(
-                        lastContent,
-                        newContent,
-                        lastContent == null
-                            ? Collections.emptyList()
-                            : JsonUtils.findChangedValues(
+                    List<Tuple<String, Object, Object>> changedValues = Collections.emptyList();
+                    if (lastContent != null && isJsonContent(lastContent) && isJsonContent(newContent)) {
+                        try {
+                            changedValues = JsonUtils.findChangedValues(
                                 JsonUtils.parseStringToMap(lastContent),
                                 JsonUtils.parseStringToMap(newContent),
                                 ""
-                            )
-                    );
+                            );
+                        } catch (Exception e) {
+                            log.debug("Failed to parse content as JSON for {}, skipping change detection", url);
+                        }
+                    }
+
+                    handler.handleData(lastContent, newContent, changedValues);
                     lastContent = newContent;
                     log.debug("Watched " + url + " once, found changes!\nOld content: " + lastContent + "\nNew content: " + newContent);
                 }
@@ -245,5 +252,13 @@ public class URLWatcher implements AutoCloseable {
 
     private static String sanitizeForThreadName(String url) {
         return url.replaceAll("[^a-zA-Z0-9_-]", "_");
+    }
+
+    private static boolean isJsonContent(String content) {
+        if (content == null || content.isBlank()) {
+            return false;
+        }
+        String trimmed = content.trim();
+        return trimmed.startsWith("{") || trimmed.startsWith("[");
     }
 }
