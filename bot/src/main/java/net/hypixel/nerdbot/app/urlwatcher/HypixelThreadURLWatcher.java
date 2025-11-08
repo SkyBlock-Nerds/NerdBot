@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 @Slf4j
-public class HypixelThreadURLWatcher extends URLWatcher {
+public class HypixelThreadURLWatcher extends XmlURLWatcher {
 
     private final AtomicInteger lastGuid = new AtomicInteger();
     private final Consumer<HypixelThread> threadHandler;
@@ -128,7 +128,7 @@ public class HypixelThreadURLWatcher extends URLWatcher {
             }
 
             if (lastGuid.compareAndSet(previousGuid, candidateGuid)) {
-                log.debug("Watched {} and found newest GUID!\nOld GUID: {}\nNew GUID: {}", getUrl(), previousGuid, candidateGuid);
+                log.debug("Watched {} and found newest GUID! Old: {} - New: {}", getUrl(), previousGuid, candidateGuid);
                 threadHandler.accept(thread);
                 return;
             }
