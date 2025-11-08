@@ -157,6 +157,8 @@ public class ConfigGenerator {
         FeatureConfig curate = new FeatureConfig();
         curate.setClassName("com.example.bot.feature.CurateFeature");
         curate.setEnabled(true);
+        curate.setInitialDelayMs(30000L);
+        curate.setPeriodMs(43_200_000L); // 12 hours
         featureConfigs.add(curate);
 
         botConfig.setFeatures(featureConfigs);

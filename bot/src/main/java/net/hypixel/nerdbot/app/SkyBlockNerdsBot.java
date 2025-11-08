@@ -21,6 +21,7 @@ import net.hypixel.nerdbot.app.user.BirthdayScheduler;
 import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.FeatureEventListener;
+import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.config.FeatureConfig;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -121,8 +123,28 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
                         }
 
                         BotFeature feature = (BotFeature) clazz.getDeclaredConstructor().newInstance();
+                        feature.setScheduleOverrides(featureConfig.getInitialDelayMs(), featureConfig.getPeriodMs());
                         features.add(feature);
                         log.info("Added feature from config: {}", featureConfig.getClassName());
+
+                        if (feature instanceof SchedulableFeature schedulable) {
+                            long defaultInitial = schedulable.defaultInitialDelayMs(config);
+                            long defaultPeriod = schedulable.defaultPeriodMs(config);
+
+                            Long overrideInitial = featureConfig.getInitialDelayMs();
+                            Long overridePeriod = featureConfig.getPeriodMs();
+                            long effectiveInitial = overrideInitial != null ? overrideInitial : defaultInitial;
+                            long effectivePeriod = overridePeriod != null ? overridePeriod : defaultPeriod;
+
+                            if (overrideInitial != null || overridePeriod != null) {
+                                log.info(
+                                    "Applying schedule override for {}: initialDelayMs={} (default {}), periodMs={} (default {})",
+                                    feature.getClass().getName(), effectiveInitial, defaultInitial, effectivePeriod, defaultPeriod
+                                );
+                            }
+
+                            feature.scheduleAtFixedRate(schedulable.buildTask(), defaultInitial, defaultPeriod);
+                        }
                     } catch (Exception e) {
                         log.warn("Failed to instantiate feature {}", featureConfig.getClassName(), e);
                     }
@@ -136,7 +158,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
     @Override
     protected String getSlashCommandBasePackage() {
-        return "net.hypixel.nerdbot.app.command";
+        return "net.hypixel.nerdbot.discord.command";
     }
 
     @Override
@@ -269,7 +291,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
             URLWatcher watcher;
             try {
-                Constructor<?> declaredConstructor = watcherClazz.getDeclaredConstructor(String.class, java.util.Map.class);
+                Constructor<?> declaredConstructor = watcherClazz.getDeclaredConstructor(String.class, Map.class);
                 watcher = (URLWatcher) declaredConstructor.newInstance(watcherConfig.getUrl(), watcherConfig.getHeaders());
             } catch (NoSuchMethodException exception) {
                 Constructor<?> declaredConstructor = watcherClazz.getDeclaredConstructor(String.class);

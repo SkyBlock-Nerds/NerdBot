@@ -22,4 +22,14 @@ public class FeatureConfig {
      */
     private String className;
 
+    /**
+     * Optional initial delay in milliseconds before the feature's periodic task first runs.
+     */
+    private Long initialDelayMs;
+
+    /**
+     * Optional repeating period in milliseconds for the feature's task.
+     */
+    private Long periodMs;
+
 }
