@@ -22,7 +22,7 @@ import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.app.modmail.ModMailListener;
 import net.hypixel.nerdbot.app.reminder.ReminderDispatcher;
 import net.hypixel.nerdbot.app.urlwatcher.HypixelThreadURLWatcher;
-import net.hypixel.nerdbot.app.urlwatcher.URLWatcher;
+import net.hypixel.nerdbot.app.urlwatcher.JsonURLWatcher;
 import net.hypixel.nerdbot.app.urlwatcher.handler.firesale.FireSaleDataHandler;
 import net.hypixel.nerdbot.app.urlwatcher.handler.status.StatusPageDataHandler;
 import net.hypixel.nerdbot.app.user.BirthdayScheduler;
@@ -224,9 +224,9 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     private void startUrlWatchers() {
         stopUrlWatchers();
 
-        startWatcher(new URLWatcher("https://status.hypixel.net/api/v2/summary.json"),
+        startWatcher(new JsonURLWatcher("https://status.hypixel.net/api/v2/summary.json"),
             watcher -> watcher.startWatching(1, TimeUnit.MINUTES, new StatusPageDataHandler()));
-        startWatcher(new URLWatcher("https://api.hypixel.net/skyblock/firesales"),
+        startWatcher(new JsonURLWatcher("https://api.hypixel.net/skyblock/firesales"),
             watcher -> watcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler()));
         startWatcher(new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss"),
             watcher -> watcher.startWatching(1, TimeUnit.MINUTES));

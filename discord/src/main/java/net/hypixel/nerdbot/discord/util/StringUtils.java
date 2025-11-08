@@ -55,4 +55,12 @@ public class StringUtils {
 
         return (firstLine.length() > 30) ? firstLine.substring(0, 27) + "..." : firstLine;
     }
+
+    public static String toOneLine(String input) {
+        if (input == null) {
+            return null;
+        }
+        String s = input.replace('\n', ' ').replace('\r', ' ');
+        return s.replaceAll("\\s{2,}", " ").trim();
+    }
 }
