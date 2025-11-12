@@ -93,4 +93,11 @@ public class RoleConfig {
      */
     private PingableRole[] pingableRoles = {};
 
+    /**
+     * Minimum number of days a user must have been in the guild (based on join date)
+     * before they can be nominated from New Member to Member when running the
+     * “new members only” nomination check. Default: 30 days.
+     */
+    private int newMemberNominationMinDays = 30;
+
 }

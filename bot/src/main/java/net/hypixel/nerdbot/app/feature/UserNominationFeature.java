@@ -25,6 +25,7 @@ import net.hypixel.nerdbot.discord.util.Utils;
 
 import java.awt.Color;
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.time.Instant;
 import java.time.Month;
 import java.time.ZoneId;
@@ -32,63 +33,185 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimerTask;
+import java.util.function.BiPredicate;
 
 @Slf4j
 public class UserNominationFeature extends BotFeature {
 
     public static void nominateUsers() {
-        Guild guild = DiscordUtils.getMainGuild();
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        int requiredVotes = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
-        int requiredComments = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion();
+        String memberRoleId = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMemberRoleId();
 
-        log.info("Checking for users to nominate for promotion (required votes: " + requiredVotes + ", required comments: " + requiredComments + ")");
-
-        discordUserRepository.getAll().forEach(discordUser -> {
-            Member member = guild.getMemberById(discordUser.getDiscordId());
-
-            if (member == null) {
-                log.error("Member not found for user " + discordUser.getDiscordId());
-                return;
-            }
-
+        BiPredicate<Member, DiscordUser> eligibility = (member, discordUser) -> {
             Role highestRole = RoleManager.getHighestRole(member);
-
             if (highestRole == null) {
                 log.info("Skipping nomination for " + member.getEffectiveName() + " as they have no roles");
-                return;
+                return false;
             }
 
-            if (!highestRole.getId().equalsIgnoreCase(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMemberRoleId())) {
+            if (!highestRole.getId().equalsIgnoreCase(memberRoleId)) {
                 log.info("Skipping nomination for " + member.getEffectiveName() + " as their highest role is: " + highestRole.getName());
-                return;
+                return false;
             }
 
-            LastActivity lastActivity = discordUser.getLastActivity();
-            int totalComments = lastActivity.getTotalComments(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory());
-            int totalVotes = lastActivity.getTotalVotes(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory());
+            return true;
+        };
 
-            boolean hasRequiredVotes = totalVotes >= requiredVotes;
-            boolean hasRequiredComments = totalComments >= requiredComments;
+        runNominationSweep(eligibility, null);
+    }
 
+    /**
+     * Runs the same promotion eligibility check as {@link #nominateUsers()}, but only for users whose
+     * highest role is the configured "New Member" role. This is intended to be triggered manually
+     * via an admin force command rather than on a schedule.
+     */
+    public static void nominateNewMembers() {
+        RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
+        String newMemberRoleId = roleConfig.getNewMemberRoleId();
+        int minDays = Math.max(0, roleConfig.getNewMemberNominationMinDays());
+
+        BiPredicate<Member, DiscordUser> eligibility = (member, discordUser) -> {
+            Role highestRole = RoleManager.getHighestRole(member);
+            if (highestRole == null) {
+                log.info("Skipping new member nomination for " + member.getEffectiveName() + " as they have no roles");
+                return false;
+            }
+
+            if (!highestRole.getId().equalsIgnoreCase(newMemberRoleId)) {
+                return false;
+            }
+
+            OffsetDateTime joinedAt = member.getTimeJoined();
+            OffsetDateTime threshold = OffsetDateTime.now().minusDays(minDays);
+            if (joinedAt.isAfter(threshold)) {
+                log.info("Skipping new member nomination for " + member.getEffectiveName() + " as they joined on " + joinedAt + " (< " + minDays + " days)");
+                return false;
+            }
+
+            return true;
+        };
+
+        runNominationSweep(eligibility, "NewMember");
+    }
+
+    private static void runNominationSweep(BiPredicate<Member, DiscordUser> eligibility, String contextLabel) {
+        Guild guild = DiscordUtils.getMainGuild();
+        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
+        int requiredVotes = roleConfig.getMinimumVotesRequiredForPromotion();
+        int requiredComments = roleConfig.getMinimumCommentsRequiredForPromotion();
+        int daysWindow = roleConfig.getDaysRequiredForVoteHistory();
+
+        long startNanos = System.nanoTime();
+
+        if (contextLabel == null) {
+            log.info("Checking for users to nominate for promotion (required votes: " + requiredVotes + ", required comments: " + requiredComments + ")");
+        } else {
+            log.info("Checking " + contextLabel + " candidates for promotion eligibility (required votes: " + requiredVotes + ", required comments: " + requiredComments + ")");
+        }
+
+        int scanned = 0;
+        int missingMember = 0;
+        int ineligible = 0;
+        int eligible = 0;
+        int nominated = 0;
+        int skippedBelowThreshold = 0;
+        int skippedAlreadyThisMonth = 0;
+
+        for (DiscordUser discordUser : discordUserRepository.getAll()) {
+            scanned++;
+            Member member = guild.getMemberById(discordUser.getDiscordId());
+            if (member == null) {
+                missingMember++;
+                log.error("Member not found for user " + discordUser.getDiscordId());
+                continue;
+            }
+
+            if (!eligibility.test(member, discordUser)) {
+                ineligible++;
+                continue;
+            }
+
+            eligible++;
+            NominationOutcome outcome = evaluateNomination(member, discordUser, contextLabel, requiredVotes, requiredComments, daysWindow);
+            if (outcome == NominationOutcome.NOMINATED) {
+                nominated++;
+            } else if (outcome == NominationOutcome.SKIPPED_BELOW_THRESHOLD) {
+                skippedBelowThreshold++;
+            } else if (outcome == NominationOutcome.SKIPPED_ALREADY_THIS_MONTH) {
+                skippedAlreadyThisMonth++;
+            }
+        }
+
+        long durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
+        String label = (contextLabel == null ? "Member" : contextLabel);
+        log.info("Nomination sweep complete for " + label + ": scanned=" + scanned
+            + ", eligible=" + eligible
+            + ", nominated=" + nominated
+            + ", belowThreshold=" + skippedBelowThreshold
+            + ", alreadyThisMonth=" + skippedAlreadyThisMonth
+            + ", ineligible=" + ineligible
+            + ", missingMember=" + missingMember
+            + ", took=" + durationMs + "ms");
+    }
+
+    private enum NominationOutcome {
+        NOMINATED,
+        SKIPPED_ALREADY_THIS_MONTH,
+        SKIPPED_BELOW_THRESHOLD
+    }
+
+    private static NominationOutcome evaluateNomination(Member member, DiscordUser discordUser, String contextLabel, int requiredVotes, int requiredComments, int daysWindow) {
+        LastActivity lastActivity = discordUser.getLastActivity();
+        int totalComments = lastActivity.getTotalComments(daysWindow);
+        int totalVotes = lastActivity.getTotalVotes(daysWindow);
+
+        boolean hasRequiredVotes = totalVotes >= requiredVotes;
+        boolean hasRequiredComments = totalComments >= requiredComments;
+
+        if (contextLabel == null) {
             log.info("Checking if " + member.getEffectiveName() + " should be nominated for promotion (total comments: " + totalComments + ", total votes: " + totalVotes + ", meets comments requirement: " + hasRequiredComments + ", meets votes requirement: " + hasRequiredVotes + ")");
+        } else {
+            log.info("[" + contextLabel + "] Checking if " + member.getEffectiveName() + " should be nominated (total comments: " + totalComments + ", total votes: " + totalVotes + ", meets comments requirement: " + hasRequiredComments + ", meets votes requirement: " + hasRequiredVotes + ")");
+        }
 
-            lastActivity.getNominationInfo().getLastNominationTimestamp().ifPresentOrElse(timestamp -> {
-                Month lastNominationMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
-                Month now = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
+        lastActivity.getNominationInfo().getLastNominationTimestamp().ifPresentOrElse(timestamp -> {
+            Month lastNominationMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
+            Month now = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
 
-                if (lastNominationMonth != now && (totalComments >= requiredComments && totalVotes >= requiredVotes)) {
+            if (lastNominationMonth != now && (totalComments >= requiredComments && totalVotes >= requiredVotes)) {
+                if (contextLabel == null) {
                     log.info("Last nomination was not this month (last: " + lastNominationMonth + ", now: " + now + "), sending nomination message for " + member.getEffectiveName() + " (nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
-                    sendNominationMessage(member, discordUser);
+                } else {
+                    log.info("[" + contextLabel + "] Last nomination not this month (last: " + lastNominationMonth + ", now: " + now + "), sending nomination message for " + member.getEffectiveName());
                 }
-            }, () -> {
+                sendNominationMessage(member, discordUser);
+            }
+        }, () -> {
+            if (contextLabel == null) {
                 log.info("No last nomination date found for " + member.getEffectiveName() + ", checking if they meet the minimum requirements (min. votes: " + requiredVotes + ", min. comments: " + requiredComments + ", nomination info: " + discordUser.getLastActivity().getNominationInfo() + ")");
-
-                if (totalComments >= requiredComments && totalVotes >= requiredVotes) {
-                    sendNominationMessage(member, discordUser);
-                }
-            });
+            } else {
+                log.info("[" + contextLabel + "] No last nomination date found for " + member.getEffectiveName() + ", checking minimum requirements");
+            }
+            if (totalComments >= requiredComments && totalVotes >= requiredVotes) {
+                sendNominationMessage(member, discordUser);
+            }
         });
+
+        Long lastTimestamp = lastActivity.getNominationInfo().getLastNominationTimestamp().orElse(null);
+        if (lastTimestamp != null) {
+            Month lastMonth = Instant.ofEpochMilli(lastTimestamp).atZone(ZoneId.systemDefault()).getMonth();
+            Month nowMonth = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
+
+            if (lastMonth == nowMonth) {
+                return NominationOutcome.SKIPPED_ALREADY_THIS_MONTH;
+            }
+        }
+
+        if (hasRequiredComments && hasRequiredVotes) {
+            return NominationOutcome.NOMINATED;
+        }
+
+        return NominationOutcome.SKIPPED_BELOW_THRESHOLD;
     }
 
     public static void findInactiveUsers() {
