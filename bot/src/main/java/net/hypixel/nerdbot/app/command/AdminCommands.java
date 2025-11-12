@@ -1139,15 +1139,33 @@ public class AdminCommands {
     }
 
     @SlashCommand(name = "force", subcommand = "nominations", description = "Forcefully run the nomination process", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
-    public void forceNominations(SlashCommandInteractionEvent event) {
-        UserNominationFeature.nominateUsers();
-        event.reply("Forced nominations!").queue();
+    public void forceNominations(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = "Only check users with the New Member role", required = false) Boolean newMembersOnly
+    ) {
+        boolean onlyNew = newMembersOnly != null && newMembersOnly;
+        if (onlyNew) {
+            UserNominationFeature.nominateNewMembers();
+            event.reply("Forced nominations for New Members only!").queue();
+        } else {
+            UserNominationFeature.nominateUsers();
+            event.reply("Forced nominations!").queue();
+        }
     }
 
     @SlashCommand(name = "force", subcommand = "inactivity-check", description = "Forcefully run the inactivity check", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
-    public void forceInactiveCheck(SlashCommandInteractionEvent event) {
-        UserNominationFeature.findInactiveUsers();
-        event.reply("Forced inactivity check!").queue();
+    public void forceInactiveCheck(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = "Only check users with the New Member role", required = false) Boolean newMembersOnly
+    ) {
+        boolean onlyNew = newMembersOnly != null && newMembersOnly;
+        if (onlyNew) {
+            UserNominationFeature.findInactiveNewMembers();
+            event.reply("Forced inactivity check for New Members only!").queue();
+        } else {
+            UserNominationFeature.findInactiveUsers();
+            event.reply("Forced inactivity check!").queue();
+        }
     }
 
     @SlashCommand(name = "force", subcommand = "restricted-inactivity-check", description = "Forcefully run the restricted inactivity check", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
