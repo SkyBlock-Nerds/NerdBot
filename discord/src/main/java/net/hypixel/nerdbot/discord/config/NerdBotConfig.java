@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.discord.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import java.util.List;
 
 /**
  * NerdBot-specific configuration extending the base Discord bot framework config.
@@ -74,4 +75,16 @@ public class NerdBotConfig extends DiscordBotConfig {
      * Default value is 10
      */
     private int inactivityMessages = 10;
+
+    /**
+     * Feature configuration. If present and not empty,
+     * the bot will instantiate and start the listed features in order.
+     */
+    private List<FeatureConfig> features;
+
+    /**
+     * URL watcher configuration. If present and not empty,
+     * the bot will instantiate and start the listed watchers.
+     */
+    private List<WatcherConfig> watchers;
 }

@@ -8,12 +8,14 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.util.HttpUtils;
 import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
+import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
+import net.hypixel.nerdbot.discord.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
+import net.hypixel.nerdbot.discord.config.FeatureConfig;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -21,7 +23,7 @@ import java.util.Locale;
 import java.util.TimerTask;
 
 @Slf4j
-public class ProfileUpdateFeature extends BotFeature {
+public class ProfileUpdateFeature extends BotFeature implements SchedulableFeature {
 
     public static void updateNickname(DiscordUser discordUser) {
         MojangProfile existingProfile = discordUser.getMojangProfile();
@@ -76,32 +78,42 @@ public class ProfileUpdateFeature extends BotFeature {
 
     @Override
     public void onFeatureStart() {
-        BotEnvironment.getBot(DiscordBot.class);
-        long cacheTTLHours = SkyBlockNerdsBot.config().getMojangUsernameCacheTTL();
-        long updateInterval = Duration.of(cacheTTLHours, ChronoUnit.HOURS).toMillis();
+    }
 
-        this.timer.scheduleAtFixedRate(
-            new TimerTask() {
-                @Override
-                public void run() {
-                    if (BotEnvironment.getBot().isReadOnly()) {
-                        log.info("Bot is in read-only mode, skipping profile update task!");
-                        return;
-                    }
-
-                    if (!SkyBlockNerdsBot.config().isMojangForceNicknameUpdate()) {
-                        log.info("Forcefully updating nicknames is currently disabled!");
-                        return;
-                    }
-
-                    DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-                    discordUserRepository.forEach(discordUser -> {
-                        if (discordUser.isProfileAssigned() && discordUser.getMojangProfile().requiresCacheUpdate(cacheTTLHours)) {
-                            updateNickname(discordUser);
-                        }
-                    });
+    @Override
+    public TimerTask buildTask() {
+        return new TimerTask() {
+            @Override
+            public void run() {
+                if (BotEnvironment.getBot().isReadOnly()) {
+                    log.info("Bot is in read-only mode, skipping profile update task!");
+                    return;
                 }
-            }, 0L, updateInterval);
+
+                if (!SkyBlockNerdsBot.config().isMojangForceNicknameUpdate()) {
+                    log.info("Forcefully updating nicknames is currently disabled!");
+                    return;
+                }
+
+                DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+                long cacheTtlHours = SkyBlockNerdsBot.config().getMojangUsernameCacheTTL();
+                discordUserRepository.forEach(discordUser -> {
+                    if (discordUser.isProfileAssigned() && discordUser.getMojangProfile().requiresCacheUpdate(cacheTtlHours)) {
+                        updateNickname(discordUser);
+                    }
+                });
+            }
+        };
+    }
+
+    @Override
+    public long defaultInitialDelayMs(NerdBotConfig config) {
+        return 0L;
+    }
+
+    @Override
+    public long defaultPeriodMs(NerdBotConfig config) {
+        return Duration.of(config.getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis();
     }
 
     @Override

@@ -4,13 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.hypixel.nerdbot.app.activity.ActivityListener;
-import net.hypixel.nerdbot.app.activity.ActivityPurgeFeature;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
-import net.hypixel.nerdbot.app.feature.CurateFeature;
-import net.hypixel.nerdbot.app.feature.HelloGoodbyeFeature;
-import net.hypixel.nerdbot.app.feature.ProfileUpdateFeature;
-import net.hypixel.nerdbot.app.feature.UserGrabberFeature;
-import net.hypixel.nerdbot.app.feature.UserNominationFeature;
 import net.hypixel.nerdbot.app.listener.FunListener;
 import net.hypixel.nerdbot.app.listener.MetricsListener;
 import net.hypixel.nerdbot.app.listener.ModLogListener;
@@ -22,16 +16,17 @@ import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.app.modmail.ModMailListener;
 import net.hypixel.nerdbot.app.reminder.ReminderDispatcher;
 import net.hypixel.nerdbot.app.urlwatcher.HypixelThreadURLWatcher;
-import net.hypixel.nerdbot.app.urlwatcher.JsonURLWatcher;
-import net.hypixel.nerdbot.app.urlwatcher.handler.firesale.FireSaleDataHandler;
-import net.hypixel.nerdbot.app.urlwatcher.handler.status.StatusPageDataHandler;
+import net.hypixel.nerdbot.app.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.app.user.BirthdayScheduler;
 import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.FeatureEventListener;
+import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
+import net.hypixel.nerdbot.discord.config.FeatureConfig;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+import net.hypixel.nerdbot.discord.config.WatcherConfig;
 import net.hypixel.nerdbot.discord.storage.database.Database;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.storage.database.repository.ReminderRepository;
@@ -39,11 +34,12 @@ import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -105,14 +101,59 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
     @Override
     protected @NotNull Collection<? extends BotFeature> createFeatures() {
-        return List.of(
-            new HelloGoodbyeFeature(),
-            new CurateFeature(),
-            new UserGrabberFeature(),
-            new ProfileUpdateFeature(),
-            new ActivityPurgeFeature(),
-            new UserNominationFeature()
-        );
+        NerdBotConfig config = getConfig();
+        List<BotFeature> features = new ArrayList<>();
+
+        if (config.getFeatures() != null) {
+            log.info("Loading features from config ({} entries)", config.getFeatures().size());
+
+            config.getFeatures().stream()
+                .filter(FeatureConfig::isEnabled)
+                .forEach(featureConfig -> {
+                    try {
+                        if (!isAllowed(featureConfig.getClassName())) {
+                            log.warn("Feature class {} not permitted by class allowlist", featureConfig.getClassName());
+                            return;
+                        }
+
+                        Class<?> clazz = Class.forName(featureConfig.getClassName());
+                        if (!BotFeature.class.isAssignableFrom(clazz)) {
+                            log.warn("Feature class {} does not implement BotFeature", featureConfig.getClassName());
+                            return;
+                        }
+
+                        BotFeature feature = (BotFeature) clazz.getDeclaredConstructor().newInstance();
+                        feature.setScheduleOverrides(featureConfig.getInitialDelayMs(), featureConfig.getPeriodMs());
+                        features.add(feature);
+                        log.info("Added feature from config: {}", featureConfig.getClassName());
+
+                        if (feature instanceof SchedulableFeature schedulable) {
+                            long defaultInitial = schedulable.defaultInitialDelayMs(config);
+                            long defaultPeriod = schedulable.defaultPeriodMs(config);
+
+                            Long overrideInitial = featureConfig.getInitialDelayMs();
+                            Long overridePeriod = featureConfig.getPeriodMs();
+                            long effectiveInitial = overrideInitial != null ? overrideInitial : defaultInitial;
+                            long effectivePeriod = overridePeriod != null ? overridePeriod : defaultPeriod;
+
+                            if (overrideInitial != null || overridePeriod != null) {
+                                log.info(
+                                    "Applying schedule override for {}: initialDelayMs={} (default {}), periodMs={} (default {})",
+                                    feature.getClass().getName(), effectiveInitial, defaultInitial, effectivePeriod, defaultPeriod
+                                );
+                            }
+
+                            feature.scheduleAtFixedRate(schedulable.buildTask(), defaultInitial, defaultPeriod);
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to instantiate feature {}", featureConfig.getClassName(), e);
+                    }
+                });
+        } else {
+            log.info("No feature config present");
+        }
+
+        return features;
     }
 
     @Override
@@ -224,14 +265,68 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     private void startUrlWatchers() {
         stopUrlWatchers();
 
-        startWatcher(new JsonURLWatcher("https://status.hypixel.net/api/v2/summary.json"),
-            watcher -> watcher.startWatching(1, TimeUnit.MINUTES, new StatusPageDataHandler()));
-        startWatcher(new JsonURLWatcher("https://api.hypixel.net/skyblock/firesales"),
-            watcher -> watcher.startWatching(1, TimeUnit.MINUTES, new FireSaleDataHandler()));
-        startWatcher(new HypixelThreadURLWatcher("https://hypixel.net/forums/skyblock-patch-notes.158/.rss"),
-            watcher -> watcher.startWatching(1, TimeUnit.MINUTES));
-        startWatcher(new HypixelThreadURLWatcher("https://hypixel.net/forums/news-and-announcements.4/.rss"),
-            watcher -> watcher.startWatching(1, TimeUnit.MINUTES));
+        NerdBotConfig config = getConfig();
+        if (config.getWatchers() != null) {
+            log.info("Loading URL watchers from config ({} entries)", config.getWatchers().size());
+            config.getWatchers().stream()
+                .filter(WatcherConfig::isEnabled)
+                .forEach(this::startWatcherFromConfig);
+        } else {
+            log.info("No URLWatcher config present");
+        }
+    }
+
+    private void startWatcherFromConfig(WatcherConfig watcherConfig) {
+        try {
+            if (!isAllowed(watcherConfig.getClassName())) {
+                log.warn("Watcher class {} not permitted by class allowlist", watcherConfig.getClassName());
+                return;
+            }
+
+            Class<?> watcherClazz = Class.forName(watcherConfig.getClassName());
+            if (!URLWatcher.class.isAssignableFrom(watcherClazz)) {
+                log.warn("Watcher class {} does not extend URLWatcher", watcherConfig.getClassName());
+                return;
+            }
+
+            URLWatcher watcher;
+            try {
+                Constructor<?> declaredConstructor = watcherClazz.getDeclaredConstructor(String.class, Map.class);
+                watcher = (URLWatcher) declaredConstructor.newInstance(watcherConfig.getUrl(), watcherConfig.getHeaders());
+            } catch (NoSuchMethodException exception) {
+                Constructor<?> declaredConstructor = watcherClazz.getDeclaredConstructor(String.class);
+                watcher = (URLWatcher) declaredConstructor.newInstance(watcherConfig.getUrl());
+            }
+
+            if (watcherConfig.getHandlerClass() != null && !watcherConfig.getHandlerClass().isBlank()) {
+                if (!isAllowed(watcherConfig.getHandlerClass())) {
+                    log.warn("Handler class {} not permitted by class allowlist", watcherConfig.getHandlerClass());
+                    return;
+                }
+
+                Class<?> handlerClazz = Class.forName(watcherConfig.getHandlerClass());
+                if (!URLWatcher.DataHandler.class.isAssignableFrom(handlerClazz)) {
+                    log.warn("Handler class {} does not implement URLWatcher.DataHandler", watcherConfig.getHandlerClass());
+                    return;
+                }
+
+                URLWatcher.DataHandler handler = (URLWatcher.DataHandler) handlerClazz.getDeclaredConstructor().newInstance();
+                log.info("Starting watcher {} on {} with handler {} (interval={} {})",
+                    watcherClazz.getName(), watcherConfig.getUrl(), handlerClazz.getName(), watcherConfig.getInterval(), watcherConfig.getTimeUnit());
+                startWatcher(watcher, w -> w.startWatching(watcherConfig.getInterval(), watcherConfig.getTimeUnit(), handler));
+            } else if (watcher instanceof HypixelThreadURLWatcher hypixelWatcher) {
+                log.info("Starting HypixelThreadURLWatcher on {} (interval={} {})", watcherConfig.getUrl(), watcherConfig.getInterval(), watcherConfig.getTimeUnit());
+                startWatcher(hypixelWatcher, w -> w.startWatching(watcherConfig.getInterval(), watcherConfig.getTimeUnit()));
+            } else {
+                log.warn("Watcher {} requires a handlerClass but none was provided", watcherConfig.getClassName());
+            }
+        } catch (Exception exception) {
+            log.warn("Failed to start watcher from config: {}", watcherConfig, exception);
+        }
+    }
+
+    private static boolean isAllowed(String className) {
+        return className != null && className.startsWith("net.hypixel.nerdbot.");
     }
 
     private void stopUrlWatchers() {
