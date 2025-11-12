@@ -272,6 +272,95 @@ public class UserNominationFeature extends BotFeature {
         });
     }
 
+    /**
+     * Runs the inactivity check but only for users whose highest role is the configured New Member role.
+     * Intended to be triggered manually via a force command.
+     */
+    public static void findInactiveNewMembers() {
+        Guild guild = DiscordUtils.getMainGuild();
+        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
+
+        int requiredVotes = roleConfig.getVotesRequiredForInactivityCheck();
+        int requiredComments = roleConfig.getCommentsRequiredForInactivityCheck();
+        int requiredMessages = roleConfig.getMessagesRequiredForInactivityCheck();
+
+        String newMemberRoleId = roleConfig.getNewMemberRoleId();
+
+        log.info("Checking for inactive NEW MEMBERS (required votes: " + requiredVotes + ", required comments: " + requiredComments + ", required messages: " + requiredMessages + ")");
+
+        int scanned = 0;
+        int missingMember = 0;
+        int ineligible = 0;
+        int warned = 0;
+        int skippedAlreadyThisMonth = 0;
+
+        long startNanos = System.nanoTime();
+
+        for (DiscordUser discordUser : discordUserRepository.getAll()) {
+            scanned++;
+
+            Member member = guild.getMemberById(discordUser.getDiscordId());
+            if (member == null) {
+                missingMember++;
+                log.error("Member not found for user " + discordUser.getDiscordId());
+                continue;
+            }
+
+            Role highestRole = RoleManager.getHighestRole(member);
+            if (highestRole == null || !highestRole.getId().equalsIgnoreCase(newMemberRoleId)) {
+                ineligible++;
+                continue;
+            }
+
+            LastActivity lastActivity = discordUser.getLastActivity();
+            int windowDays = roleConfig.getDaysRequiredForInactivityCheck();
+            int totalMessages = lastActivity.getTotalMessageCount(windowDays);
+            int totalComments = lastActivity.getTotalComments(windowDays);
+            int totalVotes = lastActivity.getTotalVotes(windowDays);
+
+            boolean hasRequiredVotes = totalVotes >= requiredVotes;
+            boolean hasRequiredComments = totalComments >= requiredComments;
+            boolean hasRequiredMessages = totalMessages >= requiredMessages;
+            final int requirementsMet = (hasRequiredMessages ? 1 : 0) + (hasRequiredComments ? 1 : 0) + (hasRequiredVotes ? 1 : 0);
+
+            log.info("[NewMember] Checking inactivity for " + member.getEffectiveName() + " (messages: " + totalMessages + ", comments: " + totalComments + ", votes: " + totalVotes + ") (has min. comments: " + hasRequiredComments + ", has min. votes: " + hasRequiredVotes + ", has min. messages: " + hasRequiredMessages + ", requirements met: " + requirementsMet + "/3)");
+
+            lastActivity.getNominationInfo().getLastInactivityWarningTimestamp().ifPresentOrElse(timestamp -> {
+                Month lastInactivityWarningMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
+                Month monthNow = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
+
+                if (lastInactivityWarningMonth != monthNow && requirementsMet < 2) {
+                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments);
+                }
+            }, () -> {
+                if (requirementsMet < 2) {
+                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments);
+                }
+            });
+
+            // Tally outputs based on updated last warning data
+            Long lastWarnTs = lastActivity.getNominationInfo().getLastInactivityWarningTimestamp().orElse(null);
+            if (lastWarnTs != null) {
+                Month lastWarnMonth = Instant.ofEpochMilli(lastWarnTs).atZone(ZoneId.systemDefault()).getMonth();
+                Month nowMonth = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
+                if (lastWarnMonth == nowMonth) {
+                    warned++;
+                } else {
+                    skippedAlreadyThisMonth++;
+                }
+            }
+        }
+
+        long durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
+        log.info("Inactive NEW MEMBER sweep complete: scanned=" + scanned
+            + ", warnedThisMonth=" + warned
+            + ", skippedAlreadyThisMonth=" + skippedAlreadyThisMonth
+            + ", ineligible=" + ineligible
+            + ", missingMember=" + missingMember
+            + ", took=" + durationMs + "ms");
+    }
+
     private static void sendNominationMessage(Member member, DiscordUser discordUser) {
         ChannelCache.getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             LastActivity lastActivity = discordUser.getLastActivity();
