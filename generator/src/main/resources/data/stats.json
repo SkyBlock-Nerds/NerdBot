@@ -1035,5 +1035,14 @@
         "color": "DARK_GREEN",
         "subColor": null,
         "parseType": "NORMAL"
+    },
+    {
+        "icon": "❃",
+        "name": "tracking",
+        "stat": "Tracking",
+        "display": "❃ Tracking",
+        "color": "LIGHT_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
     }
 ]
