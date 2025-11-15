@@ -92,7 +92,8 @@ public enum Stat {
     BARBARIAN_REPUTATION("⚒", "Barbarian Reputation", MCColor.RED),
     ITEM_STAT_RED("", "ITEM_STAT_RED", MCColor.GRAY, MCColor.RED, Stat::buildItemStat, null),
     ITEM_STAT_GREEN("", "ITEM_STAT_GREEN", MCColor.GRAY, MCColor.GREEN, Stat::buildItemStat, null),
-    ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, Stat::buildItemStat, null);
+    ITEM_STAT_PURPLE("", "ITEM_STAT_PINK", MCColor.GRAY, MCColor.LIGHT_PURPLE, Stat::buildItemStat, null),
+    TRACKING("❃", "Tracking", MCColor.LIGHT_PURPLE);
 
     public static final Stat[] VALUES = values();
 
