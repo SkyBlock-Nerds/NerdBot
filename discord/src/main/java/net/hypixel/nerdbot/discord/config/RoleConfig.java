@@ -94,6 +94,13 @@ public class RoleConfig {
     private PingableRole[] pingableRoles = {};
 
     /**
+     * Ordered list of role IDs representing the promotion path.
+     * Example: [newMemberRoleId, memberRoleId, orangeRoleId]
+     * Used to derive the displayed nomination type (source -> target).
+     */
+    private String[] promotionTierRoleIds = {};
+
+    /**
      * Minimum number of days a user must have been in the guild (based on join date)
      * before they can be nominated from New Member to Member when running the
      * “new members only” nomination check. Default: 30 days.

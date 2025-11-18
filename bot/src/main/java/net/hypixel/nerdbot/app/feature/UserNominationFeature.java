@@ -76,7 +76,9 @@ public class UserNominationFeature extends BotFeature {
                 return false;
             }
 
-            if (!highestRole.getId().equalsIgnoreCase(newMemberRoleId)) {
+            // Consider users who have the New Member role, regardless of whether it is the highest role
+            boolean hasNewMemberRole = member.getRoles().stream().anyMatch(r -> r.getId().equalsIgnoreCase(newMemberRoleId));
+            if (!hasNewMemberRole) {
                 return false;
             }
 
@@ -174,6 +176,8 @@ public class UserNominationFeature extends BotFeature {
             log.info("[" + contextLabel + "] Checking if " + member.getEffectiveName() + " should be nominated (total comments: " + totalComments + ", total votes: " + totalVotes + ", meets comments requirement: " + hasRequiredComments + ", meets votes requirement: " + hasRequiredVotes + ")");
         }
 
+        final NominationOutcome[] outcomeRef = new NominationOutcome[]{null};
+
         lastActivity.getNominationInfo().getLastNominationTimestamp().ifPresentOrElse(timestamp -> {
             Month lastNominationMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
             Month now = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
@@ -185,6 +189,7 @@ public class UserNominationFeature extends BotFeature {
                     log.info("[" + contextLabel + "] Last nomination not this month (last: " + lastNominationMonth + ", now: " + now + "), sending nomination message for " + member.getEffectiveName());
                 }
                 sendNominationMessage(member, discordUser);
+                outcomeRef[0] = NominationOutcome.NOMINATED;
             }
         }, () -> {
             if (contextLabel == null) {
@@ -194,8 +199,13 @@ public class UserNominationFeature extends BotFeature {
             }
             if (totalComments >= requiredComments && totalVotes >= requiredVotes) {
                 sendNominationMessage(member, discordUser);
+                outcomeRef[0] = NominationOutcome.NOMINATED;
             }
         });
+
+        if (outcomeRef[0] != null) {
+            return outcomeRef[0];
+        }
 
         Long lastTimestamp = lastActivity.getNominationInfo().getLastNominationTimestamp().orElse(null);
         if (lastTimestamp != null) {
@@ -373,6 +383,28 @@ public class UserNominationFeature extends BotFeature {
             int requiredVotes = roleConfig.getMinimumVotesRequiredForPromotion();
             int requiredComments = roleConfig.getMinimumCommentsRequiredForPromotion();
 
+            String nominationType = null;
+            Role highestRole = RoleManager.getHighestRole(member);
+            String[] promotionPath = roleConfig.getPromotionTierRoleIds();
+            if (highestRole != null && promotionPath != null && promotionPath.length > 0) {
+                int currentRoleIndex = -1;
+                for (int i = 0; i < promotionPath.length; i++) {
+                    String roleId = promotionPath[i];
+                    if (roleId != null && roleId.equalsIgnoreCase(highestRole.getId())) {
+                        currentRoleIndex = i;
+                        break;
+                    }
+                }
+
+                if (currentRoleIndex >= 0 && currentRoleIndex + 1 < promotionPath.length) {
+                    String targetRoleId = promotionPath[currentRoleIndex + 1];
+                    Role targetRole = member.getGuild().getRoleById(targetRoleId);
+                    String targetName = targetRole != null ? targetRole.getName() : targetRoleId;
+                    String sourceName = highestRole.getName() != null ? highestRole.getName() : highestRole.getId();
+                    nominationType = sourceName + " -> " + targetName;
+                }
+            }
+
             String votesStatus = totalVotes >= requiredVotes ? "✅" : "⚠️";
             String commentsStatus = totalComments >= requiredComments ? "✅" : "⚠️";
 
@@ -406,6 +438,10 @@ public class UserNominationFeature extends BotFeature {
                         lastActivity.getNominationInfo().getLastNominationDateString()),
                     false)
                 .setTimestamp(java.time.Instant.now());
+
+            if (nominationType != null) {
+                embedBuilder.addField("Nomination Type", nominationType, false);
+            }
 
             textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
             discordUser.getLastActivity().getNominationInfo().increaseNominations();

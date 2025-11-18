@@ -100,6 +100,7 @@ public class ConfigGenerator {
         roleConfig.setLimboRoleId(EXAMPLE_ID);
         roleConfig.setBotManagerRoleId(EXAMPLE_ID);
         roleConfig.setNewMemberRoleId(EXAMPLE_ID);
+        roleConfig.setPromotionTierRoleIds(new String[]{EXAMPLE_ID, EXAMPLE_ID, EXAMPLE_ID});
         roleConfig.setPingableRoles(new PingableRole[]{new PingableRole(EXAMPLE_NAME, EXAMPLE_ID)});
         botConfig.setRoleConfig(roleConfig);
 
