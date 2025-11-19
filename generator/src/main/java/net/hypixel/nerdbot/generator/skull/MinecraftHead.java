@@ -115,7 +115,7 @@ public class MinecraftHead {
 
         double[][] shapeVertices = PlayerSkull.coordinates;
         double[][] result = new double[shapeVertices.length][4];
-        for (var i = 0; i < shapeVertices.length; i++) {
+        for (int i = 0; i < shapeVertices.length; i++) {
             result[i] = multiplyMatrix(zRotations, shapeVertices[i]);
             result[i] = multiplyMatrix(yRotations, result[i]);
             result[i] = multiplyMatrix(xRotations, result[i]);
@@ -170,7 +170,7 @@ public class MinecraftHead {
             double[] currentRow = matrix[row];
             double cellResult = 0;
 
-            for (var col = 0; col < vertexPos.length; col++) {
+            for (int col = 0; col < vertexPos.length; col++) {
                 cellResult += currentRow[col] * vertexPos[col];
             }
             calculatedMatrix[row] = cellResult;
@@ -208,8 +208,8 @@ public class MinecraftHead {
             int uvFaceY = currentFace.getStartY();
             float shadow = currentFace.getShadow() / 255f;
 
-            for (var y = 0; y < 8; y++) {
-                for (var x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                for (int x = 0; x < 8; x++) {
                     int color = this.skin.getRGB(x + uvFaceX, y + uvFaceY);
                     // skip painting if there is nothing to paint
                     int alpha = ((color >> 24) & 0xff);

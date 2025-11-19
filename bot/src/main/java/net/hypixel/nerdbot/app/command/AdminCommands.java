@@ -38,9 +38,12 @@ import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
-import net.hypixel.nerdbot.app.feature.UserNominationFeature;
 import net.hypixel.nerdbot.app.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.app.nomination.InactivitySweepReport;
+import net.hypixel.nerdbot.app.nomination.NominationInactivityService;
+import net.hypixel.nerdbot.app.nomination.NominationService;
+import net.hypixel.nerdbot.app.nomination.NominationSweepReport;
 import net.hypixel.nerdbot.app.util.HttpUtils;
 import net.hypixel.nerdbot.core.FileUtils;
 import net.hypixel.nerdbot.core.JsonUtils;
@@ -1145,11 +1148,33 @@ public class AdminCommands {
     ) {
         boolean onlyNew = newMembersOnly != null && newMembersOnly;
         if (onlyNew) {
-            UserNominationFeature.nominateNewMembers();
-            event.reply("Forced nominations for New Members only!").queue();
+            NominationSweepReport report = NominationService.getInstance().runNewMemberNominationSweep();
+            EmbedBuilder eb = new EmbedBuilder()
+                .setTitle("Nomination Sweep Complete (New Member)")
+                .setColor(Color.GREEN)
+                .addField("Scanned", String.valueOf(report.scanned()), true)
+                .addField("Eligible", String.valueOf(report.eligible()), true)
+                .addField("Nominated", String.valueOf(report.nominated()), true)
+                .addField("Below Threshold", String.valueOf(report.belowThreshold()), true)
+                .addField("Already This Month", String.valueOf(report.alreadyThisMonth()), true)
+                .addField("Ineligible", String.valueOf(report.ineligible()), true)
+                .addField("Missing Member", String.valueOf(report.missingMember()), true)
+                .addField("Duration", report.durationMs() + "ms", true);
+            event.replyEmbeds(eb.build()).queue();
         } else {
-            UserNominationFeature.nominateUsers();
-            event.reply("Forced nominations!").queue();
+            NominationSweepReport report = NominationService.getInstance().runMemberNominationSweep();
+            EmbedBuilder eb = new EmbedBuilder()
+                .setTitle("Nomination Sweep Complete (Member)")
+                .setColor(Color.GREEN)
+                .addField("Scanned", String.valueOf(report.scanned()), true)
+                .addField("Eligible", String.valueOf(report.eligible()), true)
+                .addField("Nominated", String.valueOf(report.nominated()), true)
+                .addField("Below Threshold", String.valueOf(report.belowThreshold()), true)
+                .addField("Already This Month", String.valueOf(report.alreadyThisMonth()), true)
+                .addField("Ineligible", String.valueOf(report.ineligible()), true)
+                .addField("Missing Member", String.valueOf(report.missingMember()), true)
+                .addField("Duration", report.durationMs() + "ms", true);
+            event.replyEmbeds(eb.build()).queue();
         }
     }
 
@@ -1160,17 +1185,35 @@ public class AdminCommands {
     ) {
         boolean onlyNew = newMembersOnly != null && newMembersOnly;
         if (onlyNew) {
-            UserNominationFeature.findInactiveNewMembers();
-            event.reply("Forced inactivity check for New Members only!").queue();
+            InactivitySweepReport report = NominationInactivityService.getInstance().runInactivitySweepForNewMembers();
+            EmbedBuilder eb = new EmbedBuilder()
+                .setTitle("Inactivity Sweep Complete (New Member)")
+                .setColor(Color.ORANGE)
+                .addField("Scanned", String.valueOf(report.scanned()), true)
+                .addField("Warned This Month", String.valueOf(report.warnedThisMonth()), true)
+                .addField("Skipped Already This Month", String.valueOf(report.skippedAlreadyThisMonth()), true)
+                .addField("Ineligible", String.valueOf(report.ineligible()), true)
+                .addField("Missing Member", String.valueOf(report.missingMember()), true)
+                .addField("Duration", report.durationMs() + "ms", true);
+            event.replyEmbeds(eb.build()).queue();
         } else {
-            UserNominationFeature.findInactiveUsers();
-            event.reply("Forced inactivity check!").queue();
+            InactivitySweepReport report = NominationInactivityService.getInstance().runInactivitySweepForMembers();
+            EmbedBuilder eb = new EmbedBuilder()
+                .setTitle("Inactivity Sweep Complete (Member)")
+                .setColor(Color.ORANGE)
+                .addField("Scanned", String.valueOf(report.scanned()), true)
+                .addField("Warned This Month", String.valueOf(report.warnedThisMonth()), true)
+                .addField("Skipped Already This Month", String.valueOf(report.skippedAlreadyThisMonth()), true)
+                .addField("Ineligible", String.valueOf(report.ineligible()), true)
+                .addField("Missing Member", String.valueOf(report.missingMember()), true)
+                .addField("Duration", report.durationMs() + "ms", true);
+            event.replyEmbeds(eb.build()).queue();
         }
     }
 
     @SlashCommand(name = "force", subcommand = "restricted-inactivity-check", description = "Forcefully run the restricted inactivity check", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
     public void forceRestrictedInactiveCheck(SlashCommandInteractionEvent event) {
-        UserNominationFeature.findInactiveUsersInRoleRestrictedChannels();
+        NominationInactivityService.getInstance().runRoleRestrictedInactivitySweep();
         event.reply("Forced restricted inactivity check!").queue();
     }
 
