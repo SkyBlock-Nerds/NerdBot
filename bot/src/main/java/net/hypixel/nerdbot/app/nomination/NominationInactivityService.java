@@ -250,9 +250,9 @@ public class NominationInactivityService {
                 int totalVotes = lastActivity.getRoleRestrictedChannelVoteCount(group.getIdentifier(), group.getActivityCheckDays());
                 int totalComments = lastActivity.getRoleRestrictedChannelCommentCount(group.getIdentifier(), group.getActivityCheckDays());
 
-                String messagesStatus = totalMessages >= group.getMinimumMessagesForActivity() ? "OK" : "Not met";
-                String votesStatus = totalVotes >= group.getMinimumVotesForActivity() ? "OK" : "Not met";
-                String commentsStatus = totalComments >= group.getMinimumCommentsForActivity() ? "OK" : "Not met";
+                String messagesStatus = totalMessages >= group.getMinimumMessagesForActivity() ? "✅" : "❌";
+                String votesStatus = totalVotes >= group.getMinimumVotesForActivity() ? "✅" : "❌";
+                String commentsStatus = totalComments >= group.getMinimumCommentsForActivity() ? "✅" : "❌";
 
                 int requirementsMet = (totalMessages >= group.getMinimumMessagesForActivity() ? 1 : 0)
                     + (totalVotes >= group.getMinimumVotesForActivity() ? 1 : 0)
@@ -340,9 +340,9 @@ public class NominationInactivityService {
         ChannelCache.getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             Optional<ThreadChannel> modMailThread = ModMailService.getInstance().findExistingThread(member.getUser());
 
-            String messagesStatus = totalMessages >= requiredMessages ? "OK" : "Not met";
-            String votesStatus = totalVotes >= requiredVotes ? "OK" : "Not met";
-            String commentsStatus = totalComments >= requiredComments ? "OK" : "Not met";
+            String messagesStatus = totalMessages >= requiredMessages ? "✅" : "❌";
+            String votesStatus = totalVotes >= requiredVotes ? "✅" : "❌";
+            String commentsStatus = totalComments >= requiredComments ? "✅" : "❌";
 
             int requirementsMet = (totalMessages >= requiredMessages ? 1 : 0)
                 + (totalVotes >= requiredVotes ? 1 : 0)

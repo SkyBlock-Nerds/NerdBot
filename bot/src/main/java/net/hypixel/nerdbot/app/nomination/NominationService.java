@@ -229,8 +229,8 @@ public class NominationService {
             int requiredVotes = roleConfig.getMinimumVotesRequiredForPromotion();
             int requiredComments = roleConfig.getMinimumCommentsRequiredForPromotion();
 
-            String votesStatus = totalVotes >= requiredVotes ? "OK" : "Not met";
-            String commentsStatus = totalComments >= requiredComments ? "OK" : "Not met";
+            String votesStatus = totalVotes >= requiredVotes ? "✅" : "❌";
+            String commentsStatus = totalComments >= requiredComments ? "✅" : "❌";
 
             String nominationType = NominationTypeResolver.resolve(member, roleConfig);
 
