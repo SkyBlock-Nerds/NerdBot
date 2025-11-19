@@ -97,11 +97,11 @@ public class NominationInactivityService {
                 Month monthNow = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
 
                 if (lastInactivityWarningMonth != monthNow && requirementsMet < 2) {
-                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments);
+                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, "Member");
                 }
             }, () -> {
                 if (requirementsMet < 2) {
-                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments);
+                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, "Member");
                 }
             });
 
@@ -176,11 +176,11 @@ public class NominationInactivityService {
                 Month monthNow = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
 
                 if (lastInactivityWarningMonth != monthNow && requirementsMet < 3) {
-                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments);
+                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, "New Member");
                 }
             }, () -> {
                 if (requirementsMet < 3) {
-                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments);
+                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, "New Member");
                 }
             });
 
@@ -277,7 +277,7 @@ public class NominationInactivityService {
 
                     EmbedBuilder embedBuilder = new EmbedBuilder()
                         .setColor(embedColor)
-                        .setTitle("Role-Restricted Channel Inactivity")
+                        .setTitle("Role-Restricted Inactivity Warning")
                         .setDescription("**" + member.getAsMention() + "** has been flagged for inactivity in **" + group.getDisplayName() + "**")
                         .setThumbnail(member.getEffectiveAvatarUrl())
                         .addField("Channel Group",
@@ -330,7 +330,7 @@ public class NominationInactivityService {
         }
     }
 
-    private void sendInactiveUserMessage(Member member, DiscordUser discordUser, int requiredMessages, int requiredVotes, int requiredComments) {
+private void sendInactiveUserMessage(Member member, DiscordUser discordUser, int requiredMessages, int requiredVotes, int requiredComments, String inactivityType) {
         LastActivity lastActivity = discordUser.getLastActivity();
         RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
         int totalMessages = lastActivity.getTotalMessageCount(roleConfig.getDaysRequiredForInactivityCheck());
@@ -352,7 +352,7 @@ public class NominationInactivityService {
 
             EmbedBuilder embedBuilder = new EmbedBuilder()
                 .setColor(embedColor)
-                .setTitle("Inactivity Warning")
+                .setTitle(String.format("%s Inactivity Warning", inactivityType))
                 .setDescription(member.getAsMention() + " has been flagged for inactivity")
                 .setThumbnail(member.getEffectiveAvatarUrl())
                 .addField(String.format("Activity Summary (last %d days)", roleConfig.getDaysRequiredForInactivityCheck()),
