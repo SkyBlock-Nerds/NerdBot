@@ -277,7 +277,7 @@ public class NominationInactivityService {
 
                     EmbedBuilder embedBuilder = new EmbedBuilder()
                         .setColor(embedColor)
-                        .setTitle("Role-Restricted Inactivity Warning")
+                        .setTitle(String.format("Role-Restricted Inactivity Warning - %s", group.getDisplayName()))
                         .setDescription("**" + member.getAsMention() + "** has been flagged for inactivity in **" + group.getDisplayName() + "**")
                         .setThumbnail(member.getEffectiveAvatarUrl())
                         .addField("Channel Group",
