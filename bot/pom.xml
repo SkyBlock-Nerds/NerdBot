@@ -86,7 +86,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>net.hypixel.nerdbot.Main</mainClass>
+                            <mainClass>net.hypixel.nerdbot.app.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

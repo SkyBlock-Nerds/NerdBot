@@ -8,8 +8,23 @@ on:
       - '**.java'
       - 'pom.xml'
       - 'core/pom.xml'
+      - 'discord/pom.xml'
+      - 'bot/pom.xml'
       - 'generator/pom.xml'
       - 'tooling/pom.xml'
+  pull_request:
+    paths:
+      - '**.java'
+      - 'pom.xml'
+      - 'core/pom.xml'
+      - 'discord/pom.xml'
+      - 'bot/pom.xml'
+      - 'generator/pom.xml'
+      - 'tooling/pom.xml'
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   build:
@@ -18,21 +33,25 @@ jobs:
     steps:
       - uses: actions/checkout@v5.0.0
         with:
-          ref: ${{ github.head_ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: true
       - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'adopt'
 
-      - name: Build tooling dependencies
-        run: mvn -pl core,generator,tooling install
+      - name: Build Dependencies
+        run: mvn -pl tooling -am -DskipTests install
 
-      - name: Generate example config
-        run: mvn -pl tooling -Pgenerate-config exec:java
+      - name: Generate Example Config
+        run: mvn -f tooling/pom.xml -am -Pgenerate-config -DskipTests exec:java@generate-config
 
-      - name: Commit and push if changes detected
+      - name: Commit Changes
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: Automated config update
+          commit_message: Automated Config Update
           file_pattern: '*.json'
+          branch: ${{ github.head_ref || github.ref_name }}
