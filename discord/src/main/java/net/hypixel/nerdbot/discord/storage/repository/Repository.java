@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.Scheduler;
+import com.mongodb.MongoException;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -88,9 +89,14 @@ public abstract class Repository<T> {
 
         for (Document document : mongoCollection.find()) {
             T object = documentToEntity(document);
+            String id = getId(object);
 
-            if (cache.getIfPresent(getId(object)) != null) {
-                debug("Document with ID " + getId(object) + " already exists in cache");
+            if (id == null) {
+                throw new IllegalStateException("Document has null ID, cannot cache object: " + document.toJson());
+            }
+
+            if (cache.getIfPresent(id) != null) {
+                debug("Document with ID " + id + " already exists in cache");
                 continue;
             }
 
@@ -110,6 +116,11 @@ public abstract class Repository<T> {
                 List<CompletableFuture<Void>> futures = documents.stream()
                     .map(document -> CompletableFuture.runAsync(() -> {
                         T object = documentToEntity(document);
+                        String id = getId(object);
+
+                        if (id == null) {
+                            throw new IllegalStateException("Document has null ID, cannot cache object: " + document.toJson());
+                        }
 
                         if (cache.getIfPresent(getId(object)) != null) {
                             debug("Document with ID " + getId(object) + " already exists in cache");
@@ -157,12 +168,17 @@ public abstract class Repository<T> {
             return cachedObject;
         }
 
-        Document document = mongoCollection.find(new Document(identifierFieldName, id)).first();
-        if (document != null) {
-            T object = documentToEntity(document);
-            cacheObject(id, object);
+        try {
+            Document document = mongoCollection.find(new Document(identifierFieldName, id)).first();
+            if (document != null) {
+                T object = documentToEntity(document);
+                cacheObject(id, object);
 
-            return object;
+                return object;
+            }
+        } catch (MongoException e) {
+            log.error("Error finding document with ID " + id, e);
+            return null;
         }
 
         debug("Could not find document with ID " + id + " in cache or database");
@@ -198,25 +214,45 @@ public abstract class Repository<T> {
                 return existingObject;
             }
 
-            List<Class<?>> constructorParameters = new ArrayList<>();
-            for (Object param : parameters) {
-                constructorParameters.add(param != null ? param.getClass() : Object.class);
+            // First try to use constructor with ID parameter
+            List<Object> allParameters = new ArrayList<>();
+            allParameters.add(id);
+            if (parameters != null) {
+                allParameters.addAll(Arrays.asList(parameters));
             }
-            T object = entityClass.getConstructor(constructorParameters.toArray(new Class[0])).newInstance(parameters);
 
-            log.debug("Created new instance of " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+            List<Class<?>> constructorParameterTypes = new ArrayList<>();
+            for (Object param : allParameters) {
+                constructorParameterTypes.add(param != null ? param.getClass() : Object.class);
+            }
+
+            T object;
+            try {
+                object = entityClass.getConstructor(constructorParameterTypes.toArray(new Class[0])).newInstance(allParameters.toArray());
+                log.debug("Created new instance of " + entityClass.getSimpleName() + " with ID and parameters " + Arrays.toString(allParameters.toArray()));
+            } catch (NoSuchMethodException e) {
+                // Fall back to ID-only constructor
+                object = entityClass.getConstructor(String.class).newInstance(id);
+                log.debug("Created new instance of " + entityClass.getSimpleName() + " with ID only: " + id);
+            }
+
+            // Verify the object has the correct ID
+            String actualId = getId(object);
+            if (!id.equals(actualId)) {
+                throw new IllegalStateException("Created object with incorrect ID. Expected: " + id + ", Actual: " + actualId);
+            }
 
             cacheObject(id, object);
             saveToDatabase(object);
 
             return object;
         } catch (NoSuchMethodException e) {
-            log.error("Could not find constructor for " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+            log.error("Could not find suitable constructor for " + entityClass.getSimpleName() + " with ID: " + id);
+            throw new IllegalStateException("No suitable constructor found for " + entityClass.getSimpleName(), e);
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
-            log.error("Error creating new instance of " + entityClass.getSimpleName() + " with parameters " + Arrays.toString(parameters));
+            log.error("Error creating new instance of " + entityClass.getSimpleName() + " with ID: " + id, e);
+            throw new IllegalStateException("Failed to create new instance of " + entityClass.getSimpleName(), e);
         }
-
-        return null;
     }
 
     public CompletableFuture<T> findOrCreateByIdAsync(String id, Object... parameters) {
@@ -266,6 +302,11 @@ public abstract class Repository<T> {
 
     public void cacheObject(T object) {
         String id = getId(object);
+
+        if (id == null) {
+            throw new IllegalStateException("Cannot cache object with null ID: " + object);
+        }
+
         cacheObject(id, object);
     }
 
@@ -295,12 +336,20 @@ public abstract class Repository<T> {
         List<WriteModel<Document>> updates = new ArrayList<>();
 
         getAll().stream().map(this::entityToDocument).forEach(doc -> {
-            Bson filter = Filters.eq(identifierFieldName, doc.get(identifierFieldName));
+            Object idValue = doc.get(identifierFieldName);
+
+            if (idValue == null) {
+                log.warn("Document has null identifier field '{}': {}", identifierFieldName, doc.toJson());
+                return;
+            }
+
+            Bson filter = Filters.eq(identifierFieldName, idValue);
             Bson update = new Document("$set", doc);
+
             updates.add(new UpdateOneModel<>(filter, update, new UpdateOptions().upsert(true)));
         });
 
-        debug("Prepared " + updates.size() + " update operations");
+        log("Prepared " + updates.size() + " update operations");
 
         if (!updates.isEmpty()) {
             return mongoCollection.bulkWrite(updates);
@@ -316,12 +365,20 @@ public abstract class Repository<T> {
             List<WriteModel<Document>> updates = new ArrayList<>();
 
             getAll().stream().map(this::entityToDocument).forEach(doc -> {
-                Bson filter = Filters.eq(identifierFieldName, doc.get(identifierFieldName));
+                Object idValue = doc.get(identifierFieldName);
+
+                if (idValue == null) {
+                    log.warn("Document has null identifier field '{}': {}", identifierFieldName, doc.toJson());
+                    return;
+                }
+
+                Bson filter = Filters.eq(identifierFieldName, idValue);
                 Bson update = new Document("$set", doc);
+
                 updates.add(new UpdateOneModel<>(filter, update, new UpdateOptions().upsert(true)));
             });
 
-            debug("Prepared " + updates.size() + " update operations");
+            log("Prepared " + updates.size() + " update operations");
 
             if (!updates.isEmpty()) {
                 return mongoCollection.bulkWrite(updates);
