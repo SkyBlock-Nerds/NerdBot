@@ -12,7 +12,9 @@ import net.hypixel.nerdbot.app.role.RoleManager;
 import net.hypixel.nerdbot.core.TimeUtils;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
+import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
+import net.hypixel.nerdbot.discord.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
@@ -34,7 +36,7 @@ import java.util.Optional;
 import java.util.TimerTask;
 
 @Slf4j
-public class UserNominationFeature extends BotFeature {
+public class UserNominationFeature extends BotFeature implements SchedulableFeature {
 
     public static void nominateUsers() {
         Guild guild = DiscordUtils.getMainGuild();
@@ -331,9 +333,9 @@ public class UserNominationFeature extends BotFeature {
                     totalVotes, group.getMinimumVotesForActivity(),
                     requirementsMet);
 
-            lastActivity.getNominationInfo().getLastRoleRestrictedInactivityWarningTimestamp().ifPresentOrElse(timestamp -> {
-                Month lastInactivityWarningMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
-                Month monthNow = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
+                lastActivity.getNominationInfo().getLastRoleRestrictedInactivityWarningTimestamp().ifPresentOrElse(timestamp -> {
+                    Month lastInactivityWarningMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
+                    Month monthNow = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
 
                     if (lastInactivityWarningMonth != monthNow && requirementsMet < 2) {
                         log.info("Last role-restricted inactivity check for group '{}' was not this month (last: {}, now: {}), sending inactivity message for {} (nomination info: {})",
@@ -436,7 +438,11 @@ public class UserNominationFeature extends BotFeature {
 
     @Override
     public void onFeatureStart() {
-        this.timer.scheduleAtFixedRate(new TimerTask() {
+    }
+
+    @Override
+    public TimerTask buildTask() {
+        return new TimerTask() {
             @Override
             public void run() {
                 if (TimeUtils.isDayOfMonth(1) && SkyBlockNerdsBot.config().isNominationsEnabled()) {
@@ -450,7 +456,17 @@ public class UserNominationFeature extends BotFeature {
                     findInactiveUsersInRoleRestrictedChannels();
                 }
             }
-        }, 0, Duration.ofHours(1).toMillis());
+        };
+    }
+
+    @Override
+    public long defaultInitialDelayMs(NerdBotConfig config) {
+        return 0L;
+    }
+
+    @Override
+    public long defaultPeriodMs(NerdBotConfig config) {
+        return Duration.ofHours(1).toMillis();
     }
 
     @Override
