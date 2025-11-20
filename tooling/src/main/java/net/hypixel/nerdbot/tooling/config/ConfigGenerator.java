@@ -9,6 +9,8 @@ import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
 import net.hypixel.nerdbot.discord.config.MetricsConfig;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+import net.hypixel.nerdbot.discord.config.FeatureConfig;
+import net.hypixel.nerdbot.discord.config.WatcherConfig;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.StatusPageConfig;
 import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
@@ -26,6 +28,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 public class ConfigGenerator {
 
@@ -144,6 +148,49 @@ public class ConfigGenerator {
         statusPageConfig.setStatusAlertRoleName("Status Alerts");
         statusPageConfig.setEnableMaintenanceAlerts(false);
         botConfig.setStatusPageConfig(statusPageConfig);
+
+        List<FeatureConfig> featureConfigs = new ArrayList<>();
+        FeatureConfig hello = new FeatureConfig();
+        hello.setClassName("com.example.bot.feature.HelloGoodbyeFeature");
+        hello.setEnabled(true);
+        featureConfigs.add(hello);
+
+        FeatureConfig curate = new FeatureConfig();
+        curate.setClassName("com.example.bot.feature.CurateFeature");
+        curate.setEnabled(true);
+        curate.setInitialDelayMs(30000L);
+        curate.setPeriodMs(43_200_000L); // 12 hours
+        featureConfigs.add(curate);
+
+        botConfig.setFeatures(featureConfigs);
+
+        List<WatcherConfig> watcherConfigs = new ArrayList<>();
+
+        WatcherConfig statusWatcher = new WatcherConfig();
+        statusWatcher.setClassName("com.example.bot.urlwatcher.JsonURLWatcher");
+        statusWatcher.setUrl("https://status.example.com/api/v2/summary.json");
+        statusWatcher.setHandlerClass("com.example.bot.urlwatcher.handler.StatusPageDataHandler");
+        statusWatcher.setInterval(1);
+        statusWatcher.setTimeUnit(TimeUnit.MINUTES);
+        statusWatcher.setEnabled(true);
+        watcherConfigs.add(statusWatcher);
+
+        WatcherConfig fireSaleWatcher = new WatcherConfig();
+        fireSaleWatcher.setClassName("com.example.bot.urlwatcher.JsonURLWatcher");
+        fireSaleWatcher.setUrl("https://api.example.com/firesales");
+        fireSaleWatcher.setHandlerClass("com.example.bot.urlwatcher.handler.FireSaleDataHandler");
+        fireSaleWatcher.setInterval(1);
+        fireSaleWatcher.setTimeUnit(TimeUnit.MINUTES);
+        watcherConfigs.add(fireSaleWatcher);
+
+        WatcherConfig rssWatcher = new WatcherConfig();
+        rssWatcher.setClassName("com.example.bot.urlwatcher.ThreadURLWatcher");
+        rssWatcher.setUrl("https://forum.example.com/patch-notes.rss");
+        rssWatcher.setInterval(1);
+        rssWatcher.setTimeUnit(TimeUnit.MINUTES);
+        watcherConfigs.add(rssWatcher);
+
+        botConfig.setWatchers(watcherConfigs);
 
         String json = gson.toJson(botConfig);
 
