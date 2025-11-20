@@ -66,6 +66,7 @@
                         <version>3.6.2</version>
                         <executions>
                             <execution>
+                                <id>generate-config</id>
                                 <goals>
                                     <goal>java</goal>
                                 </goals>
@@ -88,6 +89,7 @@
                         <version>3.6.2</version>
                         <executions>
                             <execution>
+                                <id>generate-spritesheet</id>
                                 <goals>
                                     <goal>java</goal>
                                 </goals>

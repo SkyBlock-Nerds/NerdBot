@@ -8,6 +8,8 @@ on:
       - '**.java'
       - 'pom.xml'
       - 'core/pom.xml'
+      - 'discord/pom.xml'
+      - 'bot/pom.xml'
       - 'generator/pom.xml'
       - 'tooling/pom.xml'
   pull_request:
@@ -15,6 +17,8 @@ on:
       - '**.java'
       - 'pom.xml'
       - 'core/pom.xml'
+      - 'discord/pom.xml'
+      - 'bot/pom.xml'
       - 'generator/pom.xml'
       - 'tooling/pom.xml'
 
@@ -40,10 +44,10 @@ jobs:
           distribution: 'adopt'
 
       - name: Build Dependencies
-        run: mvn -pl core,generator,tooling install
+        run: mvn -pl tooling -am -DskipTests install
 
       - name: Generate Example Config
-        run: mvn -pl tooling -Pgenerate-config exec:java
+        run: mvn -f tooling/pom.xml -am -Pgenerate-config -DskipTests exec:java@generate-config
 
       - name: Commit Changes
         uses: stefanzweifel/git-auto-commit-action@v7
