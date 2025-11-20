@@ -169,7 +169,13 @@
         "name": "Example Name",
         "roleId": "1234567890123456789"
       }
-    ]
+    ],
+    "promotionTierRoleIds": [
+      "1234567890123456789",
+      "1234567890123456789",
+      "1234567890123456789"
+    ],
+    "newMemberNominationMinDays": 30
   },
   "emojiConfig": {
     "agreeEmojiId": "1234567890123456789",
