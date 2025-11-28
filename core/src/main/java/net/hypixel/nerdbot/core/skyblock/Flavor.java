@@ -7,8 +7,8 @@ import java.util.function.BiFunction;
 
 @Getter
 public enum Flavor {
-    REQUIRE("❣ Requires", MCColor.RED, Flavor::buildPostFlavor),
-    SLAYER_REQUIRE("☠ Requires", MCColor.RED, Flavor::buildPostFlavor),
+    REQUIRE("❣ Requires", MCColor.DARK_RED, MCColor.RED, Flavor::buildDualColorRequireFlavor),
+    SLAYER_REQUIRE("☠ Requires", MCColor.DARK_RED, MCColor.RED, Flavor::buildDualColorRequireFlavor),
     RECIPE("Right-click to view recipes!", MCColor.YELLOW),
     COOP_SOULBOUND("Co-op Soulbound", MCColor.DARK_GRAY, Flavor::buildSoulboundFlavor),
     SOULBOUND("Soulbound", MCColor.DARK_GRAY, Flavor::buildSoulboundFlavor),
@@ -103,5 +103,29 @@ public enum Flavor {
 
     private static String buildSoulboundFlavor(Flavor flavor, String extraDetails) {
         return "%%" + flavor.getColor() + "%%%%BOLD%%* %%" + flavor.getColor() + "%%" + flavor.getText() + " %%BOLD%%*";
+    }
+
+    /**
+     * Colors the leading icon with the primary color and the following text (and extra data) with the secondary color.
+     */
+    private static String buildDualColorRequireFlavor(Flavor flavor, String extraDetails) {
+        String text = flavor.getText();
+        int spaceIndex = text.indexOf(' ');
+
+        String icon = spaceIndex == -1 ? text : text.substring(0, spaceIndex);
+        String label = spaceIndex == -1 ? "" : text.substring(spaceIndex + 1);
+
+        StringBuilder builder = new StringBuilder()
+            .append("%%").append(flavor.getColor()).append("%%").append(icon);
+
+        if (!label.isEmpty()) {
+            builder.append(" %%").append(flavor.getSecondaryColor()).append("%%").append(label);
+        }
+
+        if (!extraDetails.isEmpty()) {
+            builder.append(" ").append(extraDetails);
+        }
+
+        return builder.toString();
     }
 }
