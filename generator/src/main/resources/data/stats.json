@@ -336,33 +336,6 @@
     },
     {
         "icon": "",
-        "name": "item_stat_RED",
-        "stat": "ITEM_STAT_RED",
-        "display": "ITEM_STAT_RED",
-        "color": "GRAY",
-        "subColor": "RED",
-        "parseType": "ITEM_STAT"
-    },
-    {
-        "icon": "",
-        "name": "item_stat_GREEN",
-        "stat": "ITEM_STAT_GREEN",
-        "display": "ITEM_STAT_GREEN",
-        "color": "GRAY",
-        "subColor": "GREEN",
-        "parseType": "ITEM_STAT"
-    },
-    {
-        "icon": "",
-        "name": "item_stat_pink",
-        "stat": "ITEM_STAT_PINK",
-        "display": "ITEM_STAT_PINK",
-        "color": "GRAY",
-        "subColor": "LIGHT_PURPLE",
-        "parseType": "ITEM_STAT"
-    },
-    {
-        "icon": "",
         "name": "mana_cost",
         "stat": "Mana Cost:",
         "display": " Mana Cost:",

@@ -35,6 +35,7 @@ import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserReposi
 import net.hypixel.nerdbot.core.FileUtils;
 import net.hypixel.nerdbot.core.ImageUtil;
 import net.hypixel.nerdbot.discord.util.StringUtils;
+import net.hypixel.nerdbot.generator.parser.text.PlaceholderReverseMapper;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -607,6 +608,14 @@ public class GeneratorCommands {
 
             GeneratedObject generatedObject = generatorImageBuilder.addGenerator(tooltipGenerator.build()).build();
 
+            PlaceholderReverseMapper reverseMapper = new PlaceholderReverseMapper();
+            String mappedLore = reverseMapper.mapPlaceholders(tooltipGenerator.getItemLore());
+            String mappedName = reverseMapper.mapPlaceholders(tooltipGenerator.getItemName());
+
+            tooltipGenerator
+                .withItemLore(mappedLore)
+                .withName(mappedName);
+
             String slashCommand = tooltipGenerator.buildSlashCommand();
             String commandItemId = parsedItemId;
 
@@ -620,6 +629,9 @@ public class GeneratorCommands {
             if (skinValueForCommand != null && !skinValueForCommand.isEmpty()) {
                 slashCommand += " skin_value: " + skinValueForCommand;
             }
+
+            // Escape newlines in lore so the slash command is a single line
+            slashCommand = slashCommand.replace("\n", "\\n");
 
             MessageEditBuilder builder = new MessageEditBuilder()
                 .setContent("Your NBT input has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + slashCommand + "```");

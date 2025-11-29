@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 public class JsonLoader<T> {
 
@@ -25,30 +26,46 @@ public class JsonLoader<T> {
 
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> List<T> loadFromJson(Class<T[]> clazz, String filePath) throws IOException {
-        if (cache.containsKey(filePath)) {
-            return (List<T>) cache.get(filePath);
+        return loadFromJson(clazz, filePath, builder -> builder);
+    }
+
+    public static <T> List<T> loadFromJson(Class<T[]> clazz, URL url) throws IOException {
+        return loadFromJson(clazz, url, builder -> builder);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> loadFromJson(Class<T[]> clazz, URL url, UnaryOperator<GsonBuilder> builderCustomizer) throws IOException {
+        String cacheKey = url.toString() + builderCustomizer.hashCode();
+
+        if (cache.containsKey(cacheKey)) {
+            return (List<T>) cache.get(cacheKey);
         }
 
-        try (FileReader reader = new FileReader(filePath)) {
+        Gson gson = builderCustomizer.apply(new GsonBuilder()).create();
+
+        try (InputStream is = url.openStream()) {
             Type listType = TypeToken.getParameterized(List.class, clazz.getComponentType()).getType();
-            List<T> data = GSON.fromJson(reader, listType);
-            cache.put(filePath, data);
+            List<T> data = gson.fromJson(new InputStreamReader(is, StandardCharsets.UTF_8), listType);
+            cache.put(cacheKey, data);
             return data;
         }
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> List<T> loadFromJson(Class<T[]> clazz, URL url) throws IOException {
-        if (cache.containsKey(url.toString())) {
-            return (List<T>) cache.get(url.toString());
+    public static <T> List<T> loadFromJson(Class<T[]> clazz, String filePath, UnaryOperator<GsonBuilder> builderCustomizer) throws IOException {
+        String cacheKey = filePath + builderCustomizer.hashCode();
+
+        if (cache.containsKey(cacheKey)) {
+            return (List<T>) cache.get(cacheKey);
         }
 
-        try (InputStream is = url.openStream()) {
+        Gson gson = builderCustomizer.apply(new GsonBuilder()).create();
+
+        try (FileReader reader = new FileReader(filePath)) {
             Type listType = TypeToken.getParameterized(List.class, clazz.getComponentType()).getType();
-            List<T> data = GSON.fromJson(new InputStreamReader(is, StandardCharsets.UTF_8), listType);
-            cache.put(url.toString(), data);
+            List<T> data = gson.fromJson(reader, listType);
+            cache.put(cacheKey, data);
             return data;
         }
     }

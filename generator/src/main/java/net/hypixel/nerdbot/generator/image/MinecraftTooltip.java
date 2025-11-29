@@ -47,17 +47,30 @@ public class MinecraftTooltip {
     static {
         SANS_SERIF_FONT = new Font("SansSerif", Font.PLAIN, 20);
 
-        MINECRAFT_FONTS.addAll(
-            Arrays.asList(
-                FontUtils.initFont("/minecraft/fonts/Minecraft-Regular.otf", 15.5f),
-                FontUtils.initFont("/minecraft/fonts/3_Minecraft-Bold.otf", 20.0f),
-                FontUtils.initFont("/minecraft/fonts/2_Minecraft-Italic.otf", 20.5f),
-                FontUtils.initFont("/minecraft/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
-            )
+        List<Font> loadedFonts = Arrays.asList(
+            FontUtils.initFont("/minecraft/assets/fonts/Minecraft-Regular.otf", 15.5f),
+            FontUtils.initFont("/minecraft/assets/fonts/3_Minecraft-Bold.otf", 20.0f),
+            FontUtils.initFont("/minecraft/assets/fonts/2_Minecraft-Italic.otf", 20.5f),
+            FontUtils.initFont("/minecraft/assets/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
         );
 
-        // Register Minecraft Fonts
-        MINECRAFT_FONTS.forEach(GraphicsEnvironment.getLocalGraphicsEnvironment()::registerFont);
+        for (int i = 0; i < 4; i++) {
+            Font font = loadedFonts.get(i);
+            if (font == null) {
+                log.warn("Minecraft font at index {} failed to load, falling back to SansSerif", i);
+                font = SANS_SERIF_FONT.deriveFont(20.0f);
+            }
+            MINECRAFT_FONTS.add(font);
+        }
+
+        // Register Minecraft Fonts that loaded successfully
+        MINECRAFT_FONTS.forEach(font -> {
+            try {
+                GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            } catch (Exception e) {
+                log.warn("Failed to register font '{}': {}", font.getName(), e.getMessage());
+            }
+        });
         // Precompute character widths for the obfuscation effect
         precomputeCharacterWidths();
     }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.core.JsonLoader;
+import net.hypixel.nerdbot.core.serializer.ColorDeserializer;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -24,7 +25,11 @@ public class Gemstone {
 
     static {
         try {
-            GEMSTONES.addAll(JsonLoader.loadFromJson(Gemstone[].class, Objects.requireNonNull(Gemstone.class.getClassLoader().getResource("data/gemstones.json"))));
+            GEMSTONES.addAll(JsonLoader.loadFromJson(
+                Gemstone[].class,
+                Objects.requireNonNull(Gemstone.class.getClassLoader().getResource("data/gemstones.json")),
+                builder -> builder.registerTypeAdapter(Color.class, new ColorDeserializer())
+            ));
         } catch (Exception e) {
             log.error("Failed to load gemstone data", e);
         }
@@ -41,5 +46,9 @@ public class Gemstone {
             .filter(gemstone -> gemstone.getName().equalsIgnoreCase(name))
             .findFirst()
             .orElse(null);
+    }
+
+    public static List<Gemstone> getGemstones() {
+        return List.copyOf(GEMSTONES);
     }
 }

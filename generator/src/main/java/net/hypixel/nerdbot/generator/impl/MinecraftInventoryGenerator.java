@@ -70,7 +70,7 @@ public class MinecraftInventoryGenerator implements Generator {
             log.error("Failed to load slot texture", e);
         }
 
-        MINECRAFT_FONT = FontUtils.initFont("/minecraft/fonts/Minecraft-Regular.otf", scaleFactor * 8);
+        MINECRAFT_FONT = FontUtils.initFont("/minecraft/assets/fonts/Minecraft-Regular.otf", scaleFactor * 8);
         if (MINECRAFT_FONT != null) {
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(MINECRAFT_FONT);
         }

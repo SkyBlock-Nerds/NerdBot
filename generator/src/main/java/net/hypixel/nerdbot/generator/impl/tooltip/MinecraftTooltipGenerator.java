@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -139,8 +140,10 @@ public class MinecraftTooltipGenerator implements Generator {
     }
 
     public static class Builder implements ClassBuilder<MinecraftTooltipGenerator> {
+        @Getter
         private String itemName;
         private Rarity rarity;
+        @Getter
         private String itemLore;
         private String type;
         private Boolean disableRarityLineBreak;
@@ -410,7 +413,7 @@ public class MinecraftTooltipGenerator implements Generator {
          */
         // TODO support player head textures
         public String buildSlashCommand() {
-            String baseCommand = System.getProperty("generator.base.command", "generator");
+            String baseCommand = System.getProperty("generator.base.command", "gen");
             StringBuilder commandBuilder = new StringBuilder("/" + baseCommand + " full ");
             Field[] fields = this.getClass().getDeclaredFields();
 

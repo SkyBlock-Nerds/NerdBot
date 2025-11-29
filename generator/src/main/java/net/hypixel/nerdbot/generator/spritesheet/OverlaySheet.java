@@ -22,17 +22,17 @@ public class OverlaySheet {
     private static final int IMAGE_SIZE = 128;
 
     static {
-        try (InputStream overlayStream = OverlaySheet.class.getResourceAsStream("/minecraft/spritesheets/overlays.png")) {
+        try (InputStream overlayStream = OverlaySheet.class.getResourceAsStream("/minecraft/assets/spritesheets/overlays.png")) {
             if (overlayStream == null) {
-                throw new IOException("Overlay sprite sheet image not found: /minecraft/spritesheets/overlays.png");
+                throw new IOException("Overlay sprite sheet image not found: /minecraft/assets/spritesheets/overlays.png");
             }
             // Load the overlay sprite sheet image
             BufferedImage overlaySpriteSheet = ImageIO.read(overlayStream);
 
             // loading color choices for overlays into memory
-            try (InputStream colorOptionsStream = OverlaySheet.class.getResourceAsStream("/minecraft/json/overlay_colors.json")) {
+            try (InputStream colorOptionsStream = OverlaySheet.class.getResourceAsStream("/minecraft/assets/json/overlay_colors.json")) {
                 if (colorOptionsStream == null) {
-                    throw new IOException("Overlay colors JSON file not found: /minecraft/json/overlay_colors.json");
+                    throw new IOException("Overlay colors JSON file not found: /minecraft/assets/json/overlay_colors.json");
                 }
                 OverlayColorOptions[] overlayColorOptionsOptions = GSON.fromJson(new InputStreamReader(colorOptionsStream), OverlayColorOptions[].class);
                 HashMap<String, OverlayColorOptions> foundOverlayColors = new HashMap<>();
@@ -41,9 +41,9 @@ public class OverlaySheet {
                 }
 
                 // loading overlays and assigning their color choices and images
-                try (InputStream overlayCoordinatesStream = OverlaySheet.class.getResourceAsStream("/minecraft/json/overlay_coordinates.json")) {
+                try (InputStream overlayCoordinatesStream = OverlaySheet.class.getResourceAsStream("/minecraft/assets/json/overlay_coordinates.json")) {
                     if (overlayCoordinatesStream == null) {
-                        throw new IOException("Overlay coordinates JSON file not found: /minecraft/json/overlay_coordinates.json");
+                        throw new IOException("Overlay coordinates JSON file not found: /minecraft/assets/json/overlay_coordinates.json");
                     }
                     ItemOverlay[] itemOverlayCoordinates = GSON.fromJson(new InputStreamReader(overlayCoordinatesStream), ItemOverlay[].class);
                     HashMap<String, ItemOverlay> foundOverlays = new HashMap<>();
@@ -59,9 +59,9 @@ public class OverlaySheet {
                     }
 
                     // assigning the items to their overlay objects
-                    try (InputStream itemOverlayBindingStream = OverlaySheet.class.getResourceAsStream("/minecraft/json/item_overlay_binding.json")) {
+                    try (InputStream itemOverlayBindingStream = OverlaySheet.class.getResourceAsStream("/minecraft/assets/json/item_overlay_binding.json")) {
                         if (itemOverlayBindingStream == null) {
-                            throw new IOException("Item overlay binding JSON file not found: /minecraft/json/item_overlay_binding.json");
+                            throw new IOException("Item overlay binding JSON file not found: /minecraft/assets/json/item_overlay_binding.json");
                         }
                         JsonArray jsonBindings = GSON.fromJson(new InputStreamReader(itemOverlayBindingStream), JsonArray.class);
                         for (JsonElement jsonElement : jsonBindings) {

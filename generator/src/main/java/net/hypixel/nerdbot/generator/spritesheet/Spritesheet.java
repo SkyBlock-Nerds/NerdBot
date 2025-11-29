@@ -21,8 +21,8 @@ import java.util.stream.Collectors;
 public class Spritesheet {
 
     private static final Map<String, BufferedImage> IMAGE_MAP = new HashMap<>();
-    private static final String ATLAS_PATH = "/minecraft/spritesheets/minecraft_texture_atlas.png";
-    private static final String COORDINATES_PATH = "/minecraft/json/atlas_coordinates.json";
+    private static final String ATLAS_PATH = "/minecraft/assets/spritesheets/minecraft_texture_atlas.png";
+    private static final String COORDINATES_PATH = "/minecraft/assets/json/atlas_coordinates.json";
 
     private static BufferedImage textureAtlas;
     private static final Gson GSON = new Gson();

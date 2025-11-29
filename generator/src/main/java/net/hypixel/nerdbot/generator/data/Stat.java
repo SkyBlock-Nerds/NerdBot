@@ -47,6 +47,35 @@ public class Stat {
             .orElse(null);
     }
 
+    public static List<Stat> getStats() {
+        return List.copyOf(STATS);
+    }
+
+    public static Stat byStatText(String text) {
+        if (text == null || text.isEmpty()) {
+            return null;
+        }
+
+        String normalized = text.trim();
+
+        for (Stat stat : STATS) {
+            if (stat.getStat() != null && stat.getStat().equalsIgnoreCase(normalized)) {
+                return stat;
+            }
+
+            if (stat.getDisplay() != null) {
+                String display = stat.getDisplay().trim();
+                String strippedDisplay = display.replaceAll("^[^A-Za-z0-9]+", "").trim();
+
+                if (strippedDisplay.equalsIgnoreCase(normalized)) {
+                    return stat;
+                }
+            }
+        }
+
+        return null;
+    }
+
     /**
      * In some cases, stats can have multiple colors.
      * One for the number and another for the stat

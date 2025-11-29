@@ -37,4 +37,8 @@ public class Icon {
             .findFirst()
             .orElse(null);
     }
+
+    public static List<Icon> getIcons() {
+        return List.copyOf(ICONS);
+    }
 }
