@@ -6,9 +6,10 @@ import java.util.regex.Pattern;
 public interface Parser<T> {
 
     /**
-     * The pattern used to match most, if not all variables.
+     * Matches placeholders like %%name:extra%% and treats the last %% (not followed by another %)
+     * as the closing delimiter so values can contain % characters.
      */
-    Pattern VARIABLE_PATTERN = Pattern.compile("%%([a-zA-Z_]+):?((?:(?!%%).)*)%%", Pattern.CASE_INSENSITIVE);
+    Pattern VARIABLE_PATTERN = Pattern.compile("%%([a-zA-Z_]+):?(.*?)%%(?!%)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
     /**
      * Parses a string using a list of parsers.
