@@ -1089,6 +1089,10 @@ public class GeneratorCommands {
     private void addCommandToUserHistory(User user, String command) {
         DiscordUserRepository discordUserRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
+        if (discordUserRepository == null) {
+            return;
+        }
+
         if (discordUserRepository.findById(user.getId()) != null) {
             DiscordUser discordUser = discordUserRepository.findById(user.getId());
 

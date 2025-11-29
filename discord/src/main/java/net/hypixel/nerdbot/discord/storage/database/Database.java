@@ -76,10 +76,14 @@ public class Database implements ServerMonitorListener {
             connected = false;
         }
 
-        try {
-            repositoryManager.registerRepositoriesFromPackage("net.hypixel.nerdbot.discord.storage.database.repository", mongoClient, databaseName);
-        } catch (RepositoryException exception) {
-            log.error("Failed to register repositories!", exception);
+        if (connected) {
+            try {
+                repositoryManager.registerRepositoriesFromPackage("net.hypixel.nerdbot.discord.storage.database.repository", mongoClient, databaseName);
+            } catch (RepositoryException exception) {
+                log.error("Failed to register repositories!", exception);
+            }
+        } else {
+            log.warn("Skipping repository registration because MongoDB is not connected");
         }
     }
 
@@ -94,7 +98,9 @@ public class Database implements ServerMonitorListener {
     }
 
     public void disconnect() {
-        mongoClient.close();
+        if (mongoClient != null) {
+            mongoClient.close();
+        }
         databaseExecutor.shutdown();
         connected = false;
     }
