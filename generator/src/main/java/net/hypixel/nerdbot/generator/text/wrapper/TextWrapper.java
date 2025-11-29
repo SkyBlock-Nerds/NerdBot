@@ -112,9 +112,18 @@ public class TextWrapper {
                 continue;
             }
 
-            String[] words = WORD_SPLIT_PATTERN.split(rawLine);
+            String strippedLeading = rawLine.stripLeading();
+            int leadingSpaces = rawLine.length() - strippedLeading.length();
+
+            String[] words = WORD_SPLIT_PATTERN.split(strippedLeading);
             StringBuilder currentLineBuilder = new StringBuilder();
             int currentVisibleLength = 0;
+
+            if (leadingSpaces > 0) {
+                currentLineBuilder.append(" ".repeat(leadingSpaces));
+                currentVisibleLength += leadingSpaces;
+                log.debug("Preserved {} leading spaces", leadingSpaces);
+            }
 
             // Process each word individually
             for (String word : words) {
