@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.generator.text.wrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.parser.Parser;
 import net.hypixel.nerdbot.generator.parser.text.ColorCodeParser;
+import net.hypixel.nerdbot.generator.parser.text.FlavorParser;
 import net.hypixel.nerdbot.generator.parser.text.GemstoneParser;
 import net.hypixel.nerdbot.generator.parser.text.IconParser;
 import net.hypixel.nerdbot.generator.parser.text.StatParser;
@@ -21,6 +22,7 @@ public class TextWrapper {
     private static final List<Parser<String>> PARSERS = List.of(
         new ColorCodeParser(),
         new IconParser(),
+        new FlavorParser(),
         new StatParser(),
         new GemstoneParser()
     );

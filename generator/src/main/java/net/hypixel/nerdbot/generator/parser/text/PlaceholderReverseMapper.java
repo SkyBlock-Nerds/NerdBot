@@ -2,11 +2,13 @@ package net.hypixel.nerdbot.generator.parser.text;
 
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.data.Gemstone;
+import net.hypixel.nerdbot.generator.data.Flavor;
 import net.hypixel.nerdbot.generator.data.Icon;
 import net.hypixel.nerdbot.generator.data.ParseType;
 import net.hypixel.nerdbot.generator.data.Stat;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,6 +41,7 @@ public class PlaceholderReverseMapper {
         this.rules.addAll(buildStatRules());
         this.rules.addAll(buildGemstoneRules());
         this.rules.addAll(buildIconRules());
+        this.rules.addAll(buildFlavorRules());
 
         log.info("Initialized PlaceholderReverseMapper with {} rules", rules.size());
     }
@@ -103,6 +106,52 @@ public class PlaceholderReverseMapper {
         }
 
         return statRules;
+    }
+
+    private List<ReplacementRule> buildFlavorRules() {
+        List<ReplacementRule> flavorRules = new ArrayList<>();
+
+        for (Flavor flavor : Flavor.getFlavors()) {
+            ParseType parseType = ParseType.byName(flavor.getParseType());
+
+            if (parseType == null) {
+                log.warn("Missing parse type for flavor text '{}'", flavor.getName());
+                continue;
+            }
+
+            if (parseType.getFormatWithDetails() != null) {
+                flavorRules.add(buildFlavorRule(flavor, parseType.getFormatWithDetails()));
+            }
+
+            if (parseType.getFormatWithoutDetails() != null) {
+                flavorRules.add(buildFlavorRule(flavor, parseType.getFormatWithoutDetails()));
+            }
+        }
+
+        return flavorRules;
+    }
+
+    private ReplacementRule buildFlavorRule(Flavor flavor, String format) {
+        PatternBuildResult result = buildPattern(format, token -> resolveFlavorToken(flavor, token));
+
+        return new ReplacementRule(result.pattern(), matcher -> {
+            List<String> parts = new ArrayList<>();
+            if (!result.captureOrder().isEmpty()) {
+                for (int i = 0; i < result.captureOrder().size(); i++) {
+                    int groupIndex = i + 1;
+                    if (groupIndex <= matcher.groupCount()) {
+                        parts.add(matcher.group(groupIndex));
+                    }
+                }
+            }
+
+            String placeholder = "%%" + flavor.getName();
+            if (!parts.isEmpty()) {
+                placeholder += ":" + String.join(":", parts).trim();
+            }
+
+            return placeholder + "%%";
+        });
     }
 
     private ReplacementRule buildStatRule(Stat stat, String format) {
@@ -212,6 +261,31 @@ public class PlaceholderReverseMapper {
 
     private static String escapeLiteral(String text) {
         return Pattern.quote(text);
+    }
+
+    private String resolveFlavorToken(Flavor flavor, String token) {
+        if ("ampersand".equalsIgnoreCase(token)) {
+            return String.valueOf(ChatFormat.AMPERSAND_SYMBOL);
+        }
+
+        ChatFormat chatFormat = ChatFormat.of(token.toUpperCase());
+        if (chatFormat != null) {
+            return String.valueOf(chatFormat.getCode());
+        }
+
+        try {
+            String methodName = "get" + Character.toUpperCase(token.charAt(0)) + token.substring(1);
+            Method method = Flavor.class.getMethod(methodName);
+            Object value = method.invoke(flavor);
+            if (value instanceof ChatFormat) {
+                return String.valueOf(((ChatFormat) value).getCode());
+            }
+            if (value != null) {
+                return value.toString();
+            }
+        } catch (Exception ignored) {}
+
+        return null;
     }
 
     private static String escapeAmpersands(String input) {
