@@ -159,6 +159,7 @@
     "currentlyPromotingUsers": false,
     "minimumVotesRequiredForPromotion": 100,
     "minimumCommentsRequiredForPromotion": 100,
+    "minimumMessagesRequiredForPromotion": 10,
     "daysRequiredForVoteHistory": 90,
     "daysRequiredForInactivityCheck": 30,
     "messagesRequiredForInactivityCheck": 100,
