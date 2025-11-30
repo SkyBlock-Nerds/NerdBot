@@ -100,6 +100,7 @@ public class GeneratorCommands {
 
         enchanted = enchanted != null && enchanted;
         hoverEffect = hoverEffect != null && hoverEffect;
+        durability = durability == null ? 100 : durability;
 
         try {
             GeneratorImageBuilder item = new GeneratorImageBuilder();
@@ -434,7 +435,7 @@ public class GeneratorCommands {
                     .withInventoryString(inventoryString)
                     .build());
 
-            if (hoveredItemString != null) {
+            if (hoveredItemString != null && !hoveredItemString.isBlank()) {
                 MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                     .withItemLore(hoveredItemString)
                     .withAlpha(MinecraftTooltip.DEFAULT_ALPHA)
@@ -718,6 +719,7 @@ public class GeneratorCommands {
         paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         renderBorder = renderBorder == null || renderBorder;
+        durability = durability == null ? 100 : durability;
 
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
@@ -759,7 +761,7 @@ public class GeneratorCommands {
                 }
             }
 
-            if (recipe != null) {
+            if (recipe != null && !recipe.isBlank()) {
                 generatorImageBuilder.addGenerator(0, new MinecraftInventoryGenerator.Builder()
                     .withRows(3)
                     .withSlotsPerRow(3)
@@ -769,9 +771,14 @@ public class GeneratorCommands {
                 ).build();
             }
 
-            if (tooltipSide != null && MinecraftTooltipGenerator.TooltipSide.valueOf(tooltipSide.toUpperCase()) == MinecraftTooltipGenerator.TooltipSide.LEFT) {
-                generatorImageBuilder.addGenerator(0, tooltipGenerator);
-            } else {
+            try {
+                if (tooltipSide != null && MinecraftTooltipGenerator.TooltipSide.valueOf(tooltipSide.toUpperCase()) == MinecraftTooltipGenerator.TooltipSide.LEFT) {
+                    generatorImageBuilder.addGenerator(0, tooltipGenerator);
+                } else {
+                    generatorImageBuilder.addGenerator(tooltipGenerator);
+                }
+            } catch (IllegalArgumentException ignored) {
+                // Fallback to default side if an invalid value was provided
                 generatorImageBuilder.addGenerator(tooltipGenerator);
             }
 
