@@ -145,7 +145,7 @@ public class GeneratorCommands {
     @SlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate an image of a Power Stone")
     public void generatePowerstone(
         SlashCommandInteractionEvent event,
-        @SlashOption(description = "The name of your Power Stone") String itemName,
+        @SlashOption(description = "The name of your Power Stone") String powerName,
         @SlashOption(autocompleteId = "power-strengths", description = "The strength of the Power Stone") String powerStrength,
         @SlashOption(description = "The Magical Power to use in the stat calculations") int magicalPower,
         @SlashOption(description = "The stats that scale with the given Magical Power", required = false) String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
@@ -265,7 +265,7 @@ public class GeneratorCommands {
             try {
                 GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
                 MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                    .withName("&a" + itemName)
+                    .withName("&a" + powerName)
                     .withRarity(Rarity.byName("none"))
                     .withItemLore(itemLore)
                     .withAlpha(alpha)
