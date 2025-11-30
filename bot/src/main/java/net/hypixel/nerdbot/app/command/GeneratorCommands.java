@@ -685,7 +685,7 @@ public class GeneratorCommands {
         return result.toString();
     }
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "full", description = "Generate a full item image. Supports displaying items, recipes, and tooltips")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a full item image. Supports displaying items, recipes, tooltips & more")
     public void generateTooltip(
         SlashCommandInteractionEvent event,
         @SlashOption(description = NAME_DESCRIPTION) String itemName,
