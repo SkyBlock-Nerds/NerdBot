@@ -28,9 +28,9 @@ public final class EnchantmentGlint {
     private static final BufferedImage GLINT_TEXTURE;
 
     static {
-        try (InputStream stream = EnchantmentGlint.class.getResourceAsStream("/minecraft/textures/glint.png")) {
+        try (InputStream stream = EnchantmentGlint.class.getResourceAsStream("/minecraft/assets/textures/glint.png")) {
             if (stream == null) {
-                throw new IOException("Missing enchant glint texture: /minecraft/textures/glint.png");
+                throw new IOException("Missing enchant glint texture: /minecraft/assets/textures/glint.png");
             }
             GLINT_TEXTURE = ImageIO.read(stream);
         } catch (IOException exception) {
