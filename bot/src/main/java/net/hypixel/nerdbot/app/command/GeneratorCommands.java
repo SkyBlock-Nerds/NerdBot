@@ -184,7 +184,7 @@ public class GeneratorCommands {
                 String[] stat = entry.split(":");
 
                 if (stat.length != 2 || stat[0].trim().isEmpty() || stat[1].trim().isEmpty()) {
-                    throw new GeneratorException("Stat `" + entry + "` is using an invalid format");
+                    throw new GeneratorException("Stat `" + entry + "` is using an invalid format. Use `stat:value` and separate multiple entries with commas (e.g., `health:-50,damage:10`)");
                 }
 
                 String statName = stat[0].trim();
@@ -194,7 +194,7 @@ public class GeneratorCommands {
                 try {
                     statValue = Integer.parseInt(stat[1].trim());
                 } catch (NumberFormatException e) {
-                    throw new GeneratorException("Invalid number for stat `" + statName + "`: " + stat[1].trim());
+                    throw new GeneratorException("Invalid number for stat `" + statName + "`: " + stat[1].trim() + ". Use `stat:value` (e.g., `health:-50`)");
                 }
 
                 map.merge(statName, statValue, Integer::sum);
@@ -1146,6 +1146,9 @@ public class GeneratorCommands {
      */
     private double calculatePowerStoneStat(Stat stat, int basePower, int magicalPower) {
         double statMultiplier = stat.getPowerScalingMultiplier() != null ? stat.getPowerScalingMultiplier() : 1;
-        return ((double) basePower / 100) * statMultiplier * 719.28 * Math.pow(Math.log(1 + (0.0019 * magicalPower)), 1.2);
+        double logValue = Math.log(1 + (0.0019 * magicalPower));
+        double magnitude = Math.pow(Math.abs(logValue), 1.2);
+        double signedFactor = Math.signum(logValue) * magnitude;
+        return ((double) basePower / 100) * statMultiplier * 719.28 * signedFactor;
     }
 }
