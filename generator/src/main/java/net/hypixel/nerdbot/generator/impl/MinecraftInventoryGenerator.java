@@ -61,7 +61,7 @@ public class MinecraftInventoryGenerator implements Generator {
             log.info("Using fallback values: item size: {}, scale factor: {}, slot size: {}", itemSize, scaleFactor, slotSize);
         }
 
-        try (InputStream slotStream = MinecraftInventoryGenerator.class.getResourceAsStream("/minecraft/textures/slot.png")) {
+        try (InputStream slotStream = MinecraftInventoryGenerator.class.getResourceAsStream("/minecraft/assets/textures/slot.png")) {
             if (slotStream != null) {
                 BufferedImage originalSlot = ImageIO.read(slotStream);
                 slotTexture = ImageUtil.resizeImage(originalSlot, slotSize, slotSize, BufferedImage.TYPE_INT_ARGB);
