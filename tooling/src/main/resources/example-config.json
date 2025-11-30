@@ -243,7 +243,8 @@
       "maxRows": 100,
       "maxColumns": 100,
       "minRows": 1,
-      "minColumns": 1
+      "minColumns": 1,
+      "animateGlint": false
     },
     "cache": {
       "enabled": true,
