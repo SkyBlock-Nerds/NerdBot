@@ -344,32 +344,6 @@ public class GeneratorCommands {
         event.getHook().editOriginal(message.toString()).queue();
     }
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "head", description = "Generate a player head")
-    public void generateHead(
-        SlashCommandInteractionEvent event,
-        @SlashOption(description = TEXTURE_DESCRIPTION) String texture,
-        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
-    ) {
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
-
-        event.deferReply(hidden).complete();
-
-        try {
-            GeneratedObject generatedObject = new GeneratorImageBuilder()
-                .addGenerator(new MinecraftPlayerHeadGenerator.Builder().withSkin(texture).build())
-                .build();
-
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "head.png")).queue();
-            addCommandToUserHistory(event.getUser(), event.getCommandString());
-        } catch (GeneratorException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while generating a player head", exception);
-        } catch (IOException exception) {
-            event.getHook().editOriginal("An error occurred while generating that player head!").queue();
-            log.error("Encountered an error while generating a player head", exception);
-        }
-    }
-
     @SlashCommand(name = BASE_COMMAND, subcommand = "recipe", description = "Generate a recipe")
     public void generateRecipe(
         SlashCommandInteractionEvent event,
