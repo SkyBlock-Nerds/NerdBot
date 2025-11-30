@@ -22,7 +22,8 @@ public class RepositoryManager {
     @SneakyThrows
     public <T> T getRepository(Class<T> repositoryClass) {
         if (!repositories.containsKey(repositoryClass)) {
-            throw new RepositoryException("Repository not registered: " + repositoryClass.getName());
+            log.warn("Repository not registered: {}", repositoryClass.getName());
+            return null;
         }
 
         return repositoryClass.cast(repositories.get(repositoryClass));
