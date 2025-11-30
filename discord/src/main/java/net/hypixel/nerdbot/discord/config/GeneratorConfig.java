@@ -163,6 +163,11 @@ public class GeneratorConfig {
          * Minimum number of columns allowed
          */
         private int minColumns = 1;
+
+        /**
+         * Whether enchanted items in inventories should animate their glint
+         */
+        private boolean animateGlint = false;
     }
 
     @Getter

@@ -422,6 +422,7 @@ public class GeneratorCommands {
         event.deferReply(hidden).complete();
 
         drawBorder = drawBorder == null || drawBorder;
+        boolean animateGlint = DiscordBotEnvironment.getBot().getConfig().getGeneratorConfig().getInventory().isAnimateGlint();
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
         try {
@@ -431,6 +432,7 @@ public class GeneratorCommands {
                     .withSlotsPerRow(slotsPerRow)
                     .drawBorder(drawBorder)
                     .drawBackground(true)
+                    .withAnimateGlint(animateGlint)
                     .withContainerTitle(containerName)
                     .withInventoryString(inventoryString)
                     .build());

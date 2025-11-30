@@ -5,6 +5,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.awt.image.BufferedImage;
+import java.util.List;
 
 @Getter
 @Setter
@@ -17,6 +18,8 @@ public class InventoryItem {
     private String extraContent;
     private BufferedImage itemImage;
     private Integer durabilityPercent;
+    private List<BufferedImage> animationFrames;
+    private Integer frameDelayMs;
 
     public InventoryItem(int slot, int amount, String itemName, String extraContent, Integer durabilityPercent) {
         this(new int[]{slot}, new int[]{amount}, itemName, extraContent, durabilityPercent);
@@ -26,7 +29,7 @@ public class InventoryItem {
         this.slot = slots;
         this.amount = amounts;
         this.itemName = itemName != null ? itemName.toLowerCase() : null;
-        this.extraContent = extraContent != null ? extraContent.toLowerCase() : null;
+        this.extraContent = extraContent;
         this.durabilityPercent = durabilityPercent;
     }
 }
