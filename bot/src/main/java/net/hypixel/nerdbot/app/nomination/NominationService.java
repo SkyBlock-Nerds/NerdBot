@@ -94,6 +94,7 @@ public class NominationService {
         RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
         int requiredVotes = roleConfig.getMinimumVotesRequiredForPromotion();
         int requiredComments = roleConfig.getMinimumCommentsRequiredForPromotion();
+        int requiredMessages = roleConfig.getMinimumMessagesRequiredForPromotion();
         int daysWindow = roleConfig.getDaysRequiredForVoteHistory();
 
         long startNanos = System.nanoTime();
@@ -129,7 +130,7 @@ public class NominationService {
 
             eligible++;
 
-            NominationOutcome outcome = evaluateNomination(member, discordUser, contextLabel, requiredVotes, requiredComments, daysWindow);
+            NominationOutcome outcome = evaluateNomination(member, discordUser, contextLabel, requiredVotes, requiredComments, requiredMessages, daysWindow);
             if (outcome == NominationOutcome.NOMINATED) {
                 nominated++;
             } else if (outcome == NominationOutcome.SKIPPED_ALREADY_THIS_MONTH) {
@@ -147,20 +148,23 @@ public class NominationService {
         return new NominationSweepReport(label, scanned, eligible, nominated, skippedBelowThreshold, skippedAlreadyThisMonth, ineligible, missingMember, durationMs);
     }
 
-    private NominationOutcome evaluateNomination(Member member, DiscordUser discordUser, String contextLabel, int requiredVotes, int requiredComments, int daysWindow) {
+    private NominationOutcome evaluateNomination(Member member, DiscordUser discordUser, String contextLabel, int requiredVotes, int requiredComments, int requiredMessages, int daysWindow) {
         LastActivity lastActivity = discordUser.getLastActivity();
+        int totalMessages = lastActivity.getTotalMessageCount(daysWindow);
         int totalComments = lastActivity.getTotalComments(daysWindow);
         int totalVotes = lastActivity.getTotalVotes(daysWindow);
 
         boolean hasRequiredVotes = totalVotes >= requiredVotes;
         boolean hasRequiredComments = totalComments >= requiredComments;
+        boolean hasRequiredMessages = totalMessages >= requiredMessages;
+        int requirementsMet = (hasRequiredMessages ? 1 : 0) + (hasRequiredVotes ? 1 : 0) + (hasRequiredComments ? 1 : 0);
 
         if (contextLabel == null) {
-            log.info("Checking if {} should be nominated for promotion (total comments: {}, total votes: {}, meets comments requirement: {}, meets votes requirement: {})",
-                member.getEffectiveName(), totalComments, totalVotes, hasRequiredComments, hasRequiredVotes);
+            log.info("Checking if {} should be nominated for promotion (total messages: {}, total comments: {}, total votes: {}, meets messages requirement: {}, meets comments requirement: {}, meets votes requirement: {}, requirements met: {}/3)",
+                member.getEffectiveName(), totalMessages, totalComments, totalVotes, hasRequiredMessages, hasRequiredComments, hasRequiredVotes, requirementsMet);
         } else {
-            log.info("[{}] Checking if {} should be nominated (total comments: {}, total votes: {}, meets comments requirement: {}, meets votes requirement: {})",
-                contextLabel, member.getEffectiveName(), totalComments, totalVotes, hasRequiredComments, hasRequiredVotes);
+            log.info("[{}] Checking if {} should be nominated (total messages: {}, total comments: {}, total votes: {}, meets messages requirement: {}, meets comments requirement: {}, meets votes requirement: {}, requirements met: {}/3)",
+                contextLabel, member.getEffectiveName(), totalMessages, totalComments, totalVotes, hasRequiredMessages, hasRequiredComments, hasRequiredVotes, requirementsMet);
         }
 
         final NominationOutcome[] outcomeRef = new NominationOutcome[]{null};
@@ -169,7 +173,7 @@ public class NominationService {
             Month lastNominationMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
             Month now = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
 
-            if (lastNominationMonth != now && (totalComments >= requiredComments && totalVotes >= requiredVotes)) {
+            if (lastNominationMonth != now && requirementsMet >= 2) {
                 if (contextLabel == null) {
                     log.info("Last nomination was not this month (last: {}, now: {}), sending nomination message for {} (nomination info: {})",
                         lastNominationMonth, now, member.getEffectiveName(), discordUser.getLastActivity().getNominationInfo());
@@ -178,20 +182,20 @@ public class NominationService {
                         contextLabel, lastNominationMonth, now, member.getEffectiveName());
                 }
 
-                sendNominationMessage(member, discordUser);
+                sendNominationMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, daysWindow);
                 outcomeRef[0] = NominationOutcome.NOMINATED;
             }
         }, () -> {
             if (contextLabel == null) {
-                log.info("No last nomination date found for {}, checking if they meet the minimum requirements (min. votes: {}, min. comments: {}, nomination info: {})",
-                    member.getEffectiveName(), requiredVotes, requiredComments, discordUser.getLastActivity().getNominationInfo());
+                log.info("No last nomination date found for {}, checking if they meet the minimum requirements (min. messages: {}, min. votes: {}, min. comments: {}, nomination info: {})",
+                    member.getEffectiveName(), requiredMessages, requiredVotes, requiredComments, discordUser.getLastActivity().getNominationInfo());
             } else {
                 log.info("[{}] No last nomination date found for {}, checking minimum requirements",
                     contextLabel, member.getEffectiveName());
             }
 
-            if (totalComments >= requiredComments && totalVotes >= requiredVotes) {
-                sendNominationMessage(member, discordUser);
+            if (requirementsMet >= 2) {
+                sendNominationMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, daysWindow);
                 outcomeRef[0] = NominationOutcome.NOMINATED;
             }
         });
@@ -210,27 +214,28 @@ public class NominationService {
             }
         }
 
-        if (hasRequiredComments && hasRequiredVotes) {
+        if (requirementsMet >= 2) {
             return NominationOutcome.NOMINATED;
         }
 
         return NominationOutcome.SKIPPED_BELOW_THRESHOLD;
     }
 
-    private void sendNominationMessage(Member member, DiscordUser discordUser) {
+    private void sendNominationMessage(Member member, DiscordUser discordUser, int requiredMessages, int requiredVotes, int requiredComments, int daysWindow) {
         ChannelCache.getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
             LastActivity lastActivity = discordUser.getLastActivity();
             RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
 
-            int totalMessages = lastActivity.getTotalMessageCount(roleConfig.getDaysRequiredForVoteHistory());
-            int totalVotes = lastActivity.getTotalVotes(roleConfig.getDaysRequiredForVoteHistory());
-            int totalComments = lastActivity.getTotalComments(roleConfig.getDaysRequiredForVoteHistory());
+            int totalMessages = lastActivity.getTotalMessageCount(daysWindow);
+            int totalVotes = lastActivity.getTotalVotes(daysWindow);
+            int totalComments = lastActivity.getTotalComments(daysWindow);
 
-            int requiredVotes = roleConfig.getMinimumVotesRequiredForPromotion();
-            int requiredComments = roleConfig.getMinimumCommentsRequiredForPromotion();
-
+            int requirementsMet = (totalMessages >= requiredMessages ? 1 : 0)
+                + (totalVotes >= requiredVotes ? 1 : 0)
+                + (totalComments >= requiredComments ? 1 : 0);
             String votesStatus = totalVotes >= requiredVotes ? "✅" : "❌";
             String commentsStatus = totalComments >= requiredComments ? "✅" : "❌";
+            String messagesStatus = totalMessages >= requiredMessages ? "✅" : "❌";
 
             String nominationType = NominationTypeResolver.resolve(member, roleConfig);
 
@@ -239,12 +244,14 @@ public class NominationService {
                 .setTitle("Promotion Nomination")
                 .setDescription("**" + member.getEffectiveName() + "** is eligible for promotion!")
                 .setThumbnail(member.getEffectiveAvatarUrl())
-                .addField(String.format("Activity Summary (last %d days)", roleConfig.getDaysRequiredForVoteHistory()),
-                    "**All Requirements:** Met",
+                .addField(String.format("Activity Summary (last %d days)", daysWindow),
+                    String.format("**Requirements Met:** %d/3", requirementsMet),
                     false)
                 .addField("Messages",
-                    String.format("%s tracked",
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalMessages)),
+                    String.format("%s **%s** / %s required",
+                        messagesStatus,
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalMessages),
+                        StringUtils.COMMA_SEPARATED_FORMAT.format(requiredMessages)),
                     true)
                 .addField("Votes",
                     String.format("%s **%s** / %s required",
