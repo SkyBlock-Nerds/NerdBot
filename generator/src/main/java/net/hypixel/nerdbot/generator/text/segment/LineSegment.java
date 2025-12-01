@@ -26,7 +26,7 @@ public final class LineSegment {
     }
 
     public static @NotNull List<LineSegment> fromLegacy(@NotNull String legacyText, char symbolSubstitute) {
-        return ArrayUtils.safeArrayStream(legacyText.split("(\n|\\\\n)"))
+        return ArrayUtils.safeArrayStream(legacyText.split("(?:\n|\\\\n)+"))
             .map(line -> TextSegment.fromLegacy(line, symbolSubstitute))
             .toList();
     }

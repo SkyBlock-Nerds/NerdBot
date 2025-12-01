@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 public class TextWrapper {
 
     private static final Pattern STRIP_COLOR_PATTERN = Pattern.compile("[&§][0-9a-fA-FK-ORk-or]");
-    private static final Pattern NEWLINE_PATTERN = Pattern.compile("(\n|\\\\n)");
+    private static final Pattern NEWLINE_PATTERN = Pattern.compile("(?:\n|\\\\n)+");
     private static final Pattern WORD_SPLIT_PATTERN = Pattern.compile(" ");
 
     private static final List<Parser<String>> PARSERS = List.of(
