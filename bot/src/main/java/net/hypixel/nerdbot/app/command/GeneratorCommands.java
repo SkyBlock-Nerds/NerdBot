@@ -51,7 +51,7 @@ import java.util.function.Function;
 @Slf4j
 public class GeneratorCommands {
 
-    public static final String BASE_COMMAND = "gen2"; // TODO change this back to "gen" when released
+    public static final String BASE_COMMAND = "gen";
 
     private static final String ITEM_DESCRIPTION = "The ID of the item to display";
     private static final String EXTRA_DATA_DESCRIPTION = "The extra modifiers to change the item";
