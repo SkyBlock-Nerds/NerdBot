@@ -276,7 +276,18 @@ public class GeneratorCommands {
                     .withRenderBorder(true);
 
                 if (includeGenFullCommand != null && includeGenFullCommand) {
-                    event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + tooltipGenerator.buildSlashCommand() + "```").queue();
+                    String slashCommand = tooltipGenerator.buildSlashCommand();
+
+                    // I hate this, but it works *for now*. Should probably replace it later
+                    if (itemId != null && !itemId.isBlank()) {
+                        slashCommand += " item_id: " + itemId;
+                    }
+
+                    if (enchanted) {
+                        slashCommand += " enchanted: True";
+                    }
+
+                    event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + slashCommand.trim() + "```").queue();
                 }
 
                 if (itemId != null) {
