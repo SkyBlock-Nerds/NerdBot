@@ -8,6 +8,7 @@ import net.hypixel.nerdbot.discord.storage.badge.Badge;
 import net.hypixel.nerdbot.discord.storage.badge.TieredBadge;
 import net.hypixel.nerdbot.discord.storage.database.model.user.badge.BadgeEntry;
 import net.hypixel.nerdbot.discord.storage.database.model.user.birthday.BirthdayData;
+import net.hypixel.nerdbot.discord.storage.database.model.user.generator.GeneratorHistory;
 import net.hypixel.nerdbot.discord.storage.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.discord.storage.database.model.user.stats.MojangProfile;
 
@@ -28,12 +29,14 @@ public class DiscordUser {
     private LastActivity lastActivity;
     private BirthdayData birthdayData;
     private MojangProfile mojangProfile;
+    private GeneratorHistory generatorHistory;
+    private boolean autoHideGenCommands;
 
     public DiscordUser() {
     }
 
     public DiscordUser(String discordId) {
-        this(discordId, new ArrayList<>(), new LastActivity(), new BirthdayData(), new MojangProfile());
+        this(discordId, new ArrayList<>(), new LastActivity(), new BirthdayData(), new MojangProfile(), new GeneratorHistory(), false);
     }
 
     public boolean isProfileAssigned() {

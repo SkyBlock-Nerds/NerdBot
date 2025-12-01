@@ -1,0 +1,179 @@
+{
+  "modMailConfig": {
+    "channelId": "1234567890123456789",
+    "roleId": "1234567890123456789",
+    "webhookId": "1234567890123456789",
+    "timeBetweenPings": 60,
+    "roleFormat": "BELOW"
+  },
+  "suggestionConfig": {
+    "reviewRequestConfig": {
+      "enabled": false,
+      "channelId": "1234567890123456789",
+      "threshold": 15,
+      "enforceGreenlitRatio": false,
+      "minimumSuggestionAge": 604800000
+    },
+    "forumChannelId": "1234567890123456789",
+    "greenlitTag": "Example Name",
+    "reviewedTag": "Example Name",
+    "greenlitThreshold": 20,
+    "greenlitRatio": 75.0,
+    "archiveOnGreenlit": false,
+    "lockOnGreenlit": false,
+    "autoArchiveThreshold": 168,
+    "autoLockThreshold": 168
+  },
+  "alphaProjectConfig": {
+    "alphaForumIds": [
+      "1234567890123456789"
+    ],
+    "projectForumIds": [
+      "1234567890123456789"
+    ],
+    "autoCreateTags": true,
+    "autoArchiveThreshold": 168,
+    "autoLockThreshold": 168
+  },
+  "channelConfig": {
+    "logChannelId": "1234567890123456789",
+    "verifyLogChannelId": "1234567890123456789",
+    "publicArchiveCategoryId": "1234567890123456789",
+    "nerdArchiveCategoryId": "1234567890123456789",
+    "alphaArchiveCategoryId": "1234567890123456789",
+    "announcementChannelId": "1234567890123456789",
+    "botSpamChannelId": "1234567890123456789",
+    "pollChannelId": "1234567890123456789",
+    "memberVotingChannelId": "",
+    "birthdayNotificationChannelId": "",
+    "genChannelIds": [
+      "1234567890123456789"
+    ],
+    "filteredAprilFoolsGenChannelIds": [],
+    "reactionChannels": [
+      {
+        "name": "example_name",
+        "discordChannelId": "1234567890123456789",
+        "emojiIds": [
+          "1234567890123456789"
+        ],
+        "thread": true
+      }
+    ],
+    "blacklistedChannels": [
+      "1234567890123456789"
+    ],
+    "customForumTags": [
+      {
+        "ownerId": "1234567890123456789",
+        "name": "Example Name"
+      }
+    ],
+    "roleRestrictedChannelGroups": [],
+    "autoManageRoleRestrictedChannels": true,
+    "defaultMinimumMessagesForActivity": 5,
+    "defaultMinimumVotesForActivity": 2,
+    "defaultMinimumCommentsForActivity": 1,
+    "defaultActivityCheckDays": 30,
+    "autoPinFirstMessage": true,
+    "autoPinBlacklistedChannels": [
+      "1234567890123456789"
+    ],
+    "projectChannelNames": [],
+    "forumAutoTags": []
+  },
+  "roleConfig": {
+    "botManagerRoleId": "1234567890123456789",
+    "moderatorRoleId": "",
+    "orangeRoleId": "",
+    "memberRoleId": "",
+    "newMemberRoleId": "1234567890123456789",
+    "limboRoleId": "1234567890123456789",
+    "currentlyPromotingUsers": false,
+    "minimumVotesRequiredForPromotion": 100,
+    "minimumCommentsRequiredForPromotion": 100,
+    "daysRequiredForVoteHistory": 90,
+    "daysRequiredForInactivityCheck": 30,
+    "messagesRequiredForInactivityCheck": 100,
+    "votesRequiredForInactivityCheck": 25,
+    "commentsRequiredForInactivityCheck": 100,
+    "pingableRoles": [
+      {
+        "name": "Example Name",
+        "roleId": "1234567890123456789"
+      }
+    ]
+  },
+  "metricsConfig": {
+    "enabled": true,
+    "port": 1234
+  },
+  "emojiConfig": {
+    "agreeEmojiId": "1234567890123456789",
+    "disagreeEmojiId": "1234567890123456789",
+    "neutralEmojiId": "1234567890123456789",
+    "greenlitEmojiId": "1234567890123456789"
+  },
+  "badgeConfig": {
+    "badges": [
+      {
+        "id": "1234567890123456789",
+        "name": "Example Name",
+        "emoji": "1234567890123456789"
+      },
+      {
+        "tiers": [
+          {
+            "name": "Example Name",
+            "emoji": "1234567890123456789",
+            "tier": 1
+          },
+          {
+            "name": "Example Name",
+            "emoji": "1234567890123456789",
+            "tier": 2
+          },
+          {
+            "name": "Example Name",
+            "emoji": "1234567890123456789",
+            "tier": 3
+          }
+        ],
+        "id": "example_name",
+        "name": "Example Name"
+      }
+    ]
+  },
+  "funConfig": {
+    "autoReactions": {}
+  },
+  "statusPageConfig": {
+    "operationalColor": "00C851",
+    "degradedColor": "FFBB33",
+    "partialOutageColor": "FF4444",
+    "majorOutageColor": "8B0000",
+    "maintenanceColor": "3498DB",
+    "maxDescriptionLength": 200,
+    "includeResolvedIncidents": true,
+    "includeCompletedMaintenances": true,
+    "enableStatusAlerts": true,
+    "statusAlertRoleName": "Status Alerts",
+    "enableMaintenanceAlerts": false
+  },
+  "guildId": "1234567890123456789",
+  "ownerIds": [
+    "1234567890123456789"
+  ],
+  "messageLimit": 100,
+  "mojangUsernameCacheTTL": 12,
+  "mojangForceNicknameUpdate": false,
+  "voiceThreshold": 60,
+  "interval": 43200000,
+  "activityType": "WATCHING",
+  "activity": "with an example message!",
+  "nominationsEnabled": true,
+  "inactivityCheckEnabled": true,
+  "inactivityDays": 7,
+  "inactivityMessages": 10,
+  "imageGeneratorTimeoutMs": 3000
+}

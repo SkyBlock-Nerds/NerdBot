@@ -3,1084 +3,1137 @@ package net.hypixel.nerdbot.app.command;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.hypixel.nerdbot.app.generation.DiscordGenerationContext;
-import net.hypixel.nerdbot.core.ArrayUtils;
-import net.hypixel.nerdbot.core.FileUtils;
-import net.hypixel.nerdbot.core.JsonUtils;
-import net.hypixel.nerdbot.core.skyblock.Flavor;
-import net.hypixel.nerdbot.core.skyblock.Icon;
-import net.hypixel.nerdbot.core.skyblock.MCColor;
-import net.hypixel.nerdbot.core.skyblock.Rarity;
-import net.hypixel.nerdbot.core.skyblock.Stat;
-import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.cache.ChannelCache;
-import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
-import net.hypixel.nerdbot.discord.util.DiscordUtils;
-import net.hypixel.nerdbot.generator.GenerationContext;
-import net.hypixel.nerdbot.generator.GeneratorBuilder;
-import net.hypixel.nerdbot.generator.ImageMerger;
-import net.hypixel.nerdbot.generator.parser.StringColorParser;
+import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.discord.storage.database.model.user.generator.GeneratorHistory;
+import net.hypixel.nerdbot.generator.data.PowerStrength;
+import net.hypixel.nerdbot.generator.data.Rarity;
+import net.hypixel.nerdbot.generator.data.Stat;
+import net.hypixel.nerdbot.generator.exception.GeneratorException;
+import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
+import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
+import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
+import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
+import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
+import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
+import net.hypixel.nerdbot.generator.item.GeneratedObject;
+import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.core.FileUtils;
+import net.hypixel.nerdbot.core.ImageUtil;
+import net.hypixel.nerdbot.discord.util.StringUtils;
+import net.hypixel.nerdbot.generator.parser.text.PlaceholderReverseMapper;
 
-import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
-
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.COMMAND_PREFIX;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_ALPHA;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_CENTERED;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_DISABLE_RARITY_LINEBREAK;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_EXTRA_ITEM_MODIFIERS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_HIDDEN;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_INCLUDE_ITEM;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_ITEM_ID;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_ITEM_LORE;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_ITEM_NAME;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_MAX_LINE_LENGTH;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_PADDING;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_PARSE_ITEM;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_RARITY;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_RECIPE;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_RENDER_INVENTORY;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_TEXT;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DESC_TYPE;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DISPLAY_INFO_ARGUMENTS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DISPLAY_INFO_BASIC;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DISPLAY_INFO_ENCHANT_GLINT;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DISPLAY_INFO_EXTRA_MODIFIERS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DISPLAY_INFO_MODIFIERS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DISPLAY_INFO_OPTIONAL_ARGUMENTS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.DISPLAY_ITEM_INFO_PLAYER_HEAD;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.FULL_GEN_INFO;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.GENERAL_HELP;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.GENERAL_INFO;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.INVALID_BASE_64_SKIN_URL;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.INVALID_ITEM_SKULL_DATA;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_BASIC_INFO;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_COLOR_CODES;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_EXAMPLES;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_INFO_ARGUMENTS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_INFO_OPTIONAL_ARGUMENTS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_OTHER_INFO;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_PARSE_ARGUMENTS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_PARSE_COMMAND;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_PARSE_INFO;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_PARSE_JSON_FORMAT;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_PARSE_OPTIONAL_ARGUMENTS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_TEXT_BASIC_INFO;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_TEXT_INFO_ARGUMENTS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.ITEM_TEXT_INFO_OPTIONAL_ARGUMENTS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.MISSING_FULL_GEN_ITEM;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.MISSING_ITEM_NBT;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.MULTIPLE_ITEM_SKULL_DATA;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_ARGUMENTS;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_BASIC;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.RECIPE_INFO_EXAMPLES;
-import static net.hypixel.nerdbot.generator.util.GeneratorStrings.stripString;
+import java.util.function.Function;
 
 @Slf4j
 public class GeneratorCommands {
-    private static final Color[] EMBED_COLORS = new Color[]{
-        new Color(167, 65, 92),
-        new Color(26, 107, 124),
-        new Color(137, 222, 74),
-        new Color(151, 150, 164)
-    };
 
-    private static final Map<String, String> FORMATTING_CODES = Map.of(
-        "bold", "&l",
-        "italic", "&o",
-        "underlined", "&n",
-        "strikethrough", "&m",
-        "obfuscated", "&k"
-    );
+    public static final String BASE_COMMAND = "gen";
 
-    private final GeneratorBuilder builder;
+    private static final String ITEM_DESCRIPTION = "The ID of the item to display";
+    private static final String EXTRA_DATA_DESCRIPTION = "The extra modifiers to change the item";
+    private static final String ENCHANTED_DESCRIPTION = "Whether or not the item should be enchanted";
+    private static final String NAME_DESCRIPTION = "The name of the item";
+    private static final String RARITY_DESCRIPTION = "The rarity of the item";
+    private static final String TYPE_DESCRIPTION = "The type of the item";
+    private static final String LORE_DESCRIPTION = "The lore of the item";
+    private static final String SKIN_VALUE_DESCRIPTION = "The skin value of the player head";
+    private static final String ALPHA_DESCRIPTION = "The alpha of the tooltip";
+    private static final String PADDING_DESCRIPTION = "The padding of the tooltip";
+    private static final String RARITY_LINE_BREAK_DESCRIPTION = "Whether or not the tooltip should have an empty line between the lore and the rarity/type";
+    private static final String CENTERED_DESCRIPTION = "Whether or not the tooltip should be centered";
+    private static final String MAX_LINE_LENGTH_DESCRIPTION = "The max line length of the tooltip";
+    private static final String LINE_PADDING_DESCRIPTION = "Add a small amount of padding between the item name and the first line of lore";
+    private static final String TOOLTIP_SIDE_DESCRIPTION = "Which side the tooltip should be displayed on";
+    private static final String TEXT_DESCRIPTION = "The text to display";
+    private static final String TEXTURE_DESCRIPTION = "The texture of the player head";
+    private static final String RECIPE_STRING_DESCRIPTION = "The recipe string to display";
+    private static final String INVENTORY_ROWS_DESCRIPTION = "The number of rows in the inventory";
+    private static final String INVENTORY_COLUMNS_DESCRIPTION = "The number of slots per row in the inventory";
+    private static final String INVENTORY_CONTENTS_DESCRIPTION = "The inventory contents to display";
+    private static final String INVENTORY_NAME_DESCRIPTION = "The name of the inventory";
+    private static final String RENDER_BACKGROUND_DESCRIPTION = "Whether or not the background should be rendered";
+    private static final String RENDER_BORDER_DESCRIPTION = "Whether the inventory's border should be rendered";
+    private static final String NBT_DESCRIPTION = "The NBT string to parse";
+    private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
+    private static final String DURABILITY_DESCRIPTION = "Item durability percentage (0-100, only shown if less than 100)";
 
-    public GeneratorCommands() {
-        super();
-        this.builder = new GeneratorBuilder();
-    }
+    private static final boolean AUTO_HIDE_ON_ERROR = true;
 
-    @SlashCommand(name = COMMAND_PREFIX, subcommand = "item", description = "Creates an image that looks like an item from Minecraft, primarily used for Hypixel SkyBlock", guildOnly = true)
-    public void generateItem(SlashCommandInteractionEvent event,
-                             @SlashOption(description = DESC_ITEM_NAME) String itemName,
-                             @SlashOption(description = DESC_RARITY, autocompleteId = "rarities") String rarity,
-                             @SlashOption(description = DESC_ITEM_LORE) String itemLore,
-                             @SlashOption(description = DESC_TYPE, required = false) String type,
-                             @SlashOption(description = DESC_DISABLE_RARITY_LINEBREAK, required = false) Boolean disableRarityLinebreak,
-                             @SlashOption(description = DESC_ALPHA, required = false) Integer alpha,
-                             @SlashOption(description = DESC_PADDING, required = false) Integer padding,
-                             @SlashOption(description = DESC_MAX_LINE_LENGTH, required = false) Integer maxLineLength,
-                             @SlashOption(description = "Render backgrounds", required = false) Boolean renderBackground,
-                             @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) {
-        if (isIncorrectChannel(event)) {
-            return;
-        }
-        final boolean hide = (hidden != null && hidden);
-        renderBackground = renderBackground == null || renderBackground;
-        alpha = (alpha != null && alpha != 0) ? alpha : 245;
-        padding = (padding != null && padding != 0) ? padding : 1;
-        maxLineLength = (maxLineLength != null && maxLineLength != 0) ? maxLineLength : StringColorParser.MAX_STANDARD_LINE_LENGTH;
-
-        event.deferReply(hide).complete();
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hide);
-
-        builder.buildItemAsync(context, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false, renderBackground)
-            .thenCompose(generatedImage -> {
-                if (generatedImage == null) {
-                    return CompletableFuture.completedFuture(null);
-                }
-                return FileUtils.toFileAsync(generatedImage);
-            })
-            .thenAccept(file -> {
-                if (file != null) {
-                    event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(hide).queue();
-                }
-            })
-            .exceptionally(throwable -> {
-                log.error("Failed to generate or convert image to file", throwable);
-                return null;
-            });
-
-        logItemGenActivity(event);
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, subcommand = "text", description = "Creates an image that looks like a message from Minecraft, primarily used for Hypixel Skyblock", guildOnly = true)
-    public void generateText(SlashCommandInteractionEvent event,
-                             @SlashOption(description = DESC_TEXT) String message,
-                             @SlashOption(description = DESC_ALPHA, required = false) Integer alpha,
-                             @SlashOption(description = DESC_CENTERED, required = false) Boolean centered,
-                             @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) throws IOException {
-        if (isIncorrectChannel(event)) {
-            return;
-        }
-        final boolean hide = (hidden != null && hidden);
-        centered = (centered != null && centered);
-        alpha = alpha == null ? 245 : Math.max(0, Math.min(alpha, 255));
-        event.deferReply(hide).complete();
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hide);
-
-        builder.buildItemAsync(context, "NONE", "NONE", message, "", true, alpha, 1, StringColorParser.MAX_FINAL_LINE_LENGTH, false, centered, false)
-            .thenCompose(generatedImage -> {
-                if (generatedImage == null) {
-                    return CompletableFuture.completedFuture(null);
-                }
-                return FileUtils.toFileAsync(generatedImage);
-            })
-            .thenAccept(file -> {
-                if (file != null) {
-                    event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(hide).queue();
-                }
-            })
-            .exceptionally(throwable -> {
-                log.error("Failed to generate or convert image to file", throwable);
-                return null;
-            });
-
-        logItemGenActivity(event);
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, subcommand = "display", description = "Draws a Minecraft item into a file", guildOnly = true)
-    public void generateItemImage(SlashCommandInteractionEvent event,
-                                  @SlashOption(description = DESC_ITEM_ID, name = "item_id") String itemID,
-                                  @SlashOption(description = DESC_EXTRA_ITEM_MODIFIERS, required = false) String extraModifiers,
-                                  @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) {
-        if (isIncorrectChannel(event)) {
-            return;
-        }
-        final boolean hide = (hidden != null && hidden);
-        event.deferReply(hide).complete();
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hide);
-
-        builder.buildUnspecifiedItemAsync(context, itemID, extraModifiers, true)
-            .thenCompose(item -> {
-                if (item == null) {
-                    return CompletableFuture.completedFuture(null);
-                }
-                return FileUtils.toFileAsync(item);
-            })
-            .thenAccept(file -> {
-                if (file != null) {
-                    event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(hide).queue();
-                }
-            })
-            .exceptionally(throwable -> {
-                log.error("Failed to generate or convert image to file", throwable);
-                return null;
-            });
-
-        logItemGenActivity(event);
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, subcommand = "full", description = "Creates an image that looks like an item from Minecraft, complete with lore and a display item.", guildOnly = true)
-    public void generateFullItem(SlashCommandInteractionEvent event,
-                                 @SlashOption(description = DESC_ITEM_NAME) String itemName,
-                                 @SlashOption(description = DESC_RARITY, autocompleteId = "rarities") String rarity,
-                                 @SlashOption(description = DESC_ITEM_LORE) String itemLore,
-                                 @SlashOption(description = DESC_TYPE, required = false) String type,
-                                 @SlashOption(description = DESC_DISABLE_RARITY_LINEBREAK, required = false) Boolean disableRarityLinebreak,
-                                 @SlashOption(description = DESC_ALPHA, required = false) Integer alpha,
-                                 @SlashOption(description = DESC_PADDING, required = false) Integer padding,
-                                 @SlashOption(description = DESC_MAX_LINE_LENGTH, required = false) Integer maxLineLength,
-                                 @SlashOption(description = DESC_ITEM_ID, required = false) String itemId,
-                                 @SlashOption(description = DESC_EXTRA_ITEM_MODIFIERS, required = false) String extraModifiers,
-                                 @SlashOption(description = DESC_RECIPE, required = false) String recipe,
-                                 @SlashOption(description = "Render backgrounds for tooltips and inventories", required = false) Boolean renderBackground,
-                                 @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) {
-        if (isIncorrectChannel(event)) {
-            return;
-        }
-        final boolean hide = (hidden != null && hidden);
-        event.deferReply(hide).complete();
-
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hide);
-
-        // checking that there are two or more different items to merge the images
-        if ((itemName == null || rarity == null || itemLore == null) && itemId == null
-            && (recipe == null || recipe.trim().isEmpty())) {
-            event.getHook().sendMessage(MISSING_FULL_GEN_ITEM).queue();
-            return;
-        }
-
-        extraModifiers = Objects.requireNonNullElse(extraModifiers, "");
-        renderBackground = renderBackground == null || renderBackground;
-        alpha = (alpha != null && alpha != 0) ? alpha : 245;
-        padding = (padding != null && padding != 0) ? padding : 1;
-        maxLineLength = (maxLineLength != null && maxLineLength != 0) ? maxLineLength : StringColorParser.MAX_STANDARD_LINE_LENGTH;
-        disableRarityLinebreak = Objects.requireNonNullElse(disableRarityLinebreak, false);
-
-        // Create futures for all async operations
-        CompletableFuture<BufferedImage> descriptionFuture =
-            (itemName != null && rarity != null && itemLore != null)
-                ? builder.buildItemAsync(context, itemName, rarity, itemLore, type, disableRarityLinebreak, alpha, padding, maxLineLength, true, false, renderBackground)
-                : CompletableFuture.completedFuture(null);
-
-        CompletableFuture<BufferedImage> itemFuture =
-            (itemId != null)
-                ? builder.buildUnspecifiedItemAsync(context, itemId, extraModifiers, true)
-                : CompletableFuture.completedFuture(null);
-
-        CompletableFuture<BufferedImage> recipeFuture =
-            (recipe != null && !recipe.trim().isEmpty())
-                ? builder.buildRecipeAsync(context, recipe, renderBackground)
-                : CompletableFuture.completedFuture(null);
-
-        // Combine all futures and process the result
-        CompletableFuture.allOf(descriptionFuture, itemFuture, recipeFuture)
-            .thenCompose(unused -> {
-                try {
-                    BufferedImage generatedDescription = descriptionFuture.get();
-                    BufferedImage generatedItem = itemFuture.get();
-                    BufferedImage generatedRecipe = recipeFuture.get();
-
-                    ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, generatedRecipe);
-                    merger.drawFinalImage();
-                    return FileUtils.toFileAsync(merger.getImage());
-                } catch (Exception e) {
-                    return CompletableFuture.failedFuture(e);
-                }
-            })
-            .thenAccept(file -> {
-                if (file != null) {
-                    event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(hide).queue();
-                }
-            })
-            .exceptionally(throwable -> {
-                log.error("Failed to generate or convert merged image to file", throwable);
-                return null;
-            });
-
-        logItemGenActivity(event);
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, subcommand = "recipe", description = "Generates a Minecraft Recipe Image", guildOnly = true)
-    public void generateRecipe(SlashCommandInteractionEvent event,
-                               @SlashOption(description = DESC_RECIPE) String recipe,
-                               @SlashOption(description = DESC_RENDER_INVENTORY, required = false) Boolean renderBackground,
-                               @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden) {
-        if (isIncorrectChannel(event)) {
-            return;
-        }
-        final boolean hide = (hidden != null && hidden);
-        event.deferReply(hide).complete();
-
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hide);
-
-        renderBackground = renderBackground == null || renderBackground;
-
-        // building the Minecraft recipe
-        builder.buildRecipeAsync(context, recipe, renderBackground)
-            .thenCompose(generatedRecipe -> {
-                if (generatedRecipe == null) {
-                    return CompletableFuture.completedFuture(null);
-                }
-                return FileUtils.toFileAsync(generatedRecipe);
-            })
-            .thenAccept(file -> {
-                if (file != null) {
-                    event.getHook().sendFiles(FileUpload.fromData(file)).queue();
-                }
-            })
-            .exceptionally(throwable -> {
-                log.error("Failed to generate or convert recipe image to file", throwable);
-                return null;
-            });
-
-        logItemGenActivity(event);
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, subcommand = "parse", description = "Converts a minecraft item into a Nerd Bot item!", guildOnly = true)
-    public void parseItemDescription(SlashCommandInteractionEvent event,
-                                     @SlashOption(description = DESC_PARSE_ITEM, name = "item_nbt") String itemNBT,
-                                     @SlashOption(description = DESC_INCLUDE_ITEM, required = false) Boolean includeItem,
-                                     @SlashOption(description = DESC_HIDDEN, required = false) Boolean hidden
+    @SlashCommand(name = BASE_COMMAND, subcommand = "display", description = "Display an item")
+    public void generateItem(
+        SlashCommandInteractionEvent event,
+        @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION) String itemId,
+        @SlashOption(description = EXTRA_DATA_DESCRIPTION, required = false) String data,
+        @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
+        @SlashOption(description = "If the item should look as if it being hovered over", required = false) Boolean hoverEffect,
+        @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
+        @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
-        if (isIncorrectChannel(event)) {
-            return;
-        }
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
-        final boolean hide = (hidden != null && hidden);
-        event.deferReply(hide).complete();
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hide);
-        final boolean shouldIncludeItem = Objects.requireNonNullElse(includeItem, false);
+        event.deferReply(hidden).complete();
 
-        JsonObject itemJSON = validateAndParseItemJSON(event, itemNBT);
-        if (itemJSON == null) {
-            return;
-        }
-
-        DisplayData displayData = validateDisplayData(event, itemJSON);
-        if (displayData == null) {
-            return;
-        }
-
-        String itemName = displayData.itemName();
-        JsonArray itemLoreArray = displayData.itemLoreArray();
-        JsonObject displayJSON = displayData.displayJSON();
-        JsonObject tagJSON = displayData.tagJSON();
-
-        final ItemData itemData;
-        if (shouldIncludeItem) {
-            itemData = processItemData(event, itemJSON, tagJSON, displayJSON);
-            if (itemData == null) {
-                return;
-            }
-        } else {
-            itemData = new ItemData("", "");
-        }
-
-        CommandData commandData = buildCommandAndText(itemName, itemLoreArray, shouldIncludeItem, itemData.itemID(), itemData.extraModifiers());
-
-        builder.buildItemAsync(context, "NONE", "NONE", commandData.itemText(), "NONE", false, 255, 0, commandData.maxLineLength(), true, false, true)
-            .thenCompose(generatedDescription -> {
-                if (generatedDescription == null) {
-                    event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();
-                    return CompletableFuture.completedFuture(null);
-                }
-
-                if (shouldIncludeItem) {
-                    return builder.buildUnspecifiedItemAsync(context, itemData.itemID(), itemData.extraModifiers(), true)
-                        .thenCompose(generatedItem -> {
-                            if (generatedItem == null) {
-                                return CompletableFuture.completedFuture(null);
-                            }
-
-                            ImageMerger merger = new ImageMerger(generatedDescription, generatedItem, null);
-                            merger.drawFinalImage();
-                            return FileUtils.toFileAsync(merger.getImage());
-                        })
-                        .thenAccept(file -> {
-                            if (file != null) {
-                                event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(hide).queue();
-                                event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();
-                            }
-                        })
-                        .thenApply(unused -> null);
-                } else {
-                    return FileUtils.toFileAsync(generatedDescription)
-                        .thenAccept(file -> {
-                            if (file != null) {
-                                event.getHook().sendFiles(FileUpload.fromData(file)).setEphemeral(false).queue();
-                                event.getHook().sendMessage(String.format(ITEM_PARSE_COMMAND, commandData.itemGenCommand())).setEphemeral(true).queue();
-                            }
-                        })
-                        .thenApply(unused -> null);
-                }
-            })
-            .exceptionally(throwable -> {
-                log.error("Failed to generate or convert image to file", throwable);
-                return null;
-            });
-
-        logItemGenActivity(event);
-    }
-
-    private JsonObject validateAndParseItemJSON(SlashCommandInteractionEvent event, String itemNBT) {
-        try {
-            return BotEnvironment.GSON.fromJson(itemNBT, JsonObject.class);
-        } catch (JsonSyntaxException exception) {
-            event.getHook().sendMessage(ITEM_PARSE_JSON_FORMAT).queue();
-            return null;
-        }
-    }
-
-    private DisplayData validateDisplayData(SlashCommandInteractionEvent event, JsonObject itemJSON) {
-        JsonObject componentsJSON = JsonUtils.isJsonObject(itemJSON, "components");
-        if (componentsJSON != null) {
-            return validateComponentsFormat(event, itemJSON, componentsJSON);
-        }
-
-        JsonObject tagJSON = JsonUtils.isJsonObject(itemJSON, "tag");
-        if (tagJSON == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("tag or components")).queue();
-            return null;
-        }
-
-        JsonObject displayJSON = JsonUtils.isJsonObject(tagJSON, "display");
-        if (displayJSON == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("display")).queue();
-            return null;
-        }
-
-        String itemName = JsonUtils.isJsonString(displayJSON, "Name");
-        JsonArray itemLoreArray = JsonUtils.isJsonArray(displayJSON, "Lore");
-
-        if (itemName == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Name")).queue();
-            return null;
-        }
-        if (itemLoreArray == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Lore")).queue();
-            return null;
-        }
-
-        itemName = itemName.replaceAll("§", "&");
-        return new DisplayData(itemName, itemLoreArray, displayJSON, tagJSON);
-    }
-
-    private DisplayData validateComponentsFormat(SlashCommandInteractionEvent event, JsonObject itemJSON, JsonObject componentsJSON) {
-        JsonElement customNameElement = componentsJSON.get("minecraft:custom_name");
-        String itemName = null;
-        if (customNameElement != null) {
-            itemName = convertComponentToString(customNameElement);
-        }
-
-        JsonElement loreElement = componentsJSON.get("minecraft:lore");
-        JsonArray itemLoreArray = null;
-        if (loreElement != null && loreElement.isJsonArray()) {
-            JsonArray originalLoreArray = loreElement.getAsJsonArray();
-            itemLoreArray = new JsonArray();
-
-            for (JsonElement loreLineElement : originalLoreArray) {
-                String convertedLore = convertComponentToString(loreLineElement);
-                itemLoreArray.add(convertedLore);
-            }
-        }
-
-        if (itemName == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("minecraft:custom_name")).queue();
-            return null;
-        }
-
-        if (itemLoreArray == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("minecraft:lore")).queue();
-            return null;
-        }
-
-        itemName = itemName.replaceAll("§", "&");
-        return new DisplayData(itemName, itemLoreArray, componentsJSON, componentsJSON);
-    }
-
-    private String convertComponentToString(JsonElement element) {
-        if (element.isJsonPrimitive()) {
-            return element.getAsString();
-        } else if (element.isJsonObject()) {
-            return processComponentObject(element.getAsJsonObject());
-        } else if (element.isJsonArray()) {
-            return processComponentArray(element.getAsJsonArray());
-        }
-
-        return "";
-    }
-
-    private String processComponentObject(JsonObject component) {
-        StringBuilder result = new StringBuilder();
-
-        if (component.has("color")) {
-            String minecraftColor = component.get("color").getAsString();
-            String colorCode = Arrays.stream(MCColor.VALUES)
-                .filter(mcColor -> mcColor.name().equalsIgnoreCase(minecraftColor))
-                .findFirst()
-                .map(mcColor -> "&" + mcColor.getColorCode())
-                .orElse("&f");
-            result.append(colorCode);
-        }
-
-        FORMATTING_CODES.forEach((key, code) -> {
-            if (component.has(key)) {
-                JsonElement element = component.get(key);
-                if (element.isJsonPrimitive()) {
-                    JsonPrimitive primitive = element.getAsJsonPrimitive();
-                    boolean enabled = false;
-
-                    if (primitive.isBoolean()) {
-                        enabled = primitive.getAsBoolean();
-                    } else if (primitive.isNumber()) {
-                        enabled = primitive.getAsInt() != 0;
-                    } else if (primitive.isString()) {
-                        String value = primitive.getAsString();
-                        enabled = "1b".equals(value) || "1".equals(value);
-                    }
-
-                    if (enabled) {
-                        result.append(code);
-                    }
-                }
-            }
-        });
-
-        // Add text content
-        if (component.has("text")) {
-            result.append(component.get("text").getAsString());
-        }
-
-        // Process extra array
-        if (component.has("extra")) {
-            JsonArray extraArray = component.getAsJsonArray("extra");
-            for (JsonElement extra : extraArray) {
-                result.append(convertComponentToString(extra));
-            }
-        }
-
-        return result.toString();
-    }
-
-    private String processComponentArray(JsonArray componentArray) {
-        StringBuilder result = new StringBuilder();
-        for (JsonElement element : componentArray) {
-            result.append(convertComponentToString(element));
-        }
-        return result.toString();
-    }
-
-    private ItemData processItemData(SlashCommandInteractionEvent event, JsonObject itemJSON, JsonObject tagJSON, JsonObject displayJSON) {
-        String itemID = JsonUtils.isJsonString(itemJSON, "id");
-        if (itemID == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("id")).queue();
-            return null;
-        }
-        itemID = itemID.replace("minecraft:", "");
-
-        String extraModifiers;
-
-        boolean isComponentsFormat = itemJSON.has("components");
-
-        if (itemID.equals("skull") || itemID.equals("player_head")) {
-            if (isComponentsFormat) {
-                extraModifiers = processSkullDataComponents(event, itemJSON);
-            } else {
-                extraModifiers = processSkullData(event, tagJSON);
-            }
-            if (extraModifiers == null) {
-                return null;
-            }
-        } else {
-            if (isComponentsFormat) {
-                extraModifiers = processNonSkullModifiersComponents(itemJSON);
-            } else {
-                extraModifiers = processNonSkullModifiers(tagJSON, displayJSON);
-            }
-        }
-
-        return new ItemData(itemID, extraModifiers);
-    }
-
-    private String processSkullData(SlashCommandInteractionEvent event, JsonObject tagJSON) {
-        JsonObject skullOwnerJSON = JsonUtils.isJsonObject(tagJSON, "SkullOwner");
-        if (skullOwnerJSON == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("SkullOwner")).queue();
-            return null;
-        }
-
-        JsonObject propertiesJSON = JsonUtils.isJsonObject(skullOwnerJSON, "Properties");
-        if (propertiesJSON == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("Properties")).queue();
-            return null;
-        }
-
-        JsonArray texturesJSON = JsonUtils.isJsonArray(propertiesJSON, "textures");
-        if (texturesJSON == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("textures")).queue();
-            return null;
-        }
-
-        if (texturesJSON.size() != 1) {
-            event.getHook().sendMessage(MULTIPLE_ITEM_SKULL_DATA).queue();
-            return null;
-        }
-
-        if (!texturesJSON.get(0).isJsonObject()) {
-            event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
-            return null;
-        }
-
-        String base64String = JsonUtils.isJsonString(texturesJSON.get(0).getAsJsonObject(), "Value");
-        if (base64String == null) {
-            event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
-            return null;
-        }
+        enchanted = enchanted != null && enchanted;
+        hoverEffect = hoverEffect != null && hoverEffect;
+        durability = durability == null ? 100 : durability;
 
         try {
-            return builder.base64ToSkinURL(base64String);
-        } catch (NullPointerException | IllegalArgumentException exception) {
-            event.getHook().sendMessage(INVALID_BASE_64_SKIN_URL).queue();
-            return null;
+            GeneratorImageBuilder item = new GeneratorImageBuilder();
+
+            if (itemId.equalsIgnoreCase("player_head") && skinValue != null) {
+                item.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
+                    .withSkin(skinValue)
+                    .build());
+            } else {
+                MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
+                    .withItem(itemId)
+                    .withData(data)
+                    .isEnchanted(enchanted)
+                    .withHoverEffect(hoverEffect)
+                    .isBigImage();
+
+                if (durability != null) {
+                    itemBuilder.withDurability(durability);
+                }
+
+                item.addGenerator(itemBuilder.build());
+            }
+
+            GeneratedObject generatedObject = item.build();
+
+            if (generatedObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "item.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+            }
+
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating an item display", exception);
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating that item!").queue();
+            log.error("Encountered an error while generating an item display", exception);
         }
     }
 
-    private String processNonSkullModifiers(JsonObject tagJSON, JsonObject displayJSON) {
-        String extraModifiers = "";
+    @SlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate an image of a Power Stone")
+    public void generatePowerstone(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = "The name of your Power Stone") String powerName,
+        @SlashOption(autocompleteId = "power-strengths", description = "The strength of the Power Stone") String powerStrength,
+        @SlashOption(description = "The Magical Power to use in the stat calculations") int magicalPower,
+        @SlashOption(description = "The stats that scale with the given Magical Power", required = false) String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
+        @SlashOption(description = "The stats that do not scale with the given Magical Power", required = false) String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
+        @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION, required = false) String itemId,
+        @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
+        @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
+        @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
+        @SlashOption(description = "Includes a slash command for you to edit", required = false) Boolean includeGenFullCommand,
+        @SlashOption(description = "Whether the Power Stone shows as selected", required = false) Boolean selected,
+        @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
+    ) {
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
-        if (displayJSON.has("color")) {
+        event.deferReply(hidden).complete();
+
+        alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
+        padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
+        enchanted = enchanted != null && enchanted;
+
+        Function<String, Map<String, Integer>> parseStatsToMap = stats -> {
+            Map<String, Integer> map = new HashMap<>();
+
+            if (stats == null || stats.trim().isEmpty()) {
+                return map;
+            }
+
+            String[] entries = stats.split(",");
+
+            for (String entry : entries) {
+                if (entry == null || entry.trim().isEmpty()) {
+                    continue;
+                }
+
+                String[] stat = entry.split(":");
+
+                if (stat.length != 2 || stat[0].trim().isEmpty() || stat[1].trim().isEmpty()) {
+                    throw new GeneratorException("Stat `" + entry + "` is using an invalid format. Use `stat:value` and separate multiple entries with commas (e.g., `health:-50,damage:10`)");
+                }
+
+                String statName = stat[0].trim();
+
+                int statValue;
+
+                try {
+                    statValue = Integer.parseInt(stat[1].trim());
+                } catch (NumberFormatException e) {
+                    throw new GeneratorException("Invalid number for stat `" + statName + "`: " + stat[1].trim() + ". Use `stat:value` (e.g., `health:-50`)");
+                }
+
+                map.merge(statName, statValue, Integer::sum);
+            }
+
+            return map;
+        };
+
+        try {
+            StringBuilder scalingStatsFormatted = new StringBuilder();
+            Map<String, Integer> scalingStatsMap = parseStatsToMap.apply(scalingStats);
+
+            for (Map.Entry<String, Integer> entry : scalingStatsMap.entrySet()) {
+                String statName = entry.getKey();
+                Integer basePower = entry.getValue();
+                Stat stat = Stat.byName(statName);
+
+                if (stat == null) {
+                    throw new GeneratorException("`" + statName + "` is not a valid stat");
+                }
+
+                scalingStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, StringUtils.COMMA_SEPARATED_FORMAT.format(calculatePowerStoneStat(stat, basePower, magicalPower))));
+            }
+
+            if (!scalingStatsFormatted.isEmpty()) {
+                scalingStatsFormatted = new StringBuilder("&7Stats:\\n")
+                    .append(scalingStatsFormatted)
+                    .append("\\n");
+            }
+
+            StringBuilder bonusStatsFormatted = new StringBuilder();
+            Map<String, Integer> bonusStats = parseStatsToMap.apply(uniqueBonus);
+
+            for (Map.Entry<String, Integer> entry : bonusStats.entrySet()) {
+                String statName = entry.getKey();
+                Integer statAmount = entry.getValue();
+                Stat stat = Stat.byName(statName);
+
+                if (stat == null) {
+                    throw new GeneratorException("'" + statName + "' is not a valid stat");
+                }
+
+                bonusStatsFormatted.append(String.format("%%%%%s:%s%%%%\\n", statName, StringUtils.COMMA_SEPARATED_FORMAT.format(statAmount)));
+            }
+
+            if (!bonusStatsFormatted.isEmpty()) {
+                bonusStatsFormatted = new StringBuilder("&7Unique Power Bonus:\\n")
+                    .append(bonusStatsFormatted)
+                    .append("\\n");
+            }
+
+            String itemLoreTemplate =
+                "&8%s\\n" + // %s = PowerStrength.byName(powerStrength) OR powerStrength
+                    "\\n" +
+                    "%s" + // %s = scalingStatsFormatted
+                    "%s" + // %s = bonusStatsFormatted
+                    "&7You have: &6%s Magical Power\\n" + // %d = magicalPower
+                    "\\n" +
+                    (selected == null || selected ? "&aPower is selected!" : "&eClick to select power!");
+
+            String itemLore = String.format(itemLoreTemplate,
+                PowerStrength.byName(powerStrength) == null ? powerStrength : PowerStrength.byName(powerStrength).getFormattedDisplay(),
+                scalingStatsFormatted,
+                bonusStatsFormatted,
+                StringUtils.COMMA_SEPARATED_FORMAT.format(magicalPower)
+            );
+
             try {
-                int colorValue;
-                if (displayJSON.get("color").isJsonPrimitive() && displayJSON.get("color").getAsJsonPrimitive().isNumber()) {
-                    colorValue = displayJSON.get("color").getAsInt();
-                } else {
-                    String colorString = JsonUtils.isJsonString(displayJSON, "color");
-                    if (colorString != null) {
-                        colorValue = Integer.decode(colorString);
+                GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+                MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                    .withName("&a" + powerName)
+                    .withRarity(Rarity.byName("none"))
+                    .withItemLore(itemLore)
+                    .withAlpha(alpha)
+                    .withPadding(padding)
+                    .disableRarityLineBreak(true)
+                    .isTextCentered(false)
+                    .isPaddingFirstLine(true)
+                    .withRenderBorder(true);
+
+                if (includeGenFullCommand != null && includeGenFullCommand) {
+                    String slashCommand = tooltipGenerator.buildSlashCommand();
+
+                    // I hate this, but it works *for now*. Should probably replace it later
+                    if (itemId != null && !itemId.isBlank()) {
+                        slashCommand += " item_id: " + itemId;
+                    }
+
+                    if (enchanted) {
+                        slashCommand += " enchanted: True";
+                    }
+
+                    event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + slashCommand.trim() + "```").queue();
+                }
+
+                if (itemId != null) {
+                    if (itemId.equalsIgnoreCase("player_head")) {
+                        MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder()
+                            .withScale(-2);
+
+                        if (skinValue != null) {
+                            generator.withSkin(skinValue);
+                        }
+
+                        generatorImageBuilder.addGenerator(generator.build());
                     } else {
-                        colorValue = -1;
+                        generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                            .withItem(itemId)
+                            .isEnchanted(enchanted)
+                            .isBigImage()
+                            .build());
                     }
                 }
 
-                if (colorValue >= 0) {
-                    extraModifiers = String.format("#%06X", colorValue);
+                generatorImageBuilder.addGenerator(tooltipGenerator.build());
+                GeneratedObject generatedObject = generatorImageBuilder.build();
+
+                if (generatedObject.isAnimated()) {
+                    event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "powerstone.gif")).queue();
+                } else {
+                    event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "powerstone.png")).queue();
                 }
-            } catch (NumberFormatException ignored) {
+
+                addCommandToUserHistory(event.getUser(), event.getCommandString());
+            } catch (GeneratorException | IllegalArgumentException exception) {
+                event.getHook().editOriginal(exception.getMessage()).queue();
+                log.error("Encountered an error while generating a Power Stone", exception);
+            } catch (IOException exception) {
+                event.getHook().editOriginal("An error occurred while generating that Power Stone!").queue();
+                log.error("Encountered an error while generating a Power Stone", exception);
+            }
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating a Power Stone", exception);
+        }
+    }
+
+    @SlashCommand(name = BASE_COMMAND, subcommand = "search", description = "Search for an item")
+    public void searchItem(SlashCommandInteractionEvent event, @SlashOption(description = "The ID of the item to search for") String itemId, @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden) {
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+
+        event.deferReply(hidden).complete();
+
+        List<Map.Entry<String, BufferedImage>> results = Spritesheet.searchForTexture(itemId);
+
+        if (results.isEmpty()) {
+            event.getHook().editOriginal("No results found for that item!").queue();
+            return;
+        }
+
+        List<Map.Entry<String, BufferedImage>> topResults = results.subList(0, Math.min(10, results.size()));
+        StringBuilder message = new StringBuilder("Top results for `" + itemId + "` (" + StringUtils.COMMA_SEPARATED_FORMAT.format(results.size()) + " total):\n");
+
+        for (Map.Entry<String, BufferedImage> entry : topResults) {
+            message.append(" - `").append(entry.getKey()).append("`\n");
+        }
+
+        event.getHook().editOriginal(message.toString()).queue();
+    }
+
+    @SlashCommand(name = BASE_COMMAND, subcommand = "recipe", description = "Generate a recipe")
+    public void generateRecipe(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = RECIPE_STRING_DESCRIPTION) String recipe,
+        @SlashOption(description = RENDER_BACKGROUND_DESCRIPTION, required = false) Boolean renderBackground,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
+    ) {
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+
+        event.deferReply(hidden).complete();
+
+        renderBackground = renderBackground == null || renderBackground;
+
+        try {
+            GeneratedObject generatedObject = new GeneratorImageBuilder()
+                .addGenerator(new MinecraftInventoryGenerator.Builder()
+                    .withRows(3)
+                    .withSlotsPerRow(3)
+                    .drawBorder(false)
+                    .drawBackground(renderBackground)
+                    .withInventoryString(recipe)
+                    .build())
+                .build();
+
+            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating a recipe", exception);
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating that recipe!").queue();
+            log.error("Encountered an error while generating a recipe", exception);
+        }
+    }
+
+    @SlashCommand(name = BASE_COMMAND, subcommand = "inventory", description = "Generate an inventory")
+    public void generateInventory(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = INVENTORY_ROWS_DESCRIPTION) int rows,
+        @SlashOption(description = INVENTORY_COLUMNS_DESCRIPTION) int slotsPerRow,
+        @SlashOption(description = INVENTORY_CONTENTS_DESCRIPTION) String inventoryString,
+        @SlashOption(description = "Optional item lore displayed beside the inventory", required = false) String hoveredItemString,
+        @SlashOption(description = INVENTORY_NAME_DESCRIPTION, required = false) String containerName,
+        @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean drawBorder,
+        @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
+    ) {
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+
+        event.deferReply(hidden).complete();
+
+        drawBorder = drawBorder == null || drawBorder;
+        boolean animateGlint = DiscordBotEnvironment.getBot().getConfig().getGeneratorConfig().getInventory().isAnimateGlint();
+        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
+
+        try {
+            GeneratorImageBuilder generatedObject = new GeneratorImageBuilder()
+                .addGenerator(new MinecraftInventoryGenerator.Builder()
+                    .withRows(rows)
+                    .withSlotsPerRow(slotsPerRow)
+                    .drawBorder(drawBorder)
+                    .drawBackground(true)
+                    .withAnimateGlint(animateGlint)
+                    .withContainerTitle(containerName)
+                    .withInventoryString(inventoryString)
+                    .build());
+
+            if (hoveredItemString != null && !hoveredItemString.isBlank()) {
+                MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                    .withItemLore(hoveredItemString)
+                    .withAlpha(MinecraftTooltip.DEFAULT_ALPHA)
+                    .withPadding(MinecraftTooltip.DEFAULT_PADDING)
+                    .isPaddingFirstLine(false)
+                    .disableRarityLineBreak(false)
+                    .withMaxLineLength(maxLineLength)
+                    .withScaleFactor(Math.min(2, MinecraftInventoryGenerator.getScaleFactor()))
+                    .withRenderBorder(true)
+                    .build();
+
+                generatedObject.addGenerator(tooltipGenerator);
+            }
+
+            GeneratedObject finalObject = generatedObject.build();
+
+            if (finalObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(finalObject.getGifData(), "inventory.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(finalObject.getImage()), "inventory.png")).queue();
+            }
+
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating an inventory", exception);
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating that inventory!").queue();
+            log.error("Encountered an error while generating an inventory", exception);
+        }
+    }
+
+    @SlashCommand(name = BASE_COMMAND, subcommand = "parse", description = "Parse an NBT string")
+    public void parseNbtString(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = NBT_DESCRIPTION) String nbt,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
+    ) {
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+
+        event.deferReply(hidden).complete();
+
+        try {
+            JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            String skinValueForCommand = null;
+
+            if (jsonObject.get("id").getAsString().contains("skull")) {
+                String value = jsonObject.get("id").getAsString();
+                value = value.replace("minecraft:", "")
+                    .replace("skull", "player_head");
+                jsonObject.addProperty("id", value);
+            }
+
+            // Handle player head for both legacy and component formats
+            boolean isPlayerHead = jsonObject.get("id").getAsString().equalsIgnoreCase("player_head");
+            JsonObject tagObject = jsonObject.has("tag") ? jsonObject.get("tag").getAsJsonObject() : null;
+            String parsedItemId = jsonObject.get("id").getAsString();
+
+            if (isPlayerHead) {
+                String base64Texture = null;
+
+                if (tagObject != null && tagObject.get("SkullOwner") != null) {
+                    JsonArray textures = tagObject.get("SkullOwner").getAsJsonObject()
+                        .get("Properties").getAsJsonObject()
+                        .get("textures").getAsJsonArray();
+
+                    if (textures.size() > 1) {
+                        event.getHook().editOriginal("There seems to be more than 1 texture in the player head's NBT data. Please double-check it is correct!").queue();
+                        return;
+                    }
+
+                    base64Texture = textures.get(0).getAsJsonObject().get("Value").getAsString();
+                }
+
+                if (base64Texture == null && jsonObject.has("components")) {
+                    JsonObject components = jsonObject.getAsJsonObject("components");
+                    if (components.has("minecraft:profile")) {
+                        JsonObject profile = components.getAsJsonObject("minecraft:profile");
+                        if (profile.has("properties")) {
+                            JsonArray properties = profile.getAsJsonArray("properties");
+                            for (JsonElement propertyElement : properties) {
+                                JsonObject property = propertyElement.getAsJsonObject();
+                                if (property.has("name") && "textures".equalsIgnoreCase(property.get("name").getAsString()) && property.has("value")) {
+                                    base64Texture = property.get("value").getAsString();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (base64Texture != null) {
+                    skinValueForCommand = base64Texture;
+
+                    generatorImageBuilder.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
+                        .withSkin(base64Texture)
+                        .build()
+                    );
+                } else {
+                    generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                        .withItem(parsedItemId)
+                        .isBigImage()
+                        .build());
+                }
+            } else {
+                generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                    .withItem(parsedItemId)
+                    //.isEnchanted(enchanted) TODO: determine if the item is enchanted
+                    .isBigImage()
+                    .build());
+            }
+
+            int maxLineLength;
+
+            // Calculate max line length based on format
+            if (jsonObject.has("components")) {
+                JsonObject components = jsonObject.getAsJsonObject("components");
+                if (components.has("minecraft:lore")) {
+                    JsonArray loreArray = components.getAsJsonArray("minecraft:lore");
+                    List<String> loreLines = new ArrayList<>();
+
+                    for (JsonElement loreElement : loreArray) {
+                        JsonObject loreEntry = loreElement.getAsJsonObject();
+                        String parsedLine = parseTextComponentForLength(loreEntry);
+                        loreLines.add(parsedLine);
+                    }
+
+                    maxLineLength = StringUtils.getLongestLine(loreLines).getRight();
+                } else {
+                    maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
+                }
+            } else if (jsonObject.has("tag")) {
+                // Legacy format
+                JsonObject tag = jsonObject.getAsJsonObject("tag");
+                if (tag.has("display")) {
+                    JsonObject display = tag.getAsJsonObject("display");
+                    if (display.has("Lore")) {
+                        maxLineLength = StringUtils.getLongestLine(display.get("Lore").getAsJsonArray()
+                            .asList()
+                            .stream()
+                            .map(JsonElement::getAsString)
+                            .toList()).getRight();
+                    } else {
+                        maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
+                    }
+                } else {
+                    maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
+                }
+            } else {
+                maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
+            }
+
+            MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                .parseNbtJson(jsonObject)
+                .withRenderBorder(true)
+                .isPaddingFirstLine(true)
+                .withMaxLineLength(maxLineLength);
+
+            // Extract dye color and apply to item generator if it exists
+            String dyeColor = tooltipGenerator.getDyeColor(jsonObject);
+            if (dyeColor != null && !isPlayerHead) {
+                // Update the item generator with dye color
+                generatorImageBuilder = new GeneratorImageBuilder();
+                generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                    .withItem(jsonObject.get("id").getAsString())
+                    .withData(dyeColor)
+                    .isBigImage()
+                    .build());
+            }
+
+            GeneratedObject generatedObject = generatorImageBuilder.addGenerator(tooltipGenerator.build()).build();
+
+            PlaceholderReverseMapper reverseMapper = new PlaceholderReverseMapper();
+            String mappedLore = reverseMapper.mapPlaceholders(tooltipGenerator.getItemLore());
+            String mappedName = reverseMapper.mapPlaceholders(tooltipGenerator.getItemName());
+
+            tooltipGenerator
+                .withItemLore(mappedLore)
+                .withName(mappedName);
+
+            String slashCommand = tooltipGenerator.buildSlashCommand();
+            String commandItemId = parsedItemId;
+
+            if (commandItemId != null && !commandItemId.isEmpty()) {
+                if (commandItemId.startsWith("minecraft:")) {
+                    commandItemId = commandItemId.substring("minecraft:".length());
+                }
+                slashCommand += " item_id: " + commandItemId;
+            }
+
+            if (skinValueForCommand != null && !skinValueForCommand.isEmpty()) {
+                slashCommand += " skin_value: " + skinValueForCommand;
+            }
+
+            // Escape newlines in lore so the slash command is a single line
+            slashCommand = slashCommand.replace("\n", "\\n");
+
+            MessageEditBuilder builder = new MessageEditBuilder()
+                .setContent("Your NBT input has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + slashCommand + "```");
+
+            if (generatedObject.isAnimated()) {
+                builder.setFiles(FileUpload.fromData(generatedObject.getGifData(), "parsed_nbt.gif"));
+            } else {
+                builder.setFiles(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "parsed_nbt.png"));
+            }
+
+            event.getHook().editOriginal(builder.build()).queue();
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
+        } catch (JsonParseException exception) {
+            event.getHook().editOriginal("You provided badly formatted NBT!").queue();
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while parsing NBT", exception);
+        } catch (IOException e) {
+            event.getHook().editOriginal("An error occurred while parsing the NBT!").queue();
+            log.error("Encountered an error while parsing NBT", e);
+        }
+    }
+
+    private static String parseTextComponentForLength(JsonObject textComponent) {
+        StringBuilder result = new StringBuilder();
+
+        // Handle base text
+        if (textComponent.has("text")) {
+            String text = textComponent.get("text").getAsString();
+            if (!text.isEmpty()) {
+                result.append(text);
             }
         }
 
-        JsonArray enchantJson = JsonUtils.isJsonArray(tagJSON, "ench");
-        if (enchantJson != null) {
-            extraModifiers = extraModifiers.isEmpty() ? "enchant" : extraModifiers + ",enchant";
+        // Handle extra components array
+        if (textComponent.has("extra")) {
+            JsonArray extraArray = textComponent.getAsJsonArray("extra");
+            for (JsonElement extraElement : extraArray) {
+                JsonObject extraComponent = extraElement.getAsJsonObject();
+
+                // Only add the text content for length calculation
+                if (extraComponent.has("text")) {
+                    result.append(extraComponent.get("text").getAsString());
+                }
+            }
         }
 
-        return extraModifiers;
+        return result.toString();
     }
 
-    private String processSkullDataComponents(SlashCommandInteractionEvent event, JsonObject itemJSON) {
-        JsonObject componentsJSON = JsonUtils.isJsonObject(itemJSON, "components");
-        if (componentsJSON == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("components")).queue();
-            return null;
+    @SlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a full item image. Supports displaying items, recipes, tooltips & more")
+    public void generateTooltip(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = NAME_DESCRIPTION) String itemName,
+        @SlashOption(description = LORE_DESCRIPTION) String itemLore,
+        @SlashOption(description = TYPE_DESCRIPTION, required = false) String type,
+        @SlashOption(autocompleteId = "item-rarities", description = RARITY_DESCRIPTION, required = false) String rarity,
+        @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION, required = false) String itemId,
+        @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
+        @SlashOption(description = RECIPE_STRING_DESCRIPTION, required = false) String recipe,
+        @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
+        @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
+        @SlashOption(description = RARITY_LINE_BREAK_DESCRIPTION, required = false) Boolean disableRarityLineBreak,
+        @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
+        @SlashOption(description = CENTERED_DESCRIPTION, required = false) Boolean centered,
+        @SlashOption(description = LINE_PADDING_DESCRIPTION, required = false) Boolean paddingFirstLine,
+        @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(autocompleteId = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION, required = false) String tooltipSide,
+        @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean renderBorder,
+        @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
+    ) {
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+
+        event.deferReply(hidden).complete();
+
+        type = type == null ? "" : type;
+        rarity = rarity == null ? "none" : rarity;
+        alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
+        padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
+        disableRarityLineBreak = disableRarityLineBreak == null || disableRarityLineBreak;
+        centered = centered != null && centered;
+        enchanted = enchanted != null && enchanted;
+        paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
+        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
+        renderBorder = renderBorder == null || renderBorder;
+        durability = durability == null ? 100 : durability;
+
+        try {
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                .withName(itemName)
+                .withRarity(Rarity.byName(rarity))
+                .withItemLore(itemLore)
+                .withType(type)
+                .withAlpha(alpha)
+                .withPadding(padding)
+                .disableRarityLineBreak(disableRarityLineBreak)
+                .withMaxLineLength(maxLineLength)
+                .isTextCentered(centered)
+                .isPaddingFirstLine(paddingFirstLine)
+                .withRenderBorder(renderBorder)
+                .build();
+
+            if (itemId != null) {
+                if (itemId.equalsIgnoreCase("player_head")) {
+                    MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder()
+                        .withScale(-2);
+
+                    if (skinValue != null) {
+                        generator.withSkin(skinValue);
+                    }
+
+                    generatorImageBuilder.addGenerator(generator.build());
+                } else {
+                    MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
+                        .withItem(itemId)
+                        .isEnchanted(enchanted)
+                        .isBigImage();
+
+                    if (durability != null) {
+                        itemBuilder.withDurability(durability);
+                    }
+
+                    generatorImageBuilder.addGenerator(itemBuilder.build());
+                }
+            }
+
+            if (recipe != null && !recipe.isBlank()) {
+                generatorImageBuilder.addGenerator(0, new MinecraftInventoryGenerator.Builder()
+                    .withRows(3)
+                    .withSlotsPerRow(3)
+                    .drawBorder(renderBorder)
+                    .withInventoryString(recipe)
+                    .build()
+                ).build();
+            }
+
+            try {
+                if (tooltipSide != null && MinecraftTooltipGenerator.TooltipSide.valueOf(tooltipSide.toUpperCase()) == MinecraftTooltipGenerator.TooltipSide.LEFT) {
+                    generatorImageBuilder.addGenerator(0, tooltipGenerator);
+                } else {
+                    generatorImageBuilder.addGenerator(tooltipGenerator);
+                }
+            } catch (IllegalArgumentException ignored) {
+                // Fallback to default side if an invalid value was provided
+                generatorImageBuilder.addGenerator(tooltipGenerator);
+            }
+
+            GeneratedObject generatedObject = generatorImageBuilder.build();
+
+            if (generatedObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "item.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
+            }
+
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
+        } catch (GeneratorException | IllegalArgumentException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating an item display", exception);
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating that item!").queue();
+            log.error("Encountered an error while generating an item display", exception);
+        }
+    }
+
+    @SlashCommand(name = BASE_COMMAND, subcommand = "text", description = "Generate some text")
+    public void generateText(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = TEXT_DESCRIPTION) String text,
+        @SlashOption(description = CENTERED_DESCRIPTION, required = false) Boolean centered,
+        @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
+        @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
+        @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean renderBorder,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
+    ) {
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+
+        event.deferReply(hidden).complete();
+
+        centered = centered != null && centered;
+        alpha = alpha == null ? 0 : alpha;
+        padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
+        maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH * 3 : maxLineLength;
+        renderBorder = renderBorder != null && renderBorder;
+
+        try {
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                .withItemLore(text)
+                .withAlpha(alpha)
+                .withPadding(padding)
+                .withMaxLineLength(maxLineLength)
+                .isTextCentered(centered)
+                .isPaddingFirstLine(false)
+                .disableRarityLineBreak(false)
+                .withRenderBorder(renderBorder)
+                .build();
+
+            generatorImageBuilder.addGenerator(tooltipGenerator);
+            GeneratedObject generatedObject = generatorImageBuilder.build();
+
+            if (generatedObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "text.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "text.png")).queue();
+            }
+
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating text", exception);
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating the text!").queue();
+            log.error("Encountered an error while generating text", exception);
+        }
+    }
+
+    @SlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "single", description = "Generate dialogue for a single NPC")
+    public void generateSingleDialogue(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = "Name of your NPC") String npcName,
+        @SlashOption(description = "NPC dialogue, lines separated by \\n") String dialogue,
+        @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(description = "If the Abiphone symbol should be shown next to the dialogue", required = false) Boolean abiphone,
+        @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
+    ) {
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+
+        event.deferReply(hidden).complete();
+
+        abiphone = abiphone != null && abiphone;
+        maxLineLength = maxLineLength == null ? 91 : maxLineLength;
+
+        String[] lines = dialogue.split("\\\\n");
+        for (int i = 0; i < lines.length; i++) {
+            lines[i] = "&e[NPC] " + npcName + "&f: " + (abiphone ? "&b%%ABIPHONE%%&f " : "") + lines[i];
+            String line = lines[i];
+
+            if (line.contains("{options:")) {
+                String[] split = line.split("\\{options: ?");
+                lines[i] = split[0];
+                String[] options = split[1].replace("}", "").split(", ");
+                lines[i] += "\n&eSelect an option: &f";
+                for (String option : options) {
+                    lines[i] += "&a" + option + "&f ";
+                }
+            }
         }
 
-        JsonObject profileJSON = JsonUtils.isJsonObject(componentsJSON, "minecraft:profile");
-        if (profileJSON == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("minecraft:profile")).queue();
-            return null;
-        }
+        dialogue = String.join("\n", lines);
 
-        JsonArray propertiesArray = JsonUtils.isJsonArray(profileJSON, "properties");
-        if (propertiesArray == null) {
-            event.getHook().sendMessage(MISSING_ITEM_NBT.formatted("properties")).queue();
-            return null;
-        }
+        MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+            .withItemLore(dialogue)
+            .withAlpha(0)
+            .withPadding(MinecraftTooltip.DEFAULT_PADDING)
+            .isPaddingFirstLine(false)
+            .disableRarityLineBreak(false)
+            .withMaxLineLength(maxLineLength)
+            .bypassMaxLineLength(true);
 
-        if (propertiesArray.size() != 1) {
-            event.getHook().sendMessage(MULTIPLE_ITEM_SKULL_DATA).queue();
-            return null;
-        }
+        try {
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
+                .addGenerator(tooltipGenerator.build());
 
-        if (!propertiesArray.get(0).isJsonObject()) {
-            event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
-            return null;
-        }
+            if (skinValue != null) {
+                MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder()
+                    .withSkin(skinValue)
+                    .withScale(-2)
+                    .build();
+                generatorImageBuilder.addGenerator(0, playerHeadGenerator);
+            }
 
-        JsonObject propertyObject = propertiesArray.get(0).getAsJsonObject();
-        String base64String = JsonUtils.isJsonString(propertyObject, "value");
-        if (base64String == null) {
-            event.getHook().sendMessage(INVALID_ITEM_SKULL_DATA).queue();
-            return null;
+            GeneratedObject generatedObject = generatorImageBuilder.build();
+
+            if (generatedObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "dialogue.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "dialogue.png")).queue();
+            }
+
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating dialogue", exception);
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating the dialogue!").queue();
+            log.error("Encountered an error while generating dialogue", exception);
+        }
+    }
+
+    @SlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "multi", description = "Generate dialogue for multiple NPCs")
+    public void generateMultiDialogue(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = "Names of your NPCs, separated by a comma") String npcNames,
+        @SlashOption(description = "NPC dialogue, lines separated by \\n") String dialogue,
+        @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(description = "If the Abiphone symbol should be shown next to the dialogue", required = false) Boolean abiphone,
+        @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
+    ) {
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+
+        event.deferReply(hidden).complete();
+
+        abiphone = abiphone != null && abiphone;
+        maxLineLength = maxLineLength == null ? 91 : maxLineLength;
+
+        try {
+            String[] lines = dialogue.split("\\\\n");
+            String[] names = npcNames.split(", ?");
+
+            for (int i = 0; i < lines.length; i++) {
+                String[] split = lines[i].split(", ?");
+                try {
+                    int index = Integer.parseInt(split[0]);
+
+                    if (index >= names.length) {
+                        index = names.length - 1;
+                    }
+
+                    lines[i] = "&e[NPC] " + names[index] + "&f: " + (abiphone ? "&b%%ABIPHONE%%&f " : "") + split[1];
+                    String line = lines[i];
+
+                    if (line.contains("{options:")) {
+                        String[] split2 = line.split("\\{options: ?");
+                        lines[i] = split2[0];
+                        String[] options = split2[1].replace("}", "").split(", ?");
+                        lines[i] += "\n&eSelect an option: &f";
+                        for (String option : options) {
+                            lines[i] += "&a" + option + "&f ";
+                        }
+                    }
+                } catch (NumberFormatException exception) {
+                    throw new GeneratorException("Invalid NPC name index found in dialogue: " + split[0] + " (line " + (i + 1) + ")");
+                }
+            }
+
+            dialogue = String.join("\n", lines);
+
+            MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                .withItemLore(dialogue)
+                .withAlpha(0)
+                .withPadding(MinecraftTooltip.DEFAULT_PADDING)
+                .isPaddingFirstLine(false)
+                .disableRarityLineBreak(false)
+                .withMaxLineLength(maxLineLength)
+                .bypassMaxLineLength(true);
+
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
+                .addGenerator(tooltipGenerator.build());
+
+            if (skinValue != null) {
+                MinecraftPlayerHeadGenerator playerHeadGenerator = new MinecraftPlayerHeadGenerator.Builder()
+                    .withSkin(skinValue)
+                    .withScale(-2)
+                    .build();
+                generatorImageBuilder.addGenerator(0, playerHeadGenerator);
+            }
+
+            GeneratedObject generatedObject = generatorImageBuilder.build();
+
+            if (generatedObject.isAnimated()) {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "dialogue.gif")).queue();
+            } else {
+                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "dialogue.png")).queue();
+            }
+
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
+        } catch (GeneratorException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating dialogue", exception);
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating the dialogue!").queue();
+            log.error("Encountered an error while generating dialogue", exception);
+        }
+    }
+
+    @SlashCommand(name = BASE_COMMAND, subcommand = "history", description = "View your command history")
+    public void viewHistory(SlashCommandInteractionEvent event) {
+        event.deferReply(true).complete();
+
+        List<EmbedBuilder> embedBuilders = new ArrayList<>();
+        DiscordUserRepository discordUserRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+
+        if (discordUserRepository.findById(event.getUser().getId()) != null) {
+            List<String> history = discordUserRepository.findById(event.getUser().getId()).getGeneratorHistory().getCommandHistory();
+            embedBuilders.addAll(history.stream()
+                .map(s -> new EmbedBuilder().setDescription(s))
+                .toList()
+            );
+        } else {
+            embedBuilders.add(new EmbedBuilder().setTitle("No history found"));
         }
 
         try {
-            return builder.base64ToSkinURL(base64String);
-        } catch (NullPointerException | IllegalArgumentException exception) {
-            event.getHook().sendMessage(INVALID_BASE_64_SKIN_URL).queue();
-            return null;
+            File file = FileUtils.createTempFile("generator_history.txt", String.join("\n\n", embedBuilders.stream().map(EmbedBuilder::getDescriptionBuilder).toList()));
+            event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
+        } catch (IOException e) {
+            event.getHook().editOriginal("An error occurred while fetching your generator command history!").queue();
+            log.error("Encountered an error while fetching generator command history for {}", event.getUser().getId(), e);
         }
     }
 
-    private String processNonSkullModifiersComponents(JsonObject itemJSON) {
-        String extraModifiers = "";
+    @SlashAutocompleteHandler(id = "power-strengths")
+    public List<Command.Choice> powerStrengths(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
 
-        JsonObject componentsJSON = JsonUtils.isJsonObject(itemJSON, "components");
-        if (componentsJSON == null) {
-            return extraModifiers;
-        }
-
-        if (componentsJSON.has("minecraft:dyed_color")) {
-            try {
-                int colorValue = componentsJSON.get("minecraft:dyed_color").getAsInt();
-                if (colorValue >= 0) {
-                    extraModifiers = String.format("#%06X", colorValue);
-                }
-            } catch (NumberFormatException ignored) {
-            }
-        }
-
-        if (componentsJSON.has("minecraft:enchantments")) {
-            JsonObject enchantmentsJSON = componentsJSON.getAsJsonObject("minecraft:enchantments");
-            if (!enchantmentsJSON.isEmpty()) {
-                extraModifiers = extraModifiers.isEmpty() ? "enchant" : extraModifiers + ",enchant";
-            }
-        }
-
-        return extraModifiers;
-    }
-
-    private CommandData buildCommandAndText(String itemName, JsonArray itemLoreArray, boolean includeItem, String itemID, String extraModifiers) {
-        StringBuilder itemGenCommand = new StringBuilder("/").append(COMMAND_PREFIX).append(includeItem ? " full" : " item");
-        StringBuilder itemText = new StringBuilder();
-        itemText.append(itemName).append("\\n");
-        itemGenCommand.append(" item_name:").append(itemName).append(" rarity:NONE item_lore:");
-
-        int maxLineLength = 0;
-        for (JsonElement element : itemLoreArray) {
-            String itemLore = element.getAsString().replaceAll("§", "&").replaceAll("`", "");
-            itemText.append(itemLore).append("\\n");
-            itemGenCommand.append(itemLore).append("\\n");
-
-            if (maxLineLength < itemLore.length()) {
-                maxLineLength = itemLore.length();
-            }
-        }
-        maxLineLength++;
-        itemGenCommand.replace(itemGenCommand.length() - 2, itemGenCommand.length(), "").append(" max_line_length:").append(maxLineLength);
-        itemText.replace(itemText.length() - 2, itemText.length(), "");
-
-        if (includeItem) {
-            itemGenCommand.append(" item_id:").append(itemID).append(!extraModifiers.isEmpty() ? " extra_modifiers:" + extraModifiers : "");
-        }
-
-        return new CommandData(itemGenCommand.toString(), itemText.toString(), maxLineLength);
-    }
-
-    private void logItemGenActivity(SlashCommandInteractionEvent event) {
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        long currentTime = System.currentTimeMillis();
-
-        discordUserRepository.findByIdAsync(event.getMember().getId())
-            .thenAccept(discordUser -> {
-                if (discordUser != null) {
-                    discordUser.getLastActivity().setLastItemGenUsage(currentTime);
-                    log.info("Updating last item generator activity date for {} to {}", DiscordUtils.getDisplayName(event.getUser()), currentTime);
-                }
-            })
-            .exceptionally(throwable -> {
-                log.warn("Failed to log item generator activity for user {}", event.getUser().getId(), throwable);
-                return null;
-            });
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "general", description = "Show some general tips for using the Item Generation commands.", guildOnly = true)
-    public void askForGeneralHelp(SlashCommandInteractionEvent event) {
-        EmbedBuilder infoBuilder = new EmbedBuilder();
-        EmbedBuilder helpPointerBuilder = new EmbedBuilder();
-
-        infoBuilder.setColor(EMBED_COLORS[0])
-            .setTitle("Item Generation Help Desk")
-            .setDescription(GENERAL_INFO);
-
-        helpPointerBuilder.setColor(EMBED_COLORS[1])
-            .addField("Other Help Commands", GENERAL_HELP, false);
-
-        Collection<MessageEmbed> embeds = new ArrayList<>();
-        embeds.add(infoBuilder.build());
-        embeds.add(helpPointerBuilder.build());
-        event.replyEmbeds(embeds).setEphemeral(true).queue();
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "item", description = "Show help related to the Item Generation command.", guildOnly = true)
-    public void askForItemRenderHelp(SlashCommandInteractionEvent event) {
-        EmbedBuilder infoBuilder = new EmbedBuilder();
-        EmbedBuilder colorsBuilder = new EmbedBuilder();
-        EmbedBuilder otherInfoBuilder = new EmbedBuilder();
-        EmbedBuilder examplesBuilder = new EmbedBuilder();
-
-        infoBuilder.setColor(EMBED_COLORS[0])
-            .setTitle("Item Generation")
-            .setDescription(ITEM_BASIC_INFO)
-            .addField("Item Arguments", ITEM_INFO_ARGUMENTS, false)
-            .addField("Optional Arguments", ITEM_INFO_OPTIONAL_ARGUMENTS, false);
-
-        colorsBuilder.setColor(EMBED_COLORS[1])
-            .addField("Colors and Stats", ITEM_COLOR_CODES, true);
-
-        otherInfoBuilder.setColor(EMBED_COLORS[2])
-            .addField("Other Information", ITEM_OTHER_INFO, true);
-
-        examplesBuilder.setColor(EMBED_COLORS[3])
-            .addField("Item Gen Examples", ITEM_EXAMPLES, true);
-
-        Collection<MessageEmbed> embeds = new ArrayList<>();
-        embeds.add(infoBuilder.build());
-        embeds.add(colorsBuilder.build());
-        embeds.add(otherInfoBuilder.build());
-        embeds.add(examplesBuilder.build());
-
-        event.replyEmbeds(embeds).setEphemeral(true).queue();
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "text", description = "Show help related to the Item Generation Text command.", guildOnly = true)
-    public void askForTextRenderHelp(SlashCommandInteractionEvent event) {
-        EmbedBuilder infoBuilder = new EmbedBuilder()
-            .setColor(EMBED_COLORS[0])
-            .setTitle("Text Generation")
-            .setDescription(ITEM_TEXT_BASIC_INFO)
-            .addField("Item Arguments", ITEM_TEXT_INFO_ARGUMENTS, false)
-            .addField("Optional Arguments", ITEM_TEXT_INFO_OPTIONAL_ARGUMENTS, false);
-
-        event.replyEmbeds(infoBuilder.build()).setEphemeral(true).queue();
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "full", description = "Show a full help page for the Item Generation command.", guildOnly = true)
-    public void askForFullRenderHelp(SlashCommandInteractionEvent event) {
-        EmbedBuilder infoBuilder = new EmbedBuilder();
-
-        infoBuilder.setColor(EMBED_COLORS[0])
-            .setTitle("Full Item Generation Help")
-            .setDescription(FULL_GEN_INFO);
-
-        event.replyEmbeds(infoBuilder.build()).setEphemeral(true).queue();
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "display", description = "Show help related to the Display Item Generation command.", guildOnly = true)
-    public void askForRenderHelp(SlashCommandInteractionEvent event) {
-        EmbedBuilder infoBuilder = new EmbedBuilder();
-        EmbedBuilder itemModifiersBuilder = new EmbedBuilder();
-        EmbedBuilder headModifiersBuilder = new EmbedBuilder();
-
-        infoBuilder.setColor(EMBED_COLORS[0])
-            .setTitle("Display Generation Help")
-            .setDescription(DISPLAY_INFO_BASIC)
-            .addField("Arguments", DISPLAY_INFO_ARGUMENTS, false)
-            .addField("Optional Arguments", DISPLAY_INFO_OPTIONAL_ARGUMENTS, false);
-
-        itemModifiersBuilder.setColor(EMBED_COLORS[1])
-            .addField("Extra Modifiers", DISPLAY_INFO_EXTRA_MODIFIERS, false)
-            .addField("Items with Modifiers", DISPLAY_INFO_MODIFIERS, false)
-            .addField("Enchant Glint", DISPLAY_INFO_ENCHANT_GLINT, false);
-
-        headModifiersBuilder.setColor(EMBED_COLORS[2])
-            .addField("Head Generation", DISPLAY_ITEM_INFO_PLAYER_HEAD.formatted(stripString(event.getMember().getEffectiveName())), false);
-
-        Collection<MessageEmbed> embeds = new ArrayList<>();
-        embeds.add(infoBuilder.build());
-        embeds.add(itemModifiersBuilder.build());
-        embeds.add(headModifiersBuilder.build());
-
-        event.replyEmbeds(embeds).setEphemeral(true).queue();
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "recipe", description = "Show help related to the Recipe Generation command.", guildOnly = true)
-    public void askForRecipeRenderHelp(SlashCommandInteractionEvent event) {
-        EmbedBuilder infoBuilder = new EmbedBuilder();
-        EmbedBuilder extraInfoBuilder = new EmbedBuilder();
-
-        infoBuilder.setColor(EMBED_COLORS[0])
-            .setTitle("Recipe Generation Help")
-            .setDescription(RECIPE_INFO_BASIC)
-            .addField("Arguments", RECIPE_INFO_ARGUMENTS, false);
-
-        extraInfoBuilder.setColor(EMBED_COLORS[1])
-            .addField("Recipe Examples", RECIPE_INFO_EXAMPLES, false);
-
-        Collection<MessageEmbed> embeds = new ArrayList<>();
-        embeds.add(infoBuilder.build());
-        embeds.add(extraInfoBuilder.build());
-
-        event.replyEmbeds(embeds).setEphemeral(true).queue();
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "parse", description = "Show help related to the Parse Generation command.", guildOnly = true)
-    public void askForParseRenderHelp(SlashCommandInteractionEvent event) {
-        EmbedBuilder infoBuilder = new EmbedBuilder();
-
-        infoBuilder.setColor(EMBED_COLORS[0])
-            .setTitle("Parse Generation Help")
-            .setDescription(ITEM_PARSE_INFO)
-            .addField("Arguments", ITEM_PARSE_ARGUMENTS, false)
-            .addField("Optional Arguments", ITEM_PARSE_OPTIONAL_ARGUMENTS, false);
-
-        Collection<MessageEmbed> embeds = new ArrayList<>();
-        embeds.add(infoBuilder.build());
-
-        event.replyEmbeds(embeds).setEphemeral(true).queue();
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "symbols", description = "Show a list of all stats symbols", guildOnly = true)
-    public void showAllStats(SlashCommandInteractionEvent event) {
-        List<EmbedBuilder> embedBuilders = new ArrayList<>();
-        EmbedBuilder currentEmbed = new EmbedBuilder().setTitle("All Available Symbols").setColor(EMBED_COLORS[0]);
-        StringBuilder idBuilder = new StringBuilder();
-        StringBuilder symbolBuilder = new StringBuilder();
-        StringBuilder displayBuilder = new StringBuilder();
-
-        for (Stat stat : Stat.VALUES) {
-            String idLine = "%%" + stat.name() + "%%\n";
-            String symbolLine = stat.getIcon() + "\n";
-            String displayLine = stat.getDisplay() + "\n";
-
-            if (idBuilder.length() + idLine.length() > 1_024
-                || symbolBuilder.length() + symbolLine.length() > 1_024
-                || displayBuilder.length() + displayLine.length() > 1_024) {
-                currentEmbed.addField("ID", idBuilder.toString(), true);
-                currentEmbed.addField("Symbol", symbolBuilder.toString(), true);
-                currentEmbed.addField("Display", displayBuilder.toString(), true);
-
-                embedBuilders.add(currentEmbed);
-                currentEmbed = new EmbedBuilder().setTitle("All Available Symbols").setColor(EMBED_COLORS[0]);
-
-                idBuilder = new StringBuilder();
-                symbolBuilder = new StringBuilder();
-                displayBuilder = new StringBuilder();
-            }
-
-            idBuilder.append(idLine);
-            symbolBuilder.append(symbolLine);
-            displayBuilder.append(displayLine);
-        }
-
-        if (!idBuilder.isEmpty()) {
-            currentEmbed.addField("ID", idBuilder.toString(), true);
-            currentEmbed.addField("Symbol", symbolBuilder.toString(), true);
-            currentEmbed.addField("Display", displayBuilder.toString(), true);
-            embedBuilders.add(currentEmbed);
-        }
-
-        event.replyEmbeds(embedBuilders.stream()
-                .map(EmbedBuilder::build)
-                .toList()
-            ).setEphemeral(true)
-            .queue();
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "icons", description = "Show a list of all other icons", guildOnly = true)
-    public void showAllIcons(SlashCommandInteractionEvent event) {
-        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Icons").setColor(EMBED_COLORS[0]);
-        StringBuilder idBuilder = new StringBuilder();
-        StringBuilder symbolBuilder = new StringBuilder();
-
-        for (Icon icon : Icon.VALUES) {
-            idBuilder.append("%%").append(icon.name()).append("%%").append("\n");
-            symbolBuilder.append(icon.getIcon()).append("\n");
-        }
-
-        embedBuilder.addField("ID", idBuilder.toString(), true);
-        embedBuilder.addField("Symbol", symbolBuilder.toString(), true);
-
-        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "colors", description = "Show a list of all colors", guildOnly = true)
-    public void showAllColors(SlashCommandInteractionEvent event) {
-        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Colors").setColor(EMBED_COLORS[0]);
-        StringBuilder idBuilder = new StringBuilder();
-        StringBuilder colorBuilder = new StringBuilder();
-
-        for (MCColor color : MCColor.VALUES) {
-            idBuilder.append("&").append(color.getColorCode()).append(" or %%").append(color.name()).append("%%").append("\n");
-            colorBuilder.append(color.name()).append("\n");
-        }
-
-        embedBuilder.addField("IDs", idBuilder.toString(), true);
-        embedBuilder.addField("Color", colorBuilder.toString(), true);
-
-        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
-    }
-
-    @SlashCommand(name = COMMAND_PREFIX, group = "help", subcommand = "flavors", description = "Show a list of all flavor texts", guildOnly = true)
-    public void showAllFlavorTexts(SlashCommandInteractionEvent event) {
-        EmbedBuilder embedBuilder = new EmbedBuilder().setTitle("All Available Flavor texts").setColor(EMBED_COLORS[0]);
-        StringBuilder idBuilder = new StringBuilder();
-        StringBuilder textBuilder = new StringBuilder();
-
-        for (Flavor flavor : Flavor.VALUES) {
-            idBuilder.append("%%").append(flavor.name()).append("%%").append("\n");
-            textBuilder.append(flavor.getText()).append("\n");
-        }
-
-        embedBuilder.addField("IDs", idBuilder.toString(), true);
-        embedBuilder.addField("Flavor texts", textBuilder.toString(), true);
-
-        event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
-    }
-
-    @SlashAutocompleteHandler(id = "rarities")
-    public List<Command.Choice> listRarities(CommandAutoCompleteInteractionEvent event) {
-        return Stream.of(Rarity.VALUES)
-            .map(rarity -> new Command.Choice(rarity.name(), rarity.name()))
+        return PowerStrength.getPowerStrengthNames().stream()
+            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
+            .limit(25)
+            .map(name -> new Command.Choice(name, name))
             .toList();
     }
 
-    private boolean isIncorrectChannel(SlashCommandInteractionEvent event) {
-        String senderChannelId = event.getChannel().getId();
-        String[] itemGenChannelIds = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getGenChannelIds();
+    @SlashAutocompleteHandler(id = "item-names")
+    public List<Command.Choice> itemNames(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
 
-        if (itemGenChannelIds == null) {
-            event.reply("The config for the item generating channel is not ready yet. Try again later!").setEphemeral(true).queue();
-            return true;
-        }
-
-        // If the command was used in a thread, check if the parent channel is an item gen channel
-        if (event.getChannel() instanceof ThreadChannel threadChannel) {
-            senderChannelId = threadChannel.getParentChannel().getId();
-        }
-
-        if (ArrayUtils.safeArrayStream(itemGenChannelIds).noneMatch(senderChannelId::equalsIgnoreCase)) {
-            ChannelCache.getChannelByName(itemGenChannelIds[0]).ifPresentOrElse(
-                channel -> event.reply("This can only be used in the " + channel.getAsMention() + " channel.").setEphemeral(true).queue(),
-                () -> event.reply("This can only be used in the item generating channel.").setEphemeral(true).queue()
-            );
-
-            return true;
-        }
-
-        return false;
+        return Spritesheet.getImageMap().keySet()
+            .stream()
+            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
+            .limit(25)
+            .map(name -> new Command.Choice(name, name))
+            .toList();
     }
 
-    private record DisplayData(String itemName, JsonArray itemLoreArray, JsonObject displayJSON, JsonObject tagJSON) {
+    @SlashAutocompleteHandler(id = "item-rarities")
+    public List<Command.Choice> itemRarities(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
+
+        return Rarity.getRarityNames().stream()
+            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
+            .limit(25)
+            .map(name -> new Command.Choice(name, name))
+            .toList();
     }
 
-    private record ItemData(String itemID, String extraModifiers) {
+    @SlashAutocompleteHandler(id = "tooltip-side")
+    public List<Command.Choice> tooltipSide(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
+
+        return Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values())
+            .map(MinecraftTooltipGenerator.TooltipSide::name)
+            .filter(side -> side.toLowerCase(Locale.ROOT).contains(userInput))
+            .limit(25)
+            .map(side -> new Command.Choice(side, side))
+            .toList();
     }
 
-    private record CommandData(String itemGenCommand, String itemText, int maxLineLength) {
+    /**
+     * Adds a slash command to the given {@link User}'s history.
+     * This will silently fail if the user is not found in the database.
+     *
+     * @param user    The {@link User} to add the command to
+     * @param command The command to add
+     */
+    private void addCommandToUserHistory(User user, String command) {
+        DiscordUserRepository discordUserRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+
+        if (discordUserRepository == null) {
+            return;
+        }
+
+        if (discordUserRepository.findById(user.getId()) != null) {
+            DiscordUser discordUser = discordUserRepository.findById(user.getId());
+
+            if (discordUser.getGeneratorHistory() == null) {
+                discordUser.setGeneratorHistory(new GeneratorHistory());
+            }
+
+            discordUserRepository.findById(user.getId()).getGeneratorHistory().addCommand(command);
+        }
+    }
+
+    /**
+     * Gets the gen command auto hide preference from a {@link SlashCommandInteractionEvent}.
+     *
+     * @param event The {@link SlashCommandInteractionEvent} triggered by the user you want to get the auto hide preference from.
+     *
+     * @return The auto hide preference from the user.
+     */
+    private boolean getUserAutoHideSetting(SlashCommandInteractionEvent event) {
+        try {
+            DiscordUserRepository repository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+            DiscordUser user = repository.findById(event.getMember().getId());
+
+            if (user != null) {
+                return user.isAutoHideGenCommands();
+            }
+        } catch (Exception exception) {
+            return AUTO_HIDE_ON_ERROR;
+        }
+
+        return AUTO_HIDE_ON_ERROR;
+    }
+
+    /**
+     * Calculates the stat value for a Power Stone stat based on the base power and magical power.
+     *
+     * @param stat         The {@link Stat} to calculate the value for
+     * @param basePower    The base power of the stat
+     * @param magicalPower The magical power of the Power Stone
+     *
+     * @return The calculated stat value
+     */
+    private double calculatePowerStoneStat(Stat stat, int basePower, int magicalPower) {
+        double statMultiplier = stat.getPowerScalingMultiplier() != null ? stat.getPowerScalingMultiplier() : 1;
+        double logValue = Math.log(1 + (0.0019 * magicalPower));
+        double magnitude = Math.pow(Math.abs(logValue), 1.2);
+        double signedFactor = Math.signum(logValue) * magnitude;
+        return ((double) basePower / 100) * statMultiplier * 719.28 * signedFactor;
     }
 }

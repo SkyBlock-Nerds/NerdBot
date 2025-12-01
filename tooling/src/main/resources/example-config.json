@@ -159,6 +159,7 @@
     "currentlyPromotingUsers": false,
     "minimumVotesRequiredForPromotion": 100,
     "minimumCommentsRequiredForPromotion": 100,
+    "minimumMessagesRequiredForPromotion": 10,
     "daysRequiredForVoteHistory": 90,
     "daysRequiredForInactivityCheck": 30,
     "messagesRequiredForInactivityCheck": 100,
@@ -215,6 +216,50 @@
   },
   "funConfig": {
     "autoReactions": {}
+  },
+  "generatorConfig": {
+    "playerHead": {
+      "defaultSkinTexture": "31f477eb1a7beee631c2ca64d06f8f68fa93a3386d04452ab27f43acdf1b60cb",
+      "defaultScale": 1,
+      "maxScale": 20,
+      "minScale": -10
+    },
+    "tooltip": {
+      "defaultMaxLineLength": 36,
+      "defaultAlpha": 230,
+      "defaultPadding": 0,
+      "defaultRenderBorder": true,
+      "defaultCenteredText": false,
+      "maxLineLength": 100,
+      "minLineLength": 10
+    },
+    "item": {
+      "defaultEnchanted": false,
+      "defaultHoverEffect": false,
+      "defaultBigImage": false
+    },
+    "inventory": {
+      "defaultDrawBorder": true,
+      "defaultDrawBackground": true,
+      "maxRows": 100,
+      "maxColumns": 100,
+      "minRows": 1,
+      "minColumns": 1,
+      "animateGlint": false
+    },
+    "cache": {
+      "enabled": true,
+      "maxSize": 1000,
+      "ttlMinutes": 60
+    },
+    "general": {
+      "defaultScaleFactor": 1,
+      "defaultPadding": 0,
+      "maxScaleFactor": 10,
+      "minScaleFactor": 1,
+      "debugLogging": false,
+      "includeErrorDetails": true
+    }
   },
   "activityType": "WATCHING",
   "activity": "with an example message!"

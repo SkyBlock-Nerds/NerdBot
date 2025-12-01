@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.discord.storage.database.model.user.stats;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.core.DiscordTimestamp;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -23,6 +24,7 @@ import java.util.function.ToLongFunction;
 @Getter
 @Setter
 @Slf4j
+@ToString
 public class LastActivity {
 
     // Global Activity
