@@ -52,7 +52,7 @@ public class PlaceholderReverseMapper {
         }
 
         String normalized = input.replace(ChatFormat.SECTION_SYMBOL, ChatFormat.AMPERSAND_SYMBOL);
-        String[] lines = normalized.split("(\\\\n|\\n)", -1);
+        String[] lines = normalized.split("(?:\\\\n|\\n)+", -1);
         List<String> mapped = new ArrayList<>(lines.length);
 
         for (String line : lines) {
