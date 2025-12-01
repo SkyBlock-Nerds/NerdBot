@@ -1,0 +1,62 @@
+[
+    {
+        "name": "NONE",
+        "formatWithDetails": "&{color}{stat}",
+        "formatWithoutDetails": "&{color}{stat}"
+    },
+    {
+        "name": "NORMAL",
+        "formatWithDetails": "&{color}{extraDetails}{display}",
+        "formatWithoutDetails": "&{color}{display}"
+    },
+    {
+        "name": "BOLD",
+        "formatWithDetails": "&{color}&{bold}{icon}",
+        "formatWithoutDetails": "&{color}&{bold}{icon}"
+    },
+    {
+        "name": "BOLD_ICON",
+        "formatWithDetails": "&{color}{extraDetails}&{color}&{bold}{icon}&{color} {stat}",
+        "formatWithoutDetails": "&{color}&{bold}{icon}&{color} {stat}"
+    },
+    {
+        "name": "DUAL",
+        "formatWithDetails": "&{subColor}{extraDetails}&{color}{display}",
+        "formatWithoutDetails": "&{color}{display}"
+    },
+    {
+        "name": "OUTSIDE_MAGIC",
+        "formatWithDetails": "&{color}&{obfuscated}X&{reset} &{color}{stat} &{color}&{obfuscated}X",
+        "formatWithoutDetails": "&{color}&{obfuscated}X&{reset} &{color}{stat} &{color}&{obfuscated}X"
+    },
+    {
+        "name": "SOULBOUND",
+        "formatWithDetails": "&{color}&{bold}* &{color}{stat} &{color}&{bold}*",
+        "formatWithoutDetails": "&{color}&{bold}* &{color}{stat} &{color}&{bold}*"
+    },
+    {
+        "name": "POST",
+        "formatWithDetails": "&{color}{display} {extraDetails}",
+        "formatWithoutDetails": "&{color}{display}"
+    },
+    {
+        "name": "POST_DUAL",
+        "formatWithDetails": "&{color}{stat} &{subColor}{extraDetails}",
+        "formatWithoutDetails": "&{color}{stat}"
+    },
+    {
+        "name": "ITEM_STAT",
+        "formatWithDetails": "&{gray}{itemStat}: &{subColor}{amount}",
+        "formatWithoutDetails": "[ITEM_STAT_MISSING_DETAILS]"
+    },
+    {
+        "name": "ABILITY",
+        "formatWithDetails": "&{color}{stat}: {abilityName} &{subColor}&{bold}{abilityType}",
+        "formatWithoutDetails": "[ABILITY_MISSING_DETAILS]"
+    },
+    {
+        "name": "DIFFERENT_ICON_COLOR",
+        "formatWithDetails": "&{color}{icon} &{subColor}{stat} {extraDetails}",
+        "formatWithoutDetails": "&{color}{icon} &{subColor}{stat}"
+    }
+]

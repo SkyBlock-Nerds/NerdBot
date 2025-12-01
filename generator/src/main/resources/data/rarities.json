@@ -1,0 +1,67 @@
+[
+    {
+        "name": "common",
+        "display": "COMMON",
+        "color": "WHITE"
+    },
+    {
+        "name": "uncommon",
+        "display": "UNCOMMON",
+        "color": "GREEN"
+    },
+    {
+        "name": "rare",
+        "display": "RARE",
+        "color": "BLUE"
+    },
+    {
+        "name": "epic",
+        "display": "EPIC",
+        "color": "DARK_PURPLE"
+    },
+    {
+        "name": "legendary",
+        "display": "LEGENDARY",
+        "color": "GOLD"
+    },
+    {
+        "name": "mythic",
+        "display": "MYTHIC",
+        "color": "LIGHT_PURPLE"
+    },
+    {
+        "name": "divine",
+        "display": "DIVINE",
+        "color": "AQUA"
+    },
+    {
+        "name": "special",
+        "display": "SPECIAL",
+        "color": "RED"
+    },
+    {
+        "name": "very_special",
+        "display": "VERY SPECIAL",
+        "color": "RED"
+    },
+    {
+        "name": "admin",
+        "display": "ADMIN",
+        "color": "DARK_RED"
+    },
+    {
+        "name": "supreme",
+        "display": "SUPREME",
+        "color": "DARK_RED"
+    },
+    {
+        "name": "ultimate",
+        "display": "ULTIMATE",
+        "color": "DARK_RED"
+    },
+    {
+        "name": "none",
+        "display": "",
+        "color": "GRAY"
+    }
+]

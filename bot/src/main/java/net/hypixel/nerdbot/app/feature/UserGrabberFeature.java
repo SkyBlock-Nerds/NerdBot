@@ -8,6 +8,7 @@ import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.model.user.badge.BadgeEntry;
 import net.hypixel.nerdbot.discord.storage.database.model.user.birthday.BirthdayData;
+import net.hypixel.nerdbot.discord.storage.database.model.user.generator.GeneratorHistory;
 import net.hypixel.nerdbot.discord.storage.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.discord.storage.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
@@ -43,7 +44,7 @@ public class UserGrabberFeature extends BotFeature {
 
                 DiscordUser discordUser = discordUserRepository.findById(member.getId());
                 if (discordUser == null) {
-                    discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new LastActivity(), new BirthdayData(), new MojangProfile());
+                    discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new LastActivity(), new BirthdayData(), new MojangProfile(), new GeneratorHistory(), false);
                     log.info("Creating new DiscordUser for user " + member.getId());
                 }
 

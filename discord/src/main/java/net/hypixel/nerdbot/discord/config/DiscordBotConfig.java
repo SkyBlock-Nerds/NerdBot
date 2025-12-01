@@ -71,6 +71,11 @@ public class DiscordBotConfig {
     private FunConfig funConfig = new FunConfig();
 
     /**
+     * Configuration for generator commands
+     */
+    private GeneratorConfig generatorConfig = new GeneratorConfig();
+
+    /**
      * The activity type that the bot will display on its profile
      * Default is WATCHING
      */
