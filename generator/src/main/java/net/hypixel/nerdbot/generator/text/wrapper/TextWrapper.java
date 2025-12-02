@@ -10,14 +10,15 @@ import net.hypixel.nerdbot.generator.parser.text.StatParser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
 public class TextWrapper {
 
     private static final Pattern STRIP_COLOR_PATTERN = Pattern.compile("[&§][0-9a-fA-FK-ORk-or]");
-    private static final Pattern NEWLINE_PATTERN = Pattern.compile("(?:\n|\\\\n)+");
-    private static final Pattern WORD_SPLIT_PATTERN = Pattern.compile(" ");
+    private static final Pattern NEWLINE_PATTERN = Pattern.compile("(?:\n|\\\\n)");
+    private static final Pattern TOKEN_PATTERN = Pattern.compile("\\S+|\\s+");
 
     private static final List<Parser<String>> PARSERS = List.of(
         new ColorCodeParser(),
@@ -100,8 +101,8 @@ public class TextWrapper {
             return lines;
         }
 
-        String parsedInput = parseLine(input);
-        String[] rawLines = NEWLINE_PATTERN.split(parsedInput);
+        String parsedInput = normalizeNewlines(parseLine(input));
+        String[] rawLines = NEWLINE_PATTERN.split(parsedInput, -1);
         FormatState currentFormatState = FormatState.EMPTY;
 
         for (String rawLine : rawLines) {
@@ -114,35 +115,41 @@ public class TextWrapper {
                 continue;
             }
 
-            String strippedLeading = rawLine.stripLeading();
-            int leadingSpaces = rawLine.length() - strippedLeading.length();
-
-            String[] words = WORD_SPLIT_PATTERN.split(strippedLeading);
             StringBuilder currentLineBuilder = new StringBuilder();
             int currentVisibleLength = 0;
 
-            if (leadingSpaces > 0) {
-                currentLineBuilder.append(" ".repeat(leadingSpaces));
-                currentVisibleLength += leadingSpaces;
-                log.debug("Preserved {} leading spaces", leadingSpaces);
-            }
+            // Process each token individually
+            Matcher tokenMatcher = TOKEN_PATTERN.matcher(rawLine);
+            while (tokenMatcher.find()) {
+                String token = tokenMatcher.group();
 
-            // Process each word individually
-            for (String word : words) {
-                if (word.isEmpty()) {
-                    log.debug("Skipping empty word in words array: '{}' currentLineBuilder: '{}'", word, currentLineBuilder);
+                if (token.trim().isEmpty()) {
+                    int whitespaceLength = token.length();
+
+                    // If whitespace alone would exceed the line, wrap before adding more spaces
+                    if (currentVisibleLength + whitespaceLength > maxLineLength && !currentLineBuilder.isEmpty()) {
+                        String finishedLine = currentLineBuilder.toString();
+                        lines.add(currentFormatState.prefix() + finishedLine);
+                        log.debug("Adding line before whitespace overflow: '{}'", lines.getLast());
+
+                        currentFormatState = FormatState.deriveStateFromSegment(finishedLine, currentFormatState);
+                        currentLineBuilder = new StringBuilder();
+                        currentVisibleLength = 0;
+                    }
+
+                    currentLineBuilder.append(token);
+                    currentVisibleLength += whitespaceLength;
+                    log.debug("Appended whitespace token: '{}' (visible length now {})", token.replace("\t", "\\t"), currentVisibleLength);
                     continue;
                 }
 
-                String strippedWord = stripColorCodes(word);
+                String strippedWord = stripColorCodes(token);
                 int wordVisibleLength = strippedWord.length();
 
                 // Handle words that are longer than the max line length
                 if (wordVisibleLength > maxLineLength) {
-                    // Finish the current line before splitting the long word
                     if (!currentLineBuilder.isEmpty()) {
                         String finishedLine = currentLineBuilder.toString();
-
                         lines.add(currentFormatState.prefix() + finishedLine);
                         log.debug("Adding line before splitting long word: '{}'", lines.get(lines.size() - 1));
 
@@ -151,36 +158,22 @@ public class TextWrapper {
                         currentVisibleLength = 0;
                     }
 
-                    // Split the long word using the splitLongWord method
-                    currentFormatState = splitLongWord(word, maxLineLength, lines, currentFormatState);
-                } else { // Word fits within the max line length
-                    int spaceLength = (currentVisibleLength > 0) ? 1 : 0;
+                    currentFormatState = splitLongWord(token, maxLineLength, lines, currentFormatState);
+                } else if (currentVisibleLength + wordVisibleLength <= maxLineLength) {
+                    currentLineBuilder.append(token);
+                    currentVisibleLength += wordVisibleLength;
+                    log.debug("Added word token to current line: '{}' (visible length now {})", token, currentVisibleLength);
+                } else {
+                    String finishedLine = currentLineBuilder.toString();
+                    lines.add(currentFormatState.prefix() + finishedLine);
+                    log.debug("Adding line due to length: '{}' (" + "currentVisibleLength: {}, wordVisibleLength: {})",
+                        lines.getLast(), currentVisibleLength, wordVisibleLength
+                    );
 
-                    // Check if the word fits on the current line
-                    if (currentVisibleLength + spaceLength + wordVisibleLength <= maxLineLength) {
-                        if (spaceLength > 0) {
-                            currentLineBuilder.append(" ");
-                            log.debug("Added space to current line: '{}'", currentLineBuilder);
-                        }
+                    currentFormatState = FormatState.deriveStateFromSegment(finishedLine, currentFormatState);
 
-                        currentLineBuilder.append(word);
-                        currentVisibleLength += spaceLength + wordVisibleLength;
-                        log.debug("Added word to current line: '{}'", word);
-                    } else {
-                        // Doesn't fit so lets stop and add the current line to the list
-                        String finishedLine = currentLineBuilder.toString();
-
-                        lines.add(currentFormatState.prefix() + finishedLine);
-                        log.debug("Adding line due to length: '{}' (" + "currentVisibleLength: {}, wordVisibleLength: {})",
-                            lines.get(lines.size() - 1), currentVisibleLength, wordVisibleLength
-                        );
-
-                        currentFormatState = FormatState.deriveStateFromSegment(finishedLine, currentFormatState);
-
-                        // Start a new line
-                        currentLineBuilder = new StringBuilder(word);
-                        currentVisibleLength = wordVisibleLength;
-                    }
+                    currentLineBuilder = new StringBuilder(token);
+                    currentVisibleLength = wordVisibleLength;
                 }
             }
 
@@ -263,6 +256,52 @@ public class TextWrapper {
 
         // Return the final state after processing the entire word
         return currentWordFormatState;
+    }
+
+    /**
+     * Normalizes newline handling so that combinations like actual newlines
+     * plus literal "\n" markers are treated as a single line break.
+     *
+     * @param input Parsed input string
+     *
+     * @return Normalized string with redundant newline markers removed
+     */
+    public static String normalizeNewlines(String input) {
+        if (input.indexOf('\r') != -1) {
+            input = input.replace("\r\n", "\n").replace('\r', '\n');
+        }
+
+        StringBuilder normalized = new StringBuilder(input.length());
+
+        for (int i = 0; i < input.length(); ) {
+            char current = input.charAt(i);
+
+            if (current == '\n') {
+                normalized.append('\n');
+                i++;
+
+                while (i + 1 < input.length() && input.charAt(i) == '\\' && input.charAt(i + 1) == 'n') {
+                    i += 2;
+                }
+                continue;
+            }
+
+            if (current == '\\' && i + 1 < input.length() && input.charAt(i + 1) == 'n') {
+                if (i + 2 < input.length() && input.charAt(i + 2) == '\n') {
+                    i += 2;
+                    continue;
+                }
+
+                normalized.append('\n');
+                i += 2;
+                continue;
+            }
+
+            normalized.append(current);
+            i++;
+        }
+
+        return normalized.toString();
     }
 
     /**
