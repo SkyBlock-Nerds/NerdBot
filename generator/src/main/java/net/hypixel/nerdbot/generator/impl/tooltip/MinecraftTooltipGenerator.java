@@ -252,11 +252,19 @@ public class MinecraftTooltipGenerator implements Generator {
 
                     // Parse Lore if present
                     if (displayObject.has("Lore")) {
-                        displayObject.get("Lore").getAsJsonArray().forEach(jsonElement -> {
-                            this.itemLore += jsonElement.getAsString() + "\\n";
-                        });
+                        JsonArray loreArray = displayObject.get("Lore").getAsJsonArray();
+                        StringBuilder loreBuilder = new StringBuilder();
 
-                        this.itemLore = this.itemLore.replaceAll(String.valueOf(ChatFormat.SECTION_SYMBOL), String.valueOf(ChatFormat.AMPERSAND_SYMBOL));
+                        for (int i = 0; i < loreArray.size(); i++) {
+                            if (i > 0) {
+                                loreBuilder.append("\\n");
+                            }
+
+                            loreBuilder.append(loreArray.get(i).getAsString());
+                        }
+
+                        this.itemLore = loreBuilder.toString()
+                            .replaceAll(String.valueOf(ChatFormat.SECTION_SYMBOL), String.valueOf(ChatFormat.AMPERSAND_SYMBOL));
                     }
                 }
             }
@@ -433,6 +441,8 @@ public class MinecraftTooltipGenerator implements Generator {
 
                         if (value instanceof Boolean bool) {
                             commandBuilder.append(capitalize(bool.toString())); // Discord slash commands use "True" and "False" for booleans
+                        } else if (value instanceof String stringValue) {
+                            commandBuilder.append(formatCommandString(stringValue));
                         } else {
                             commandBuilder.append(value);
                         }
@@ -450,6 +460,15 @@ public class MinecraftTooltipGenerator implements Generator {
         private static String capitalize(String text) {
             if (text == null || text.isEmpty()) return text;
             return text.substring(0, 1).toUpperCase() + text.substring(1);
+        }
+
+        private static String formatCommandString(String text) {
+            if (text == null) {
+                return "";
+            }
+
+            String normalized = TextWrapper.normalizeNewlines(text);
+            return normalized.replace("\n", "\\n");
         }
 
         private static String convertCamelCaseToSnakeCase(String camelCase) {

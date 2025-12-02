@@ -7,6 +7,7 @@ import net.hypixel.nerdbot.generator.data.Icon;
 import net.hypixel.nerdbot.generator.data.ParseType;
 import net.hypixel.nerdbot.generator.data.Stat;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
+import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -51,8 +52,8 @@ public class PlaceholderReverseMapper {
             return input;
         }
 
-        String normalized = input.replace(ChatFormat.SECTION_SYMBOL, ChatFormat.AMPERSAND_SYMBOL);
-        String[] lines = normalized.split("(?:\\\\n|\\n)+", -1);
+        String normalized = TextWrapper.normalizeNewlines(input.replace(ChatFormat.SECTION_SYMBOL, ChatFormat.AMPERSAND_SYMBOL));
+        String[] lines = normalized.split("\n", -1);
         List<String> mapped = new ArrayList<>(lines.length);
 
         for (String line : lines) {
