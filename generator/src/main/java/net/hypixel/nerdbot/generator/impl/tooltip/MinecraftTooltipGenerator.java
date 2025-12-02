@@ -414,7 +414,7 @@ public class MinecraftTooltipGenerator implements Generator {
         // TODO support player head textures
         public String buildSlashCommand() {
             String baseCommand = System.getProperty("generator.base.command", "gen");
-            StringBuilder commandBuilder = new StringBuilder("/" + baseCommand + " full ");
+            StringBuilder commandBuilder = new StringBuilder("/" + baseCommand + " item ");
             Field[] fields = this.getClass().getDeclaredFields();
 
             for (Field field : fields) {
