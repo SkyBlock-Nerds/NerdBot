@@ -43,9 +43,11 @@ public class MinecraftTooltip {
     private static final int UNDERLINE_OFFSET = 2;
     private static final @NotNull List<Font> MINECRAFT_FONTS = new ArrayList<>();
     private static final Font SANS_SERIF_FONT;
+    private static final Font UNICODE_FALLBACK_FONT;
 
     static {
         SANS_SERIF_FONT = new Font("SansSerif", Font.PLAIN, 20);
+        UNICODE_FALLBACK_FONT = FontUtils.initFont("/minecraft/assets/fonts/unifont-15.1.05.otf", 20.0f);
 
         List<Font> loadedFonts = Arrays.asList(
             FontUtils.initFont("/minecraft/assets/fonts/Minecraft-Regular.otf", 15.5f),
@@ -71,6 +73,15 @@ public class MinecraftTooltip {
                 log.warn("Failed to register font '{}': {}", font.getName(), e.getMessage());
             }
         });
+
+        if (UNICODE_FALLBACK_FONT != null) {
+            try {
+                GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(UNICODE_FALLBACK_FONT);
+            } catch (Exception e) {
+                log.warn("Failed to register unicode fallback font '{}': {}", UNICODE_FALLBACK_FONT.getName(), e.getMessage());
+            }
+        }
+
         // Precompute character widths for the obfuscation effect
         precomputeCharacterWidths();
     }
@@ -113,12 +124,12 @@ public class MinecraftTooltip {
     private final boolean centeredText;
     @Getter
     private final int scaleFactor;
-    
+
     // Scaled values based on scale factor
     private final int pixelSize;
     private final int startXY;
     private final int yIncrement;
-    
+
     @Getter
     private BufferedImage image;
     @Getter
@@ -160,11 +171,11 @@ public class MinecraftTooltip {
         this.frameDelayMs = frameDelayMs;
         this.animationFrameCount = animationFrameCount;
         this.scaleFactor = scaleFactor;
-        
+
         this.pixelSize = DEFAULT_PIXEL_SIZE * scaleFactor;
         this.startXY = pixelSize * 5;
         this.yIncrement = pixelSize * 10;
-        
+
         this.locationX = startXY;
         this.locationY = startXY + pixelSize * 2 + yIncrement / 2;
     }
@@ -340,10 +351,10 @@ public class MinecraftTooltip {
                 if (font.canDisplay(character)) {
                     lineWidth += metrics.charWidth(character);
                 } else {
-                    Font symbolFont = SANS_SERIF_FONT;
-                    graphics.setFont(symbolFont);
-                    FontMetrics symbolMetrics = graphics.getFontMetrics(symbolFont);
-                    lineWidth += symbolMetrics.charWidth(character);
+                    Font fallbackFont = getFallbackFont(font.getSize2D());
+                    graphics.setFont(fallbackFont);
+                    FontMetrics fallbackMetrics = graphics.getFontMetrics(fallbackFont);
+                    lineWidth += fallbackMetrics.charWidth(character);
                     graphics.setFont(font);
                 }
             }
@@ -443,7 +454,7 @@ public class MinecraftTooltip {
                     subWord.setLength(0);
                 }
 
-                // Draw symbol using SANS_SERIF_FONT
+                // Draw symbol using unicode fallback font
                 drawSymbolAndAdvance(graphics, character, colorSegment);
                 continue;
             }
@@ -482,8 +493,9 @@ public class MinecraftTooltip {
      * @param symbol   The symbol to draw.
      */
     private void drawSymbolAndAdvance(Graphics2D graphics, char symbol, ColorSegment segment) {
-        graphics.setFont(SANS_SERIF_FONT);
-        FontMetrics symbolMetrics = graphics.getFontMetrics(SANS_SERIF_FONT);
+        Font fallbackFont = getFallbackFont(this.currentFont.getSize2D());
+        graphics.setFont(fallbackFont);
+        FontMetrics symbolMetrics = graphics.getFontMetrics(fallbackFont);
         String symbolStr = Character.toString(symbol);
         int width = symbolMetrics.stringWidth(symbolStr);
 
@@ -491,6 +503,14 @@ public class MinecraftTooltip {
 
         this.locationX += width;
         graphics.setFont(this.currentFont);
+    }
+
+    /**
+     * Returns a fallback font.
+     */
+    private Font getFallbackFont(float targetSize) {
+        Font base = UNICODE_FALLBACK_FONT != null ? UNICODE_FALLBACK_FONT : SANS_SERIF_FONT;
+        return base.deriveFont(targetSize);
     }
 
     /**
