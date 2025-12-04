@@ -869,17 +869,15 @@ public class ProfileCommands {
 
                 try {
                     discordUser.setAutoHideGenCommands(autohide);
+                    event.getHook().editOriginal("Your default image generator message behavior has been set to " + (autohide ? "hidden" : "public")).queue();
                 } catch (Exception e) {
                     log.error("Error saving user auto-hide preference", e);
-                    event.getHook().editOriginal("An error occurred while saving your preference. Please try again later.\nReason: " + e.getMessage()).queue();
-                    return;
+                    event.getHook().editOriginal("An error occurred while saving your preference, please try again later.").queue();
                 }
-
-                event.getHook().editOriginal("Your default generator hiding behavior has been set to " + (autohide ? "true" : "false") + ".").queue();
             })
             .exceptionally(throwable ->  {
                 log.error("Error setting hide preference", throwable);
-                event.getHook().editOriginal("Failed to set hide preference: " + throwable.getMessage()).queue();
+                event.getHook().editOriginal("An error occurred while saving your preference, please try again later.").queue();
                 return null;
             });
     }
