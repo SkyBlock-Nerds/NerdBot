@@ -850,6 +850,40 @@ public class ProfileCommands {
             });
     }
 
+    @SlashCommand(name = "profile", group = "preference", subcommand = "hide", description = "Change your default hide behavior for generator commands.")
+    public void setHidePreference(SlashCommandInteractionEvent event, @SlashOption(description = "The value to set as your default hide behavior") boolean autohide) {
+        event.deferReply(true).complete();
+
+        if (!BotEnvironment.getBot().getDatabase().isConnected()) {
+            event.getHook().editOriginal("Could not connect to database!").queue();
+            return;
+        }
+
+        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        discordUserRepository.findByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    event.getHook().editOriginal("User not found").queue();
+                    return;
+                }
+
+                try {
+                    discordUser.setAutoHideGenCommands(autohide);
+                } catch (Exception e) {
+                    log.error("Error saving user auto-hide preference", e);
+                    event.getHook().editOriginal("An error occurred while saving your preference. Please try again later.\nReason: " + e.getMessage()).queue();
+                    return;
+                }
+
+                event.getHook().editOriginal("Your default generator hiding behavior has been set to " + (autohide ? "true" : "false") + ".").queue();
+            })
+            .exceptionally(throwable ->  {
+                log.error("Error setting hide preference", throwable);
+                event.getHook().editOriginal("Failed to set hide preference: " + throwable.getMessage()).queue();
+                return null;
+            });
+    }
+
     @SlashComponentHandler(id = "verification", patterns = {"verification-*"})
     public void handleVerificationButtons(ButtonInteractionEvent event) {
         String[] parts = event.getComponentId().split("-");
