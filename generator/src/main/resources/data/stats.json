@@ -702,5 +702,14 @@
         "color": "LIGHT_PURPLE",
         "subColor": null,
         "parseType": "NORMAL"
+    },
+    {
+        "icon": "⛃",
+        "name": "Treasure Chance",
+        "stat": "Treasure Chance",
+        "display": "⛃ Treasure Chance",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
     }
 ]
