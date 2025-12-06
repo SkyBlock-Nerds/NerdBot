@@ -587,6 +587,15 @@
         "parseType": "NORMAL"
     },
     {
+        "icon": "⛃",
+        "name": "treasure_chance",
+        "stat": "Treasure Chance",
+        "display": "⛃ Treasure Chance",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
         "icon": "♨",
         "name": "heat_resistance",
         "stat": "Heat Resistance",
