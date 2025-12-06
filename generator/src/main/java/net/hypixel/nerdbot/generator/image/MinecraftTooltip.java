@@ -8,7 +8,7 @@ import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.generator.text.segment.ColorSegment;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
-import net.hypixel.nerdbot.generator.util.FontUtils;
+import net.hypixel.nerdbot.generator.util.MinecraftFonts;
 import net.hypixel.nerdbot.core.Range;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,51 +37,10 @@ public class MinecraftTooltip {
     public static final Range<Integer> LINE_LENGTH = Range.between(1, 128);
 
     private static final int DEFAULT_PIXEL_SIZE = 2;
-    private static final int DEFAULT_START_XY = DEFAULT_PIXEL_SIZE * 5;
-    private static final int DEFAULT_Y_INCREMENT = DEFAULT_PIXEL_SIZE * 10;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
-    private static final @NotNull List<Font> MINECRAFT_FONTS = new ArrayList<>();
-    private static final Font SANS_SERIF_FONT;
-    private static final Font UNICODE_FALLBACK_FONT;
 
     static {
-        SANS_SERIF_FONT = new Font("SansSerif", Font.PLAIN, 20);
-        UNICODE_FALLBACK_FONT = FontUtils.initFont("/minecraft/assets/fonts/unifont-15.1.05.otf", 20.0f);
-
-        List<Font> loadedFonts = Arrays.asList(
-            FontUtils.initFont("/minecraft/assets/fonts/Minecraft-Regular.otf", 15.5f),
-            FontUtils.initFont("/minecraft/assets/fonts/3_Minecraft-Bold.otf", 20.0f),
-            FontUtils.initFont("/minecraft/assets/fonts/2_Minecraft-Italic.otf", 20.5f),
-            FontUtils.initFont("/minecraft/assets/fonts/4_Minecraft-BoldItalic.otf", 20.5f)
-        );
-
-        for (int i = 0; i < 4; i++) {
-            Font font = loadedFonts.get(i);
-            if (font == null) {
-                log.warn("Minecraft font at index {} failed to load, falling back to SansSerif", i);
-                font = SANS_SERIF_FONT.deriveFont(20.0f);
-            }
-            MINECRAFT_FONTS.add(font);
-        }
-
-        // Register Minecraft Fonts that loaded successfully
-        MINECRAFT_FONTS.forEach(font -> {
-            try {
-                GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-            } catch (Exception e) {
-                log.warn("Failed to register font '{}': {}", font.getName(), e.getMessage());
-            }
-        });
-
-        if (UNICODE_FALLBACK_FONT != null) {
-            try {
-                GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(UNICODE_FALLBACK_FONT);
-            } catch (Exception e) {
-                log.warn("Failed to register unicode fallback font '{}': {}", UNICODE_FALLBACK_FONT.getName(), e.getMessage());
-            }
-        }
-
         // Precompute character widths for the obfuscation effect
         precomputeCharacterWidths();
     }
@@ -184,32 +143,23 @@ public class MinecraftTooltip {
      * Precomputes character widths for the text obfuscation/magic formatting effect.
      */
     private static void precomputeCharacterWidths() {
-        for (int i = 0; i < MINECRAFT_FONTS.size(); i++) {
+        List<Font> fonts = MinecraftFonts.getAllFonts();
+
+        for (int i = 0; i < fonts.size(); i++) {
             OBFUSCATION_WIDTH_MAPS.put(i, new HashMap<>());
         }
 
         BufferedImage tempImg = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D tempG2d = tempImg.createGraphics();
-        FontMetrics[] metrics = new FontMetrics[MINECRAFT_FONTS.size()];
+        FontMetrics[] metrics = new FontMetrics[fonts.size()];
 
-        for (int i = 0; i < MINECRAFT_FONTS.size(); i++) {
-            Font font = MINECRAFT_FONTS.get(i);
-
-            if (font == null) {
-                log.error("Minecraft font at index {} is null, so we can't precompute the character widths", i);
-                continue;
-            }
-
-            metrics[i] = tempG2d.getFontMetrics(font);
+        for (int i = 0; i < fonts.size(); i++) {
+            metrics[i] = tempG2d.getFontMetrics(fonts.get(i));
         }
 
-        for (int fontIndex = 0; fontIndex < MINECRAFT_FONTS.size(); fontIndex++) {
-            Font font = MINECRAFT_FONTS.get(fontIndex);
+        for (int fontIndex = 0; fontIndex < fonts.size(); fontIndex++) {
+            Font font = fonts.get(fontIndex);
             FontMetrics fontMetrics = metrics[fontIndex];
-
-            if (font == null || fontMetrics == null) {
-                continue;
-            }
 
             Map<Integer, List<Character>> map = OBFUSCATION_WIDTH_MAPS.get(fontIndex);
 
@@ -217,7 +167,7 @@ public class MinecraftTooltip {
                 for (int codePoint = UNICODE_BLOCK_RANGES[range]; codePoint <= UNICODE_BLOCK_RANGES[range + 1]; codePoint++) {
                     char c = (char) codePoint;
 
-                    if (font.canDisplay(c)) {
+                    if (MinecraftFonts.canRender(font, c)) {
                         int width = fontMetrics.charWidth(c);
                         if (width > 0) {
                             map.computeIfAbsent(width, k -> new ArrayList<>()).add(c);
@@ -339,24 +289,30 @@ public class MinecraftTooltip {
     private int calculateLineWidth(Graphics2D graphics, LineSegment line) {
         int lineWidth = 0;
         for (ColorSegment segment : line.getSegments()) {
-            Font baseFont = MINECRAFT_FONTS.get((segment.isBold() ? 1 : 0) + (segment.isItalic() ? 2 : 0));
+            Font baseFont = MinecraftFonts.getFont(segment.isBold(), segment.isItalic());
             Font font = scaleFactor > 1 ? baseFont.deriveFont(baseFont.getSize2D() * scaleFactor) : baseFont;
             graphics.setFont(font);
             FontMetrics metrics = graphics.getFontMetrics(font);
             String segmentText = segment.getText();
 
-            for (int charIndex = 0; charIndex < segmentText.length(); charIndex++) {
-                char character = segmentText.charAt(charIndex);
+            for (int i = 0; i < segmentText.length(); ) {
+                int codePoint = segmentText.codePointAt(i);
+                String charStr = new String(Character.toChars(codePoint));
 
-                if (font.canDisplay(character)) {
-                    lineWidth += metrics.charWidth(character);
+                if (font.canDisplayUpTo(charStr) == -1) {
+                    lineWidth += metrics.stringWidth(charStr);
                 } else {
-                    Font fallbackFont = getFallbackFont(font.getSize2D());
-                    graphics.setFont(fallbackFont);
-                    FontMetrics fallbackMetrics = graphics.getFontMetrics(fallbackFont);
-                    lineWidth += fallbackMetrics.charWidth(character);
-                    graphics.setFont(font);
+                    Font fallbackFont = MinecraftFonts.getFallbackFont(codePoint, font.getSize2D());
+                    if (fallbackFont != null) {
+                        graphics.setFont(fallbackFont);
+                        FontMetrics fallbackMetrics = graphics.getFontMetrics(fallbackFont);
+                        lineWidth += fallbackMetrics.stringWidth(charStr);
+                        graphics.setFont(font);
+                    } else {
+                        lineWidth += metrics.stringWidth(charStr);
+                    }
                 }
+                i += Character.charCount(codePoint);
             }
         }
 
@@ -423,17 +379,21 @@ public class MinecraftTooltip {
      * @param colorSegment The {@link ColorSegment} containing formatted text.
      */
     private void drawString(Graphics2D graphics, @NotNull ColorSegment colorSegment) {
-        Font baseFont = MINECRAFT_FONTS.get((colorSegment.isBold() ? 1 : 0) + (colorSegment.isItalic() ? 2 : 0));
+        Font baseFont = MinecraftFonts.getFont(colorSegment.isBold(), colorSegment.isItalic());
         this.currentFont = scaleFactor > 1 ? baseFont.deriveFont(baseFont.getSize2D() * scaleFactor) : baseFont;
         this.currentColor = colorSegment.getColor().orElse(ChatFormat.GRAY);
         graphics.setFont(this.currentFont);
         FontMetrics metrics = graphics.getFontMetrics(this.currentFont);
 
         String text = colorSegment.getText();
+        log.debug("Drawing text segment '{}' with font: {} (bold: {}, italic: {})",
+            text, this.currentFont.getName(), colorSegment.isBold(), colorSegment.isItalic());
         StringBuilder subWord = new StringBuilder();
 
-        for (int charIndex = 0; charIndex < text.length(); charIndex++) {
-            char character = text.charAt(charIndex);
+        for (int i = 0; i < text.length(); ) {
+            int codePoint = text.codePointAt(i);
+            String charStr = new String(Character.toChars(codePoint));
+            int charCount = Character.charCount(codePoint);
 
             if (colorSegment.isObfuscated()) {
                 // Draw previous subWord, if any
@@ -443,11 +403,17 @@ public class MinecraftTooltip {
                 }
 
                 // Draw obfuscated character
-                drawObfuscatedChar(graphics, character, colorSegment, metrics);
+                if (codePoint <= 0xFFFF) {
+                    drawObfuscatedChar(graphics, (char) codePoint, colorSegment, metrics);
+                } else {
+                    drawSymbolAndAdvance(graphics, codePoint, charStr, colorSegment);
+                }
+
+                i += charCount;
                 continue;
             }
 
-            if (!this.currentFont.canDisplay(character)) {
+            if (this.currentFont.canDisplayUpTo(charStr) != -1) {
                 // Draw previous subWord, if any
                 if (!subWord.isEmpty()) {
                     drawSubWord(graphics, subWord.toString(), colorSegment, metrics);
@@ -455,11 +421,13 @@ public class MinecraftTooltip {
                 }
 
                 // Draw symbol using unicode fallback font
-                drawSymbolAndAdvance(graphics, character, colorSegment);
+                drawSymbolAndAdvance(graphics, codePoint, charStr, colorSegment);
+                i += charCount;
                 continue;
             }
 
-            subWord.append(character);
+            subWord.append(charStr);
+            i += charCount;
         }
 
         // Draw any remaining subWord, if any
@@ -487,30 +455,36 @@ public class MinecraftTooltip {
     }
 
     /**
-     * Draws a symbol using the {@link MinecraftTooltip#SANS_SERIF_FONT} font.
+     * Draws a symbol using a fallback font when the Minecraft font cannot render it.
      *
-     * @param graphics The {@link Graphics2D} object to draw on.
-     * @param symbol   The symbol to draw.
+     * @param graphics  The {@link Graphics2D} object to draw on.
+     * @param codePoint The Unicode code point of the character.
+     * @param charStr   The character as a string (handles surrogate pairs).
+     * @param segment   The color segment containing style information.
      */
-    private void drawSymbolAndAdvance(Graphics2D graphics, char symbol, ColorSegment segment) {
-        Font fallbackFont = getFallbackFont(this.currentFont.getSize2D());
-        graphics.setFont(fallbackFont);
-        FontMetrics symbolMetrics = graphics.getFontMetrics(fallbackFont);
-        String symbolStr = Character.toString(symbol);
-        int width = symbolMetrics.stringWidth(symbolStr);
+    private void drawSymbolAndAdvance(Graphics2D graphics, int codePoint, String charStr, ColorSegment segment) {
+        log.warn("Character '{}' (U+{}) cannot be displayed by font '{}'",
+            charStr, String.format("%04X", codePoint), this.currentFont.getName());
 
-        drawTextWithEffects(graphics, symbolStr, segment, width);
+        Font fallbackFont = MinecraftFonts.getFallbackFont(codePoint, this.currentFont.getSize2D());
+        Font fontToUse = fallbackFont != null ? fallbackFont : this.currentFont;
+
+        if (fallbackFont != null) {
+            log.debug("Switching font: '{}' -> '{}'", this.currentFont.getName(), fallbackFont.getName());
+        }
+
+        graphics.setFont(fontToUse);
+        FontMetrics symbolMetrics = graphics.getFontMetrics(fontToUse);
+        int width = symbolMetrics.stringWidth(charStr);
+
+        drawTextWithEffects(graphics, charStr, segment, width);
 
         this.locationX += width;
         graphics.setFont(this.currentFont);
-    }
 
-    /**
-     * Returns a fallback font.
-     */
-    private Font getFallbackFont(float targetSize) {
-        Font base = UNICODE_FALLBACK_FONT != null ? UNICODE_FALLBACK_FONT : SANS_SERIF_FONT;
-        return base.deriveFont(targetSize);
+        if (fallbackFont != null) {
+            log.debug("Switching font: '{}' -> '{}'", fallbackFont.getName(), this.currentFont.getName());
+        }
     }
 
     /**
@@ -530,9 +504,15 @@ public class MinecraftTooltip {
         List<Character> matchingWidthChars = (widthMap != null) ? widthMap.get(originalWidth) : null;
 
         if (matchingWidthChars != null && !matchingWidthChars.isEmpty()) {
-            charToDrawStr = String.valueOf(matchingWidthChars.get(ThreadLocalRandom.current().nextInt(matchingWidthChars.size())));
+            char randomChar = matchingWidthChars.get(ThreadLocalRandom.current().nextInt(matchingWidthChars.size()));
+            charToDrawStr = String.valueOf(randomChar);
+            log.trace("Obfuscating character '{}' (U+{}) with '{}' (U+{}) using font: {}",
+                originalChar, String.format("%04X", (int) originalChar),
+                randomChar, String.format("%04X", (int) randomChar),
+                this.currentFont.getName());
         } else {
-            log.warn("No matching character found with width {} for original character '{}', using original", originalWidth, originalChar);
+            log.warn("No matching character found with width {} for original character '{}' (U+{}), using original",
+                originalWidth, originalChar, String.format("%04X", (int) originalChar));
         }
 
         // Recalculate width for the potentially different character

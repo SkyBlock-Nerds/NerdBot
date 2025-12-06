@@ -10,7 +10,7 @@ import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.item.InventoryItem;
 import net.hypixel.nerdbot.generator.parser.inventory.InventoryStringParser;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
-import net.hypixel.nerdbot.generator.util.FontUtils;
+import net.hypixel.nerdbot.generator.util.MinecraftFonts;
 import net.hypixel.nerdbot.core.ImageUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,7 +34,6 @@ public class MinecraftInventoryGenerator implements Generator {
     private static final Color INVENTORY_BACKGROUND = new Color(198, 198, 198);
     private static final Color BORDER_COLOR = new Color(198, 198, 198);
     private static final Color DARK_BORDER_COLOR = new Color(85, 85, 85);
-    private static final Font MINECRAFT_FONT;
 
     private static final int SLOT_BORDER_THICKNESS = 1;
     private static final int SLOT_INNER_BORDER_OFFSET = 1;
@@ -68,11 +67,6 @@ public class MinecraftInventoryGenerator implements Generator {
             }
         } catch (IOException e) {
             log.error("Failed to load slot texture", e);
-        }
-
-        MINECRAFT_FONT = FontUtils.initFont("/minecraft/assets/fonts/Minecraft-Regular.otf", scaleFactor * 8);
-        if (MINECRAFT_FONT != null) {
-            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(MINECRAFT_FONT);
         }
     }
 
@@ -117,7 +111,7 @@ public class MinecraftInventoryGenerator implements Generator {
         this.inventoryImage = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
         this.g2d = inventoryImage.createGraphics();
         this.g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-        this.g2d.setFont(MINECRAFT_FONT);
+        this.g2d.setFont(MinecraftFonts.getFont(MinecraftFonts.REGULAR).deriveFont((float) scaleFactor * 8));
     }
 
     private void drawInventoryBackground() {
@@ -259,7 +253,7 @@ public class MinecraftInventoryGenerator implements Generator {
 
                     this.g2d = inventoryImage.createGraphics();
                     this.g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-                    this.g2d.setFont(MINECRAFT_FONT);
+                    this.g2d.setFont(MinecraftFonts.getFont(MinecraftFonts.REGULAR).deriveFont((float) scaleFactor * 8));
 
                     this.generatedObject = new GeneratedObject(gifData, frames, frameDelay);
 
@@ -364,7 +358,7 @@ public class MinecraftInventoryGenerator implements Generator {
         String amountText = String.valueOf(amount);
 
         Font originalFont = target.getFont();
-        Font stackFont = MINECRAFT_FONT.deriveFont(Font.PLAIN, (float) scaleFactor * 8);
+        Font stackFont = MinecraftFonts.getFont(MinecraftFonts.REGULAR).deriveFont((float) scaleFactor * 8);
         target.setFont(stackFont);
 
         // Calculate text position (bottom-right of slot)
@@ -398,7 +392,7 @@ public class MinecraftInventoryGenerator implements Generator {
             BufferedImage frame = new BufferedImage(inventoryImage.getWidth(), inventoryImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
             Graphics2D frameGraphics = frame.createGraphics();
             frameGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-            frameGraphics.setFont(MINECRAFT_FONT);
+            frameGraphics.setFont(MinecraftFonts.getFont(MinecraftFonts.REGULAR).deriveFont((float) scaleFactor * 8));
             frameGraphics.drawImage(inventoryImage, 0, 0, null);
 
             for (InventoryItem item : items) {
