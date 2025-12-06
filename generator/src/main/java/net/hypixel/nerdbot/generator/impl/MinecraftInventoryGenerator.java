@@ -21,9 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @ToString
@@ -218,18 +217,7 @@ public class MinecraftInventoryGenerator implements Generator {
         }
 
         InventoryStringParser parser = new InventoryStringParser(totalSlots);
-        ArrayList<InventoryItem> items = parser.parse(inventoryString);
-
-        // Remove duplicate items by slot, keeping the last occurrence
-        Map<String, InventoryItem> slotToItemMap = new LinkedHashMap<>();
-        for (InventoryItem item : items) {
-            if (item.getSlot() != null) {
-                String slotKey = Arrays.toString(item.getSlot());
-                slotToItemMap.put(slotKey, item);
-            }
-        }
-        items.clear();
-        items.addAll(slotToItemMap.values());
+        List<InventoryItem> items = resolveSlotConflicts(parser.parse(inventoryString));
 
         boolean hasAnimation = false;
         for (InventoryItem item : items) {
@@ -243,6 +231,7 @@ public class MinecraftInventoryGenerator implements Generator {
             List<BufferedImage> frames = buildAnimationFrames(items);
             if (!frames.isEmpty()) {
                 int frameDelay = determineFrameDelay(items);
+
                 try {
                     byte[] gifData = ImageUtil.toGifBytes(frames, frameDelay, true);
                     this.inventoryImage = frames.getFirst();
@@ -268,6 +257,53 @@ public class MinecraftInventoryGenerator implements Generator {
         for (InventoryItem item : items) {
             drawItem(g2d, item);
         }
+    }
+
+    /**
+     * Ensures each slot is filled by the last item referencing it within the inventory string.
+     */
+    private List<InventoryItem> resolveSlotConflicts(List<InventoryItem> parsedItems) {
+        if (parsedItems == null || parsedItems.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        boolean[] slotHasItem = new boolean[this.totalSlots + 1];
+        ArrayList<InventoryItem> filteredItems = new ArrayList<>(parsedItems.size());
+
+        for (int index = parsedItems.size() - 1; index >= 0; index--) {
+            InventoryItem item = parsedItems.get(index);
+            int[] slots = item.getSlot();
+            int[] amounts = item.getAmount();
+
+            if (slots == null || amounts == null || slots.length != amounts.length) {
+                continue;
+            }
+
+            int keptCount = 0;
+            for (int slotIndex = 0; slotIndex < slots.length; slotIndex++) {
+                int slot = slots[slotIndex];
+                if (slot >= 1 && slot <= this.totalSlots && !slotHasItem[slot]) {
+                    slotHasItem[slot] = true;
+                    slots[keptCount] = slot;
+                    amounts[keptCount] = amounts[slotIndex];
+                    keptCount++;
+                }
+            }
+
+            if (keptCount == 0) {
+                continue;
+            }
+
+            if (keptCount != slots.length) {
+                item.setSlot(Arrays.copyOf(slots, keptCount));
+                item.setAmount(Arrays.copyOf(amounts, keptCount));
+            }
+
+            filteredItems.add(item);
+        }
+
+        Collections.reverse(filteredItems);
+        return filteredItems;
     }
 
     private void processItem(InventoryItem item) {
