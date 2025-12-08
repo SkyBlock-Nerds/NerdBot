@@ -5,7 +5,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
- 
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -23,9 +22,8 @@ public class Spritesheet {
     private static final Map<String, BufferedImage> IMAGE_MAP = new HashMap<>();
     private static final String ATLAS_PATH = "/minecraft/assets/spritesheets/minecraft_texture_atlas.png";
     private static final String COORDINATES_PATH = "/minecraft/assets/json/atlas_coordinates.json";
-
-    private static BufferedImage textureAtlas;
     private static final Gson GSON = new Gson();
+    private static BufferedImage textureAtlas;
 
     static {
         try (InputStream atlasStream = Spritesheet.class.getResourceAsStream(ATLAS_PATH)) {
@@ -68,6 +66,7 @@ public class Spritesheet {
     }
 
     private Spritesheet() {
+        throw new UnsupportedOperationException("Utility class");
     }
 
     public static BufferedImage getTexture(String textureId) {

@@ -163,4 +163,16 @@ public class ImageUtil {
 
         return baos.toByteArray();
     }
+
+    /**
+     * Copies a source image onto an existing target image.
+     *
+     * @param target Target image to draw onto
+     * @param source Source image to copy from
+     */
+    public static void copyImage(BufferedImage target, BufferedImage source) {
+        Graphics2D g = target.createGraphics();
+        g.drawImage(source, 0, 0, null);
+        g.dispose();
+    }
 }
