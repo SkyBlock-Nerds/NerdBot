@@ -12,6 +12,7 @@ public class Utils {
     public static final String[] SPECIAL_ROLES = {"Apex Nerd", "Ultimate Nerd", "Ultimate Nerd But Red"};
 
     private Utils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     @Deprecated
