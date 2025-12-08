@@ -4,27 +4,26 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import net.hypixel.nerdbot.core.ImageUtil;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.generator.data.ArmorType;
+import net.hypixel.nerdbot.generator.effect.EffectContext;
+import net.hypixel.nerdbot.generator.effect.EffectPipeline;
+import net.hypixel.nerdbot.generator.effect.impl.DurabilityBarEffect;
+import net.hypixel.nerdbot.generator.effect.impl.GlintImageEffect;
+import net.hypixel.nerdbot.generator.effect.impl.HoverImageEffect;
+import net.hypixel.nerdbot.generator.effect.impl.OverlayApplicationEffect;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
-import net.hypixel.nerdbot.generator.item.overlay.EnchantmentGlint;
-import net.hypixel.nerdbot.generator.item.overlay.HoverEffect;
-import net.hypixel.nerdbot.generator.item.overlay.ItemOverlay;
-import net.hypixel.nerdbot.generator.item.overlay.OverlayType;
-import net.hypixel.nerdbot.generator.spritesheet.OverlaySheet;
+import net.hypixel.nerdbot.generator.spritesheet.OverlayLoader;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
-import net.hypixel.nerdbot.core.ImageUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.function.UnaryOperator;
+import java.io.IOException;
+import java.io.InputStream;
 
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -37,217 +36,75 @@ public class MinecraftItemGenerator implements Generator {
     private final boolean hoverEffect;
     private final boolean bigImage;
     private final Integer durabilityPercent;
-
-    private BufferedImage itemImage;
+    private final OverlayLoader overlayLoader;
+    private final EffectPipeline effectPipeline;
 
     @Override
     public @NotNull GeneratedObject render() {
         log.debug("Rendering item '{}' ({})", itemId, this);
 
-        itemImage = Spritesheet.getTexture(itemId.toLowerCase());
+        // Load base item texture
+        BufferedImage itemImage = Spritesheet.getTexture(itemId.toLowerCase());
 
         if (itemImage == null) {
             throw new GeneratorException("Item with ID `%s` not found", itemId);
         }
 
-        ItemOverlay itemOverlays = OverlaySheet.getOverlay(itemId.toLowerCase());
-        if (itemOverlays != null) {
-            itemImage = applyOverlay(itemOverlays);
+        // Create initial effect context
+        EffectContext.Builder contextBuilder = new EffectContext.Builder()
+            .withImage(itemImage)
+            .withItemId(itemId)
+            .withEnchanted(enchanted)
+            .withHovered(hoverEffect)
+            .putMetadata("data", data);
+
+        if (durabilityPercent != null) {
+            contextBuilder.putMetadata("durabilityPercent", durabilityPercent);
         }
 
-        if (bigImage && itemImage.getHeight() <= 16 && itemImage.getWidth() <= 16) {
-            itemImage = ImageUtil.upscaleImage(itemImage, 10);
-        }
+        EffectContext context = contextBuilder.build();
 
-        List<BufferedImage> animationFrames = null;
-        int animationFrameDelay = 0;
+        // Execute effect pipeline (overlay, glint, hover, durability)
+        context = effectPipeline.execute(context);
 
-        if (enchanted) {
-            EnchantmentGlint.GlintAnimation glintAnimation = EnchantmentGlint.applyEnchantGlint(itemImage);
-            itemImage = glintAnimation.firstFrame();
-            if (glintAnimation.isAnimated()) {
-                animationFrames = new ArrayList<>(glintAnimation.frames());
-                animationFrameDelay = glintAnimation.frameDelayMs();
-            }
-        }
-
-        if (hoverEffect) {
-            if (animationFrames != null) {
-                animationFrames = transformFrames(animationFrames, HoverEffect::applyHoverEffect);
-                itemImage = animationFrames.getFirst();
+        // Apply big image scaling if requested
+        BufferedImage finalImage = context.getImage();
+        if (bigImage && finalImage != null && finalImage.getHeight() <= 16 && finalImage.getWidth() <= 16) {
+            if (context.isAnimated()) {
+                List<BufferedImage> scaledFrames = context.getAnimationFrames().stream()
+                    .map(frame -> ImageUtil.upscaleImage(frame, 10))
+                    .toList();
+                context = new EffectContext.Builder()
+                    .withAnimationFrames(scaledFrames, context.getFrameDelayMs())
+                    .withItemId(itemId)
+                    .withEnchanted(enchanted)
+                    .withHovered(hoverEffect)
+                    .withMetadata(context.getMetadata())
+                    .build();
+                finalImage = scaledFrames.getFirst();
             } else {
-                itemImage = HoverEffect.applyHoverEffect(itemImage);
+                finalImage = ImageUtil.upscaleImage(finalImage, 10);
             }
         }
 
-        if (durabilityPercent != null && shouldShowDurabilityBar()) {
-            if (animationFrames != null) {
-                animationFrames = transformFrames(animationFrames, this::addDurabilityBar);
-                itemImage = animationFrames.getFirst();
-            } else {
-                itemImage = addDurabilityBar(itemImage);
-            }
-        }
-
-        if (animationFrames != null) {
+        if (context.isAnimated()) {
             try {
-                byte[] gifData = ImageUtil.toGifBytes(animationFrames, animationFrameDelay, true);
-                log.debug("Rendered animated item '{}' ({} frames, delay {}ms)", itemId, animationFrames.size(), animationFrameDelay);
-                return new GeneratedObject(gifData, animationFrames, animationFrameDelay);
+                byte[] gifData = ImageUtil.toGifBytes(
+                    context.getAnimationFrames(),
+                    context.getFrameDelayMs(),
+                    true
+                );
+                log.debug("Rendered animated item '{}' ({} frames, delay {}ms)",
+                    itemId, context.getAnimationFrames().size(), context.getFrameDelayMs());
+                return new GeneratedObject(gifData, context.getAnimationFrames(), context.getFrameDelayMs());
             } catch (IOException e) {
-                throw new GeneratorException("Failed to encode enchantment glint animation", e);
+                throw new GeneratorException("Failed to encode animation", e);
             }
         }
 
-        log.debug("Rendered static item '{}' (dimensions {}x{})", itemId, itemImage.getWidth(), itemImage.getHeight());
-        return new GeneratedObject(itemImage);
-    }
-
-    private BufferedImage applyOverlay(ItemOverlay overlay) {
-        BufferedImage overlayImage = overlay.getImage();
-        String options = (data != null ? data : "");
-        log.debug("Overlay type: {}, Color options: {}, Data: {}", overlay.getType(), overlay.getOverlayColorOptions(), options);
-        
-        log.debug("Processing overlay with name: '{}'", overlay.getName());
-        log.debug("Overlay image dimensions: {}x{}, Base image dimensions: {}x{}", 
-                 overlayImage.getWidth(), overlayImage.getHeight(),
-                 itemImage.getWidth(), itemImage.getHeight());
-
-        boolean isColorableArmor = ArmorType.isColorableArmor(overlay.getName());
-
-        BufferedImage coloredImage;
-        BufferedImage baseForFinal;
-        BufferedImage overlayForFinal;
-
-        if (isColorableArmor) {
-            coloredImage = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            applyColoring(coloredImage, itemImage, overlay, options);
-            baseForFinal = coloredImage;
-            overlayForFinal = overlayImage;
-            log.debug("Applied coloring to base item for colorable armor");
-        } else {
-            // For other overlays: color the overlay, leave base item uncolored
-            coloredImage = new BufferedImage(overlayImage.getWidth(), overlayImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            applyColoring(coloredImage, overlayImage, overlay, options);
-            baseForFinal = itemImage; // Uncolored base
-            overlayForFinal = coloredImage; // Colored overlay
-            log.debug("Applied coloring to overlay for non-colorable item");
-        }
-
-        BufferedImage overlaidItem = new BufferedImage(itemImage.getWidth(), itemImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D overlaidItemGraphics = overlaidItem.createGraphics();
-        
-        overlaidItemGraphics.drawImage(baseForFinal, 0, 0, null);
-        log.debug("Drawing overlay on top. Overlay dimensions: {}x{}, Base dimensions: {}x{}", 
-                 overlayForFinal.getWidth(), overlayForFinal.getHeight(),
-                 baseForFinal.getWidth(), baseForFinal.getHeight());
-        overlaidItemGraphics.drawImage(overlayForFinal, 0, 0, null);
-        overlaidItemGraphics.dispose();
-
-        return overlaidItem;
-    }
-
-    private void applyColoring(BufferedImage target, BufferedImage source, ItemOverlay overlay, String options) {
-        switch (overlay.getType()) {
-            case NORMAL -> {
-                int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
-                log.debug("Retrieved overlay colors: {}", overlayColors != null ? Arrays.toString(overlayColors) : "null");
-                if (overlayColors != null) {
-                    log.debug("Applying color {} to image", Integer.toHexString(overlayColors[0]));
-                    OverlayType.normalOverlay(target, source, overlayColors[0]);
-                    log.debug("Colored image created");
-                } else {
-                    log.debug("No colors found, copying image as-is");
-                    Graphics2D g = target.createGraphics();
-                    g.drawImage(source, 0, 0, null);
-                    g.dispose();
-                }
-            }
-            case MAPPED -> {
-                int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
-                if (overlayColors != null) {
-                    OverlayType.mappedOverlay(target, source, overlay.getOverlayColorOptions().getMap(), overlayColors);
-                } else {
-                    Graphics2D g = target.createGraphics();
-                    g.drawImage(source, 0, 0, null);
-                    g.dispose();
-                }
-            }
-            case DUAL_LAYER -> {
-                int[] overlayColors = overlay.getOverlayColorOptions().getColorsFromOption(options);
-                if (overlayColors != null) {
-                    OverlayType.normalOverlay(target, source, overlayColors[1]);
-                    OverlayType.normalOverlay(target, source, overlayColors[0]);
-                } else {
-                    Graphics2D g = target.createGraphics();
-                    g.drawImage(source, 0, 0, null);
-                    g.dispose();
-                }
-            }
-        }
-    }
-
-    private boolean shouldShowDurabilityBar() {
-        return durabilityPercent < 100;
-    }
-
-    private List<BufferedImage> transformFrames(List<BufferedImage> frames, UnaryOperator<BufferedImage> transformer) {
-        List<BufferedImage> transformed = new ArrayList<>(frames.size());
-
-        for (BufferedImage frame : frames) {
-            transformed.add(transformer.apply(frame));
-        }
-
-        return transformed;
-    }
-
-    private BufferedImage addDurabilityBar(BufferedImage item) {
-        BufferedImage result = new BufferedImage(item.getWidth(), item.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = result.createGraphics();
-        
-        // Draw the original item
-        g2d.drawImage(item, 0, 0, null);
-        
-        // The durability display is two separate bars stacked vertically
-        int scaleFactor = item.getWidth() / 16;
-        int barWidth = item.getWidth() - (4 * scaleFactor) + scaleFactor;
-        int barHeight = scaleFactor;
-        int barX = 2 * scaleFactor;
-        
-        // Position the bars
-        int colorBarY = item.getHeight() - (3 * scaleFactor); // Top bar (colored durability)
-        int blackBarY = item.getHeight() - (2 * scaleFactor); // Bottom bar (permanently black)
-        
-        // Draw the bottom bar
-        g2d.setColor(Color.BLACK);
-        g2d.fillRect(barX, blackBarY, barWidth, barHeight);
-        
-        // Draw the top durability bar
-        g2d.setColor(Color.BLACK);
-        g2d.fillRect(barX, colorBarY, barWidth, barHeight);
-        
-        // Draw the colored portion
-        if (durabilityPercent > 0) {
-            int filledWidth = (int) (barWidth * durabilityPercent / 100.0);
-            Color barColor = getDurabilityColor(durabilityPercent);
-            g2d.setColor(barColor);
-            g2d.fillRect(barX, colorBarY, filledWidth, barHeight);
-        }
-        
-        g2d.dispose();
-        return result;
-    }
-
-    private Color getDurabilityColor(int durabilityPercent) {
-        if (durabilityPercent > 50) {
-            // Green to yellow (high to medium durability)
-            int red = (int) (255 * 2 * (100 - durabilityPercent) / 100.0);
-            return new Color(red, 255, 0);
-        } else {
-            // Yellow to red (medium to low durability)
-            int green = (int) (255 * 2 * durabilityPercent / 100.0);
-            return new Color(255, green, 0);
-        }
+        log.debug("Rendered static item '{}' (dimensions {}x{})",
+            itemId, finalImage.getWidth(), finalImage.getHeight());
+        return new GeneratedObject(finalImage);
     }
 
     public static class Builder implements ClassBuilder<MinecraftItemGenerator> {
@@ -257,6 +114,8 @@ public class MinecraftItemGenerator implements Generator {
         private boolean hoverEffect;
         private boolean bigImage;
         private Integer durabilityPercent;
+        private OverlayLoader overlayLoader;
+        private EffectPipeline effectPipeline;
 
         public MinecraftItemGenerator.Builder withItem(String itemId) {
             if (itemId == null || itemId.isBlank()) {
@@ -298,12 +157,70 @@ public class MinecraftItemGenerator implements Generator {
             return this;
         }
 
+        /**
+         * Inject custom overlay loader
+         *
+         * @param loader Overlay loader
+         * @return This builder
+         */
+        public MinecraftItemGenerator.Builder withOverlayLoader(OverlayLoader loader) {
+            this.overlayLoader = loader;
+            return this;
+        }
+
+        /**
+         * Inject custom effect pipeline
+         *
+         * @param pipeline Effect pipeline
+         * @return This builder
+         */
+        public MinecraftItemGenerator.Builder withEffectPipeline(EffectPipeline pipeline) {
+            this.effectPipeline = pipeline;
+            return this;
+        }
+
         @Override
         public MinecraftItemGenerator build() {
             if (itemId == null || itemId.isBlank()) {
                 throw new IllegalArgumentException("itemId must not be blank");
             }
-            return new MinecraftItemGenerator(itemId, data, enchanted, hoverEffect, bigImage, durabilityPercent);
+
+            // Use default overlay loader if not provided
+            if (overlayLoader == null) {
+                overlayLoader = OverlayLoader.getInstance();
+            }
+
+            // Build default effect pipeline if not provided
+            if (effectPipeline == null) {
+                effectPipeline = buildDefaultEffectPipeline();
+            }
+
+            return new MinecraftItemGenerator(
+                itemId, data, enchanted, hoverEffect, bigImage,
+                durabilityPercent, overlayLoader, effectPipeline
+            );
+        }
+
+        private EffectPipeline buildDefaultEffectPipeline() {
+            BufferedImage glintTexture = loadGlintTexture();
+
+            return new EffectPipeline.Builder()
+                .addEffect(new OverlayApplicationEffect(overlayLoader))
+                .addEffect(new GlintImageEffect(glintTexture))
+                .addEffect(new HoverImageEffect())
+                .addEffect(new DurabilityBarEffect())
+                .build();
+        }
+
+        private BufferedImage loadGlintTexture() {
+            try (InputStream stream = getClass().getResourceAsStream("/minecraft/assets/textures/glint.png")) {
+                if (stream == null) {
+                    throw new IOException("glint.png not found");
+                }
+                return ImageIO.read(stream);
+            } catch (IOException e) {
+                throw new GeneratorException("Failed to load glint texture", e);
+            }
         }
     }
 }

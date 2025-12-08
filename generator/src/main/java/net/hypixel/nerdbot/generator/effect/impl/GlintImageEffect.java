@@ -1,63 +1,67 @@
-package net.hypixel.nerdbot.generator.item.overlay;
+package net.hypixel.nerdbot.generator.effect.impl;
 
-import net.hypixel.nerdbot.generator.exception.GeneratorException;
+import net.hypixel.nerdbot.generator.effect.EffectContext;
+import net.hypixel.nerdbot.generator.effect.EffectResult;
+import net.hypixel.nerdbot.generator.effect.ImageEffect;
 
-import javax.imageio.ImageIO;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public final class EnchantmentGlint {
+/**
+ * Enchantment glint effect - creates an animated glint overlay.
+ * <p>
+ * This effect generates an animated glint overlay similar to Minecraft's
+ * enchantment effect.
+ */
+public class GlintImageEffect implements ImageEffect {
 
-    private static final int FRAME_DELAY_MS = 33; // ~30 FPS for smoother motion
-    private static final int TOTAL_DURATION_MS = 6_000;
-    private static final int FRAME_COUNT = (int) Math.ceil((double) TOTAL_DURATION_MS / FRAME_DELAY_MS);
+    private final BufferedImage glintTexture;
+
+    private static final int FRAME_DELAY_MS = 33; // ~30 FPS
+    private static final int TOTAL_DURATION_MS = 6000;
     private static final double UV_SCALE = 8.0;
     private static final double PRIMARY_ROTATION_DEG = -50.0;
     private static final double SECONDARY_ROTATION_DEG = 10.0;
-    private static final int PRIMARY_PERIOD_MS = 3_000;
-    private static final int SECONDARY_PERIOD_MS = 4_875;
+    private static final int PRIMARY_PERIOD_MS = 3000;
+    private static final int SECONDARY_PERIOD_MS = 4875;
     private static final float[] GLINT_TINT = {0.5f, 0.25f, 0.8f};
     private static final float GLINT_INTENSITY = 0.75f;
-    private static final double GLINT_SCROLL_SPEED = 0.3;
+    private static final double SCROLL_SPEED = 0.3;
     private static final double BASE_SPRITE_PIXELS = 16.0;
-    private static final BufferedImage GLINT_TEXTURE;
 
-    static {
-        try (InputStream stream = EnchantmentGlint.class.getResourceAsStream("/minecraft/assets/textures/glint.png")) {
-            if (stream == null) {
-                throw new IOException("Missing enchant glint texture: /minecraft/assets/textures/glint.png");
-            }
-            GLINT_TEXTURE = ImageIO.read(stream);
-        } catch (IOException exception) {
-            throw new ExceptionInInitializerError(exception);
-        }
-    }
-
-    private EnchantmentGlint() {
-    }
-
-    public static GlintAnimation applyEnchantGlint(BufferedImage baseImage) {
-        if (baseImage == null) {
-            throw new IllegalArgumentException("Base image cannot be null");
+    /**
+     * Create glint effect.
+     *
+     * @param glintTexture The glint texture image
+     */
+    public GlintImageEffect(BufferedImage glintTexture) {
+        if (glintTexture == null) {
+            throw new IllegalArgumentException("Glint texture cannot be null");
         }
 
-        BufferedImage prepared = ensureArgb(baseImage);
-        int width = prepared.getWidth();
-        int height = prepared.getHeight();
-        int[] basePixels = prepared.getRGB(0, 0, width, height, null, 0, width);
+        this.glintTexture = glintTexture;
+    }
 
-        double spriteSpanU = BASE_SPRITE_PIXELS / GLINT_TEXTURE.getWidth();
-        double spriteSpanV = BASE_SPRITE_PIXELS / GLINT_TEXTURE.getHeight();
+    @Override
+    public EffectResult apply(EffectContext context) {
+        BufferedImage baseImage = ensureArgb(context.getImage());
+
+        int frameCount = (int) Math.ceil((double) TOTAL_DURATION_MS / FRAME_DELAY_MS);
+        int width = baseImage.getWidth();
+        int height = baseImage.getHeight();
+        int[] basePixels = baseImage.getRGB(0, 0, width, height, null, 0, width);
+
+        double spriteSpanU = BASE_SPRITE_PIXELS / glintTexture.getWidth();
+        double spriteSpanV = BASE_SPRITE_PIXELS / glintTexture.getHeight();
         double resolutionScale = Math.max(Math.max(width, height) / BASE_SPRITE_PIXELS, 1.0);
         double uvScale = UV_SCALE / resolutionScale;
 
-        List<BufferedImage> frames = new ArrayList<>(FRAME_COUNT);
-        for (int frameIndex = 0; frameIndex < FRAME_COUNT; frameIndex++) {
+        List<BufferedImage> frames = new ArrayList<>(frameCount);
+
+        for (int frameIndex = 0; frameIndex < frameCount; frameIndex++) {
             double timeMs = frameIndex * FRAME_DELAY_MS;
             int[] framePixels = Arrays.copyOf(basePixels, basePixels.length);
 
@@ -69,40 +73,19 @@ public final class EnchantmentGlint {
             frames.add(frame);
         }
 
-        return new GlintAnimation(frames, FRAME_DELAY_MS);
+        return EffectResult.animated(frames, FRAME_DELAY_MS);
     }
 
-    private static BufferedImage ensureArgb(BufferedImage image) {
-        if (image.getType() == BufferedImage.TYPE_INT_ARGB) {
-            return image;
-        }
-
-        BufferedImage converted = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D graphics = converted.createGraphics();
-        graphics.drawImage(image, 0, 0, null);
-        graphics.dispose();
-
-        return converted;
-    }
-
-    private static void applyGlintPass(int[] pixels,
-                                       int width,
-                                       int height,
-                                       double timeMs,
-                                       double periodMs,
-                                       double rotationDeg,
-                                       double direction,
-                                       double spriteSpanU,
-                                       double spriteSpanV,
-                                       double uvScale) {
+    private void applyGlintPass(int[] pixels, int width, int height, double timeMs, double periodMs, double rotationDeg,
+                                double direction, double spriteSpanU, double spriteSpanV, double uvScale) {
         double offset = (timeMs % periodMs) / periodMs;
         double inverseScale = 1.0 / uvScale;
-        double adjustedOffset = offset * GLINT_SCROLL_SPEED;
+        double adjustedOffset = offset * SCROLL_SPEED;
         double radians = Math.toRadians(rotationDeg);
         double cos = Math.cos(radians);
         double sin = Math.sin(radians);
-        int textureWidth = GLINT_TEXTURE.getWidth();
-        int textureHeight = GLINT_TEXTURE.getHeight();
+        int textureWidth = glintTexture.getWidth();
+        int textureHeight = glintTexture.getHeight();
         float[] sampled = new float[4];
 
         for (int y = 0; y < height; y++) {
@@ -147,7 +130,7 @@ public final class EnchantmentGlint {
         }
     }
 
-    private static void sampleGlint(double u, double v, int textureWidth, int textureHeight, float[] out) {
+    private void sampleGlint(double u, double v, int textureWidth, int textureHeight, float[] out) {
         double wrappedU = u - Math.floor(u);
         double wrappedV = v - Math.floor(v);
 
@@ -165,10 +148,10 @@ public final class EnchantmentGlint {
         double fracX = texX - baseX;
         double fracY = texY - baseY;
 
-        int topLeftColor = GLINT_TEXTURE.getRGB(leftX, topY);
-        int topRightColor = GLINT_TEXTURE.getRGB(rightX, topY);
-        int bottomLeftColor = GLINT_TEXTURE.getRGB(leftX, bottomY);
-        int bottomRightColor = GLINT_TEXTURE.getRGB(rightX, bottomY);
+        int topLeftColor = glintTexture.getRGB(leftX, topY);
+        int topRightColor = glintTexture.getRGB(rightX, topY);
+        int bottomLeftColor = glintTexture.getRGB(leftX, bottomY);
+        int bottomRightColor = glintTexture.getRGB(rightX, bottomY);
 
         double weightTopLeft = (1.0 - fracX) * (1.0 - fracY);
         double weightTopRight = fracX * (1.0 - fracY);
@@ -198,31 +181,31 @@ public final class EnchantmentGlint {
         out[3] = (float) (alpha / 255.0);
     }
 
-    private static int floorMod(int value, int modulus) {
+    private int floorMod(int value, int modulus) {
         int result = value % modulus;
         return result < 0 ? result + modulus : result;
     }
 
-    public record GlintAnimation(List<BufferedImage> frames, int frameDelayMs) {
-        public GlintAnimation(List<BufferedImage> frames, int frameDelayMs) {
-            if (frames == null || frames.isEmpty()) {
-                throw new GeneratorException("Enchantment glint produced no frames");
-            }
-
-            if (frameDelayMs <= 0) {
-                throw new GeneratorException("Frame delay must be positive");
-            }
-
-            this.frames = List.copyOf(frames);
-            this.frameDelayMs = frameDelayMs;
+    private BufferedImage ensureArgb(BufferedImage image) {
+        if (image.getType() == BufferedImage.TYPE_INT_ARGB) {
+            return image;
         }
 
-        public BufferedImage firstFrame() {
-            return frames.getFirst();
-        }
+        BufferedImage converted = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = converted.createGraphics();
+        graphics.drawImage(image, 0, 0, null);
+        graphics.dispose();
 
-        public boolean isAnimated() {
-            return frames.size() > 1;
-        }
+        return converted;
+    }
+
+    @Override
+    public String getName() {
+        return "glint";
+    }
+
+    @Override
+    public boolean canApply(EffectContext context) {
+        return context.isEnchanted();
     }
 }
