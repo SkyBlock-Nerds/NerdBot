@@ -21,6 +21,7 @@ public class FileUtils {
     public static final DateTimeFormatter FILE_NAME_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss").withZone(ZoneId.systemDefault());
 
     private FileUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     public static String getBranchName() {

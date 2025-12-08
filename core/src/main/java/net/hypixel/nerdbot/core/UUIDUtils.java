@@ -10,6 +10,7 @@ public class UUIDUtils {
     private static final Pattern ADD_UUID_HYPHENS_REGEX = Pattern.compile("([a-f0-9]{8})([a-f0-9]{4})(4[a-f0-9]{3})([89aAbB][a-f0-9]{3})([a-f0-9]{12})");
 
     private UUIDUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     public static boolean isUUID(String input) {

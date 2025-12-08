@@ -12,6 +12,7 @@ public class TimeUtils {
     public static final SimpleDateFormat GLOBAL_DATE_TIME_FORMAT = new SimpleDateFormat("d MMMM yyyy HH:mm a");
 
     private TimeUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     public static String formatNow() {

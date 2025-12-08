@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 public class EnumUtils {
 
     private EnumUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     @Nullable

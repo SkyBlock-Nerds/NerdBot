@@ -10,6 +10,7 @@ import java.util.function.Function;
 public final class EmojiConfigUtils {
 
     private EmojiConfigUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     public static boolean isReactionEquals(EmojiConfig config, MessageReaction reaction, Function<EmojiConfig, String> emojiIdSupplier) {

@@ -22,7 +22,7 @@ public final class GeneratorCacheKey {
     private static final HexFormat HEX = HexFormat.of();
 
     private GeneratorCacheKey() {
-        // Utility class
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     /**
