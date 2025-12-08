@@ -32,6 +32,7 @@ import java.util.Optional;
 public class DiscordUtils {
 
     private DiscordUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     @Nullable

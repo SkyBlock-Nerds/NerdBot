@@ -23,6 +23,7 @@ public final class HttpClient {
         .build();
 
     private HttpClient() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     /**

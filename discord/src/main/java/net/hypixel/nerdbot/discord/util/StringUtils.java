@@ -21,6 +21,7 @@ public class StringUtils {
     public static final Pattern SKIN_BASE64_REGEX = Pattern.compile("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$");
 
     private StringUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     public static String convertCamelCaseToSnakeCase(String camelCase) {

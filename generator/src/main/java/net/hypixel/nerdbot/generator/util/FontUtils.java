@@ -11,6 +11,10 @@ import java.io.InputStream;
 @Slf4j
 public class FontUtils {
 
+    private FontUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
+
     /**
      * Initializes a font.
      *
