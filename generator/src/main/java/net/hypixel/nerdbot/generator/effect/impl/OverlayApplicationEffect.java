@@ -45,8 +45,12 @@ public class OverlayApplicationEffect implements ImageEffect {
             return EffectResult.single(context.getImage());
         }
 
-        String dataOption = context.getMetadata("data", String.class).orElse("");
-        log.debug("Applying overlay to item '{}' with data option '{}'", itemId, dataOption);
+        // Use color if provided, otherwise fall back to data
+        String colorOption = context.getMetadata("color", String.class).orElse(null);
+        String dataOption = colorOption != null && !colorOption.isBlank()
+            ? colorOption
+            : context.getMetadata("data", String.class).orElse("");
+        log.debug("Applying overlay to item '{}' with color option '{}'", itemId, dataOption);
 
         BufferedImage result = applyOverlay(context.getImage(), itemOverlay, dataOption);
         return EffectResult.single(result);
