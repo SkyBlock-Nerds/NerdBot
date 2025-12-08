@@ -21,9 +21,7 @@ public class OverlayColorOptions {
     @Getter
     private final int[] defaultColors;
 
-    private final transient Cache<String, int[]> parsedHexCache = Caffeine.newBuilder()
-        .maximumSize(100)
-        .build();
+    private transient Cache<String, int[]> parsedHexCache;
 
     public OverlayColorOptions(String name, HashMap<String, int[]> options, HashMap<Integer, Integer> map,
                                boolean allowHexColors, boolean useDefaultIfMissing, int[] defaultColors) {
@@ -45,6 +43,12 @@ public class OverlayColorOptions {
         }
 
         if (allowHexColors) {
+            if (parsedHexCache == null) {
+                parsedHexCache = Caffeine.newBuilder()
+                    .maximumSize(100)
+                    .build();
+            }
+
             final String finalOption = option;
             int[] cachedColors = parsedHexCache.get(option, key -> {
                 try {
