@@ -38,6 +38,7 @@ public class JsonUtils {
     private static final ExecutorService jsonExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     private JsonUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     public static JsonObject readJsonFile(String filename) {

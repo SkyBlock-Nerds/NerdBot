@@ -31,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 public class HttpUtils {
 
     private HttpUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     public static MojangProfile getMojangProfile(String username) throws HttpException {

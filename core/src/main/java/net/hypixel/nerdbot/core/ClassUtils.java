@@ -9,6 +9,7 @@ import java.util.Set;
 public class ClassUtils {
 
     private ClassUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     public static Set<Class<?>> findClasses(String packageName, Class<?> clazz) {

@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 public class ArrayUtils {
 
     private ArrayUtils() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     public static Stream<String> safeArrayStream(String[]... arrays) {
