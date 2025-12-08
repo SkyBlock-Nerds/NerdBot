@@ -310,7 +310,7 @@ public class PlaceholderReverseMapper {
 
         try {
             String methodName = "get" + Character.toUpperCase(token.charAt(0)) + token.substring(1);
-            var method = Stat.class.getMethod(methodName);
+            Method method = Stat.class.getMethod(methodName);
             Object value = method.invoke(stat);
             if (value instanceof ChatFormat cf) {
                 return String.valueOf(cf.getCode());

@@ -5,7 +5,8 @@
     "y": 0,
     "size": 256,
     "type": "NORMAL",
-    "colorOptions": "leather_armor"
+    "colorOptions": "firework",
+    "colorMode": "OVERLAY"
   },
   {
     "name": "leather_boots_overlay",
@@ -45,7 +46,8 @@
     "y": 256,
     "size": 256,
     "type": "NORMAL",
-    "colorOptions": "leather_armor"
+    "colorOptions": "potion",
+    "colorMode": "OVERLAY"
   },
   {
     "name": "tipped_arrow_head",
@@ -53,7 +55,8 @@
     "y": 256,
     "size": 256,
     "type": "NORMAL",
-    "colorOptions": "leather_armor"
+    "colorOptions": "potion",
+    "colorMode": "OVERLAY"
   },
   {
     "name": "wolf_armor_overlay",

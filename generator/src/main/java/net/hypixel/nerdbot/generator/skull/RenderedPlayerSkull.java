@@ -214,15 +214,15 @@ public class RenderedPlayerSkull extends GeneratedObject {
                 for (int x = 0; x < 8; x++) {
                     int color = this.skin.getRGB(x + uvFaceX, y + uvFaceY);
                     // skip painting if there is nothing to paint
-                    int alpha = ((color >> 24) & 0xff);
+                    int alpha = ((color >> 24) & 0xFF);
                     if (alpha == 0) {
                         continue;
                     }
 
                     // applying shadows to the face
-                    int red = Math.round(((color >> 16) & 0xff) * shadow);
-                    int green = Math.round(((color >> 8) & 0xff) * shadow);
-                    int blue = Math.round((color & 0xff) * shadow);
+                    int red = Math.round(((color >> 16) & 0xFF) * shadow);
+                    int green = Math.round(((color >> 8) & 0xFF) * shadow);
+                    int blue = Math.round((color & 0xFF) * shadow);
                     g2d.setColor(new Color(red, green, blue, alpha));
 
                     // calculating the initial starting point (first index of face) for a face
