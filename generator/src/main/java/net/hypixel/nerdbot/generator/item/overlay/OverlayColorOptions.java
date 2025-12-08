@@ -4,9 +4,11 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.Getter;
 import lombok.ToString;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
 import java.util.HashMap;
+import java.util.Set;
 
 @ToString
 public class OverlayColorOptions {
@@ -16,12 +18,13 @@ public class OverlayColorOptions {
     private final HashMap<String, int[]> options;
     @Getter
     private final HashMap<Integer, Integer> map;
+    @Getter
     private final boolean allowHexColors;
     private final boolean useDefaultIfMissing;
     @Getter
     private final int[] defaultColors;
 
-    private transient Cache<String, int[]> parsedHexCache;
+    private transient Cache<@NotNull String, int[]> parsedHexCache;
 
     public OverlayColorOptions(String name, HashMap<String, int[]> options, HashMap<Integer, Integer> map,
                                boolean allowHexColors, boolean useDefaultIfMissing, int[] defaultColors) {
@@ -69,5 +72,14 @@ public class OverlayColorOptions {
         }
 
         return useDefaultIfMissing ? defaultColors : null;
+    }
+
+    /**
+     * Returns all available option names for this color options set.
+     *
+     * @return Set of option names
+     */
+    public Set<String> getOptionNames() {
+        return options != null ? options.keySet() : Set.of();
     }
 }

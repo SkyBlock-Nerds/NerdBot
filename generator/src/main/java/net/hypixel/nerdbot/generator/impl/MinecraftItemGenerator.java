@@ -32,6 +32,7 @@ public class MinecraftItemGenerator implements Generator {
 
     private final String itemId;
     private final String data;
+    private final String color;
     private final boolean enchanted;
     private final boolean hoverEffect;
     private final boolean bigImage;
@@ -56,7 +57,8 @@ public class MinecraftItemGenerator implements Generator {
             .withItemId(itemId)
             .withEnchanted(enchanted)
             .withHovered(hoverEffect)
-            .putMetadata("data", data);
+            .putMetadata("data", data)
+            .putMetadata("color", color);
 
         if (durabilityPercent != null) {
             contextBuilder.putMetadata("durabilityPercent", durabilityPercent);
@@ -110,6 +112,7 @@ public class MinecraftItemGenerator implements Generator {
     public static class Builder implements ClassBuilder<MinecraftItemGenerator> {
         private String itemId;
         private String data;
+        private String color;
         private boolean enchanted;
         private boolean hoverEffect;
         private boolean bigImage;
@@ -127,6 +130,11 @@ public class MinecraftItemGenerator implements Generator {
 
         public MinecraftItemGenerator.Builder withData(String data) {
             this.data = data;
+            return this;
+        }
+
+        public MinecraftItemGenerator.Builder withColor(String color) {
+            this.color = color;
             return this;
         }
 
@@ -196,7 +204,7 @@ public class MinecraftItemGenerator implements Generator {
             }
 
             return new MinecraftItemGenerator(
-                itemId, data, enchanted, hoverEffect, bigImage,
+                itemId, data, color, enchanted, hoverEffect, bigImage,
                 durabilityPercent, overlayLoader, effectPipeline
             );
         }

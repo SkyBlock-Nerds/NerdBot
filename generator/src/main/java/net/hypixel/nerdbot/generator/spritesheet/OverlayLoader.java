@@ -16,7 +16,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Loads and caches overlay resources.
@@ -37,6 +39,7 @@ public class OverlayLoader {
     }
 
     private final Map<String, ItemOverlay> itemOverlays = new ConcurrentHashMap<>();
+    private final Map<String, OverlayColorOptions> colorOptionsMap = new ConcurrentHashMap<>();
     private final Gson gson;
     private final String resourceBasePath;
     private boolean loaded = false;
@@ -81,6 +84,7 @@ public class OverlayLoader {
 
             // Load color options
             Map<String, OverlayColorOptions> colorOptions = loadColorOptions();
+            colorOptionsMap.putAll(colorOptions);
 
             // Load overlay coordinates
             Map<String, ItemOverlay> overlays = loadOverlayCoordinates(overlaySpriteSheet, colorOptions);
@@ -226,5 +230,22 @@ public class OverlayLoader {
      */
     protected InputStream getResource(String path) {
         return getClass().getResourceAsStream(path);
+    }
+
+    /**
+     * Get all available color option names across all overlay types.
+     * This combines color options from leather armor, potions, fireworks, etc.
+     *
+     * @return Set of all color option names
+     */
+    public Set<String> getAllColorOptionNames() {
+        if (!loaded) {
+            loadOverlays();
+        }
+
+        return colorOptionsMap.values()
+            .stream()
+            .flatMap(options -> options.getOptionNames().stream())
+            .collect(Collectors.toSet());
     }
 }
