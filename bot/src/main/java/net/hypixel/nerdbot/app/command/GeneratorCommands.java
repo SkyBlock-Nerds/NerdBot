@@ -30,6 +30,7 @@ import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
+import net.hypixel.nerdbot.generator.spritesheet.OverlayLoader;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.core.FileUtils;
@@ -80,6 +81,7 @@ public class GeneratorCommands {
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
     private static final String DURABILITY_DESCRIPTION = "Item durability percentage (0-100, only shown if less than 100)";
+    private static final String COLOR_DESCRIPTION = "The overlay color (e.g., red, blue, #FF0000)";
 
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
@@ -88,6 +90,7 @@ public class GeneratorCommands {
         SlashCommandInteractionEvent event,
         @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION) String itemId,
         @SlashOption(description = EXTRA_DATA_DESCRIPTION, required = false) String data,
+        @SlashOption(autocompleteId = "overlay-colors", description = COLOR_DESCRIPTION, required = false) String color,
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
         @SlashOption(description = "If the item should look as if it being hovered over", required = false) Boolean hoverEffect,
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
@@ -113,6 +116,7 @@ public class GeneratorCommands {
                 MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
                     .withItem(itemId)
                     .withData(data)
+                    .withColor(color)
                     .isEnchanted(enchanted)
                     .withHoverEffect(hoverEffect)
                     .isBigImage();
@@ -151,6 +155,7 @@ public class GeneratorCommands {
         @SlashOption(description = "The stats that scale with the given Magical Power", required = false) String scalingStats, // Desired Format: stat1:1,stat2:23,stat3:456
         @SlashOption(description = "The stats that do not scale with the given Magical Power", required = false) String uniqueBonus, // Desired Format: stat1:1,stat2:23,stat3:456
         @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION, required = false) String itemId,
+        @SlashOption(autocompleteId = "overlay-colors", description = COLOR_DESCRIPTION, required = false) String color,
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
         @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
         @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
@@ -303,6 +308,7 @@ public class GeneratorCommands {
                     } else {
                         generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
                             .withItem(itemId)
+                            .withColor(color)
                             .isEnchanted(enchanted)
                             .isBigImage()
                             .build());
@@ -678,6 +684,7 @@ public class GeneratorCommands {
         @SlashOption(description = TYPE_DESCRIPTION, required = false) String type,
         @SlashOption(autocompleteId = "item-rarities", description = RARITY_DESCRIPTION, required = false) String rarity,
         @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION, required = false) String itemId,
+        @SlashOption(autocompleteId = "overlay-colors", description = COLOR_DESCRIPTION, required = false) String color,
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
         @SlashOption(description = RECIPE_STRING_DESCRIPTION, required = false) String recipe,
         @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
@@ -737,6 +744,7 @@ public class GeneratorCommands {
                 } else {
                     MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
                         .withItem(itemId)
+                        .withColor(color)
                         .isEnchanted(enchanted)
                         .isBigImage();
 
@@ -1070,6 +1078,19 @@ public class GeneratorCommands {
             .filter(side -> side.toLowerCase(Locale.ROOT).contains(userInput))
             .limit(25)
             .map(side -> new Command.Choice(side, side))
+            .toList();
+    }
+
+    @SlashAutocompleteHandler(id = "overlay-colors")
+    public List<Command.Choice> overlayColors(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
+
+        return OverlayLoader.getInstance().getAllColorOptionNames()
+            .stream()
+            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
+            .sorted()
+            .limit(25)
+            .map(name -> new Command.Choice(name, name))
             .toList();
     }
 
