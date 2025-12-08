@@ -297,6 +297,13 @@ public class MinecraftTooltip {
 
             for (int i = 0; i < segmentText.length(); ) {
                 int codePoint = segmentText.codePointAt(i);
+
+                // Skip variation selectors (U+FE0E and U+FE0F) - they're zero-width control characters
+                if (codePoint == 0xFE0E || codePoint == 0xFE0F) {
+                    i += Character.charCount(codePoint);
+                    continue;
+                }
+
                 String charStr = new String(Character.toChars(codePoint));
 
                 if (font.canDisplayUpTo(charStr) == -1) {
@@ -392,6 +399,13 @@ public class MinecraftTooltip {
 
         for (int i = 0; i < text.length(); ) {
             int codePoint = text.codePointAt(i);
+
+            // Skip variation selectors (U+FE0E and U+FE0F) - they're zero-width control characters
+            if (codePoint == 0xFE0E || codePoint == 0xFE0F) {
+                i += Character.charCount(codePoint);
+                continue;
+            }
+
             String charStr = new String(Character.toChars(codePoint));
             int charCount = Character.charCount(codePoint);
 
