@@ -702,5 +702,14 @@
         "color": "LIGHT_PURPLE",
         "subColor": null,
         "parseType": "NORMAL"
+    },
+    {
+        "icon": "❤",
+        "name": "absorption",
+        "stat": "Absorption",
+        "display": "❤ Absorption",
+        "color": "GOLD",
+        "subColor": null,
+        "parseType": "NORMAL"
     }
 ]
