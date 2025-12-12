@@ -72,6 +72,15 @@
         "parseType": "NONE"
     },
     {
+        "icon": "Ж",
+        "name": "arachnal",
+        "stat": "This item is Arachnal Ж!",
+        "display": "Ж This item is Arachnal Ж!",
+        "color": "DARK_RED",
+        "subColor": null,
+        "parseType": "NONE"
+    },
+    {
         "icon": "✈",
         "name": "airborne",
         "stat": "Airborne",
@@ -306,6 +315,15 @@
         "parseType": "NORMAL"
     },
     {
+        "icon": "᠅",
+        "name": "glacite_powder",
+        "stat": "Glacite Powder",
+        "display": "᠅ Glacite Powder",
+        "color": "AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
         "icon": "",
         "name": "mana_cost",
         "stat": "Mana Cost:",
@@ -331,5 +349,77 @@
         "color": "GOLD",
         "subColor": "YELLOW",
         "parseType": "ABILITY"
+    },
+    {
+        "icon": "❄",
+        "name": "cold",
+        "stat": "Cold",
+        "display": "❄ Cold",
+        "color": "AQUA",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "♨",
+        "name": "heat",
+        "stat": "Heat",
+        "display": "♨ Heat",
+        "color": "RED",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "ථ",
+        "name": "hook",
+        "stat": "Hook",
+        "display": "ථ Hook",
+        "color": "BLUE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "ꨃ",
+        "name": "line",
+        "stat": "Line",
+        "display": "ꨃ Line",
+        "color": "BLUE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "࿉",
+        "name": "sinker",
+        "stat": "Sinker",
+        "display": "࿉ Sinker",
+        "color": "BLUE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "",
+        "name": "health_cost",
+        "stat": "Health Cost:",
+        "display": " Health Cost:",
+        "color": "DARK_GRAY",
+        "subColor": null,
+        "parseType": "NONE"
+    },
+    {
+        "icon": "ቾ",
+        "name": "mage_reputation",
+        "stat": "Mage Reputation",
+        "display": "ቾ Mage Reputation",
+        "color": "DARK_PURPLE",
+        "subColor": null,
+        "parseType": "NORMAL"
+    },
+    {
+        "icon": "⚒",
+        "name": "barbarian_reputation",
+        "stat": "Barbarian Reputation",
+        "display": "⚒ Barbarian Reputation",
+        "color": "RED",
+        "subColor": null,
+        "parseType": "NORMAL"
     }
 ]
