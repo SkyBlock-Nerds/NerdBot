@@ -54,5 +54,17 @@
     {
         "name": "foraging_fortune_booster",
         "icon": "⎋"
+    },
+    {
+        "name": "checkmark",
+        "icon": "✔"
+    },
+    {
+        "name": "cross",
+        "icon": "✖"
+    },
+    {
+        "name": "raffle",
+        "icon": "⛃"
     }
 ]
