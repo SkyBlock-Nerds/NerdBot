@@ -137,6 +137,12 @@ public class TextWrapper {
                         currentVisibleLength = 0;
                     }
 
+                    boolean manualIndent = tokenMatcher.start() == 0;
+                    if (currentLineBuilder.isEmpty() && !manualIndent) {
+                        log.debug("Skipping leading whitespace originating from automatic wrap");
+                        continue;
+                    }
+
                     currentLineBuilder.append(token);
                     currentVisibleLength += whitespaceLength;
                     log.debug("Appended whitespace token: '{}' (visible length now {})", token.replace("\t", "\\t"), currentVisibleLength);
@@ -159,6 +165,7 @@ public class TextWrapper {
                     }
 
                     currentFormatState = splitLongWord(token, maxLineLength, lines, currentFormatState);
+                    currentVisibleLength = 0;
                 } else if (currentVisibleLength + wordVisibleLength <= maxLineLength) {
                     currentLineBuilder.append(token);
                     currentVisibleLength += wordVisibleLength;
