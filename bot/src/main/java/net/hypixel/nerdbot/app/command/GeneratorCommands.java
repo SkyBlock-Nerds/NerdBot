@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.model.user.generator.GeneratorHistory;
+import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.generator.data.PowerStrength;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.data.Stat;
@@ -97,6 +98,10 @@ public class GeneratorCommands {
         @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
@@ -164,6 +169,10 @@ public class GeneratorCommands {
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
@@ -340,6 +349,10 @@ public class GeneratorCommands {
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "search", description = "Search for an item")
     public void searchItem(SlashCommandInteractionEvent event, @SlashOption(description = "The ID of the item to search for") String itemId, @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
@@ -368,6 +381,10 @@ public class GeneratorCommands {
         @SlashOption(description = RENDER_BACKGROUND_DESCRIPTION, required = false) Boolean renderBackground,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
@@ -408,6 +425,10 @@ public class GeneratorCommands {
         @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
@@ -467,6 +488,10 @@ public class GeneratorCommands {
         @SlashOption(description = NBT_DESCRIPTION) String nbt,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
@@ -699,6 +724,10 @@ public class GeneratorCommands {
         @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
@@ -806,6 +835,10 @@ public class GeneratorCommands {
         @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean renderBorder,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
@@ -858,6 +891,10 @@ public class GeneratorCommands {
         @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
@@ -932,6 +969,10 @@ public class GeneratorCommands {
         @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
@@ -1117,6 +1158,40 @@ public class GeneratorCommands {
 
             discordUserRepository.findById(user.getId()).getGeneratorHistory().addCommand(command);
         }
+    }
+
+    /**
+     * Determine whether the slash command should be allowed to be executed
+     *
+     * @param event The SlashCommandInteractionEvent event instance
+     *
+     * @return True if it can execute, false otherwise
+     */
+    private boolean shouldBlockGeneratorCommand(SlashCommandInteractionEvent event) {
+        ChannelConfig channelConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig();
+        String[] allowedChannelIds = channelConfig.getGenChannelIds();
+
+        if (allowedChannelIds == null || allowedChannelIds.length == 0) {
+            return false;
+        }
+
+        String channelId = event.getChannel().getId();
+        boolean allowed = Arrays.asList(allowedChannelIds).contains(channelId);
+
+        if (!allowed) {
+            String response = "Generator commands can only be used in image generator channels.";
+
+            if (event.isAcknowledged()) {
+                event.getHook().sendMessage(response).setEphemeral(true).queue();
+            } else {
+                event.reply(response).setEphemeral(true).queue();
+            }
+
+            log.warn("Blocked generator command '{}' from user {} in channel {}", event.getCommandString(), event.getUser().getId(), event.getChannel().getId());
+            return true;
+        }
+
+        return false;
     }
 
     /**
