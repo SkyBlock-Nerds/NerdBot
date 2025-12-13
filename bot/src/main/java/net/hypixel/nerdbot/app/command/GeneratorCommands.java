@@ -64,7 +64,6 @@ public class GeneratorCommands {
     private static final String SKIN_VALUE_DESCRIPTION = "The skin value of the player head";
     private static final String ALPHA_DESCRIPTION = "The alpha of the tooltip";
     private static final String PADDING_DESCRIPTION = "The padding of the tooltip";
-    private static final String RARITY_LINE_BREAK_DESCRIPTION = "Whether or not the tooltip should have an empty line between the lore and the rarity/type";
     private static final String CENTERED_DESCRIPTION = "Whether or not the tooltip should be centered";
     private static final String MAX_LINE_LENGTH_DESCRIPTION = "The max line length of the tooltip";
     private static final String LINE_PADDING_DESCRIPTION = "Add a small amount of padding between the item name and the first line of lore";
@@ -275,7 +274,6 @@ public class GeneratorCommands {
                     .withItemLore(itemLore)
                     .withAlpha(alpha)
                     .withPadding(padding)
-                    .disableRarityLineBreak(true)
                     .isTextCentered(false)
                     .isPaddingFirstLine(true)
                     .withRenderBorder(true);
@@ -434,7 +432,6 @@ public class GeneratorCommands {
                     .withAlpha(MinecraftTooltip.DEFAULT_ALPHA)
                     .withPadding(MinecraftTooltip.DEFAULT_PADDING)
                     .isPaddingFirstLine(false)
-                    .disableRarityLineBreak(false)
                     .withMaxLineLength(maxLineLength)
                     .withScaleFactor(Math.min(2, MinecraftInventoryGenerator.getScaleFactor()))
                     .withRenderBorder(true)
@@ -689,7 +686,6 @@ public class GeneratorCommands {
         @SlashOption(description = RECIPE_STRING_DESCRIPTION, required = false) String recipe,
         @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
         @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
-        @SlashOption(description = RARITY_LINE_BREAK_DESCRIPTION, required = false) Boolean disableRarityLineBreak,
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
         @SlashOption(description = CENTERED_DESCRIPTION, required = false) Boolean centered,
         @SlashOption(description = LINE_PADDING_DESCRIPTION, required = false) Boolean paddingFirstLine,
@@ -707,7 +703,6 @@ public class GeneratorCommands {
         rarity = rarity == null ? "none" : rarity;
         alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
-        disableRarityLineBreak = disableRarityLineBreak == null || disableRarityLineBreak;
         centered = centered != null && centered;
         enchanted = enchanted != null && enchanted;
         paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
@@ -724,7 +719,6 @@ public class GeneratorCommands {
                 .withType(type)
                 .withAlpha(alpha)
                 .withPadding(padding)
-                .disableRarityLineBreak(disableRarityLineBreak)
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
                 .isPaddingFirstLine(paddingFirstLine)
@@ -825,7 +819,6 @@ public class GeneratorCommands {
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
                 .isPaddingFirstLine(false)
-                .disableRarityLineBreak(false)
                 .withRenderBorder(renderBorder)
                 .build();
 
@@ -888,7 +881,6 @@ public class GeneratorCommands {
             .withAlpha(0)
             .withPadding(MinecraftTooltip.DEFAULT_PADDING)
             .isPaddingFirstLine(false)
-            .disableRarityLineBreak(false)
             .withMaxLineLength(maxLineLength)
             .bypassMaxLineLength(true);
 
@@ -976,7 +968,6 @@ public class GeneratorCommands {
                 .withAlpha(0)
                 .withPadding(MinecraftTooltip.DEFAULT_PADDING)
                 .isPaddingFirstLine(false)
-                .disableRarityLineBreak(false)
                 .withMaxLineLength(maxLineLength)
                 .bypassMaxLineLength(true);
 
