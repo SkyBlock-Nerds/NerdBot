@@ -19,6 +19,8 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.hypixel.nerdbot.app.command.SuggestionStats;
+import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.app.role.RoleManager;
 import net.hypixel.nerdbot.app.user.BirthdayScheduler;
@@ -732,21 +734,26 @@ public class ProfileCommands {
                     return;
                 }
 
-                List<Suggestion> suggestions = SuggestionCommands.getSuggestions(event.getMember(), event.getMember().getIdLong(), tags, title, finalType);
+                List<Suggestion> suggestions = SuggestionCommandUtils.getSuggestions(event.getMember(), event.getMember().getIdLong(), tags, title, finalType);
+                SuggestionStats stats = SuggestionCommandUtils.buildSuggestionStats(suggestions, event.getMember());
 
                 if (suggestions.isEmpty()) {
                     event.getHook().editOriginal("No suggestions found matching that filter!").queue();
                     return;
                 }
 
-                PaginatedResponse<Suggestion> pagination = PaginatedResponse.forEmbeds(
+                PaginatedResponse<Suggestion> pagination = SuggestionCommandUtils.createSuggestionsPagination(
+                    event.getMember(),
                     suggestions,
-                    10,
-                    pageItems -> SuggestionCommands.buildSuggestionsEmbed(event.getMember(), pageItems, tags, title, finalType, false, true)
-                        .setAuthor(event.getMember().getEffectiveName())
-                        .setThumbnail(event.getMember().getEffectiveAvatarUrl())
-                        .build(),
-                    "profile-page"
+                    stats,
+                    tags,
+                    title,
+                    finalType,
+                    false,
+                    true,
+                    "profile-page",
+                    event.getMember().getEffectiveName(),
+                    event.getMember().getEffectiveAvatarUrl()
                 );
 
                 pagination.sendMessage(event);

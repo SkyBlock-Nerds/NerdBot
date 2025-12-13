@@ -24,12 +24,12 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
+import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.core.DiscordTimestamp;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
-import net.hypixel.nerdbot.discord.cache.EmojiCache;
 import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
 import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
@@ -43,16 +43,13 @@ import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
 import net.hypixel.nerdbot.discord.util.pagination.PaginationManager;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -66,131 +63,6 @@ public class SuggestionCommands {
         .removalListener((o, o2, removalCause) -> log.info("Removed {} from last review request cache", o))
         .build();
 
-    /**
-     * Get a list of suggestions based on the provided filters.
-     *
-     * @param member      The member looking for suggestions.
-     * @param userId      The user ID to filter by.
-     * @param tags        The tags to filter by.
-     * @param title       The title to filter by.
-     * @param channelType The {@link Suggestion.ChannelType} to filter by.
-     *
-     * @return A list of suggestions that match the provided filters.
-     */
-    public static List<Suggestion> getSuggestions(Member member, @Nullable Long userId, String tags, String title, Suggestion.ChannelType channelType) {
-        final List<String> searchTags = (tags == null || tags.trim().isEmpty())
-            ? Collections.emptyList()
-            : Arrays.asList(tags.split(", ?"));
-
-        List<Suggestion> allSuggestions = DiscordBotEnvironment.getBot().getSuggestionCache().getSuggestions();
-        if (allSuggestions.isEmpty()) {
-            log.warn("Suggestions cache is empty!");
-            return Collections.emptyList();
-        }
-
-        return allSuggestions.stream()
-            .filter(suggestion -> suggestion.getChannelType() == channelType)
-            .filter(Suggestion::notDeleted)
-            .filter(suggestion -> {
-                if (userId != null) {
-                    Member user = DiscordUtils.getMainGuild().retrieveMemberById(userId).complete();
-                    return user != null && suggestion.getOwnerIdLong() == userId && suggestion.canSee(member);
-                }
-                return true;
-            })
-            .filter(suggestion -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> suggestion.getAppliedTags()
-                .stream()
-                .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
-            ))
-            .filter(suggestion -> title == null || title.isEmpty() || suggestion.getThreadName()
-                .toLowerCase()
-                .contains(title.toLowerCase())
-            )
-            .toList();
-    }
-
-    public static EmbedBuilder buildSuggestionsEmbed(Member member, List<Suggestion> pageItems, String tags, String title, Suggestion.ChannelType channelType, boolean showNames, boolean showRatio) {
-        List<Suggestion> list = pageItems.stream().filter(suggestion -> suggestion.canSee(member)).toList();
-
-        StringJoiner links = new StringJoiner("\n");
-        double total = list.size();
-        double greenlit = list.stream().filter(Suggestion::isGreenlit).count();
-        StringBuilder filtersBuilder = new StringBuilder();
-
-        if (tags != null && !tags.isEmpty()) {
-            filtersBuilder.append("- Filtered by tags: `").append(tags).append("`\n");
-        }
-
-        if (title != null && !title.isEmpty()) {
-            filtersBuilder.append("- Filtered by title: `").append(title).append("`\n");
-        }
-
-        if (channelType != Suggestion.ChannelType.NORMAL) {
-            filtersBuilder.append("- Filtered by type: `").append(channelType.getName()).append("`");
-        }
-
-        String filters = filtersBuilder.toString();
-
-        list.forEach(suggestion -> {
-            String link = "[" + suggestion.getThreadName().replaceAll("`", "") + "](" + suggestion.getJumpUrl() + ")";
-            link += (suggestion.isGreenlit() ? " " + EmojiCache.getFormattedEmoji(EmojiConfig::getGreenlitEmojiId) : "") + "\n";
-
-            if (!suggestion.getAppliedTags().isEmpty()) {
-                link += "Tags: `" + suggestion.getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")) + "`\n";
-
-            }
-
-            link += "Created at " + DiscordTimestamp.toLongDateTime(suggestion.getTimeCreated().toEpochSecond() * 1_000);
-            link = link.replaceAll("\n\n", "\n");
-
-            if (showNames) {
-                User user = DiscordBotEnvironment.getBot().getJDA().getUserById(suggestion.getOwnerIdLong());
-                if (user != null) {
-                    link += " by " + user.getAsMention();
-                }
-            }
-
-            link += "\n";
-            link += EmojiCache.getFormattedEmoji(EmojiConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + EmojiCache.getFormattedEmoji(EmojiConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
-            links.add(link);
-        });
-
-        EmbedBuilder embedBuilder = new EmbedBuilder();
-        int blankFields = 2;
-
-        embedBuilder.setColor(Color.GREEN)
-            .setTitle("Suggestions")
-            .setDescription(links.toString())
-            .addField(
-                "Total",
-                String.valueOf((int) total),
-                true
-            );
-
-        if (showRatio && channelType == Suggestion.ChannelType.NORMAL) {
-            blankFields--;
-            embedBuilder.addField(
-                EmojiCache.getFormattedEmoji(EmojiConfig::getGreenlitEmojiId),
-                (int) greenlit + " (" + (int) ((greenlit / total) * 100.0) + "%)",
-                true
-            );
-        }
-
-        for (int i = 0; i < blankFields; i++) {
-            embedBuilder.addBlankField(true);
-        }
-
-        if (!filters.isEmpty()) {
-            embedBuilder.addField("Filters", filters, false);
-        }
-
-        long minutesSinceStart = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - DiscordBotEnvironment.getBot().getStartTime());
-        if (minutesSinceStart <= 30) {
-            embedBuilder.setFooter("The bot recently started so results may be inaccurate!");
-        }
-
-        return embedBuilder;
-    }
 
 
     @SlashCommand(name = "request-review", description = "Request a greenlit review of your suggestion.", guildOnly = true)
@@ -408,21 +280,26 @@ public class SuggestionCommands {
             long userIdLong = Long.parseLong(userId);
             User searchUser = DiscordBotEnvironment.getBot().getJDA().getUserById(userIdLong);
             boolean showRatio = userIdLong == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
-            List<Suggestion> suggestions = getSuggestions(event.getMember(), userIdLong, tags, title, channelTypeEnum);
+            List<Suggestion> suggestions = SuggestionCommandUtils.getSuggestions(event.getMember(), userIdLong, tags, title, channelTypeEnum);
+            SuggestionStats stats = SuggestionCommandUtils.buildSuggestionStats(suggestions, event.getMember());
 
             if (suggestions.isEmpty()) {
                 event.getHook().editOriginal("No suggestions found matching that filter!").queue();
                 return;
             }
 
-            PaginatedResponse<Suggestion> pagination = PaginatedResponse.forEmbeds(
+            PaginatedResponse<Suggestion> pagination = SuggestionCommandUtils.createSuggestionsPagination(
+                event.getMember(),
                 suggestions,
-                10,
-                pageItems -> buildSuggestionsEmbed(event.getMember(), pageItems, tags, title, channelTypeEnum, false, showRatio)
-                    .setAuthor(searchUser != null ? searchUser.getName() : userId)
-                    .setThumbnail(searchUser != null ? searchUser.getEffectiveAvatarUrl() : null)
-                    .build(),
-                "suggestions-page"
+                stats,
+                tags,
+                title,
+                channelTypeEnum,
+                false,
+                showRatio,
+                "suggestions-page",
+                searchUser != null ? searchUser.getName() : userId,
+                searchUser != null ? searchUser.getEffectiveAvatarUrl() : null
             );
 
             pagination.sendMessage(event);
@@ -457,21 +334,26 @@ public class SuggestionCommands {
 
         boolean showRatio = member.getIdLong() == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
 
-        List<Suggestion> suggestions = getSuggestions(event.getMember(), member.getIdLong(), tags, title, typeEnum);
+        List<Suggestion> suggestions = SuggestionCommandUtils.getSuggestions(event.getMember(), member.getIdLong(), tags, title, typeEnum);
+        SuggestionStats stats = SuggestionCommandUtils.buildSuggestionStats(suggestions, event.getMember());
 
         if (suggestions.isEmpty()) {
             event.getHook().editOriginal("No suggestions found matching that filter!").queue();
             return;
         }
 
-        PaginatedResponse<Suggestion> pagination = PaginatedResponse.forEmbeds(
+        PaginatedResponse<Suggestion> pagination = SuggestionCommandUtils.createSuggestionsPagination(
+            member,
             suggestions,
-            10,
-            pageItems -> buildSuggestionsEmbed(member, pageItems, tags, title, typeEnum, false, showRatio)
-                .setAuthor(member.getEffectiveName())
-                .setThumbnail(member.getEffectiveAvatarUrl())
-                .build(),
-            "suggestions-page"
+            stats,
+            tags,
+            title,
+            typeEnum,
+            false,
+            showRatio,
+            "suggestions-page",
+            member.getEffectiveName(),
+            member.getEffectiveAvatarUrl()
         );
 
         pagination.sendMessage(event);
@@ -500,18 +382,26 @@ public class SuggestionCommands {
             return;
         }
 
-        List<Suggestion> suggestions = getSuggestions(event.getMember(), null, tags, title, typeEnum);
+        List<Suggestion> suggestions = SuggestionCommandUtils.getSuggestions(event.getMember(), null, tags, title, typeEnum);
+        SuggestionStats stats = SuggestionCommandUtils.buildSuggestionStats(suggestions, event.getMember());
 
         if (suggestions.isEmpty()) {
             event.getHook().editOriginal("No suggestions found matching that filter!").queue();
             return;
         }
 
-        PaginatedResponse<Suggestion> pagination = PaginatedResponse.forEmbeds(
+        PaginatedResponse<Suggestion> pagination = SuggestionCommandUtils.createSuggestionsPagination(
+            event.getMember(),
             suggestions,
-            10,
-            pageItems -> buildSuggestionsEmbed(event.getMember(), pageItems, tags, title, typeEnum, true, true).build(),
-            "suggestions-page"
+            stats,
+            tags,
+            title,
+            typeEnum,
+            true,
+            true,
+            "suggestions-page",
+            null,
+            null
         );
 
         pagination.sendMessage(event);
