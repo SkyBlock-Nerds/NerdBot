@@ -703,10 +703,6 @@ public class MinecraftTooltip {
             return this;
         }
 
-        public Builder withRarityLineBreak() {
-            return this.withSegments(ColorSegment.builder().build());
-        }
-
         public Builder withLines(@NotNull LineSegment... lines) {
             return this.withLines(Arrays.asList(lines));
         }

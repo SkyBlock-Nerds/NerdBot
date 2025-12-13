@@ -39,7 +39,6 @@ public class MinecraftTooltipGenerator implements Generator {
     private final Rarity rarity;
     private final String itemLore;
     private final String type;
-    private final boolean disableRarityLineBreak;
     private final int alpha;
     private final int padding;
     private final boolean normalItem;
@@ -55,7 +54,6 @@ public class MinecraftTooltipGenerator implements Generator {
         // Configure tooltip rendering before generating
         TooltipSettings settings = new TooltipSettings(
             name,
-            disableRarityLineBreak,
             type,
             alpha,
             padding,
@@ -123,10 +121,6 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         if (rarity != null && rarity != Rarity.byName("NONE")) {
-            if (settings.isDisableRarityLineBreak()) {
-                builder.withRarityLineBreak();
-            }
-
             String formattedType = settings.getType() == null || settings.getType().isEmpty() ? "" : " " + settings.getType();
             builder.withLines(LineSegment.fromLegacy(rarity.getFormattedDisplay() + formattedType, '&'));
         }
@@ -146,7 +140,6 @@ public class MinecraftTooltipGenerator implements Generator {
         @Getter
         private String itemLore;
         private String type;
-        private Boolean disableRarityLineBreak;
         private Integer alpha = MinecraftTooltip.DEFAULT_ALPHA;
         private Integer padding = 0;
         private boolean paddingFirstLine = true;
@@ -173,11 +166,6 @@ public class MinecraftTooltipGenerator implements Generator {
 
         public MinecraftTooltipGenerator.Builder withType(String type) {
             this.type = type;
-            return this;
-        }
-
-        public MinecraftTooltipGenerator.Builder disableRarityLineBreak(boolean disableRarityLineBreak) {
-            this.disableRarityLineBreak = disableRarityLineBreak;
             return this;
         }
 
@@ -226,7 +214,6 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         public MinecraftTooltipGenerator.Builder parseNbtJson(JsonObject nbtJson) {
-            this.disableRarityLineBreak = false;
             this.paddingFirstLine = false;
             this.centered = false;
             this.rarity = Rarity.byName("NONE");
@@ -483,7 +470,6 @@ public class MinecraftTooltipGenerator implements Generator {
                 rarity,
                 itemLore,
                 type,
-                disableRarityLineBreak != null ? disableRarityLineBreak : false,
                 alpha,
                 padding,
                 !paddingFirstLine, // normalItem is inverse of paddingFirstLine
