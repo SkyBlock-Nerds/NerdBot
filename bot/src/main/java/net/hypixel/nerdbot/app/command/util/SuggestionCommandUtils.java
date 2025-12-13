@@ -11,6 +11,7 @@ import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
+import net.hypixel.nerdbot.discord.util.StringUtils;
 import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -116,7 +117,9 @@ public class SuggestionCommandUtils {
             }
 
             link += "\n";
-            link += EmojiCache.getFormattedEmoji(EmojiConfig::getAgreeEmojiId) + " " + suggestion.getAgrees() + "\u3000" + EmojiCache.getFormattedEmoji(EmojiConfig::getDisagreeEmojiId) + " " + suggestion.getDisagrees() + "\n";
+            link += EmojiCache.getFormattedEmoji(EmojiConfig::getAgreeEmojiId) + " " + StringUtils.COMMA_SEPARATED_FORMAT.format(suggestion.getAgrees())
+                + "\u3000"
+                + EmojiCache.getFormattedEmoji(EmojiConfig::getDisagreeEmojiId) + " " + StringUtils.COMMA_SEPARATED_FORMAT.format(suggestion.getDisagrees()) + "\n";
             links.add(link);
         });
 
@@ -128,7 +131,7 @@ public class SuggestionCommandUtils {
             .setDescription(links.toString())
             .addField(
                 "Total",
-                String.valueOf(stats.totalSuggestions()),
+                StringUtils.COMMA_SEPARATED_FORMAT.format(stats.totalSuggestions()),
                 true
             );
 
@@ -136,7 +139,7 @@ public class SuggestionCommandUtils {
             statsFields++;
             embedBuilder.addField(
                 EmojiCache.getFormattedEmoji(EmojiConfig::getGreenlitEmojiId),
-                stats.greenlitSuggestions() + " (" + stats.greenlitPercentage() + "%)",
+                StringUtils.COMMA_SEPARATED_FORMAT.format(stats.greenlitSuggestions()) + " (" + stats.greenlitPercentage() + "%)",
                 true
             );
         }
@@ -145,7 +148,10 @@ public class SuggestionCommandUtils {
             statsFields++;
             embedBuilder.addField(
                 "Reactions",
-                EmojiCache.getFormattedEmoji(EmojiConfig::getAgreeEmojiId) + " " + stats.totalAgrees() + "\u3000" + EmojiCache.getFormattedEmoji(EmojiConfig::getDisagreeEmojiId) + " " + stats.totalDisagrees() + " (Total: " + stats.totalReactions() + ")",
+                EmojiCache.getFormattedEmoji(EmojiConfig::getAgreeEmojiId) + " " + StringUtils.COMMA_SEPARATED_FORMAT.format(stats.totalAgrees()) +
+                    "\u3000"
+                    + EmojiCache.getFormattedEmoji(EmojiConfig::getDisagreeEmojiId) + " " + StringUtils.COMMA_SEPARATED_FORMAT.format(stats.totalDisagrees())
+                    + " (Total: " + StringUtils.COMMA_SEPARATED_FORMAT.format(stats.totalReactions()) + ")",
                 true
             );
         }
