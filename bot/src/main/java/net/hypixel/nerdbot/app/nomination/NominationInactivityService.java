@@ -216,6 +216,11 @@ public class NominationInactivityService {
         log.info("Checking for inactive users in {} role-restricted channel groups", channelGroups.size());
 
         for (RoleRestrictedChannelGroup group : channelGroups) {
+            if (!group.isVotingNotificationsEnabled()) {
+                log.info("Skipping inactivity warnings for role-restricted channel group '{}' as voting notifications are disabled", group.getIdentifier());
+                continue;
+            }
+
             log.info("Checking inactivity for role-restricted channel group '{}' (display name: '{}', required messages: {}, required votes: {}, required comments: {}, check days: {})",
                 group.getIdentifier(), group.getDisplayName(), group.getMinimumMessagesForActivity(),
                 group.getMinimumVotesForActivity(), group.getMinimumCommentsForActivity(), group.getActivityCheckDays()
