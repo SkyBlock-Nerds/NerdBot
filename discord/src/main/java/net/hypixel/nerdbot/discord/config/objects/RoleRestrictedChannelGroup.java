@@ -58,4 +58,9 @@ public class RoleRestrictedChannelGroup {
      */
     private int activityCheckDays = 30;
 
+    /**
+     * Whether this group should send inactivity warnings to the voting channel
+     */
+    private boolean votingNotificationsEnabled = true;
+
 }
