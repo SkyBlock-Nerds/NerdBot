@@ -80,7 +80,8 @@ public class ChannelConfig {
                 group.getMinimumMessagesForActivity(),
                 group.getMinimumVotesForActivity(),
                 group.getMinimumCommentsForActivity(),
-                group.getActivityCheckDays()
+                group.getActivityCheckDays(),
+                group.isVotingNotificationsEnabled()
             );
 
             rebuiltGroups.add(normalised);

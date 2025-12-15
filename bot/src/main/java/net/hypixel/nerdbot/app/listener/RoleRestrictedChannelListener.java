@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Slf4j
@@ -219,7 +220,8 @@ public class RoleRestrictedChannelListener {
             botConfig.getChannelConfig().getDefaultMinimumMessagesForActivity(),
             botConfig.getChannelConfig().getDefaultMinimumVotesForActivity(),
             botConfig.getChannelConfig().getDefaultMinimumCommentsForActivity(),
-            botConfig.getChannelConfig().getDefaultActivityCheckDays()
+            botConfig.getChannelConfig().getDefaultActivityCheckDays(),
+            true
         );
 
         groups.add(newGroup);
@@ -245,7 +247,7 @@ public class RoleRestrictedChannelListener {
     private String generateGroupIdentifier(Guild guild, Set<String> roleIds) {
         List<String> roleNames = roleIds.stream()
             .map(guild::getRoleById)
-            .filter(role -> role != null && role.getName() != null)
+            .filter(Objects::nonNull)
             .map(role -> role.getName().toLowerCase().replaceAll("[^a-z0-9]", ""))
             .sorted()
             .toList();
@@ -260,7 +262,7 @@ public class RoleRestrictedChannelListener {
     private String generateGroupDisplayName(Guild guild, Set<String> roleIds) {
         List<String> roleNames = roleIds.stream()
             .map(guild::getRoleById)
-            .filter(role -> role != null && role.getName() != null)
+            .filter(Objects::nonNull)
             .map(net.dv8tion.jda.api.entities.Role::getName)
             .sorted()
             .toList();
@@ -270,12 +272,12 @@ public class RoleRestrictedChannelListener {
         }
 
         if (roleNames.size() == 1) {
-            return roleNames.get(0) + " Channels";
+            return roleNames.getFirst() + " Channels";
         } else if (roleNames.size() == 2) {
             return roleNames.get(0) + " & " + roleNames.get(1) + " Channels";
         } else {
             return String.join(", ", roleNames.subList(0, roleNames.size() - 1)) +
-                " & " + roleNames.get(roleNames.size() - 1) + " Channels";
+                " & " + roleNames.getLast() + " Channels";
         }
     }
 }
