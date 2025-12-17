@@ -3,7 +3,6 @@ package net.hypixel.nerdbot.app.command;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -12,6 +11,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.utils.FileUpload;
+import net.hypixel.nerdbot.app.command.util.MessageExport;
 import net.hypixel.nerdbot.core.FileUtils;
 import net.hypixel.nerdbot.core.csv.CSVData;
 import net.hypixel.nerdbot.discord.BotEnvironment;
@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class ChannelCommands {
@@ -46,14 +45,8 @@ public class ChannelCommands {
         AtomicInteger total = new AtomicInteger(0);
         channel.getIterableHistory().forEachAsync(message -> {
             String formattedTimestamp = message.getTimeCreated().format(FileUtils.REGULAR_DATE_FORMAT);
-            String messageContent = message.getContentRaw().replace("\"", "\"\"");
-
-            if (!message.getAttachments().isEmpty()) {
-                if (!messageContent.isEmpty()) {
-                    messageContent += "\n";
-                }
-                messageContent += "Attachments:\n" + message.getAttachments().stream().map(Message.Attachment::getUrl).collect(Collectors.joining("\n"));
-            }
+            MessageExport export = MessageExport.from(message, false);
+            String messageContent = export.contentWithAttachments().replace("\"", "\"\"");
 
             if (message.getContentRaw().isEmpty() && !message.getEmbeds().isEmpty()) {
                 if (!messageContent.isEmpty()) {

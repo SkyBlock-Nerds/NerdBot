@@ -6,7 +6,6 @@ import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.ThreadMember;
@@ -21,6 +20,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.app.command.util.MessageExport;
 import net.hypixel.nerdbot.app.role.RoleManager;
 import net.hypixel.nerdbot.core.ArrayUtils;
 import net.hypixel.nerdbot.core.FileUtils;
@@ -141,11 +141,11 @@ public class ExportCommands {
 
             List<String> orderedMessages = new ArrayList<>();
 
-            MessageExport startExport = buildMessageExport(startMessage);
+            MessageExport startExport = MessageExport.from(startMessage, true);
             orderedMessages.add(startExport.line());
 
             messages.forEach(message -> {
-                MessageExport export = buildMessageExport(message);
+                MessageExport export = MessageExport.from(message, true);
                 orderedMessages.add(export.line());
             });
 
@@ -478,19 +478,6 @@ public class ExportCommands {
             log.error("Failed to create temp file!", exception);
             event.getHook().editOriginal("An error occurred while creating the temp file: " + exception.getMessage()).queue();
         }
-    }
-
-    private MessageExport buildMessageExport(Message message) {
-        String authorName = message.getAuthor().getName();
-        String timestamp = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(message.getTimeCreated());
-        List<String> attachmentUrls = message.getAttachments().stream().map(Attachment::getUrl).toList();
-        String attachmentSuffix = attachmentUrls.isEmpty() ? "" : " [Attachments: " + String.join(", ", attachmentUrls) + "]";
-        String line = String.format("[%s] %s: %s%s", timestamp, authorName, message.getContentRaw(), attachmentSuffix);
-
-        return new MessageExport(line, attachmentSuffix);
-    }
-
-    private record MessageExport(String line, String attachmentSuffix) {
     }
 
     private String formatTimestampSheets(long timestamp) {
