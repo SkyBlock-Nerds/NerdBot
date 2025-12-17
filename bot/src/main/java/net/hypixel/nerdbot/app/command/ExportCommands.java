@@ -6,23 +6,15 @@ import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.ThreadMember;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
-import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.exceptions.ErrorResponseException;
-import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.app.command.util.MessageExport;
 import net.hypixel.nerdbot.app.role.RoleManager;
-import net.hypixel.nerdbot.core.ArrayUtils;
 import net.hypixel.nerdbot.core.FileUtils;
 import net.hypixel.nerdbot.core.csv.CSVData;
 import net.hypixel.nerdbot.discord.BotEnvironment;
@@ -40,11 +32,8 @@ import net.hypixel.nerdbot.discord.util.Utils;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -66,114 +55,16 @@ public class ExportCommands {
             return;
         }
 
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser commandSender = discordUserRepository.findOrCreateById(event.getMember().getId());
-
         event.getHook().editOriginal(String.format("Exporting threads from %s...", forumChannel.getAsMention())).queue();
 
-        CSVData csvData = new CSVData(List.of("Username", "Thread", "Content", "Agrees", "Disagrees", "Messages"), ";");
-        List<ThreadChannel> threads = ArrayUtils.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
-            .map(ThreadChannel.class::cast)
-            .distinct()
-            .sorted((o1, o2) -> (int) (o1.getTimeCreated().toEpochSecond() - o2.getTimeCreated().toEpochSecond()))
-            .filter(threadChannel -> {
-                try {
-                    Message startMessage = threadChannel.retrieveStartMessage().complete();
-                    return startMessage != null && !startMessage.getContentRaw().isBlank();
-                } catch (ErrorResponseException exception) {
-                    return exception.getErrorResponse() != ErrorResponse.UNKNOWN_MESSAGE;
-                }
-            })
-            .toList();
-
-        for (ThreadChannel threadChannel : threads) {
-            DiscordUser discordUser = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class).findById(threadChannel.getOwnerId());
-            String username;
-
-            try {
-                if (discordUser != null && discordUser.isProfileAssigned()) {
-                    username = discordUser.getMojangProfile().getUsername();
-                } else {
-                    ThreadMember threadOwner = threadChannel.getOwnerThreadMember() == null
-                        ? threadChannel.retrieveThreadMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS)
-                        : threadChannel.getOwnerThreadMember();
-                    username = threadOwner.getMember().getEffectiveName();
-                }
-            } catch (Exception exception) {
-                username = threadChannel.getOwnerId();
-                log.error("Failed to get username for thread owner " + threadChannel.getOwnerId(), exception);
-            }
-
-            int index = threads.indexOf(threadChannel);
-            event.getHook().editOriginal(String.format("Exporting thread %d/%d: %s by %s", index + 1, threads.size(), threadChannel.getName(), username)).queue();
-
-            Message startMessage = threadChannel.retrieveStartMessage().complete();
-            String threadUrl = startMessage.getJumpUrl();
-            String threadNameEscaped = threadChannel.getName().replace("\"", "\"\"");
-            String threadHyperlink = "=HYPERLINK(\"" + threadUrl + "\", \"" + threadNameEscaped + "\")";
-            List<MessageReaction> reactions = startMessage.getReactions().stream()
-                .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
-                .toList();
-
-            int agrees = 0;
-            int disagrees = 0;
-
-            if (!reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("agree")).toList().isEmpty()) {
-                agrees = reactions.stream()
-                    .filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("agree"))
-                    .toList()
-                    .getFirst()
-                    .getCount();
-            }
-
-            if (!reactions.stream().filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("disagree")).toList().isEmpty()) {
-                disagrees = reactions.stream()
-                    .filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("disagree"))
-                    .toList()
-                    .getFirst()
-                    .getCount();
-            }
-
-            List<Message> messages = new ArrayList<>();
-            threadChannel.getIterableHistory().forEachRemaining(messages::add);
-            messages.sort(Comparator.comparing(Message::getTimeCreated));
-            messages.removeIf(message -> message.getId().equals(startMessage.getId()));
-
-            List<String> orderedMessages = new ArrayList<>();
-
-            MessageExport startExport = MessageExport.from(startMessage, true);
-            orderedMessages.add(startExport.line());
-
-            messages.forEach(message -> {
-                MessageExport export = MessageExport.from(message, true);
-                orderedMessages.add(export.line());
-            });
-
-            String messageHistory = orderedMessages.size() > 1
-                ? String.join("\r\n", orderedMessages.subList(1, orderedMessages.size()))
-                : "";
-
-            csvData.addRow(List.of(
-                username,
-                threadHyperlink,
-                "\"" + (startMessage.getContentRaw() + startExport.attachmentSuffix()).replace("\"", "\"\"") + "\"",
-                String.valueOf(agrees),
-                String.valueOf(disagrees),
-                "\"" + messageHistory.replace("\"", "\"\"") + "\""
-            ));
-
-            event.getHook().editOriginal(String.format("Finished exporting thread %d/%d: %s by %s", index + 1, threads.size(), threadChannel.getName(), username)).queue();
-
-            // Check if all threads have been exported
-            if ((index + 1) == threads.size()) {
-                try {
-                    File file = FileUtils.createTempFile("export-threads-" + forumChannel.getName() + "-" + DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now()) + ".csv", csvData.toCSV());
-                    event.getHook().editOriginal(String.format("Finished exporting all threads from %s!", forumChannel.getAsMention())).setFiles(FileUpload.fromData(file)).queue();
-                } catch (IOException exception) {
-                    log.error("Failed to create temp file!", exception);
-                    event.getHook().editOriginal(String.format("Failed to create temporary file: %s", exception.getMessage())).queue();
-                }
-            }
+        try {
+            File file = ArchiveExporter.exportForumThreadsDetailed(forumChannel, status -> event.getHook().editOriginal(status).queue());
+            event.getHook().editOriginal(String.format("Finished exporting all threads from %s!", forumChannel.getAsMention()))
+                .setFiles(FileUpload.fromData(file))
+                .queue();
+        } catch (IOException exception) {
+            log.error("Failed to create temp file!", exception);
+            event.getHook().editOriginal(String.format("Failed to create temporary file: %s", exception.getMessage())).queue();
         }
     }
 

@@ -7,10 +7,16 @@ import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.ThreadMember;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.hypixel.nerdbot.core.FileUtils;
 import net.hypixel.nerdbot.core.csv.CSVData;
 import net.hypixel.nerdbot.app.command.util.MessageExport;
 import net.hypixel.nerdbot.discord.util.StringUtils;
+import net.hypixel.nerdbot.core.ArrayUtils;
+import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class ArchiveExporter {
@@ -73,6 +80,106 @@ public class ArchiveExporter {
         addThreadMessages(csvData, forumChannel.retrieveArchivedPublicThreadChannels().stream().toList(), total, progressCallback);
 
         return FileUtils.createTempFile(String.format("archive-forum-%s-%s-%s.csv", forumChannel.getName(), forumChannel.getId(), FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
+    }
+
+    public static File exportForumThreadsDetailed(ForumChannel forumChannel, Consumer<String> progressCallback) throws IOException {
+        CSVData csvData = new CSVData(List.of("Username", "Thread", "Content", "Agrees", "Disagrees", "Messages"), ";");
+        List<ThreadChannel> threads = ArrayUtils.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
+            .map(ThreadChannel.class::cast)
+            .distinct()
+            .sorted((o1, o2) -> (int) (o1.getTimeCreated().toEpochSecond() - o2.getTimeCreated().toEpochSecond()))
+            .filter(threadChannel -> {
+                try {
+                    Message startMessage = threadChannel.retrieveStartMessage().complete();
+                    return startMessage != null && !startMessage.getContentRaw().isBlank();
+                } catch (ErrorResponseException exception) {
+                    return exception.getErrorResponse() != net.dv8tion.jda.api.requests.ErrorResponse.UNKNOWN_MESSAGE;
+                }
+            })
+            .toList();
+        AtomicInteger index = new AtomicInteger(0);
+        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+
+        for (ThreadChannel threadChannel : threads) {
+            Message startMessage = threadChannel.retrieveStartMessage().complete();
+            if (startMessage == null || startMessage.getContentRaw().isBlank()) {
+                continue;
+            }
+
+            update(progressCallback, String.format("Exporting thread %d/%d: %s", index.get() + 1, threads.size(), threadChannel.getName()));
+
+            DiscordUser discordUser = discordUserRepository.findById(threadChannel.getOwnerId());
+            String username;
+
+            try {
+                if (discordUser != null && discordUser.isProfileAssigned()) {
+                    username = discordUser.getMojangProfile().getUsername();
+                } else {
+                    ThreadMember threadOwner = threadChannel.getOwnerThreadMember() == null
+                        ? threadChannel.retrieveThreadMemberById(threadChannel.getOwnerId()).completeAfter(3, TimeUnit.SECONDS)
+                        : threadChannel.getOwnerThreadMember();
+                    username = threadOwner.getMember().getEffectiveName();
+                }
+            } catch (Exception exception) {
+                username = threadChannel.getOwnerId();
+                log.error("Failed to get username for thread owner " + threadChannel.getOwnerId(), exception);
+            }
+
+            String threadUrl = startMessage.getJumpUrl();
+            String threadNameEscaped = threadChannel.getName().replace("\"", "\"\"");
+            String threadHyperlink = "=HYPERLINK(\"" + threadUrl + "\", \"" + threadNameEscaped + "\")";
+
+            int agrees = 0;
+            int disagrees = 0;
+
+            List<MessageReaction> reactions = startMessage.getReactions();
+            if (!reactions.isEmpty()) {
+                agrees = reactions.stream()
+                    .filter(reaction -> reaction.getEmoji().getName().equalsIgnoreCase("agree"))
+                    .mapToInt(MessageReaction::getCount)
+                    .findFirst()
+                    .orElse(0);
+
+                disagrees = reactions.stream()
+                    .filter(reaction -> reaction.getEmoji().getName().equalsIgnoreCase("disagree"))
+                    .mapToInt(MessageReaction::getCount)
+                    .findFirst()
+                    .orElse(0);
+            }
+
+            List<Message> messages = new ArrayList<>();
+            threadChannel.getIterableHistory().forEachRemaining(messages::add);
+            messages.sort(java.util.Comparator.comparing(Message::getTimeCreated));
+            messages.removeIf(message -> message.getId().equals(startMessage.getId()));
+
+            MessageExport startExport = MessageExport.from(startMessage, true);
+
+            List<String> orderedMessages = new ArrayList<>();
+            orderedMessages.add(startExport.line());
+            messages.forEach(message -> orderedMessages.add(MessageExport.from(message, true).line()));
+
+            String messageHistory = orderedMessages.size() > 1
+                ? String.join("\r\n", orderedMessages.subList(1, orderedMessages.size()))
+                : "";
+
+            csvData.addRow(List.of(
+                username,
+                threadHyperlink,
+                "\"" + (startMessage.getContentRaw() + startExport.attachmentSuffix()).replace("\"", "\"\"") + "\"",
+                String.valueOf(agrees),
+                String.valueOf(disagrees),
+                "\"" + messageHistory.replace("\"", "\"\"") + "\""
+            ));
+
+            index.incrementAndGet();
+            update(progressCallback, String.format("Finished exporting thread %d/%d: %s", index.get(), threads.size(), threadChannel.getName()));
+        }
+
+        if (!csvData.hasContent()) {
+            throw new IOException("No threads found to export.");
+        }
+
+        return FileUtils.createTempFile("export-threads-" + forumChannel.getName() + "-" + FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now()) + ".csv", csvData.toCSV());
     }
 
     private static void addChannelMessages(CSVData csvData, TextChannel channel, AtomicInteger counter, Consumer<String> progressCallback) {
