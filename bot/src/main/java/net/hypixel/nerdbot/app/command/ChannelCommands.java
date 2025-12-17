@@ -26,6 +26,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 public class ChannelCommands {
@@ -36,19 +39,23 @@ public class ChannelCommands {
         InteractionHook hook = event.getHook();
         hook.editOriginal(String.format("Archiving channel %s! If no file appears here, please contact a bot developer.", channel.getAsMention())).queue();
 
-        try {
-            File file = ArchiveExporter.exportTextChannel(channel, status -> hook.editOriginal(status).queue());
-            log.info("Finished archiving channel " + channel.getName() + " (ID: " + channel.getId() + ")! File located at: " + file.getAbsolutePath());
+        CompletableFuture.runAsync(() -> {
+            try {
+                File file = ArchiveExporter.exportTextChannel(channel, createProgressUpdater(hook));
+                log.info("Finished archiving channel " + channel.getName() + " (ID: " + channel.getId() + ")! File located at: " + file.getAbsolutePath());
 
-            if (!hook.isExpired()) {
-                hook.editOriginal(String.format("Finished archiving channel %s! The file should appear below.", channel.getAsMention()))
-                    .setFiles(FileUpload.fromData(file))
-                    .queue();
+                if (!hook.isExpired()) {
+                    hook.editOriginal(String.format("Finished archiving channel %s! The file should appear below.", channel.getAsMention()))
+                        .setFiles(FileUpload.fromData(file))
+                        .queue();
+                }
+            } catch (IOException exception) {
+                log.error("An error occurred when archiving the channel " + channel.getId() + "!", exception);
+                if (!hook.isExpired()) {
+                    hook.editOriginal(String.format("An error occurred while archiving channel %s: %s", channel.getAsMention(), exception.getMessage())).queue();
+                }
             }
-        } catch (IOException exception) {
-            event.reply(String.format("An error occurred while archiving channel %s! Please check the logs for more information.", channel.getAsMention())).queue();
-            log.error("An error occurred when archiving the channel " + channel.getId() + "!", exception);
-        }
+        });
     }
 
     @SlashCommand(name = "archive", subcommand = "category", description = "Archives all text/forum channels (including threads) in a category into a single zip", guildOnly = true, requiredPermissions = {"MANAGE_CHANNEL"})
@@ -57,14 +64,20 @@ public class ChannelCommands {
         InteractionHook hook = event.getHook();
         hook.editOriginal(String.format("Archiving category **%s** (ID: %s)...", category.getName(), category.getId())).queue();
 
-        try {
-            File zipFile = ArchiveExporter.exportCategory(category, status -> hook.editOriginal(status).queue());
-            hook.editOriginal("Finished archiving! Preparing to send the zip file...").queue();
-            sendZipToUser(event, zipFile, hook);
-        } catch (IOException exception) {
-            log.error("Failed to zip archives for category " + category.getId(), exception);
-            hook.editOriginal("Failed to create the archive zip file: " + exception.getMessage()).queue();
-        }
+        CompletableFuture.runAsync(() -> {
+            try {
+                File zipFile = ArchiveExporter.exportCategory(category, createProgressUpdater(hook));
+                if (!hook.isExpired()) {
+                    hook.editOriginal("Finished archiving! Preparing to send the zip file...").queue();
+                    sendZipToUser(event, zipFile, hook);
+                }
+            } catch (IOException exception) {
+                log.error("Failed to zip archives for category " + category.getId(), exception);
+                if (!hook.isExpired()) {
+                    hook.editOriginal("Failed to create the archive zip file: " + exception.getMessage()).queue();
+                }
+            }
+        });
     }
 
     private void sendZipToUser(SlashCommandInteractionEvent event, File zipFile, InteractionHook hook) {
@@ -82,6 +95,28 @@ public class ChannelCommands {
             log.error("Failed to open DM for user " + event.getUser().getId(), error);
             hook.editOriginal("Finished archiving, but could not open DMs to send the zip file. File path: " + zipFile.getAbsolutePath()).queue();
         });
+    }
+
+    private Consumer<String> createProgressUpdater(InteractionHook hook) {
+        AtomicLong lastUpdate = new AtomicLong(0);
+        long intervalMs = 10_000;
+
+        return status -> {
+            log.info(status);
+
+            if (hook.isExpired()) {
+                return;
+            }
+
+            long now = System.currentTimeMillis();
+            long last = lastUpdate.get();
+            if (now - last >= intervalMs && lastUpdate.compareAndSet(last, now)) {
+                hook.editOriginal(status).queue(
+                    null,
+                    throwable -> log.debug("Failed to send progress update: {}", throwable.getMessage())
+                );
+            }
+        };
     }
 
     @SlashCommand(name = "lock", description = "Locks the thread that the command is executed in", guildOnly = true, requiredPermissions = {"MANAGE_THREADS"})

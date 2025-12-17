@@ -186,6 +186,7 @@ public class ArchiveExporter {
         for (Message message : channel.getIterableHistory()) {
             csvData.addRow(buildRow(message, "\\N", "\\N"));
             logProgress(counter, progressCallback, "Archiving channel " + channel.getName() + " (ID: " + channel.getId() + ")");
+            throttle(counter);
         }
     }
 
@@ -194,6 +195,7 @@ public class ArchiveExporter {
             for (Message message : threadChannel.getIterableHistory()) {
                 csvData.addRow(buildRow(message, threadChannel.getId(), threadChannel.getName()));
                 logProgress(counter, progressCallback, "Archiving thread " + threadChannel.getName() + " (ID: " + threadChannel.getId() + ")");
+                throttle(counter);
             }
         }
     }
@@ -257,6 +259,22 @@ public class ArchiveExporter {
             log.info(message);
             update(progressCallback, message);
         }
+    }
+
+    private static void throttle(AtomicInteger counter) {
+        int current = counter.get();
+        if (current > 0 && current % 500 == 0 && inSafeThread()) {
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private static boolean inSafeThread() {
+        String threadName = Thread.currentThread().getName().toLowerCase();
+        return !(threadName.contains("mainws") || threadName.equals("main"));
     }
 
     private static void update(Consumer<String> progressCallback, String status) {
