@@ -149,13 +149,17 @@ public class ExportCommands {
                 orderedMessages.add(export.line());
             });
 
+            String messageHistory = orderedMessages.size() > 1
+                ? String.join("\r\n", orderedMessages.subList(1, orderedMessages.size()))
+                : "";
+
             csvData.addRow(List.of(
                 username,
                 threadHyperlink,
                 "\"" + (startMessage.getContentRaw() + startExport.attachmentSuffix()).replace("\"", "\"\"") + "\"",
                 String.valueOf(agrees),
                 String.valueOf(disagrees),
-                "\"" + String.join("\r\n", orderedMessages.subList(1, orderedMessages.size())).replace("\"", "\"\"") + "\""
+                "\"" + messageHistory.replace("\"", "\"\"") + "\""
             ));
 
             event.getHook().editOriginal(String.format("Finished exporting thread %d/%d: %s by %s", index + 1, threads.size(), threadChannel.getName(), username)).queue();
