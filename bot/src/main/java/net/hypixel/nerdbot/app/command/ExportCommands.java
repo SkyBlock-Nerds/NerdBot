@@ -43,6 +43,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -69,7 +70,7 @@ public class ExportCommands {
 
         event.getHook().editOriginal(String.format("Exporting threads from %s...", forumChannel.getAsMention())).queue();
 
-        CSVData csvData = new CSVData(List.of("Username", "Thread", "Content", "Agrees", "Disagrees"), ";");
+        CSVData csvData = new CSVData(List.of("Username", "Thread", "Content", "Agrees", "Disagrees", "Messages"), ";");
         List<ThreadChannel> threads = ArrayUtils.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
             .map(ThreadChannel.class::cast)
             .distinct()
@@ -117,7 +118,7 @@ public class ExportCommands {
                 agrees = reactions.stream()
                     .filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("agree"))
                     .toList()
-                    .get(0)
+                    .getFirst()
                     .getCount();
             }
 
@@ -125,16 +126,34 @@ public class ExportCommands {
                 disagrees = reactions.stream()
                     .filter(messageReaction -> messageReaction.getEmoji().getName().equalsIgnoreCase("disagree"))
                     .toList()
-                    .get(0)
+                    .getFirst()
                     .getCount();
             }
+
+            List<Message> messages = new ArrayList<>();
+            threadChannel.getIterableHistory().forEachRemaining(messages::add);
+            messages.sort(Comparator.comparing(Message::getTimeCreated));
+            messages.removeIf(message -> message.getId().equals(startMessage.getId()));
+
+            List<String> orderedMessages = messages.stream()
+                .map(message -> {
+                    message.getAuthor();
+                    return String.format(
+                        "[%s] %s: %s",
+                        DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(message.getTimeCreated()),
+                        message.getAuthor().getName(),
+                        message.getContentRaw()
+                    );
+                })
+                .toList();
 
             csvData.addRow(List.of(
                 username,
                 "=HYPERLINK(\"" + threadChannel.getName().replace("\"", "\"\"") + "\")",
                 "\"" + startMessage.getContentRaw().replace("\"", "\"\"") + "\"",
                 String.valueOf(agrees),
-                String.valueOf(disagrees)
+                String.valueOf(disagrees),
+                "\"" + String.join("\r\n", orderedMessages).replace("\"", "\"\"") + "\""
             ));
 
             event.getHook().editOriginal(String.format("Finished exporting thread %d/%d: %s by %s", index + 1, threads.size(), threadChannel.getName(), username)).queue();
@@ -433,9 +452,9 @@ public class ExportCommands {
                 formatTimestampSheets(lastActivity.getLastGlobalActivity()),
                 formatTimestampSheets(lastActivity.getLastVoiceChannelJoinDate()),
                 formatTimestampSheets(lastActivity.getLastItemGenUsage()),
-                lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getSuggestionCreationHistory().get(0)),
-                lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getProjectSuggestionCreationHistory().get(0)),
-                lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getAlphaSuggestionCreationHistory().get(0)),
+                lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getSuggestionCreationHistory().getFirst()),
+                lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getProjectSuggestionCreationHistory().getFirst()),
+                lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getAlphaSuggestionCreationHistory().getFirst()),
                 lastActivity.getSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getSuggestionVoteHistoryMap())),
                 lastActivity.getProjectSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getProjectSuggestionVoteHistoryMap())),
                 lastActivity.getAlphaSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getAlphaSuggestionVoteHistoryMap())),
