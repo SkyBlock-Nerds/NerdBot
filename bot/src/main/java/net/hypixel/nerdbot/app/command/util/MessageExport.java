@@ -6,9 +6,9 @@ import net.dv8tion.jda.api.entities.Message.Attachment;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-record MessageExport(String line, String contentWithAttachments, String attachmentSuffix) {
+public record MessageExport(String line, String contentWithAttachments, String attachmentSuffix) {
 
-    static MessageExport from(Message message, boolean includeMetadata) {
+    public static MessageExport from(Message message, boolean includeMetadata) {
         String authorName = message.getAuthor().getName();
         String timestamp = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(message.getTimeCreated());
         List<String> attachmentUrls = message.getAttachments().stream().map(Attachment::getUrl).toList();
