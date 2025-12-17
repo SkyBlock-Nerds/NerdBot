@@ -6,6 +6,7 @@ import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.ThreadMember;
@@ -70,7 +71,7 @@ public class ExportCommands {
 
         event.getHook().editOriginal(String.format("Exporting threads from %s...", forumChannel.getAsMention())).queue();
 
-        CSVData csvData = new CSVData(List.of("Username", "Thread", "Content", "Agrees", "Disagrees", "Messages"), ";");
+        CSVData csvData = new CSVData(List.of("Username", "Thread", "Content", "Agrees", "Disagrees", "Messages", "Attachments"), ";");
         List<ThreadChannel> threads = ArrayUtils.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
             .map(ThreadChannel.class::cast)
             .distinct()
@@ -135,25 +136,26 @@ public class ExportCommands {
             messages.sort(Comparator.comparing(Message::getTimeCreated));
             messages.removeIf(message -> message.getId().equals(startMessage.getId()));
 
-            List<String> orderedMessages = messages.stream()
-                .map(message -> {
-                    message.getAuthor();
-                    return String.format(
-                        "[%s] %s: %s",
-                        DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(message.getTimeCreated()),
-                        message.getAuthor().getName(),
-                        message.getContentRaw()
-                    );
-                })
-                .toList();
+            List<String> orderedMessages = new ArrayList<>();
+
+            MessageExport startExport = buildMessageExport(startMessage);
+            orderedMessages.add(startExport.line());
+            List<String> attachmentSummaries = new ArrayList<>(startExport.attachments());
+
+            messages.forEach(message -> {
+                MessageExport export = buildMessageExport(message);
+                orderedMessages.add(export.line());
+                attachmentSummaries.addAll(export.attachments());
+            });
 
             csvData.addRow(List.of(
                 username,
                 "=HYPERLINK(\"" + threadChannel.getName().replace("\"", "\"\"") + "\")",
-                "\"" + startMessage.getContentRaw().replace("\"", "\"\"") + "\"",
+                "\"" + (startMessage.getContentRaw() + startExport.attachmentSuffix()).replace("\"", "\"\"") + "\"",
                 String.valueOf(agrees),
                 String.valueOf(disagrees),
-                "\"" + String.join("\r\n", orderedMessages).replace("\"", "\"\"") + "\""
+                "\"" + String.join("\r\n", orderedMessages.subList(1, orderedMessages.size())).replace("\"", "\"\"") + "\"",
+                "\"" + String.join("\r\n", attachmentSummaries).replace("\"", "\"\"") + "\""
             ));
 
             event.getHook().editOriginal(String.format("Finished exporting thread %d/%d: %s by %s", index + 1, threads.size(), threadChannel.getName(), username)).queue();
@@ -476,6 +478,23 @@ public class ExportCommands {
             log.error("Failed to create temp file!", exception);
             event.getHook().editOriginal("An error occurred while creating the temp file: " + exception.getMessage()).queue();
         }
+    }
+
+    private MessageExport buildMessageExport(Message message) {
+        String authorName = message.getAuthor().getName();
+        String timestamp = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(message.getTimeCreated());
+        List<String> attachmentUrls = message.getAttachments().stream().map(Attachment::getUrl).toList();
+        String attachmentSuffix = attachmentUrls.isEmpty() ? "" : " [Attachments: " + String.join(", ", attachmentUrls) + "]";
+        String line = String.format("[%s] %s: %s%s", timestamp, authorName, message.getContentRaw(), attachmentSuffix);
+
+        List<String> attachments = attachmentUrls.isEmpty()
+            ? List.of()
+            : List.of(String.format("[%s] %s: %s", timestamp, authorName, String.join(", ", attachmentUrls)));
+
+        return new MessageExport(line, attachmentSuffix, attachments);
+    }
+
+    private record MessageExport(String line, String attachmentSuffix, List<String> attachments) {
     }
 
     private String formatTimestampSheets(long timestamp) {
