@@ -71,7 +71,7 @@ public class ExportCommands {
 
         event.getHook().editOriginal(String.format("Exporting threads from %s...", forumChannel.getAsMention())).queue();
 
-        CSVData csvData = new CSVData(List.of("Username", "Thread", "Content", "Agrees", "Disagrees", "Messages", "Attachments"), ";");
+        CSVData csvData = new CSVData(List.of("Username", "Thread", "Content", "Agrees", "Disagrees", "Messages"), ";");
         List<ThreadChannel> threads = ArrayUtils.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
             .map(ThreadChannel.class::cast)
             .distinct()
@@ -108,6 +108,9 @@ public class ExportCommands {
             event.getHook().editOriginal(String.format("Exporting thread %d/%d: %s by %s", index + 1, threads.size(), threadChannel.getName(), username)).queue();
 
             Message startMessage = threadChannel.retrieveStartMessage().complete();
+            String threadUrl = startMessage.getJumpUrl();
+            String threadNameEscaped = threadChannel.getName().replace("\"", "\"\"");
+            String threadHyperlink = "=HYPERLINK(\"" + threadUrl + "\", \"" + threadNameEscaped + "\")";
             List<MessageReaction> reactions = startMessage.getReactions().stream()
                 .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
                 .toList();
@@ -140,22 +143,19 @@ public class ExportCommands {
 
             MessageExport startExport = buildMessageExport(startMessage);
             orderedMessages.add(startExport.line());
-            List<String> attachmentSummaries = new ArrayList<>(startExport.attachments());
 
             messages.forEach(message -> {
                 MessageExport export = buildMessageExport(message);
                 orderedMessages.add(export.line());
-                attachmentSummaries.addAll(export.attachments());
             });
 
             csvData.addRow(List.of(
                 username,
-                "=HYPERLINK(\"" + threadChannel.getName().replace("\"", "\"\"") + "\")",
+                threadHyperlink,
                 "\"" + (startMessage.getContentRaw() + startExport.attachmentSuffix()).replace("\"", "\"\"") + "\"",
                 String.valueOf(agrees),
                 String.valueOf(disagrees),
-                "\"" + String.join("\r\n", orderedMessages.subList(1, orderedMessages.size())).replace("\"", "\"\"") + "\"",
-                "\"" + String.join("\r\n", attachmentSummaries).replace("\"", "\"\"") + "\""
+                "\"" + String.join("\r\n", orderedMessages.subList(1, orderedMessages.size())).replace("\"", "\"\"") + "\""
             ));
 
             event.getHook().editOriginal(String.format("Finished exporting thread %d/%d: %s by %s", index + 1, threads.size(), threadChannel.getName(), username)).queue();
@@ -487,14 +487,10 @@ public class ExportCommands {
         String attachmentSuffix = attachmentUrls.isEmpty() ? "" : " [Attachments: " + String.join(", ", attachmentUrls) + "]";
         String line = String.format("[%s] %s: %s%s", timestamp, authorName, message.getContentRaw(), attachmentSuffix);
 
-        List<String> attachments = attachmentUrls.isEmpty()
-            ? List.of()
-            : List.of(String.format("[%s] %s: %s", timestamp, authorName, String.join(", ", attachmentUrls)));
-
-        return new MessageExport(line, attachmentSuffix, attachments);
+        return new MessageExport(line, attachmentSuffix);
     }
 
-    private record MessageExport(String line, String attachmentSuffix, List<String> attachments) {
+    private record MessageExport(String line, String attachmentSuffix) {
     }
 
     private String formatTimestampSheets(long timestamp) {
