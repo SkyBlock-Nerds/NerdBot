@@ -212,7 +212,7 @@ public class MinecraftInventoryGenerator implements Generator {
     }
 
     private void drawItems() {
-        if (inventoryString == null || inventoryString.isEmpty()) {
+        if (inventoryString == null || inventoryString.isBlank()) {
             return;
         }
 
