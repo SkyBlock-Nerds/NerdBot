@@ -491,7 +491,7 @@ public class GeneratorCommands {
         event.deferReply(hidden).complete();
 
         try {
-            MinecraftNbtParser.ParsedNbt ParsedNbt = MinecraftNbtParser.Parse(nbt);
+            MinecraftNbtParser.ParsedNbt ParsedNbt = MinecraftNbtParser.parse(nbt);
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
 
             ParsedNbt.getGenerators().forEach(generator -> {

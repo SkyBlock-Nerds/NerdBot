@@ -21,7 +21,7 @@ import java.util.List;
 @Slf4j
 public class MinecraftNbtParser {
 
-    public static ParsedNbt Parse(String nbt) {
+    public static ParsedNbt parse(String nbt) {
         JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
         ArrayList<ClassBuilder<? extends Generator>> generators = new ArrayList<>();
 
@@ -168,15 +168,15 @@ public class MinecraftNbtParser {
 
     private static String getSkinValue(JsonObject jsonObject) {
         if (jsonObject.has("tag")) {
-            return getSKinValueLegacyFormat(jsonObject);
+            return getSkinValueLegacyFormat(jsonObject);
         } else if (jsonObject.has("components")) {
-            return getSKinValueComponentsFormat(jsonObject);
+            return getSkinValueComponentsFormat(jsonObject);
         }
 
         return null;
     }
 
-    private static String getSKinValueLegacyFormat(JsonObject jsonObject) {
+    private static String getSkinValueLegacyFormat(JsonObject jsonObject) {
         JsonObject tagObject = jsonObject.getAsJsonObject("tag");
         if (tagObject != null && tagObject.get("SkullOwner") != null) {
             JsonArray textures = tagObject.get("SkullOwner").getAsJsonObject()
@@ -192,7 +192,7 @@ public class MinecraftNbtParser {
         return null;
     }
 
-    private static String getSKinValueComponentsFormat(JsonObject jsonObject) {
+    private static String getSkinValueComponentsFormat(JsonObject jsonObject) {
         JsonObject components = jsonObject.getAsJsonObject("components");
         if (components.has("minecraft:profile")) {
             JsonObject profile = components.getAsJsonObject("minecraft:profile");
