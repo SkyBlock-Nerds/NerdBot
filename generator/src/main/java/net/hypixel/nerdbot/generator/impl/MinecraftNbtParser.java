@@ -129,7 +129,7 @@ public class MinecraftNbtParser {
         if (tag.has("display")) {
             JsonObject display = tag.getAsJsonObject("display");
             if (display.has("Lore")) {
-                var stats = display.get("Lore")
+                IntSummaryStatistics stats = display.get("Lore")
                     .getAsJsonArray()
                     .asList()
                     .stream()

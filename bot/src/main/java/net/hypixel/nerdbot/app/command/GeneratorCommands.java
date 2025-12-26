@@ -500,7 +500,7 @@ public class GeneratorCommands {
 
             GeneratedObject generatedObject = generatorImageBuilder.build();
 
-            var tooltipGenerator = ParsedNbt.getGenerators()
+            Optional<ClassBuilder<? extends Generator>> tooltipGenerator = parsedNbt.getGenerators()
                 .stream()
                 .filter(gen -> gen instanceof MinecraftTooltipGenerator.Builder)
                 .findFirst();
