@@ -31,7 +31,7 @@ public class LastActivity {
     private long lastGlobalActivity = -1L;
     private long lastVoiceChannelJoinDate = -1L;
     private long lastItemGenUsage = -1L;
-    private long lastModMailUsage = -1L;
+    private long lastTicketUsage = -1L;
 
     // Suggestion Activity History
     private List<Long> suggestionCreationHistory = new ArrayList<>();

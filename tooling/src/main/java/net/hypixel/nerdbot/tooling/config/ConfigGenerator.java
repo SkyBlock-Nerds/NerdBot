@@ -15,7 +15,11 @@ import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.StatusPageConfig;
 import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
-import net.hypixel.nerdbot.discord.config.channel.ModMailConfig;
+import net.hypixel.nerdbot.discord.config.channel.TicketConfig;
+import net.hypixel.nerdbot.discord.config.channel.TicketStatusConfig;
+import net.hypixel.nerdbot.discord.config.channel.TicketReminderThreshold;
+import net.hypixel.nerdbot.discord.config.channel.TicketTemplate;
+import net.hypixel.nerdbot.discord.config.channel.TicketTemplateField;
 import net.hypixel.nerdbot.discord.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.discord.config.objects.PingableRole;
 import net.hypixel.nerdbot.discord.config.objects.ReactionChannel;
@@ -92,13 +96,60 @@ public class ConfigGenerator {
         metricsConfig.setPort(1234);
         botConfig.setMetricsConfig(metricsConfig);
 
-        ModMailConfig modMailConfig = new ModMailConfig();
-        modMailConfig.setChannelId(EXAMPLE_ID);
-        modMailConfig.setRoleFormat(ModMailConfig.RoleFormat.BELOW);
-        modMailConfig.setRoleId(EXAMPLE_ID);
-        modMailConfig.setWebhookId(EXAMPLE_ID);
-        modMailConfig.setTimeBetweenPings(60);
-        botConfig.setModMailConfig(modMailConfig);
+        TicketConfig ticketConfig = new TicketConfig();
+        ticketConfig.setForumChannelId(EXAMPLE_ID);
+        ticketConfig.setTicketRoleId(EXAMPLE_ID);
+        ticketConfig.setWebhookId(EXAMPLE_ID);
+        ticketConfig.setCategories(List.of(
+            new TicketConfig.TicketCategory("example_general", "Example General", "Example description for a general ticket."),
+            new TicketConfig.TicketCategory("example_bug_report", "Example Bug Report", "Example description for bug reports."),
+            new TicketConfig.TicketCategory("example_request", "Example Request", "Example description for special requests.")
+        ));
+        ticketConfig.setStatuses(List.of(
+            new TicketStatusConfig("open", "Open", "\uD83D\uDFE2", null, false, true),
+            new TicketStatusConfig("in_progress", "In Progress", "\uD83D\uDFE1", null, false, false),
+            new TicketStatusConfig("awaiting_response", "Awaiting Response", "\uD83D\uDFE0", null, false, false),
+            new TicketStatusConfig("escalated", "Escalated", "\uD83D\uDD34", null, false, false),
+            new TicketStatusConfig("closed", "Closed", "\u26AB", null, true, false)
+        ));
+        ticketConfig.setUserReplyStatus("open");
+        ticketConfig.setStaffReplyStatus("awaiting_response");
+        ticketConfig.setRemindersEnabled(true);
+        ticketConfig.setReminderThresholds(List.of(
+            new TicketReminderThreshold(4, "Example reminder after 4 hours without a response.", true),
+            new TicketReminderThreshold(24, "Example reminder after 24 hours without a response.", true),
+            new TicketReminderThreshold(72, "Example reminder after 72 hours without a response.", true)
+        ));
+        ticketConfig.setReminderCheckIntervalMinutes(30);
+        ticketConfig.setUseModalFlow(true);
+
+        TicketTemplate exampleBugTemplate = new TicketTemplate();
+        exampleBugTemplate.setCategoryId("example_bug_report");
+        exampleBugTemplate.setModalTitle("Example Ticket Form");
+        exampleBugTemplate.setFields(List.of(
+            new TicketTemplateField("example_subject", "Example Subject", "Example subject placeholder.", true, "SHORT", 2, 100),
+            new TicketTemplateField("example_description", "Example Description", "Example description placeholder.", true, "PARAGRAPH", 20, 2000),
+            new TicketTemplateField("example_optional", "Example Optional Field", "Optional example placeholder.", false, "PARAGRAPH", 1, 1000)
+        ));
+
+        TicketTemplate exampleRequestTemplate = new TicketTemplate();
+        exampleRequestTemplate.setCategoryId("example_request");
+        exampleRequestTemplate.setModalTitle("Example Request Form");
+        exampleRequestTemplate.setFields(List.of(
+            new TicketTemplateField("example_duration", "Example Duration", "Example duration placeholder.", true, "SHORT", 2, 100),
+            new TicketTemplateField("example_reason", "Example Reason", "Example optional reason placeholder.", false, "PARAGRAPH", 1, 500)
+        ));
+
+        ticketConfig.setTemplates(List.of(exampleBugTemplate, exampleRequestTemplate));
+        ticketConfig.setMaxOpenTicketsPerUser(3);
+        ticketConfig.setTimeBetweenPings(60);
+        ticketConfig.setStoreTranscripts(true);
+        ticketConfig.setUploadTranscriptOnClose(true);
+        ticketConfig.setAutoCloseEnabled(true);
+        ticketConfig.setAutoCloseDays(7);
+        ticketConfig.setAutoCloseStatusId("awaiting_response");
+        ticketConfig.setAutoCloseMessage("Example auto-close message explaining why a ticket was closed.");
+        botConfig.setTicketConfig(ticketConfig);
 
         RoleConfig roleConfig = new RoleConfig();
         roleConfig.setLimboRoleId(EXAMPLE_ID);
@@ -220,7 +271,7 @@ public class ConfigGenerator {
     }
 
     private static void writeJsonToFile(String json) throws IOException {
-        File outputDir = new File("./tooling/src/main/resources");
+        File outputDir = new File(".");
         if (!outputDir.exists() && !outputDir.mkdirs()) {
             throw new IOException("Failed to create output directory " + outputDir.getAbsolutePath());
         }
