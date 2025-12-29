@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.generator.impl;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.AccessLevel;
@@ -18,6 +19,7 @@ import net.hypixel.nerdbot.generator.parser.text.PlaceholderReverseMapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 public class MinecraftNbtParser {
@@ -53,6 +55,8 @@ public class MinecraftNbtParser {
         NbtFormatMetadata formatMetadata = formatHandler.extractMetadata(jsonObject);
         boolean hasTextureMetadata = formatMetadata.containsKey(NbtFormatMetadata.KEY_PLAYER_HEAD_TEXTURE);
         Integer metadataMaxLineLength = formatMetadata.get(NbtFormatMetadata.KEY_MAX_LINE_LENGTH, Integer.class);
+        Boolean metadataEnchanted = formatMetadata.get(NbtFormatMetadata.KEY_ENCHANTED, Boolean.class);
+        boolean enchanted = metadataEnchanted != null && metadataEnchanted;
 
         log.debug(
             "Extracted metadata via '{}': texturePresent={}, maxLineLength={}",
@@ -77,12 +81,13 @@ public class MinecraftNbtParser {
             } else {
                 generators.add(new MinecraftItemGenerator.Builder()
                     .withItem(parsedItemId)
+                    .isEnchanted(enchanted)
                     .isBigImage());
             }
         } else {
             generators.add(new MinecraftItemGenerator.Builder()
                 .withItem(parsedItemId)
-                //.isEnchanted(enchanted) TODO: determine if the item is enchanted
+                .isEnchanted(enchanted)
                 .isBigImage());
         }
 
@@ -104,6 +109,7 @@ public class MinecraftNbtParser {
             generators.add(new MinecraftItemGenerator.Builder()
                 .withItem(jsonObject.get("id").getAsString())
                 .withData(dyeColor)
+                .isEnchanted(enchanted)
                 .isBigImage());
         } else if (dyeColor == null) {
             log.trace("No dye color present for item '{}'", parsedItemId);
@@ -121,7 +127,7 @@ public class MinecraftNbtParser {
             .withItemLore(mappedLore)
             .withName(mappedName);
 
-        return new ParsedNbt(generators, base64Texture, parsedItemId);
+        return new ParsedNbt(generators, base64Texture, parsedItemId, enchanted);
     }
 
     private static boolean isPlayerHeadId(String itemId) {
@@ -173,6 +179,7 @@ public class MinecraftNbtParser {
         private ArrayList<ClassBuilder<? extends Generator>> generators;
         private String base64Texture;
         private String parsedItemId;
+        private boolean enchanted;
     }
 
     private static final class DefaultNbtFormatHandler implements NbtFormatHandler {

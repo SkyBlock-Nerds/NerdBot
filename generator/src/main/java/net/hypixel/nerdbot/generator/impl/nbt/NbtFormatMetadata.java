@@ -9,6 +9,7 @@ public final class NbtFormatMetadata {
 
     public static final String KEY_PLAYER_HEAD_TEXTURE = "player_head_texture";
     public static final String KEY_MAX_LINE_LENGTH = "max_line_length";
+    public static final String KEY_ENCHANTED = "enchanted";
 
     public static final NbtFormatMetadata EMPTY = new NbtFormatMetadata(Collections.emptyMap());
 

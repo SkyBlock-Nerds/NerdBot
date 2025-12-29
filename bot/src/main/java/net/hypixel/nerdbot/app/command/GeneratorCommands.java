@@ -529,6 +529,10 @@ public class GeneratorCommands {
                 slashCommand += " skin_value: " + parsedNbt.getBase64Texture();
             }
 
+            if (parsedNbt.isEnchanted()) {
+                slashCommand += " enchanted: True";
+            }
+
             // Escape newlines in lore so the slash command is a single line
             slashCommand = slashCommand.replace("\n", "\\n");
 

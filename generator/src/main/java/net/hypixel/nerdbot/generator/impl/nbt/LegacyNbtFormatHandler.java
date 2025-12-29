@@ -21,10 +21,12 @@ public class LegacyNbtFormatHandler implements NbtFormatHandler {
 
         String skinValue = resolveSkinValue(tagObject);
         Integer maxLineLength = resolveMaxLineLength(tagObject);
+        boolean enchanted = detectEnchanted(tagObject);
 
         return NbtFormatMetadata.builder()
             .withValue(NbtFormatMetadata.KEY_PLAYER_HEAD_TEXTURE, skinValue)
             .withValue(NbtFormatMetadata.KEY_MAX_LINE_LENGTH, maxLineLength)
+            .withValue(NbtFormatMetadata.KEY_ENCHANTED, enchanted ? Boolean.TRUE : null)
             .build();
     }
 
@@ -91,4 +93,33 @@ public class LegacyNbtFormatHandler implements NbtFormatHandler {
 
         return maxLength == 0 ? null : maxLength;
     }
+
+    private boolean detectEnchanted(JsonObject tag) {
+        if (tag == null) {
+            return false;
+        }
+
+        JsonElement[] legacyKeys = {
+            tag.get("Enchantments"),
+            tag.get("StoredEnchantments"),
+            tag.get("ench")
+        };
+
+        for (JsonElement element : legacyKeys) {
+            if (element == null) {
+                continue;
+            }
+
+            if (element.isJsonArray() && !element.getAsJsonArray().isEmpty()) {
+                return true;
+            }
+
+            if (element.isJsonObject() && !element.getAsJsonObject().entrySet().isEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }

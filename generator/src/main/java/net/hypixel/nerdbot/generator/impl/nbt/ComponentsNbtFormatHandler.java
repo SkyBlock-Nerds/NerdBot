@@ -4,6 +4,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import java.util.Locale;
+
 public class ComponentsNbtFormatHandler implements NbtFormatHandler {
 
     @Override
@@ -21,10 +23,12 @@ public class ComponentsNbtFormatHandler implements NbtFormatHandler {
         JsonObject components = componentsElement.getAsJsonObject();
         String skinValue = resolveSkinValue(components);
         Integer maxLineLength = resolveMaxLineLength(components);
+        boolean enchanted = detectEnchanted(components);
 
         return NbtFormatMetadata.builder()
             .withValue(NbtFormatMetadata.KEY_PLAYER_HEAD_TEXTURE, skinValue)
             .withValue(NbtFormatMetadata.KEY_MAX_LINE_LENGTH, maxLineLength)
+            .withValue(NbtFormatMetadata.KEY_ENCHANTED, enchanted ? Boolean.TRUE : null)
             .build();
     }
 
@@ -69,6 +73,72 @@ public class ComponentsNbtFormatHandler implements NbtFormatHandler {
         }
 
         return maxLength == 0 ? null : maxLength;
+    }
+
+    private boolean detectEnchanted(JsonObject components) {
+        Boolean override = parseBooleanFromElement(components.get("minecraft:enchantment_glint_override"));
+        if (override != null) {
+            return override;
+        }
+
+        if (hasComponentEnchantments(components.get("minecraft:enchantments"))) {
+            return true;
+        }
+
+        return hasComponentEnchantments(components.get("minecraft:stored_enchantments"));
+    }
+
+    private boolean hasComponentEnchantments(JsonElement element) {
+        if (element == null) {
+            return false;
+        }
+
+        if (element.isJsonArray()) {
+            return !element.getAsJsonArray().isEmpty();
+        }
+
+        if (element.isJsonObject()) {
+            JsonObject obj = element.getAsJsonObject();
+            if (obj.has("levels")) {
+                JsonElement levels = obj.get("levels");
+                if (levels.isJsonObject() && !levels.getAsJsonObject().entrySet().isEmpty()) {
+                    return true;
+                }
+                if (levels.isJsonArray() && !levels.getAsJsonArray().isEmpty()) {
+                    return true;
+                }
+            }
+
+            return obj.has("entries") && obj.get("entries").isJsonArray() && !obj.getAsJsonArray("entries").isEmpty();
+        }
+
+        return false;
+    }
+
+    private Boolean parseBooleanFromElement(JsonElement element) {
+        if (element == null || !element.isJsonPrimitive()) {
+            return null;
+        }
+
+        if (element.getAsJsonPrimitive().isBoolean()) {
+            return element.getAsBoolean();
+        }
+
+        if (element.getAsJsonPrimitive().isNumber()) {
+            return element.getAsNumber().intValue() != 0;
+        }
+
+        if (element.getAsJsonPrimitive().isString()) {
+            String raw = element.getAsString().trim().toLowerCase(Locale.ROOT);
+            if (raw.equals("true") || raw.equals("1") || raw.equals("1b")) {
+                return true;
+            }
+            if (raw.equals("false") || raw.equals("0") || raw.equals("0b")) {
+                return false;
+            }
+        }
+
+        return null;
     }
 
     private String extractTextureFromProperties(JsonElement propertiesElement) {
