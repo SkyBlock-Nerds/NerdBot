@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class PlaceholderReverseMapper {
 
     private static final Pattern TOKEN_PATTERN = Pattern.compile("\\{([^}]+)}");
-    private static final String DEFAULT_CAPTURE = "[^\\n]+?";
+    private static final String DEFAULT_CAPTURE = "[^\\n]+";
 
     private record ReplacementRule(Pattern pattern, ReplacementProvider provider) {
     }

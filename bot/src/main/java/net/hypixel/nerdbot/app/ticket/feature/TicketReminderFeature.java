@@ -1,6 +1,7 @@
-package net.hypixel.nerdbot.app.ticket;
+package net.hypixel.nerdbot.app.ticket.feature;
 
 import lombok.extern.slf4j.Slf4j;
+import net.hypixel.nerdbot.app.ticket.service.TicketService;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;

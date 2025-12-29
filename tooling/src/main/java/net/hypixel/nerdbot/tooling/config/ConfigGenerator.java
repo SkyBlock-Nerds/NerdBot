@@ -18,6 +18,7 @@ import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.config.channel.TicketConfig;
 import net.hypixel.nerdbot.discord.config.channel.TicketStatusConfig;
 import net.hypixel.nerdbot.discord.config.channel.TicketReminderThreshold;
+import net.hypixel.nerdbot.discord.storage.database.model.ticket.TicketStatus;
 import net.hypixel.nerdbot.discord.config.channel.TicketTemplate;
 import net.hypixel.nerdbot.discord.config.channel.TicketTemplateField;
 import net.hypixel.nerdbot.discord.config.objects.CustomForumTag;
@@ -97,7 +98,8 @@ public class ConfigGenerator {
         botConfig.setMetricsConfig(metricsConfig);
 
         TicketConfig ticketConfig = new TicketConfig();
-        ticketConfig.setForumChannelId(EXAMPLE_ID);
+        ticketConfig.setTicketCategoryId(EXAMPLE_ID);
+        ticketConfig.setClosedTicketCategoryId(EXAMPLE_ID);
         ticketConfig.setTicketRoleId(EXAMPLE_ID);
         ticketConfig.setWebhookId(EXAMPLE_ID);
         ticketConfig.setCategories(List.of(
@@ -106,14 +108,13 @@ public class ConfigGenerator {
             new TicketConfig.TicketCategory("example_request", "Example Request", "Example description for special requests.")
         ));
         ticketConfig.setStatuses(List.of(
-            new TicketStatusConfig("open", "Open", "\uD83D\uDFE2", null, false, true),
-            new TicketStatusConfig("in_progress", "In Progress", "\uD83D\uDFE1", null, false, false),
-            new TicketStatusConfig("awaiting_response", "Awaiting Response", "\uD83D\uDFE0", null, false, false),
-            new TicketStatusConfig("escalated", "Escalated", "\uD83D\uDD34", null, false, false),
-            new TicketStatusConfig("closed", "Closed", "\u26AB", null, true, false)
+            new TicketStatusConfig("open", "Open", "\uD83D\uDFE2"),
+            new TicketStatusConfig("in_progress", "In Progress", "\uD83D\uDFE1"),
+            new TicketStatusConfig("awaiting_response", "Awaiting Response", "\uD83D\uDFE0"),
+            new TicketStatusConfig("closed", "Closed", "\u26AB")
         ));
-        ticketConfig.setUserReplyStatus("open");
-        ticketConfig.setStaffReplyStatus("awaiting_response");
+        ticketConfig.setUserReplyStatus(TicketStatus.OPEN);
+        ticketConfig.setStaffReplyStatus(TicketStatus.AWAITING_RESPONSE);
         ticketConfig.setRemindersEnabled(true);
         ticketConfig.setReminderThresholds(List.of(
             new TicketReminderThreshold(4, "Example reminder after 4 hours without a response.", true),
@@ -147,7 +148,7 @@ public class ConfigGenerator {
         ticketConfig.setUploadTranscriptOnClose(true);
         ticketConfig.setAutoCloseEnabled(true);
         ticketConfig.setAutoCloseDays(7);
-        ticketConfig.setAutoCloseStatusId("awaiting_response");
+        ticketConfig.setAutoCloseStatus(TicketStatus.AWAITING_RESPONSE);
         ticketConfig.setAutoCloseMessage("Example auto-close message explaining why a ticket was closed.");
         botConfig.setTicketConfig(ticketConfig);
 

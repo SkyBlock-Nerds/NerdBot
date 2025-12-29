@@ -1,13 +1,12 @@
 package net.hypixel.nerdbot.discord.cache;
 
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
-import net.dv8tion.jda.api.events.channel.forum.GenericForumTagEvent;
 import net.dv8tion.jda.api.events.channel.update.GenericChannelUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
@@ -16,17 +15,11 @@ import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class ChannelCache {
 
     private static final Map<String, GuildChannel> CHANNEL_CACHE = new HashMap<>();
-
-    /**
-     * Cache of ticket forum tag IDs, keyed by tag name (case-insensitive, stored lowercase)
-     */
-    private static final Map<String, Long> TICKET_TAG_CACHE = new ConcurrentHashMap<>();
 
     public ChannelCache() {
         DiscordUtils.getMainGuild().getChannels().forEach(channel -> {
@@ -57,64 +50,44 @@ public class ChannelCache {
 
     public static Optional<ForumChannel> getForumChannelByName(String channelName) {
         return getChannelByName(channelName)
+            .filter(channel -> channel instanceof ForumChannel)
             .map(ForumChannel.class::cast);
     }
 
     public static Optional<ForumChannel> getForumChannelById(String channelId) {
         return getChannelById(channelId)
+            .filter(channel -> channel instanceof ForumChannel)
             .map(ForumChannel.class::cast);
     }
 
-    public static Optional<ForumChannel> getTicketChannel() {
-        return getChannelById(DiscordBotEnvironment.getBot().getConfig().getTicketConfig().getForumChannelId())
-            .map(ForumChannel.class::cast);
+    public static Optional<Category> getCategoryByName(String categoryName) {
+        return getChannelByName(categoryName)
+            .filter(channel -> channel instanceof Category)
+            .map(Category.class::cast);
+    }
+
+    public static Optional<Category> getCategoryById(String categoryId) {
+        return getChannelById(categoryId)
+            .filter(channel -> channel instanceof Category)
+            .map(Category.class::cast);
     }
 
     /**
-     * Get a cached ticket tag ID by name
-     *
-     * @param tagName the tag name (case-insensitive)
-     *
-     * @return the tag ID if cached, empty otherwise
+     * Get the ticket category where ticket channels are created.
      */
-    public static Optional<Long> getTicketTagId(String tagName) {
-        if (tagName == null) {
+    public static Optional<Category> getTicketCategory() {
+        return getCategoryById(DiscordBotEnvironment.getBot().getConfig().getTicketConfig().getTicketCategoryId());
+    }
+
+    /**
+     * Get the closed ticket category where closed ticket channels are moved.
+     */
+    public static Optional<Category> getClosedTicketCategory() {
+        String closedCategoryId = DiscordBotEnvironment.getBot().getConfig().getTicketConfig().getClosedTicketCategoryId();
+        if (closedCategoryId == null || closedCategoryId.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.ofNullable(TICKET_TAG_CACHE.get(tagName.toLowerCase()));
-    }
-
-    /**
-     * Refresh the ticket tag cache from the ticket forum channel
-     */
-    public static void refreshTicketTagCache() {
-        getTicketChannel().ifPresent(forum -> {
-            TICKET_TAG_CACHE.clear();
-            for (ForumTag tag : forum.getAvailableTags()) {
-                TICKET_TAG_CACHE.put(tag.getName().toLowerCase(), tag.getIdLong());
-            }
-            log.info("Refreshed ticket tag cache with {} tags", TICKET_TAG_CACHE.size());
-        });
-    }
-
-    /**
-     * Get a ForumTag from the ticket channel by its cached ID
-     *
-     * @param tagName the tag name to look up
-     *
-     * @return the ForumTag if found
-     */
-    public static Optional<ForumTag> getTicketTagByName(String tagName) {
-        if (tagName == null) {
-            return Optional.empty();
-        }
-        return getTicketTagId(tagName).flatMap(tagId ->
-            getTicketChannel().flatMap(forum ->
-                forum.getAvailableTags().stream()
-                    .filter(t -> t.getIdLong() == tagId)
-                    .findFirst()
-            )
-        );
+        return getCategoryById(closedCategoryId);
     }
 
     public static Optional<TextChannel> getLogChannel() {
@@ -148,17 +121,5 @@ public class ChannelCache {
     public void onChannelDelete(ChannelDeleteEvent event) {
         CHANNEL_CACHE.remove(event.getChannel().getId());
         log.debug("Removed channel from cache '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was deleted");
-    }
-
-    @SubscribeEvent
-    public void onForumChannelUpdate(GenericForumTagEvent event) {
-        CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel());
-        log.debug("Cached channel '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was updated");
-
-        // Refresh ticket tag cache if this is the ticket channel
-        String ticketChannelId = DiscordBotEnvironment.getBot().getConfig().getTicketConfig().getForumChannelId();
-        if (event.getChannel().getId().equals(ticketChannelId)) {
-            refreshTicketTagCache();
-        }
     }
 }

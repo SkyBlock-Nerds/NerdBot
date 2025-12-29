@@ -5,10 +5,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.core.JsonLoader;
+import net.hypixel.nerdbot.generator.text.ChatFormat;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -43,6 +44,10 @@ public class Rarity {
 
     public static List<String> getRarityNames() {
         return RARITIES.stream().map(Rarity::getName).collect(Collectors.toList());
+    }
+
+    public static List<Rarity> getAllRarities() {
+        return Collections.unmodifiableList(RARITIES);
     }
 
     public String getColorCode() {

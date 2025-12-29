@@ -318,7 +318,7 @@ public class TextWrapper {
      *
      * @return A plain string with codes removed, or an empty string if input is null/empty.
      */
-    private static String stripColorCodes(String string) {
+    public static String stripColorCodes(String string) {
         if (string == null || string.isEmpty()) {
             return "";
         }

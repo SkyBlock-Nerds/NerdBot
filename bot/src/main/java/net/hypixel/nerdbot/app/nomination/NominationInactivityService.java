@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.app.role.RoleManager;
-import net.hypixel.nerdbot.app.ticket.TicketService;
+import net.hypixel.nerdbot.app.ticket.service.TicketService;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
@@ -315,7 +315,7 @@ public class NominationInactivityService {
 
                     if (!openTickets.isEmpty()) {
                         String ticketLinks = openTickets.stream()
-                            .map(t -> t.getFormattedTicketId() + ": <#" + t.getThreadId() + ">")
+                            .map(t -> t.getFormattedTicketId() + ": <#" + t.getChannelId() + ">")
                             .reduce((a, b) -> a + "\n" + b)
                             .orElse("");
                         embedBuilder.addField("Open Tickets", ticketLinks, false);
@@ -392,7 +392,7 @@ private void sendInactiveUserMessage(Member member, DiscordUser discordUser, int
 
             if (!openTickets.isEmpty()) {
                 String ticketLinks = openTickets.stream()
-                    .map(t -> t.getFormattedTicketId() + ": <#" + t.getThreadId() + ">")
+                    .map(t -> t.getFormattedTicketId() + ": <#" + t.getChannelId() + ">")
                     .reduce((a, b) -> a + "\n" + b)
                     .orElse("");
                 embedBuilder.addField("Open Tickets", ticketLinks, false);

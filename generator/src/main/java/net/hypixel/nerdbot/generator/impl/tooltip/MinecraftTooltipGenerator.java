@@ -8,17 +8,19 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import net.hypixel.nerdbot.core.ImageUtil;
+import net.hypixel.nerdbot.core.Range;
+import net.hypixel.nerdbot.core.Tuple;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
+import net.hypixel.nerdbot.generator.parser.text.RarityFooterParser;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
-import net.hypixel.nerdbot.core.ImageUtil;
-import net.hypixel.nerdbot.core.Range;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.image.BufferedImage;
@@ -94,7 +96,7 @@ public class MinecraftTooltipGenerator implements Generator {
 
         MinecraftTooltip.Builder builder = MinecraftTooltip.builder()
             .withPadding(settings.getPadding())
-            .isPaddingFirstLine(settings.isPaddingFirstLine())
+            .hasFirstLinePadding(settings.hasFirstLinePadding())
             .setRenderBorder(settings.isRenderBorder())
             .isTextCentered(settings.isCenteredText())
             .withAlpha(Range.between(0, 255).fit(settings.getAlpha()))
@@ -142,7 +144,7 @@ public class MinecraftTooltipGenerator implements Generator {
         private String type;
         private Integer alpha = MinecraftTooltip.DEFAULT_ALPHA;
         private Integer padding = 0;
-        private boolean paddingFirstLine = true;
+        private boolean firstLinePadding = true;
         private int maxLineLength = DEFAULT_MAX_LINE_LENGTH;
         private transient boolean bypassMaxLineLength;
         private boolean centered;
@@ -179,8 +181,8 @@ public class MinecraftTooltipGenerator implements Generator {
             return this;
         }
 
-        public MinecraftTooltipGenerator.Builder isPaddingFirstLine(boolean paddingFirstLine) {
-            this.paddingFirstLine = paddingFirstLine;
+        public MinecraftTooltipGenerator.Builder hasFirstLinePadding(boolean firstLinePadding) {
+            this.firstLinePadding = firstLinePadding;
             return this;
         }
 
@@ -213,50 +215,24 @@ public class MinecraftTooltipGenerator implements Generator {
             return this;
         }
 
-        public MinecraftTooltipGenerator.Builder parseNbtJson(JsonObject nbtJson) {
-            this.paddingFirstLine = false;
-            this.centered = false;
-            this.rarity = Rarity.byName("NONE");
-            this.itemLore = "";
-            this.renderBorder = true;
-            this.alpha = MinecraftTooltip.DEFAULT_ALPHA;
-            this.padding = 0;
-
-            // Check if using new component format (1.20.5+)
-            if (nbtJson.has("components")) {
-                parseComponents(nbtJson.getAsJsonObject("components"));
-            } else if (nbtJson.has("tag")) {
-                // Legacy format support
-                JsonObject tagObject = nbtJson.get("tag").getAsJsonObject();
-                if (tagObject.has("display")) {
-                    JsonObject displayObject = tagObject.get("display").getAsJsonObject();
-
-                    // Parse Name if present
-                    if (displayObject.has("Name")) {
-                        this.itemName = displayObject.get("Name").getAsString();
-                        this.itemName = this.itemName.replace(ChatFormat.SECTION_SYMBOL, ChatFormat.AMPERSAND_SYMBOL);
-                    }
-
-                    // Parse Lore if present
-                    if (displayObject.has("Lore")) {
-                        JsonArray loreArray = displayObject.get("Lore").getAsJsonArray();
-                        StringBuilder loreBuilder = new StringBuilder();
-
-                        for (int i = 0; i < loreArray.size(); i++) {
-                            if (i > 0) {
-                                loreBuilder.append("\\n");
-                            }
-
-                            loreBuilder.append(loreArray.get(i).getAsString());
-                        }
-
-                        this.itemLore = loreBuilder.toString()
-                            .replaceAll(String.valueOf(ChatFormat.SECTION_SYMBOL), String.valueOf(ChatFormat.AMPERSAND_SYMBOL));
-                    }
-                }
+        private static String formatCommandValue(Object value) {
+            if (value == null) {
+                return null;
             }
 
-            return this;
+            if (value instanceof Boolean bool) {
+                return capitalize(bool.toString());
+            }
+
+            if (value instanceof Rarity rarityValue) {
+                return rarityValue.getName();
+            }
+
+            if (value instanceof String stringValue) {
+                return formatCommandString(stringValue);
+            }
+
+            return value.toString();
         }
 
         private void parseComponents(JsonObject components) {
@@ -336,47 +312,61 @@ public class MinecraftTooltipGenerator implements Generator {
             return false;
         }
 
-        private String parseTextComponent(JsonObject textComponent) {
-            StringBuilder result = new StringBuilder();
+        public MinecraftTooltipGenerator.Builder parseNbtJson(JsonObject nbtJson) {
+            this.firstLinePadding = false;
+            this.centered = false;
+            this.rarity = Rarity.byName("NONE");
+            this.itemLore = "";
+            this.renderBorder = true;
+            this.alpha = MinecraftTooltip.DEFAULT_ALPHA;
+            this.padding = 0;
 
-            // Handle base text
-            if (textComponent.has("text")) {
-                String text = textComponent.get("text").getAsString();
-                if (!text.isEmpty()) {
-                    result.append(text);
-                }
-            }
+            // Check if using new component format (1.20.5+)
+            if (nbtJson.has("components")) {
+                parseComponents(nbtJson.getAsJsonObject("components"));
+            } else if (nbtJson.has("tag")) {
+                // Legacy format support
+                JsonObject tagObject = nbtJson.get("tag").getAsJsonObject();
+                if (tagObject.has("display")) {
+                    JsonObject displayObject = tagObject.get("display").getAsJsonObject();
 
-            // Handle extra components array
-            if (textComponent.has("extra")) {
-                JsonArray extraArray = textComponent.getAsJsonArray("extra");
-                for (JsonElement extraElement : extraArray) {
-                    JsonObject extraComponent = extraElement.getAsJsonObject();
+                    // Parse Name if present
+                    if (displayObject.has("Name")) {
+                        this.itemName = displayObject.get("Name").getAsString();
+                        this.itemName = this.itemName.replace(ChatFormat.SECTION_SYMBOL, ChatFormat.AMPERSAND_SYMBOL);
+                    }
 
-                    // Add color formatting if present
-                    if (extraComponent.has("color")) {
-                        String colorName = extraComponent.get("color").getAsString();
-                        ChatFormat colorFormat = getColorFromComponentName(colorName);
-                        if (colorFormat != null && colorFormat.isColor()) {
-                            result.append("&").append(colorFormat.getCode());
+                    // Parse Lore if present
+                    if (displayObject.has("Lore")) {
+                        JsonArray loreArray = displayObject.get("Lore").getAsJsonArray();
+                        StringBuilder loreBuilder = new StringBuilder();
+
+                        for (int i = 0; i < loreArray.size(); i++) {
+                            if (i > 0) {
+                                loreBuilder.append("\\n");
+                            }
+
+                            loreBuilder.append(loreArray.get(i).getAsString());
                         }
-                    }
 
-                    // Add formatting codes - handle both boolean and "1b"/"0b" format
-                    addFormattingCode(result, extraComponent, "bold", ChatFormat.BOLD);
-                    addFormattingCode(result, extraComponent, "italic", ChatFormat.ITALIC);
-                    addFormattingCode(result, extraComponent, "underlined", ChatFormat.UNDERLINE);
-                    addFormattingCode(result, extraComponent, "strikethrough", ChatFormat.STRIKETHROUGH);
-                    addFormattingCode(result, extraComponent, "obfuscated", ChatFormat.OBFUSCATED);
-
-                    // Add the text content
-                    if (extraComponent.has("text")) {
-                        result.append(extraComponent.get("text").getAsString());
+                        this.itemLore = loreBuilder.toString()
+                            .replaceAll(String.valueOf(ChatFormat.SECTION_SYMBOL), String.valueOf(ChatFormat.AMPERSAND_SYMBOL));
                     }
                 }
             }
 
-            return result.toString();
+            Tuple<String, Rarity, String> footer = RarityFooterParser.extract(this.itemLore);
+            this.itemLore = footer.value1();
+
+            if (footer.value2() != null) {
+                this.rarity = footer.value2();
+            }
+
+            if (footer.value3() != null && (this.type == null || this.type.isBlank())) {
+                this.type = footer.value3();
+            }
+
+            return this;
         }
 
         private ChatFormat getColorFromComponentName(String componentColorName) {
@@ -401,6 +391,82 @@ public class MinecraftTooltipGenerator implements Generator {
             };
         }
 
+        private String parseTextComponent(JsonObject textComponent) {
+            StringBuilder result = new StringBuilder();
+            String lastColorCode = null;
+
+            if (textComponent.has("color")) {
+                String colorName = textComponent.get("color").getAsString();
+                ChatFormat colorFormat = getColorFromComponentName(colorName);
+                lastColorCode = appendColorIfNeeded(result, colorFormat, lastColorCode);
+            }
+
+            // Handle base text
+            if (textComponent.has("text")) {
+                String text = textComponent.get("text").getAsString();
+                if (!text.isEmpty()) {
+                    result.append(text);
+                }
+            }
+
+            // Handle extra components array
+            if (textComponent.has("extra")) {
+                JsonArray extraArray = textComponent.getAsJsonArray("extra");
+                for (JsonElement extraElement : extraArray) {
+                    JsonObject extraComponent = extraElement.getAsJsonObject();
+
+                    // Add color formatting if present
+                    if (extraComponent.has("color")) {
+                        String colorName = extraComponent.get("color").getAsString();
+                        ChatFormat colorFormat = getColorFromComponentName(colorName);
+                        lastColorCode = appendColorIfNeeded(result, colorFormat, lastColorCode);
+                    }
+
+                    // Add formatting codes - handle both boolean and "1b"/"0b" format
+                    addFormattingCode(result, extraComponent, "bold", ChatFormat.BOLD);
+                    addFormattingCode(result, extraComponent, "italic", ChatFormat.ITALIC);
+                    addFormattingCode(result, extraComponent, "underlined", ChatFormat.UNDERLINE);
+                    addFormattingCode(result, extraComponent, "strikethrough", ChatFormat.STRIKETHROUGH);
+                    addFormattingCode(result, extraComponent, "obfuscated", ChatFormat.OBFUSCATED);
+
+                    // Add the text content
+                    if (extraComponent.has("text")) {
+                        result.append(extraComponent.get("text").getAsString());
+                    }
+                }
+            }
+
+            return result.toString();
+        }
+
+        private String appendColorIfNeeded(StringBuilder builder, ChatFormat colorFormat, String lastColorCode) {
+            if (colorFormat == null || !colorFormat.isColor()) {
+                return lastColorCode;
+            }
+
+            String code = "&" + colorFormat.getCode();
+            if (code.equalsIgnoreCase(lastColorCode)) {
+                return lastColorCode;
+            }
+
+            builder.append(code);
+            return code;
+        }
+
+        private static String capitalize(String text) {
+            if (text == null || text.isEmpty()) return text;
+            return text.substring(0, 1).toUpperCase() + text.substring(1);
+        }
+
+        private static String formatCommandString(String text) {
+            if (text == null) {
+                return "";
+            }
+
+            String normalized = TextWrapper.normalizeNewlines(text);
+            return normalized.replace("\n", "\\n");
+        }
+
         /**
          * Builds a slash command from the current state of the builder.
          *
@@ -422,19 +488,13 @@ public class MinecraftTooltipGenerator implements Generator {
 
                     Object value = field.get(this);
                     if (value != null && !(value instanceof String string && string.isEmpty())) {
-                        String paramName = convertCamelCaseToSnakeCase(field.getName());
-
-                        commandBuilder.append(paramName).append(": ");
-
-                        if (value instanceof Boolean bool) {
-                            commandBuilder.append(capitalize(bool.toString())); // Discord slash commands use "True" and "False" for booleans
-                        } else if (value instanceof String stringValue) {
-                            commandBuilder.append(formatCommandString(stringValue));
-                        } else {
-                            commandBuilder.append(value);
+                        String serializedValue = formatCommandValue(value);
+                        if (serializedValue == null || serializedValue.isEmpty()) {
+                            continue;
                         }
 
-                        commandBuilder.append(" ");
+                        String paramName = convertCamelCaseToSnakeCase(field.getName());
+                        commandBuilder.append(paramName).append(": ").append(serializedValue).append(" ");
                     }
                 } catch (IllegalAccessException e) {
                     throw new GeneratorException("Failed to build slash command", e);
@@ -442,20 +502,6 @@ public class MinecraftTooltipGenerator implements Generator {
             }
 
             return commandBuilder.toString().trim();
-        }
-
-        private static String capitalize(String text) {
-            if (text == null || text.isEmpty()) return text;
-            return text.substring(0, 1).toUpperCase() + text.substring(1);
-        }
-
-        private static String formatCommandString(String text) {
-            if (text == null) {
-                return "";
-            }
-
-            String normalized = TextWrapper.normalizeNewlines(text);
-            return normalized.replace("\n", "\\n");
         }
 
         private static String convertCamelCaseToSnakeCase(String camelCase) {
@@ -472,7 +518,7 @@ public class MinecraftTooltipGenerator implements Generator {
                 type,
                 alpha,
                 padding,
-                !paddingFirstLine, // normalItem is inverse of paddingFirstLine
+                !firstLinePadding, // normalItem is inverse of firstLinePadding
                 centered,
                 maxLineLength,
                 renderBorder,

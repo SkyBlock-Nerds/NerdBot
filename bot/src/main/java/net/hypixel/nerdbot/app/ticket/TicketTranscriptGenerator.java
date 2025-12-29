@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.app.ticket;
 
 import net.hypixel.nerdbot.discord.config.channel.TicketConfig;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.Ticket;
+import net.hypixel.nerdbot.discord.storage.database.model.ticket.TicketFieldValue;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.TicketMessage;
 
 import java.time.Instant;
@@ -40,8 +41,8 @@ public class TicketTranscriptGenerator {
         // Data
         sb.append("Ticket ID: ").append(ticket.getFormattedTicketId()).append("\n");
         sb.append("Owner ID: ").append(ticket.getOwnerId()).append("\n");
-        sb.append("Category: ").append(getCategoryDisplayName(ticket.getCategoryId(), config)).append("\n");
-        sb.append("Status: ").append(config.getStatusDisplayName(ticket.getStatusId())).append("\n");
+        sb.append("Category: ").append(getCategoryDisplayName(ticket.getTicketCategoryId(), config)).append("\n");
+        sb.append("Status: ").append(config.getStatusDisplayName(ticket.getStatus())).append("\n");
         sb.append("Created: ").append(formatTimestamp(ticket.getCreatedAt())).append("\n");
 
         if (ticket.getClosedAt() > 0) {
@@ -54,6 +55,18 @@ public class TicketTranscriptGenerator {
 
         if (ticket.isClaimed()) {
             sb.append("Claimed By: ").append(ticket.getClaimedById()).append("\n");
+        }
+
+        // Custom Fields
+        if (ticket.hasCustomFields()) {
+            sb.append("\n").append("-".repeat(60)).append("\n");
+            sb.append("SUBMITTED FIELDS\n");
+            sb.append("-".repeat(60)).append("\n\n");
+
+            for (TicketFieldValue field : ticket.getCustomFieldValues()) {
+                sb.append(field.getLabel()).append(":\n");
+                sb.append(field.getValue()).append("\n\n");
+            }
         }
 
         sb.append("\n").append("-".repeat(60)).append("\n");

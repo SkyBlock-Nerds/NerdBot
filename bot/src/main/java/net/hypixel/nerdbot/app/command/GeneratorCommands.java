@@ -1,10 +1,6 @@
 package net.hypixel.nerdbot.app.command;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
@@ -16,28 +12,32 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.core.FileUtils;
+import net.hypixel.nerdbot.core.ImageUtil;
+import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.model.user.generator.GeneratorHistory;
-import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
+import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.discord.util.StringUtils;
+import net.hypixel.nerdbot.generator.Generator;
+import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.data.PowerStrength;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.data.Stat;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
+import net.hypixel.nerdbot.generator.exception.NbtParseException;
+import net.hypixel.nerdbot.generator.exception.TooManyTexturesException;
 import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
 import net.hypixel.nerdbot.generator.impl.MinecraftInventoryGenerator;
 import net.hypixel.nerdbot.generator.impl.MinecraftItemGenerator;
+import net.hypixel.nerdbot.generator.impl.MinecraftNbtParser;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.spritesheet.OverlayLoader;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
-import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.core.FileUtils;
-import net.hypixel.nerdbot.core.ImageUtil;
-import net.hypixel.nerdbot.discord.util.StringUtils;
-import net.hypixel.nerdbot.generator.parser.text.PlaceholderReverseMapper;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 @Slf4j
@@ -67,7 +68,7 @@ public class GeneratorCommands {
     private static final String PADDING_DESCRIPTION = "The padding of the tooltip";
     private static final String CENTERED_DESCRIPTION = "Whether or not the tooltip should be centered";
     private static final String MAX_LINE_LENGTH_DESCRIPTION = "The max line length of the tooltip";
-    private static final String LINE_PADDING_DESCRIPTION = "Add a small amount of padding between the item name and the first line of lore";
+    private static final String FIRST_LINE_PADDING_DESCRIPTION = "Add a small amount of padding between the item name and the first line of lore";
     private static final String TOOLTIP_SIDE_DESCRIPTION = "Which side the tooltip should be displayed on";
     private static final String TEXT_DESCRIPTION = "The text to display";
     private static final String TEXTURE_DESCRIPTION = "The texture of the player head";
@@ -163,7 +164,7 @@ public class GeneratorCommands {
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
         @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
         @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
-        @SlashOption(description = "Includes a slash command for you to edit", required = false) Boolean includeGenFullCommand,
+        @SlashOption(description = "Includes a slash command for you to edit", required = false) Boolean includeGenCommand,
         @SlashOption(description = "Whether the Power Stone shows as selected", required = false) Boolean selected,
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
@@ -284,10 +285,10 @@ public class GeneratorCommands {
                     .withAlpha(alpha)
                     .withPadding(padding)
                     .isTextCentered(false)
-                    .isPaddingFirstLine(true)
+                    .hasFirstLinePadding(true)
                     .withRenderBorder(true);
 
-                if (includeGenFullCommand != null && includeGenFullCommand) {
+                if (includeGenCommand != null && includeGenCommand) {
                     String slashCommand = tooltipGenerator.buildSlashCommand();
 
                     // I hate this, but it works *for now*. Should probably replace it later
@@ -452,7 +453,7 @@ public class GeneratorCommands {
                     .withItemLore(hoveredItemString)
                     .withAlpha(MinecraftTooltip.DEFAULT_ALPHA)
                     .withPadding(MinecraftTooltip.DEFAULT_PADDING)
-                    .isPaddingFirstLine(false)
+                    .hasFirstLinePadding(false)
                     .withMaxLineLength(maxLineLength)
                     .withScaleFactor(Math.min(2, MinecraftInventoryGenerator.getScaleFactor()))
                     .withRenderBorder(true)
@@ -494,156 +495,42 @@ public class GeneratorCommands {
         event.deferReply(hidden).complete();
 
         try {
-            JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
+            MinecraftNbtParser.ParsedNbt parsedNbt = MinecraftNbtParser.parse(nbt);
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
-            String skinValueForCommand = null;
 
-            if (jsonObject.get("id").getAsString().contains("skull")) {
-                String value = jsonObject.get("id").getAsString();
-                value = value.replace("minecraft:", "")
-                    .replace("skull", "player_head");
-                jsonObject.addProperty("id", value);
+            parsedNbt.getGenerators().forEach(generator -> {
+                generatorImageBuilder.addGenerator(generator.build());
+            });
+
+            GeneratedObject generatedObject = generatorImageBuilder.build();
+
+            Optional<ClassBuilder<? extends Generator>> tooltipGenerator = parsedNbt.getGenerators()
+                .stream()
+                .filter(gen -> gen instanceof MinecraftTooltipGenerator.Builder)
+                .findFirst();
+            if (tooltipGenerator.isEmpty()) {
+                event.getHook().editOriginal("An error occurred.").queue();
+                log.error("An error occurred while parsing the NBT string, " +
+                    "there doesnt seem to be a tooltip but no nbt parser exception occurred.");
+                return;
             }
 
-            // Handle player head for both legacy and component formats
-            boolean isPlayerHead = jsonObject.get("id").getAsString().equalsIgnoreCase("player_head");
-            JsonObject tagObject = jsonObject.has("tag") ? jsonObject.get("tag").getAsJsonObject() : null;
-            String parsedItemId = jsonObject.get("id").getAsString();
+            String slashCommand = ((MinecraftTooltipGenerator.Builder) tooltipGenerator.get()).buildSlashCommand();
+            String commandItemId = parsedNbt.getParsedItemId();
 
-            if (isPlayerHead) {
-                String base64Texture = null;
-
-                if (tagObject != null && tagObject.get("SkullOwner") != null) {
-                    JsonArray textures = tagObject.get("SkullOwner").getAsJsonObject()
-                        .get("Properties").getAsJsonObject()
-                        .get("textures").getAsJsonArray();
-
-                    if (textures.size() > 1) {
-                        event.getHook().editOriginal("There seems to be more than 1 texture in the player head's NBT data. Please double-check it is correct!").queue();
-                        return;
-                    }
-
-                    base64Texture = textures.get(0).getAsJsonObject().get("Value").getAsString();
-                }
-
-                if (base64Texture == null && jsonObject.has("components")) {
-                    JsonObject components = jsonObject.getAsJsonObject("components");
-                    if (components.has("minecraft:profile")) {
-                        JsonObject profile = components.getAsJsonObject("minecraft:profile");
-                        if (profile.has("properties")) {
-                            JsonArray properties = profile.getAsJsonArray("properties");
-                            for (JsonElement propertyElement : properties) {
-                                JsonObject property = propertyElement.getAsJsonObject();
-                                if (property.has("name") && "textures".equalsIgnoreCase(property.get("name").getAsString()) && property.has("value")) {
-                                    base64Texture = property.get("value").getAsString();
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (base64Texture != null) {
-                    skinValueForCommand = base64Texture;
-
-                    generatorImageBuilder.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
-                        .withSkin(base64Texture)
-                        .build()
-                    );
-                } else {
-                    generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
-                        .withItem(parsedItemId)
-                        .isBigImage()
-                        .build());
-                }
-            } else {
-                generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
-                    .withItem(parsedItemId)
-                    //.isEnchanted(enchanted) TODO: determine if the item is enchanted
-                    .isBigImage()
-                    .build());
-            }
-
-            int maxLineLength;
-
-            // Calculate max line length based on format
-            if (jsonObject.has("components")) {
-                JsonObject components = jsonObject.getAsJsonObject("components");
-                if (components.has("minecraft:lore")) {
-                    JsonArray loreArray = components.getAsJsonArray("minecraft:lore");
-                    List<String> loreLines = new ArrayList<>();
-
-                    for (JsonElement loreElement : loreArray) {
-                        JsonObject loreEntry = loreElement.getAsJsonObject();
-                        String parsedLine = parseTextComponentForLength(loreEntry);
-                        loreLines.add(parsedLine);
-                    }
-
-                    maxLineLength = StringUtils.getLongestLine(loreLines).getRight();
-                } else {
-                    maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
-                }
-            } else if (jsonObject.has("tag")) {
-                // Legacy format
-                JsonObject tag = jsonObject.getAsJsonObject("tag");
-                if (tag.has("display")) {
-                    JsonObject display = tag.getAsJsonObject("display");
-                    if (display.has("Lore")) {
-                        maxLineLength = StringUtils.getLongestLine(display.get("Lore").getAsJsonArray()
-                            .asList()
-                            .stream()
-                            .map(JsonElement::getAsString)
-                            .toList()).getRight();
-                    } else {
-                        maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
-                    }
-                } else {
-                    maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
-                }
-            } else {
-                maxLineLength = MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
-            }
-
-            MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                .parseNbtJson(jsonObject)
-                .withRenderBorder(true)
-                .isPaddingFirstLine(true)
-                .withMaxLineLength(maxLineLength);
-
-            // Extract dye color and apply to item generator if it exists
-            String dyeColor = tooltipGenerator.getDyeColor(jsonObject);
-            if (dyeColor != null && !isPlayerHead) {
-                // Update the item generator with dye color
-                generatorImageBuilder = new GeneratorImageBuilder();
-                generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
-                    .withItem(jsonObject.get("id").getAsString())
-                    .withData(dyeColor)
-                    .isBigImage()
-                    .build());
-            }
-
-            GeneratedObject generatedObject = generatorImageBuilder.addGenerator(tooltipGenerator.build()).build();
-
-            PlaceholderReverseMapper reverseMapper = new PlaceholderReverseMapper();
-            String mappedLore = reverseMapper.mapPlaceholders(tooltipGenerator.getItemLore());
-            String mappedName = reverseMapper.mapPlaceholders(tooltipGenerator.getItemName());
-
-            tooltipGenerator
-                .withItemLore(mappedLore)
-                .withName(mappedName);
-
-            String slashCommand = tooltipGenerator.buildSlashCommand();
-            String commandItemId = parsedItemId;
-
-            if (commandItemId != null && !commandItemId.isEmpty()) {
+            if (commandItemId != null && !commandItemId.isBlank()) {
                 if (commandItemId.startsWith("minecraft:")) {
                     commandItemId = commandItemId.substring("minecraft:".length());
                 }
                 slashCommand += " item_id: " + commandItemId;
             }
 
-            if (skinValueForCommand != null && !skinValueForCommand.isEmpty()) {
-                slashCommand += " skin_value: " + skinValueForCommand;
+            if (parsedNbt.getBase64Texture() != null && !parsedNbt.getBase64Texture().isBlank()) {
+                slashCommand += " skin_value: " + parsedNbt.getBase64Texture();
+            }
+
+            if (parsedNbt.isEnchanted()) {
+                slashCommand += " enchanted: True";
             }
 
             // Escape newlines in lore so the slash command is a single line
@@ -662,40 +549,15 @@ public class GeneratorCommands {
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (JsonParseException exception) {
             event.getHook().editOriginal("You provided badly formatted NBT!").queue();
-        } catch (GeneratorException exception) {
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while parsing the NBT!").queue();
+            log.error("Encountered an error while parsing NBT", exception);
+        } catch (TooManyTexturesException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+        } catch (GeneratorException | NbtParseException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while parsing NBT", exception);
-        } catch (IOException e) {
-            event.getHook().editOriginal("An error occurred while parsing the NBT!").queue();
-            log.error("Encountered an error while parsing NBT", e);
         }
-    }
-
-    private static String parseTextComponentForLength(JsonObject textComponent) {
-        StringBuilder result = new StringBuilder();
-
-        // Handle base text
-        if (textComponent.has("text")) {
-            String text = textComponent.get("text").getAsString();
-            if (!text.isEmpty()) {
-                result.append(text);
-            }
-        }
-
-        // Handle extra components array
-        if (textComponent.has("extra")) {
-            JsonArray extraArray = textComponent.getAsJsonArray("extra");
-            for (JsonElement extraElement : extraArray) {
-                JsonObject extraComponent = extraElement.getAsJsonObject();
-
-                // Only add the text content for length calculation
-                if (extraComponent.has("text")) {
-                    result.append(extraComponent.get("text").getAsString());
-                }
-            }
-        }
-
-        return result.toString();
     }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a full item image. Supports displaying items, recipes, tooltips & more")
@@ -713,7 +575,7 @@ public class GeneratorCommands {
         @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
         @SlashOption(description = CENTERED_DESCRIPTION, required = false) Boolean centered,
-        @SlashOption(description = LINE_PADDING_DESCRIPTION, required = false) Boolean paddingFirstLine,
+        @SlashOption(description = FIRST_LINE_PADDING_DESCRIPTION, required = false) Boolean firstLinePadding,
         @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
         @SlashOption(autocompleteId = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION, required = false) String tooltipSide,
         @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean renderBorder,
@@ -734,7 +596,7 @@ public class GeneratorCommands {
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         centered = centered != null && centered;
         enchanted = enchanted != null && enchanted;
-        paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
+        firstLinePadding = firstLinePadding == null || firstLinePadding;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         renderBorder = renderBorder == null || renderBorder;
         durability = durability == null ? 100 : durability;
@@ -750,7 +612,7 @@ public class GeneratorCommands {
                 .withPadding(padding)
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
-                .isPaddingFirstLine(paddingFirstLine)
+                .hasFirstLinePadding(firstLinePadding)
                 .withRenderBorder(renderBorder)
                 .build();
 
@@ -851,7 +713,7 @@ public class GeneratorCommands {
                 .withPadding(padding)
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
-                .isPaddingFirstLine(false)
+                .hasFirstLinePadding(false)
                 .withRenderBorder(renderBorder)
                 .build();
 
@@ -882,6 +744,7 @@ public class GeneratorCommands {
         @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
         @SlashOption(description = "If the Abiphone symbol should be shown next to the dialogue", required = false) Boolean abiphone,
         @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
+        @SlashOption(description = RENDER_BACKGROUND_DESCRIPTION, required = false) Boolean renderBackground,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -894,6 +757,7 @@ public class GeneratorCommands {
 
         abiphone = abiphone != null && abiphone;
         maxLineLength = maxLineLength == null ? 91 : maxLineLength;
+        renderBackground = renderBackground != null && renderBackground;
 
         String[] lines = dialogue.split("\\\\n");
         for (int i = 0; i < lines.length; i++) {
@@ -917,8 +781,9 @@ public class GeneratorCommands {
             .withItemLore(dialogue)
             .withAlpha(0)
             .withPadding(MinecraftTooltip.DEFAULT_PADDING)
-            .isPaddingFirstLine(false)
+            .hasFirstLinePadding(false)
             .withMaxLineLength(maxLineLength)
+            .withRenderBorder(renderBackground)
             .bypassMaxLineLength(true);
 
         try {
@@ -959,6 +824,7 @@ public class GeneratorCommands {
         @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
         @SlashOption(description = "If the Abiphone symbol should be shown next to the dialogue", required = false) Boolean abiphone,
         @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
+        @SlashOption(description = RENDER_BACKGROUND_DESCRIPTION, required = false) Boolean renderBackground,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -971,13 +837,14 @@ public class GeneratorCommands {
 
         abiphone = abiphone != null && abiphone;
         maxLineLength = maxLineLength == null ? 91 : maxLineLength;
+        renderBackground = renderBackground != null && renderBackground;
 
         try {
             String[] lines = dialogue.split("\\\\n");
             String[] names = npcNames.split(", ?");
 
             for (int i = 0; i < lines.length; i++) {
-                String[] split = lines[i].split(", ?");
+                String[] split = lines[i].split(", ?", 2);
                 try {
                     int index = Integer.parseInt(split[0]);
 
@@ -1008,8 +875,9 @@ public class GeneratorCommands {
                 .withItemLore(dialogue)
                 .withAlpha(0)
                 .withPadding(MinecraftTooltip.DEFAULT_PADDING)
-                .isPaddingFirstLine(false)
+                .hasFirstLinePadding(false)
                 .withMaxLineLength(maxLineLength)
+                .withRenderBorder(renderBackground)
                 .bypassMaxLineLength(true);
 
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()

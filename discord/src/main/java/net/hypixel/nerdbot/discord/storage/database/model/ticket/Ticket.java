@@ -6,10 +6,12 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Persistent representation of a ticket thread, including metadata,
+ * Persistent representation of a ticket channel, including metadata,
  * message history, and reminder bookkeeping stored in MongoDB.
  */
 @Getter
@@ -18,14 +20,11 @@ import java.util.List;
 @ToString
 public class Ticket {
 
-    private static final String DEFAULT_STATUS_ID = "open";
-
     private int ticketNumber;
     private String ownerId;
-    private String threadId;
-    private String forumChannelId;
-    private String statusId;
-    private String categoryId;
+    private String channelId;
+    private TicketStatus status = TicketStatus.OPEN;
+    private String ticketCategoryId;
     private String claimedById;
     private long createdAt;
     private long updatedAt;
@@ -33,15 +32,34 @@ public class Ticket {
     private String closedById;
     private String closeReason;
     private List<TicketMessage> messages;
+    private String buttonControllerMessageId;
 
-    // Reminder tracking
+    private static final int MAX_STORED_MESSAGES = 500;
+
+    private int totalMessageCount = 0;
+    private boolean hasOverflowMessages = false;
+
+    private int controlPanelRefreshAttempts = 0;
+
     private long lastReminderSent;
     private int lastReminderThresholdHours;
+
+    /**
+     * Timestamp of the first staff response, used for metrics.
+     * Set once when the first staff member replies.
+     */
+    private long firstStaffResponseAt;
+
+    /**
+     * Custom field values submitted when the ticket was created.
+     * Keys are field IDs from TicketTemplateField.
+     * Uses LinkedHashMap to preserve insertion order.
+     */
+    private Map<String, TicketFieldValue> customFields = new LinkedHashMap<>();
 
     public Ticket(int ticketNumber, String ownerId) {
         this.ticketNumber = ticketNumber;
         this.ownerId = ownerId;
-        this.statusId = DEFAULT_STATUS_ID;
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = System.currentTimeMillis();
         this.messages = new ArrayList<>();
@@ -56,26 +74,40 @@ public class Ticket {
             messages = new ArrayList<>();
         }
         messages.add(message);
+        totalMessageCount++;
+
+        if (messages.size() > MAX_STORED_MESSAGES) {
+            hasOverflowMessages = true;
+        }
+
         updatedAt = System.currentTimeMillis();
     }
 
     /**
-     * Get the status ID, defaulting to "open" if not set
+     * Get overflow messages that should be archived.
+     * This removes them from the main messages list.
      *
-     * @return the status ID (never null)
+     * @return list of overflow messages, or empty list if no overflow
      */
-    public String getStatusId() {
-        return statusId != null ? statusId : DEFAULT_STATUS_ID;
+    public List<TicketMessage> getOverflowMessagesAndClear() {
+        if (messages == null || messages.size() <= MAX_STORED_MESSAGES) {
+            return new ArrayList<>();
+        }
+
+        List<TicketMessage> overflow = new ArrayList<>(messages.subList(0, messages.size() - MAX_STORED_MESSAGES));
+        messages = new ArrayList<>(messages.subList(messages.size() - MAX_STORED_MESSAGES, messages.size()));
+        hasOverflowMessages = true;
+
+        return overflow;
     }
 
     /**
-     * Check if the ticket is open (not closed)
-     * Uses closedAt timestamp as the source of truth
+     * Get the status, defaulting to OPEN if not set.
      *
-     * @return true if the ticket is open
+     * @return the ticket status (never null)
      */
-    public boolean isOpen() {
-        return closedAt <= 0;
+    public TicketStatus getStatus() {
+        return status != null ? status : TicketStatus.OPEN;
     }
 
     /**
@@ -102,5 +134,78 @@ public class Ticket {
     public void resetReminderTracking() {
         this.lastReminderSent = 0;
         this.lastReminderThresholdHours = 0;
+    }
+
+    /**
+     * Record the first staff response time if not already set.
+     *
+     * @return true if this was the first staff response, false if already recorded
+     */
+    public boolean recordFirstStaffResponse() {
+        if (firstStaffResponseAt <= 0) {
+            firstStaffResponseAt = System.currentTimeMillis();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the time in milliseconds from creation to first staff response.
+     *
+     * @return milliseconds to first response, or -1 if no staff response yet
+     */
+    public long getTimeToFirstResponseMs() {
+        if (firstStaffResponseAt <= 0) {
+            return -1;
+        }
+
+        return firstStaffResponseAt - createdAt;
+    }
+
+    /**
+     * Add a custom field value to the ticket.
+     *
+     * @param fieldValue the field value to add
+     */
+    public void addCustomField(TicketFieldValue fieldValue) {
+        if (customFields == null) {
+            customFields = new LinkedHashMap<>();
+        }
+
+        customFields.put(fieldValue.getFieldId(), fieldValue);
+    }
+
+    /**
+     * Add a custom field value to the ticket.
+     *
+     * @param fieldId the field ID
+     * @param label   the field label
+     * @param value   the submitted value
+     */
+    public void addCustomField(String fieldId, String label, String value) {
+        addCustomField(new TicketFieldValue(fieldId, label, value));
+    }
+
+    /**
+     * Check if this ticket has any custom fields.
+     *
+     * @return true if custom fields exist
+     */
+    public boolean hasCustomFields() {
+        return customFields != null && !customFields.isEmpty();
+    }
+
+    /**
+     * Get all custom field values in order.
+     *
+     * @return list of field values
+     */
+    public List<TicketFieldValue> getCustomFieldValues() {
+        if (customFields == null) {
+            return List.of();
+        }
+
+        return new ArrayList<>(customFields.values());
     }
 }
