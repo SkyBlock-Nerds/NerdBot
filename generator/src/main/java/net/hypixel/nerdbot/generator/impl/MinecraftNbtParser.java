@@ -97,7 +97,7 @@ public class MinecraftNbtParser {
         MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
             .parseNbtJson(jsonObject)
             .withRenderBorder(true)
-            .isPaddingFirstLine(true)
+            .hasFirstLinePadding(true)
             .withMaxLineLength(maxLineLength);
 
         // Extract dye color and apply to item generator if it exists
