@@ -744,6 +744,7 @@ public class GeneratorCommands {
         @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
         @SlashOption(description = "If the Abiphone symbol should be shown next to the dialogue", required = false) Boolean abiphone,
         @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
+        @SlashOption(description = RENDER_BACKGROUND_DESCRIPTION, required = false) Boolean renderBackground,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -756,6 +757,7 @@ public class GeneratorCommands {
 
         abiphone = abiphone != null && abiphone;
         maxLineLength = maxLineLength == null ? 91 : maxLineLength;
+        renderBackground = renderBackground != null && renderBackground;
 
         String[] lines = dialogue.split("\\\\n");
         for (int i = 0; i < lines.length; i++) {
@@ -781,6 +783,7 @@ public class GeneratorCommands {
             .withPadding(MinecraftTooltip.DEFAULT_PADDING)
             .isPaddingFirstLine(false)
             .withMaxLineLength(maxLineLength)
+            .withRenderBorder(renderBackground)
             .bypassMaxLineLength(true);
 
         try {
@@ -821,6 +824,7 @@ public class GeneratorCommands {
         @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
         @SlashOption(description = "If the Abiphone symbol should be shown next to the dialogue", required = false) Boolean abiphone,
         @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
+        @SlashOption(description = RENDER_BACKGROUND_DESCRIPTION, required = false) Boolean renderBackground,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -833,6 +837,7 @@ public class GeneratorCommands {
 
         abiphone = abiphone != null && abiphone;
         maxLineLength = maxLineLength == null ? 91 : maxLineLength;
+        renderBackground = renderBackground != null && renderBackground;
 
         try {
             String[] lines = dialogue.split("\\\\n");
@@ -872,6 +877,7 @@ public class GeneratorCommands {
                 .withPadding(MinecraftTooltip.DEFAULT_PADDING)
                 .isPaddingFirstLine(false)
                 .withMaxLineLength(maxLineLength)
+                .withRenderBorder(renderBackground)
                 .bypassMaxLineLength(true);
 
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
