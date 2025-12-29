@@ -1,7 +1,5 @@
 package net.hypixel.nerdbot.generator.impl;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.AccessLevel;
@@ -10,39 +8,72 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
-import net.hypixel.nerdbot.generator.exception.TooManyTexturesException;
+import net.hypixel.nerdbot.generator.exception.NbtParseException;
+import net.hypixel.nerdbot.generator.impl.nbt.ComponentsNbtFormatHandler;
+import net.hypixel.nerdbot.generator.impl.nbt.LegacyNbtFormatHandler;
+import net.hypixel.nerdbot.generator.impl.nbt.NbtFormatHandler;
+import net.hypixel.nerdbot.generator.impl.nbt.NbtFormatMetadata;
 import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.parser.text.PlaceholderReverseMapper;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
 public class MinecraftNbtParser {
 
+    private static final NbtFormatHandler DEFAULT_FORMAT_HANDLER = new DefaultNbtFormatHandler();
+
+    private static final List<NbtFormatHandler> FORMAT_HANDLERS = List.of(
+        new ComponentsNbtFormatHandler(),
+        new LegacyNbtFormatHandler()
+    );
+
     public static ParsedNbt parse(String nbt) {
         JsonObject jsonObject = JsonParser.parseString(nbt).getAsJsonObject();
         ArrayList<ClassBuilder<? extends Generator>> generators = new ArrayList<>();
+
+        if (!jsonObject.has("id")) {
+            throw new NbtParseException("NBT data is missing required 'id' field");
+        }
 
         if (jsonObject.get("id").getAsString().contains("skull")) {
             String value = jsonObject.get("id").getAsString();
             value = value.replace("minecraft:", "")
                 .replace("skull", "player_head");
             jsonObject.addProperty("id", value);
+            log.debug("Normalized skull item id to '{}'", value);
         }
 
         // Handle player head for both legacy and component formats
-        boolean isPlayerHead = jsonObject.get("id").getAsString().equalsIgnoreCase("player_head");
         String parsedItemId = jsonObject.get("id").getAsString();
+        boolean isPlayerHead = isPlayerHeadId(parsedItemId);
+        NbtFormatHandler formatHandler = resolveFormatHandler(jsonObject);
+        log.debug("Parsing item '{}' with NBT format handler '{}'", parsedItemId, handlerName(formatHandler));
+        NbtFormatMetadata formatMetadata = formatHandler.extractMetadata(jsonObject);
+        boolean hasTextureMetadata = formatMetadata.containsKey(NbtFormatMetadata.KEY_PLAYER_HEAD_TEXTURE);
+        Integer metadataMaxLineLength = formatMetadata.get(NbtFormatMetadata.KEY_MAX_LINE_LENGTH, Integer.class);
+
+        log.debug(
+            "Extracted metadata via '{}': texturePresent={}, maxLineLength={}",
+            handlerName(formatHandler),
+            hasTextureMetadata,
+            metadataMaxLineLength
+        );
 
         String base64Texture = null;
         if (isPlayerHead) {
-            base64Texture = getSkinValue(jsonObject);
+            base64Texture = formatMetadata.get(NbtFormatMetadata.KEY_PLAYER_HEAD_TEXTURE, String.class);
+            if (base64Texture != null) {
+                log.debug("Resolved player head texture via '{}' (length={})", handlerName(formatHandler), base64Texture.length());
+            } else {
+                log.debug("Handler '{}' did not provide a player head texture; falling back to static item render", handlerName(formatHandler));
+            }
 
             if (base64Texture != null) {
                 generators.add(new MinecraftPlayerHeadGenerator.Builder()
-                    .withSkin(base64Texture));
+                    .withSkin(base64Texture)
+                    .withScale(-2));
             } else {
                 generators.add(new MinecraftItemGenerator.Builder()
                     .withItem(parsedItemId)
@@ -55,21 +86,29 @@ public class MinecraftNbtParser {
                 .isBigImage());
         }
 
+        int maxLineLength = resolveMaxLineLength(formatMetadata, formatHandler);
+        log.debug("Using max line length {} for item '{}' (handler='{}')", maxLineLength, parsedItemId, handlerName(formatHandler));
+
         MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
             .parseNbtJson(jsonObject)
             .withRenderBorder(true)
             .isPaddingFirstLine(true)
-            .withMaxLineLength(getMaxLineLength(jsonObject));
+            .withMaxLineLength(maxLineLength);
 
         // Extract dye color and apply to item generator if it exists
         String dyeColor = tooltipGenerator.getDyeColor(jsonObject);
         if (dyeColor != null && !isPlayerHead) {
+            log.debug("Detected dye color '{}' for item '{}'", dyeColor, parsedItemId);
             // Update the item generator with dye color
             generators = new ArrayList<>();
             generators.add(new MinecraftItemGenerator.Builder()
                 .withItem(jsonObject.get("id").getAsString())
                 .withData(dyeColor)
                 .isBigImage());
+        } else if (dyeColor == null) {
+            log.trace("No dye color present for item '{}'", parsedItemId);
+        } else {
+            log.trace("Ignoring dye color '{}' because '{}' renders as a player head", dyeColor, parsedItemId);
         }
 
         generators.add(tooltipGenerator);
@@ -85,129 +124,46 @@ public class MinecraftNbtParser {
         return new ParsedNbt(generators, base64Texture, parsedItemId);
     }
 
-    private static String parseTextComponentForLength(JsonObject textComponent) {
-        StringBuilder result = new StringBuilder();
-
-        // Handle base text
-        if (textComponent.has("text")) {
-            String text = textComponent.get("text").getAsString();
-            if (!text.isEmpty()) {
-                result.append(text);
-            }
+    private static boolean isPlayerHeadId(String itemId) {
+        if (itemId == null || itemId.isBlank()) {
+            return false;
         }
 
-        // Handle extra components array
-        if (textComponent.has("extra")) {
-            JsonArray extraArray = textComponent.getAsJsonArray("extra");
-            for (JsonElement extraElement : extraArray) {
-                JsonObject extraComponent = extraElement.getAsJsonObject();
-
-                // Only add the text content for length calculation
-                if (extraComponent.has("text")) {
-                    result.append(extraComponent.get("text").getAsString());
-                }
-            }
+        String normalizedId = itemId.toLowerCase();
+        if (normalizedId.startsWith("minecraft:")) {
+            normalizedId = normalizedId.substring("minecraft:".length());
         }
 
-        return result.toString();
+        return normalizedId.equals("player_head");
     }
 
-    private static int getMaxLineLength(JsonObject jsonObject) {
-        Integer maxLineLength = null;
-
-        if (jsonObject.has("components")) {
-            maxLineLength = getMaxLineLengthComponentsFormat(jsonObject);
-        } else if (jsonObject.has("tag")) {
-            maxLineLength = getMaxLineLengthLegacyFormat(jsonObject);
-        }
-
-        return maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
-    }
-
-    private static Integer getMaxLineLengthLegacyFormat(JsonObject jsonObject) {
-        JsonObject tag = jsonObject.getAsJsonObject("tag");
-        if (tag.has("display")) {
-            JsonObject display = tag.getAsJsonObject("display");
-            if (display.has("Lore")) {
-                IntSummaryStatistics stats = display.get("Lore")
-                    .getAsJsonArray()
-                    .asList()
-                    .stream()
-                    .map(JsonElement::getAsString)
-                    .mapToInt(String::length)
-                    .summaryStatistics();
-
-                if (stats.getCount() > 0) {
-                    return stats.getMax();
-                }
+    private static NbtFormatHandler resolveFormatHandler(JsonObject jsonObject) {
+        for (NbtFormatHandler handler : FORMAT_HANDLERS) {
+            if (handler.supports(jsonObject)) {
+                return handler;
             }
         }
 
-        return null;
+        log.info("No specific NBT handler matched payload, using default handler");
+        return DEFAULT_FORMAT_HANDLER;
     }
 
-    private static Integer getMaxLineLengthComponentsFormat(JsonObject jsonObject) {
-        JsonObject components = jsonObject.getAsJsonObject("components");
-        if (components.has("minecraft:lore")) {
-            JsonArray loreArray = components.getAsJsonArray("minecraft:lore");
-            List<String> loreLines = new ArrayList<>();
-
-            for (JsonElement loreElement : loreArray) {
-                JsonObject loreEntry = loreElement.getAsJsonObject();
-                String parsedLine = parseTextComponentForLength(loreEntry);
-                loreLines.add(parsedLine);
-            }
-
-            if (!loreLines.isEmpty()) {
-                return loreLines.stream().max(Comparator.comparingInt(String::length)).get().length();
-            }
+    private static int resolveMaxLineLength(NbtFormatMetadata metadata, NbtFormatHandler handler) {
+        Integer maxLineLength = metadata.get(NbtFormatMetadata.KEY_MAX_LINE_LENGTH, Integer.class);
+        if (maxLineLength == null) {
+            log.debug("Handler '{}' did not specify max line length; defaulting to {}", handlerName(handler), MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH);
+            return MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH;
         }
 
-        return null;
+        return maxLineLength;
     }
 
-    private static String getSkinValue(JsonObject jsonObject) {
-        if (jsonObject.has("tag")) {
-            return getSkinValueLegacyFormat(jsonObject);
-        } else if (jsonObject.has("components")) {
-            return getSkinValueComponentsFormat(jsonObject);
+    private static String handlerName(NbtFormatHandler handler) {
+        if (handler == null) {
+            return "null";
         }
-
-        return null;
-    }
-
-    private static String getSkinValueLegacyFormat(JsonObject jsonObject) {
-        JsonObject tagObject = jsonObject.getAsJsonObject("tag");
-        if (tagObject != null && tagObject.get("SkullOwner") != null) {
-            JsonArray textures = tagObject.get("SkullOwner").getAsJsonObject()
-                .get("Properties").getAsJsonObject()
-                .get("textures").getAsJsonArray();
-
-            if (textures.size() > 1) {
-                throw new TooManyTexturesException();
-            }
-
-            return textures.get(0).getAsJsonObject().get("Value").getAsString();
-        }
-        return null;
-    }
-
-    private static String getSkinValueComponentsFormat(JsonObject jsonObject) {
-        JsonObject components = jsonObject.getAsJsonObject("components");
-        if (components.has("minecraft:profile")) {
-            JsonObject profile = components.getAsJsonObject("minecraft:profile");
-            if (profile.has("properties")) {
-                JsonArray properties = profile.getAsJsonArray("properties");
-                for (JsonElement propertyElement : properties) {
-                    JsonObject property = propertyElement.getAsJsonObject();
-                    if (property.has("name") && "textures".equalsIgnoreCase(property.get("name").getAsString()) && property.has("value")) {
-                        return property.get("value").getAsString();
-                    }
-                }
-            }
-        }
-
-        return null;
+        String simpleName = handler.getClass().getSimpleName();
+        return simpleName.isBlank() ? handler.getClass().getName() : simpleName;
     }
 
     @Getter(AccessLevel.PUBLIC)
@@ -217,5 +173,13 @@ public class MinecraftNbtParser {
         private ArrayList<ClassBuilder<? extends Generator>> generators;
         private String base64Texture;
         private String parsedItemId;
+    }
+
+    private static final class DefaultNbtFormatHandler implements NbtFormatHandler {
+
+        @Override
+        public boolean supports(JsonObject nbt) {
+            return true;
+        }
     }
 }

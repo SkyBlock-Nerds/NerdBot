@@ -20,10 +20,13 @@ import net.hypixel.nerdbot.discord.storage.database.model.user.generator.Generat
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.StringUtils;
+import net.hypixel.nerdbot.generator.Generator;
+import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.data.PowerStrength;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.data.Stat;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
+import net.hypixel.nerdbot.generator.exception.NbtParseException;
 import net.hypixel.nerdbot.generator.exception.TooManyTexturesException;
 import net.hypixel.nerdbot.generator.image.GeneratorImageBuilder;
 import net.hypixel.nerdbot.generator.image.MinecraftTooltip;
@@ -45,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 @Slf4j
@@ -491,10 +495,10 @@ public class GeneratorCommands {
         event.deferReply(hidden).complete();
 
         try {
-            MinecraftNbtParser.ParsedNbt ParsedNbt = MinecraftNbtParser.parse(nbt);
+            MinecraftNbtParser.ParsedNbt parsedNbt = MinecraftNbtParser.parse(nbt);
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
 
-            ParsedNbt.getGenerators().forEach(generator -> {
+            parsedNbt.getGenerators().forEach(generator -> {
                 generatorImageBuilder.addGenerator(generator.build());
             });
 
@@ -512,7 +516,7 @@ public class GeneratorCommands {
             }
 
             String slashCommand = ((MinecraftTooltipGenerator.Builder) tooltipGenerator.get()).buildSlashCommand();
-            String commandItemId = ParsedNbt.getParsedItemId();
+            String commandItemId = parsedNbt.getParsedItemId();
 
             if (commandItemId != null && !commandItemId.isBlank()) {
                 if (commandItemId.startsWith("minecraft:")) {
@@ -521,8 +525,8 @@ public class GeneratorCommands {
                 slashCommand += " item_id: " + commandItemId;
             }
 
-            if (ParsedNbt.getBase64Texture() != null && !ParsedNbt.getBase64Texture().isBlank()) {
-                slashCommand += " skin_value: " + ParsedNbt.getBase64Texture();
+            if (parsedNbt.getBase64Texture() != null && !parsedNbt.getBase64Texture().isBlank()) {
+                slashCommand += " skin_value: " + parsedNbt.getBase64Texture();
             }
 
             // Escape newlines in lore so the slash command is a single line
@@ -541,14 +545,14 @@ public class GeneratorCommands {
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (JsonParseException exception) {
             event.getHook().editOriginal("You provided badly formatted NBT!").queue();
-        } catch (GeneratorException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while parsing NBT", exception);
         } catch (IOException exception) {
             event.getHook().editOriginal("An error occurred while parsing the NBT!").queue();
             log.error("Encountered an error while parsing NBT", exception);
         } catch (TooManyTexturesException exception) {
-            event.getHook().editOriginal("There seems to be more than 1 texture in the player head's NBT data. Please double-check it is correct!").queue();
+            event.getHook().editOriginal(exception.getMessage()).queue();
+        } catch (GeneratorException | NbtParseException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while parsing NBT", exception);
         }
     }
 
