@@ -68,7 +68,7 @@ public class GeneratorCommands {
     private static final String PADDING_DESCRIPTION = "The padding of the tooltip";
     private static final String CENTERED_DESCRIPTION = "Whether or not the tooltip should be centered";
     private static final String MAX_LINE_LENGTH_DESCRIPTION = "The max line length of the tooltip";
-    private static final String LINE_PADDING_DESCRIPTION = "Add a small amount of padding between the item name and the first line of lore";
+    private static final String FIRST_LINE_PADDING_DESCRIPTION = "Add a small amount of padding between the item name and the first line of lore";
     private static final String TOOLTIP_SIDE_DESCRIPTION = "Which side the tooltip should be displayed on";
     private static final String TEXT_DESCRIPTION = "The text to display";
     private static final String TEXTURE_DESCRIPTION = "The texture of the player head";
@@ -164,7 +164,7 @@ public class GeneratorCommands {
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
         @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
         @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
-        @SlashOption(description = "Includes a slash command for you to edit", required = false) Boolean includeGenFullCommand,
+        @SlashOption(description = "Includes a slash command for you to edit", required = false) Boolean includeGenCommand,
         @SlashOption(description = "Whether the Power Stone shows as selected", required = false) Boolean selected,
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
@@ -285,10 +285,10 @@ public class GeneratorCommands {
                     .withAlpha(alpha)
                     .withPadding(padding)
                     .isTextCentered(false)
-                    .isPaddingFirstLine(true)
+                    .hasFirstLinePadding(true)
                     .withRenderBorder(true);
 
-                if (includeGenFullCommand != null && includeGenFullCommand) {
+                if (includeGenCommand != null && includeGenCommand) {
                     String slashCommand = tooltipGenerator.buildSlashCommand();
 
                     // I hate this, but it works *for now*. Should probably replace it later
@@ -453,7 +453,7 @@ public class GeneratorCommands {
                     .withItemLore(hoveredItemString)
                     .withAlpha(MinecraftTooltip.DEFAULT_ALPHA)
                     .withPadding(MinecraftTooltip.DEFAULT_PADDING)
-                    .isPaddingFirstLine(false)
+                    .hasFirstLinePadding(false)
                     .withMaxLineLength(maxLineLength)
                     .withScaleFactor(Math.min(2, MinecraftInventoryGenerator.getScaleFactor()))
                     .withRenderBorder(true)
@@ -575,7 +575,7 @@ public class GeneratorCommands {
         @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
         @SlashOption(description = CENTERED_DESCRIPTION, required = false) Boolean centered,
-        @SlashOption(description = LINE_PADDING_DESCRIPTION, required = false) Boolean paddingFirstLine,
+        @SlashOption(description = FIRST_LINE_PADDING_DESCRIPTION, required = false) Boolean firstLinePadding,
         @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
         @SlashOption(autocompleteId = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION, required = false) String tooltipSide,
         @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean renderBorder,
@@ -596,7 +596,7 @@ public class GeneratorCommands {
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         centered = centered != null && centered;
         enchanted = enchanted != null && enchanted;
-        paddingFirstLine = paddingFirstLine == null || paddingFirstLine;
+        firstLinePadding = firstLinePadding == null || firstLinePadding;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         renderBorder = renderBorder == null || renderBorder;
         durability = durability == null ? 100 : durability;
@@ -612,7 +612,7 @@ public class GeneratorCommands {
                 .withPadding(padding)
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
-                .isPaddingFirstLine(paddingFirstLine)
+                .hasFirstLinePadding(firstLinePadding)
                 .withRenderBorder(renderBorder)
                 .build();
 
@@ -713,7 +713,7 @@ public class GeneratorCommands {
                 .withPadding(padding)
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
-                .isPaddingFirstLine(false)
+                .hasFirstLinePadding(false)
                 .withRenderBorder(renderBorder)
                 .build();
 
@@ -781,7 +781,7 @@ public class GeneratorCommands {
             .withItemLore(dialogue)
             .withAlpha(0)
             .withPadding(MinecraftTooltip.DEFAULT_PADDING)
-            .isPaddingFirstLine(false)
+            .hasFirstLinePadding(false)
             .withMaxLineLength(maxLineLength)
             .withRenderBorder(renderBackground)
             .bypassMaxLineLength(true);
@@ -875,7 +875,7 @@ public class GeneratorCommands {
                 .withItemLore(dialogue)
                 .withAlpha(0)
                 .withPadding(MinecraftTooltip.DEFAULT_PADDING)
-                .isPaddingFirstLine(false)
+                .hasFirstLinePadding(false)
                 .withMaxLineLength(maxLineLength)
                 .withRenderBorder(renderBackground)
                 .bypassMaxLineLength(true);

@@ -75,8 +75,7 @@ public class MinecraftTooltip {
     private final int alpha;
     @Getter
     private final int padding;
-    @Getter
-    private final boolean paddingFirstLine;
+    private final boolean firstLinePadding;
     @Getter
     private final boolean renderBorder;
     @Getter
@@ -112,19 +111,19 @@ public class MinecraftTooltip {
      * @param defaultColor        The default {@link ChatFormat} color to use for the text.
      * @param alpha               The alpha value for the tooltip background. Range: 0-255.
      * @param padding             The padding value for the tooltip. Range: 0-255.
-     * @param paddingFirstLine    Whether to apply padding to the first line.
+     * @param firstLinePadding    Whether to apply padding to the first line.
      * @param renderBorder        Whether to render a border around the tooltip.
      * @param centeredText        Whether to center the text within the tooltip.
      * @param frameDelayMs        The delay in milliseconds between animation frames.
      * @param animationFrameCount The number of frames to generate for the animation.
      * @param scaleFactor         The scale factor to apply to all pixel sizes.
      */
-    private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean paddingFirstLine, boolean renderBorder, boolean centeredText, int frameDelayMs, int animationFrameCount, int scaleFactor) {
+    private MinecraftTooltip(List<LineSegment> lines, ChatFormat defaultColor, int alpha, int padding, boolean firstLinePadding, boolean renderBorder, boolean centeredText, int frameDelayMs, int animationFrameCount, int scaleFactor) {
         this.lines = lines;
         this.currentColor = defaultColor;
         this.alpha = alpha;
         this.padding = padding;
-        this.paddingFirstLine = paddingFirstLine;
+        this.firstLinePadding = firstLinePadding;
         this.renderBorder = renderBorder;
         this.centeredText = centeredText;
         this.frameDelayMs = frameDelayMs;
@@ -194,6 +193,15 @@ public class MinecraftTooltip {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Returns whether first line padding is enabled.
+     *
+     * @return true if first line padding is enabled
+     */
+    public boolean hasFirstLinePadding() {
+        return this.firstLinePadding;
     }
 
     /**
@@ -340,7 +348,8 @@ public class MinecraftTooltip {
             int lineWidth = calculateLineWidth(measureGraphics, line);
             this.lineMetrics.put(lineIndex, lineWidth);
 
-            this.locationY += yIncrement + (lineIndex == 0 && this.isPaddingFirstLine() ? pixelSize * 2 : 0);
+            int extraPadding = (lineIndex == 0 && this.hasFirstLinePadding()) ? pixelSize * 2 : 0;
+            this.locationY += yIncrement + extraPadding;
         }
 
         this.largestWidth = this.lineMetrics.values().stream().mapToInt(Integer::intValue).max().orElse(0);
@@ -375,7 +384,8 @@ public class MinecraftTooltip {
             }
 
             // Increment Y position for the next line
-            this.locationY += yIncrement + (lineIndex == 0 && this.isPaddingFirstLine() ? pixelSize * 2 : 0);
+            int extraPadding = (lineIndex == 0 && this.hasFirstLinePadding()) ? pixelSize * 2 : 0;
+            this.locationY += yIncrement + extraPadding;
         }
     }
 
@@ -607,7 +617,7 @@ public class MinecraftTooltip {
 
         // Calculate final dimensions based on the measured largestWidth and height
         int finalWidth = startXY + this.largestWidth + startXY;
-        int finalHeight = measuredHeight - (yIncrement + (this.lines.isEmpty() || !this.paddingFirstLine ? 0 : pixelSize * 2)) + startXY + pixelSize * 2;
+        int finalHeight = measuredHeight - (yIncrement + (this.lines.isEmpty() || !this.firstLinePadding ? 0 : pixelSize * 2)) + startXY + pixelSize * 2;
 
         // Determine if we need to animate the image beforehand
         this.isAnimated = this.lines.stream()
@@ -661,19 +671,19 @@ public class MinecraftTooltip {
         private ChatFormat defaultColor = ChatFormat.GRAY;
         private int alpha = DEFAULT_ALPHA;
         private int padding = 0;
-        private boolean paddingFirstLine = true;
+        private boolean firstLinePadding = true;
         private boolean renderBorder = true;
         private boolean centeredText = false;
         private int frameDelayMs = 50;
         private int animationFrameCount = 10;
         private int scaleFactor = 1;
 
-        public Builder isPaddingFirstLine() {
-            return this.isPaddingFirstLine(true);
+        public Builder hasFirstLinePadding() {
+            return this.hasFirstLinePadding(true);
         }
 
-        public Builder isPaddingFirstLine(boolean value) {
-            this.paddingFirstLine = value;
+        public Builder hasFirstLinePadding(boolean value) {
+            this.firstLinePadding = value;
             return this;
         }
 
@@ -748,7 +758,7 @@ public class MinecraftTooltip {
                 this.defaultColor,
                 this.alpha,
                 this.padding,
-                this.paddingFirstLine,
+                this.firstLinePadding,
                 this.renderBorder,
                 this.centeredText,
                 this.frameDelayMs,

@@ -96,7 +96,7 @@ public class MinecraftTooltipGenerator implements Generator {
 
         MinecraftTooltip.Builder builder = MinecraftTooltip.builder()
             .withPadding(settings.getPadding())
-            .isPaddingFirstLine(settings.isPaddingFirstLine())
+            .hasFirstLinePadding(settings.hasFirstLinePadding())
             .setRenderBorder(settings.isRenderBorder())
             .isTextCentered(settings.isCenteredText())
             .withAlpha(Range.between(0, 255).fit(settings.getAlpha()))
@@ -144,7 +144,7 @@ public class MinecraftTooltipGenerator implements Generator {
         private String type;
         private Integer alpha = MinecraftTooltip.DEFAULT_ALPHA;
         private Integer padding = 0;
-        private boolean paddingFirstLine = true;
+        private boolean firstLinePadding = true;
         private int maxLineLength = DEFAULT_MAX_LINE_LENGTH;
         private transient boolean bypassMaxLineLength;
         private boolean centered;
@@ -181,8 +181,8 @@ public class MinecraftTooltipGenerator implements Generator {
             return this;
         }
 
-        public MinecraftTooltipGenerator.Builder isPaddingFirstLine(boolean paddingFirstLine) {
-            this.paddingFirstLine = paddingFirstLine;
+        public MinecraftTooltipGenerator.Builder hasFirstLinePadding(boolean firstLinePadding) {
+            this.firstLinePadding = firstLinePadding;
             return this;
         }
 
@@ -313,7 +313,7 @@ public class MinecraftTooltipGenerator implements Generator {
         }
 
         public MinecraftTooltipGenerator.Builder parseNbtJson(JsonObject nbtJson) {
-            this.paddingFirstLine = false;
+            this.firstLinePadding = false;
             this.centered = false;
             this.rarity = Rarity.byName("NONE");
             this.itemLore = "";
@@ -518,7 +518,7 @@ public class MinecraftTooltipGenerator implements Generator {
                 type,
                 alpha,
                 padding,
-                !paddingFirstLine, // normalItem is inverse of paddingFirstLine
+                !firstLinePadding, // normalItem is inverse of firstLinePadding
                 centered,
                 maxLineLength,
                 renderBorder,
