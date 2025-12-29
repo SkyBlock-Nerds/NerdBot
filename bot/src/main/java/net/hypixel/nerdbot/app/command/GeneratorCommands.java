@@ -844,7 +844,7 @@ public class GeneratorCommands {
             String[] names = npcNames.split(", ?");
 
             for (int i = 0; i < lines.length; i++) {
-                String[] split = lines[i].split(", ?");
+                String[] split = lines[i].split(", ?", 2);
                 try {
                     int index = Integer.parseInt(split[0]);
 
