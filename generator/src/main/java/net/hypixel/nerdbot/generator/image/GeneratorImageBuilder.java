@@ -1,12 +1,12 @@
 package net.hypixel.nerdbot.generator.image;
 
 import lombok.extern.slf4j.Slf4j;
+import net.hypixel.nerdbot.core.ImageUtil;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
-import net.hypixel.nerdbot.core.ImageUtil;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;

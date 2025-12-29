@@ -1,7 +1,6 @@
 package net.hypixel.nerdbot.discord.util;
 
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.internal.utils.tuple.Pair;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -26,20 +25,6 @@ public class StringUtils {
 
     public static String convertCamelCaseToSnakeCase(String camelCase) {
         return camelCase.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
-    }
-
-    public static Pair<String, Integer> getLongestLine(List<String> strings) {
-        String longest = "";
-        int length = 0;
-
-        for (String string : strings) {
-            if (string.length() > length) {
-                longest = string;
-                length = string.length();
-            }
-        }
-
-        return Pair.of(longest, length);
     }
 
     public static List<String> splitString(String text, int size) {
