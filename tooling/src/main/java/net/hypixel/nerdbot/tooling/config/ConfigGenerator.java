@@ -74,7 +74,7 @@ public class ConfigGenerator {
         channelConfig.setPublicArchiveCategoryId(EXAMPLE_ID);
         channelConfig.setAlphaArchiveCategoryId(EXAMPLE_ID);
         channelConfig.setNerdArchiveCategoryId(EXAMPLE_ID);
-        channelConfig.setReactionChannels(List.of(new ReactionChannel(EXAMPLE_NAME_ID, EXAMPLE_ID, List.of(EXAMPLE_ID), true)));
+        channelConfig.setReactionChannels(List.of(new ReactionChannel(EXAMPLE_NAME_ID, EXAMPLE_ID, List.of(EXAMPLE_ID), true, List.of())));
         channelConfig.setCustomForumTags(List.of(new CustomForumTag(EXAMPLE_ID, EXAMPLE_NAME)));
         channelConfig.setAutoPinFirstMessage(true);
         channelConfig.setAutoPinBlacklistedChannels(new String[]{EXAMPLE_ID});
