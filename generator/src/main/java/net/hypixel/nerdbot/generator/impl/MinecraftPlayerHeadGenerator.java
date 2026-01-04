@@ -33,6 +33,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
 
     private static final Pattern TEXTURE_URL = Pattern.compile("(?:https?://textures.minecraft.net/texture/)?([a-zA-Z0-9]+)");
     private static final Pattern SKIN_BASE64_REGEX = Pattern.compile("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$");
+    private static final Pattern HEX_TEXTURE_HASH = Pattern.compile("^[a-fA-F0-9]{64}$");
 
     private final String textureId;
     private final int scale;
@@ -64,15 +65,17 @@ public class MinecraftPlayerHeadGenerator implements Generator {
     private BufferedImage createHead(String textureId) {
         // If no textureId provided, leave as null and let downstream logic handle
 
-        if (isSkinBase64(textureId)) {
+        if (isHexTextureHash(textureId)) {
+            // Already a valid hex texture hash, use directly
+        } else if (isSkinBase64(textureId)) {
             textureId = base64ToSkinURL(textureId);
         } else if (textureId.length() <= 16) {
             textureId = getPlayerHeadURL(textureId);
-        }
-
-        Matcher textureMatcher = TEXTURE_URL.matcher(textureId);
-        if (textureMatcher.matches()) {
-            textureId = textureMatcher.group(1);
+        } else {
+            Matcher textureMatcher = TEXTURE_URL.matcher(textureId);
+            if (textureMatcher.matches()) {
+                textureId = textureMatcher.group(1);
+            }
         }
 
         try {
@@ -125,6 +128,10 @@ public class MinecraftPlayerHeadGenerator implements Generator {
         return base64ToSkinURL(base64SkinData);
     }
 
+    private boolean isHexTextureHash(String string) {
+        return string != null && HEX_TEXTURE_HASH.matcher(string).matches();
+    }
+
     private boolean isSkinBase64(String string) {
         if (string == null || string.length() <= 16) {
             return false;
@@ -145,7 +152,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
         try {
             JsonObject root = JsonParser.parseString(json).getAsJsonObject();
             return root != null && root.has("textures") && root.getAsJsonObject("textures").has("SKIN");
-        } catch (JsonSyntaxException ex) {
+        } catch (JsonSyntaxException | IllegalStateException ex) {
             return false;
         }
     }
