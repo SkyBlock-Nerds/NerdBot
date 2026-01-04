@@ -47,8 +47,9 @@ public final class RarityFooterParser {
             return new Tuple<>(lore, null, null);
         }
 
+        boolean preserveBlankSeparator = footerIndex > 0 && isBlankLine(lines.get(footerIndex - 1));
         lines.remove(footerIndex);
-        trimTrailingEmptyLines(lines);
+        trimTrailingEmptyLines(lines, preserveBlankSeparator);
         String cleanedLore = lines.isEmpty() ? "" : String.join("\\n", lines);
 
         return new Tuple<>(cleanedLore, match.value1(), match.value2());
@@ -131,15 +132,33 @@ public final class RarityFooterParser {
     /**
      * Removes trailing empty lines from the lore list so we don't leave extra blank lines.
      */
-    private static void trimTrailingEmptyLines(List<String> lines) {
-        while (!lines.isEmpty()) {
-            String stripped = TextWrapper.stripColorCodes(lines.getLast());
+    private static boolean isBlankLine(String line) {
+        if (line == null) {
+            return true;
+        }
 
-            if (stripped == null || stripped.trim().isEmpty()) {
-                lines.removeLast();
-            } else {
+        String stripped = TextWrapper.stripColorCodes(line);
+        return stripped == null || stripped.trim().isEmpty();
+    }
+
+    private static void trimTrailingEmptyLines(List<String> lines, boolean preserveSingleBlank) {
+        String preservedBlank = null;
+
+        while (!lines.isEmpty()) {
+            String last = lines.getLast();
+            if (!isBlankLine(last)) {
                 break;
             }
+
+            if (preserveSingleBlank && preservedBlank == null) {
+                preservedBlank = last;
+            }
+
+            lines.removeLast();
+        }
+
+        if (preserveSingleBlank && preservedBlank != null) {
+            lines.add(preservedBlank);
         }
     }
 }
