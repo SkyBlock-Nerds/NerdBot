@@ -124,7 +124,8 @@
         "emojiIds": [
           "1234567890123456789"
         ],
-        "thread": true
+        "thread": true,
+        "reactionRules": []
       }
     ],
     "blacklistedChannels": [
