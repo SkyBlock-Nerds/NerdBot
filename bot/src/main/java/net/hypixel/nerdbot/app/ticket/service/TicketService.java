@@ -275,7 +275,6 @@ public class TicketService {
                 TicketStatus oldStatus = ticket.getStatus();
                 ticket.setStatus(targetStatus);
                 ticket.resetReminderTracking();
-                discordService.updateChannelName(ticket);
                 log.info("Auto-updated ticket {} status from {} to {} after staff reply",
                     ticket.getFormattedTicketId(), oldStatus, targetStatus);
             }
@@ -340,7 +339,6 @@ public class TicketService {
                 TicketStatus oldStatus = ticket.getStatus();
                 ticket.setStatus(targetStatus);
                 ticket.resetReminderTracking();
-                discordService.updateChannelName(ticket);
                 log.info("Auto-updated ticket {} status from {} to {} after user reply",
                     ticket.getFormattedTicketId(), oldStatus, targetStatus);
             }
@@ -399,7 +397,6 @@ public class TicketService {
         ticket.setUpdatedAt(System.currentTimeMillis());
         ticket.resetReminderTracking();
 
-        discordService.updateChannelName(ticket);
         ticketRepository.saveToDatabase(ticket);
 
         // Metrics
@@ -434,7 +431,6 @@ public class TicketService {
 
         // Update Discord channel
         discordService.ensureButtonControllerMessageId(ticket);
-        discordService.updateChannelName(ticket);
 
         if (config.isUploadTranscriptOnClose()) {
             discordService.uploadTranscript(ticket, closedBy, reason);
@@ -484,10 +480,9 @@ public class TicketService {
         ticket.setUpdatedAt(System.currentTimeMillis());
         ticket.resetReminderTracking();
 
-        // Unarchive channel, then update name and send message
+        // Unarchive channel and send message
         discordService.ensureButtonControllerMessageId(ticket);
         discordService.unarchiveChannel(ticket, () -> {
-            discordService.updateChannelName(ticket);
             String reasonText = reason != null ? reason : "No reason provided";
             notificationService.sendToChannel(ticket, "**Ticket Reopened** by <@" + reopenedBy.getId() + ">\n**Reason:** " + reasonText);
             discordService.refreshControlPanel(ticket);
@@ -530,7 +525,6 @@ public class TicketService {
         ticket.setUpdatedAt(System.currentTimeMillis());
         ticket.resetReminderTracking();
 
-        discordService.updateChannelName(ticket);
         ticketRepository.saveToDatabase(ticket);
 
         discordService.ensureButtonControllerMessageId(ticket);
@@ -635,7 +629,6 @@ public class TicketService {
         ticket.setCloseReason(reason);
 
         discordService.ensureButtonControllerMessageId(ticket);
-        discordService.updateChannelName(ticket);
 
         if (config.isUploadTranscriptOnClose()) {
             discordService.uploadTranscript(ticket, null, reason);

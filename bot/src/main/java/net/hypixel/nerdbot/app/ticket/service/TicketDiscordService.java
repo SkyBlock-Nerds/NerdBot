@@ -163,31 +163,6 @@ public class TicketDiscordService {
     }
 
     /**
-     * Update the channel name to reflect ticket status.
-     */
-    public void updateChannelName(Ticket ticket) {
-        TextChannel channel = DiscordBotEnvironment.getBot().getJDA().getTextChannelById(ticket.getChannelId());
-        if (channel == null) {
-            return;
-        }
-
-        User owner = DiscordBotEnvironment.getBot().getJDA().getUserById(ticket.getOwnerId());
-        String userName = owner != null ? sanitizeChannelName(owner.getName()) : "unknown";
-
-        String newName = config.getTicketChannelPrefix() + String.format("%04d", ticket.getTicketNumber()) + "-" + userName;
-
-        // Limit channel name to 100 characters (Discord limit)
-        if (newName.length() > 100) {
-            newName = newName.substring(0, 100);
-        }
-
-        channel.getManager().setName(newName).queue(
-            null,
-            error -> log.error("Failed to update channel name for ticket {}", ticket.getChannelId(), error)
-        );
-    }
-
-    /**
      * Archive a ticket channel by removing user permissions and optionally moving to closed category.
      */
     public void archiveChannel(Ticket ticket) {
@@ -218,8 +193,41 @@ public class TicketDiscordService {
                 );
         }
 
-        // Update channel name to show closed status
-        updateChannelName(ticket);
+        archiveInternalThread(ticket);
+    }
+
+    /**
+     * Archive the internal staff thread when a ticket is closed.
+     */
+    private void archiveInternalThread(Ticket ticket) {
+        if (ticket.getInternalThreadId() == null) {
+            return;
+        }
+
+        ThreadChannel thread = DiscordBotEnvironment.getBot().getJDA().getThreadChannelById(ticket.getInternalThreadId());
+        if (thread != null) {
+            thread.getManager().setArchived(true).queue(
+                null,
+                error -> log.debug("Failed to archive internal thread for ticket {}", ticket.getFormattedTicketId())
+            );
+        }
+    }
+
+    /**
+     * Unarchive the internal staff thread when a ticket is reopened.
+     */
+    private void unarchiveInternalThread(Ticket ticket) {
+        if (ticket.getInternalThreadId() == null) {
+            return;
+        }
+
+        ThreadChannel thread = DiscordBotEnvironment.getBot().getJDA().getThreadChannelById(ticket.getInternalThreadId());
+        if (thread != null) {
+            thread.getManager().setArchived(false).queue(
+                null,
+                error -> log.debug("Failed to unarchive internal thread for ticket {}", ticket.getFormattedTicketId())
+            );
+        }
     }
 
     /**
@@ -284,6 +292,8 @@ public class TicketDiscordService {
                 );
         }
 
+        unarchiveInternalThread(ticket);
+
         // Move back to open ticket category
         Optional<Category> openCategory = getTicketCategory();
         if (openCategory.isPresent() && !channel.getParentCategoryId().equals(openCategory.get().getId())) {
@@ -291,7 +301,6 @@ public class TicketDiscordService {
                 .setParent(openCategory.get())
                 .queue(
                     success -> {
-                        updateChannelName(ticket);
                         if (onSuccess != null) {
                             onSuccess.run();
                         }
@@ -304,7 +313,6 @@ public class TicketDiscordService {
                     }
                 );
         } else {
-            updateChannelName(ticket);
             if (onSuccess != null) {
                 onSuccess.run();
             }
