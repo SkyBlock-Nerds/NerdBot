@@ -1,0 +1,403 @@
+{
+  "metricsConfig": {
+    "enabled": true,
+    "port": 1234
+  },
+  "statusPageConfig": {
+    "operationalColor": "00C851",
+    "degradedColor": "FFBB33",
+    "partialOutageColor": "FF4444",
+    "majorOutageColor": "8B0000",
+    "maintenanceColor": "3498DB",
+    "maxDescriptionLength": 200,
+    "includeResolvedIncidents": true,
+    "includeCompletedMaintenances": true,
+    "enableStatusAlerts": true,
+    "statusAlertRoleName": "Status Alerts",
+    "enableMaintenanceAlerts": false
+  },
+  "messageLimit": 100,
+  "mojangUsernameCacheTTL": 12,
+  "mojangForceNicknameUpdate": false,
+  "voiceThreshold": 60,
+  "interval": 43200000,
+  "nominationsEnabled": true,
+  "inactivityCheckEnabled": true,
+  "inactivityDays": 7,
+  "inactivityMessages": 10,
+  "features": [
+    {
+      "enabled": true,
+      "className": "com.example.bot.feature.HelloGoodbyeFeature"
+    },
+    {
+      "enabled": true,
+      "className": "com.example.bot.feature.CurateFeature",
+      "initialDelayMs": 30000,
+      "periodMs": 43200000
+    }
+  ],
+  "watchers": [
+    {
+      "enabled": true,
+      "className": "com.example.bot.urlwatcher.JsonURLWatcher",
+      "url": "https://status.example.com/api/v2/summary.json",
+      "interval": 1,
+      "timeUnit": "MINUTES",
+      "handlerClass": "com.example.bot.urlwatcher.handler.StatusPageDataHandler"
+    },
+    {
+      "enabled": true,
+      "className": "com.example.bot.urlwatcher.JsonURLWatcher",
+      "url": "https://api.example.com/firesales",
+      "interval": 1,
+      "timeUnit": "MINUTES",
+      "handlerClass": "com.example.bot.urlwatcher.handler.FireSaleDataHandler"
+    },
+    {
+      "enabled": true,
+      "className": "com.example.bot.urlwatcher.ThreadURLWatcher",
+      "url": "https://forum.example.com/patch-notes.rss",
+      "interval": 1,
+      "timeUnit": "MINUTES"
+    }
+  ],
+  "guildId": "1234567890123456789",
+  "ownerIds": [
+    "1234567890123456789"
+  ],
+  "ticketConfig": {
+    "ticketCategoryId": "1234567890123456789",
+    "closedTicketCategoryId": "1234567890123456789",
+    "ticketChannelPrefix": "ticket-",
+    "ticketRoleId": "1234567890123456789",
+    "webhookId": "1234567890123456789",
+    "categories": [
+      {
+        "id": "example_general",
+        "displayName": "Example General",
+        "description": "Example description for a general ticket."
+      },
+      {
+        "id": "example_bug_report",
+        "displayName": "Example Bug Report",
+        "description": "Example description for bug reports."
+      },
+      {
+        "id": "example_request",
+        "displayName": "Example Request",
+        "description": "Example description for special requests."
+      }
+    ],
+    "statuses": [
+      {
+        "id": "open",
+        "displayName": "Open",
+        "emoji": "🟢",
+        "allowedTransitions": []
+      },
+      {
+        "id": "in_progress",
+        "displayName": "In Progress",
+        "emoji": "🟡",
+        "allowedTransitions": []
+      },
+      {
+        "id": "awaiting_response",
+        "displayName": "Awaiting Response",
+        "emoji": "🟠",
+        "allowedTransitions": []
+      },
+      {
+        "id": "closed",
+        "displayName": "Closed",
+        "emoji": "⚫",
+        "allowedTransitions": []
+      }
+    ],
+    "userReplyStatus": "OPEN",
+    "staffReplyStatus": "AWAITING_RESPONSE",
+    "remindersEnabled": true,
+    "reminderThresholds": [
+      {
+        "hoursWithoutResponse": 4,
+        "message": "Example reminder after 4 hours without a response.",
+        "pingStaff": true
+      },
+      {
+        "hoursWithoutResponse": 24,
+        "message": "Example reminder after 24 hours without a response.",
+        "pingStaff": true
+      },
+      {
+        "hoursWithoutResponse": 72,
+        "message": "Example reminder after 72 hours without a response.",
+        "pingStaff": true
+      }
+    ],
+    "reminderCheckIntervalMinutes": 30,
+    "useModalFlow": true,
+    "templates": [
+      {
+        "categoryId": "example_bug_report",
+        "modalTitle": "Example Ticket Form",
+        "fields": [
+          {
+            "id": "example_subject",
+            "label": "Example Subject",
+            "placeholder": "Example subject placeholder.",
+            "required": true,
+            "style": "SHORT",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          {
+            "id": "example_description",
+            "label": "Example Description",
+            "placeholder": "Example description placeholder.",
+            "required": true,
+            "style": "PARAGRAPH",
+            "minLength": 20,
+            "maxLength": 2000
+          },
+          {
+            "id": "example_optional",
+            "label": "Example Optional Field",
+            "placeholder": "Optional example placeholder.",
+            "required": false,
+            "style": "PARAGRAPH",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        ]
+      },
+      {
+        "categoryId": "example_request",
+        "modalTitle": "Example Request Form",
+        "fields": [
+          {
+            "id": "example_duration",
+            "label": "Example Duration",
+            "placeholder": "Example duration placeholder.",
+            "required": true,
+            "style": "SHORT",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          {
+            "id": "example_reason",
+            "label": "Example Reason",
+            "placeholder": "Example optional reason placeholder.",
+            "required": false,
+            "style": "PARAGRAPH",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        ]
+      }
+    ],
+    "maxOpenTicketsPerUser": 3,
+    "timeBetweenPings": 60,
+    "storeTranscripts": true,
+    "uploadTranscriptOnClose": true,
+    "autoCloseEnabled": true,
+    "autoCloseDays": 7,
+    "autoCloseStatus": "AWAITING_RESPONSE",
+    "autoCloseMessage": "Example auto-close message explaining why a ticket was closed.",
+    "autoDeleteClosedTickets": false,
+    "closedTicketRetentionDays": 30,
+    "blacklistedUserIds": [],
+    "blacklistMessage": "You are not permitted to create tickets.",
+    "activityLogChannelId": ""
+  },
+  "suggestionConfig": {
+    "reviewRequestConfig": {
+      "enabled": false,
+      "channelId": "1234567890123456789",
+      "threshold": 15,
+      "enforceGreenlitRatio": false,
+      "minimumSuggestionAge": 604800000
+    },
+    "forumChannelId": "1234567890123456789",
+    "greenlitTag": "Example Name",
+    "reviewedTag": "Example Name",
+    "greenlitThreshold": 20,
+    "greenlitRatio": 75.0,
+    "archiveOnGreenlit": false,
+    "lockOnGreenlit": false,
+    "autoArchiveThreshold": 168,
+    "autoLockThreshold": 168
+  },
+  "alphaProjectConfig": {
+    "alphaForumIds": [
+      "1234567890123456789"
+    ],
+    "projectForumIds": [
+      "1234567890123456789"
+    ],
+    "autoCreateTags": true,
+    "autoArchiveThreshold": 168,
+    "autoLockThreshold": 168
+  },
+  "channelConfig": {
+    "logChannelId": "1234567890123456789",
+    "verifyLogChannelId": "1234567890123456789",
+    "publicArchiveCategoryId": "1234567890123456789",
+    "nerdArchiveCategoryId": "1234567890123456789",
+    "alphaArchiveCategoryId": "1234567890123456789",
+    "announcementChannelId": "1234567890123456789",
+    "botSpamChannelId": "1234567890123456789",
+    "pollChannelId": "1234567890123456789",
+    "memberVotingChannelId": "",
+    "birthdayNotificationChannelId": "",
+    "genChannelIds": [
+      "1234567890123456789"
+    ],
+    "filteredAprilFoolsGenChannelIds": [],
+    "reactionChannels": [
+      {
+        "name": "example_name",
+        "discordChannelId": "1234567890123456789",
+        "emojiIds": [
+          "1234567890123456789"
+        ],
+        "thread": true
+      }
+    ],
+    "blacklistedChannels": [
+      "1234567890123456789"
+    ],
+    "customForumTags": [
+      {
+        "ownerId": "1234567890123456789",
+        "name": "Example Name"
+      }
+    ],
+    "roleRestrictedChannelGroups": [],
+    "autoManageRoleRestrictedChannels": true,
+    "defaultMinimumMessagesForActivity": 5,
+    "defaultMinimumVotesForActivity": 2,
+    "defaultMinimumCommentsForActivity": 1,
+    "defaultActivityCheckDays": 30,
+    "autoPinFirstMessage": true,
+    "autoPinBlacklistedChannels": [
+      "1234567890123456789"
+    ],
+    "projectChannelNames": [],
+    "forumAutoTags": []
+  },
+  "roleConfig": {
+    "botManagerRoleId": "1234567890123456789",
+    "moderatorRoleId": "",
+    "orangeRoleId": "",
+    "memberRoleId": "",
+    "newMemberRoleId": "1234567890123456789",
+    "limboRoleId": "1234567890123456789",
+    "currentlyPromotingUsers": false,
+    "minimumVotesRequiredForPromotion": 100,
+    "minimumCommentsRequiredForPromotion": 100,
+    "minimumMessagesRequiredForPromotion": 10,
+    "daysRequiredForVoteHistory": 90,
+    "daysRequiredForInactivityCheck": 30,
+    "messagesRequiredForInactivityCheck": 100,
+    "votesRequiredForInactivityCheck": 25,
+    "commentsRequiredForInactivityCheck": 100,
+    "pingableRoles": [
+      {
+        "name": "Example Name",
+        "roleId": "1234567890123456789"
+      }
+    ],
+    "promotionTierRoleIds": [
+      "1234567890123456789",
+      "1234567890123456789",
+      "1234567890123456789"
+    ],
+    "newMemberNominationMinDays": 30
+  },
+  "emojiConfig": {
+    "agreeEmojiId": "1234567890123456789",
+    "disagreeEmojiId": "1234567890123456789",
+    "neutralEmojiId": "1234567890123456789",
+    "greenlitEmojiId": "1234567890123456789"
+  },
+  "badgeConfig": {
+    "badges": [
+      {
+        "id": "1234567890123456789",
+        "name": "Example Name",
+        "emoji": "1234567890123456789"
+      },
+      {
+        "tiers": [
+          {
+            "name": "Example Name",
+            "emoji": "1234567890123456789",
+            "tier": 1
+          },
+          {
+            "name": "Example Name",
+            "emoji": "1234567890123456789",
+            "tier": 2
+          },
+          {
+            "name": "Example Name",
+            "emoji": "1234567890123456789",
+            "tier": 3
+          }
+        ],
+        "id": "example_name",
+        "name": "Example Name"
+      }
+    ]
+  },
+  "funConfig": {
+    "autoReactions": {}
+  },
+  "generatorConfig": {
+    "playerHead": {
+      "defaultSkinTexture": "31f477eb1a7beee631c2ca64d06f8f68fa93a3386d04452ab27f43acdf1b60cb",
+      "defaultScale": 1,
+      "maxScale": 20,
+      "minScale": -10
+    },
+    "tooltip": {
+      "defaultMaxLineLength": 36,
+      "defaultAlpha": 230,
+      "defaultPadding": 0,
+      "defaultRenderBorder": true,
+      "defaultCenteredText": false,
+      "maxLineLength": 100,
+      "minLineLength": 10
+    },
+    "item": {
+      "defaultEnchanted": false,
+      "defaultHoverEffect": false,
+      "defaultBigImage": false
+    },
+    "inventory": {
+      "defaultDrawBorder": true,
+      "defaultDrawBackground": true,
+      "maxRows": 100,
+      "maxColumns": 100,
+      "minRows": 1,
+      "minColumns": 1,
+      "animateGlint": false
+    },
+    "cache": {
+      "enabled": true,
+      "maxSize": 1000,
+      "ttlMinutes": 60
+    },
+    "general": {
+      "defaultScaleFactor": 1,
+      "defaultPadding": 0,
+      "maxScaleFactor": 10,
+      "minScaleFactor": 1,
+      "debugLogging": false,
+      "includeErrorDetails": true
+    }
+  },
+  "activityType": "WATCHING",
+  "activity": "with an example message!"
+}
