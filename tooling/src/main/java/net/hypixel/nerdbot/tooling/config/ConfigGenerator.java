@@ -4,283 +4,433 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import net.hypixel.nerdbot.discord.config.BadgeConfig;
-import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
-import net.hypixel.nerdbot.discord.config.EmojiConfig;
-import net.hypixel.nerdbot.discord.config.FeatureConfig;
-import net.hypixel.nerdbot.discord.config.MetricsConfig;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
-import net.hypixel.nerdbot.discord.config.RoleConfig;
-import net.hypixel.nerdbot.discord.config.StatusPageConfig;
-import net.hypixel.nerdbot.discord.config.WatcherConfig;
-import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
-import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
-import net.hypixel.nerdbot.discord.config.channel.TicketConfig;
-import net.hypixel.nerdbot.discord.config.channel.TicketReminderThreshold;
-import net.hypixel.nerdbot.discord.config.channel.TicketStatusConfig;
-import net.hypixel.nerdbot.discord.config.channel.TicketTemplate;
-import net.hypixel.nerdbot.discord.config.channel.TicketTemplateField;
-import net.hypixel.nerdbot.discord.config.objects.CustomForumTag;
-import net.hypixel.nerdbot.discord.config.objects.PingableRole;
-import net.hypixel.nerdbot.discord.config.objects.ReactionChannel;
-import net.hypixel.nerdbot.discord.config.suggestion.ReviewRequestConfig;
-import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
-import net.hypixel.nerdbot.discord.storage.badge.Badge;
-import net.hypixel.nerdbot.discord.storage.badge.TieredBadge;
-import net.hypixel.nerdbot.discord.storage.database.model.ticket.TicketStatus;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings({"UnusedReturnValue", "ResultOfMethodCallIgnored"})
 public class ConfigGenerator {
 
-    private static final String EXAMPLE_NAME_ID = "example_name";
-    private static final String EXAMPLE_NAME = "Example Name";
+    private static final String EXAMPLE_DISCORD_ID = "1234567890123456789";
+    private static final String EXAMPLE_STRING = "example_value";
+    private static final String EXAMPLE_URL = "https://example.com/";
 
-    private static final String EXAMPLE_ID = "1234567890123456789";
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
+    // Prevent infinite recursion
+    private final Set<Class<?>> visitedClasses = new HashSet<>();
+    private final int maxDepth;
+
+    public ConfigGenerator() {
+        this(10); // Default max depth
+    }
+
+    public ConfigGenerator(int maxDepth) {
+        this.maxDepth = maxDepth;
+    }
 
     public static void main(String[] args) {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        if (args.length < 1) {
+            System.err.println("Usage: ConfigGenerator <output-path>");
+            System.exit(-1);
+        }
 
-        NerdBotConfig botConfig = new NerdBotConfig();
-        botConfig.setOwnerIds(List.of(EXAMPLE_ID));
-        botConfig.setGuildId(EXAMPLE_ID);
-        botConfig.setMessageLimit(100);
-        botConfig.setMojangUsernameCacheTTL(12);
-        botConfig.setVoiceThreshold(60);
-        botConfig.setInterval(43_200_000);
-        botConfig.setActivityType(DiscordBotConfig.ActivityType.WATCHING);
-        botConfig.setActivity("with an example message!");
-        botConfig.setInactivityDays(7);
+        ConfigGenerator generator = new ConfigGenerator();
 
-        BadgeConfig badgeConfig = new BadgeConfig();
-        badgeConfig.setBadges(List.of(
-            new Badge(EXAMPLE_ID, EXAMPLE_NAME, EXAMPLE_ID),
-            new TieredBadge(EXAMPLE_NAME_ID, EXAMPLE_NAME, List.of(
-                new TieredBadge.Tier(EXAMPLE_NAME, EXAMPLE_ID, 1),
-                new TieredBadge.Tier(EXAMPLE_NAME, EXAMPLE_ID, 2),
-                new TieredBadge.Tier(EXAMPLE_NAME, EXAMPLE_ID, 3)
-            ))
-        ));
-        botConfig.setBadgeConfig(badgeConfig);
-
-        ChannelConfig channelConfig = new ChannelConfig();
-        channelConfig.setBlacklistedChannels(new String[]{EXAMPLE_ID});
-        channelConfig.setAnnouncementChannelId(EXAMPLE_ID);
-        channelConfig.setLogChannelId(EXAMPLE_ID);
-        channelConfig.setGenChannelIds(new String[]{EXAMPLE_ID});
-        channelConfig.setPollChannelId(EXAMPLE_ID);
-        channelConfig.setBotSpamChannelId(EXAMPLE_ID);
-        channelConfig.setVerifyLogChannelId(EXAMPLE_ID);
-        channelConfig.setPublicArchiveCategoryId(EXAMPLE_ID);
-        channelConfig.setAlphaArchiveCategoryId(EXAMPLE_ID);
-        channelConfig.setNerdArchiveCategoryId(EXAMPLE_ID);
-        channelConfig.setReactionChannels(List.of(new ReactionChannel(EXAMPLE_NAME_ID, EXAMPLE_ID, List.of(EXAMPLE_ID), true)));
-        channelConfig.setCustomForumTags(List.of(new CustomForumTag(EXAMPLE_ID, EXAMPLE_NAME)));
-        channelConfig.setAutoPinFirstMessage(true);
-        channelConfig.setAutoPinBlacklistedChannels(new String[]{EXAMPLE_ID});
-        botConfig.setChannelConfig(channelConfig);
-
-        EmojiConfig emojiConfig = new EmojiConfig();
-        emojiConfig.setAgreeEmojiId(EXAMPLE_ID);
-        emojiConfig.setDisagreeEmojiId(EXAMPLE_ID);
-        emojiConfig.setNeutralEmojiId(EXAMPLE_ID);
-        emojiConfig.setGreenlitEmojiId(EXAMPLE_ID);
-        botConfig.setEmojiConfig(emojiConfig);
-
-        MetricsConfig metricsConfig = new MetricsConfig();
-        metricsConfig.setEnabled(true);
-        metricsConfig.setPort(1234);
-        botConfig.setMetricsConfig(metricsConfig);
-
-        TicketConfig ticketConfig = new TicketConfig();
-        ticketConfig.setTicketCategoryId(EXAMPLE_ID);
-        ticketConfig.setClosedTicketCategoryId(EXAMPLE_ID);
-        ticketConfig.setTicketRoleId(EXAMPLE_ID);
-        ticketConfig.setCategories(List.of(
-            new TicketConfig.TicketCategory("example_general", "Example General", "Example description for a general ticket."),
-            new TicketConfig.TicketCategory("example_bug_report", "Example Bug Report", "Example description for bug reports."),
-            new TicketConfig.TicketCategory("example_request", "Example Request", "Example description for special requests.")
-        ));
-        ticketConfig.setStatuses(List.of(
-            new TicketStatusConfig("open", "Open", "\uD83D\uDFE2"),
-            new TicketStatusConfig("in_progress", "In Progress", "\uD83D\uDFE1"),
-            new TicketStatusConfig("awaiting_response", "Awaiting Response", "\uD83D\uDFE0"),
-            new TicketStatusConfig("closed", "Closed", "\u26AB")
-        ));
-        ticketConfig.setUserReplyStatus(TicketStatus.OPEN);
-        ticketConfig.setStaffReplyStatus(TicketStatus.AWAITING_RESPONSE);
-        ticketConfig.setRemindersEnabled(true);
-        ticketConfig.setReminderThresholds(List.of(
-            new TicketReminderThreshold(4, "Example reminder after 4 hours without a response.", true),
-            new TicketReminderThreshold(24, "Example reminder after 24 hours without a response.", true),
-            new TicketReminderThreshold(72, "Example reminder after 72 hours without a response.", true)
-        ));
-        ticketConfig.setReminderCheckIntervalMinutes(30);
-        ticketConfig.setUseModalFlow(true);
-
-        TicketTemplate exampleBugTemplate = new TicketTemplate();
-        exampleBugTemplate.setCategoryId("example_bug_report");
-        exampleBugTemplate.setModalTitle("Example Ticket Form");
-        exampleBugTemplate.setFields(List.of(
-            new TicketTemplateField("example_subject", "Example Subject", "Example subject placeholder.", true, "SHORT", 2, 100),
-            new TicketTemplateField("example_description", "Example Description", "Example description placeholder.", true, "PARAGRAPH", 20, 2000),
-            new TicketTemplateField("example_optional", "Example Optional Field", "Optional example placeholder.", false, "PARAGRAPH", 1, 1000)
-        ));
-
-        TicketTemplate exampleRequestTemplate = new TicketTemplate();
-        exampleRequestTemplate.setCategoryId("example_request");
-        exampleRequestTemplate.setModalTitle("Example Request Form");
-        exampleRequestTemplate.setFields(List.of(
-            new TicketTemplateField("example_duration", "Example Duration", "Example duration placeholder.", true, "SHORT", 2, 100),
-            new TicketTemplateField("example_reason", "Example Reason", "Example optional reason placeholder.", false, "PARAGRAPH", 1, 500)
-        ));
-
-        ticketConfig.setTemplates(List.of(exampleBugTemplate, exampleRequestTemplate));
-        ticketConfig.setMaxOpenTicketsPerUser(3);
-        ticketConfig.setTimeBetweenPings(60);
-        ticketConfig.setStoreTranscripts(true);
-        ticketConfig.setUploadTranscriptOnClose(true);
-        ticketConfig.setAutoCloseEnabled(true);
-        ticketConfig.setAutoCloseDays(7);
-        ticketConfig.setAutoCloseStatus(TicketStatus.AWAITING_RESPONSE);
-        ticketConfig.setAutoCloseMessage("Example auto-close message explaining why a ticket was closed.");
-        botConfig.setTicketConfig(ticketConfig);
-
-        RoleConfig roleConfig = new RoleConfig();
-        roleConfig.setLimboRoleId(EXAMPLE_ID);
-        roleConfig.setBotManagerRoleId(EXAMPLE_ID);
-        roleConfig.setNewMemberRoleId(EXAMPLE_ID);
-        roleConfig.setPromotionTierRoleIds(new String[]{EXAMPLE_ID, EXAMPLE_ID, EXAMPLE_ID});
-        roleConfig.setPingableRoles(new PingableRole[]{new PingableRole(EXAMPLE_NAME, EXAMPLE_ID)});
-        botConfig.setRoleConfig(roleConfig);
-
-        SuggestionConfig suggestionConfig = new SuggestionConfig();
-        ReviewRequestConfig reviewRequestConfig = new ReviewRequestConfig();
-        reviewRequestConfig.setChannelId(EXAMPLE_ID);
-        reviewRequestConfig.setThreshold(15);
-        reviewRequestConfig.setEnforceGreenlitRatio(false);
-        reviewRequestConfig.setMinimumSuggestionAge(604_800_000);
-        suggestionConfig.setReviewRequestConfig(reviewRequestConfig);
-
-        suggestionConfig.setForumChannelId(EXAMPLE_ID);
-        suggestionConfig.setGreenlitTag(EXAMPLE_NAME);
-        suggestionConfig.setReviewedTag(EXAMPLE_NAME);
-        suggestionConfig.setGreenlitThreshold(20);
-        suggestionConfig.setGreenlitRatio(75);
-        suggestionConfig.setArchiveOnGreenlit(false);
-        suggestionConfig.setLockOnGreenlit(false);
-        suggestionConfig.setAutoArchiveThreshold(168);
-        suggestionConfig.setAutoLockThreshold(168);
-        botConfig.setSuggestionConfig(suggestionConfig);
-
-        AlphaProjectConfig alphaProjectConfig = new AlphaProjectConfig();
-        alphaProjectConfig.setAlphaForumIds(new String[]{EXAMPLE_ID});
-        alphaProjectConfig.setProjectForumIds(new String[]{EXAMPLE_ID});
-        alphaProjectConfig.setAutoCreateTags(true);
-        alphaProjectConfig.setAutoArchiveThreshold(168);
-        alphaProjectConfig.setAutoLockThreshold(168);
-        botConfig.setAlphaProjectConfig(alphaProjectConfig);
-
-        StatusPageConfig statusPageConfig = new StatusPageConfig();
-        statusPageConfig.setOperationalColor("00C851");
-        statusPageConfig.setDegradedColor("FFBB33");
-        statusPageConfig.setPartialOutageColor("FF4444");
-        statusPageConfig.setMajorOutageColor("8B0000");
-        statusPageConfig.setMaintenanceColor("3498DB");
-        statusPageConfig.setMaxDescriptionLength(200);
-        statusPageConfig.setIncludeResolvedIncidents(true);
-        statusPageConfig.setIncludeCompletedMaintenances(true);
-        statusPageConfig.setEnableStatusAlerts(true);
-        statusPageConfig.setStatusAlertRoleName("Status Alerts");
-        statusPageConfig.setEnableMaintenanceAlerts(false);
-        botConfig.setStatusPageConfig(statusPageConfig);
-
-        List<FeatureConfig> featureConfigs = new ArrayList<>();
-        FeatureConfig hello = new FeatureConfig();
-        hello.setClassName("com.example.bot.feature.HelloGoodbyeFeature");
-        hello.setEnabled(true);
-        featureConfigs.add(hello);
-
-        FeatureConfig curate = new FeatureConfig();
-        curate.setClassName("com.example.bot.feature.CurateFeature");
-        curate.setEnabled(true);
-        curate.setInitialDelayMs(30000L);
-        curate.setPeriodMs(43_200_000L); // 12 hours
-        featureConfigs.add(curate);
-
-        botConfig.setFeatures(featureConfigs);
-
-        List<WatcherConfig> watcherConfigs = new ArrayList<>();
-
-        WatcherConfig statusWatcher = new WatcherConfig();
-        statusWatcher.setClassName("com.example.bot.urlwatcher.JsonURLWatcher");
-        statusWatcher.setUrl("https://status.example.com/api/v2/summary.json");
-        statusWatcher.setHandlerClass("com.example.bot.urlwatcher.handler.StatusPageDataHandler");
-        statusWatcher.setInterval(1);
-        statusWatcher.setTimeUnit(TimeUnit.MINUTES);
-        statusWatcher.setEnabled(true);
-        watcherConfigs.add(statusWatcher);
-
-        WatcherConfig fireSaleWatcher = new WatcherConfig();
-        fireSaleWatcher.setClassName("com.example.bot.urlwatcher.JsonURLWatcher");
-        fireSaleWatcher.setUrl("https://api.example.com/firesales");
-        fireSaleWatcher.setHandlerClass("com.example.bot.urlwatcher.handler.FireSaleDataHandler");
-        fireSaleWatcher.setInterval(1);
-        fireSaleWatcher.setTimeUnit(TimeUnit.MINUTES);
-        watcherConfigs.add(fireSaleWatcher);
-
-        WatcherConfig rssWatcher = new WatcherConfig();
-        rssWatcher.setClassName("com.example.bot.urlwatcher.ThreadURLWatcher");
-        rssWatcher.setUrl("https://forum.example.com/patch-notes.rss");
-        rssWatcher.setInterval(1);
-        rssWatcher.setTimeUnit(TimeUnit.MINUTES);
-        watcherConfigs.add(rssWatcher);
-
-        botConfig.setWatchers(watcherConfigs);
-
-        String json = gson.toJson(botConfig);
-
-        if (isValidJson(json)) {
-            System.out.println("The provided JSON string is valid!");
-
-            try {
-                writeJsonToFile(json);
-            } catch (IOException exception) {
-                System.err.println("Error writing JSON to file");
-                exception.printStackTrace();
-            }
-        } else {
-            System.err.println("The provided JSON string is invalid: \n" + json + "\n");
+        try {
+            NerdBotConfig config = generator.generate(NerdBotConfig.class);
+            String json = GSON.toJson(config);
+            writeJsonToFile(json, args[0]);
+            System.out.println("Created JSON file: " + args[0]);
+        } catch (Exception e) {
+            System.err.println("Failed to generate config: " + e.getMessage());
             System.exit(-1);
         }
     }
 
-    private static boolean isValidJson(String jsonStr) {
-        try {
-            JsonParser.parseString(jsonStr);
-            return true;
-        } catch (JsonSyntaxException exception) {
-            System.err.println("Invalid JSON string: " + jsonStr);
-            return false;
+    private static void writeJsonToFile(String json, String outputPath) throws IOException {
+        try (FileWriter writer = new FileWriter(outputPath)) {
+            writer.write(json);
         }
     }
 
-    private static void writeJsonToFile(String json) throws IOException {
-        File outputDir = new File(".");
-        if (!outputDir.exists() && !outputDir.mkdirs()) {
-            throw new IOException("Failed to create output directory " + outputDir.getAbsolutePath());
+    /**
+     * Generate an example instance of the given config class.
+     *
+     * @param clazz the config class to generate
+     * @param <T>   the type of the config class
+     *
+     * @return a populated instance with example values
+     */
+    public <T> T generate(Class<T> clazz) {
+        visitedClasses.clear();
+        return generateInstance(clazz, 0);
+    }
+
+    private <T> T generateInstance(Class<T> clazz, int depth) {
+        if (depth > maxDepth) {
+            return null;
         }
 
-        File outputFile = new File(outputDir, "example-config.json");
-
-        try (FileWriter writer = new FileWriter(outputFile)) {
-            writer.write(json);
-            System.out.println("Created JSON file successfully!");
+        // Prevent infinite recursion
+        if (visitedClasses.contains(clazz) && depth > 2) {
+            return null;
         }
+        visitedClasses.add(clazz);
+
+        try {
+            T instance = createInstance(clazz, depth);
+            if (instance == null) {
+                return null;
+            }
+
+            for (Field field : getAllFields(clazz)) {
+                if (Modifier.isStatic(field.getModifiers()) ||
+                    Modifier.isTransient(field.getModifiers())) {
+                    continue;
+                }
+
+                field.setAccessible(true);
+
+                if (Modifier.isFinal(field.getModifiers())) {
+                    populateFinalCollectionField(field, instance, depth);
+                    continue;
+                }
+
+                Object value = generateValueForField(field, depth);
+
+                if (value != null) {
+                    field.set(instance, value);
+                }
+            }
+
+            return instance;
+        } catch (Exception e) {
+            System.err.println("Failed to generate instance of " + clazz.getName() + ": " + e.getMessage());
+            return null;
+        } finally {
+            visitedClasses.remove(clazz);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void populateFinalCollectionField(Field field, Object instance, int depth) {
+        try {
+            Object existingValue = field.get(instance);
+            if (existingValue == null) {
+                return;
+            }
+
+            Type genericType = field.getGenericType();
+            String fieldName = field.getName().toLowerCase();
+
+            switch (existingValue) {
+                case Map<?, ?> map when map.isEmpty() -> {
+                    if (genericType instanceof ParameterizedType paramType) {
+                        Type[] typeArgs = paramType.getActualTypeArguments();
+
+                        if (typeArgs.length >= 2) {
+                            Class<?> keyClass = getClassFromType(typeArgs[0]);
+                            Class<?> valueClass = getClassFromType(typeArgs[1]);
+
+                            if (keyClass != null && valueClass != null) {
+                                Object key = generateValue(keyClass, typeArgs[0], "key", false, depth + 1);
+                                Object value = generateValue(valueClass, typeArgs[1], fieldName, false, depth + 1);
+
+                                if (key != null && value != null) {
+                                    ((Map<Object, Object>) existingValue).put(key, value);
+                                }
+                            }
+                        }
+                    }
+                }
+                case List<?> list when list.isEmpty() -> {
+                    if (genericType instanceof ParameterizedType paramType) {
+                        Type[] typeArgs = paramType.getActualTypeArguments();
+
+                        if (typeArgs.length > 0) {
+                            Class<?> elementClass = getClassFromType(typeArgs[0]);
+
+                            if (elementClass != null) {
+                                boolean isDiscordId = fieldName.contains("id");
+                                Object element = generateValue(elementClass, typeArgs[0], fieldName, isDiscordId, depth + 1);
+
+                                if (element != null) {
+                                    ((List<Object>) existingValue).add(element);
+                                }
+                            }
+                        }
+                    }
+                }
+                case Set<?> set when set.isEmpty() -> {
+                    if (genericType instanceof ParameterizedType paramType) {
+                        Type[] typeArgs = paramType.getActualTypeArguments();
+
+                        if (typeArgs.length > 0) {
+                            Class<?> elementClass = getClassFromType(typeArgs[0]);
+
+                            if (elementClass != null) {
+                                boolean isDiscordId = fieldName.contains("id");
+                                Object element = generateValue(elementClass, typeArgs[0], fieldName, isDiscordId, depth + 1);
+
+                                if (element != null) {
+                                    ((Set<Object>) existingValue).add(element);
+                                }
+                            }
+                        }
+                    }
+                }
+                default -> {
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private Object generateValueForField(Field field, int depth) {
+        Class<?> type = field.getType();
+        Type genericType = field.getGenericType();
+        String fieldName = field.getName().toLowerCase();
+
+        boolean isDiscordId = fieldName.endsWith("id") || fieldName.endsWith("ids");
+
+        return generateValue(type, genericType, fieldName, isDiscordId, depth);
+    }
+
+    private Object generateValue(Class<?> type, Type genericType, String fieldName, boolean isDiscordId, int depth) {
+        if (type == String.class) {
+            return generateStringValue(fieldName, isDiscordId);
+        }
+        
+        if (type == int.class || type == Integer.class) {
+            return 1;
+        }
+
+        if (type == long.class || type == Long.class) {
+            return 1L;
+        }
+
+        if (type == boolean.class || type == Boolean.class) {
+            return true;
+        }
+
+        if (type == double.class || type == Double.class) {
+            return 1.0;
+        }
+
+        if (type == float.class || type == Float.class) {
+            return 1.0f;
+        }
+
+        if (type == short.class || type == Short.class) {
+            return (short) 1;
+        }
+
+        if (type == byte.class || type == Byte.class) {
+            return (byte) 1;
+        }
+
+        if (type == char.class || type == Character.class) {
+            return 'A';
+        }
+
+        if (type.isEnum()) {
+            Object[] constants = type.getEnumConstants();
+            return constants.length > 0 ? constants[0] : null;
+        }
+
+        if (type == TimeUnit.class) {
+            return TimeUnit.MINUTES;
+        }
+
+        if (type.isArray()) {
+            Class<?> componentType = type.getComponentType();
+            Object array = Array.newInstance(componentType, 1);
+            Object elementValue = generateValue(componentType, componentType, fieldName, isDiscordId, depth + 1);
+
+            if (elementValue != null) {
+                Array.set(array, 0, elementValue);
+            }
+
+            return array;
+        }
+
+        if (List.class.isAssignableFrom(type)) {
+            return generateList(genericType, fieldName, depth);
+        }
+
+        if (Set.class.isAssignableFrom(type)) {
+            return generateSet(genericType, fieldName, depth);
+        }
+
+        if (Map.class.isAssignableFrom(type)) {
+            return generateMap(genericType, fieldName, depth);
+        }
+
+        // Nested objects
+        return generateInstance(type, depth + 1);
+    }
+
+    private String generateStringValue(String fieldName, boolean isDiscordId) {
+        if (isDiscordId) {
+            return EXAMPLE_DISCORD_ID;
+        }
+        if (fieldName.contains("url")) {
+            return EXAMPLE_URL;
+        }
+        return EXAMPLE_STRING;
+    }
+
+    private List<?> generateList(Type genericType, String fieldName, int depth) {
+        List<Object> list = new ArrayList<>();
+
+        if (genericType instanceof ParameterizedType paramType) {
+            Type[] typeArgs = paramType.getActualTypeArguments();
+
+            if (typeArgs.length > 0) {
+                Type elementType = typeArgs[0];
+                Class<?> elementClass = getClassFromType(elementType);
+
+                if (elementClass != null) {
+                    boolean isDiscordId = fieldName.toLowerCase().contains("id");
+                    Object element = generateValue(elementClass, elementType, fieldName, isDiscordId, depth + 1);
+
+                    if (element != null) {
+                        list.add(element);
+                    }
+                }
+            }
+        }
+
+        return list;
+    }
+
+    private Set<?> generateSet(Type genericType, String fieldName, int depth) {
+        Set<Object> set = new HashSet<>();
+
+        if (genericType instanceof ParameterizedType paramType) {
+            Type[] typeArgs = paramType.getActualTypeArguments();
+
+            if (typeArgs.length > 0) {
+                Type elementType = typeArgs[0];
+                Class<?> elementClass = getClassFromType(elementType);
+
+                if (elementClass != null) {
+                    boolean isDiscordId = fieldName.toLowerCase().contains("id");
+                    Object element = generateValue(elementClass, elementType, fieldName, isDiscordId, depth + 1);
+
+                    if (element != null) {
+                        set.add(element);
+                    }
+                }
+            }
+        }
+
+        return set;
+    }
+
+    private Map<?, ?> generateMap(Type genericType, String fieldName, int depth) {
+        Map<Object, Object> map = new HashMap<>();
+
+        if (genericType instanceof ParameterizedType paramType) {
+            Type[] typeArgs = paramType.getActualTypeArguments();
+            if (typeArgs.length >= 2) {
+                Class<?> keyClass = getClassFromType(typeArgs[0]);
+                Class<?> valueClass = getClassFromType(typeArgs[1]);
+
+                if (keyClass != null && valueClass != null) {
+                    Object key = generateValue(keyClass, typeArgs[0], "key", false, depth + 1);
+                    Object value = generateValue(valueClass, typeArgs[1], fieldName, false, depth + 1);
+
+                    if (key != null && value != null) {
+                        map.put(key, value);
+                    }
+                }
+            }
+        }
+
+        return map;
+    }
+
+    private Class<?> getClassFromType(Type type) {
+        if (type instanceof Class<?> clazz) {
+            return clazz;
+        }
+
+        if (type instanceof ParameterizedType paramType) {
+            Type rawType = paramType.getRawType();
+            if (rawType instanceof Class<?> clazz) {
+                return clazz;
+            }
+        }
+
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T createInstance(Class<T> clazz, int depth) {
+        try {
+            // Try no-arg constructor first
+            Constructor<T> noArgConstructor = clazz.getDeclaredConstructor();
+            noArgConstructor.setAccessible(true);
+            return noArgConstructor.newInstance();
+        } catch (NoSuchMethodException e) {
+            // Try to find any constructor and use example values based on parameter names
+            Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+            for (Constructor<?> constructor : constructors) {
+                try {
+                    constructor.setAccessible(true);
+                    Parameter[] parameters = constructor.getParameters();
+                    Object[] params = new Object[parameters.length];
+
+                    for (int i = 0; i < parameters.length; i++) {
+                        Parameter param = parameters[i];
+                        String paramName = param.getName().toLowerCase();
+                        Class<?> paramType = param.getType();
+                        Type genericType = param.getParameterizedType();
+
+                        boolean isDiscordId = paramName.endsWith("id") || paramName.endsWith("ids");
+
+                        params[i] = generateValue(paramType, genericType, paramName, isDiscordId, depth + 1);
+                    }
+
+                    return (T) constructor.newInstance(params);
+                } catch (Exception ignored) {
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to create instance of " + clazz.getName() + ": " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    private List<Field> getAllFields(Class<?> clazz) {
+        List<Field> fields = new ArrayList<>();
+        Class<?> current = clazz;
+
+        while (current != null && current != Object.class) {
+            Collections.addAll(fields, current.getDeclaredFields());
+            current = current.getSuperclass();
+        }
+
+        return fields;
     }
 }

@@ -58,6 +58,9 @@
     <profiles>
         <profile>
             <id>generate-config</id>
+            <properties>
+                <config.output.path>${project.basedir}/../example-config.json</config.output.path>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -72,6 +75,9 @@
                                 </goals>
                                 <configuration>
                                     <mainClass>net.hypixel.nerdbot.tooling.config.ConfigGenerator</mainClass>
+                                    <arguments>
+                                        <argument>${config.output.path}</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>
