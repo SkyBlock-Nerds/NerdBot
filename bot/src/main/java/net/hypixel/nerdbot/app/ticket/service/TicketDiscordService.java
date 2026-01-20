@@ -500,22 +500,32 @@ public class TicketDiscordService {
     }
 
     private String generateInitialPost(User user, Ticket ticket, String categoryName) {
-        return String.format("""
+        StringBuilder post = new StringBuilder();
+        post.append(String.format("""
                              **New Ticket %s**
-                             
+
                              **User:** %s
                              **User ID:** %s
                              **Category:** %s
                              **Created:** <t:%d:F>
-                             
-                             **Description:**
                              """,
             ticket.getFormattedTicketId(),
             user.getAsMention(),
             user.getId(),
             categoryName,
             ticket.getCreatedAt() / 1_000
-        );
+        ));
+
+        // Add custom fields if present
+        if (ticket.hasCustomFields()) {
+            post.append("\n");
+            for (var field : ticket.getCustomFieldValues()) {
+                post.append("**").append(field.getLabel()).append(":** ").append(field.getValue()).append("\n");
+            }
+        }
+
+        post.append("\n**Description:**\n");
+        return post.toString();
     }
 
     private List<ActionRow> buildControlPanelComponents(Ticket ticket) {
@@ -587,18 +597,6 @@ public class TicketDiscordService {
         };
     }
 
-    /**
-     * Get the button style for a target status.
-     */
-    private ButtonStyle getButtonStyleForStatus(TicketStatus status) {
-        return switch (status) {
-            case CLOSED -> ButtonStyle.DANGER;
-            case OPEN -> ButtonStyle.SUCCESS;
-            case IN_PROGRESS -> ButtonStyle.PRIMARY;
-            case AWAITING_RESPONSE -> ButtonStyle.SECONDARY;
-        };
-    }
-
     private void addTicketRolePermissions(TextChannel channel) {
         String ticketRoleId = config.getTicketRoleId();
         if (ticketRoleId == null || ticketRoleId.isEmpty()) {
@@ -638,15 +636,19 @@ public class TicketDiscordService {
             ticketRepository.saveToDatabase(ticket);
 
             // Add all staff members with the ticket role to the thread
+            // Stagger requests to avoid rate limiting
             String ticketRoleId = config.getTicketRoleId();
             if (ticketRoleId != null && !ticketRoleId.isEmpty()) {
                 RoleManager.getRoleById(ticketRoleId).ifPresent(role -> {
-                    channel.getGuild().getMembersWithRoles(role).forEach(member ->
-                        thread.addThreadMember(member).queue(
+                    List<Member> members = channel.getGuild().getMembersWithRoles(role);
+                    for (int i = 0; i < members.size(); i++) {
+                        Member member = members.get(i);
+                        // Stagger each request by 100ms to avoid rate limits
+                        thread.addThreadMember(member).queueAfter(i * 100L, java.util.concurrent.TimeUnit.MILLISECONDS,
                             null,
                             error -> log.debug("Could not add {} to internal thread", member.getId())
-                        )
-                    );
+                        );
+                    }
                 });
             }
 
