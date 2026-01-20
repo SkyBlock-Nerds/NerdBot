@@ -47,7 +47,7 @@ jobs:
         run: mvn -pl tooling -am -DskipTests install
 
       - name: Generate Example Config
-        run: mvn -f tooling/pom.xml -am -Pgenerate-config -DskipTests exec:java@generate-config
+        run: mvn -f tooling/pom.xml -Pgenerate-config -DskipTests -Dconfig.output.path=${{ github.workspace }}/example-config.json exec:java@generate-config
 
       - name: Commit Changes
         uses: stefanzweifel/git-auto-commit-action@v7

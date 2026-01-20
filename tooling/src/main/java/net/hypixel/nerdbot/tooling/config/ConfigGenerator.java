@@ -47,56 +47,28 @@ public class ConfigGenerator {
     }
 
     public static void main(String[] args) {
+        if (args.length < 1) {
+            System.err.println("Usage: ConfigGenerator <output-path>");
+            System.exit(-1);
+        }
+
         ConfigGenerator generator = new ConfigGenerator();
 
         try {
             NerdBotConfig config = generator.generate(NerdBotConfig.class);
             String json = GSON.toJson(config);
-
-            if (isValidJson(json)) {
-                System.out.println("Generated valid JSON config!");
-                writeJsonToFile(json);
-            } else {
-                System.err.println("Generated invalid JSON!");
-                System.exit(-1);
-            }
+            writeJsonToFile(json, args[0]);
+            System.out.println("Created JSON file: " + args[0]);
         } catch (Exception e) {
             System.err.println("Failed to generate config: " + e.getMessage());
             System.exit(-1);
         }
     }
 
-    private static boolean isValidJson(String jsonStr) {
-        try {
-            JsonParser.parseString(jsonStr);
-            return true;
-        } catch (JsonSyntaxException e) {
-            System.err.println("Invalid JSON: " + e.getMessage());
-            return false;
-        }
-    }
-
-    private static void writeJsonToFile(String json) throws IOException {
-        File projectRoot = findProjectRoot();
-        File outputFile = new File(projectRoot, "example-config.json");
-
-        try (FileWriter writer = new FileWriter(outputFile)) {
+    private static void writeJsonToFile(String json, String outputPath) throws IOException {
+        try (FileWriter writer = new FileWriter(outputPath)) {
             writer.write(json);
-            System.out.println("Created JSON file: " + outputFile.getAbsolutePath());
         }
-    }
-
-    private static File findProjectRoot() {
-        File current = new File(System.getProperty("user.dir"));
-
-        while (current != null) {
-            if (new File(current, ".git").exists()) {
-                return current;
-            }
-            current = current.getParentFile();
-        }
-
-        return new File(System.getProperty("user.dir"));
     }
 
     /**
