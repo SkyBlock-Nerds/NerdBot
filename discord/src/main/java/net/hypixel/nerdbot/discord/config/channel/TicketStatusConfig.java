@@ -36,13 +36,6 @@ public class TicketStatusConfig {
     private String emoji;
 
     /**
-     * Short prefix used in channel names (e.g., "open", "wip", "wait", "closed").
-     * Should be lowercase, no spaces, Discord channel-name safe.
-     * If not set, defaults to a sanitized version of the status ID.
-     */
-    private String channelPrefix;
-
-    /**
      * List of allowed transitions from this status.
      * If empty, default transitions will be used based on the status type.
      */
@@ -97,19 +90,5 @@ public class TicketStatusConfig {
             .filter(t -> t.getTargetStatusId().equalsIgnoreCase(targetStatusId))
             .findFirst()
             .orElse(null);
-    }
-
-    /**
-     * Get the effective channel prefix for this status.
-     * Returns the configured channelPrefix if set, otherwise returns a sanitized version of the status ID.
-     *
-     * @return the channel prefix to use in channel names
-     */
-    public String getEffectiveChannelPrefix() {
-        if (channelPrefix != null && !channelPrefix.isEmpty()) {
-            return channelPrefix.toLowerCase().replaceAll("[^a-z0-9-]", "-");
-        }
-        // Fallback to sanitized status ID
-        return id.toLowerCase().replaceAll("[^a-z0-9-]", "-").replaceAll("_", "-");
     }
 }

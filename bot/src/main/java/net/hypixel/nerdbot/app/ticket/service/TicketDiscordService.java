@@ -20,7 +20,6 @@ import net.hypixel.nerdbot.app.ticket.TicketTranscriptGenerator;
 import net.hypixel.nerdbot.app.ticket.control.BuiltInTicketActions;
 import net.hypixel.nerdbot.app.ticket.control.TicketAction;
 import net.hypixel.nerdbot.discord.config.channel.TicketConfig;
-import net.hypixel.nerdbot.discord.config.channel.TicketStatusConfig;
 import net.hypixel.nerdbot.discord.config.channel.TicketStatusTransition;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.Ticket;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.TicketStatus;
@@ -170,8 +169,7 @@ public class TicketDiscordService {
         User owner = DiscordBotEnvironment.getBot().getJDA().getUserById(ticket.getOwnerId());
         String userName = owner != null ? sanitizeChannelName(owner.getName()) : "unknown";
 
-        String statusPrefix = getStatusPrefix(ticket.getStatus());
-        String newName = config.getTicketChannelPrefix() + String.format("%04d", ticket.getTicketNumber()) + "-" + statusPrefix + "-" + userName;
+        String newName = config.getTicketChannelPrefix() + String.format("%04d", ticket.getTicketNumber()) + "-" + userName;
 
         // Limit channel name to 100 characters (Discord limit)
         if (newName.length() > 100) {
@@ -443,9 +441,8 @@ public class TicketDiscordService {
     }
 
     private String generateChannelName(Ticket ticket, User user) {
-        String statusPrefix = getStatusPrefix(ticket.getStatus());
         String userName = sanitizeChannelName(user.getName());
-        String name = config.getTicketChannelPrefix() + String.format("%04d", ticket.getTicketNumber()) + "-" + statusPrefix + "-" + userName;
+        String name = config.getTicketChannelPrefix() + String.format("%04d", ticket.getTicketNumber()) + "-" + userName;
 
         // Limit to 100 characters (Discord limit)
         if (name.length() > 100) {
@@ -460,18 +457,6 @@ public class TicketDiscordService {
             .replaceAll("[^a-z0-9-_]", "-")
             .replaceAll("-+", "-")
             .replaceAll("^-|-$", "");
-    }
-
-    private String getStatusPrefix(TicketStatus status) {
-        return config.getStatusConfig(status)
-            .map(TicketStatusConfig::getEffectiveChannelPrefix)
-            .orElseGet(() -> switch (status) {
-                // Fallback to default prefixes if no config found
-                case OPEN -> "open";
-                case IN_PROGRESS -> "wip";
-                case AWAITING_RESPONSE -> "wait";
-                case CLOSED -> "closed";
-            });
     }
 
     private String generateInitialPost(User user, Ticket ticket, String categoryName) {
@@ -535,8 +520,13 @@ public class TicketDiscordService {
         }
 
         if (!options.isEmpty()) {
+            // Show current status in placeholder
+            String currentStatusName = config.getStatusDisplayName(ticket.getStatus());
+            Optional<String> currentEmoji = config.getStatusEmoji(ticket.getStatus());
+            String placeholder = currentEmoji.map(e -> e + " ").orElse("") + currentStatusName;
+
             StringSelectMenu statusMenu = StringSelectMenu.create("ticket:status-select")
-                .setPlaceholder("Change ticket status...")
+                .setPlaceholder(placeholder)
                 .addOptions(options)
                 .build();
             rows.add(ActionRow.of(statusMenu));
