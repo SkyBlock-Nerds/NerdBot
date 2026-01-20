@@ -8,7 +8,6 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -90,16 +89,6 @@ public class TicketListener {
 
         Message message = event.getMessage();
         String content = message.getContentDisplay();
-
-        // Hidden message - add muted reaction and don't process further
-        if (content.startsWith("?")) {
-            message.addReaction(Emoji.fromUnicode("\uD83D\uDD07")).queue(
-                null,
-                error -> log.debug("Failed to add mute reaction to hidden message", error)
-            );
-            return;
-        }
-
         boolean isStaff = isStaffMember(event.getMember());
 
         ticketService.handleTicketMessage(
