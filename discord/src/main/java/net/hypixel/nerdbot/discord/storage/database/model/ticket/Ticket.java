@@ -34,6 +34,7 @@ public class Ticket {
     private String closeReason;
     private List<TicketMessage> messages;
     private String buttonControllerMessageId;
+    private String internalThreadId;
     private int totalMessageCount = 0;
     private boolean hasOverflowMessages = false;
 

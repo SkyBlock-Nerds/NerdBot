@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
@@ -150,6 +151,9 @@ public class TicketDiscordService {
 
             // Ping ticket role
             pingTicketRole(channel);
+
+            // Create internal staff thread
+            createInternalThread(channel, ticket);
 
             return Optional.of(channel);
         } catch (Exception e) {
@@ -610,6 +614,40 @@ public class TicketDiscordService {
                 null,
                 error -> log.error("Failed to ping ticket role in channel {}", channel.getId(), error)
             );
+        }
+    }
+
+    /**
+     * Create a private thread for internal staff discussions.
+     * Only staff members with the ticket role can see this thread.
+     */
+    private void createInternalThread(TextChannel channel, Ticket ticket) {
+        try {
+            String threadName = "Internal - " + ticket.getFormattedTicketId();
+            ThreadChannel thread = channel.createThreadChannel(threadName, true).complete();
+
+            ticket.setInternalThreadId(thread.getId());
+            ticketRepository.saveToDatabase(ticket);
+
+            // Add all staff members with the ticket role to the thread
+            String ticketRoleId = config.getTicketRoleId();
+            if (ticketRoleId != null && !ticketRoleId.isEmpty()) {
+                RoleManager.getRoleById(ticketRoleId).ifPresent(role -> {
+                    channel.getGuild().getMembersWithRoles(role).forEach(member ->
+                        thread.addThreadMember(member).queue(
+                            null,
+                            error -> log.debug("Could not add {} to internal thread", member.getId())
+                        )
+                    );
+                });
+            }
+
+            // Send initial message
+            thread.sendMessage("**Internal Staff Discussion**\nThis thread is only visible to staff. Use it for internal notes about this ticket.").queue();
+
+            log.debug("Created internal thread {} for ticket {}", thread.getId(), ticket.getFormattedTicketId());
+        } catch (Exception e) {
+            log.error("Failed to create internal thread for ticket {}", ticket.getFormattedTicketId(), e);
         }
     }
 
