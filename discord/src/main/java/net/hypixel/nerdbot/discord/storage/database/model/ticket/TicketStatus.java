@@ -12,17 +12,15 @@ public enum TicketStatus {
     AWAITING_RESPONSE("awaiting_response", false),
     CLOSED("closed", true);
 
+    private static final TicketStatus[] VALUES = values();
     /**
      * The ID used for database storage and config mapping.
      */
     private final String id;
-
     /**
      * Whether this status represents a closed/resolved ticket.
      */
     private final boolean closedState;
-
-    private static final TicketStatus[] VALUES = values();
 
     TicketStatus(String id, boolean closedState) {
         this.id = id;

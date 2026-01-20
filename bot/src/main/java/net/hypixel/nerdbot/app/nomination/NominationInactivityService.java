@@ -337,7 +337,7 @@ public class NominationInactivityService {
         }
     }
 
-private void sendInactiveUserMessage(Member member, DiscordUser discordUser, int requiredMessages, int requiredVotes, int requiredComments, String inactivityType) {
+    private void sendInactiveUserMessage(Member member, DiscordUser discordUser, int requiredMessages, int requiredVotes, int requiredComments, String inactivityType) {
         LastActivity lastActivity = discordUser.getLastActivity();
         RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
         int totalMessages = lastActivity.getTotalMessageCount(roleConfig.getDaysRequiredForInactivityCheck());

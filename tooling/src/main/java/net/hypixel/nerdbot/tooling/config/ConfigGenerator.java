@@ -7,18 +7,17 @@ import com.google.gson.JsonSyntaxException;
 import net.hypixel.nerdbot.discord.config.BadgeConfig;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
+import net.hypixel.nerdbot.discord.config.FeatureConfig;
 import net.hypixel.nerdbot.discord.config.MetricsConfig;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
-import net.hypixel.nerdbot.discord.config.FeatureConfig;
-import net.hypixel.nerdbot.discord.config.WatcherConfig;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.StatusPageConfig;
+import net.hypixel.nerdbot.discord.config.WatcherConfig;
 import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.config.channel.TicketConfig;
-import net.hypixel.nerdbot.discord.config.channel.TicketStatusConfig;
 import net.hypixel.nerdbot.discord.config.channel.TicketReminderThreshold;
-import net.hypixel.nerdbot.discord.storage.database.model.ticket.TicketStatus;
+import net.hypixel.nerdbot.discord.config.channel.TicketStatusConfig;
 import net.hypixel.nerdbot.discord.config.channel.TicketTemplate;
 import net.hypixel.nerdbot.discord.config.channel.TicketTemplateField;
 import net.hypixel.nerdbot.discord.config.objects.CustomForumTag;
@@ -28,12 +27,13 @@ import net.hypixel.nerdbot.discord.config.suggestion.ReviewRequestConfig;
 import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.discord.storage.badge.Badge;
 import net.hypixel.nerdbot.discord.storage.badge.TieredBadge;
+import net.hypixel.nerdbot.discord.storage.database.model.ticket.TicketStatus;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class ConfigGenerator {
@@ -101,7 +101,6 @@ public class ConfigGenerator {
         ticketConfig.setTicketCategoryId(EXAMPLE_ID);
         ticketConfig.setClosedTicketCategoryId(EXAMPLE_ID);
         ticketConfig.setTicketRoleId(EXAMPLE_ID);
-        ticketConfig.setWebhookId(EXAMPLE_ID);
         ticketConfig.setCategories(List.of(
             new TicketConfig.TicketCategory("example_general", "Example General", "Example description for a general ticket."),
             new TicketConfig.TicketCategory("example_bug_report", "Example Bug Report", "Example description for bug reports."),

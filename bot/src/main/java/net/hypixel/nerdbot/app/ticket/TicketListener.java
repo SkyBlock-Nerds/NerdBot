@@ -223,10 +223,10 @@ public class TicketListener {
 
             event.getHook().editOriginal(String.format("""
                                                        **Ticket Created Successfully!**
-
+                                                       
                                                        **Ticket ID:** %s
                                                        **Category:** %s
-
+                                                       
                                                        Your ticket has been created: <#%s>
                                                        Our team will respond shortly.
                                                        """, ticket.getFormattedTicketId(), config.getCategoryDisplayName(categoryId), ticket.getChannelId())).queue(

@@ -31,8 +31,8 @@
     </appender>
 
     <root level="INFO">
-        <appender-ref ref="ConsoleLogger" />
-        <appender-ref ref="FileLogger" />
+        <appender-ref ref="ConsoleLogger"/>
+        <appender-ref ref="FileLogger"/>
     </root>
 
 </configuration>

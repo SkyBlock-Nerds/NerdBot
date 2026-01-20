@@ -62,10 +62,10 @@ public class TicketCommands {
 
         String embedTitle = title != null ? title : "Tickets";
         String embedDescription = description != null ? description : """
-            Need help? Click the button below to create a ticket.
-
-            Our team will assist you as soon as possible.
-            """;
+                                                                      Need help? Click the button below to create a ticket.
+                                                                      
+                                                                      Our team will assist you as soon as possible.
+                                                                      """;
 
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle(embedTitle)

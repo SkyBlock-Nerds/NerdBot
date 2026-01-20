@@ -40,11 +40,6 @@ public class TicketConfig {
     private String ticketRoleId = "";
 
     /**
-     * Optional webhook ID for mirroring ticket updates
-     */
-    private String webhookId = "";
-
-    /**
      * Available ticket categories. Initializes with three default
      * categories
      */

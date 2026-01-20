@@ -163,7 +163,7 @@ public class TicketService {
      * @return persisted ticket instance
      *
      * @throws IllegalArgumentException if input validation fails
-     * @throws IllegalStateException if max tickets reached or channel not found
+     * @throws IllegalStateException    if max tickets reached or channel not found
      */
     public Ticket createTicket(User user, String categoryId, String description) {
         // Validate inputs
@@ -924,6 +924,7 @@ public class TicketService {
      * Downloads are performed in parallel for better performance.
      *
      * @param attachments list of attachments to download
+     *
      * @return list of file uploads ready to send
      */
     private List<FileUpload> downloadAttachments(List<Message.Attachment> attachments) {

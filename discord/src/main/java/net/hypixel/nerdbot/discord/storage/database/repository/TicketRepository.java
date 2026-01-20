@@ -222,6 +222,7 @@ public class TicketRepository extends Repository<Ticket> {
      * Uses a tiered cache strategy: thread index -> open ticket cache -> closed ticket cache -> database.
      *
      * @param channelId the Discord thread ID
+     *
      * @return optional containing the ticket if found
      */
     public Optional<Ticket> findByChannelId(String channelId) {
@@ -416,6 +417,7 @@ public class TicketRepository extends Repository<Ticket> {
      * Queries MongoDB directly to avoid loading all tickets into memory.
      *
      * @param userId the Discord user ID
+     *
      * @return list of open tickets owned by the user
      */
     public List<Ticket> findOpenTicketsByUser(String userId) {
@@ -445,6 +447,7 @@ public class TicketRepository extends Repository<Ticket> {
      * Queries MongoDB directly with pagination support.
      *
      * @param userId the Discord user ID
+     *
      * @return list of all tickets owned by the user
      */
     public List<Ticket> findAllTicketsByUser(String userId) {
@@ -480,6 +483,7 @@ public class TicketRepository extends Repository<Ticket> {
      * Queries MongoDB directly.
      *
      * @param status the status to filter by
+     *
      * @return list of tickets with the specified status
      */
     public List<Ticket> findByStatus(TicketStatus status) {
@@ -515,6 +519,7 @@ public class TicketRepository extends Repository<Ticket> {
      * Queries MongoDB directly.
      *
      * @param categoryId the category ID to filter by
+     *
      * @return list of tickets in the specified category
      */
     public List<Ticket> findByCategory(String categoryId) {
@@ -551,6 +556,7 @@ public class TicketRepository extends Repository<Ticket> {
      *
      * @param fromTimestamp start of the date range (inclusive)
      * @param toTimestamp   end of the date range (inclusive)
+     *
      * @return list of tickets created within the date range
      */
     public List<Ticket> findByDateRange(long fromTimestamp, long toTimestamp) {
@@ -590,6 +596,7 @@ public class TicketRepository extends Repository<Ticket> {
      * Uses MongoDB text search if available, otherwise performs regex search.
      *
      * @param keyword the keyword to search for
+     *
      * @return list of tickets containing the keyword in their messages
      */
     public List<Ticket> searchByKeyword(String keyword) {
@@ -626,6 +633,7 @@ public class TicketRepository extends Repository<Ticket> {
      * Uses MongoDB count query instead of loading all tickets.
      *
      * @param userId the Discord user ID
+     *
      * @return count of open tickets for the user
      */
     public int countOpenTicketsByUser(String userId) {

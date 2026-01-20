@@ -5,7 +5,6 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -27,7 +26,6 @@ import net.hypixel.nerdbot.discord.storage.database.model.ticket.Ticket;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.TicketStatus;
 import net.hypixel.nerdbot.discord.storage.database.repository.TicketRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
-import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -479,12 +477,12 @@ public class TicketDiscordService {
     private String generateInitialPost(User user, Ticket ticket, String categoryName) {
         return String.format("""
                              **New Ticket %s**
-
+                             
                              **User:** %s
                              **User ID:** %s
                              **Category:** %s
                              **Created:** <t:%d:F>
-
+                             
                              **Description:**
                              """,
             ticket.getFormattedTicketId(),

@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.discord.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
 import java.util.List;
 
 /**

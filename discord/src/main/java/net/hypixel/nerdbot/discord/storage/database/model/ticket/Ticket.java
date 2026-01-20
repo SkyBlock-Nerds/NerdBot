@@ -20,6 +20,7 @@ import java.util.Map;
 @ToString
 public class Ticket {
 
+    private static final int MAX_STORED_MESSAGES = 500;
     private int ticketNumber;
     private String ownerId;
     private String channelId;
@@ -33,9 +34,6 @@ public class Ticket {
     private String closeReason;
     private List<TicketMessage> messages;
     private String buttonControllerMessageId;
-
-    private static final int MAX_STORED_MESSAGES = 500;
-
     private int totalMessageCount = 0;
     private boolean hasOverflowMessages = false;
 

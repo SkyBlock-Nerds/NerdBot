@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Configurable display settings for a ticket status.
- * The status types are fixed by {@link TicketStatus}, but display names, emojis, 
+ * The status types are fixed by {@link TicketStatus}, but display names, emojis,
  * and allowed transitions are configurable.
  */
 @Getter

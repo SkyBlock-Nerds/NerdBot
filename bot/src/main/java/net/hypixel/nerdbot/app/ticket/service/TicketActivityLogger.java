@@ -1,19 +1,30 @@
 package net.hypixel.nerdbot.app.ticket.service;
 
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.discord.config.channel.TicketConfig;
+
+import java.time.Instant;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.Ticket;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.TicketStatus;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 /**
- * Logs ticket activity events to a configured Discord channel.
- * This provides staff with a centralized audit log of ticket operations.
+ * Logs ticket activity events to a configured Discord channel using embeds.
  */
 @Slf4j
 public class TicketActivityLogger {
+
+    private static final int COLOR_CREATED = 0x57F287;    // Green
+    private static final int COLOR_CLAIMED = 0x5865F2;    // Blurple
+    private static final int COLOR_STATUS = 0xFEE75C;     // Yellow
+    private static final int COLOR_CLOSED = 0xED4245;     // Red
+    private static final int COLOR_REOPENED = 0x57F287;   // Green
+    private static final int COLOR_TRANSFERRED = 0x5865F2; // Blurple
+    private static final int COLOR_DELETED = 0x99AAB5;    // Gray
 
     private final TicketConfig config;
 
@@ -21,100 +32,98 @@ public class TicketActivityLogger {
         this.config = config;
     }
 
-    /**
-     * Log that a ticket was created.
-     *
-     * @param ticket  the created ticket
-     * @param creator the user who created the ticket
-     */
     public void logCreated(Ticket ticket, User creator) {
         String categoryName = config.getCategoryDisplayName(ticket.getTicketCategoryId());
-        sendLog("[%s] Created by %s in **%s**",
-            ticket.getFormattedTicketId(), creator.getAsMention(), categoryName);
+        MessageEmbed embed = new EmbedBuilder()
+            .setTitle("Ticket Created")
+            .setDescription(ticket.getFormattedTicketId())
+            .addField("Created By", creator.getAsMention(), true)
+            .addField("Category", categoryName, true)
+            .addField("Channel", "<#" + ticket.getChannelId() + ">", true)
+            .setColor(COLOR_CREATED)
+            .setTimestamp(Instant.now())
+            .build();
+        sendEmbed(embed);
     }
 
-    /**
-     * Log that a ticket was claimed.
-     *
-     * @param ticket the claimed ticket
-     * @param staff  the staff member who claimed it
-     */
     public void logClaimed(Ticket ticket, User staff) {
-        sendLog("[%s] Claimed by %s",
-            ticket.getFormattedTicketId(), staff.getAsMention());
+        MessageEmbed embed = new EmbedBuilder()
+            .setTitle("Ticket Claimed")
+            .setDescription(ticket.getFormattedTicketId())
+            .addField("Claimed By", staff.getAsMention(), true)
+            .addField("Channel", "<#" + ticket.getChannelId() + ">", true)
+            .setColor(COLOR_CLAIMED)
+            .setTimestamp(Instant.now())
+            .build();
+        sendEmbed(embed);
     }
 
-    /**
-     * Log a status change.
-     *
-     * @param ticket    the ticket
-     * @param oldStatus the previous status
-     * @param newStatus the new status
-     * @param actor     the user who made the change
-     */
     public void logStatusChange(Ticket ticket, TicketStatus oldStatus, TicketStatus newStatus, User actor) {
         String oldName = config.getStatusDisplayName(oldStatus);
         String newName = config.getStatusDisplayName(newStatus);
-        sendLog("[%s] Status: **%s** -> **%s** by %s",
-            ticket.getFormattedTicketId(), oldName, newName, actor.getAsMention());
+        MessageEmbed embed = new EmbedBuilder()
+            .setTitle("Status Changed")
+            .setDescription(ticket.getFormattedTicketId())
+            .addField("Status", oldName + " → " + newName, true)
+            .addField("Changed By", actor.getAsMention(), true)
+            .setColor(COLOR_STATUS)
+            .setTimestamp(Instant.now())
+            .build();
+        sendEmbed(embed);
     }
 
-    /**
-     * Log that a ticket was closed.
-     *
-     * @param ticket the closed ticket
-     * @param staff  the staff member who closed it (may be null for auto-close)
-     * @param reason the close reason
-     */
     public void logClosed(Ticket ticket, User staff, String reason) {
-        String closedBy = staff != null ? staff.getAsMention() : "Auto-close";
-        String reasonText = reason != null && !reason.isBlank() ? reason : "No reason provided";
-        sendLog("[%s] Closed by %s: \"%s\"",
-            ticket.getFormattedTicketId(), closedBy, truncate(reasonText, 100));
+        String closedBy = staff != null ? staff.getAsMention() : "System (Auto-close)";
+        String reasonText = reason != null && !reason.isBlank() ? truncate(reason, 200) : "No reason provided";
+        MessageEmbed embed = new EmbedBuilder()
+            .setTitle("Ticket Closed")
+            .setDescription(ticket.getFormattedTicketId())
+            .addField("Closed By", closedBy, true)
+            .addField("Reason", reasonText, false)
+            .setColor(COLOR_CLOSED)
+            .setTimestamp(Instant.now())
+            .build();
+        sendEmbed(embed);
     }
 
-    /**
-     * Log that a ticket was reopened.
-     *
-     * @param ticket the reopened ticket
-     * @param staff  the staff member who reopened it
-     */
     public void logReopened(Ticket ticket, User staff) {
-        sendLog("[%s] Reopened by %s",
-            ticket.getFormattedTicketId(), staff.getAsMention());
+        MessageEmbed embed = new EmbedBuilder()
+            .setTitle("Ticket Reopened")
+            .setDescription(ticket.getFormattedTicketId())
+            .addField("Reopened By", staff.getAsMention(), true)
+            .addField("Channel", "<#" + ticket.getChannelId() + ">", true)
+            .setColor(COLOR_REOPENED)
+            .setTimestamp(Instant.now())
+            .build();
+        sendEmbed(embed);
     }
 
-    /**
-     * Log that a ticket was transferred.
-     *
-     * @param ticket the transferred ticket
-     * @param from   the previous assignee
-     * @param to     the new assignee
-     * @param actor  the user who performed the transfer
-     */
     public void logTransferred(Ticket ticket, User from, User to, User actor) {
         String fromName = from != null ? from.getAsMention() : "Unclaimed";
-        sendLog("[%s] Transferred from %s to %s by %s",
-            ticket.getFormattedTicketId(), fromName, to.getAsMention(), actor.getAsMention());
+        MessageEmbed embed = new EmbedBuilder()
+            .setTitle("Ticket Transferred")
+            .setDescription(ticket.getFormattedTicketId())
+            .addField("From", fromName, true)
+            .addField("To", to.getAsMention(), true)
+            .addField("By", actor.getAsMention(), true)
+            .setColor(COLOR_TRANSFERRED)
+            .setTimestamp(Instant.now())
+            .build();
+        sendEmbed(embed);
     }
 
-    /**
-     * Log that a ticket was auto-deleted.
-     *
-     * @param ticket the deleted ticket
-     */
     public void logAutoDeleted(Ticket ticket) {
-        sendLog("[%s] Auto-deleted (retention period expired)",
-            ticket.getFormattedTicketId());
+        MessageEmbed embed = new EmbedBuilder()
+            .setTitle("Ticket Deleted")
+            .setDescription(ticket.getFormattedTicketId())
+            .addField("Reason", "Retention period expired", false)
+            .setColor(COLOR_DELETED)
+            .setTimestamp(Instant.now())
+            .build();
+        sendEmbed(embed);
     }
 
-    /**
-     * Send a log message to the activity log channel.
-     *
-     * @param format the message format string
-     * @param args   format arguments
-     */
-    private void sendLog(String format, Object... args) {
+    private void sendEmbed(MessageEmbed embed) {
         if (!config.isActivityLogEnabled()) {
             return;
         }
@@ -124,11 +133,9 @@ public class TicketActivityLogger {
             return;
         }
 
-        String message = String.format(format, args);
-        channel.sendMessage(message).queue(
-            success -> {
-            },
-            error -> log.warn("Failed to send activity log message: {}", error.getMessage())
+        channel.sendMessageEmbeds(embed).queue(
+            success -> {},
+            error -> log.warn("Failed to send activity log: {}", error.getMessage())
         );
     }
 
