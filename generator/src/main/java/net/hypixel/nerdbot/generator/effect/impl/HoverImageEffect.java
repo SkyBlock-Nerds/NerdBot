@@ -4,7 +4,7 @@ import net.hypixel.nerdbot.generator.effect.EffectContext;
 import net.hypixel.nerdbot.generator.effect.EffectResult;
 import net.hypixel.nerdbot.generator.effect.ImageEffect;
 
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.stream.Collectors;

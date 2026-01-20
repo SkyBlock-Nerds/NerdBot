@@ -12,7 +12,7 @@
 
 Nerd Bot is a passion project built for the SkyBlock Nerds Discord server. Keeping it running involves server hosting
 costs, and maintaining and improving the bot takes time and effort.
-If you've found the Nerd Bot's features useful in any way, all contributions are greatly appreciated and are put towards 
+If you've found the Nerd Bot's features useful in any way, all contributions are greatly appreciated and are put towards
 infrastructure costs.
 
 <div align="center">
@@ -86,5 +86,6 @@ Please follow the instructions [here](https://github.com/SkyBlock-Nerds/NerdBot/
 
 # Commands
 
-See the [commands](https://github.com/SkyBlock-Nerds/NerdBot/tree/master/src/main/java/net/hypixel/nerdbot/command) package.
+See the [commands](https://github.com/SkyBlock-Nerds/NerdBot/tree/master/src/main/java/net/hypixel/nerdbot/command)
+package.
 

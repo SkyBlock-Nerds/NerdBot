@@ -4,12 +4,12 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.hypixel.nerdbot.core.Range;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.generator.text.segment.ColorSegment;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.util.MinecraftFonts;
-import net.hypixel.nerdbot.core.Range;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -24,6 +24,9 @@ import java.util.concurrent.ThreadLocalRandom;
 @Slf4j
 public class MinecraftTooltip {
 
+    public static final int DEFAULT_PADDING = 0;
+    public static final int DEFAULT_ALPHA = 245;
+    public static final Range<Integer> LINE_LENGTH = Range.between(1, 128);
     private static final Map<Integer, Map<Integer, List<Character>>> OBFUSCATION_WIDTH_MAPS = new HashMap<>(); // Integer key represents font style index (0: regular, 1: bold, 2: italic, 3: bold-italic)
     private static final int[] UNICODE_BLOCK_RANGES = {
         0x0020, 0x007E, // Basic Latin
@@ -31,11 +34,6 @@ public class MinecraftTooltip {
         0x2500, 0x257F, // Box Drawing
         0x2580, 0x259F  // Block Elements
     };
-
-    public static final int DEFAULT_PADDING = 0;
-    public static final int DEFAULT_ALPHA = 245;
-    public static final Range<Integer> LINE_LENGTH = Range.between(1, 128);
-
     private static final int DEFAULT_PIXEL_SIZE = 2;
     private static final int STRIKETHROUGH_OFFSET = -8;
     private static final int UNDERLINE_OFFSET = 2;
@@ -44,30 +42,6 @@ public class MinecraftTooltip {
         // Precompute character widths for the obfuscation effect
         precomputeCharacterWidths();
     }
-
-    private void drawSolidBorder(Graphics2D graphics, int width, int height, int inset, int stroke) {
-        if (stroke <= 0) {
-            return;
-        }
-
-        int horizontalLength = width - inset * 2;
-        int verticalLength = height - inset * 2;
-        if (horizontalLength <= 0 || verticalLength <= 0) {
-            return;
-        }
-
-        // Top
-        graphics.fillRect(inset, inset, horizontalLength, stroke);
-        // Bottom
-        graphics.fillRect(inset, height - inset - stroke, horizontalLength, stroke);
-        // Left
-        graphics.fillRect(inset, inset + stroke, stroke, verticalLength - stroke * 2);
-        // Right
-        graphics.fillRect(width - inset - stroke, inset + stroke, stroke, verticalLength - stroke * 2);
-    }
-
-    @Getter
-    private List<BufferedImage> animationFrames = new ArrayList<>();
 
     @Getter
     private final List<LineSegment> lines;
@@ -82,12 +56,12 @@ public class MinecraftTooltip {
     private final boolean centeredText;
     @Getter
     private final int scaleFactor;
-
     // Scaled values based on scale factor
     private final int pixelSize;
     private final int startXY;
     private final int yIncrement;
-
+    @Getter
+    private List<BufferedImage> animationFrames = new ArrayList<>();
     @Getter
     private BufferedImage image;
     @Getter
@@ -96,14 +70,12 @@ public class MinecraftTooltip {
     private int frameDelayMs;
     @Getter
     private int animationFrameCount;
-
     private transient ChatFormat currentColor;
     private transient Font currentFont;
     private transient int locationX;
     private transient int locationY;
     private transient int largestWidth = 0;
     private transient Map<Integer, Integer> lineMetrics;
-
     /**
      * Construct a new {@link MinecraftTooltip} instance.
      *
@@ -193,6 +165,27 @@ public class MinecraftTooltip {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    private void drawSolidBorder(Graphics2D graphics, int width, int height, int inset, int stroke) {
+        if (stroke <= 0) {
+            return;
+        }
+
+        int horizontalLength = width - inset * 2;
+        int verticalLength = height - inset * 2;
+        if (horizontalLength <= 0 || verticalLength <= 0) {
+            return;
+        }
+
+        // Top
+        graphics.fillRect(inset, inset, horizontalLength, stroke);
+        // Bottom
+        graphics.fillRect(inset, height - inset - stroke, horizontalLength, stroke);
+        // Left
+        graphics.fillRect(inset, inset + stroke, stroke, verticalLength - stroke * 2);
+        // Right
+        graphics.fillRect(width - inset - stroke, inset + stroke, stroke, verticalLength - stroke * 2);
     }
 
     /**

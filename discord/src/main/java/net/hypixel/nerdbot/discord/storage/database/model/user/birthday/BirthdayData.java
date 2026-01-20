@@ -38,12 +38,12 @@ public class BirthdayData {
         return getBirthdayDate();
     }
 
-    public Date getBirthdayDate() {
-        return isBirthdaySet() ? new Date(birthdayTimestamp) : null;
-    }
-
     public void setBirthday(Date birthday) {
         this.birthdayTimestamp = birthday != null ? birthday.getTime() : -1L;
+    }
+
+    public Date getBirthdayDate() {
+        return isBirthdaySet() ? new Date(birthdayTimestamp) : null;
     }
 
     public long getBirthdayThisYearTimestamp() {

@@ -13,11 +13,11 @@ public class StringUtils {
     public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
 
     public static final Pattern SUGGESTION_TITLE_REGEX = Pattern.compile("(?i)\\[(.*?)]");
+    public static final Pattern SKIN_BASE64_REGEX = Pattern.compile("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$");
     @Deprecated
     static final String MINECRAFT_USERNAME_REGEX = "^[a-zA-Z0-9_]{2,16}";
     @Deprecated
     static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
-    public static final Pattern SKIN_BASE64_REGEX = Pattern.compile("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$");
 
     private StringUtils() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");

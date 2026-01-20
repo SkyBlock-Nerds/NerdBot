@@ -51,16 +51,6 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
     private final List<AutoCloseable> activeWatchers = new ArrayList<>();
 
-    @Override
-    protected @NotNull Class<? extends DiscordBotConfig> getConfigClass() {
-        return NerdBotConfig.class;
-    }
-
-    @Override
-    public NerdBotConfig getConfig() {
-        return (NerdBotConfig) super.getConfig();
-    }
-
     /**
      * Static helper to get the NerdBotConfig from the current bot instance.
      * Provides clean, type-safe access to NerdBot-specific configuration throughout the bot module.
@@ -69,6 +59,20 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
      */
     public static NerdBotConfig config() {
         return (NerdBotConfig) DiscordBotEnvironment.getBot().getConfig();
+    }
+
+    private static boolean isAllowed(String className) {
+        return className != null && className.startsWith("net.hypixel.nerdbot.");
+    }
+
+    @Override
+    protected @NotNull Class<? extends DiscordBotConfig> getConfigClass() {
+        return NerdBotConfig.class;
+    }
+
+    @Override
+    public NerdBotConfig getConfig() {
+        return (NerdBotConfig) super.getConfig();
     }
 
     @Override
@@ -323,10 +327,6 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         } catch (Exception exception) {
             log.warn("Failed to start watcher from config: {}", watcherConfig, exception);
         }
-    }
-
-    private static boolean isAllowed(String className) {
-        return className != null && className.startsWith("net.hypixel.nerdbot.");
     }
 
     private void stopUrlWatchers() {

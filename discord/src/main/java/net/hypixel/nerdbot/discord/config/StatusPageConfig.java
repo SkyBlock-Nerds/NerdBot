@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.awt.Color;
+import java.awt.*;
 
 @Getter
 @Setter

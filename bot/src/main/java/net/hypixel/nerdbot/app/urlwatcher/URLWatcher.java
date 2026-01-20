@@ -29,10 +29,10 @@ public abstract class URLWatcher implements AutoCloseable {
     @Getter
     private final String url;
     private final ScheduledExecutorService scheduler;
-    private ScheduledFuture<?> scheduledTask;
     private final OkHttpClient client;
     private final Map<String, String> headers;
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private ScheduledFuture<?> scheduledTask;
     @Getter
     @Setter
     private String lastContent;
@@ -64,6 +64,10 @@ public abstract class URLWatcher implements AutoCloseable {
         if (loadInitialContent) {
             this.lastContent = fetchContent();
         }
+    }
+
+    private static String sanitizeForThreadName(String url) {
+        return url.replaceAll("[^a-zA-Z0-9_-]", "_");
     }
 
     public void startWatching(long interval, TimeUnit unit, DataHandler handler) {
@@ -228,21 +232,17 @@ public abstract class URLWatcher implements AutoCloseable {
         return future;
     }
 
-    public interface DataHandler {
-        void handleData(String oldContent, String newContent, List<Tuple<String, Object, Object>> changedValues);
-    }
-
     @Override
     public void close() {
         stopWatching();
-    }
-
-    private static String sanitizeForThreadName(String url) {
-        return url.replaceAll("[^a-zA-Z0-9_-]", "_");
     }
 
     /**
      * Subclasses decide how to compute changes (e.g., JSON diff, XML diff, or none).
      */
     protected abstract List<Tuple<String, Object, Object>> computeChangedValues(String oldContent, String newContent);
+
+    public interface DataHandler {
+        void handleData(String oldContent, String newContent, List<Tuple<String, Object, Object>> changedValues);
+    }
 }

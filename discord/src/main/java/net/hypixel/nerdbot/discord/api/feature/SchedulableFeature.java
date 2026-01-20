@@ -1,8 +1,8 @@
 package net.hypixel.nerdbot.discord.api.feature;
 
-import java.util.TimerTask;
-
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+
+import java.util.TimerTask;
 
 /**
  * Implement on features that execute periodic tasks. The framework

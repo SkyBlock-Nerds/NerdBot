@@ -2,9 +2,7 @@ package net.hypixel.nerdbot.generator.skull;
 
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Image;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 

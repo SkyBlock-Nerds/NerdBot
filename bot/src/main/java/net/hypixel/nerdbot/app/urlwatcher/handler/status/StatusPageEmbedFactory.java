@@ -7,7 +7,7 @@ import net.hypixel.nerdbot.core.TimeUtils;
 import net.hypixel.nerdbot.core.status.StatusPageResponse;
 import net.hypixel.nerdbot.discord.config.StatusPageConfig;
 
-import java.awt.Color;
+import java.awt.*;
 import java.time.Instant;
 
 @RequiredArgsConstructor

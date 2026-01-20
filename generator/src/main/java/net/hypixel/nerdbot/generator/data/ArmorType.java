@@ -21,6 +21,10 @@ import java.util.stream.Collectors;
 public class ArmorType {
 
     private static final List<ArmorType> ARMOR_TYPES = new ArrayList<>();
+    private static final Set<String> COLORABLE_ARMOR_NAMES = ARMOR_TYPES.stream()
+        .filter(ArmorType::isSupportsCustomColoring)
+        .map(ArmorType::getMaterialName)
+        .collect(Collectors.toSet());
 
     static {
         try {
@@ -33,15 +37,11 @@ public class ArmorType {
     private String materialName;
     private boolean supportsCustomColoring;
 
-    private static final Set<String> COLORABLE_ARMOR_NAMES = ARMOR_TYPES.stream()
-        .filter(ArmorType::isSupportsCustomColoring)
-        .map(ArmorType::getMaterialName)
-        .collect(Collectors.toSet());
-
     /**
      * Checks if the given overlay name represents colorable armor
      *
      * @param overlayName The overlay name to check
+     *
      * @return true if the armor supports custom coloring, false otherwise
      */
     public static boolean isColorableArmor(String overlayName) {
@@ -61,6 +61,7 @@ public class ArmorType {
      * Gets the armor type from an overlay name
      *
      * @param overlayName The overlay name to parse
+     *
      * @return The matching ArmorType or null if none found
      */
     public static ArmorType fromOverlayName(String overlayName) {

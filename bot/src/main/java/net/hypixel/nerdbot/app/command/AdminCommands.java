@@ -71,7 +71,7 @@ import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.Utils;
 import org.apache.commons.lang.time.DateFormatUtils;
 
-import java.awt.Color;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;

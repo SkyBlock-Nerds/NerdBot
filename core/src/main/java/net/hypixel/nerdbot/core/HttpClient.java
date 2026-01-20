@@ -30,8 +30,10 @@ public final class HttpClient {
      * Makes a synchronous HTTP GET request and returns the response body as a string.
      *
      * @param url The URL to request
+     *
      * @return The response body as a string
-     * @throws IOException If an I/O error occurs
+     *
+     * @throws IOException          If an I/O error occurs
      * @throws InterruptedException If the operation is interrupted
      */
     @NotNull
@@ -43,11 +45,11 @@ public final class HttpClient {
             .build();
 
         HttpResponse<String> response = CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-        
+
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             throw new IOException("HTTP request failed with status code " + response.statusCode() + " for URL: " + url);
         }
-        
+
         return response.body();
     }
 
@@ -55,6 +57,7 @@ public final class HttpClient {
      * Makes an asynchronous HTTP GET request and returns the response body as a string.
      *
      * @param url The URL to request
+     *
      * @return A CompletableFuture that will complete with the response body
      */
     @NotNull
@@ -78,19 +81,21 @@ public final class HttpClient {
      * Makes a synchronous HTTP GET request and parses the response as JSON.
      *
      * @param url The URL to request
+     *
      * @return The parsed JSON object
-     * @throws IOException If an I/O error occurs or the response is not valid JSON
+     *
+     * @throws IOException          If an I/O error occurs or the response is not valid JSON
      * @throws InterruptedException If the operation is interrupted
      */
     @NotNull
     public static JsonObject getJson(@NotNull String url) throws IOException, InterruptedException {
         String responseBody = getString(url);
         JsonElement element = GSON.fromJson(responseBody, JsonElement.class);
-        
+
         if (element == null || !element.isJsonObject()) {
             return new JsonObject();
         }
-        
+
         return element.getAsJsonObject();
     }
 
@@ -98,6 +103,7 @@ public final class HttpClient {
      * Makes an asynchronous HTTP GET request and parses the response as JSON.
      *
      * @param url The URL to request
+     *
      * @return A CompletableFuture that will complete with the parsed JSON object
      */
     @NotNull
@@ -105,11 +111,11 @@ public final class HttpClient {
         return getStringAsync(url)
             .thenApply(body -> {
                 JsonElement element = GSON.fromJson(body, JsonElement.class);
-                
+
                 if (element == null || !element.isJsonObject()) {
                     return new JsonObject();
                 }
-                
+
                 return element.getAsJsonObject();
             });
     }

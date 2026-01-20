@@ -1,6 +1,5 @@
 package net.hypixel.nerdbot.generator.impl;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.AccessLevel;
@@ -19,7 +18,6 @@ import net.hypixel.nerdbot.generator.parser.text.PlaceholderReverseMapper;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 @Slf4j
 public class MinecraftNbtParser {

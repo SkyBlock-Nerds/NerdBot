@@ -5,8 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.core.JsonLoader;
+import net.hypixel.nerdbot.generator.text.ChatFormat;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;

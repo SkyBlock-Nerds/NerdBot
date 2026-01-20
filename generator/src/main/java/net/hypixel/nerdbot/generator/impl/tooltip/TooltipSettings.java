@@ -16,14 +16,13 @@ public class TooltipSettings {
     private final int alpha;
     private final int padding;
     private final boolean firstLinePadding;
-
-    public boolean hasFirstLinePadding() {
-        return this.firstLinePadding;
-    }
-
     private final int maxLineLength;
     private final boolean renderBorder;
     private final boolean centeredText;
     private final int scaleFactor;
+
+    public boolean hasFirstLinePadding() {
+        return this.firstLinePadding;
+    }
 
 }

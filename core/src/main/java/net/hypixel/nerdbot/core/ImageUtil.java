@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.core;
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageOutputStream;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;

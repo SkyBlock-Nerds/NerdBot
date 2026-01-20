@@ -5,8 +5,7 @@ import com.google.gson.JsonObject;
 import net.hypixel.nerdbot.discord.storage.DataSerialization;
 
 import javax.imageio.ImageIO;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
@@ -21,7 +20,7 @@ public class OverlayGenerator {
 
     public static final int OVERLAY_OUTPUT_SIZE = SpritesheetGenerator.IMAGE_SIZE; // Match item size from actual spritesheet
     private static final int ATLAS_WIDTH = 1_024;
-    
+
     private static final List<OverlayInfo> overlayInfo = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -56,9 +55,9 @@ public class OverlayGenerator {
                     System.out.println("Loaded overlay: " + file.getName());
 
                     // Always resize overlays to match item dimensions (256x256)
-                    System.out.println("Scaling overlay: " + file.getName() + " from " + 
-                                     overlay.getWidth() + "x" + overlay.getHeight() + 
-                                     " to " + OVERLAY_OUTPUT_SIZE + "x" + OVERLAY_OUTPUT_SIZE);
+                    System.out.println("Scaling overlay: " + file.getName() + " from " +
+                        overlay.getWidth() + "x" + overlay.getHeight() +
+                        " to " + OVERLAY_OUTPUT_SIZE + "x" + OVERLAY_OUTPUT_SIZE);
                     overlay = resizeOverlay(overlay);
 
                     String overlayName = file.getName().split("\\.")[0];

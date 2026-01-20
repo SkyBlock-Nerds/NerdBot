@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.generator.impl;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import net.hypixel.nerdbot.core.ImageUtil;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.image.ImageCoordinates;
@@ -11,7 +12,6 @@ import net.hypixel.nerdbot.generator.item.InventoryItem;
 import net.hypixel.nerdbot.generator.parser.inventory.InventoryStringParser;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import net.hypixel.nerdbot.generator.util.MinecraftFonts;
-import net.hypixel.nerdbot.core.ImageUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
@@ -337,11 +337,11 @@ public class MinecraftInventoryGenerator implements Generator {
                 .isEnchanted(contentLower != null && contentLower.contains("enchant"))
                 .withHoverEffect(contentLower != null && contentLower.contains("hover"))
                 .withData(item.getExtraContent());
-            
+
             if (item.getDurabilityPercent() != null) {
                 itemBuilder.withDurability(item.getDurabilityPercent());
             }
-            
+
             GeneratedObject generatedItem = itemBuilder.build().generate();
             item.setItemImage(generatedItem.getImage());
             item.setAnimationFrames(generatedItem.getAnimationFrames());
@@ -409,7 +409,7 @@ public class MinecraftInventoryGenerator implements Generator {
 
         target.setColor(NORMAL_TEXT_COLOR);
         target.drawString(amountText, textX - 1, textY - 1);
-        
+
         target.setFont(originalFont);
     }
 

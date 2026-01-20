@@ -151,6 +151,36 @@ public class MinecraftTooltipGenerator implements Generator {
         private boolean renderBorder = true;
         private transient int scaleFactor = 1;
 
+        private static String formatCommandValue(Object value) {
+            return switch (value) {
+                case null -> null;
+                case Boolean bool -> capitalize(bool.toString());
+                case Rarity rarityValue -> rarityValue.getName();
+                case String stringValue -> formatCommandString(stringValue);
+                default -> value.toString();
+            };
+
+        }
+
+        private static String capitalize(String text) {
+            if (text == null || text.isEmpty()) return text;
+            return text.substring(0, 1).toUpperCase() + text.substring(1);
+        }
+
+        private static String formatCommandString(String text) {
+            if (text == null) {
+                return "";
+            }
+
+            String normalized = TextWrapper.normalizeNewlines(text);
+            return normalized.replace("\n", "\\n");
+        }
+
+        private static String convertCamelCaseToSnakeCase(String camelCase) {
+            if (camelCase == null) return null;
+            return camelCase.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
+        }
+
         public MinecraftTooltipGenerator.Builder withName(String itemName) {
             this.itemName = itemName;
             return this;
@@ -213,26 +243,6 @@ public class MinecraftTooltipGenerator implements Generator {
         public MinecraftTooltipGenerator.Builder withScaleFactor(int scaleFactor) {
             this.scaleFactor = Math.max(1, scaleFactor);
             return this;
-        }
-
-        private static String formatCommandValue(Object value) {
-            if (value == null) {
-                return null;
-            }
-
-            if (value instanceof Boolean bool) {
-                return capitalize(bool.toString());
-            }
-
-            if (value instanceof Rarity rarityValue) {
-                return rarityValue.getName();
-            }
-
-            if (value instanceof String stringValue) {
-                return formatCommandString(stringValue);
-            }
-
-            return value.toString();
         }
 
         private void parseComponents(JsonObject components) {
@@ -453,20 +463,6 @@ public class MinecraftTooltipGenerator implements Generator {
             return code;
         }
 
-        private static String capitalize(String text) {
-            if (text == null || text.isEmpty()) return text;
-            return text.substring(0, 1).toUpperCase() + text.substring(1);
-        }
-
-        private static String formatCommandString(String text) {
-            if (text == null) {
-                return "";
-            }
-
-            String normalized = TextWrapper.normalizeNewlines(text);
-            return normalized.replace("\n", "\\n");
-        }
-
         /**
          * Builds a slash command from the current state of the builder.
          *
@@ -502,11 +498,6 @@ public class MinecraftTooltipGenerator implements Generator {
             }
 
             return commandBuilder.toString().trim();
-        }
-
-        private static String convertCamelCaseToSnakeCase(String camelCase) {
-            if (camelCase == null) return null;
-            return camelCase.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
         }
 
         @Override

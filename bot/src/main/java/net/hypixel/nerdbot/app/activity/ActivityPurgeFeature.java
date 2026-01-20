@@ -3,13 +3,10 @@ package net.hypixel.nerdbot.app.activity;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.discord.config.FeatureConfig;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;

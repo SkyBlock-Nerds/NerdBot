@@ -1,8 +1,8 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.generator.data.Gemstone;
 import net.hypixel.nerdbot.generator.data.Flavor;
+import net.hypixel.nerdbot.generator.data.Gemstone;
 import net.hypixel.nerdbot.generator.data.Icon;
 import net.hypixel.nerdbot.generator.data.ParseType;
 import net.hypixel.nerdbot.generator.data.Stat;
@@ -26,15 +26,6 @@ public class PlaceholderReverseMapper {
 
     private static final Pattern TOKEN_PATTERN = Pattern.compile("\\{([^}]+)}");
     private static final String DEFAULT_CAPTURE = "[^\\n]+";
-
-    private record ReplacementRule(Pattern pattern, ReplacementProvider provider) {
-    }
-
-    @FunctionalInterface
-    private interface ReplacementProvider {
-        String provide(Matcher matcher);
-    }
-
     private final List<ReplacementRule> rules;
 
     public PlaceholderReverseMapper() {
@@ -45,6 +36,22 @@ public class PlaceholderReverseMapper {
         this.rules.addAll(buildFlavorRules());
 
         log.info("Initialized PlaceholderReverseMapper with {} rules", rules.size());
+    }
+
+    private static String escapeLiteral(String text) {
+        return Pattern.quote(text);
+    }
+
+    private static String escapeAmpersands(String input) {
+        return input.replace("\\Q&\\E", "[§&]");
+    }
+
+    private static String safeString(String value) {
+        return value == null ? "" : value;
+    }
+
+    private static Map<String, String> safeMap(Map<String, String> map) {
+        return map == null ? new LinkedHashMap<>() : map;
     }
 
     public String mapPlaceholders(String input) {
@@ -227,9 +234,6 @@ public class PlaceholderReverseMapper {
         return gemstoneRules;
     }
 
-    private record PatternBuildResult(Pattern pattern, List<String> captureOrder) {
-    }
-
     private PatternBuildResult buildPattern(String format, TokenResolver resolver) {
         StringBuilder regex = new StringBuilder();
         List<String> captureOrder = new ArrayList<>();
@@ -260,10 +264,6 @@ public class PlaceholderReverseMapper {
         return new PatternBuildResult(Pattern.compile(regexString, Pattern.CASE_INSENSITIVE), captureOrder);
     }
 
-    private static String escapeLiteral(String text) {
-        return Pattern.quote(text);
-    }
-
     private String resolveFlavorToken(Flavor flavor, String token) {
         if ("ampersand".equalsIgnoreCase(token)) {
             return String.valueOf(ChatFormat.AMPERSAND_SYMBOL);
@@ -284,18 +284,10 @@ public class PlaceholderReverseMapper {
             if (value != null) {
                 return value.toString();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         return null;
-    }
-
-    private static String escapeAmpersands(String input) {
-        return input.replace("\\Q&\\E", "[§&]");
-    }
-
-    @FunctionalInterface
-    private interface TokenResolver {
-        String resolve(String token);
     }
 
     private String resolveStatToken(Stat stat, String token) {
@@ -318,16 +310,25 @@ public class PlaceholderReverseMapper {
             if (value != null) {
                 return value.toString();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         return null;
     }
 
-    private static String safeString(String value) {
-        return value == null ? "" : value;
+    @FunctionalInterface
+    private interface ReplacementProvider {
+        String provide(Matcher matcher);
     }
 
-    private static Map<String, String> safeMap(Map<String, String> map) {
-        return map == null ? new LinkedHashMap<>() : map;
+    @FunctionalInterface
+    private interface TokenResolver {
+        String resolve(String token);
+    }
+
+    private record ReplacementRule(Pattern pattern, ReplacementProvider provider) {
+    }
+
+    private record PatternBuildResult(Pattern pattern, List<String> captureOrder) {
     }
 }

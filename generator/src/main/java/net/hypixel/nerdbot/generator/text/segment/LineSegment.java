@@ -6,8 +6,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.core.ArrayUtils;
+import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;

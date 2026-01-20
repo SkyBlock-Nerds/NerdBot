@@ -23,7 +23,7 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
-import java.awt.Color;
+import java.awt.*;
 import java.time.Instant;
 import java.time.LocalTime;
 

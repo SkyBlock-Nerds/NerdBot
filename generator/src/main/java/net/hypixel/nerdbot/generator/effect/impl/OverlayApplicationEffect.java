@@ -10,7 +10,7 @@ import net.hypixel.nerdbot.generator.item.overlay.OverlayRenderer;
 import net.hypixel.nerdbot.generator.item.overlay.OverlayRendererRegistry;
 import net.hypixel.nerdbot.generator.spritesheet.OverlayLoader;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 /**

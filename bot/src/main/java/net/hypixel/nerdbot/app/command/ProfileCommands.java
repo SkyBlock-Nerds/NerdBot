@@ -19,9 +19,8 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import net.hypixel.nerdbot.app.command.SuggestionStats;
-import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
+import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
 import net.hypixel.nerdbot.app.role.RoleManager;
 import net.hypixel.nerdbot.app.user.BirthdayScheduler;
 import net.hypixel.nerdbot.app.util.HttpUtils;
@@ -48,7 +47,7 @@ import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.Color;
+import java.awt.*;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -882,7 +881,7 @@ public class ProfileCommands {
                     event.getHook().editOriginal("An error occurred while saving your preference, please try again later.").queue();
                 }
             })
-            .exceptionally(throwable ->  {
+            .exceptionally(throwable -> {
                 log.error("Error setting hide preference", throwable);
                 event.getHook().editOriginal("An error occurred while saving your preference, please try again later.").queue();
                 return null;

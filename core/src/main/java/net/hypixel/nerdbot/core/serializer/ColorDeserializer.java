@@ -5,7 +5,7 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 
-import java.awt.Color;
+import java.awt.*;
 import java.lang.reflect.Type;
 
 /**

@@ -26,15 +26,15 @@ public final class BotEnvironment {
 
     private static volatile Bot bot;
 
-    public static void setBot(@NotNull Bot botInstance) {
-        bot = botInstance;
-    }
-
     public static Bot getBot() {
         if (bot == null) {
             throw new IllegalStateException("Bot instance not initialised yet.");
         }
         return bot;
+    }
+
+    public static void setBot(@NotNull Bot botInstance) {
+        bot = botInstance;
     }
 
     public static <T extends Bot> T getBot(@NotNull Class<T> type) {

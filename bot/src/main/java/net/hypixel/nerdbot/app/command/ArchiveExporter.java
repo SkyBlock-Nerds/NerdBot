@@ -3,20 +3,20 @@ package net.hypixel.nerdbot.app.command;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.ThreadMember;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
-import net.dv8tion.jda.api.entities.ThreadMember;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
+import net.hypixel.nerdbot.app.command.util.MessageExport;
+import net.hypixel.nerdbot.core.ArrayUtils;
 import net.hypixel.nerdbot.core.FileUtils;
 import net.hypixel.nerdbot.core.csv.CSVData;
-import net.hypixel.nerdbot.app.command.util.MessageExport;
-import net.hypixel.nerdbot.discord.util.StringUtils;
-import net.hypixel.nerdbot.core.ArrayUtils;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.discord.util.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,12 +25,12 @@ import java.nio.file.Files;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import java.util.stream.Collectors;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class ArchiveExporter {

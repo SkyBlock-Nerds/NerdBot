@@ -21,9 +21,9 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.util.List;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -169,6 +169,7 @@ public class MinecraftItemGenerator implements Generator {
          * Inject custom overlay loader
          *
          * @param loader Overlay loader
+         *
          * @return This builder
          */
         public MinecraftItemGenerator.Builder withOverlayLoader(OverlayLoader loader) {
@@ -180,6 +181,7 @@ public class MinecraftItemGenerator implements Generator {
          * Inject custom effect pipeline
          *
          * @param pipeline Effect pipeline
+         *
          * @return This builder
          */
         public MinecraftItemGenerator.Builder withEffectPipeline(EffectPipeline pipeline) {

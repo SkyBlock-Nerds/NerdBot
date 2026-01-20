@@ -16,7 +16,7 @@ import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 
-import java.awt.Color;
+import java.awt.*;
 import java.time.Instant;
 import java.util.List;
 

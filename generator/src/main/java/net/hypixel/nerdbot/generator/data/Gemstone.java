@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.core.JsonLoader;
 import net.hypixel.nerdbot.core.serializer.ColorDeserializer;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

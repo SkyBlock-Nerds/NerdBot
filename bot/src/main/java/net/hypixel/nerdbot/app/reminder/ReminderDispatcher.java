@@ -58,7 +58,7 @@ public class ReminderDispatcher {
 
         @Override
         public void run() {
-        ReminderRepository reminderRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
+            ReminderRepository reminderRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
             DeleteResult result = reminderRepository.deleteFromDatabase(reminder.getUuid().toString());
 
             if (result != null && result.wasAcknowledged() && result.getDeletedCount() > 0) {

@@ -19,9 +19,9 @@ public class HypixelThreadURLWatcher extends XmlURLWatcher {
 
     private final AtomicInteger lastGuid = new AtomicInteger();
     private final Consumer<HypixelThread> threadHandler;
-    private volatile boolean initialised;
     private final CompletableFuture<Void> baselineFuture;
     private final AtomicBoolean startScheduled = new AtomicBoolean(false);
+    private volatile boolean initialised;
 
     public HypixelThreadURLWatcher(String url) {
         this(url, null, 0, SkyBlockUpdateDataHandler::handleThread);

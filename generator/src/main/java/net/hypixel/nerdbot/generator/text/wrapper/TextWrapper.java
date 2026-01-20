@@ -29,59 +29,6 @@ public class TextWrapper {
     );
 
     /**
-     * Holds the last color code and active formatting codes to carry over between lines/segments.
-     */
-    private record FormatState(String lastColor, String formattingCodes) {
-        // Represents the initial state with no formatting.
-        private static final FormatState EMPTY = new FormatState("", "");
-
-        /**
-         * Creates the formatting prefix string (e.g., "&c&l") to prepend to a new line/segment.
-         */
-        public String prefix() {
-            return lastColor + formattingCodes;
-        }
-
-        /**
-         * Calculates the formatting state at the end of a given segment
-         * based on the state at the beginning of it
-         *
-         * @param segment      The text segment to analyze.
-         * @param initialState The {@link FormatState} before this segment.
-         *
-         * @return The {@link FormatState} after processing this segment.
-         */
-        public static FormatState deriveStateFromSegment(String segment, FormatState initialState) {
-            String lastColor = initialState.lastColor();
-            StringBuilder formatting = new StringBuilder(initialState.formattingCodes());
-            boolean colorFoundInSegment = false;
-
-            for (int i = 0; i < segment.length(); i++) {
-                if ((segment.charAt(i) == '&' || segment.charAt(i) == '§') && i + 1 < segment.length()) {
-                    char code = Character.toLowerCase(segment.charAt(i + 1));
-                    String codeStr = segment.substring(i, i + 2);
-
-                    if ("0123456789abcdef".indexOf(code) != -1) {
-                        lastColor = codeStr;
-                        formatting = new StringBuilder(); // We want to reset the formatting when changing color
-                        colorFoundInSegment = true;
-                        i++; // Skip the code character
-                        log.debug("Found color code: '{}'", codeStr);
-                    } else if ("klmnor".indexOf(code) != -1) {
-                        // Append formatting codes to the formatting string
-                        if (formatting.indexOf(codeStr) == -1) {
-                            formatting.append(codeStr);
-                            log.debug("Found formatting code: '{}'", codeStr);
-                        }
-                        i++;
-                    }
-                }
-            }
-            return new FormatState(lastColor, formatting.toString());
-        }
-    }
-
-    /**
      * Wraps a string to a specified maximum line length, preserving Minecraft formatting codes.
      *
      * @param input         The input string, potentially containing placeholders and formatting.
@@ -340,5 +287,58 @@ public class TextWrapper {
         }
 
         return Parser.parseString(line, PARSERS);
+    }
+
+    /**
+     * Holds the last color code and active formatting codes to carry over between lines/segments.
+     */
+    private record FormatState(String lastColor, String formattingCodes) {
+        // Represents the initial state with no formatting.
+        private static final FormatState EMPTY = new FormatState("", "");
+
+        /**
+         * Calculates the formatting state at the end of a given segment
+         * based on the state at the beginning of it
+         *
+         * @param segment      The text segment to analyze.
+         * @param initialState The {@link FormatState} before this segment.
+         *
+         * @return The {@link FormatState} after processing this segment.
+         */
+        public static FormatState deriveStateFromSegment(String segment, FormatState initialState) {
+            String lastColor = initialState.lastColor();
+            StringBuilder formatting = new StringBuilder(initialState.formattingCodes());
+            boolean colorFoundInSegment = false;
+
+            for (int i = 0; i < segment.length(); i++) {
+                if ((segment.charAt(i) == '&' || segment.charAt(i) == '§') && i + 1 < segment.length()) {
+                    char code = Character.toLowerCase(segment.charAt(i + 1));
+                    String codeStr = segment.substring(i, i + 2);
+
+                    if ("0123456789abcdef".indexOf(code) != -1) {
+                        lastColor = codeStr;
+                        formatting = new StringBuilder(); // We want to reset the formatting when changing color
+                        colorFoundInSegment = true;
+                        i++; // Skip the code character
+                        log.debug("Found color code: '{}'", codeStr);
+                    } else if ("klmnor".indexOf(code) != -1) {
+                        // Append formatting codes to the formatting string
+                        if (formatting.indexOf(codeStr) == -1) {
+                            formatting.append(codeStr);
+                            log.debug("Found formatting code: '{}'", codeStr);
+                        }
+                        i++;
+                    }
+                }
+            }
+            return new FormatState(lastColor, formatting.toString());
+        }
+
+        /**
+         * Creates the formatting prefix string (e.g., "&c&l") to prepend to a new line/segment.
+         */
+        public String prefix() {
+            return lastColor + formattingCodes;
+        }
     }
 }

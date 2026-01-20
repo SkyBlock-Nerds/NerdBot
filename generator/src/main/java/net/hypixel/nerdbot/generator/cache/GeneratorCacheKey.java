@@ -29,6 +29,7 @@ public final class GeneratorCacheKey {
      * Creates a deterministic cache key for the supplied generator instance by hashing all of its final fields.
      *
      * @param generator Generator instance (typically {@code this} inside {@code generate()}).
+     *
      * @return Stable cache key derived from the generator configuration.
      */
     public static String fromGenerator(Object generator) {

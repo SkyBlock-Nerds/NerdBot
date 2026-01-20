@@ -46,7 +46,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,7 +62,6 @@ public class SuggestionCommands {
         .scheduler(Scheduler.systemScheduler())
         .removalListener((o, o2, removalCause) -> log.info("Removed {} from last review request cache", o))
         .build();
-
 
 
     @SlashCommand(name = "request-review", description = "Request a greenlit review of your suggestion.", guildOnly = true)

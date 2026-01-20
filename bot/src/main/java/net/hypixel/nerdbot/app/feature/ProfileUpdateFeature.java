@@ -15,7 +15,6 @@ import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
-import net.hypixel.nerdbot.discord.config.FeatureConfig;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;

@@ -4,7 +4,7 @@ import net.hypixel.nerdbot.generator.effect.EffectContext;
 import net.hypixel.nerdbot.generator.effect.EffectResult;
 import net.hypixel.nerdbot.generator.effect.ImageEffect;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,8 +18,6 @@ import java.util.List;
  */
 public class GlintImageEffect implements ImageEffect {
 
-    private final BufferedImage glintTexture;
-
     private static final int FRAME_DELAY_MS = 33; // ~30 FPS
     private static final int TOTAL_DURATION_MS = 6000;
     private static final double UV_SCALE = 8.0;
@@ -31,6 +29,7 @@ public class GlintImageEffect implements ImageEffect {
     private static final float GLINT_INTENSITY = 0.75f;
     private static final double SCROLL_SPEED = 0.3;
     private static final double BASE_SPRITE_PIXELS = 16.0;
+    private final BufferedImage glintTexture;
 
     /**
      * Create glint effect.
