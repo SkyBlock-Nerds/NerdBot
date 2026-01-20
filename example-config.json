@@ -71,7 +71,6 @@
     "closedTicketCategoryId": "1234567890123456789",
     "ticketChannelPrefix": "ticket-",
     "ticketRoleId": "1234567890123456789",
-    "webhookId": "1234567890123456789",
     "categories": [
       {
         "id": "example_general",
