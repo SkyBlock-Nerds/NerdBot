@@ -34,9 +34,18 @@ public class SuggestionCommandUtils {
     }
 
     public static List<Suggestion> getSuggestions(Member member, @Nullable Long userId, String tags, String title, Suggestion.ChannelType channelType) {
-        final List<String> searchTags = (tags == null || tags.trim().isEmpty())
+        final List<String> allTags = (tags == null || tags.trim().isEmpty())
             ? Collections.emptyList()
             : Arrays.asList(tags.split(", ?"));
+
+        // Separate tags into include (positive) and exclude (negated with !) lists
+        final List<String> includeTags = allTags.stream()
+            .filter(tag -> !tag.startsWith("!"))
+            .toList();
+        final List<String> excludeTags = allTags.stream()
+            .filter(tag -> tag.startsWith("!"))
+            .map(tag -> tag.substring(1))
+            .toList();
 
         List<Suggestion> allSuggestions = DiscordBotEnvironment.getBot().getSuggestionCache().getSuggestions();
         if (allSuggestions.isEmpty()) {
@@ -54,7 +63,13 @@ public class SuggestionCommandUtils {
                 }
                 return true;
             })
-            .filter(suggestion -> searchTags.isEmpty() || searchTags.stream().allMatch(tag -> suggestion.getAppliedTags()
+            // Include filter: suggestion must have ALL specified include tags
+            .filter(suggestion -> includeTags.isEmpty() || includeTags.stream().allMatch(tag -> suggestion.getAppliedTags()
+                .stream()
+                .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
+            ))
+            // Exclude filter: suggestion must have NONE of the specified exclude tags
+            .filter(suggestion -> excludeTags.isEmpty() || excludeTags.stream().noneMatch(tag -> suggestion.getAppliedTags()
                 .stream()
                 .anyMatch(forumTag -> forumTag.getName().equalsIgnoreCase(tag))
             ))

@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.app.command;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
-import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -12,8 +12,6 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.hypixel.nerdbot.core.FileUtils;
-import net.hypixel.nerdbot.core.csv.CSVData;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
@@ -22,16 +20,15 @@ import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
-import net.hypixel.nerdbot.discord.util.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 public class ChannelCommands {
@@ -39,71 +36,87 @@ public class ChannelCommands {
     @SlashCommand(name = "archive", subcommand = "channel", description = "Archives a channel and exports its contents to a file", guildOnly = true, requiredPermissions = {"MANAGE_CHANNEL"})
     public void archive(SlashCommandInteractionEvent event, @SlashOption TextChannel channel) {
         event.deferReply(true).complete();
-        event.getHook().editOriginal(String.format("Archiving channel %s! If no file appears here, please contact a bot developer.", channel.getAsMention())).queue();
+        InteractionHook hook = event.getHook();
+        hook.editOriginal(String.format("Archiving channel %s! If no file appears here, please contact a bot developer.", channel.getAsMention())).queue();
 
-        CSVData csvData = new CSVData(List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Message Content"));
-
-        AtomicInteger total = new AtomicInteger(0);
-        channel.getIterableHistory().forEachAsync(message -> {
-            String formattedTimestamp = message.getTimeCreated().format(FileUtils.REGULAR_DATE_FORMAT);
-            String messageContent = message.getContentRaw().replace("\"", "\"\"");
-
-            if (!message.getAttachments().isEmpty()) {
-                if (!messageContent.isEmpty()) {
-                    messageContent += "\n";
-                }
-                messageContent += "Attachments:\n" + message.getAttachments().stream().map(Message.Attachment::getUrl).collect(Collectors.joining("\n"));
-            }
-
-            if (message.getContentRaw().isEmpty() && !message.getEmbeds().isEmpty()) {
-                if (!messageContent.isEmpty()) {
-                    messageContent += "\n";
-                }
-                messageContent += "Contains " + message.getEmbeds().size() + " embed" + (message.getEmbeds().size() == 1 ? "" : "s");
-            }
-
-            if (message.getStartedThread() != null) {
-                csvData.addRow(List.of(
-                    formattedTimestamp,
-                    message.getAuthor().getName(),
-                    message.getAuthor().getId(),
-                    message.getId(),
-                    message.getStartedThread().getId(),
-                    message.getStartedThread().getName(),
-                    "\"" + messageContent + "\""
-                ));
-            } else {
-                csvData.addRow(List.of(
-                    formattedTimestamp,
-                    message.getAuthor().getName(),
-                    message.getAuthor().getId(),
-                    message.getId(),
-                    "\\N",
-                    "\\N",
-                    "\"" + messageContent + "\""
-                ));
-            }
-
-            if (total.incrementAndGet() % (total.get() < 1000 ? 100 : (int) Math.pow(10, String.valueOf(total.get()).length() - 1)) == 0) {
-                log.info("Archiving channel " + channel.getName() + " (ID: " + channel.getId() + ") - processed " + StringUtils.COMMA_SEPARATED_FORMAT.format(total.get()) + " message" + (total.get() == 1 ? "" : "s") + " so far!");
-            }
-
-            return true;
-        }).thenAccept(unused -> {
+        CompletableFuture.runAsync(() -> {
             try {
-                File file = FileUtils.createTempFile(String.format("archive-%s-%s-%s.csv", channel.getName(), channel.getId(), FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
+                File file = ArchiveExporter.exportTextChannel(channel, createProgressUpdater(hook));
                 log.info("Finished archiving channel " + channel.getName() + " (ID: " + channel.getId() + ")! File located at: " + file.getAbsolutePath());
 
-                if (!event.getHook().isExpired()) {
-                    event.getHook().editOriginal(String.format("Finished archiving channel %s! The file should appear below.", channel.getAsMention()))
+                if (!hook.isExpired()) {
+                    hook.editOriginal(String.format("Finished archiving channel %s! The file should appear below.", channel.getAsMention()))
                         .setFiles(FileUpload.fromData(file))
                         .queue();
                 }
             } catch (IOException exception) {
-                event.reply(String.format("An error occurred while archiving channel %s! Please check the logs for more information.", channel.getAsMention())).queue();
                 log.error("An error occurred when archiving the channel " + channel.getId() + "!", exception);
+                if (!hook.isExpired()) {
+                    hook.editOriginal(String.format("An error occurred while archiving channel %s: %s", channel.getAsMention(), exception.getMessage())).queue();
+                }
             }
         });
+    }
+
+    @SlashCommand(name = "archive", subcommand = "category", description = "Archives all text/forum channels (including threads) in a category into a single zip", guildOnly = true, requiredPermissions = {"MANAGE_CHANNEL"})
+    public void archiveCategory(SlashCommandInteractionEvent event, @SlashOption Category category) {
+        event.deferReply(true).complete();
+        InteractionHook hook = event.getHook();
+        hook.editOriginal(String.format("Archiving category **%s** (ID: %s)...", category.getName(), category.getId())).queue();
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                File zipFile = ArchiveExporter.exportCategory(category, createProgressUpdater(hook));
+                if (!hook.isExpired()) {
+                    hook.editOriginal("Finished archiving! Preparing to send the zip file...").queue();
+                    sendZipToUser(event, zipFile, hook);
+                }
+            } catch (IOException exception) {
+                log.error("Failed to zip archives for category " + category.getId(), exception);
+                if (!hook.isExpired()) {
+                    hook.editOriginal("Failed to create the archive zip file: " + exception.getMessage()).queue();
+                }
+            }
+        });
+    }
+
+    private void sendZipToUser(SlashCommandInteractionEvent event, File zipFile, InteractionHook hook) {
+        event.getUser().openPrivateChannel().queue(privateChannel -> {
+            privateChannel.sendFiles(FileUpload.fromData(zipFile)).queue(
+                success -> hook.editOriginal("Finished! Sent you the archive zip via DM").queue(),
+                error -> {
+                    log.error("Failed to DM archive zip file to user " + event.getUser().getId(), error);
+                    hook.editOriginal("Finished archiving, but failed to DM the zip file. Sending here instead...")
+                        .setFiles(FileUpload.fromData(zipFile))
+                        .queue(null, sendError -> hook.editOriginal("Failed to send the zip. File path: " + zipFile.getAbsolutePath()).queue());
+                }
+            );
+        }, error -> {
+            log.error("Failed to open DM for user " + event.getUser().getId(), error);
+            hook.editOriginal("Finished archiving, but could not open DMs to send the zip file. File path: " + zipFile.getAbsolutePath()).queue();
+        });
+    }
+
+    private Consumer<String> createProgressUpdater(InteractionHook hook) {
+        AtomicLong lastUpdate = new AtomicLong(0);
+        long intervalMs = 10_000;
+
+        return status -> {
+            log.info(status);
+
+            if (hook.isExpired()) {
+                return;
+            }
+
+            long now = System.currentTimeMillis();
+            long last = lastUpdate.get();
+            if (now - last >= intervalMs && lastUpdate.compareAndSet(last, now)) {
+                hook.editOriginal(status).queue(
+                    null,
+                    throwable -> log.debug("Failed to send progress update: {}", throwable.getMessage())
+                );
+            }
+        };
     }
 
     @SlashCommand(name = "lock", description = "Locks the thread that the command is executed in", guildOnly = true, requiredPermissions = {"MANAGE_THREADS"})
