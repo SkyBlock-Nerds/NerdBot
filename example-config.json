@@ -207,7 +207,8 @@
     "closedTicketRetentionDays": 30,
     "blacklistedUserIds": [],
     "blacklistMessage": "You are not permitted to create tickets.",
-    "activityLogChannelId": ""
+    "activityLogChannelId": "",
+    "transcriptChannelId": ""
   },
   "suggestionConfig": {
     "reviewRequestConfig": {
