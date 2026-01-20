@@ -113,6 +113,31 @@ public class TicketNotificationService {
     }
 
     /**
+     * Send an embed to the ticket channel notifying that the ticket was claimed.
+     *
+     * @param ticket    ticket that was claimed
+     * @param claimedBy staff user who claimed it
+     */
+    public void notifyTicketClaimedInChannel(Ticket ticket, User claimedBy) {
+        TextChannel channel = DiscordBotEnvironment.getBot().getJDA().getTextChannelById(ticket.getChannelId());
+        if (channel == null) {
+            log.debug("Cannot notify claim - channel {} not found", ticket.getChannelId());
+            return;
+        }
+
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("Ticket Claimed")
+            .setDescription(claimedBy.getAsMention() + " is now handling this ticket.")
+            .setColor(0x5865F2)
+            .setTimestamp(java.time.Instant.now());
+
+        channel.sendMessageEmbeds(embed.build()).queue(
+            null,
+            error -> log.error("Failed to send claim notification to channel {}", ticket.getChannelId(), error)
+        );
+    }
+
+    /**
      * Send a message to a ticket channel with proper error handling.
      *
      * @param ticket  the ticket

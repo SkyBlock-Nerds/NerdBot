@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.app.ticket.service;
 
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -307,26 +308,53 @@ public class TicketDiscordService {
     }
 
     /**
-     * Upload a transcript file to the ticket channel.
+     * Upload a transcript file to the ticket channel and optionally to the transcript archive channel.
      */
     public void uploadTranscript(Ticket ticket, User closedBy, String reason) {
-        TextChannel channel = DiscordBotEnvironment.getBot().getJDA().getTextChannelById(ticket.getChannelId());
-        if (channel == null) {
-            return;
-        }
-
         String transcript = TicketTranscriptGenerator.generate(ticket, config);
         String reasonText = reason != null ? reason : "No reason provided";
         String closedByText = closedBy != null ? closedBy.getAsMention() : "System";
+        String fileName = "transcript-" + ticket.getFormattedTicketId().replace("#", "") + ".txt";
+        byte[] transcriptBytes = transcript.getBytes(StandardCharsets.UTF_8);
 
-        channel.sendMessage("**Ticket Closed** by " + closedByText + "\n**Reason:** " + reasonText)
-            .addFiles(FileUpload.fromData(
-                transcript.getBytes(StandardCharsets.UTF_8),
-                "transcript-" + ticket.getFormattedTicketId().replace("#", "") + ".txt"))
-            .queue(
-                null,
-                error -> log.error("Failed to upload transcript to channel {}", ticket.getChannelId(), error)
-            );
+        // Upload to the ticket channel
+        TextChannel ticketChannel = DiscordBotEnvironment.getBot().getJDA().getTextChannelById(ticket.getChannelId());
+        if (ticketChannel != null) {
+            ticketChannel.sendMessage("**Ticket Closed** by " + closedByText + "\n**Reason:** " + reasonText)
+                .addFiles(FileUpload.fromData(transcriptBytes, fileName))
+                .queue(
+                    null,
+                    error -> log.error("Failed to upload transcript to ticket channel {}", ticket.getChannelId(), error)
+                );
+        }
+
+        // Upload to the transcript archive channel if configured
+        if (config.isTranscriptChannelEnabled()) {
+            TextChannel transcriptChannel = DiscordBotEnvironment.getBot().getJDA().getTextChannelById(config.getTranscriptChannelId());
+            if (transcriptChannel != null) {
+                User owner = DiscordBotEnvironment.getBot().getJDA().getUserById(ticket.getOwnerId());
+                String ownerText = owner != null ? owner.getAsMention() : "Unknown (" + ticket.getOwnerId() + ")";
+                String categoryName = config.getCategoryDisplayName(ticket.getTicketCategoryId());
+
+                EmbedBuilder embed = new EmbedBuilder()
+                    .setTitle("Ticket Closed: " + ticket.getFormattedTicketId())
+                    .addField("Owner", ownerText, true)
+                    .addField("Category", categoryName, true)
+                    .addField("Closed By", closedByText, true)
+                    .addField("Reason", reasonText, false)
+                    .setColor(0xED4245)
+                    .setTimestamp(java.time.Instant.now());
+
+                transcriptChannel.sendMessageEmbeds(embed.build())
+                    .addFiles(FileUpload.fromData(transcriptBytes, fileName))
+                    .queue(
+                        null,
+                        error -> log.error("Failed to upload transcript to archive channel {}", config.getTranscriptChannelId(), error)
+                    );
+            } else {
+                log.warn("Transcript channel {} not found", config.getTranscriptChannelId());
+            }
+        }
     }
 
     /**

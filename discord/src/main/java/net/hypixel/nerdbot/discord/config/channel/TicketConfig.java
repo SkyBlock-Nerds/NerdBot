@@ -197,6 +197,12 @@ public class TicketConfig {
      */
     private String activityLogChannelId = "";
 
+    /**
+     * Channel ID for posting ticket transcripts when tickets are closed.
+     * If empty or null, transcripts are only uploaded to the ticket channel itself.
+     */
+    private String transcriptChannelId = "";
+
     // ==================== Helper Methods ====================
 
     /**
@@ -393,6 +399,15 @@ public class TicketConfig {
      */
     public boolean isActivityLogEnabled() {
         return activityLogChannelId != null && !activityLogChannelId.isEmpty();
+    }
+
+    /**
+     * Check if transcript channel is configured.
+     *
+     * @return true if transcript channel is configured
+     */
+    public boolean isTranscriptChannelEnabled() {
+        return transcriptChannelId != null && !transcriptChannelId.isEmpty();
     }
 
     @Getter

@@ -534,7 +534,7 @@ public class TicketService {
         ticketRepository.saveToDatabase(ticket);
 
         discordService.ensureButtonControllerMessageId(ticket);
-        notificationService.sendToChannel(ticket, "**Ticket claimed** by " + staff.getAsMention());
+        notificationService.notifyTicketClaimedInChannel(ticket, staff);
         discordService.refreshControlPanel(ticket);
 
         // Metrics
