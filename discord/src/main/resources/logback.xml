@@ -30,9 +30,16 @@
         </encoder>
     </appender>
 
+    <appender name="SentryAppender" class="io.sentry.logback.SentryAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
     <root level="INFO">
         <appender-ref ref="ConsoleLogger" />
         <appender-ref ref="FileLogger" />
+        <appender-ref ref="SentryAppender" />
     </root>
 
 </configuration>

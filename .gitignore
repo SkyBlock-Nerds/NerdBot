@@ -2,6 +2,7 @@
 .idea/
 out/
 dev.config.json
+sentry.properties
 /src/main/resources/minecraft/textures/items/
 
 # mpeltonen/sbt-idea plugin
