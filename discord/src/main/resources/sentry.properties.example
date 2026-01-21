@@ -1,4 +1,0 @@
-# Copy this file to sentry.properties and fill in your DSN
-dsn=https://your-key@your-sentry-instance/project-id
-send-default-pii=false
-traces-sample-rate=1.0
