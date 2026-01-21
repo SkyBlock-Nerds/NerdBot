@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.app.curator;
 
 import io.prometheus.client.Summary;
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
@@ -28,6 +29,7 @@ import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.EmojiConfigUtils;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -201,6 +203,18 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                     }
 
                     log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has tags: " + thread.getAppliedTags().stream().map(BaseForumTag::getName).toList());
+
+                    // Discord only allows a maximum of 5 tags per thread
+                    if (tags.size() >= 5 && !tags.contains(greenlitTag)) {
+                        log.warn("Thread '{}' (ID: {}) already has the maximum of 5 tags. Cannot apply greenlit tag.", thread.getName(), thread.getId());
+                        thread.sendMessageEmbeds(new EmbedBuilder()
+                            .setColor(Color.RED)
+                            .setTitle("Error")
+                            .setDescription("This suggestion could not be automatically greenlit because the thread already has the maximum number of tags (5). Please remove a tag to allow the greenlit tag to be applied.")
+                            .build()
+                        ).setContent("<@" + thread.getOwnerId() + ">").queue();
+                        continue;
+                    }
 
                     if (!tags.contains(greenlitTag)) {
                         tags.add(greenlitTag);
