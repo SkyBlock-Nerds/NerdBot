@@ -13,6 +13,7 @@ import net.hypixel.nerdbot.app.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.app.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.app.listener.SuggestionListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.app.sentry.SentryManager;
 import net.hypixel.nerdbot.app.reminder.ReminderDispatcher;
 import net.hypixel.nerdbot.app.ticket.TicketListener;
 import net.hypixel.nerdbot.app.ticket.service.TicketService;
@@ -221,11 +222,15 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         if (config.getMetricsConfig().isEnabled()) {
             PrometheusMetrics.setMetricsEnabled(true);
         }
+
+        // Configure Sentry environment (auto-initialized via sentry.properties)
+        SentryManager.configureEnvironment();
     }
 
     @Override
     protected void onShutdown() {
         PrometheusMetrics.setMetricsEnabled(false);
+        SentryManager.close();
         stopUrlWatchers();
     }
 
