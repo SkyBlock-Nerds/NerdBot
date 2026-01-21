@@ -5,13 +5,13 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
-import net.hypixel.nerdbot.app.modmail.ModMailService;
 import net.hypixel.nerdbot.app.role.RoleManager;
+import net.hypixel.nerdbot.app.ticket.service.TicketService;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
+import net.hypixel.nerdbot.discord.storage.database.model.ticket.Ticket;
 import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
@@ -20,13 +20,12 @@ import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 import net.hypixel.nerdbot.discord.util.Utils;
 
-import java.awt.Color;
+import java.awt.*;
 import java.time.Instant;
 import java.time.Month;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 public class NominationInactivityService {
@@ -278,7 +277,7 @@ public class NominationInactivityService {
                 }
 
                 ChannelCache.getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-                    Optional<ThreadChannel> modMailThread = ModMailService.getInstance().findExistingThread(member.getUser());
+                    List<Ticket> openTickets = TicketService.getInstance().getTicketRepository().findOpenTicketsByUser(member.getId());
 
                     EmbedBuilder embedBuilder = new EmbedBuilder()
                         .setColor(embedColor)
@@ -314,10 +313,13 @@ public class NominationInactivityService {
                                 StringUtils.COMMA_SEPARATED_FORMAT.format(group.getMinimumCommentsForActivity())),
                             true);
 
-                    modMailThread.ifPresent(threadChannel -> embedBuilder.addField("Mod Mail",
-                        "Active thread: " + threadChannel.getAsMention(),
-                        false
-                    ));
+                    if (!openTickets.isEmpty()) {
+                        String ticketLinks = openTickets.stream()
+                            .map(t -> t.getFormattedTicketId() + ": <#" + t.getChannelId() + ">")
+                            .reduce((a, b) -> a + "\n" + b)
+                            .orElse("");
+                        embedBuilder.addField("Open Tickets", ticketLinks, false);
+                    }
 
                     textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
                     lastActivity.getNominationInfo().increaseRoleRestrictedInactivityWarnings();
@@ -335,7 +337,7 @@ public class NominationInactivityService {
         }
     }
 
-private void sendInactiveUserMessage(Member member, DiscordUser discordUser, int requiredMessages, int requiredVotes, int requiredComments, String inactivityType) {
+    private void sendInactiveUserMessage(Member member, DiscordUser discordUser, int requiredMessages, int requiredVotes, int requiredComments, String inactivityType) {
         LastActivity lastActivity = discordUser.getLastActivity();
         RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
         int totalMessages = lastActivity.getTotalMessageCount(roleConfig.getDaysRequiredForInactivityCheck());
@@ -343,7 +345,7 @@ private void sendInactiveUserMessage(Member member, DiscordUser discordUser, int
         int totalComments = lastActivity.getTotalComments(roleConfig.getDaysRequiredForInactivityCheck());
 
         ChannelCache.getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-            Optional<ThreadChannel> modMailThread = ModMailService.getInstance().findExistingThread(member.getUser());
+            List<Ticket> openTickets = TicketService.getInstance().getTicketRepository().findOpenTicketsByUser(member.getId());
 
             String messagesStatus = totalMessages >= requiredMessages ? "✅" : "❌";
             String votesStatus = totalVotes >= requiredVotes ? "✅" : "❌";
@@ -388,10 +390,13 @@ private void sendInactiveUserMessage(Member member, DiscordUser discordUser, int
                     false)
                 .setTimestamp(Instant.now());
 
-            modMailThread.ifPresent(threadChannel -> embedBuilder.addField("Mod Mail",
-                "Active thread: " + threadChannel.getAsMention(),
-                false
-            ));
+            if (!openTickets.isEmpty()) {
+                String ticketLinks = openTickets.stream()
+                    .map(t -> t.getFormattedTicketId() + ": <#" + t.getChannelId() + ">")
+                    .reduce((a, b) -> a + "\n" + b)
+                    .orElse("");
+                embedBuilder.addField("Open Tickets", ticketLinks, false);
+            }
 
             textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
             discordUser.getLastActivity().getNominationInfo().increaseInactivityWarnings();

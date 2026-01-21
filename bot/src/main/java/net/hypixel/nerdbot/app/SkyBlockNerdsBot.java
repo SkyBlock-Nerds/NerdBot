@@ -13,9 +13,10 @@ import net.hypixel.nerdbot.app.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.app.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.app.listener.SuggestionListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.app.modmail.ModMailListener;
 import net.hypixel.nerdbot.app.sentry.SentryManager;
 import net.hypixel.nerdbot.app.reminder.ReminderDispatcher;
+import net.hypixel.nerdbot.app.ticket.TicketListener;
+import net.hypixel.nerdbot.app.ticket.service.TicketService;
 import net.hypixel.nerdbot.app.urlwatcher.HypixelThreadURLWatcher;
 import net.hypixel.nerdbot.app.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.app.user.BirthdayScheduler;
@@ -92,9 +93,9 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
             new RoleRestrictedChannelListener()
         ));
 
-        // Conditionally add ModMail listener if configured
-        if (getConfig().getModMailConfig() != null) {
-            listeners.add(new ModMailListener());
+        // Conditionally add Ticket listener if configured
+        if (getConfig().getTicketConfig() != null && !getConfig().getTicketConfig().getTicketCategoryId().isEmpty()) {
+            listeners.add(new TicketListener());
         }
 
         return listeners;
@@ -205,6 +206,12 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
         loadRemindersFromDatabase();
         startUrlWatchers();
+
+        // Initialize ticket system if configured
+        if (config.getTicketConfig() != null && !config.getTicketConfig().getTicketCategoryId().isEmpty()) {
+            // Ticket system uses private channels - no forum tag setup needed
+            TicketService.getInstance();
+        }
 
         // Initialize member count metric
         DiscordUtils.getMainGuild().loadMembers()

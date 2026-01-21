@@ -268,7 +268,7 @@ public class ExportCommands {
             "Last Alpha Suggestion Vote",
             "Last Project Activity",
             "Last Alpha Activity",
-            "Last Mod Mail Activity",
+            "Last Ticket Activity",
             "Total Recent Messages",
             "Messages Sent (Last " + inactivityDays + "d)",
             "Reviewed",
@@ -357,7 +357,7 @@ public class ExportCommands {
                 lastActivity.getAlphaSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getAlphaSuggestionVoteHistoryMap())),
                 formatTimestampSheets(lastActivity.getLastProjectActivity()),
                 formatTimestampSheets(lastActivity.getLastAlphaActivity()),
-                formatTimestampSheets(lastActivity.getLastModMailUsage()),
+                formatTimestampSheets(lastActivity.getLastTicketUsage()),
                 String.valueOf(lastActivity.getTotalMessageCount(inactivityDays)),
                 "\"" + channelActivity + "\"",
                 "FALSE"

@@ -60,10 +60,11 @@ the Hypixel Network's in-game social menu.
 The bot can generate images of Minecraft items, tooltips, and crafting recipes with user-provided data. It also supports
 parsing NBT data into an image and returning an editable command.
 
-## Mod Mail
+## Tickets
 
-Users can send messages to the server's management team by sending a DM to the bot. The bot will then forward the
-message to the staff team, and they can respond to the user by replying to the bot's message in the appropriate thread.
+Users can create tickets to contact the server's management team. Tickets are created as private channels where
+users and staff can communicate directly. Staff can claim, transfer, and manage ticket statuses through an interactive
+control panel.
 
 ## Mod Logs
 
