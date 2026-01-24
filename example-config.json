@@ -314,7 +314,9 @@
       "maxScaleFactor": 1,
       "minScaleFactor": 1,
       "debugLogging": true,
-      "includeErrorDetails": true
+      "includeErrorDetails": true,
+      "imagePadding": 1,
+      "imageBorderPadding": 1
     }
   },
   "activityType": "PLAYING",
