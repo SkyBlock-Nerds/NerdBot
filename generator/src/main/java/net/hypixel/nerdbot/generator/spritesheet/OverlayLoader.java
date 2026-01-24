@@ -146,12 +146,8 @@ public class OverlayLoader {
             for (ItemOverlay overlay : overlayArray) {
                 // Extract sub-image from spritesheet
                 int size = overlay.getSize() > 0 ? overlay.getSize() : DEFAULT_IMAGE_SIZE;
-                overlay.setImage(spriteSheet.getSubimage(
-                    overlay.getX(),
-                    overlay.getY(),
-                    size,
-                    size
-                ));
+                BufferedImage subImage = spriteSheet.getSubimage(overlay.getX(), overlay.getY(), size, size);
+                overlay.setImage(subImage);
 
                 // Skip enchant overlays
                 if (overlay.getName().contains("enchant")) {

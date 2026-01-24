@@ -55,7 +55,7 @@ public class Spritesheet {
                 int size = itemData.get("size").getAsInt();
                 BufferedImage image = textureAtlas.getSubimage(x, y, size, size);
 
-                log.info("Loaded texture: " + name + " at (" + x + ", " + y + ") with size " + size + "x" + size);
+                log.debug("Loaded texture: " + name + " at (" + x + ", " + y + ") with size " + size + "x" + size);
                 IMAGE_MAP.put(name, image);
             }
 
