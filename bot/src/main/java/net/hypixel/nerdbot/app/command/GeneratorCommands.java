@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.core.FileUtils;
 import net.hypixel.nerdbot.core.ImageUtil;
+import net.hypixel.nerdbot.discord.config.GeneratorConfig;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.model.user.generator.GeneratorHistory;
@@ -86,6 +87,16 @@ public class GeneratorCommands {
 
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
+    /**
+     * Creates a new {@link GeneratorImageBuilder} configured with padding values from the config.
+     */
+    private static GeneratorImageBuilder createImageBuilder() {
+        GeneratorConfig.GeneralConfig generalConfig = DiscordBotEnvironment.getBot().getConfig().getGeneratorConfig().getGeneral();
+        return new GeneratorImageBuilder()
+            .withImagePadding(generalConfig.getImagePadding())
+            .withImageBorderPadding(generalConfig.getImageBorderPadding());
+    }
+
     @SlashCommand(name = BASE_COMMAND, subcommand = "display", description = "Display an item")
     public void generateItem(
         SlashCommandInteractionEvent event,
@@ -111,7 +122,7 @@ public class GeneratorCommands {
         durability = durability == null ? 100 : durability;
 
         try {
-            GeneratorImageBuilder item = new GeneratorImageBuilder();
+            GeneratorImageBuilder item = createImageBuilder();
 
             if (itemId.equalsIgnoreCase("player_head") && skinValue != null) {
                 item.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
@@ -277,7 +288,7 @@ public class GeneratorCommands {
             );
 
             try {
-                GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+                GeneratorImageBuilder generatorImageBuilder = createImageBuilder();
                 MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                     .withName("&a" + powerName)
                     .withRarity(Rarity.byName("none"))
@@ -391,7 +402,7 @@ public class GeneratorCommands {
         renderBackground = renderBackground == null || renderBackground;
 
         try {
-            GeneratedObject generatedObject = new GeneratorImageBuilder()
+            GeneratedObject generatedObject = createImageBuilder()
                 .addGenerator(new MinecraftInventoryGenerator.Builder()
                     .withRows(3)
                     .withSlotsPerRow(3)
@@ -437,7 +448,7 @@ public class GeneratorCommands {
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
         try {
-            GeneratorImageBuilder generatedObject = new GeneratorImageBuilder()
+            GeneratorImageBuilder generatedObject = createImageBuilder()
                 .addGenerator(new MinecraftInventoryGenerator.Builder()
                     .withRows(rows)
                     .withSlotsPerRow(slotsPerRow)
@@ -496,7 +507,7 @@ public class GeneratorCommands {
 
         try {
             MinecraftNbtParser.ParsedNbt parsedNbt = MinecraftNbtParser.parse(nbt);
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            GeneratorImageBuilder generatorImageBuilder = createImageBuilder();
 
             parsedNbt.getGenerators().forEach(generator -> {
                 generatorImageBuilder.addGenerator(generator.build());
@@ -602,7 +613,7 @@ public class GeneratorCommands {
         durability = durability == null ? 100 : durability;
 
         try {
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            GeneratorImageBuilder generatorImageBuilder = createImageBuilder();
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withName(itemName)
                 .withRarity(Rarity.byName(rarity))
@@ -706,7 +717,7 @@ public class GeneratorCommands {
         renderBorder = renderBorder != null && renderBorder;
 
         try {
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            GeneratorImageBuilder generatorImageBuilder = createImageBuilder();
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withItemLore(text)
                 .withAlpha(alpha)
@@ -787,7 +798,7 @@ public class GeneratorCommands {
             .bypassMaxLineLength(true);
 
         try {
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
+            GeneratorImageBuilder generatorImageBuilder = createImageBuilder()
                 .addGenerator(tooltipGenerator.build());
 
             if (skinValue != null) {
@@ -880,7 +891,7 @@ public class GeneratorCommands {
                 .withRenderBorder(renderBackground)
                 .bypassMaxLineLength(true);
 
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
+            GeneratorImageBuilder generatorImageBuilder = createImageBuilder()
                 .addGenerator(tooltipGenerator.build());
 
             if (skinValue != null) {
