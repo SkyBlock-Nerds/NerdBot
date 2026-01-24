@@ -5,9 +5,10 @@ import com.google.gson.JsonObject;
 import net.hypixel.nerdbot.discord.storage.DataSerialization;
 
 import javax.imageio.ImageIO;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBufferInt;
+import java.awt.image.Raster;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileWriter;
@@ -21,22 +22,26 @@ public class OverlayGenerator {
 
     public static final int OVERLAY_OUTPUT_SIZE = SpritesheetGenerator.IMAGE_SIZE; // Match item size from actual spritesheet
     private static final int ATLAS_WIDTH = 1_024;
-    
+
+    private static final String TOOLING_RESOURCES = "tooling/src/main/resources/minecraft";
+    private static final String GENERATOR_RESOURCES = "generator/src/main/resources/minecraft/assets";
+
     private static final List<OverlayInfo> overlayInfo = new ArrayList<>();
 
     public static void main(String[] args) {
-        String path = "./src/main/resources/minecraft/textures/overlays";
-        String outputDir = "./src/main/resources/minecraft/spritesheets";
+        String inputPath = TOOLING_RESOURCES + "/textures/overlays";
+        String outputDir = GENERATOR_RESOURCES + "/spritesheets";
+        String jsonOutputDir = GENERATOR_RESOURCES + "/json";
         String atlasName = "overlays.png";
         String jsonFileName = "overlay_coordinates.json";
 
         List<String> overlayNames = new ArrayList<>();
-        overlayInfo.addAll(loadOverlays(path, overlayNames));
+        overlayInfo.addAll(loadOverlays(inputPath, overlayNames));
 
         System.out.println("Loaded " + overlayInfo.size() + " overlays.");
 
         BufferedImage atlas = createOverlayAtlas();
-        saveOverlayAtlas(atlas, outputDir, atlasName, jsonFileName);
+        saveOverlayAtlas(atlas, outputDir, jsonOutputDir, atlasName, jsonFileName);
         System.out.println("Overlay atlas generation complete!");
     }
 
@@ -74,12 +79,64 @@ public class OverlayGenerator {
         return overlayInfoList;
     }
 
+    /**
+     * Converts an image to TYPE_INT_ARGB format and ensures straight alpha.
+     * Handles all image types and converts premultiplied to straight alpha.
+     */
+    private static BufferedImage ensureArgbFormat(BufferedImage source) {
+        int width = source.getWidth();
+        int height = source.getHeight();
+        BufferedImage argbImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+        ColorModel cm = source.getColorModel();
+        Raster srcRaster = source.getRaster();
+        int[] destPixels = ((DataBufferInt) argbImage.getRaster().getDataBuffer()).getData();
+
+        // ColorModel#getRGB() always returns premultiplied alpha, so we always unpremultiply
+        Object dataElements = null;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                dataElements = srcRaster.getDataElements(x, y, dataElements);
+                int argb = cm.getRGB(dataElements);
+
+                // Convert from premultiplied to straight alpha
+                int a = (argb >> 24) & 0xFF;
+                if (a > 0 && a < 255) {
+                    int r = Math.min(255, ((argb >> 16) & 0xFF) * 255 / a);
+                    int g = Math.min(255, ((argb >> 8) & 0xFF) * 255 / a);
+                    int b = Math.min(255, (argb & 0xFF) * 255 / a);
+                    argb = (a << 24) | (r << 16) | (g << 8) | b;
+                }
+
+                destPixels[y * width + x] = argb;
+            }
+        }
+
+        return argbImage;
+    }
+
+    /**
+     * Resizes an overlay using direct pixel copying with nearest-neighbor interpolation.
+     * This preserves straight alpha values without premultiplication.
+     */
     private static BufferedImage resizeOverlay(BufferedImage originalOverlay) {
+        BufferedImage source = ensureArgbFormat(originalOverlay);
+        int srcWidth = source.getWidth();
+        int srcHeight = source.getHeight();
+
+        int[] srcPixels = ((DataBufferInt) source.getRaster().getDataBuffer()).getData();
+
         BufferedImage resizedOverlay = new BufferedImage(OVERLAY_OUTPUT_SIZE, OVERLAY_OUTPUT_SIZE, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D graphics2D = resizedOverlay.createGraphics();
-        graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-        graphics2D.drawImage(originalOverlay, 0, 0, OVERLAY_OUTPUT_SIZE, OVERLAY_OUTPUT_SIZE, null);
-        graphics2D.dispose();
+        int[] dstPixels = ((DataBufferInt) resizedOverlay.getRaster().getDataBuffer()).getData();
+
+        for (int dstY = 0; dstY < OVERLAY_OUTPUT_SIZE; dstY++) {
+            int srcY = dstY * srcHeight / OVERLAY_OUTPUT_SIZE;
+            for (int dstX = 0; dstX < OVERLAY_OUTPUT_SIZE; dstX++) {
+                int srcX = dstX * srcWidth / OVERLAY_OUTPUT_SIZE;
+                dstPixels[dstY * OVERLAY_OUTPUT_SIZE + dstX] = srcPixels[srcY * srcWidth + srcX];
+            }
+        }
+
         return resizedOverlay;
     }
 
@@ -119,20 +176,39 @@ public class OverlayGenerator {
         return atlas;
     }
 
+    /**
+     * Extends the overlay atlas to fit the new overlay at the specified position.
+     * Uses direct raster data access to preserve straight alpha values.
+     */
     private static BufferedImage extendOverlayAtlas(BufferedImage atlas, int x, int y, BufferedImage overlay) {
         int newWidth = Math.max(atlas.getWidth(), x + overlay.getWidth());
         int newHeight = Math.max(atlas.getHeight(), y + overlay.getHeight());
 
         BufferedImage newAtlas = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
-        newAtlas.getGraphics().drawImage(atlas, 0, 0, null);
-        newAtlas.getGraphics().drawImage(overlay, x, y, null);
+
+        int[] destPixels = ((DataBufferInt) newAtlas.getRaster().getDataBuffer()).getData();
+
+        if (atlas.getWidth() > 0 && atlas.getHeight() > 0) {
+            int[] atlasPixels = ((DataBufferInt) atlas.getRaster().getDataBuffer()).getData();
+            for (int row = 0; row < atlas.getHeight(); row++) {
+                System.arraycopy(atlasPixels, row * atlas.getWidth(), destPixels, row * newWidth, atlas.getWidth());
+            }
+        }
+
+        int[] overlayPixels = ((DataBufferInt) overlay.getRaster().getDataBuffer()).getData();
+        for (int row = 0; row < overlay.getHeight(); row++) {
+            System.arraycopy(overlayPixels, row * overlay.getWidth(), destPixels, (y + row) * newWidth + x, overlay.getWidth());
+        }
 
         return newAtlas;
     }
 
-    private static void saveOverlayAtlas(BufferedImage atlas, String outputDir, String atlasName, String jsonFileName) {
+    private static void saveOverlayAtlas(BufferedImage atlas, String outputDir, String jsonOutputDir, String atlasName, String jsonFileName) {
         File outputFolder = new File(outputDir);
-        outputFolder.mkdirs();
+        if (!outputFolder.exists() && !outputFolder.mkdirs()) {
+            System.err.println("Failed to create directory: " + outputFolder.getAbsolutePath());
+            return;
+        }
 
         File outputFile = new File(outputFolder, atlasName);
 
@@ -142,7 +218,11 @@ public class OverlayGenerator {
             ImageIO.write(atlas, "png", outputFile);
             System.out.println("Overlay atlas saved successfully!");
 
-            File jsonFolder = new File("./src/main/resources/minecraft/json");
+            File jsonFolder = new File(jsonOutputDir);
+            if (!jsonFolder.exists() && !jsonFolder.mkdirs()) {
+                System.err.println("Failed to create directory: " + jsonFolder.getAbsolutePath());
+                return;
+            }
             saveOverlayCoordinatesJson(jsonFolder, jsonFileName);
         } catch (IOException exception) {
             System.err.println("Failed to save overlay atlas!");

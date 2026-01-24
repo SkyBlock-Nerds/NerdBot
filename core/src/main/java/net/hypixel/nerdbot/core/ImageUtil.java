@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.core;
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageOutputStream;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -49,8 +49,14 @@ public class ImageUtil {
         int newWidth = (int) (inputImage.getWidth() * scalingFactor);
         int newHeight = (int) (inputImage.getHeight() * scalingFactor);
 
-        BufferedImage upscaledImage = new BufferedImage(newWidth, newHeight, inputImage.getType());
+        int imageType = inputImage.getType();
+        if (imageType == BufferedImage.TYPE_CUSTOM) {
+            imageType = BufferedImage.TYPE_INT_ARGB;
+        }
+
+        BufferedImage upscaledImage = new BufferedImage(newWidth, newHeight, imageType);
         Graphics2D graphics = upscaledImage.createGraphics();
+        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         graphics.drawImage(inputImage, 0, 0, newWidth, newHeight, null);
         graphics.dispose();
 
@@ -69,8 +75,14 @@ public class ImageUtil {
         int newWidth = (int) (inputImage.getWidth() / scalingFactor);
         int newHeight = (int) (inputImage.getHeight() / scalingFactor);
 
-        BufferedImage downscaledImage = new BufferedImage(newWidth, newHeight, inputImage.getType());
+        int imageType = inputImage.getType();
+        if (imageType == BufferedImage.TYPE_CUSTOM) {
+            imageType = BufferedImage.TYPE_INT_ARGB;
+        }
+
+        BufferedImage downscaledImage = new BufferedImage(newWidth, newHeight, imageType);
         Graphics2D graphics = downscaledImage.createGraphics();
+        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         graphics.drawImage(inputImage, 0, 0, newWidth, newHeight, null);
         graphics.dispose();
 
@@ -101,9 +113,13 @@ public class ImageUtil {
      * @return The resized {@link BufferedImage}
      */
     public static BufferedImage resizeImage(BufferedImage originalImage, int width, int height, int type) {
+        if (type == BufferedImage.TYPE_CUSTOM) {
+            type = BufferedImage.TYPE_INT_ARGB;
+        }
+
         BufferedImage resizedImage = new BufferedImage(width, height, type);
         Graphics2D g = resizedImage.createGraphics();
-
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         g.drawImage(originalImage, 0, 0, width, height, null);
         g.dispose();
 
@@ -131,7 +147,7 @@ public class ImageUtil {
         GifSequenceWriter writer = null;
 
         try {
-            int imageType = frames.get(0).getType();
+            int imageType = frames.getFirst().getType();
             if (imageType == BufferedImage.TYPE_CUSTOM) {
                 imageType = BufferedImage.TYPE_INT_ARGB;
             }
