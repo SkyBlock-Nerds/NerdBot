@@ -79,12 +79,7 @@ public class OverlayGenerator {
     }
 
     /**
-     * Checks if the image is grayscale (1 or 2 bands), excluding indexed color images.
-     * Grayscale images need raw raster access instead of getRGB() to avoid sRGB color space conversion.
-     * <p>
-     * Bands are color channels: 1 = grayscale, 2 = grayscale + alpha, 3 = RGB, 4 = RGBA.
-     *
-     * @see <a href="http://www.libpng.org/pub/png/spec/1.1/PNG-Chunks.html#C.sBIT">PNG Specification - sBIT chunk (channels per color type)</a>
+     * Returns true if the image is grayscale (1 or 2 color channels), false otherwise.
      */
     private static boolean isGrayscaleFormat(BufferedImage image) {
         int numBands = image.getRaster().getNumBands();
