@@ -6,7 +6,6 @@ import net.hypixel.nerdbot.discord.storage.DataSerialization;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
 import java.awt.image.DataBufferInt;
 import java.awt.image.Raster;
 import java.io.File;
@@ -102,25 +101,60 @@ public class SpritesheetGenerator {
     }
 
     /**
+     * Checks if the image is grayscale (1 or 2 bands), excluding indexed color images.
+     * Grayscale images need raw raster access instead of getRGB() to avoid sRGB color space conversion.
+     * <p>
+     * Bands are color channels: 1 = grayscale, 2 = grayscale + alpha, 3 = RGB, 4 = RGBA.
+     *
+     * @see <a href="http://www.libpng.org/pub/png/spec/1.1/PNG-Chunks.html#C.sBIT">PNG Specification - sBIT chunk (channels per color type)</a>
+     */
+    private static boolean isGrayscaleFormat(BufferedImage image) {
+        int numBands = image.getRaster().getNumBands();
+        int type = image.getType();
+
+        // Indexed color has 1 band but stores palette indices, not grayscale - use getRGB() instead
+        if (type == BufferedImage.TYPE_BYTE_INDEXED) {
+            return false;
+        }
+
+        // 1 band = grayscale, 2 bands = grayscale + alpha
+        return numBands == 1 || numBands == 2;
+    }
+
+    /**
      * Converts any image to TYPE_INT_ARGB, resizing with nearest-neighbor sampling.
      */
     private static BufferedImage toArgb(BufferedImage source) {
         int srcWidth = source.getWidth();
         int srcHeight = source.getHeight();
 
-        BufferedImage result = new BufferedImage(SpritesheetGenerator.IMAGE_SIZE, SpritesheetGenerator.IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage result = new BufferedImage(IMAGE_SIZE, IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
         int[] destPixels = ((DataBufferInt) result.getRaster().getDataBuffer()).getData();
 
-        ColorModel cm = source.getColorModel();
-        Raster srcRaster = source.getRaster();
-        Object dataElements = null;
+        if (isGrayscaleFormat(source)) {
+            // Read raw samples to preserve linear grayscale values without gamma conversion
+            Raster srcRaster = source.getRaster();
+            int numBands = srcRaster.getNumBands();
+            int[] samples = new int[numBands];
 
-        for (int dstY = 0; dstY < SpritesheetGenerator.IMAGE_SIZE; dstY++) {
-            int srcY = dstY * srcHeight / SpritesheetGenerator.IMAGE_SIZE;
-            for (int dstX = 0; dstX < SpritesheetGenerator.IMAGE_SIZE; dstX++) {
-                int srcX = dstX * srcWidth / SpritesheetGenerator.IMAGE_SIZE;
-                dataElements = srcRaster.getDataElements(srcX, srcY, dataElements);
-                destPixels[dstY * SpritesheetGenerator.IMAGE_SIZE + dstX] = cm.getRGB(dataElements);
+            for (int dstY = 0; dstY < IMAGE_SIZE; dstY++) {
+                int srcY = dstY * srcHeight / IMAGE_SIZE;
+                for (int dstX = 0; dstX < IMAGE_SIZE; dstX++) {
+                    int srcX = dstX * srcWidth / IMAGE_SIZE;
+                    srcRaster.getPixel(srcX, srcY, samples);
+                    int gray = samples[0];
+                    int alpha = numBands == 2 ? samples[1] : 255;
+                    destPixels[dstY * IMAGE_SIZE + dstX] = (alpha << 24) | (gray << 16) | (gray << 8) | gray;
+                }
+            }
+        } else {
+            // Use getRGB() for indexed, RGB, RGBA - handles palette lookup and transparency correctly
+            for (int dstY = 0; dstY < IMAGE_SIZE; dstY++) {
+                int srcY = dstY * srcHeight / IMAGE_SIZE;
+                for (int dstX = 0; dstX < IMAGE_SIZE; dstX++) {
+                    int srcX = dstX * srcWidth / IMAGE_SIZE;
+                    destPixels[dstY * IMAGE_SIZE + dstX] = source.getRGB(srcX, srcY);
+                }
             }
         }
 
