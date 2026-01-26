@@ -71,7 +71,7 @@ public class ProfileUpdateFeature extends BotFeature implements SchedulableFeatu
                     throwable -> log.error("Failed to queue nickname update for {} to {}", discordUser.getDiscordId(), desiredNickname, throwable)
                 );
             } catch (HierarchyException exception) {
-                log.error("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getId() + ") to " + mojangProfile.getUsername() + " due to a hierarchy exception!");
+                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getId() + ") to '" + mojangProfile.getUsername() + "' Are they a higher role?");
             }
         }
     }

@@ -170,7 +170,7 @@ public class ProfileCommands {
             try {
                 member.modifyNickname(mojangProfile.getUsername()).queue();
             } catch (HierarchyException hex) {
-                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
+                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getId() + ") to '" + mojangProfile.getUsername() + "' Are they a higher role?");
             }
         }
 
