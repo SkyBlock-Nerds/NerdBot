@@ -20,6 +20,8 @@ public class HoverImageEffect implements ImageEffect {
     private static final float OPACITY = 0.5f;
     private static final Color OVERLAY_COLOR = Color.WHITE;
 
+    private static final int HOVERED_SLOT_GRAY = 197;
+
     @Override
     public EffectResult apply(EffectContext context) {
         if (context.isAnimated()) {
@@ -47,9 +49,8 @@ public class HoverImageEffect implements ImageEffect {
                 int alpha = (pixel >> 24) & 0xFF;
 
                 if (alpha == 0) {
-                    // Transparent pixel: fill with light color to show hover effect
-                    int lightness = (int) (255 * OPACITY);
-                    int newPixel = (255 << 24) | (lightness << 16) | (lightness << 8) | lightness;
+                    // Transparent pixel: fill with hovered slot background color
+                    int newPixel = (255 << 24) | (HOVERED_SLOT_GRAY << 16) | (HOVERED_SLOT_GRAY << 8) | HOVERED_SLOT_GRAY;
                     hoveredItem.setRGB(x, y, newPixel);
                 } else {
                     // Non-transparent pixel: blend with overlay color

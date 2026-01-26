@@ -191,4 +191,61 @@ public class ImageUtil {
         g.drawImage(source, 0, 0, null);
         g.dispose();
     }
+
+    /**
+     * Checks if the image file format is grayscale (1 or 2 color channels).
+     * Used to avoid sRGB conversion when reading raw pixels from grayscale PNGs.
+     *
+     * @param image The image to check
+     *
+     * @return true if the image format is grayscale
+     */
+    public static boolean isGrayscaleFormat(BufferedImage image) {
+        int numBands = image.getRaster().getNumBands();
+        int type = image.getType();
+
+        // Indexed color has 1 band but stores palette indices, not grayscale
+        if (type == BufferedImage.TYPE_BYTE_INDEXED) {
+            return false;
+        }
+
+        // 1 band = grayscale, 2 bands = grayscale + alpha
+        return numBands == 1 || numBands == 2;
+    }
+
+    /**
+     * Checks if an image is grayscale by sampling pixels.
+     *
+     * @param image The image to check
+     *
+     * @return true if all sampled non-transparent pixels have R=G=B
+     */
+    public static boolean isGrayscaleImage(BufferedImage image) {
+        int sampleCount = 0;
+        int maxSamples = 100;
+
+        for (int y = 0; y < image.getHeight() && sampleCount < maxSamples; y += Math.max(1, image.getHeight() / 10)) {
+            for (int x = 0; x < image.getWidth() && sampleCount < maxSamples; x += Math.max(1, image.getWidth() / 10)) {
+                int rgb = image.getRGB(x, y);
+                int alpha = (rgb >> 24) & 0xFF;
+
+                if (alpha == 0) {
+                    continue;
+                }
+
+                int r = (rgb >> 16) & 0xFF;
+                int g = (rgb >> 8) & 0xFF;
+                int b = rgb & 0xFF;
+
+                // Allow small tolerance
+                if (Math.abs(r - g) > 2 || Math.abs(g - b) > 2 || Math.abs(r - b) > 2) {
+                    return false;
+                }
+
+                sampleCount++;
+            }
+        }
+
+        return sampleCount > 0;
+    }
 }

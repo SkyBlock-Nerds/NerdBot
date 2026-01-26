@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.tooling.spritesheet;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import net.hypixel.nerdbot.core.ImageUtil;
 import net.hypixel.nerdbot.discord.storage.DataSerialization;
 
 import javax.imageio.ImageIO;
@@ -101,22 +102,6 @@ public class SpritesheetGenerator {
     }
 
     /**
-     * Returns true if the image is grayscale (1 or 2 color channels), false otherwise.
-     */
-    private static boolean isGrayscaleFormat(BufferedImage image) {
-        int numBands = image.getRaster().getNumBands();
-        int type = image.getType();
-
-        // Indexed color has 1 band but stores palette indices, not grayscale - use getRGB() instead
-        if (type == BufferedImage.TYPE_BYTE_INDEXED) {
-            return false;
-        }
-
-        // 1 band = grayscale, 2 bands = grayscale + alpha
-        return numBands == 1 || numBands == 2;
-    }
-
-    /**
      * Converts any image to TYPE_INT_ARGB, resizing with nearest-neighbor sampling.
      */
     private static BufferedImage toArgb(BufferedImage source) {
@@ -126,8 +111,8 @@ public class SpritesheetGenerator {
         BufferedImage result = new BufferedImage(IMAGE_SIZE, IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
         int[] destPixels = ((DataBufferInt) result.getRaster().getDataBuffer()).getData();
 
-        if (isGrayscaleFormat(source)) {
-            // Read raw samples to preserve linear grayscale values without gamma conversion
+        if (ImageUtil.isGrayscaleFormat(source)) {
+            // Read raw samples to preserve linear grayscale values without sRGB conversion
             Raster srcRaster = source.getRaster();
             int numBands = srcRaster.getNumBands();
             int[] samples = new int[numBands];

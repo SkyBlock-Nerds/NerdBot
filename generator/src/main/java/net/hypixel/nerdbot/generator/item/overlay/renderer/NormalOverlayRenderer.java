@@ -33,7 +33,12 @@ public class NormalOverlayRenderer implements OverlayRenderer {
         int blue = color & 0xFF;
 
         int[] defaultColors = config.getDefaultColors();
-        final boolean hasDefaultColor = defaultColors != null && defaultColors.length > 0;
+        boolean hasDefaultColor = defaultColors != null && defaultColors.length > 0;
+
+        // Skip de-tinting for grayscale images to avoid color bias
+        if (hasDefaultColor && ImageUtil.isGrayscaleImage(source)) {
+            hasDefaultColor = false;
+        }
 
         final int defaultRed;
         final int defaultGreen;
@@ -53,6 +58,7 @@ public class NormalOverlayRenderer implements OverlayRenderer {
             log.debug("De-tinting disabled: target RGB({}, {}, {})", red, green, blue);
         }
 
+        final boolean useDefaultColor = hasDefaultColor;
         HashMap<Integer, Integer> colorCache = new HashMap<>();
 
         for (int y = 0; y < target.getHeight(); y++) {
@@ -72,7 +78,7 @@ public class NormalOverlayRenderer implements OverlayRenderer {
                     int srcB = rgb & 0xFF;
 
                     int finalR, finalG, finalB;
-                    if (hasDefaultColor) {
+                    if (useDefaultColor) {
                         // De-tint then re-tint: (source / default) * desired
                         finalR = defaultRed > 0
                             ? (int) Math.min(255, Math.max(0, Math.round((srcR * red) / (double) defaultRed)))
