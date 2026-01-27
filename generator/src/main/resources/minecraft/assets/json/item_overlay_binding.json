@@ -46,6 +46,6 @@
     {"name": "potion", "overlays": "potion_overlay"},
     {"name": "lingering_potion", "overlays": "potion_overlay"},
     {"name": "splash_potion", "overlays": "potion_overlay"},
-    {"name": "tipped_arrow", "overlays": "tipped_arrow_head"},
+    {"name": "tipped_arrow_base", "overlays": "tipped_arrow_head"},
     {"name": "firework_star", "overlays": "firework_star_overlay"}
 ]

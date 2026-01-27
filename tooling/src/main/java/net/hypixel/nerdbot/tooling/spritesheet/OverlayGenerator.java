@@ -7,7 +7,6 @@ import net.hypixel.nerdbot.discord.storage.DataSerialization;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
-import java.awt.image.Raster;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileWriter;
@@ -60,8 +59,8 @@ public class OverlayGenerator {
                     System.out.println("Loaded overlay: " + file.getName());
 
                     // Always resize overlays to match item dimensions (256x256)
-                    System.out.println("Scaling overlay: " + file.getName() + " from " + 
-                                     overlay.getWidth() + "x" + overlay.getHeight() + 
+                    System.out.println("Scaling overlay: " + file.getName() + " from " +
+                                     overlay.getWidth() + "x" + overlay.getHeight() +
                                      " to " + OVERLAY_OUTPUT_SIZE + "x" + OVERLAY_OUTPUT_SIZE);
                     overlay = resizeOverlay(overlay);
 
@@ -79,22 +78,6 @@ public class OverlayGenerator {
     }
 
     /**
-     * Returns true if the image is grayscale (1 or 2 color channels), false otherwise.
-     */
-    private static boolean isGrayscaleFormat(BufferedImage image) {
-        int numBands = image.getRaster().getNumBands();
-        int type = image.getType();
-
-        // Indexed color has 1 band but stores palette indices, not grayscale - use getRGB() instead
-        if (type == BufferedImage.TYPE_BYTE_INDEXED) {
-            return false;
-        }
-
-        // 1 band = grayscale, 2 bands = grayscale + alpha
-        return numBands == 1 || numBands == 2;
-    }
-
-    /**
      * Converts an image to TYPE_INT_ARGB format.
      */
     private static BufferedImage ensureArgbFormat(BufferedImage source) {
@@ -104,26 +87,9 @@ public class OverlayGenerator {
         BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         int[] destPixels = ((DataBufferInt) result.getRaster().getDataBuffer()).getData();
 
-        if (isGrayscaleFormat(source)) {
-            // Read raw samples to preserve linear grayscale values without gamma conversion
-            Raster srcRaster = source.getRaster();
-            int numBands = srcRaster.getNumBands();
-            int[] samples = new int[numBands];
-
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    srcRaster.getPixel(x, y, samples);
-                    int gray = samples[0];
-                    int alpha = numBands == 2 ? samples[1] : 255;
-                    destPixels[y * width + x] = (alpha << 24) | (gray << 16) | (gray << 8) | gray;
-                }
-            }
-        } else {
-            // Use getRGB() for indexed, RGB, RGBA - handles palette lookup and transparency correctly
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    destPixels[y * width + x] = source.getRGB(x, y);
-                }
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                destPixels[y * width + x] = source.getRGB(x, y);
             }
         }
 
