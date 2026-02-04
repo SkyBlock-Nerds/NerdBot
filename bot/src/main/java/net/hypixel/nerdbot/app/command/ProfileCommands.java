@@ -137,23 +137,21 @@ public class ProfileCommands {
                             return errorProfile;
                         }
 
-                        if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
-                            MojangProfile errorProfile = new MojangProfile();
-                            errorProfile.setErrorMessage("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
-                            return errorProfile;
-                        }
+                        if (enforceSocial) {
+                            if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
+                                MojangProfile errorProfile = new MojangProfile();
+                                errorProfile.setErrorMessage("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
+                                return errorProfile;
+                            }
 
-                        String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
-                        String discordName = member.getUser().getName();
+                            String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
+                            String discordName = member.getUser().getName();
 
-                        if (!member.getUser().getDiscriminator().equalsIgnoreCase("0000")) {
-                            discordName += "#" + member.getUser().getDiscriminator();
-                        }
-
-                        if (enforceSocial && !discordName.equalsIgnoreCase(discord)) {
-                            MojangProfile errorProfile = new MojangProfile();
-                            errorProfile.setErrorMessage("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
-                            return errorProfile;
+                            if (!discordName.equalsIgnoreCase(discord)) {
+                                MojangProfile errorProfile = new MojangProfile();
+                                errorProfile.setErrorMessage("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
+                                return errorProfile;
+                            }
                         }
 
                         return mojangProfile;
