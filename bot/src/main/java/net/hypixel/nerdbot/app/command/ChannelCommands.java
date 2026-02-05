@@ -62,19 +62,24 @@ public class ChannelCommands {
     public void archiveCategory(SlashCommandInteractionEvent event, @SlashOption Category category) {
         event.deferReply(true).complete();
         InteractionHook hook = event.getHook();
-        hook.editOriginal(String.format("Archiving category **%s** (ID: %s)...", category.getName(), category.getId())).queue();
+        hook.editOriginal(String.format("Archiving category **%s** (ID: %s). You will receive a DM when complete.", category.getName(), category.getId())).queue();
 
         CompletableFuture.runAsync(() -> {
             try {
                 File zipFile = ArchiveExporter.exportCategory(category, createProgressUpdater(hook));
                 if (!hook.isExpired()) {
-                    hook.editOriginal("Finished archiving! Preparing to send the zip file...").queue();
-                    sendZipToUser(event, zipFile, hook);
+                    hook.editOriginal("Finished archiving! Sending the zip file via DM").queue();
                 }
+                sendZipToUserAsync(event, zipFile, hook, category.getName());
             } catch (IOException exception) {
                 log.error("Failed to zip archives for category " + category.getId(), exception);
                 if (!hook.isExpired()) {
                     hook.editOriginal("Failed to create the archive zip file: " + exception.getMessage()).queue();
+                } else {
+                    event.getUser().openPrivateChannel().queue(
+                        dm -> dm.sendMessage("Failed to archive category " + category.getName() + ": " + exception.getMessage()).queue(),
+                        error -> log.error("Failed to notify user {} of archive failure via DM", event.getUser().getId(), error)
+                    );
                 }
             }
         });
@@ -94,6 +99,41 @@ public class ChannelCommands {
         }, error -> {
             log.error("Failed to open DM for user " + event.getUser().getId(), error);
             hook.editOriginal("Finished archiving, but could not open DMs to send the zip file. File path: " + zipFile.getAbsolutePath()).queue();
+        });
+    }
+
+    private void sendZipToUserAsync(SlashCommandInteractionEvent event, File zipFile, InteractionHook hook, String categoryName) {
+        event.getUser().openPrivateChannel().queue(privateChannel -> {
+            privateChannel.sendMessage("Here is your archive for category **" + categoryName + "**:")
+                .addFiles(FileUpload.fromData(zipFile))
+                .queue(
+                    success -> {
+                        log.info("Successfully sent archive zip for category {} to user {}", categoryName, event.getUser().getId());
+                        if (!hook.isExpired()) {
+                            hook.editOriginal("Finished! Sent you the archive zip via DM.").queue();
+                        }
+                    },
+                    error -> {
+                        log.error("Failed to DM archive zip file to user " + event.getUser().getId(), error);
+                        if (!hook.isExpired()) {
+                            hook.editOriginal("Finished archiving, but failed to DM the zip file. Sending here instead...")
+                                .setFiles(FileUpload.fromData(zipFile))
+                                .queue(
+                                    null,
+                                    sendError -> hook.editOriginal("Failed to send the zip. File path: " + zipFile.getAbsolutePath()).queue()
+                                );
+                        } else {
+                            log.warn("Hook expired and DM failed. Archive file located at: {}", zipFile.getAbsolutePath());
+                        }
+                    }
+                );
+        }, error -> {
+            log.error("Failed to open DM for user " + event.getUser().getId(), error);
+            if (!hook.isExpired()) {
+                hook.editOriginal("Finished archiving, but could not open DMs to send the zip file. File path: " + zipFile.getAbsolutePath()).queue();
+            } else {
+                log.warn("Hook expired and could not open DM. Archive file located at: {}", zipFile.getAbsolutePath());
+            }
         });
     }
 
