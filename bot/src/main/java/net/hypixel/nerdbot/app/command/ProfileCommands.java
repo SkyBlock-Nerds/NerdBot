@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashOption;
@@ -13,13 +14,14 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.UserSnowflake;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import net.hypixel.nerdbot.app.command.SuggestionStats;
 import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.app.role.RoleManager;
@@ -50,6 +52,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
 import java.time.Duration;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -658,7 +661,7 @@ public class ProfileCommands {
                         .setColor(event.getMember().getColor())
                         .addField("Mojang Profile", profile, false)
                         .addField("Badges", discordUser.getBadges().isEmpty() ? "None" : String.valueOf(discordUser.getBadges().size()), true)
-                        .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), true)
+                        .addField("Birthday", discordUser.getBirthdayData().getFormattedDisplay(), true)
                         .build()
                 ).queue();
             })
@@ -810,11 +813,14 @@ public class ProfileCommands {
     @SlashCommand(
         name = "profile",
         group = "birthday",
-        subcommand = "set",
-        description = "Set your birthday.",
+        subcommand = "timezone",
+        description = "Update your birthday notification timezone.",
         guildOnly = true
     )
-    public void setBirthday(SlashCommandInteractionEvent event, @SlashOption(description = "Your birthday in the format MM/DD/YYYY.") String birthday, @SlashOption(description = "Whether to announce your age.", required = false) Boolean announceAge) {
+    public void setBirthdayTimezone(
+        SlashCommandInteractionEvent event,
+        @SlashOption(autocompleteId = "timezones", description = "Your timezone (e.g., America/New_York, Europe/London, Asia/Tokyo, UTC).") String timezone
+    ) {
         event.deferReply(true).complete();
 
         if (!BotEnvironment.getBot().getDatabase().isConnected()) {
@@ -822,8 +828,78 @@ public class ProfileCommands {
             return;
         }
 
+        ZoneId zoneId;
+        try {
+            zoneId = ZoneId.of(timezone);
+        } catch (Exception e) {
+            event.getHook().editOriginal("Invalid timezone: `" + timezone + "`. Please use a valid timezone ID (e.g., `America/New_York`, `Europe/London`, `Asia/Tokyo`, `UTC`).").queue();
+            return;
+        }
+
+        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+
+        discordUserRepository.findByIdAsync(event.getMember().getId())
+            .thenAccept(discordUser -> {
+                if (discordUser == null) {
+                    event.getHook().editOriginal("User not found").queue();
+                    return;
+                }
+
+                BirthdayData birthdayData = discordUser.getBirthdayData();
+                if (!birthdayData.isBirthdaySet()) {
+                    event.getHook().editOriginal("You need to set your birthday first using `/profile birthday set`.").queue();
+                    return;
+                }
+
+                if (birthdayData.getTimer() != null) {
+                    birthdayData.getTimer().cancel();
+                }
+
+                birthdayData.setTimezone(zoneId.getId());
+                BirthdayScheduler.schedule(discordUser);
+
+                event.getHook().editOriginal("Your birthday timezone has been updated to `" + zoneId.getId() + "`.").queue();
+            })
+            .exceptionally(throwable -> {
+                log.error("Error updating birthday timezone", throwable);
+                event.getHook().editOriginal("Failed to update timezone: " + throwable.getMessage()).queue();
+                return null;
+            });
+    }
+
+    @SlashCommand(
+        name = "profile",
+        group = "birthday",
+        subcommand = "set",
+        description = "Set your birthday.",
+        guildOnly = true
+    )
+    public void setBirthday(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = "Your birthday in the format MM/DD/YYYY.") String birthday,
+        @SlashOption(description = "Whether to announce your age.", required = false) Boolean announceAge,
+        @SlashOption(autocompleteId = "timezones", description = "Your timezone (e.g., America/New_York, Europe/London, Asia/Tokyo). Defaults to UTC.", required = false) String timezone
+    ) {
+        event.deferReply(true).complete();
+
+        if (!BotEnvironment.getBot().getDatabase().isConnected()) {
+            event.getHook().editOriginal("Could not connect to database!").queue();
+            return;
+        }
+
+        ZoneId zoneId = null;
+        if (timezone != null && !timezone.isBlank()) {
+            try {
+                zoneId = ZoneId.of(timezone);
+            } catch (Exception e) {
+                event.getHook().editOriginal("Invalid timezone: `" + timezone + "`. Please use a valid timezone ID (e.g., `America/New_York`, `Europe/London`, `Asia/Tokyo`, `UTC`).").queue();
+                return;
+            }
+        }
+
         Member member = event.getMember();
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        ZoneId finalZoneId = zoneId;
 
         discordUserRepository.findByIdAsync(member.getId())
             .thenAccept(discordUser -> {
@@ -842,8 +918,15 @@ public class ProfileCommands {
                     Date date = DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"});
                     discordUser.setBirthday(date);
                     birthdayData.setShouldAnnounceAge(announceAge != null && announceAge);
+
+                    if (finalZoneId != null) {
+                        birthdayData.setTimezone(finalZoneId.getId());
+                    }
+
                     BirthdayScheduler.schedule(discordUser);
-                    event.getHook().editOriginal(String.format("Set your birthday to %s!", DateFormatUtils.format(date, "dd MMMM yyyy"))).queue();
+
+                    String timezoneDisplay = birthdayData.getTimeZoneId().getId();
+                    event.getHook().editOriginal(String.format("Set your birthday to %s (timezone: %s)!", DateFormatUtils.format(date, "dd MMMM yyyy"), timezoneDisplay)).queue();
                 } catch (Exception exception) {
                     event.getHook().editOriginal("That doesn't seem to be a valid date. Please try again or contact a bot developer!").queue();
                 }
@@ -880,7 +963,7 @@ public class ProfileCommands {
                     event.getHook().editOriginal("An error occurred while saving your preference, please try again later.").queue();
                 }
             })
-            .exceptionally(throwable ->  {
+            .exceptionally(throwable -> {
                 log.error("Error setting hide preference", throwable);
                 event.getHook().editOriginal("An error occurred while saving your preference, please try again later.").queue();
                 return null;
@@ -973,5 +1056,17 @@ public class ProfileCommands {
             log.error("Error handling profile pagination button interaction", e);
             event.getHook().editOriginal("An error occurred while navigating pages.").queue();
         }
+    }
+
+    @SlashAutocompleteHandler(id = "timezones")
+    public List<Command.Choice> timezoneAutocomplete(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase();
+
+        return ZoneId.getAvailableZoneIds().stream()
+            .filter(tz -> userInput.isEmpty() || tz.toLowerCase().contains(userInput))
+            .sorted()
+            .limit(25)
+            .map(tz -> new Command.Choice(tz, tz))
+            .toList();
     }
 }
