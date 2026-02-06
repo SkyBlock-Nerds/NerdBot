@@ -256,7 +256,6 @@ public class ArchiveExporter {
         int current = counter.incrementAndGet();
         if (current % (current < 1000 ? 100 : (int) Math.pow(10, String.valueOf(current).length() - 1)) == 0) {
             String message = context + " - processed " + StringUtils.COMMA_SEPARATED_FORMAT.format(current) + " message" + (current == 1 ? "" : "s") + " so far!";
-            log.info(message);
             update(progressCallback, message);
         }
     }
