@@ -10,6 +10,7 @@ import net.hypixel.nerdbot.generator.image.ImageCoordinates;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.item.InventoryItem;
 import net.hypixel.nerdbot.generator.parser.inventory.InventoryStringParser;
+import net.hypixel.nerdbot.generator.spritesheet.OverlayLoader;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import net.hypixel.nerdbot.generator.util.MinecraftFonts;
 import org.jetbrains.annotations.NotNull;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @ToString
@@ -333,17 +335,53 @@ public class MinecraftInventoryGenerator implements Generator {
             item.setAnimationFrames(playerHeadObject.getAnimationFrames());
             item.setFrameDelayMs(playerHeadObject.getFrameDelayMs() > 0 ? playerHeadObject.getFrameDelayMs() : null);
         } else if (!item.getItemName().equalsIgnoreCase("null")) {
-            String contentLower = item.getExtraContent() != null ? item.getExtraContent().toLowerCase() : null;
+            // Parse extra content for color, armor trim, and other modifiers
+            String extraContent = item.getExtraContent();
+            String color = null;
+            String armorTrim = null;
+            boolean enchanted = false;
+            boolean hoverEffect = false;
+            List<String> remainingData = new ArrayList<>();
+
+            if (extraContent != null && !extraContent.isBlank()) {
+                String itemNameLower = item.getItemName().toLowerCase();
+                boolean isArmor = itemNameLower.contains("helmet") || itemNameLower.contains("chestplate")
+                    || itemNameLower.contains("leggings") || itemNameLower.contains("boots");
+
+                OverlayLoader overlayLoader = OverlayLoader.getInstance();
+                Set<String> trimMaterials = overlayLoader.getArmorTrimMaterials();
+                Set<String> colorOptions = overlayLoader.getAllColorOptionNames();
+
+                for (String token : extraContent.split(",")) {
+                    String tokenTrimmed = token.trim();
+                    String tokenLower = tokenTrimmed.toLowerCase();
+
+                    if (tokenLower.equals("enchant") || tokenLower.equals("enchanted")) {
+                        enchanted = true;
+                    } else if (tokenLower.equals("hover")) {
+                        hoverEffect = true;
+                    } else if (isArmor && trimMaterials.contains(tokenLower)) {
+                        armorTrim = tokenLower;
+                    } else if (colorOptions.contains(tokenLower) || tokenLower.startsWith("#")) {
+                        color = tokenLower;
+                    } else {
+                        remainingData.add(tokenTrimmed);
+                    }
+                }
+            }
+
             MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
                 .withItem(item.getItemName())
-                .isEnchanted(contentLower != null && contentLower.contains("enchant"))
-                .withHoverEffect(contentLower != null && contentLower.contains("hover"))
-                .withData(item.getExtraContent());
-            
+                .withColor(color)
+                .withArmorTrim(armorTrim)
+                .isEnchanted(enchanted)
+                .withHoverEffect(hoverEffect)
+                .withData(remainingData.isEmpty() ? null : String.join(",", remainingData));
+
             if (item.getDurabilityPercent() != null) {
                 itemBuilder.withDurability(item.getDurabilityPercent());
             }
-            
+
             GeneratedObject generatedItem = itemBuilder.build().generate();
             item.setItemImage(generatedItem.getImage());
             item.setAnimationFrames(generatedItem.getAnimationFrames());

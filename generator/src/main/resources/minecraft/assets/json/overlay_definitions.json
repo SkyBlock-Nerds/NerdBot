@@ -1,0 +1,26 @@
+{
+    "specialOverlays": [
+        {
+            "fileName": "potion_overlay",
+            "colorOptions": "potion",
+            "type": "NORMAL",
+            "colorMode": "OVERLAY"
+        },
+        {
+            "fileName": "tipped_arrow_head",
+            "colorOptions": "effect",
+            "type": "NORMAL",
+            "colorMode": "OVERLAY"
+        },
+        {
+            "fileName": "firework_star_overlay",
+            "colorOptions": "firework",
+            "type": "NORMAL",
+            "colorMode": "OVERLAY"
+        }
+    ],
+    "armorOverlayPatterns": [
+        "leather_",
+        "wolf_"
+    ]
+}

@@ -1,0 +1,136 @@
+name: Generate Spritesheet
+
+on:
+  workflow_dispatch:
+    inputs:
+      minecraft_version:
+        description: 'Minecraft version (leave empty for latest)'
+        required: false
+        default: ''
+        type: string
+      render_size:
+        description: 'Render size in pixels'
+        required: false
+        default: '256'
+        type: string
+      pipeline:
+        description: 'Pipeline to run'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - download-only
+          - render-only
+          - spritesheet-only
+          - overlays-only
+      create_pr:
+        description: 'Create a pull request with changes'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'adopt'
+          cache: maven
+
+      - name: Set up .NET SDK
+        if: inputs.pipeline == 'full' || inputs.pipeline == 'render-only'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build Tooling Module
+        run: mvn -pl tooling -am compile -DskipTests -q
+
+      - name: Run Full Asset Pipeline
+        if: inputs.pipeline == 'full'
+        run: |
+          mvn -pl tooling compile -P asset-pipeline \
+            -Dmc.version=${{ inputs.minecraft_version }} \
+            -Drender.size=${{ inputs.render_size }}
+
+      - name: Download Assets Only
+        if: inputs.pipeline == 'download-only'
+        run: |
+          mvn -pl tooling compile -P download-assets \
+            -Dmc.version=${{ inputs.minecraft_version }}
+
+      - name: Render Items Only
+        if: inputs.pipeline == 'render-only'
+        run: |
+          mvn -pl tooling compile -P render-items \
+            -Dmc.version=${{ inputs.minecraft_version }} \
+            -Drender.size=${{ inputs.render_size }}
+
+      - name: Generate Spritesheet Only
+        if: inputs.pipeline == 'spritesheet-only'
+        run: mvn -pl tooling compile -P generate-spritesheet
+
+      - name: Generate Overlays Only
+        if: inputs.pipeline == 'overlays-only'
+        run: mvn -pl tooling compile -P generate-overlays
+
+      - name: Check For Changes
+        id: changes
+        run: |
+          if [[ -n $(git status --porcelain generator/src/main/resources/minecraft/assets/) ]]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.has_changes == 'true' && inputs.create_pr == true
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'Update spritesheet assets'
+          title: 'Update spritesheet assets'
+          body: |
+            Automated spritesheet generation
+
+            **Configuration:**
+            - Minecraft version: `${{ inputs.minecraft_version || 'latest' }}`
+            - Render size: `${{ inputs.render_size }}px`
+            - Pipeline: `${{ inputs.pipeline }}`
+          branch: automated/spritesheet-update
+          delete-branch: true
+
+      - name: Commit Directly
+        if: steps.changes.outputs.has_changes == 'true' && inputs.create_pr == false
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: 'Update spritesheet assets'
+          file_pattern: 'generator/src/main/resources/minecraft/assets/**'
+
+      - name: Upload Artifacts
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: spritesheet-assets
+          path: |
+            generator/src/main/resources/minecraft/assets/spritesheets/
+            generator/src/main/resources/minecraft/assets/json/
+          retention-days: 7

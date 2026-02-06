@@ -1,80 +1,85 @@
 package net.hypixel.nerdbot.tooling.spritesheet;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.hypixel.nerdbot.core.ImageUtil;
-import net.hypixel.nerdbot.discord.storage.DataSerialization;
+import net.hypixel.nerdbot.tooling.ToolingConstants;
+import net.hypixel.nerdbot.tooling.minecraft.TrimPaletteExtractor;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
-import java.awt.image.Raster;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 /**
- * Generates a texture atlas (spritesheet) from individual PNG textures.
- * All textures are normalized to IMAGE_SIZE x IMAGE_SIZE and packed into rows.
+ * Generates a texture atlas from individual PNG textures.
  */
-public class SpritesheetGenerator {
+public class SpritesheetGenerator extends AtlasGenerator {
 
-    protected static final int IMAGE_SIZE = 256;
     private static final int ATLAS_WIDTH = IMAGE_SIZE * 16;
+    private static final String[] ARMOR_TYPES = {"helmet", "chestplate", "leggings", "boots"};
 
-    private static final String TOOLING_RESOURCES = "tooling/src/main/resources/minecraft";
-    private static final String GENERATOR_RESOURCES = "generator/src/main/resources/minecraft/assets";
+    private final String inputPath;
+    private Set<String> trimMaterials;
+
+    public SpritesheetGenerator(String inputPath) {
+        super(
+            ATLAS_WIDTH,
+            ToolingConstants.GENERATOR_SPRITESHEETS + "/minecraft_texture_atlas.png",
+            ToolingConstants.GENERATOR_JSON + "/atlas_coordinates.json"
+        );
+        this.inputPath = inputPath;
+    }
 
     public static void main(String[] args) {
-        String inputPath = TOOLING_RESOURCES + "/textures";
-        String outputPath = GENERATOR_RESOURCES + "/spritesheets/minecraft_texture_atlas.png";
-        String jsonPath = GENERATOR_RESOURCES + "/json/atlas_coordinates.json";
+        String inputPath = ToolingConstants.RENDERED_ITEMS.toString();
 
-        // Load all textures
-        List<TextureInfo> textures = loadTextures(inputPath);
-        System.out.println("Loaded " + textures.size() + " textures.");
-
-        // Calculate atlas dimensions
-        int texturesPerRow = ATLAS_WIDTH / IMAGE_SIZE;
-        int rows = (textures.size() + texturesPerRow - 1) / texturesPerRow;
-        int atlasHeight = rows * IMAGE_SIZE;
-
-        // Create atlas and pack textures
-        BufferedImage atlas = new BufferedImage(ATLAS_WIDTH, atlasHeight, BufferedImage.TYPE_INT_ARGB);
-        int[] atlasPixels = ((DataBufferInt) atlas.getRaster().getDataBuffer()).getData();
-
-        for (int i = 0; i < textures.size(); i++) {
-            TextureInfo entry = textures.get(i);
-            int col = i % texturesPerRow;
-            int row = i / texturesPerRow;
-            entry.x = col * IMAGE_SIZE;
-            entry.y = row * IMAGE_SIZE;
-
-            // Copy texture pixels into atlas
-            int[] texturePixels = ((DataBufferInt) entry.image.getRaster().getDataBuffer()).getData();
-            for (int py = 0; py < IMAGE_SIZE; py++) {
-                int atlasOffset = (entry.y + py) * ATLAS_WIDTH + entry.x;
-                int textureOffset = py * IMAGE_SIZE;
-                System.arraycopy(texturePixels, textureOffset, atlasPixels, atlasOffset, IMAGE_SIZE);
+        for (String arg : args) {
+            if (arg.startsWith("--input=")) {
+                inputPath = arg.substring("--input=".length());
             }
-
-            System.out.printf("\rPacking textures: %d/%d (%.1f%%)", i + 1, textures.size(), (i + 1) * 100.0 / textures.size());
         }
-        System.out.println();
 
-        // Save outputs
-        saveAtlas(atlas, outputPath);
-        saveCoordinatesJson(textures, jsonPath);
+        SpritesheetGenerator generator = new SpritesheetGenerator(inputPath);
+        generator.generate();
         System.out.println("Texture atlas generation complete!");
     }
 
-    private static List<TextureInfo> loadTextures(String inputDir) {
-        List<TextureInfo> textures = new ArrayList<>();
-        File folder = new File(inputDir);
+    private boolean isArmorTrimVariant(String name) {
+        if (!name.endsWith("_trim")) {
+            return false;
+        }
+
+        if (trimMaterials == null || trimMaterials.isEmpty()) {
+            return false;
+        }
+
+        return Arrays.stream(ARMOR_TYPES)
+            .anyMatch(armor -> trimMaterials.stream()
+                .anyMatch(material -> name.endsWith(armor + "_" + material + "_trim"))
+            );
+    }
+
+    private void loadTrimMaterials() {
+        try {
+            trimMaterials = TrimPaletteExtractor.extractAllPalettes().keySet();
+            System.out.println("Loaded " + trimMaterials.size() + " trim materials from assets.");
+        } catch (Exception e) {
+            System.err.println("Failed to load trim materials: " + e.getMessage());
+            trimMaterials = Set.of();
+        }
+    }
+
+    @Override
+    protected List<AtlasEntry> loadTextures() {
+        loadTrimMaterials();
+
+        List<AtlasEntry> textures = new ArrayList<>();
+        File folder = new File(inputPath);
         File[] files = folder.listFiles(f -> f.isFile() && f.getName().toLowerCase().endsWith(".png"));
 
         if (files == null) {
@@ -85,116 +90,64 @@ public class SpritesheetGenerator {
         System.out.println("Loading textures from: " + folder.getAbsolutePath());
         Arrays.sort(files, Comparator.comparing(File::getName));
 
-        for (File file : files) {
-            try {
-                BufferedImage raw = ImageIO.read(file);
-                BufferedImage processed = toArgb(raw);
+        int skipped = 0;
+        int trimFiltered = 0;
 
-                String name = file.getName().replace(".png", "");
-                textures.add(new TextureInfo(name, processed));
-            } catch (IOException exception) {
-                System.err.println("Failed to load: " + file.getName());
-                exception.printStackTrace();
+        for (File file : files) {
+            String name = file.getName().replace(".png", "");
+
+            if (isArmorTrimVariant(name)) {
+                trimFiltered++;
+                continue;
             }
+
+            BufferedImage image = loadImage(file);
+            if (image == null) {
+                System.err.println("Failed to load: " + file.getName());
+                continue;
+            }
+
+            try {
+                BufferedImage processed = resizeToAtlasSize(image);
+
+                if (ImageUtil.isFullyTransparent(processed)) {
+                    skipped++;
+                    continue;
+                }
+
+                textures.add(new AtlasEntry(name, processed));
+            } catch (Exception e) {
+                System.err.println("Failed to process: " + file.getName());
+                e.printStackTrace();
+            }
+        }
+
+        if (skipped > 0) {
+            System.out.println("Skipped " + skipped + " fully transparent textures.");
+        }
+
+        if (trimFiltered > 0) {
+            System.out.println("Filtered out " + trimFiltered + " armor trim variants (rendered dynamically).");
         }
 
         return textures;
     }
 
-    /**
-     * Converts any image to TYPE_INT_ARGB, resizing with nearest-neighbor sampling.
-     */
-    private static BufferedImage toArgb(BufferedImage source) {
-        int srcWidth = source.getWidth();
-        int srcHeight = source.getHeight();
-
-        BufferedImage result = new BufferedImage(IMAGE_SIZE, IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
-        int[] destPixels = ((DataBufferInt) result.getRaster().getDataBuffer()).getData();
-
-        if (ImageUtil.isGrayscaleFormat(source)) {
-            // Read raw samples to preserve linear grayscale values without sRGB conversion
-            Raster srcRaster = source.getRaster();
-            int numBands = srcRaster.getNumBands();
-            int[] samples = new int[numBands];
-
-            for (int dstY = 0; dstY < IMAGE_SIZE; dstY++) {
-                int srcY = dstY * srcHeight / IMAGE_SIZE;
-                for (int dstX = 0; dstX < IMAGE_SIZE; dstX++) {
-                    int srcX = dstX * srcWidth / IMAGE_SIZE;
-                    srcRaster.getPixel(srcX, srcY, samples);
-                    int gray = samples[0];
-                    int alpha = numBands == 2 ? samples[1] : 255;
-                    destPixels[dstY * IMAGE_SIZE + dstX] = (alpha << 24) | (gray << 16) | (gray << 8) | gray;
-                }
-            }
-        } else {
-            // Use getRGB() for indexed, RGB, RGBA - handles palette lookup and transparency correctly
-            for (int dstY = 0; dstY < IMAGE_SIZE; dstY++) {
-                int srcY = dstY * srcHeight / IMAGE_SIZE;
-                for (int dstX = 0; dstX < IMAGE_SIZE; dstX++) {
-                    int srcX = dstX * srcWidth / IMAGE_SIZE;
-                    destPixels[dstY * IMAGE_SIZE + dstX] = source.getRGB(srcX, srcY);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private static void saveAtlas(BufferedImage atlas, String outputPath) {
-        File outputFile = new File(outputPath);
-        File parentDir = outputFile.getParentFile();
-        if (!parentDir.exists() && !parentDir.mkdirs()) {
-            System.err.println("Failed to create directory: " + parentDir.getAbsolutePath());
-            return;
-        }
-
+    private BufferedImage loadImage(File file) {
         try {
-            System.out.println("Saving texture atlas to: " + outputFile.getAbsolutePath());
-            ImageIO.write(atlas, "png", outputFile);
-            System.out.println("Texture atlas saved successfully!");
-        } catch (IOException exception) {
-            System.err.println("Failed to save texture atlas!");
-            exception.printStackTrace();
+            return ImageIO.read(file);
+        } catch (IOException e) {
+            return null;
         }
     }
 
-    private static void saveCoordinatesJson(List<TextureInfo> textures, String jsonPath) {
-        JsonArray jsonArray = new JsonArray();
-
-        for (TextureInfo entry : textures) {
-            JsonObject obj = new JsonObject();
-            obj.addProperty("name", entry.name);
-            obj.addProperty("x", entry.x);
-            obj.addProperty("y", entry.y);
-            obj.addProperty("size", IMAGE_SIZE);
-            jsonArray.add(obj);
-        }
-
-        File jsonFile = new File(jsonPath);
-        File parentDir = jsonFile.getParentFile();
-        if (!parentDir.exists() && !parentDir.mkdirs()) {
-            System.err.println("Failed to create directory: " + parentDir.getAbsolutePath());
-            return;
-        }
-
-        try (FileWriter writer = new FileWriter(jsonFile)) {
-            DataSerialization.GSON.toJson(jsonArray, writer);
-            System.out.println("Texture atlas coordinates JSON saved successfully!");
-        } catch (IOException exception) {
-            exception.printStackTrace();
-        }
-    }
-
-    static class TextureInfo {
-        final String name;
-        final BufferedImage image;
-        int x;
-        int y;
-
-        TextureInfo(String name, BufferedImage image) {
-            this.name = name;
-            this.image = image;
-        }
+    @Override
+    protected JsonObject entryToJson(AtlasEntry entry) {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("name", entry.name);
+        obj.addProperty("x", entry.x);
+        obj.addProperty("y", entry.y);
+        obj.addProperty("size", IMAGE_SIZE);
+        return obj;
     }
 }

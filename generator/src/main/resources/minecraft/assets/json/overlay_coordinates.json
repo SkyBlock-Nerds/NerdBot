@@ -1,15 +1,14 @@
 [
   {
-    "name": "firework_star_overlay",
+      "name": "leather_boots_overlay",
     "x": 0,
     "y": 0,
     "size": 256,
     "type": "NORMAL",
-    "colorOptions": "firework",
-    "colorMode": "OVERLAY"
+      "colorOptions": "leather_armor"
   },
   {
-    "name": "leather_boots_overlay",
+      "name": "leather_chestplate_overlay",
     "x": 256,
     "y": 0,
     "size": 256,
@@ -17,7 +16,7 @@
     "colorOptions": "leather_armor"
   },
   {
-    "name": "leather_chestplate_overlay",
+      "name": "leather_helmet_overlay",
     "x": 512,
     "y": 0,
     "size": 256,
@@ -25,7 +24,7 @@
     "colorOptions": "leather_armor"
   },
   {
-    "name": "leather_helmet_overlay",
+      "name": "leather_horse_armor_overlay",
     "x": 768,
     "y": 0,
     "size": 256,
@@ -41,16 +40,15 @@
     "colorOptions": "leather_armor"
   },
   {
-    "name": "potion_overlay",
+      "name": "wolf_armor_overlay",
     "x": 256,
     "y": 256,
     "size": 256,
     "type": "NORMAL",
-    "colorOptions": "potion",
-    "colorMode": "OVERLAY"
+      "colorOptions": "leather_armor"
   },
   {
-    "name": "tipped_arrow_head",
+      "name": "potion_overlay",
     "x": 512,
     "y": 256,
     "size": 256,
@@ -59,11 +57,21 @@
     "colorMode": "OVERLAY"
   },
   {
-    "name": "wolf_armor_overlay",
+      "name": "tipped_arrow_head",
     "x": 768,
     "y": 256,
     "size": 256,
     "type": "NORMAL",
-    "colorOptions": "leather_armor"
+      "colorOptions": "effect",
+      "colorMode": "OVERLAY"
+  },
+    {
+        "name": "firework_star_overlay",
+        "x": 0,
+        "y": 512,
+        "size": 256,
+        "type": "NORMAL",
+        "colorOptions": "firework",
+        "colorMode": "OVERLAY"
   }
 ]

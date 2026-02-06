@@ -21,9 +21,9 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.util.List;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -33,6 +33,7 @@ public class MinecraftItemGenerator implements Generator {
     private final String itemId;
     private final String data;
     private final String color;
+    private final String armorTrim;
     private final boolean enchanted;
     private final boolean hoverEffect;
     private final boolean bigImage;
@@ -58,7 +59,8 @@ public class MinecraftItemGenerator implements Generator {
             .withEnchanted(enchanted)
             .withHovered(hoverEffect)
             .putMetadata("data", data)
-            .putMetadata("color", color);
+            .putMetadata("color", color)
+            .putMetadata("armor_trim", armorTrim);
 
         if (durabilityPercent != null) {
             contextBuilder.putMetadata("durabilityPercent", durabilityPercent);
@@ -113,6 +115,7 @@ public class MinecraftItemGenerator implements Generator {
         private String itemId;
         private String data;
         private String color;
+        private String armorTrim;
         private boolean enchanted;
         private boolean hoverEffect;
         private boolean bigImage;
@@ -135,6 +138,11 @@ public class MinecraftItemGenerator implements Generator {
 
         public MinecraftItemGenerator.Builder withColor(String color) {
             this.color = color;
+            return this;
+        }
+
+        public MinecraftItemGenerator.Builder withArmorTrim(String armorTrim) {
+            this.armorTrim = armorTrim;
             return this;
         }
 
@@ -204,7 +212,7 @@ public class MinecraftItemGenerator implements Generator {
             }
 
             return new MinecraftItemGenerator(
-                itemId, data, color, enchanted, hoverEffect, bigImage,
+                itemId, data, color, armorTrim, enchanted, hoverEffect, bigImage,
                 durabilityPercent, overlayLoader, effectPipeline
             );
         }

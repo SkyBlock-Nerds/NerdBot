@@ -10,7 +10,7 @@ import net.hypixel.nerdbot.generator.item.overlay.OverlayRenderer;
 import net.hypixel.nerdbot.generator.item.overlay.OverlayRendererRegistry;
 import net.hypixel.nerdbot.generator.spritesheet.OverlayLoader;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 /**
@@ -39,21 +39,94 @@ public class OverlayApplicationEffect implements ImageEffect {
     @Override
     public EffectResult apply(EffectContext context) {
         String itemId = context.getItemId().toLowerCase();
-        ItemOverlay itemOverlay = overlayLoader.getOverlay(itemId);
+        BufferedImage result = context.getImage();
 
-        if (itemOverlay == null) {
-            return EffectResult.single(context.getImage());
+        // Apply base overlay (leather dye, potion color, etc.)
+        ItemOverlay itemOverlay = overlayLoader.getOverlay(itemId);
+        if (itemOverlay != null) {
+            String colorOption = context.getMetadata("color", String.class).orElse(null);
+            String dataOption = colorOption != null && !colorOption.isBlank()
+                ? colorOption
+                : context.getMetadata("data", String.class).orElse("");
+            log.debug("Applying overlay to item '{}' with color option '{}'", itemId, dataOption);
+            result = applyOverlay(result, itemOverlay, dataOption);
         }
 
-        // Use color if provided, otherwise fall back to data
-        String colorOption = context.getMetadata("color", String.class).orElse(null);
-        String dataOption = colorOption != null && !colorOption.isBlank()
-            ? colorOption
-            : context.getMetadata("data", String.class).orElse("");
-        log.debug("Applying overlay to item '{}' with color option '{}'", itemId, dataOption);
+        // Apply armor trim if specified
+        String armorTrim = context.getMetadata("armor_trim", String.class).orElse(null);
+        if (armorTrim != null && !armorTrim.isBlank()) {
+            String trimOverlayName = getTrimOverlayName(itemId);
+            if (trimOverlayName != null) {
+                ItemOverlay trimOverlay = overlayLoader.getOverlayByName(trimOverlayName);
+                if (trimOverlay != null) {
+                    log.debug("Applying armor trim '{}' to item '{}' using overlay '{}'", armorTrim, itemId, trimOverlayName);
+                    result = applyTrimOverlay(result, trimOverlay, armorTrim);
+                } else {
+                    log.warn("Trim overlay '{}' not found for item '{}'", trimOverlayName, itemId);
+                }
+            } else {
+                log.warn("Item '{}' does not support armor trims", itemId);
+            }
+        }
 
-        BufferedImage result = applyOverlay(context.getImage(), itemOverlay, dataOption);
         return EffectResult.single(result);
+    }
+
+    /**
+     * Maps item IDs to their corresponding trim overlay names.
+     */
+    private String getTrimOverlayName(String itemId) {
+        if (itemId.contains("helmet")) {
+            return "helmet_trim";
+        } else if (itemId.contains("chestplate")) {
+            return "chestplate_trim";
+        } else if (itemId.contains("leggings")) {
+            return "leggings_trim";
+        } else if (itemId.contains("boots")) {
+            return "boots_trim";
+        }
+
+        return null;
+    }
+
+    /**
+     * Applies armor trim overlay with the specified material color.
+     */
+    private BufferedImage applyTrimOverlay(BufferedImage baseImage, ItemOverlay trimOverlay, String material) {
+        BufferedImage overlayImage = trimOverlay.getImage();
+
+        // Trim overlays use the MAPPED renderer with palette colors
+        OverlayRenderer renderer = OverlayRendererRegistry.getRendererOrThrow(trimOverlay.getType());
+
+        int[] colors = trimOverlay.getOverlayColorOptions() != null
+            ? trimOverlay.getOverlayColorOptions().getColorsFromOption(material)
+            : null;
+
+        if (colors == null || colors.length == 0) {
+            log.warn("No colors found for trim material '{}', skipping trim", material);
+            return baseImage;
+        }
+
+        OverlayConfig config = new OverlayConfig.Builder()
+            .withColors(colors)
+            .withColorMap(trimOverlay.getOverlayColorOptions() != null
+                ? trimOverlay.getOverlayColorOptions().getMap()
+                : null)
+            .withDataOption(material)
+            .build();
+
+        // Render the colored trim overlay
+        BufferedImage coloredTrim = new BufferedImage(overlayImage.getWidth(), overlayImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        renderer.render(coloredTrim, overlayImage, config);
+
+        // Composite trim on top of base
+        BufferedImage result = new BufferedImage(baseImage.getWidth(), baseImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = result.createGraphics();
+        g.drawImage(baseImage, 0, 0, null);
+        g.drawImage(coloredTrim, 0, 0, null);
+        g.dispose();
+
+        return result;
     }
 
     private BufferedImage applyOverlay(BufferedImage baseImage, ItemOverlay overlay, String dataOption) {
@@ -129,7 +202,13 @@ public class OverlayApplicationEffect implements ImageEffect {
     @Override
     public boolean canApply(EffectContext context) {
         String itemId = context.getItemId().toLowerCase();
-        return overlayLoader.hasOverlay(itemId);
+        // Can apply if item has an overlay OR if armor_trim is specified for an armor piece
+        if (overlayLoader.hasOverlay(itemId)) {
+            return true;
+        }
+
+        String armorTrim = context.getMetadata("armor_trim", String.class).orElse(null);
+        return armorTrim != null && !armorTrim.isBlank() && getTrimOverlayName(itemId) != null;
     }
 
     @Override

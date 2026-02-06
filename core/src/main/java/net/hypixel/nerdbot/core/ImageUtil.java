@@ -4,6 +4,8 @@ import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
+import java.awt.image.Raster;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -22,19 +24,6 @@ public class ImageUtil {
         File tempFile = File.createTempFile("image", ".png");
         ImageIO.write(imageToSave, "PNG", tempFile);
         return tempFile;
-    }
-
-    /**
-     * Reads a {@link BufferedImage} from a file.
-     *
-     * @param file The file to read the image from.
-     *
-     * @return The {@link BufferedImage} read from the file.
-     *
-     * @throws IOException If an error occurs while reading the file.
-     */
-    public static BufferedImage fromFile(File file) throws IOException {
-        return ImageIO.read(file);
     }
 
     /**
@@ -247,5 +236,142 @@ public class ImageUtil {
         }
 
         return sampleCount > 0;
+    }
+
+    /**
+     * Converts any image to TYPE_INT_ARGB using Graphics2D, properly handling
+     * indexed/palette PNG transparency.
+     *
+     * @param source The source image to convert
+     *
+     * @return The converted ARGB image, or the original if already ARGB
+     */
+    public static BufferedImage convertToArgb(BufferedImage source) {
+        if (source.getType() == BufferedImage.TYPE_INT_ARGB) {
+            return source;
+        }
+
+        BufferedImage converted = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = converted.createGraphics();
+        g.drawImage(source, 0, 0, null);
+        g.dispose();
+
+        return converted;
+    }
+
+    /**
+     * Converts any image to ARGB by reading raw raster data. This avoids gamma
+     * conversion issues that can occur with getRGB() on grayscale images.
+     *
+     * @param source The source image to convert
+     *
+     * @return The converted ARGB image, or the original if already ARGB
+     */
+    public static BufferedImage convertToArgbRaw(BufferedImage source) {
+        if (source.getType() == BufferedImage.TYPE_INT_ARGB) {
+            return source;
+        }
+
+        BufferedImage converted = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        int[] destPixels = ((DataBufferInt) converted.getRaster().getDataBuffer()).getData();
+
+        Raster raster = source.getRaster();
+        int numBands = raster.getNumBands();
+        int[] pixel = new int[numBands];
+
+        for (int y = 0; y < source.getHeight(); y++) {
+            for (int x = 0; x < source.getWidth(); x++) {
+                raster.getPixel(x, y, pixel);
+
+                int a, r, g, b;
+                if (numBands == 2) {
+                    int gray = pixel[0];
+                    a = pixel[1];
+                    r = g = b = gray;
+                } else if (numBands == 4) {
+                    r = pixel[0];
+                    g = pixel[1];
+                    b = pixel[2];
+                    a = pixel[3];
+                } else if (numBands == 3) {
+                    r = pixel[0];
+                    g = pixel[1];
+                    b = pixel[2];
+                    a = 255;
+                } else {
+                    destPixels[y * source.getWidth() + x] = source.getRGB(x, y);
+                    continue;
+                }
+
+                destPixels[y * source.getWidth() + x] = (a << 24) | (r << 16) | (g << 8) | b;
+            }
+        }
+
+        return converted;
+    }
+
+    /**
+     * Resizes an image using nearest-neighbor sampling with direct pixel access.
+     * Handles grayscale images specially to avoid gamma conversion issues.
+     *
+     * @param source The source image to resize
+     * @param width  The target width
+     * @param height The target height
+     *
+     * @return The resized ARGB image
+     */
+    public static BufferedImage resizeImageRaw(BufferedImage source, int width, int height) {
+        int srcWidth = source.getWidth();
+        int srcHeight = source.getHeight();
+
+        BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        int[] destPixels = ((DataBufferInt) result.getRaster().getDataBuffer()).getData();
+
+        if (isGrayscaleFormat(source)) {
+            // Read raw samples to preserve linear grayscale values without gamma conversion
+            Raster srcRaster = source.getRaster();
+            int numBands = srcRaster.getNumBands();
+            int[] samples = new int[numBands];
+
+            for (int dstY = 0; dstY < height; dstY++) {
+                int srcY = dstY * srcHeight / height;
+                for (int dstX = 0; dstX < width; dstX++) {
+                    int srcX = dstX * srcWidth / width;
+                    srcRaster.getPixel(srcX, srcY, samples);
+                    int gray = samples[0];
+                    int alpha = numBands == 2 ? samples[1] : 255;
+                    destPixels[dstY * width + dstX] = (alpha << 24) | (gray << 16) | (gray << 8) | gray;
+                }
+            }
+        } else {
+            BufferedImage argbSource = convertToArgb(source);
+            for (int dstY = 0; dstY < height; dstY++) {
+                int srcY = dstY * srcHeight / height;
+                for (int dstX = 0; dstX < width; dstX++) {
+                    int srcX = dstX * srcWidth / width;
+                    destPixels[dstY * width + dstX] = argbSource.getRGB(srcX, srcY);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Returns true if all pixels in the image are fully transparent.
+     *
+     * @param image The ARGB image to check
+     *
+     * @return true if all pixels have zero alpha
+     */
+    public static boolean isFullyTransparent(BufferedImage image) {
+        int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
+        for (int pixel : pixels) {
+            int alpha = (pixel >> 24) & 0xFF;
+            if (alpha > 0) {
+                return false;
+            }
+        }
+        return true;
     }
 }

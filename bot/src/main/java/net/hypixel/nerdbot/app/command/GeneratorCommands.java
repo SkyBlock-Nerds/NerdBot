@@ -36,6 +36,8 @@ import net.hypixel.nerdbot.generator.impl.MinecraftNbtParser;
 import net.hypixel.nerdbot.generator.impl.MinecraftPlayerHeadGenerator;
 import net.hypixel.nerdbot.generator.impl.tooltip.MinecraftTooltipGenerator;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
+import net.hypixel.nerdbot.generator.item.overlay.ItemOverlay;
+import net.hypixel.nerdbot.generator.item.overlay.OverlayColorOptions;
 import net.hypixel.nerdbot.generator.spritesheet.OverlayLoader;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 
@@ -83,6 +85,7 @@ public class GeneratorCommands {
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
     private static final String DURABILITY_DESCRIPTION = "Item durability percentage (0-100, only shown if less than 100)";
     private static final String COLOR_DESCRIPTION = "The overlay color (e.g., red, blue, #FF0000)";
+    private static final String ARMOR_TRIM_DESCRIPTION = "Armor trim material (e.g., iron, gold, diamond, amethyst)";
 
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
@@ -92,6 +95,7 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION) String itemId,
         @SlashOption(description = EXTRA_DATA_DESCRIPTION, required = false) String data,
         @SlashOption(autocompleteId = "overlay-colors", description = COLOR_DESCRIPTION, required = false) String color,
+        @SlashOption(autocompleteId = "armor-trim-materials", description = ARMOR_TRIM_DESCRIPTION, required = false) String armorTrim,
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
         @SlashOption(description = "If the item should look as if it being hovered over", required = false) Boolean hoverEffect,
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
@@ -122,6 +126,7 @@ public class GeneratorCommands {
                     .withItem(itemId)
                     .withData(data)
                     .withColor(color)
+                    .withArmorTrim(armorTrim)
                     .isEnchanted(enchanted)
                     .withHoverEffect(hoverEffect)
                     .isBigImage();
@@ -569,6 +574,7 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "item-rarities", description = RARITY_DESCRIPTION, required = false) String rarity,
         @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION, required = false) String itemId,
         @SlashOption(autocompleteId = "overlay-colors", description = COLOR_DESCRIPTION, required = false) String color,
+        @SlashOption(autocompleteId = "armor-trim-materials", description = ARMOR_TRIM_DESCRIPTION, required = false) String armorTrim,
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
         @SlashOption(description = RECIPE_STRING_DESCRIPTION, required = false) String recipe,
         @SlashOption(description = ALPHA_DESCRIPTION, required = false) Integer alpha,
@@ -630,6 +636,7 @@ public class GeneratorCommands {
                     MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
                         .withItem(itemId)
                         .withColor(color)
+                        .withArmorTrim(armorTrim)
                         .isEnchanted(enchanted)
                         .isBigImage();
 
@@ -935,6 +942,101 @@ public class GeneratorCommands {
         }
     }
 
+    @SlashCommand(name = BASE_COMMAND, group = "debug", subcommand = "overlays", description = "Generate visual samples of all overlays with their color options")
+    public void debugOverlays(SlashCommandInteractionEvent event) {
+        event.deferReply().complete();
+
+        try {
+            OverlayLoader overlayLoader = OverlayLoader.getInstance();
+
+            // Items with overlays (base items only, no trim variants)
+            List<String> overlayItems = List.of(
+                "leather_helmet", "leather_chestplate", "leather_leggings", "leather_boots",
+                "potion", "splash_potion", "lingering_potion",
+                "tipped_arrow", "firework_star"
+            );
+
+            event.getHook().editOriginal("Starting overlay debug generation...").complete();
+
+            for (String itemId : overlayItems) {
+                ItemOverlay overlay = overlayLoader.getOverlay(itemId);
+                if (overlay == null || overlay.getOverlayColorOptions() == null) {
+                    continue;
+                }
+
+                OverlayColorOptions colorOptions = overlay.getOverlayColorOptions();
+                List<String> colorNames = new ArrayList<>(colorOptions.getOptionNames());
+                if (colorNames.isEmpty()) {
+                    continue;
+                }
+
+                String colorOptionsName = overlay.getColorOptions();
+                List<BufferedImage> images = new ArrayList<>();
+                List<String> successfulColors = new ArrayList<>();
+
+                for (String colorName : colorNames) {
+                    try {
+                        GeneratedObject generated = new GeneratorImageBuilder()
+                            .addGenerator(new MinecraftItemGenerator.Builder()
+                                .withItem(itemId)
+                                .withColor(colorName)
+                                .isBigImage()
+                                .build())
+                            .build();
+
+                        images.add(generated.getImage());
+                        successfulColors.add(colorName);
+                    } catch (Exception e) {
+                        log.warn("Failed to generate {} with color {}: {}", itemId, colorName, e.getMessage());
+                    }
+                }
+
+                if (images.isEmpty()) {
+                    continue;
+                }
+
+                // Combine all images side by side
+                BufferedImage combined = combineImagesHorizontally(images);
+
+                // Build message with numbered color list
+                StringBuilder message = new StringBuilder();
+                message.append("**").append(itemId).append("** (options: `").append(colorOptionsName).append("`)\n");
+                for (int i = 0; i < successfulColors.size(); i++) {
+                    message.append(i + 1).append(". `").append(successfulColors.get(i)).append("`\n");
+                }
+
+                event.getHook().sendMessage(message.toString())
+                    .addFiles(FileUpload.fromData(ImageUtil.toFile(combined), itemId + "_all_colors.png"))
+                    .complete();
+            }
+
+            event.getHook().sendMessage("Overlay debug complete!").complete();
+        } catch (Exception e) {
+            event.getHook().editOriginal("An error occurred: " + e.getMessage()).queue();
+            log.error("Error generating overlay debug images", e);
+        }
+    }
+
+    /**
+     * Combines multiple images horizontally into a single image.
+     */
+    private BufferedImage combineImagesHorizontally(List<BufferedImage> images) {
+        int totalWidth = images.stream().mapToInt(BufferedImage::getWidth).sum();
+        int maxHeight = images.stream().mapToInt(BufferedImage::getHeight).max().orElse(0);
+
+        BufferedImage combined = new BufferedImage(totalWidth, maxHeight, BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics2D g = combined.createGraphics();
+
+        int x = 0;
+        for (BufferedImage img : images) {
+            g.drawImage(img, x, 0, null);
+            x += img.getWidth();
+        }
+
+        g.dispose();
+        return combined;
+    }
+
     @SlashAutocompleteHandler(id = "power-strengths")
     public List<Command.Choice> powerStrengths(CommandAutoCompleteInteractionEvent event) {
         String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
@@ -986,6 +1088,19 @@ public class GeneratorCommands {
         String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
 
         return OverlayLoader.getInstance().getAllColorOptionNames()
+            .stream()
+            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
+            .sorted()
+            .limit(25)
+            .map(name -> new Command.Choice(name, name))
+            .toList();
+    }
+
+    @SlashAutocompleteHandler(id = "armor-trim-materials")
+    public List<Command.Choice> armorTrimMaterials(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
+
+        return OverlayLoader.getInstance().getArmorTrimMaterials()
             .stream()
             .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
             .sorted()

@@ -35,6 +35,16 @@
             <artifactId>nerdbot-generator</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.7.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.fabricmc</groupId>
+            <artifactId>mapping-io</artifactId>
+            <version>0.7.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -70,6 +80,7 @@
                         <executions>
                             <execution>
                                 <id>generate-config</id>
+                                <phase>compile</phase>
                                 <goals>
                                     <goal>java</goal>
                                 </goals>
@@ -96,12 +107,137 @@
                         <executions>
                             <execution>
                                 <id>generate-spritesheet</id>
+                                <phase>compile</phase>
                                 <goals>
                                     <goal>java</goal>
                                 </goals>
                                 <configuration>
-                                    <mainClass>net.hypixel.nerdbot.tooling.spritesheet.ItemSpritesheetGenerator
+                                    <mainClass>net.hypixel.nerdbot.tooling.spritesheet.SpritesheetGenerator
                                     </mainClass>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>generate-overlays</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>generate-overlays</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>net.hypixel.nerdbot.tooling.spritesheet.OverlayGenerator
+                                    </mainClass>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>download-assets</id>
+            <properties>
+                <mc.version></mc.version>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>download-assets</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>net.hypixel.nerdbot.tooling.minecraft.MinecraftAssetTool</mainClass>
+                                    <arguments>
+                                        <argument>--download</argument>
+                                        <argument>--version=${mc.version}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>render-items</id>
+            <properties>
+                <mc.version></mc.version>
+                <render.size>256</render.size>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>render-items</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>net.hypixel.nerdbot.tooling.minecraft.MinecraftAssetTool</mainClass>
+                                    <arguments>
+                                        <argument>--render</argument>
+                                        <argument>--version=${mc.version}</argument>
+                                        <argument>--size=${render.size}</argument>
+                                        <argument>--debug</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>asset-pipeline</id>
+            <properties>
+                <mc.version></mc.version>
+                <render.size>256</render.size>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>asset-pipeline</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>net.hypixel.nerdbot.tooling.minecraft.MinecraftAssetTool</mainClass>
+                                    <arguments>
+                                        <argument>--all</argument>
+                                        <argument>--version=${mc.version}</argument>
+                                        <argument>--size=${render.size}</argument>
+                                        <argument>--debug</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>

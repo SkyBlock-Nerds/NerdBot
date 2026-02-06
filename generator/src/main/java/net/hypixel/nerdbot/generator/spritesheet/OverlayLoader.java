@@ -39,6 +39,7 @@ public class OverlayLoader {
     }
 
     private final Map<String, ItemOverlay> itemOverlays = new ConcurrentHashMap<>();
+    private final Map<String, ItemOverlay> overlaysByName = new ConcurrentHashMap<>();
     private final Map<String, OverlayColorOptions> colorOptionsMap = new ConcurrentHashMap<>();
     private final Gson gson;
     private final String resourceBasePath;
@@ -88,6 +89,7 @@ public class OverlayLoader {
 
             // Load overlay coordinates
             Map<String, ItemOverlay> overlays = loadOverlayCoordinates(overlaySpriteSheet, colorOptions);
+            overlaysByName.putAll(overlays);
 
             // Load item bindings
             loadItemBindings(overlays);
@@ -243,5 +245,38 @@ public class OverlayLoader {
             .stream()
             .flatMap(options -> options.getOptionNames().stream())
             .collect(Collectors.toSet());
+    }
+
+    /**
+     * Get available armor trim material names.
+     *
+     * @return Set of armor trim material names
+     */
+    public Set<String> getArmorTrimMaterials() {
+        if (!loaded) {
+            loadOverlays();
+        }
+
+        OverlayColorOptions armorTrim = colorOptionsMap.get("armor_trim");
+        if (armorTrim == null) {
+            return Set.of();
+        }
+
+        return armorTrim.getOptionNames();
+    }
+
+    /**
+     * Get overlay by name (NOT item ID).
+     *
+     * @param overlayName Overlay name (e.g., "chestplate_trim")
+     *
+     * @return ItemOverlay or null
+     */
+    public ItemOverlay getOverlayByName(String overlayName) {
+        if (!loaded) {
+            loadOverlays();
+        }
+
+        return overlaysByName.get(overlayName);
     }
 }
