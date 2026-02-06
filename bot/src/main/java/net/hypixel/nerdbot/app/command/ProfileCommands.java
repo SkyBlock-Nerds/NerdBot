@@ -171,7 +171,7 @@ public class ProfileCommands {
             try {
                 member.modifyNickname(mojangProfile.getUsername()).queue();
             } catch (HierarchyException hex) {
-                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getId() + ") to '" + mojangProfile.getUsername() + "' Are they a higher role?");
+                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
             }
         }
 
@@ -661,7 +661,7 @@ public class ProfileCommands {
                         .setColor(event.getMember().getColor())
                         .addField("Mojang Profile", profile, false)
                         .addField("Badges", discordUser.getBadges().isEmpty() ? "None" : String.valueOf(discordUser.getBadges().size()), true)
-                        .addField("Birthday", formatBirthdayDisplay(discordUser.getBirthdayData()), true)
+                        .addField("Birthday", discordUser.getBirthdayData().getFormattedDisplay(), true)
                         .build()
                 ).queue();
             })
@@ -963,7 +963,7 @@ public class ProfileCommands {
                     event.getHook().editOriginal("An error occurred while saving your preference, please try again later.").queue();
                 }
             })
-            .exceptionally(throwable ->  {
+            .exceptionally(throwable -> {
                 log.error("Error setting hide preference", throwable);
                 event.getHook().editOriginal("An error occurred while saving your preference, please try again later.").queue();
                 return null;
@@ -1068,14 +1068,5 @@ public class ProfileCommands {
             .limit(25)
             .map(tz -> new Command.Choice(tz, tz))
             .toList();
-    }
-
-    private String formatBirthdayDisplay(BirthdayData birthdayData) {
-        if (!birthdayData.isBirthdaySet()) {
-            return "Not Set";
-        }
-        String dateStr = DateFormatUtils.format(birthdayData.getBirthday(), "dd MMMM yyyy");
-        String tz = birthdayData.getTimeZoneId().getId();
-        return dateStr + " (" + tz + ")";
     }
 }

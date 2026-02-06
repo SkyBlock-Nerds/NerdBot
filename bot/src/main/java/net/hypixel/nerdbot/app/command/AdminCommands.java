@@ -510,7 +510,7 @@ public class AdminCommands {
             .setThumbnail(member.getEffectiveAvatarUrl())
             .addField("ID", member.getId(), false)
             .addField("Mojang Profile", profile, false)
-            .addField("Birthday", (discordUser.getBirthdayData().isBirthdaySet() ? DateFormatUtils.format(discordUser.getBirthdayData().getBirthday(), "dd MMMM yyyy") : "Not Set"), false)
+            .addField("Birthday", discordUser.getBirthdayData().getFormattedDisplay(), false)
             .build());
         embeds.add(1, ProfileCommands.createBadgesEmbed(member, discordUser, false));
 

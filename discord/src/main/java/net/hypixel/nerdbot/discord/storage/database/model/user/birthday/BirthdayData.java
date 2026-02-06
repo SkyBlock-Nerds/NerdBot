@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.hypixel.nerdbot.core.json.adapter.EpochMillisAdapter;
 
+import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
@@ -101,5 +102,16 @@ public class BirthdayData {
 
         long diff = System.currentTimeMillis() - birthdayTimestamp;
         return (int) (diff / (1000L * 60L * 60L * 24L * 365L));
+    }
+
+    public String getFormattedDisplay() {
+        if (!isBirthdaySet()) {
+            return "Not Set";
+        }
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy");
+        String dateStr = dateFormat.format(getBirthday());
+
+        return dateStr + " (" + getTimeZoneId().getId() + ")";
     }
 }
