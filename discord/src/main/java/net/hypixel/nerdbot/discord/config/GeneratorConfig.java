@@ -225,5 +225,15 @@ public class GeneratorConfig {
          * Whether error details should be included in responses
          */
         private boolean includeErrorDetails = true;
+
+        /**
+         * Padding between images when compositing multiple generators (in pixels)
+         */
+        private int imagePadding = 25;
+
+        /**
+         * Border padding around the final generated image (in pixels)
+         */
+        private int imageBorderPadding = 15;
     }
 }
