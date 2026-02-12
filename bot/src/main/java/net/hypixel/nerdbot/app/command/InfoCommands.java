@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class InfoCommands {
 
 
-    @SlashCommand(name = "info", subcommand = "bot", description = "View information about the bot", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "info", subcommand = "bot", description = "View information about the bot", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void botInfo(SlashCommandInteractionEvent event) {
         StringBuilder builder = new StringBuilder();
         SelfUser bot = DiscordBotEnvironment.getBot().getJDA().getSelfUser();
@@ -61,7 +61,7 @@ public class InfoCommands {
         event.reply(botInfo).setEphemeral(true).queue();
     }
 
-    @SlashCommand(name = "info", subcommand = "greenlit", description = "View greenlit suggestions", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "info", subcommand = "greenlit", description = "View greenlit suggestions", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void greenlitInfo(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
@@ -108,15 +108,8 @@ public class InfoCommands {
             .setTitle("Greenlit Suggestions");
 
         for (GreenlitMessage message : greenlitMessages) {
-            String title = message.getSuggestionTitle();
-            if (title.length() > 100) {
-                title = title.substring(0, 97) + "...";
-            }
-
-            String content = message.getSuggestionContent();
-            if (content.length() > 200) {
-                content = content.substring(0, 197) + "...";
-            }
+            String title = StringUtils.truncate(message.getSuggestionTitle(), 100);
+            String content = StringUtils.truncate(message.getSuggestionContent(), 200);
 
             String tags = message.getTags().isEmpty() ? "No tags" : String.join(", ", message.getTags());
             String votes = String.format("%s %d | %s %d | %s %d",
@@ -139,7 +132,7 @@ public class InfoCommands {
         return embedBuilder;
     }
 
-    @SlashCommand(name = "info", subcommand = "server", description = "View some information about the server", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "info", subcommand = "server", description = "View some information about the server", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void serverInfo(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
 

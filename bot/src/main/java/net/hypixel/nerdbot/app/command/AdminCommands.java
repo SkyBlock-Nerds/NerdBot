@@ -69,7 +69,6 @@ import net.hypixel.nerdbot.discord.storage.repository.Repository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.Utils;
-import org.apache.commons.lang.time.DateFormatUtils;
 
 import java.awt.Color;
 import java.io.File;
@@ -92,7 +91,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class AdminCommands {
 
-    @SlashCommand(name = "curate", description = "Manually run the curation process", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "curate", description = "Manually run the curation process", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void curate(SlashCommandInteractionEvent event, @SlashOption ForumChannel channel, @SlashOption(description = "Run the curator without greenlighting suggestions", required = false) Boolean readOnly) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         final boolean finalReadOnly = readOnly != null && readOnly;
@@ -155,7 +154,7 @@ public class AdminCommands {
             });
     }
 
-    @SlashCommand(name = "invites", subcommand = "create", description = "Generate a bunch of invites for a specific channel.", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "invites", subcommand = "create", description = "Generate a bunch of invites for a specific channel.", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void createInvites(SlashCommandInteractionEvent event, @SlashOption int amount, @SlashOption(required = false) TextChannel channel) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
@@ -170,14 +169,12 @@ public class AdminCommands {
                 TextChannel selected = Objects.requireNonNullElse(channel, DiscordBotEnvironment.getBot().getJDA().getTextChannelsByName("limbo", true).get(0));
                 event.deferReply(true).complete();
 
-                ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
-                    textChannel.sendMessageEmbeds(
-                        new EmbedBuilder()
-                            .setTitle("Invites Created")
-                            .setDescription(event.getUser().getAsMention() + " created " + amount + " invite(s) for " + selected.getAsMention() + ".")
-                            .build()
-                    ).queue();
-                }, () -> log.warn("Log channel not found!"));
+                ChannelCache.sendToLogChannel(
+                    new EmbedBuilder()
+                        .setTitle("Invites Created")
+                        .setDescription(event.getUser().getAsMention() + " created " + amount + " invite(s) for " + selected.getAsMention() + ".")
+                        .build()
+                );
 
                 for (int i = 0; i < amount; i++) {
                     try {
@@ -206,7 +203,7 @@ public class AdminCommands {
             });
     }
 
-    @SlashCommand(name = "invites", subcommand = "delete", description = "Delete all active invites.", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "invites", subcommand = "delete", description = "Delete all active invites.", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void deleteInvites(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
@@ -220,16 +217,12 @@ public class AdminCommands {
                     log.info(event.getUser().getName() + " deleted invite " + invite.getUrl());
                 });
 
-                ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
-                    textChannel.sendMessageEmbeds(
-                        new EmbedBuilder()
-                            .setTitle("Invites Deleted")
-                            .setDescription(event.getUser().getAsMention() + " deleted all " + invites.size() + " invite(s).")
-                            .build()
-                    ).queue();
-                }, () -> {
-                    log.warn("Log channel not found!");
-                });
+                ChannelCache.sendToLogChannel(
+                    new EmbedBuilder()
+                        .setTitle("Invites Deleted")
+                        .setDescription(event.getUser().getAsMention() + " deleted all " + invites.size() + " invite(s).")
+                        .build()
+                );
 
                 event.getHook().editOriginal(String.format("Deleted %d invites!", invites.size())).queue();
             })
@@ -240,7 +233,7 @@ public class AdminCommands {
             });
     }
 
-    @SlashCommand(name = "config", subcommand = "show", description = "View the currently loaded config", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "config", subcommand = "show", description = "View the currently loaded config", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void showConfig(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
@@ -261,7 +254,7 @@ public class AdminCommands {
         }
     }
 
-    @SlashCommand(name = "config", subcommand = "reload", description = "Reload the config file", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "config", subcommand = "reload", description = "Reload the config file", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void reloadConfig(SlashCommandInteractionEvent event) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
@@ -288,7 +281,7 @@ public class AdminCommands {
             });
     }
 
-    @SlashCommand(name = "config", subcommand = "edit", description = "Edit the config file", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "config", subcommand = "edit", description = "Edit the config file", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void editConfig(SlashCommandInteractionEvent event, @SlashOption String key, @SlashOption String value) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
@@ -331,7 +324,7 @@ public class AdminCommands {
             });
     }
 
-    @SlashCommand(name = "metrics", subcommand = "toggle", description = "Toggle metrics collection", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "metrics", subcommand = "toggle", description = "Toggle metrics collection", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void toggleMetrics(SlashCommandInteractionEvent event) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
@@ -354,7 +347,7 @@ public class AdminCommands {
         subcommand = "link",
         description = "Link a Mojang Profile to a member's account.",
         guildOnly = true,
-        requiredPermissions = {"BAN_MEMBERS"}
+        defaultMemberPermissions = {"BAN_MEMBERS"}
     )
     public void linkProfile(
         SlashCommandInteractionEvent event,
@@ -394,27 +387,23 @@ public class AdminCommands {
                         ProfileCommands.updateMojangProfile(member, mojangProfile);
                         event.getHook().editOriginal(String.format("Updated profile for %s to %s (UUID: %s)", member.getAsMention(), mojangProfile.getUsername(), mojangProfile.getUniqueId())).queue();
 
-                        ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
-                            textChannel.sendMessageEmbeds(
-                                new EmbedBuilder()
-                                    .setTitle("Mojang Profile Change")
-                                    .setThumbnail(member.getAvatarUrl())
-                                    .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
-                                    .addField("Username", mojangProfile.getUsername(), false)
-                                    .addField(
-                                        "UUID / SkyCrypt",
-                                        String.format(
-                                            "[%s](https://sky.shiiyu.moe/stats/%s)",
-                                            mojangProfile.getUniqueId(),
-                                            mojangProfile.getUniqueId()
-                                        ),
-                                        false
-                                    )
-                                    .build()
-                            ).queue();
-                        }, () -> {
-                            log.warn("Log channel not found!");
-                        });
+                        ChannelCache.sendToLogChannel(
+                            new EmbedBuilder()
+                                .setTitle("Mojang Profile Change")
+                                .setThumbnail(member.getAvatarUrl())
+                                .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
+                                .addField("Username", mojangProfile.getUsername(), false)
+                                .addField(
+                                    "UUID / SkyCrypt",
+                                    String.format(
+                                        "[%s](https://sky.shiiyu.moe/stats/%s)",
+                                        mojangProfile.getUniqueId(),
+                                        mojangProfile.getUniqueId()
+                                    ),
+                                    false
+                                )
+                                .build()
+                        );
                     })
                     .exceptionally(throwable -> {
                         log.error("Error during profile linking", throwable);
@@ -434,7 +423,7 @@ public class AdminCommands {
         subcommand = "missing",
         description = "List any user with no assigned Mojang Profile.",
         guildOnly = true,
-        requiredPermissions = {"BAN_MEMBERS"}
+        defaultMemberPermissions = {"BAN_MEMBERS"}
     )
     public void userMissingProfile(SlashCommandInteractionEvent event) {
         event.deferReply(true).queue();
@@ -493,7 +482,7 @@ public class AdminCommands {
         subcommand = "info",
         description = "View information about a user",
         guildOnly = true,
-        requiredPermissions = {"BAN_MEMBERS"}
+        defaultMemberPermissions = {"BAN_MEMBERS"}
     )
     public void userInfo(SlashCommandInteractionEvent event, @SlashOption(description = "The user to search") Member member) {
         event.deferReply(true).queue();
@@ -522,7 +511,7 @@ public class AdminCommands {
         subcommand = "badges",
         description = "View the badges of a user",
         guildOnly = true,
-        requiredPermissions = {"BAN_MEMBERS"}
+        defaultMemberPermissions = {"BAN_MEMBERS"}
     )
     public void viewUserBadges(SlashCommandInteractionEvent event, @SlashOption(description = "The user to search") Member member) {
         event.deferReply(true).queue();
@@ -543,7 +532,7 @@ public class AdminCommands {
         subcommand = "names",
         description = "Attempts to migrate any user with no assigned Mojang Profile using their display name.",
         guildOnly = true,
-        requiredPermissions = {"ADMINISTRATOR"}
+        defaultMemberPermissions = {"ADMINISTRATOR"}
     )
     public void migrateUsernames(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
@@ -603,7 +592,7 @@ public class AdminCommands {
             });
     }
 
-    @SlashCommand(name = "debug", subcommand = "role-restricted-activity", description = "Debug role-restricted channel activity for a user", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "debug", subcommand = "role-restricted-activity", description = "Debug role-restricted channel activity for a user", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void debugRoleRestrictedActivity(SlashCommandInteractionEvent event, @SlashOption(description = "The user to debug") Member member) {
         event.deferReply(true).complete();
 
@@ -674,7 +663,7 @@ public class AdminCommands {
         event.getHook().editOriginalEmbeds(embedBuilder.build()).queue();
     }
 
-    @SlashCommand(name = "cache", subcommand = "force-save", description = "Force save the specified cache to the database", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "cache", subcommand = "force-save", description = "Force save the specified cache to the database", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void forceSaveRepository(SlashCommandInteractionEvent event, @SlashOption String repositoryName) {
         event.deferReply(true).complete();
 
@@ -701,7 +690,7 @@ public class AdminCommands {
         }
     }
 
-    @SlashCommand(name = "cache", subcommand = "force-load", description = "Forcefully load documents from the database into the cache", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "cache", subcommand = "force-load", description = "Forcefully load documents from the database into the cache", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void forceLoadDocuments(SlashCommandInteractionEvent event, @SlashOption String repositoryName) {
         event.deferReply(true).complete();
 
@@ -729,7 +718,7 @@ public class AdminCommands {
         }
     }
 
-    @SlashCommand(name = "cache", subcommand = "stats", description = "View cache statistics", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "cache", subcommand = "stats", description = "View cache statistics", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void cacheStats(SlashCommandInteractionEvent event, @SlashOption String repositoryName) {
         event.deferReply(true).complete();
 
@@ -751,7 +740,7 @@ public class AdminCommands {
         }
     }
 
-    @SlashCommand(name = "admin", subcommand = "transfer-tag", description = "Interactive forum tag transfer panel", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "admin", subcommand = "transfer-tag", description = "Interactive forum tag transfer panel", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void transferForumTag(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
         createTagTransferPanel(event.getHook(), event.getUser().getId());
@@ -1141,7 +1130,7 @@ public class AdminCommands {
             .toList();
     }
 
-    @SlashCommand(name = "force", subcommand = "nominations", description = "Forcefully run the nomination process", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "force", subcommand = "nominations", description = "Forcefully run the nomination process", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void forceNominations(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "Only check users with the New Member role", required = false) Boolean newMembersOnly
@@ -1178,7 +1167,7 @@ public class AdminCommands {
         }
     }
 
-    @SlashCommand(name = "force", subcommand = "inactivity-check", description = "Forcefully run the inactivity check", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "force", subcommand = "inactivity-check", description = "Forcefully run the inactivity check", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void forceInactiveCheck(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "Only check users with the New Member role", required = false) Boolean newMembersOnly
@@ -1211,13 +1200,13 @@ public class AdminCommands {
         }
     }
 
-    @SlashCommand(name = "force", subcommand = "restricted-inactivity-check", description = "Forcefully run the restricted inactivity check", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "force", subcommand = "restricted-inactivity-check", description = "Forcefully run the restricted inactivity check", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void forceRestrictedInactiveCheck(SlashCommandInteractionEvent event) {
         NominationInactivityService.getInstance().runRoleRestrictedInactivitySweep();
         event.reply("Forced restricted inactivity check!").queue();
     }
 
-    @SlashCommand(name = "reset-inactivity-check-data", description = "Reset the inactivity check data", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "reset-inactivity-check-data", description = "Reset the inactivity check data", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void resetInactiveCheckData(SlashCommandInteractionEvent event) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
@@ -1230,7 +1219,7 @@ public class AdminCommands {
         });
     }
 
-    @SlashCommand(name = "scan-channel", description = "Manually scan a channel for role membership", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "scan-channel", description = "Manually scan a channel for role membership", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void scanChannelForRoleRestricted(SlashCommandInteractionEvent event, @SlashOption(description = "The channel to scan") GuildChannel channel) {
         event.deferReply(true).complete();
 
@@ -1309,7 +1298,7 @@ public class AdminCommands {
             event.getUser().getName(), channel.getName(), channel.getId());
     }
 
-    @SlashCommand(name = "channel-config", subcommand = "toggle", description = "Toggle automatic management of role-restricted channel groups", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "channel-config", subcommand = "toggle", description = "Toggle automatic management of role-restricted channel groups", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void toggleAutoManageRoleRestricted(SlashCommandInteractionEvent event) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
@@ -1332,7 +1321,7 @@ public class AdminCommands {
             event.getUser().getName(), !currentState ? "enabled" : "disabled");
     }
 
-    @SlashCommand(name = "channel-config", subcommand = "status", description = "View the status of automatic role-restricted channel management", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "channel-config", subcommand = "status", description = "View the status of automatic role-restricted channel management", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void autoManageStatus(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
@@ -1383,7 +1372,7 @@ public class AdminCommands {
         event.getHook().editOriginalEmbeds(embedBuilder.build()).queue();
     }
 
-    @SlashCommand(name = "channel-config", subcommand = "rebuild", description = "Rebuild role-restricted channel groups from current permissions", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "channel-config", subcommand = "rebuild", description = "Rebuild role-restricted channel groups from current permissions", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void rebuildRoleRestrictedGroups(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
@@ -1446,7 +1435,7 @@ public class AdminCommands {
         });
     }
 
-    @SlashCommand(name = "channel-config", subcommand = "clean", description = "Remove empty role-restricted channel groups", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "channel-config", subcommand = "clean", description = "Remove empty role-restricted channel groups", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void cleanRoleRestrictedGroups(SlashCommandInteractionEvent event) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
@@ -1476,7 +1465,7 @@ public class AdminCommands {
         }
     }
 
-    @SlashCommand(name = "debug", subcommand = "ungrouped-channels", description = "Show channels that are not part of any role-restricted group", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "debug", subcommand = "ungrouped-channels", description = "Show channels that are not part of any role-restricted group", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void debugUngroupedChannels(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 

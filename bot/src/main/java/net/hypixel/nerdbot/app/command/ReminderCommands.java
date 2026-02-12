@@ -32,6 +32,7 @@ import net.hypixel.nerdbot.discord.storage.database.model.reminder.Reminder;
 import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.storage.database.repository.ReminderRepository;
+import net.hypixel.nerdbot.discord.util.StringUtils;
 
 import java.awt.Color;
 import java.text.SimpleDateFormat;
@@ -451,9 +452,7 @@ public class ReminderCommands {
             String readableDate = dateFormat.format(reminder.getTime());
 
             String optionLabel = "#" + globalIndex + " - " + readableDate;
-            String optionDescription = reminder.getDescription().length() > 50
-                ? reminder.getDescription().substring(0, 47) + "..."
-                : reminder.getDescription();
+            String optionDescription = StringUtils.truncate(reminder.getDescription(), 50);
 
             selectBuilder.addOption(optionLabel, reminder.getUuid().toString(), optionDescription);
         }

@@ -577,27 +577,24 @@ public class ProfileCommands {
 
                                 event.getHook().editOriginal(String.format("Updated your Mojang profile to %s (`%s`)", mojangProfile.getUsername(), mojangProfile.getUniqueId())).queue();
 
-                                ChannelCache.getLogChannel().ifPresentOrElse(textChannel -> {
-                                    textChannel.sendMessageEmbeds(
-                                            new EmbedBuilder()
-                                                .setTitle("Mojang Profile Link")
-                                                .setDescription(member.getAsMention() + " has linked their Mojang Profile.")
-                                                .setThumbnail(member.getEffectiveAvatarUrl())
-                                                .setColor(Color.GREEN)
-                                                .addField("Username", mojangProfile.getUsername(), false)
-                                                .addField(
-                                                    "UUID / SkyCrypt",
-                                                    String.format(
-                                                        "[%s](https://sky.shiiyu.moe/stats/%s)",
-                                                        mojangProfile.getUniqueId(),
-                                                        mojangProfile.getUniqueId()
-                                                    ),
-                                                    false
-                                                )
-                                                .build()
+                                ChannelCache.sendToLogChannel(
+                                    new EmbedBuilder()
+                                        .setTitle("Mojang Profile Link")
+                                        .setDescription(member.getAsMention() + " has linked their Mojang Profile.")
+                                        .setThumbnail(member.getEffectiveAvatarUrl())
+                                        .setColor(Color.GREEN)
+                                        .addField("Username", mojangProfile.getUsername(), false)
+                                        .addField(
+                                            "UUID / SkyCrypt",
+                                            String.format(
+                                                "[%s](https://sky.shiiyu.moe/stats/%s)",
+                                                mojangProfile.getUniqueId(),
+                                                mojangProfile.getUniqueId()
+                                            ),
+                                            false
                                         )
-                                        .queue();
-                                }, () -> log.warn("Log channel not found!"));
+                                        .build()
+                                );
                             });
                     });
             })

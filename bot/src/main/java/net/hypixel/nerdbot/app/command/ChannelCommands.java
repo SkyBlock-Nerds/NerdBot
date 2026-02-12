@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class ChannelCommands {
 
-    @SlashCommand(name = "archive", subcommand = "channel", description = "Archives a channel and exports its contents to a file", guildOnly = true, requiredPermissions = {"MANAGE_CHANNEL"})
+    @SlashCommand(name = "archive", subcommand = "channel", description = "Archives a channel and exports its contents to a file", guildOnly = true, defaultMemberPermissions = {"MANAGE_CHANNEL"}, requiredPermissions = {"MANAGE_CHANNEL"})
     public void archive(SlashCommandInteractionEvent event, @SlashOption TextChannel channel) {
         event.deferReply(true).complete();
         InteractionHook hook = event.getHook();
@@ -58,7 +58,7 @@ public class ChannelCommands {
         });
     }
 
-    @SlashCommand(name = "archive", subcommand = "category", description = "Archives all text/forum channels (including threads) in a category into a single zip", guildOnly = true, requiredPermissions = {"MANAGE_CHANNEL"})
+    @SlashCommand(name = "archive", subcommand = "category", description = "Archives all text/forum channels (including threads) in a category into a single zip", guildOnly = true, defaultMemberPermissions = {"MANAGE_CHANNEL"}, requiredPermissions = {"MANAGE_CHANNEL"})
     public void archiveCategory(SlashCommandInteractionEvent event, @SlashOption Category category) {
         event.deferReply(true).complete();
         InteractionHook hook = event.getHook();
@@ -159,7 +159,7 @@ public class ChannelCommands {
         };
     }
 
-    @SlashCommand(name = "lock", description = "Locks the thread that the command is executed in", guildOnly = true, requiredPermissions = {"MANAGE_THREADS"})
+    @SlashCommand(name = "lock", description = "Locks the thread that the command is executed in", guildOnly = true, defaultMemberPermissions = {"MANAGE_THREADS"}, requiredPermissions = {"MANAGE_THREADS"})
     public void lockThread(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
         InteractionHook hook = event.getHook();
