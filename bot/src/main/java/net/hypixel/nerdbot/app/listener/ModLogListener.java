@@ -22,6 +22,7 @@ import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.discord.util.StringUtils;
 
 import java.awt.Color;
 import java.time.Instant;
@@ -31,10 +32,6 @@ public class ModLogListener {
 
     @SubscribeEvent
     public void onJoin(GuildMemberJoinEvent event) {
-        if (ChannelCache.getLogChannel().isEmpty()) {
-            return;
-        }
-
         Member member = event.getMember();
         String roles = member.getRoles().stream().map(Role::getName).reduce((a, b) -> a + ", " + b).orElse("None");
         MessageEmbed messageEmbed = getDefaultEmbed()
@@ -47,19 +44,15 @@ public class ModLogListener {
             .setColor(Color.GREEN)
             .build();
 
-        ChannelCache.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
+        ChannelCache.sendToLogChannel(messageEmbed);
     }
 
     @SubscribeEvent
     public void onMemberRemove(GuildMemberRemoveEvent event) {
-        if (ChannelCache.getLogChannel().isEmpty()) {
-            return;
-        }
-
         Member member = event.getMember();
 
         if (member == null) {
-            ChannelCache.getLogChannel().get().sendMessage("Could not find member with ID: " + event.getUser().getId() + " who may have left the server.").queue();
+            ChannelCache.sendMessageToLogChannel("Could not find member with ID: " + event.getUser().getId() + " who may have left the server.");
             return;
         }
 
@@ -74,15 +67,11 @@ public class ModLogListener {
             .setColor(Color.BLUE)
             .build();
 
-        ChannelCache.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
+        ChannelCache.sendToLogChannel(messageEmbed);
     }
 
     @SubscribeEvent
     public void onGuildBan(GuildBanEvent event) {
-        if (ChannelCache.getLogChannel().isEmpty()) {
-            return;
-        }
-
         User member = event.getUser();
         MessageEmbed messageEmbed = getDefaultEmbed()
             .setTitle("Member banned")
@@ -91,15 +80,11 @@ public class ModLogListener {
             .setColor(Color.RED)
             .build();
 
-        ChannelCache.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
+        ChannelCache.sendToLogChannel(messageEmbed);
     }
 
     @SubscribeEvent
     public void onGuildUnban(GuildUnbanEvent event) {
-        if (ChannelCache.getLogChannel().isEmpty()) {
-            return;
-        }
-
         User member = event.getUser();
         MessageEmbed messageEmbed = getDefaultEmbed()
             .setTitle("Member unbanned")
@@ -108,15 +93,11 @@ public class ModLogListener {
             .setColor(Color.GREEN)
             .build();
 
-        ChannelCache.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
+        ChannelCache.sendToLogChannel(messageEmbed);
     }
 
     @SubscribeEvent
     public void onInviteCreate(GuildInviteCreateEvent event) {
-        if (ChannelCache.getLogChannel().isEmpty()) {
-            return;
-        }
-
         User member = event.getInvite().getInviter();
         Invite invite = event.getInvite();
         MessageEmbed messageEmbed = getDefaultEmbed()
@@ -132,30 +113,22 @@ public class ModLogListener {
             .setColor(Color.GREEN)
             .build();
 
-        ChannelCache.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
+        ChannelCache.sendToLogChannel(messageEmbed);
     }
 
     @SubscribeEvent
     public void onInviteDelete(GuildInviteDeleteEvent event) {
-        if (ChannelCache.getLogChannel().isEmpty()) {
-            return;
-        }
-
         MessageEmbed messageEmbed = getDefaultEmbed()
             .setTitle("Invite deleted")
             .setDescription("Invite Code: " + event.getUrl())
             .setColor(Color.RED)
             .build();
 
-        ChannelCache.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
+        ChannelCache.sendToLogChannel(messageEmbed);
     }
 
     @SubscribeEvent
     public void onRoleAdd(GuildMemberRoleAddEvent event) {
-        if (ChannelCache.getLogChannel().isEmpty()) {
-            return;
-        }
-
         Member member = event.getMember();
         StringBuilder stringBuilder = new StringBuilder("Roles added to " + member.getAsMention() + ":\n");
 
@@ -169,15 +142,12 @@ public class ModLogListener {
             .setThumbnail(member.getAvatarUrl())
             .setColor(Color.GREEN)
             .build();
-        ChannelCache.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
+
+        ChannelCache.sendToLogChannel(messageEmbed);
     }
 
     @SubscribeEvent
     public void onRoleRemove(GuildMemberRoleRemoveEvent event) {
-        if (ChannelCache.getLogChannel().isEmpty()) {
-            return;
-        }
-
         Member member = event.getMember();
         StringBuilder stringBuilder = new StringBuilder("Roles removed from " + member.getAsMention() + ":\n");
         event.getRoles().forEach(role -> stringBuilder.append(" • ").append(role.getName()).append("\n"));
@@ -188,15 +158,11 @@ public class ModLogListener {
             .setColor(Color.RED)
             .build();
 
-        ChannelCache.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
+        ChannelCache.sendToLogChannel(messageEmbed);
     }
 
     @SubscribeEvent
     public void onMessageDelete(MessageDeleteEvent event) {
-        if (ChannelCache.getLogChannel().isEmpty()) {
-            return;
-        }
-
         if (isNotViewableByModerators(event.getGuildChannel())) {
             return;
         }
@@ -208,7 +174,7 @@ public class ModLogListener {
 
         User user = message.getAuthor();
         Channel channel = message.getChannel();
-        String messageContent = message.getContentDisplay().length() > 2_000 ? message.getContentDisplay().substring(0, 2_000) : message.getContentDisplay();
+        String messageContent = StringUtils.truncate(message.getContentDisplay(), 2_000);
         EmbedBuilder messageEmbed = getDefaultEmbed()
             .setTitle("Message deleted")
             .setThumbnail(user.getAvatarUrl())
@@ -224,15 +190,11 @@ public class ModLogListener {
             messageEmbed.addField("Attachments", attachments.toString(), false);
         }
 
-        ChannelCache.getLogChannel().get().sendMessageEmbeds(messageEmbed.build()).queue();
+        ChannelCache.sendToLogChannel(messageEmbed.build());
     }
 
     @SubscribeEvent
     public void onMessageEdit(MessageUpdateEvent event) {
-        if (ChannelCache.getLogChannel().isEmpty()) {
-            return;
-        }
-
         if (event.getAuthor().getId().equals(DiscordBotEnvironment.getBot().getJDA().getSelfUser().getId())) {
             return;
         }
@@ -264,7 +226,7 @@ public class ModLogListener {
             .addField("After", after.getContentDisplay(), true)
             .build();
 
-        ChannelCache.getLogChannel().get().sendMessageEmbeds(messageEmbed).queue();
+        ChannelCache.sendToLogChannel(messageEmbed);
     }
 
     private EmbedBuilder getDefaultEmbed() {

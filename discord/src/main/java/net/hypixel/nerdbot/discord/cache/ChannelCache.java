@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.discord.cache;
 
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -93,6 +94,20 @@ public class ChannelCache {
     public static Optional<TextChannel> getLogChannel() {
         return getChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getLogChannelId())
             .map(TextChannel.class::cast);
+    }
+
+    public static void sendToLogChannel(MessageEmbed embed, MessageEmbed... additional) {
+        getLogChannel().ifPresentOrElse(
+            channel -> channel.sendMessageEmbeds(embed, additional).queue(),
+            () -> log.warn("Log channel not found!")
+        );
+    }
+
+    public static void sendMessageToLogChannel(String message) {
+        getLogChannel().ifPresentOrElse(
+            channel -> channel.sendMessage(message).queue(),
+            () -> log.warn("Log channel not found!")
+        );
     }
 
     public static Optional<TextChannel> getVerifyLogChannel() {

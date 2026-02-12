@@ -23,7 +23,7 @@ import java.util.List;
 @Slf4j
 public class BadgeCommands {
 
-    @SlashCommand(name = "badge", subcommand = "give", description = "Award a badge to a user", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "badge", subcommand = "give", description = "Award a badge to a user", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void badgeAward(SlashCommandInteractionEvent event, @SlashOption Member member, @SlashOption(autocompleteId = "available_badges") String badgeId, @SlashOption(required = false) int tier) {
         event.deferReply(true).complete();
 
@@ -73,7 +73,7 @@ public class BadgeCommands {
             });
     }
 
-    @SlashCommand(name = "badge", subcommand = "revoke", description = "Remove a badge from a user", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "badge", subcommand = "revoke", description = "Remove a badge from a user", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void badgeRemove(SlashCommandInteractionEvent event, @SlashOption Member member, @SlashOption(autocompleteId = "available_badges") String badgeId, @SlashOption(required = false) int tier) {
         event.deferReply(true).complete();
 
@@ -112,7 +112,7 @@ public class BadgeCommands {
             });
     }
 
-    @SlashCommand(name = "badge", subcommand = "list", description = "List all available badges", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "badge", subcommand = "list", description = "List all available badges", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void badgeList(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 

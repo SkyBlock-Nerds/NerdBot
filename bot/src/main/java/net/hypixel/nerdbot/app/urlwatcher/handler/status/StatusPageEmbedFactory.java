@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.hypixel.nerdbot.core.TimeUtils;
 import net.hypixel.nerdbot.core.status.StatusPageResponse;
 import net.hypixel.nerdbot.discord.config.StatusPageConfig;
+import net.hypixel.nerdbot.discord.util.StringUtils;
 
 import java.awt.Color;
 import java.time.Instant;
@@ -29,9 +30,7 @@ public class StatusPageEmbedFactory {
             description.append("**").append(statusLabel).append(":** ");
 
             String body = latestUpdate.getBody();
-            if (body.length() > config.getMaxDescriptionLength()) {
-                body = body.substring(0, config.getMaxDescriptionLength() - 3) + "...";
-            }
+            body = StringUtils.truncate(body, config.getMaxDescriptionLength());
             description.append(body);
         }
 

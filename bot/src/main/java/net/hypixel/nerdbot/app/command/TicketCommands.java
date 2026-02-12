@@ -46,6 +46,7 @@ public class TicketCommands {
         subcommand = "setup",
         description = "Post the ticket creation panel in the current channel",
         guildOnly = true,
+        defaultMemberPermissions = {"ADMINISTRATOR"},
         requiredPermissions = {"ADMINISTRATOR"}
     )
     public void setupTicketPanel(
@@ -93,6 +94,7 @@ public class TicketCommands {
         subcommand = "close",
         description = "Close the current ticket",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void closeTicket(
@@ -135,6 +137,7 @@ public class TicketCommands {
         subcommand = "reopen",
         description = "Reopen a closed ticket",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void reopenTicket(
@@ -180,6 +183,7 @@ public class TicketCommands {
         subcommand = "claim",
         description = "Claim this ticket",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void claimTicket(SlashCommandInteractionEvent event) {
@@ -223,6 +227,7 @@ public class TicketCommands {
         subcommand = "transfer",
         description = "Transfer this ticket to another staff member",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void transferTicket(
@@ -271,6 +276,7 @@ public class TicketCommands {
         subcommand = "status",
         description = "Change ticket status",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void setStatus(
@@ -329,6 +335,7 @@ public class TicketCommands {
         subcommand = "find",
         description = "Find tickets for a user",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void findTickets(
@@ -371,6 +378,7 @@ public class TicketCommands {
         subcommand = "new",
         description = "Create a ticket on behalf of a user",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void createTicketForUser(
@@ -417,6 +425,7 @@ public class TicketCommands {
         subcommand = "info",
         description = "Get information about the current ticket",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void ticketInfo(SlashCommandInteractionEvent event) {
@@ -466,6 +475,7 @@ public class TicketCommands {
         subcommand = "export",
         description = "Export tickets to CSV",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void exportTickets(
@@ -558,6 +568,7 @@ public class TicketCommands {
         subcommand = "search",
         description = "Search tickets",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void searchTickets(
@@ -657,6 +668,7 @@ public class TicketCommands {
         subcommand = "deleteall",
         description = "[DEBUG] Delete ALL tickets, ticket channels, and reset counter",
         guildOnly = true,
+        defaultMemberPermissions = {"ADMINISTRATOR"},
         requiredPermissions = {"ADMINISTRATOR"}
     )
     public void deleteAllTickets(
@@ -689,6 +701,7 @@ public class TicketCommands {
         subcommand = "stats",
         description = "View ticket statistics",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void ticketStats(
@@ -882,6 +895,7 @@ public class TicketCommands {
         subcommand = "blacklist-add",
         description = "Add a user to the ticket blacklist",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void blacklistAdd(
@@ -915,6 +929,7 @@ public class TicketCommands {
         subcommand = "blacklist-remove",
         description = "Remove a user from the ticket blacklist",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void blacklistRemove(
@@ -943,6 +958,7 @@ public class TicketCommands {
         subcommand = "list",
         description = "List all blacklisted users",
         guildOnly = true,
+        defaultMemberPermissions = {"BAN_MEMBERS"},
         requiredPermissions = {"BAN_MEMBERS"}
     )
     public void blacklistList(SlashCommandInteractionEvent event) {

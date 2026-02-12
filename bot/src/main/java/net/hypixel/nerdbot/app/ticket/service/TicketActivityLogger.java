@@ -6,11 +6,12 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.discord.config.channel.TicketConfig;
-
-import java.time.Instant;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.Ticket;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.TicketStatus;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.discord.util.StringUtils;
+
+import java.time.Instant;
 
 /**
  * Logs ticket activity events to a configured Discord channel using embeds.
@@ -74,7 +75,7 @@ public class TicketActivityLogger {
 
     public void logClosed(Ticket ticket, User staff, String reason) {
         String closedBy = staff != null ? staff.getAsMention() : "System (Auto-close)";
-        String reasonText = reason != null && !reason.isBlank() ? truncate(reason, 200) : "No reason provided";
+        String reasonText = reason != null && !reason.isBlank() ? StringUtils.truncate(reason, 200) : "No reason provided";
         MessageEmbed embed = new EmbedBuilder()
             .setTitle("Ticket Closed")
             .setDescription(ticket.getFormattedTicketId())
@@ -156,21 +157,5 @@ public class TicketActivityLogger {
         }
 
         return channel;
-    }
-
-    /**
-     * Truncate a string to a maximum length, adding ellipsis if truncated.
-     *
-     * @param text      the text to truncate
-     * @param maxLength maximum length
-     *
-     * @return truncated string
-     */
-    private String truncate(String text, int maxLength) {
-        if (text == null || text.length() <= maxLength) {
-            return text;
-        }
-
-        return text.substring(0, maxLength - 3) + "...";
     }
 }

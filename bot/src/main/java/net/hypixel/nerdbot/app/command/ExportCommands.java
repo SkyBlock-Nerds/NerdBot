@@ -22,6 +22,7 @@ import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.discord.storage.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.model.user.stats.ChannelActivityEntry;
+import net.hypixel.nerdbot.discord.util.StringUtils;
 import net.hypixel.nerdbot.discord.storage.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.discord.storage.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
@@ -46,7 +47,7 @@ public class ExportCommands {
 
     private static final String PARENT_COMMAND = "export";
 
-    @SlashCommand(name = PARENT_COMMAND, subcommand = "threads", description = "Export threads from a Forum Channel", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "threads", description = "Export threads from a Forum Channel", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void exportForumThreads(SlashCommandInteractionEvent event, @SlashOption ForumChannel forumChannel) {
         event.deferReply(true).queue();
 
@@ -68,7 +69,7 @@ public class ExportCommands {
         }
     }
 
-    @SlashCommand(name = PARENT_COMMAND, subcommand = "greenlit", description = "Exports all greenlit forum posts into a CSV file", guildOnly = true, requiredPermissions = {"MANAGE_CHANNEL", "MANAGE_THREADS"})
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "greenlit", description = "Exports all greenlit forum posts into a CSV file", guildOnly = true, defaultMemberPermissions = {"MANAGE_CHANNEL", "MANAGE_THREADS"}, requiredPermissions = {"MANAGE_CHANNEL", "MANAGE_THREADS"})
     public void exportGreenlitThreads(SlashCommandInteractionEvent event, @SlashOption(description = "Disregards any post before this UNIX timestamp (Default: 0)", required = false) long suggestionsAfter) {
         event.deferReply(true).complete();
 
@@ -140,7 +141,7 @@ public class ExportCommands {
         }
     }
 
-    @SlashCommand(name = PARENT_COMMAND, subcommand = "uuids", description = "Get all assigned Minecraft Names/UUIDs from all specified roles (requires Member) in the server.", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "uuids", description = "Get all assigned Minecraft Names/UUIDs from all specified roles (requires Member) in the server.", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void userList(SlashCommandInteractionEvent event, @SlashOption(description = "Comma-separated role names to search for (Default: Member)", required = false) String roles) {
         event.deferReply(true).queue();
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
@@ -187,7 +188,7 @@ public class ExportCommands {
         });
     }
 
-    @SlashCommand(name = PARENT_COMMAND, subcommand = "roles", description = "Export a list of users with the given roles", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "roles", description = "Export a list of users with the given roles", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void exportRoles(SlashCommandInteractionEvent event, @SlashOption(description = "Comma-separated list of role names (e.g. Role 1, Role 2, Role 3)") String roles) {
         event.deferReply(true).queue();
         String[] roleArray = roles.split(", ?");
@@ -239,7 +240,7 @@ public class ExportCommands {
         });
     }
 
-    @SlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", guildOnly = true, requiredPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "member-activity", description = "Export a list of members and their activity", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void exportMemberActivity(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "The number of days of inactivity to consider", required = false) int inactivityDays,
@@ -391,7 +392,7 @@ public class ExportCommands {
         return new Date(timestamp) + "/" + timestamp;
     }
 
-    @SlashCommand(name = PARENT_COMMAND, subcommand = "user-suggestions", description = "Export all suggestions made by a specific user ID", guildOnly = true, requiredPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = PARENT_COMMAND, subcommand = "user-suggestions", description = "Export all suggestions made by a specific user ID", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void exportUserSuggestions(SlashCommandInteractionEvent event, @SlashOption(description = "User ID to export suggestions for") String userId) {
         event.deferReply(true).queue();
 
@@ -433,9 +434,7 @@ public class ExportCommands {
                 int progress = i + 1;
                 event.getHook().editOriginal(String.format("Processing suggestion %d/%d: \"%s\"",
                     progress, totalSuggestions,
-                    suggestion.getThreadName().length() > 50 ?
-                        suggestion.getThreadName().substring(0, 50) + "..." :
-                        suggestion.getThreadName()
+                    StringUtils.truncate(suggestion.getThreadName(), 53)
                 )).queue();
 
                 String content = suggestion.getFirstMessage()
