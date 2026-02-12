@@ -52,7 +52,7 @@ env:
   ENVIRONMENT_NAME: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
   PORT: ${{ github.event.inputs.port || '1234' }} # Default port is 1234 but should probably be changed to 9090 (convention)
   USE_OLD_IMAGE: ${{ github.event.inputs.useOldImage || 'false' }}
-  DOCKER_NETWORK: ${{ github.event.inputs.dockerNetwork || '' }}
+  DOCKER_NETWORK: ${{ github.event.inputs.dockerNetwork || secrets.DOCKER_NETWORK || '' }}
 
 jobs:
   publish:
