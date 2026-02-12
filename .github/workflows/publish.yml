@@ -85,6 +85,7 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
           cd ${{ secrets.WORK_DIR }}
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
           sudo docker pull ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
           sudo docker stop $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') || true
           sudo docker rm $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') || true
