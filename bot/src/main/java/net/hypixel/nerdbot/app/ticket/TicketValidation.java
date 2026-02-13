@@ -1,19 +1,17 @@
 package net.hypixel.nerdbot.app.ticket;
 
+import lombok.experimental.UtilityClass;
 import net.hypixel.nerdbot.discord.config.channel.TicketConfig;
 
 /**
  * Utility class for validating ticket-related input.
  * All validation methods throw {@link IllegalArgumentException} on invalid input.
  */
-public final class TicketValidation {
+@UtilityClass
+public class TicketValidation {
 
     private static final int MIN_DESCRIPTION_LENGTH = 10;
     private static final int MAX_DESCRIPTION_LENGTH = 4_000;
-
-    private TicketValidation() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
 
     /**
      * Validates that the category ID exists in the configuration.

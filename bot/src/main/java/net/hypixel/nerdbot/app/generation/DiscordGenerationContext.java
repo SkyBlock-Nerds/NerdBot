@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.generation;
 
+import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.hypixel.nerdbot.core.TimeUtils;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
@@ -9,10 +10,8 @@ import net.hypixel.nerdbot.generator.GenerationFeedback;
 
 import java.util.Arrays;
 
-public final class DiscordGenerationContext {
-
-    private DiscordGenerationContext() {
-    }
+@UtilityClass
+public class DiscordGenerationContext {
 
     public static GenerationContext fromEvent(SlashCommandInteractionEvent event, boolean defaultEphemeral) {
         GenerationFeedback feedback = (message, forceEphemeral) -> {

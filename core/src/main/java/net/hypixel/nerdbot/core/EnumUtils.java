@@ -1,18 +1,17 @@
 package net.hypixel.nerdbot.core;
 
+import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.Nullable;
 
+@UtilityClass
 public class EnumUtils {
 
-    private EnumUtils() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
-
     @Nullable
-    public static Enum<?> findValue(Enum<?>[] enumSet, String match) {
-        for (Enum<?> enumItem : enumSet) {
-            if (match.equalsIgnoreCase(enumItem.name()))
+    public static <T extends Enum<T>> T findValue(T[] enumSet, String match) {
+        for (T enumItem : enumSet) {
+            if (match.equalsIgnoreCase(enumItem.name())) {
                 return enumItem;
+            }
         }
 
         return null;

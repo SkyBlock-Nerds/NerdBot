@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.imageio.ImageIO;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
+@UtilityClass
 public class Spritesheet {
 
     private static final Map<String, BufferedImage> IMAGE_MAP = new HashMap<>();
@@ -65,9 +67,6 @@ public class Spritesheet {
         }
     }
 
-    private Spritesheet() {
-        throw new UnsupportedOperationException("Utility class");
-    }
 
     public static BufferedImage getTexture(String textureId) {
         return IMAGE_MAP.get(textureId);

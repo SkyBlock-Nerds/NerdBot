@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.discord.util;
 
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 
@@ -7,13 +8,10 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Slf4j
+@UtilityClass
 public class Utils {
 
     public static final String[] SPECIAL_ROLES = {"Apex Nerd", "Ultimate Nerd", "Ultimate Nerd But Red"};
-
-    private Utils() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
 
     @Deprecated
     public static Optional<String> getScuffedMinecraftIGN(Member member) {

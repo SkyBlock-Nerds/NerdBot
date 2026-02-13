@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.app.command.util;
 
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
@@ -14,10 +16,8 @@ import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -25,13 +25,9 @@ import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Slf4j
+@UtilityClass
 public class SuggestionCommandUtils {
-
-    private static final Logger log = LoggerFactory.getLogger(SuggestionCommandUtils.class);
-
-    private SuggestionCommandUtils() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
 
     public static List<Suggestion> getSuggestions(Member member, @Nullable Long userId, String tags, String title, Suggestion.ChannelType channelType) {
         final List<String> allTags = (tags == null || tags.trim().isEmpty())

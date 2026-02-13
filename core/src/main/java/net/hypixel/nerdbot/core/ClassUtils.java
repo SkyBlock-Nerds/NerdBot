@@ -1,16 +1,14 @@
 package net.hypixel.nerdbot.core;
 
+import lombok.experimental.UtilityClass;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
 import java.util.HashSet;
 import java.util.Set;
 
+@UtilityClass
 public class ClassUtils {
-
-    private ClassUtils() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
 
     public static Set<Class<?>> findClasses(String packageName, Class<?> clazz) {
         Reflections reflections = new Reflections(packageName, new SubTypesScanner(false));

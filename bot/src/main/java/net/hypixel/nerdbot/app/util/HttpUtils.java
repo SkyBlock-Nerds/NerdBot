@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.app.util;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import io.prometheus.client.Summary;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
@@ -28,11 +29,8 @@ import java.util.concurrent.CompletableFuture;
  * This class extends the core HttpClient functionality with monitoring and domain-specific methods.
  */
 @Slf4j
+@UtilityClass
 public class HttpUtils {
-
-    private HttpUtils() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
 
     public static MojangProfile getMojangProfile(String username) throws HttpException {
         String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);

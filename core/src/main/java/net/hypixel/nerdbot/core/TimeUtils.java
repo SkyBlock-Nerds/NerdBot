@@ -1,28 +1,14 @@
 package net.hypixel.nerdbot.core;
 
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
+@UtilityClass
 public class TimeUtils {
-
-    public static final SimpleDateFormat GLOBAL_DATE_TIME_FORMAT = new SimpleDateFormat("d MMMM yyyy HH:mm a");
-
-    private TimeUtils() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
-
-    public static String formatNow() {
-        long millis = System.currentTimeMillis();
-        return String.format("[%02d:%02d:%02d]",
-            TimeUnit.MILLISECONDS.toHours(millis) % 24,
-            TimeUnit.MILLISECONDS.toMinutes(millis) % 60,
-            TimeUnit.MILLISECONDS.toSeconds(millis) % 60
-        );
-    }
 
     public static String formatMs(long ms) {
         long days = TimeUnit.MILLISECONDS.toDays(ms);

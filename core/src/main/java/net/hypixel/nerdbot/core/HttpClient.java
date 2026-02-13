@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -13,7 +14,8 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
-public final class HttpClient {
+@UtilityClass
+public class HttpClient {
 
     private static final Gson GSON = new GsonBuilder().create();
 
@@ -21,10 +23,6 @@ public final class HttpClient {
         .connectTimeout(Duration.ofSeconds(10))
         .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
         .build();
-
-    private HttpClient() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
 
     /**
      * Makes a synchronous HTTP GET request and returns the response body as a string.

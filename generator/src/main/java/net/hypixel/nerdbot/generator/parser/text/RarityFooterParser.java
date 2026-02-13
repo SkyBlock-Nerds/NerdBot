@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
+import lombok.experimental.UtilityClass;
 import net.hypixel.nerdbot.core.Tuple;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
@@ -12,10 +13,8 @@ import java.util.Locale;
 /**
  * Utility to strip the rarity/type footer line from lore and surface its metadata.
  */
-public final class RarityFooterParser {
-
-    private RarityFooterParser() {
-    }
+@UtilityClass
+public class RarityFooterParser {
 
     /**
      * Attempts to remove the rarity footer line (e.g., "EPIC SWORD") from lore and return structured data.

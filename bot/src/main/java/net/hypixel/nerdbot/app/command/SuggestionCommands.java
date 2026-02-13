@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.app.command;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
+import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
@@ -43,19 +44,16 @@ import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
 import net.hypixel.nerdbot.discord.util.pagination.PaginationManager;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class SuggestionCommands {
-
-    private static final Logger log = LoggerFactory.getLogger(SuggestionCommands.class);
 
     private final Cache<@NotNull String, Long> lastReviewRequestCache = Caffeine.newBuilder()
         .expireAfterWrite(1, TimeUnit.HOURS)

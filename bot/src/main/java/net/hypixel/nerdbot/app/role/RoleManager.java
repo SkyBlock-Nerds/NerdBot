@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.role;
 
+import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.discord.config.objects.PingableRole;
@@ -11,10 +12,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+@UtilityClass
 public class RoleManager {
-
-    private RoleManager() {
-    }
 
     public static Optional<PingableRole> getPingableRoleByName(String name) {
         return Arrays.stream(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getPingableRoles())

@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.nomination;
 
+import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.app.role.RoleManager;
@@ -10,10 +11,8 @@ import net.hypixel.nerdbot.discord.config.RoleConfig;
  * using the configured ordered promotion path in {@link RoleConfig#getPromotionTierRoleIds()}.
  * Returns null if no next tier exists for the member's current highest role.
  */
-public final class NominationTypeResolver {
-
-    private NominationTypeResolver() {
-    }
+@UtilityClass
+public class NominationTypeResolver {
 
     public static String resolve(Member member, RoleConfig roleConfig) {
         Role highestRole = RoleManager.getHighestRole(member);

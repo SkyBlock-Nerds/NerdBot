@@ -1,11 +1,11 @@
 package net.hypixel.nerdbot.discord.util;
 
 import com.vdurmont.emoji.EmojiManager;
+import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
-import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
@@ -22,34 +22,17 @@ import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+@UtilityClass
 public class DiscordUtils {
-
-    private DiscordUtils() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
-
-    @Nullable
-    public static Guild getGuild(String guildId) {
-        return DiscordBotEnvironment.getBot().getJDA().getGuildById(guildId);
-    }
 
     @NotNull
     public static Guild getMainGuild() {
         return Objects.requireNonNull(DiscordBotEnvironment.getBot().getJDA().getGuildById(DiscordBotEnvironment.getBot().getConfig().getGuildId()));
-    }
-
-    public static int getReactionCountExcludingList(MessageReaction reaction, List<User> users) {
-        return (int) reaction.retrieveUsers()
-            .stream()
-            .filter(user -> !users.contains(user))
-            .count();
     }
 
     public static Optional<Message> getFirstMessage(String threadId) {

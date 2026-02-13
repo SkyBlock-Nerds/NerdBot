@@ -1,20 +1,21 @@
 package net.hypixel.nerdbot.app.ticket.control;
 
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.hypixel.nerdbot.app.ticket.service.TicketService;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.Ticket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Built-in ticket actions for control panel buttons.
  * Each action handles visibility, enabled state, and execution logic.
  */
-public final class BuiltInTicketActions {
+@Slf4j
+@UtilityClass
+public class BuiltInTicketActions {
 
-    private static final Logger log = LoggerFactory.getLogger(BuiltInTicketActions.class);
     private static final String ERROR_MESSAGE = "An error occurred while processing your request.";
     public static final TicketAction CLAIM = new TicketAction() {
         @Override
@@ -133,7 +134,4 @@ public final class BuiltInTicketActions {
         }
     };
 
-    private BuiltInTicketActions() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
 }

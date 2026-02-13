@@ -2,6 +2,9 @@ package net.hypixel.nerdbot.tooling.spritesheet;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import net.hypixel.nerdbot.core.ImageUtil;
 import net.hypixel.nerdbot.discord.storage.DataSerialization;
 
@@ -186,15 +189,13 @@ public class SpritesheetGenerator {
         }
     }
 
+    @Getter
+    @Setter
+    @RequiredArgsConstructor
     static class TextureInfo {
         final String name;
         final BufferedImage image;
         int x;
         int y;
-
-        TextureInfo(String name, BufferedImage image) {
-            this.name = name;
-            this.image = image;
-        }
     }
 }

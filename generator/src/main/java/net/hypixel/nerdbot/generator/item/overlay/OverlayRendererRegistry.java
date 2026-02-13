@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.generator.item.overlay;
 
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.overlay.renderer.DualLayerOverlayRenderer;
@@ -14,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Registry for OverlayRenderer implementations.
  */
 @Slf4j
+@UtilityClass
 public class OverlayRendererRegistry {
 
     private static final Map<String, OverlayRenderer> RENDERERS = new ConcurrentHashMap<>();
@@ -22,10 +24,6 @@ public class OverlayRendererRegistry {
         registerRenderer(new NormalOverlayRenderer());
         registerRenderer(new MappedOverlayRenderer());
         registerRenderer(new DualLayerOverlayRenderer());
-    }
-
-    private OverlayRendererRegistry() {
-        throw new UnsupportedOperationException("Utility class");
     }
 
     /**
