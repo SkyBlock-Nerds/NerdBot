@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.generator.cache;
 
+import lombok.experimental.UtilityClass;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -16,14 +18,11 @@ import java.util.Objects;
 /**
  * Utility methods for creating stable cache keys for generator configurations.
  */
-public final class GeneratorCacheKey {
+@UtilityClass
+public class GeneratorCacheKey {
 
     private static final String NULL_VALUE = "null";
     private static final HexFormat HEX = HexFormat.of();
-
-    private GeneratorCacheKey() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
 
     /**
      * Creates a deterministic cache key for the supplied generator instance by hashing all of its final fields.

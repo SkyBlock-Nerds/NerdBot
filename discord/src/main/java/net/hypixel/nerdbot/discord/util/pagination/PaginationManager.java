@@ -2,17 +2,17 @@ package net.hypixel.nerdbot.discord.util.pagination;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
+@UtilityClass
 public class PaginationManager {
-
-    private static final Logger log = LoggerFactory.getLogger(PaginationManager.class);
 
     private static final Cache<@NotNull String, PaginatedResponse<?>> activePages = Caffeine.newBuilder()
         .expireAfterWrite(15, TimeUnit.MINUTES)

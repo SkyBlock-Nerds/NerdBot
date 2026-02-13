@@ -1,18 +1,18 @@
 package net.hypixel.nerdbot.generator.util;
 
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.Font;
-import java.awt.FontFormatException;
-import java.awt.GraphicsEnvironment;
+import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
-public final class MinecraftFonts {
+@UtilityClass
+public class MinecraftFonts {
 
     public static final int REGULAR = 0;
 
@@ -58,9 +58,6 @@ public final class MinecraftFonts {
         log.info("Font initialization complete");
     }
 
-    private MinecraftFonts() {
-        throw new UnsupportedOperationException("Utility class");
-    }
 
     /**
      * Load a font.

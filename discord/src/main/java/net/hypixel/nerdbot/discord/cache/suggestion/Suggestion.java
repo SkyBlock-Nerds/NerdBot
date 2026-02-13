@@ -11,12 +11,12 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
+import net.hypixel.nerdbot.core.EnumUtils;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
 import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -159,10 +159,8 @@ public class Suggestion {
         private final String name;
 
         public static ChannelType getType(String name) {
-            return Arrays.stream(VALUES)
-                .filter(channelType -> channelType.name().equalsIgnoreCase(name))
-                .findFirst()
-                .orElse(UNKNOWN);
+            ChannelType result = EnumUtils.findValue(VALUES, name);
+            return result != null ? result : UNKNOWN;
         }
     }
 }

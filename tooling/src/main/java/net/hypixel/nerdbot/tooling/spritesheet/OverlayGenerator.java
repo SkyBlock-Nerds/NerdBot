@@ -2,6 +2,9 @@ package net.hypixel.nerdbot.tooling.spritesheet;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import net.hypixel.nerdbot.discord.storage.DataSerialization;
 
 import javax.imageio.ImageIO;
@@ -242,41 +245,13 @@ public class OverlayGenerator {
         }
     }
 
+    @Getter
+    @Setter
+    @AllArgsConstructor
     static class OverlayInfo {
         private final String name;
         private final BufferedImage image;
         private int x;
         private int y;
-
-        public OverlayInfo(String name, BufferedImage image, int x, int y) {
-            this.name = name;
-            this.image = image;
-            this.x = x;
-            this.y = y;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public BufferedImage getImage() {
-            return image;
-        }
-
-        public int getX() {
-            return x;
-        }
-
-        public void setX(int x) {
-            this.x = x;
-        }
-
-        public int getY() {
-            return y;
-        }
-
-        public void setY(int y) {
-            this.y = y;
-        }
     }
 }

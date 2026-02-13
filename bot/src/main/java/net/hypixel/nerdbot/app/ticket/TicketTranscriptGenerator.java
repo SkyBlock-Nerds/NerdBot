@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.ticket;
 
+import lombok.experimental.UtilityClass;
 import net.hypixel.nerdbot.discord.config.channel.TicketConfig;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.Ticket;
 import net.hypixel.nerdbot.discord.storage.database.model.ticket.TicketFieldValue;
@@ -14,12 +15,10 @@ import java.time.format.DateTimeFormatter;
  * Utility responsible for rendering ticket metadata and messages
  * into a simple text transcript that can be logged or exported.
  */
+@UtilityClass
 public class TicketTranscriptGenerator {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    private TicketTranscriptGenerator() {
-    }
 
     /**
      * Produce a human-readable transcript for the provided ticket, including

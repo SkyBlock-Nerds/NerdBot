@@ -1,15 +1,13 @@
 package net.hypixel.nerdbot.app.sentry;
 
 import io.sentry.Sentry;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.discord.api.bot.Environment;
 
 @Slf4j
+@UtilityClass
 public class SentryManager {
-
-    private SentryManager() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
 
     /**
      * Configures Sentry with the current environment.

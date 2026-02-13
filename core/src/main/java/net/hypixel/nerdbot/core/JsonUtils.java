@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
@@ -31,15 +32,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
+@UtilityClass
 public class JsonUtils {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private static final ExecutorService jsonExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
-    private JsonUtils() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
 
     public static JsonObject readJsonFile(String filename) {
         try (Reader reader = Files.newBufferedReader(Path.of(filename), StandardCharsets.UTF_8)) {
@@ -179,17 +177,6 @@ public class JsonUtils {
         return GSON.fromJson(br, clazz);
     }
 
-    public static CompletableFuture<Object> jsonToObjectAsync(File file, Class<?> clazz) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (BufferedReader br = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
-                return GSON.fromJson(br, clazz);
-            } catch (IOException e) {
-                log.error("Error reading file: {}", file.getPath(), e);
-                throw new RuntimeException("Error reading file: " + file.getPath(), e);
-            }
-        }, jsonExecutor);
-    }
-
     public static JsonObject isJsonObject(JsonObject obj, String element) {
         // checking if the json object has the key
         if (!obj.has(element)) {
@@ -203,19 +190,6 @@ public class JsonUtils {
         return foundItem.getAsJsonObject();
     }
 
-    public static String isJsonString(JsonObject obj, String element) {
-        // checking if the json object has the key
-        if (!obj.has(element)) {
-            return null;
-        }
-        // checking if the found element is a primitive type
-        JsonElement foundItem = obj.get(element);
-        if (!foundItem.isJsonPrimitive()) {
-            return null;
-        }
-        return foundItem.getAsJsonPrimitive().getAsString();
-    }
-
     public static JsonArray isJsonArray(JsonObject obj, String element) {
         // checking if the json object has the key
         if (!obj.has(element)) {
@@ -227,37 +201,6 @@ public class JsonUtils {
             return null;
         }
         return foundItem.getAsJsonArray();
-    }
-
-    public static JsonElement getIndexedElement(JsonElement element, String property, String indexStr) {
-        try {
-            int index = Integer.parseInt(indexStr);
-            JsonElement propertyElement = element.getAsJsonObject().get(property);
-            if (propertyElement == null || !propertyElement.isJsonArray()) {
-                return null;
-            }
-            return propertyElement.getAsJsonArray().get(index);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    public static JsonElement getNextElement(JsonElement element, String key) {
-        if (element.isJsonObject()) {
-            return element.getAsJsonObject().get(key);
-        } else if (element.isJsonArray()) {
-            return getElementFromArray(element.getAsJsonArray(), key);
-        }
-        return null;
-    }
-
-    private static JsonElement getElementFromArray(JsonArray array, String indexStr) {
-        try {
-            int index = Integer.parseInt(indexStr);
-            return array.get(index);
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
     public static void shutdown() {

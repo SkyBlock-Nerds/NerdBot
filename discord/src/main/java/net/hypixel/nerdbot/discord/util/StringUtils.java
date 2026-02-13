@@ -1,7 +1,10 @@
 package net.hypixel.nerdbot.discord.util;
 
+import lombok.experimental.UtilityClass;
+
 import java.text.DecimalFormat;
 
+@UtilityClass
 public class StringUtils {
 
     public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
@@ -10,10 +13,6 @@ public class StringUtils {
     static final String MINECRAFT_USERNAME_REGEX = "^[a-zA-Z0-9_]{2,16}";
     @Deprecated
     static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
-
-    private StringUtils() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
 
     public static String formatSize(long size) {
         if (size <= 0) return "0";
