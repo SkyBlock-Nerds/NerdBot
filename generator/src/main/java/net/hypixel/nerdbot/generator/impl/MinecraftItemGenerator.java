@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.core.ImageUtil;
+import net.hypixel.nerdbot.generator.GenerationContext;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.effect.EffectContext;
@@ -18,12 +19,13 @@ import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.spritesheet.OverlayLoader;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.util.List;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -41,7 +43,7 @@ public class MinecraftItemGenerator implements Generator {
     private final EffectPipeline effectPipeline;
 
     @Override
-    public @NotNull GeneratedObject render() {
+    public @NotNull GeneratedObject render(@Nullable GenerationContext generationContext) {
         log.debug("Rendering item '{}' ({})", itemId, this);
 
         // Load base item texture

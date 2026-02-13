@@ -7,14 +7,16 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import net.hypixel.nerdbot.core.HttpClient;
+import net.hypixel.nerdbot.core.ImageUtil;
+import net.hypixel.nerdbot.generator.GenerationContext;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
 import net.hypixel.nerdbot.generator.skull.RenderedPlayerSkull;
-import net.hypixel.nerdbot.core.HttpClient;
-import net.hypixel.nerdbot.core.ImageUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -54,7 +56,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
     }
 
     @Override
-    public @NotNull GeneratedObject render() {
+    public @NotNull GeneratedObject render(@Nullable GenerationContext generationContext) {
         log.debug("Rendering player head for texture '{}' (scale={})", textureId, scale);
 
         BufferedImage headImage = createHead(textureId);
@@ -108,7 +110,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
             throw new GeneratorException("Could not find player with name: `%s`", playerName);
         }
 
-        if (userUUID == null || userUUID.get("id") == null) {
+        if (userUUID.get("id") == null) {
             throw new GeneratorException("Could not find player with name: `%s`", playerName);
         }
 
@@ -120,7 +122,7 @@ public class MinecraftPlayerHeadGenerator implements Generator {
             throw new GeneratorException("Could not find player with name: `%s`", playerName);
         }
 
-        if (userProfile == null || userProfile.get("properties") == null) {
+        if (userProfile.get("properties") == null) {
             throw new GeneratorException("Could not find player with name: `%s`", playerName);
         }
 
