@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.core.ImageUtil;
+import net.hypixel.nerdbot.generator.GenerationContext;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.image.ImageCoordinates;
@@ -13,6 +14,7 @@ import net.hypixel.nerdbot.generator.parser.inventory.InventoryStringParser;
 import net.hypixel.nerdbot.generator.spritesheet.Spritesheet;
 import net.hypixel.nerdbot.generator.util.MinecraftFonts;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -212,7 +214,7 @@ public class MinecraftInventoryGenerator implements Generator {
         g2d.drawString(containerTitle, titleX, titleY);
     }
 
-    private void drawItems() {
+    private void drawItems(@Nullable GenerationContext generationContext) {
         if (inventoryString == null || inventoryString.isBlank()) {
             return;
         }
@@ -222,7 +224,7 @@ public class MinecraftInventoryGenerator implements Generator {
 
         boolean hasAnimation = false;
         for (InventoryItem item : items) {
-            processItem(item);
+            processItem(item, generationContext);
             if (item.getAnimationFrames() != null && !item.getAnimationFrames().isEmpty()) {
                 hasAnimation = true;
             }
@@ -308,7 +310,7 @@ public class MinecraftInventoryGenerator implements Generator {
         return filteredItems;
     }
 
-    private void processItem(InventoryItem item) {
+    private void processItem(InventoryItem item, @Nullable GenerationContext generationContext) {
         if (item.getItemName().contains("player_head")) {
             String skinValue = item.getExtraContent();
             if (skinValue != null && skinValue.contains(",")) {
@@ -328,7 +330,7 @@ public class MinecraftInventoryGenerator implements Generator {
             GeneratedObject playerHeadObject = new MinecraftPlayerHeadGenerator.Builder()
                 .withSkin(skinValue)
                 .build()
-                .generate();
+                .generate(generationContext);
             item.setItemImage(playerHeadObject.getImage());
             item.setAnimationFrames(playerHeadObject.getAnimationFrames());
             item.setFrameDelayMs(playerHeadObject.getFrameDelayMs() > 0 ? playerHeadObject.getFrameDelayMs() : null);
@@ -343,8 +345,8 @@ public class MinecraftInventoryGenerator implements Generator {
             if (item.getDurabilityPercent() != null) {
                 itemBuilder.withDurability(item.getDurabilityPercent());
             }
-            
-            GeneratedObject generatedItem = itemBuilder.build().generate();
+
+            GeneratedObject generatedItem = itemBuilder.build().generate(generationContext);
             item.setItemImage(generatedItem.getImage());
             item.setAnimationFrames(generatedItem.getAnimationFrames());
             item.setFrameDelayMs(generatedItem.getFrameDelayMs() > 0 ? generatedItem.getFrameDelayMs() : null);
@@ -461,13 +463,13 @@ public class MinecraftInventoryGenerator implements Generator {
     }
 
     @Override
-    public @NotNull GeneratedObject render() {
+    public @NotNull GeneratedObject render(@Nullable GenerationContext generationContext) {
         log.debug("Rendering inventory ({})", this);
 
         drawInventoryBackground();
         drawSlots();
         drawTitle();
-        drawItems();
+        drawItems(generationContext);
 
         g2d.dispose();
         log.debug("Rendered inventory image (dimensions {}x{})", inventoryImage.getWidth(), inventoryImage.getHeight());

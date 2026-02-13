@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.core.ImageUtil;
 import net.hypixel.nerdbot.core.Range;
 import net.hypixel.nerdbot.core.Tuple;
+import net.hypixel.nerdbot.generator.GenerationContext;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.data.Rarity;
@@ -22,6 +23,7 @@ import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -50,7 +52,7 @@ public class MinecraftTooltipGenerator implements Generator {
     private final int scaleFactor;
 
     @Override
-    public @NotNull GeneratedObject render() throws GeneratorException {
+    public @NotNull GeneratedObject render(@Nullable GenerationContext generationContext) throws GeneratorException {
         log.debug("Rendering tooltip for '{}'", name);
 
         // Configure tooltip rendering before generating

@@ -2,9 +2,11 @@ package net.hypixel.nerdbot.generator.image;
 
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.core.ImageUtil;
+import net.hypixel.nerdbot.generator.GenerationContext;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.GeneratedObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -26,12 +28,25 @@ public class GeneratorImageBuilder {
 
     private static final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
     private final List<Generator> generators;
+    private @Nullable GenerationContext context;
 
     /**
      * Default constructor for the {@link GeneratorImageBuilder} class.
      */
     public GeneratorImageBuilder() {
         this.generators = new ArrayList<>();
+    }
+
+    /**
+     * Set the {@link GenerationContext} for this builder.
+     *
+     * @param context The {@link GenerationContext context} to use, or null.
+     *
+     * @return The {@link GeneratorImageBuilder builder} instance.
+     */
+    public GeneratorImageBuilder withContext(@Nullable GenerationContext context) {
+        this.context = context;
+        return this;
     }
 
     /**
@@ -98,7 +113,7 @@ public class GeneratorImageBuilder {
         List<GeneratedObject> generatedObjects = new ArrayList<>();
         for (Generator generator : generators) {
             try {
-                generatedObjects.add(generator.generate());
+                generatedObjects.add(generator.generate(this.context));
             } catch (Exception e) {
                 throw new GeneratorException("Error generating object from generator: " + e.getMessage(), e);
             }

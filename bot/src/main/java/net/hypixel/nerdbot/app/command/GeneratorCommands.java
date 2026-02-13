@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import net.hypixel.nerdbot.app.generation.DiscordGenerationContext;
 import net.hypixel.nerdbot.core.FileUtils;
 import net.hypixel.nerdbot.core.ImageUtil;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
@@ -20,6 +21,7 @@ import net.hypixel.nerdbot.discord.storage.database.model.user.generator.Generat
 import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.StringUtils;
+import net.hypixel.nerdbot.generator.GenerationContext;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;
 import net.hypixel.nerdbot.generator.data.PowerStrength;
@@ -106,12 +108,14 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
+        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
+
         enchanted = enchanted != null && enchanted;
         hoverEffect = hoverEffect != null && hoverEffect;
         durability = durability == null ? 100 : durability;
 
         try {
-            GeneratorImageBuilder item = new GeneratorImageBuilder();
+            GeneratorImageBuilder item = new GeneratorImageBuilder().withContext(context);
 
             if (itemId.equalsIgnoreCase("player_head") && skinValue != null) {
                 item.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
@@ -176,6 +180,8 @@ public class GeneratorCommands {
         hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
 
         event.deferReply(hidden).complete();
+
+        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
 
         alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
@@ -277,7 +283,7 @@ public class GeneratorCommands {
             );
 
             try {
-                GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+                GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
                 MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                     .withName("&a" + powerName)
                     .withRarity(Rarity.byName("none"))
@@ -388,10 +394,12 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
+        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
+
         renderBackground = renderBackground == null || renderBackground;
 
         try {
-            GeneratedObject generatedObject = new GeneratorImageBuilder()
+            GeneratedObject generatedObject = new GeneratorImageBuilder().withContext(context)
                 .addGenerator(new MinecraftInventoryGenerator.Builder()
                     .withRows(3)
                     .withSlotsPerRow(3)
@@ -432,12 +440,14 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
+        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
+
         drawBorder = drawBorder == null || drawBorder;
         boolean animateGlint = DiscordBotEnvironment.getBot().getConfig().getGeneratorConfig().getInventory().isAnimateGlint();
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
         try {
-            GeneratorImageBuilder generatedObject = new GeneratorImageBuilder()
+            GeneratorImageBuilder generatedObject = new GeneratorImageBuilder().withContext(context)
                 .addGenerator(new MinecraftInventoryGenerator.Builder()
                     .withRows(rows)
                     .withSlotsPerRow(slotsPerRow)
@@ -494,9 +504,11 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
+        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
+
         try {
             MinecraftNbtParser.ParsedNbt parsedNbt = MinecraftNbtParser.parse(nbt);
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
 
             parsedNbt.getGenerators().forEach(generator -> {
                 generatorImageBuilder.addGenerator(generator.build());
@@ -590,6 +602,8 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
+        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
+
         type = type == null ? "" : type;
         rarity = rarity == null ? "none" : rarity;
         alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
@@ -602,7 +616,7 @@ public class GeneratorCommands {
         durability = durability == null ? 100 : durability;
 
         try {
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withName(itemName)
                 .withRarity(Rarity.byName(rarity))
@@ -699,6 +713,8 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
+        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
+
         centered = centered != null && centered;
         alpha = alpha == null ? 0 : alpha;
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
@@ -706,7 +722,7 @@ public class GeneratorCommands {
         renderBorder = renderBorder != null && renderBorder;
 
         try {
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder();
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withItemLore(text)
                 .withAlpha(alpha)
@@ -755,6 +771,8 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
+        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
+
         abiphone = abiphone != null && abiphone;
         maxLineLength = maxLineLength == null ? 91 : maxLineLength;
         renderBackground = renderBackground != null && renderBackground;
@@ -787,7 +805,7 @@ public class GeneratorCommands {
             .bypassMaxLineLength(true);
 
         try {
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context)
                 .addGenerator(tooltipGenerator.build());
 
             if (skinValue != null) {
@@ -835,6 +853,8 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
+        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
+
         abiphone = abiphone != null && abiphone;
         maxLineLength = maxLineLength == null ? 91 : maxLineLength;
         renderBackground = renderBackground != null && renderBackground;
@@ -880,7 +900,7 @@ public class GeneratorCommands {
                 .withRenderBorder(renderBackground)
                 .bypassMaxLineLength(true);
 
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder()
+            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context)
                 .addGenerator(tooltipGenerator.build());
 
             if (skinValue != null) {
