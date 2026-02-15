@@ -26,12 +26,12 @@ import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.hypixel.nerdbot.app.reminder.ReminderDispatcher;
-import net.hypixel.nerdbot.core.DiscordTimestamp;
 import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.storage.database.model.reminder.Reminder;
-import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.discord.storage.database.repository.ReminderRepository;
+import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
+import net.hypixel.nerdbot.marmalade.storage.database.model.reminder.Reminder;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.ReminderRepository;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 
 import java.awt.Color;

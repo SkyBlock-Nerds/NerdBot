@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.app.nomination;
 import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import net.hypixel.nerdbot.app.role.RoleManager;
+import net.hypixel.nerdbot.discord.role.RoleManager;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
 
 /**

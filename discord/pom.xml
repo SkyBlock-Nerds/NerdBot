@@ -16,9 +16,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>net.hypixel</groupId>
-            <artifactId>nerdbot-core</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.github.SkyBlock-Nerds</groupId>
+            <artifactId>Marmalade</artifactId>
+            <version>master-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>net.dv8tion</groupId>

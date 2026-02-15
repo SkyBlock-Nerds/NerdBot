@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.generator.impl;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.core.ImageUtil;
+import net.hypixel.nerdbot.marmalade.image.ImageUtil;
 import net.hypixel.nerdbot.generator.GenerationContext;
 import net.hypixel.nerdbot.generator.Generator;
 import net.hypixel.nerdbot.generator.builder.ClassBuilder;

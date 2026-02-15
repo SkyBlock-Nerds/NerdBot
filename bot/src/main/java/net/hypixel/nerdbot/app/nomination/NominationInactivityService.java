@@ -5,25 +5,30 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import net.hypixel.nerdbot.app.role.RoleManager;
-import net.hypixel.nerdbot.app.ticket.service.TicketService;
+import net.hypixel.nerdbot.discord.role.RoleManager;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
-import net.hypixel.nerdbot.discord.storage.database.model.ticket.Ticket;
-import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.discord.storage.database.model.user.stats.LastActivity;
-import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.LastActivity;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 import net.hypixel.nerdbot.discord.util.Utils;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+
 import java.awt.*;
 import java.time.Instant;
 import java.time.Month;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -277,7 +282,7 @@ public class NominationInactivityService {
                 }
 
                 ChannelCache.getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-                    List<Ticket> openTickets = TicketService.getInstance().getTicketRepository().findOpenTicketsByUser(member.getId());
+                    List<String> openTicketLinks = findOpenTicketLinks(member.getId());
 
                     EmbedBuilder embedBuilder = new EmbedBuilder()
                         .setColor(embedColor)
@@ -313,12 +318,8 @@ public class NominationInactivityService {
                                 StringUtils.COMMA_SEPARATED_FORMAT.format(group.getMinimumCommentsForActivity())),
                             true);
 
-                    if (!openTickets.isEmpty()) {
-                        String ticketLinks = openTickets.stream()
-                            .map(t -> t.getFormattedTicketId() + ": <#" + t.getChannelId() + ">")
-                            .reduce((a, b) -> a + "\n" + b)
-                            .orElse("");
-                        embedBuilder.addField("Open Tickets", ticketLinks, false);
+                    if (!openTicketLinks.isEmpty()) {
+                        embedBuilder.addField("Open Tickets", String.join("\n", openTicketLinks), false);
                     }
 
                     textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
@@ -345,7 +346,7 @@ public class NominationInactivityService {
         int totalComments = lastActivity.getTotalComments(roleConfig.getDaysRequiredForInactivityCheck());
 
         ChannelCache.getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-            List<Ticket> openTickets = TicketService.getInstance().getTicketRepository().findOpenTicketsByUser(member.getId());
+            List<String> openTicketLinks = findOpenTicketLinks(member.getId());
 
             String messagesStatus = totalMessages >= requiredMessages ? "✅" : "❌";
             String votesStatus = totalVotes >= requiredVotes ? "✅" : "❌";
@@ -390,12 +391,8 @@ public class NominationInactivityService {
                     false)
                 .setTimestamp(Instant.now());
 
-            if (!openTickets.isEmpty()) {
-                String ticketLinks = openTickets.stream()
-                    .map(t -> t.getFormattedTicketId() + ": <#" + t.getChannelId() + ">")
-                    .reduce((a, b) -> a + "\n" + b)
-                    .orElse("");
-                embedBuilder.addField("Open Tickets", ticketLinks, false);
+            if (!openTicketLinks.isEmpty()) {
+                embedBuilder.addField("Open Tickets", String.join("\n", openTicketLinks), false);
             }
 
             textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
@@ -406,5 +403,54 @@ public class NominationInactivityService {
         }, () -> {
             throw new IllegalStateException("Cannot find voting channel to send inactivity warning message into!");
         });
+    }
+
+    /**
+     * Queries the tickets collection directly via MongoDB to find open tickets for a user,
+     * avoiding a compile-time dependency on the ticket model classes.
+     *
+     * @param userId the Discord user ID
+     *
+     * @return formatted ticket links (e.g. "#0001: <#channelId>"), or empty list
+     */
+    private List<String> findOpenTicketLinks(String userId) {
+        try {
+            var database = BotEnvironment.getBot().getDatabase();
+            if (!database.isConnected() || database.getMongoClient() == null) {
+                return List.of();
+            }
+
+            String dbName = database.getConnectionString().getDatabase();
+            if (dbName == null) {
+                return List.of();
+            }
+
+            MongoCollection<Document> ticketsCollection = database.getMongoClient()
+                .getDatabase(dbName)
+                .getCollection("tickets");
+
+            Bson filter = Filters.and(
+                Filters.eq("ownerId", userId),
+                Filters.or(
+                    Filters.exists("closedAt", false),
+                    Filters.eq("closedAt", null),
+                    Filters.lte("closedAt", 0L)
+                )
+            );
+
+            List<String> links = new ArrayList<>();
+            for (Document doc : ticketsCollection.find(filter).sort(Sorts.descending("createdAt"))) {
+                Integer ticketNumber = doc.getInteger("ticketNumber");
+                String channelId = doc.getString("channelId");
+                if (ticketNumber != null && channelId != null) {
+                    links.add(String.format("#%04d: <#%s>", ticketNumber, channelId));
+                }
+            }
+
+            return links;
+        } catch (Exception e) {
+            log.warn("Failed to query open tickets for user {}", userId, e);
+            return List.of();
+        }
     }
 }

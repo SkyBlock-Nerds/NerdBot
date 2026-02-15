@@ -11,11 +11,11 @@ import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
-import net.hypixel.nerdbot.core.FileUtils;
+import net.hypixel.nerdbot.marmalade.io.FileUtils;
 import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.storage.badge.Badge;
-import net.hypixel.nerdbot.discord.storage.badge.TieredBadge;
-import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.marmalade.storage.badge.Badge;
+import net.hypixel.nerdbot.marmalade.storage.badge.TieredBadge;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 
 import java.io.IOException;
 import java.util.List;

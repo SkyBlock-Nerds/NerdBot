@@ -9,7 +9,7 @@ import net.hypixel.nerdbot.generator.text.ChatFormat;
 import net.hypixel.nerdbot.generator.text.segment.ColorSegment;
 import net.hypixel.nerdbot.generator.text.segment.LineSegment;
 import net.hypixel.nerdbot.generator.util.MinecraftFonts;
-import net.hypixel.nerdbot.core.Range;
+import net.hypixel.nerdbot.marmalade.Range;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;

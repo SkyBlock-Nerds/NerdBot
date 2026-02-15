@@ -1,10 +1,9 @@
 package net.hypixel.nerdbot.tooling.config;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+import net.hypixel.nerdbot.marmalade.json.DataSerialization;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -32,8 +31,6 @@ public class ConfigGenerator {
     private static final String EXAMPLE_STRING = "example_value";
     private static final String EXAMPLE_URL = "https://example.com/";
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-
     // Prevent infinite recursion
     private final Set<Class<?>> visitedClasses = new HashSet<>();
     private final int maxDepth;
@@ -56,7 +53,7 @@ public class ConfigGenerator {
 
         try {
             NerdBotConfig config = generator.generate(NerdBotConfig.class);
-            String json = GSON.toJson(config);
+            String json = DataSerialization.GSON.toJson(config);
             writeJsonToFile(json, args[0]);
             System.out.println("Created JSON file: " + args[0]);
         } catch (Exception e) {

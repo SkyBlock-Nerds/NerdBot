@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.core.JsonLoader;
+import net.hypixel.nerdbot.marmalade.json.JsonLoader;
 
 import java.util.ArrayList;
 import java.util.List;

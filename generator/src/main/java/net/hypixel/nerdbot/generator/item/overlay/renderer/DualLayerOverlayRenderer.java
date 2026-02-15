@@ -1,8 +1,8 @@
 package net.hypixel.nerdbot.generator.item.overlay.renderer;
 
-import net.hypixel.nerdbot.core.ImageUtil;
 import net.hypixel.nerdbot.generator.item.overlay.OverlayConfig;
 import net.hypixel.nerdbot.generator.item.overlay.OverlayRenderer;
+import net.hypixel.nerdbot.marmalade.image.ImageUtil;
 
 import java.awt.image.BufferedImage;
 

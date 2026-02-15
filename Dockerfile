@@ -6,8 +6,6 @@ WORKDIR /app
 
 # Copy the project files
 COPY pom.xml .
-COPY core/pom.xml core/pom.xml
-COPY core/src core/src
 COPY generator/pom.xml generator/pom.xml
 COPY generator/src generator/src
 COPY discord/pom.xml discord/pom.xml

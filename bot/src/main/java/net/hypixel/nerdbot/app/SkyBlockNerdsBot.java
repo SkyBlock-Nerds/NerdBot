@@ -15,10 +15,6 @@ import net.hypixel.nerdbot.app.listener.SuggestionListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.app.sentry.SentryManager;
 import net.hypixel.nerdbot.app.reminder.ReminderDispatcher;
-import net.hypixel.nerdbot.app.ticket.TicketListener;
-import net.hypixel.nerdbot.app.ticket.service.TicketService;
-import net.hypixel.nerdbot.app.urlwatcher.HypixelThreadURLWatcher;
-import net.hypixel.nerdbot.app.urlwatcher.URLWatcher;
 import net.hypixel.nerdbot.app.user.BirthdayScheduler;
 import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
@@ -28,21 +24,17 @@ import net.hypixel.nerdbot.discord.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.config.FeatureConfig;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
-import net.hypixel.nerdbot.discord.config.WatcherConfig;
-import net.hypixel.nerdbot.discord.storage.database.Database;
-import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.discord.storage.database.repository.ReminderRepository;
+import net.hypixel.nerdbot.marmalade.storage.database.Database;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.ReminderRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * SkyBlock Nerds Discord bot implementation.
@@ -50,8 +42,6 @@ import java.util.function.Consumer;
  */
 @Slf4j
 public class SkyBlockNerdsBot extends AbstractDiscordBot {
-
-    private final List<AutoCloseable> activeWatchers = new ArrayList<>();
 
     @Override
     protected @NotNull Class<? extends DiscordBotConfig> getConfigClass() {
@@ -92,11 +82,6 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
             new FunListener(),
             new RoleRestrictedChannelListener()
         ));
-
-        // Conditionally add Ticket listener if configured
-        if (getConfig().getTicketConfig() != null && !getConfig().getTicketConfig().getTicketCategoryId().isEmpty()) {
-            listeners.add(new TicketListener());
-        }
 
         return listeners;
     }
@@ -205,13 +190,6 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         }
 
         loadRemindersFromDatabase();
-        startUrlWatchers();
-
-        // Initialize ticket system if configured
-        if (config.getTicketConfig() != null && !config.getTicketConfig().getTicketCategoryId().isEmpty()) {
-            // Ticket system uses private channels - no forum tag setup needed
-            TicketService.getInstance();
-        }
 
         // Initialize member count metric
         DiscordUtils.getMainGuild().loadMembers()
@@ -231,7 +209,6 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     protected void onShutdown() {
         PrometheusMetrics.setMetricsEnabled(false);
         SentryManager.close();
-        stopUrlWatchers();
     }
 
     private void loadRemindersFromDatabase() {
@@ -274,86 +251,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
             });
     }
 
-    private void startUrlWatchers() {
-        stopUrlWatchers();
-
-        NerdBotConfig config = getConfig();
-        if (config.getWatchers() != null) {
-            log.info("Loading URL watchers from config ({} entries)", config.getWatchers().size());
-            config.getWatchers().stream()
-                .filter(WatcherConfig::isEnabled)
-                .forEach(this::startWatcherFromConfig);
-        } else {
-            log.info("No URLWatcher config present");
-        }
-    }
-
-    private void startWatcherFromConfig(WatcherConfig watcherConfig) {
-        try {
-            if (!isAllowed(watcherConfig.getClassName())) {
-                log.warn("Watcher class {} not permitted by class allowlist", watcherConfig.getClassName());
-                return;
-            }
-
-            Class<?> watcherClazz = Class.forName(watcherConfig.getClassName());
-            if (!URLWatcher.class.isAssignableFrom(watcherClazz)) {
-                log.warn("Watcher class {} does not extend URLWatcher", watcherConfig.getClassName());
-                return;
-            }
-
-            URLWatcher watcher;
-            try {
-                Constructor<?> declaredConstructor = watcherClazz.getDeclaredConstructor(String.class, Map.class);
-                watcher = (URLWatcher) declaredConstructor.newInstance(watcherConfig.getUrl(), watcherConfig.getHeaders());
-            } catch (NoSuchMethodException exception) {
-                Constructor<?> declaredConstructor = watcherClazz.getDeclaredConstructor(String.class);
-                watcher = (URLWatcher) declaredConstructor.newInstance(watcherConfig.getUrl());
-            }
-
-            if (watcherConfig.getHandlerClass() != null && !watcherConfig.getHandlerClass().isBlank()) {
-                if (!isAllowed(watcherConfig.getHandlerClass())) {
-                    log.warn("Handler class {} not permitted by class allowlist", watcherConfig.getHandlerClass());
-                    return;
-                }
-
-                Class<?> handlerClazz = Class.forName(watcherConfig.getHandlerClass());
-                if (!URLWatcher.DataHandler.class.isAssignableFrom(handlerClazz)) {
-                    log.warn("Handler class {} does not implement URLWatcher.DataHandler", watcherConfig.getHandlerClass());
-                    return;
-                }
-
-                URLWatcher.DataHandler handler = (URLWatcher.DataHandler) handlerClazz.getDeclaredConstructor().newInstance();
-                log.info("Starting watcher {} on {} with handler {} (interval={} {})",
-                    watcherClazz.getName(), watcherConfig.getUrl(), handlerClazz.getName(), watcherConfig.getInterval(), watcherConfig.getTimeUnit());
-                startWatcher(watcher, w -> w.startWatching(watcherConfig.getInterval(), watcherConfig.getTimeUnit(), handler));
-            } else if (watcher instanceof HypixelThreadURLWatcher hypixelWatcher) {
-                log.info("Starting HypixelThreadURLWatcher on {} (interval={} {})", watcherConfig.getUrl(), watcherConfig.getInterval(), watcherConfig.getTimeUnit());
-                startWatcher(hypixelWatcher, w -> w.startWatching(watcherConfig.getInterval(), watcherConfig.getTimeUnit()));
-            } else {
-                log.warn("Watcher {} requires a handlerClass but none was provided", watcherConfig.getClassName());
-            }
-        } catch (Exception exception) {
-            log.warn("Failed to start watcher from config: {}", watcherConfig, exception);
-        }
-    }
-
     private static boolean isAllowed(String className) {
         return className != null && className.startsWith("net.hypixel.nerdbot.");
-    }
-
-    private void stopUrlWatchers() {
-        activeWatchers.forEach(watcher -> {
-            try {
-                watcher.close();
-            } catch (Exception exception) {
-                log.warn("Failed to stop watcher {}", watcher.getClass().getSimpleName(), exception);
-            }
-        });
-        activeWatchers.clear();
-    }
-
-    private <T extends AutoCloseable> void startWatcher(T watcher, Consumer<T> starter) {
-        starter.accept(watcher);
-        activeWatchers.add(watcher);
     }
 }

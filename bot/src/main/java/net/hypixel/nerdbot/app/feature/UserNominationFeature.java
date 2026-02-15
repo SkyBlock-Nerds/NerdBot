@@ -4,8 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.nomination.NominationInactivityService;
 import net.hypixel.nerdbot.app.nomination.NominationService;
-import net.hypixel.nerdbot.core.TimeUtils;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
+import net.hypixel.nerdbot.marmalade.format.TimeUtils;
 
 import java.time.Duration;
 import java.util.TimerTask;

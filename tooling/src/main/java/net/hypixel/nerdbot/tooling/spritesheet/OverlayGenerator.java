@@ -5,7 +5,7 @@ import com.google.gson.JsonObject;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import net.hypixel.nerdbot.discord.storage.DataSerialization;
+import net.hypixel.nerdbot.marmalade.json.DataSerialization;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

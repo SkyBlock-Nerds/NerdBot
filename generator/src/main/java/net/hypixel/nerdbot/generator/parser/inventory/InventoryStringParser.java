@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.hypixel.nerdbot.generator.exception.GeneratorException;
 import net.hypixel.nerdbot.generator.item.InventoryItem;
 import net.hypixel.nerdbot.generator.parser.Parser;
-import net.hypixel.nerdbot.core.Range;
+import net.hypixel.nerdbot.marmalade.Range;
 
 import java.util.ArrayList;
 import java.util.Arrays;

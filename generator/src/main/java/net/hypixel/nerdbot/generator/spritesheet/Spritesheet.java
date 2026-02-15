@@ -1,11 +1,11 @@
 package net.hypixel.nerdbot.generator.spritesheet;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import net.hypixel.nerdbot.marmalade.json.DataSerialization;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -24,7 +24,6 @@ public class Spritesheet {
     private static final Map<String, BufferedImage> IMAGE_MAP = new HashMap<>();
     private static final String ATLAS_PATH = "/minecraft/assets/spritesheets/minecraft_texture_atlas.png";
     private static final String COORDINATES_PATH = "/minecraft/assets/json/atlas_coordinates.json";
-    private static final Gson GSON = new Gson();
     private static BufferedImage textureAtlas;
 
     static {
@@ -47,7 +46,7 @@ public class Spritesheet {
             log.info("Loading texture atlas coordinates from JSON file");
 
             // Load the texture atlas coordinates
-            JsonArray jsonCoordinates = GSON.fromJson(new InputStreamReader(coordinatesStream), JsonArray.class);
+            JsonArray jsonCoordinates = DataSerialization.GSON.fromJson(new InputStreamReader(coordinatesStream), JsonArray.class);
 
             for (JsonElement jsonElement : jsonCoordinates) {
                 JsonObject itemData = jsonElement.getAsJsonObject();

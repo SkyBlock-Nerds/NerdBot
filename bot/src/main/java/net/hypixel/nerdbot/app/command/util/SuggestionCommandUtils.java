@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.hypixel.nerdbot.app.command.SuggestionStats;
-import net.hypixel.nerdbot.core.DiscordTimestamp;
 import net.hypixel.nerdbot.discord.cache.EmojiCache;
 import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
@@ -15,6 +14,7 @@ import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
+import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;

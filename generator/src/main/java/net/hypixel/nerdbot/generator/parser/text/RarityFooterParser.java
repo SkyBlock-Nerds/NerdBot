@@ -1,9 +1,9 @@
 package net.hypixel.nerdbot.generator.parser.text;
 
 import lombok.experimental.UtilityClass;
-import net.hypixel.nerdbot.core.Tuple;
 import net.hypixel.nerdbot.generator.data.Rarity;
 import net.hypixel.nerdbot.generator.text.wrapper.TextWrapper;
+import net.hypixel.nerdbot.marmalade.Tuple;
 
 import java.util.ArrayList;
 import java.util.Arrays;

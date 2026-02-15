@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.discord.api.bot;
 
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
-import net.hypixel.nerdbot.discord.storage.database.Database;
+import net.hypixel.nerdbot.marmalade.storage.database.Database;
 
 import javax.security.auth.login.LoginException;
 import java.util.List;
