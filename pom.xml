@@ -18,7 +18,6 @@
     </properties>
 
     <modules>
-        <module>generator</module>
         <module>discord</module>
         <module>bot</module>
         <module>tooling</module>
