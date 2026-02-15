@@ -3,19 +3,6 @@
     "enabled": true,
     "port": 1
   },
-  "statusPageConfig": {
-    "operationalColor": "example_value",
-    "degradedColor": "example_value",
-    "partialOutageColor": "example_value",
-    "majorOutageColor": "example_value",
-    "maintenanceColor": "example_value",
-    "maxDescriptionLength": 1,
-    "includeResolvedIncidents": true,
-    "includeCompletedMaintenances": true,
-    "enableStatusAlerts": true,
-    "statusAlertRoleName": "example_value",
-    "enableMaintenanceAlerts": true
-  },
   "messageLimit": 1,
   "mojangUsernameCacheTTL": 1,
   "mojangForceNicknameUpdate": true,
@@ -33,96 +20,10 @@
       "periodMs": 1
     }
   ],
-  "watchers": [
-    {
-      "enabled": true,
-      "className": "example_value",
-      "url": "https://example.com/",
-      "headers": {
-        "example_value": "example_value"
-      },
-      "interval": 1,
-      "timeUnit": "NANOSECONDS",
-      "handlerClass": "example_value"
-    }
-  ],
   "guildId": "1234567890123456789",
   "ownerIds": [
     "1234567890123456789"
   ],
-  "ticketConfig": {
-    "ticketCategoryId": "1234567890123456789",
-    "closedTicketCategoryId": "1234567890123456789",
-    "ticketChannelPrefix": "example_value",
-    "ticketRoleId": "1234567890123456789",
-    "categories": [
-      {
-        "id": "1234567890123456789",
-        "displayName": "example_value",
-        "description": "example_value"
-      }
-    ],
-    "statuses": [
-      {
-        "id": "1234567890123456789",
-        "displayName": "example_value",
-        "emoji": "example_value",
-        "allowedTransitions": [
-          {
-            "targetStatusId": "1234567890123456789",
-            "buttonLabel": "example_value",
-            "requiresClaim": true,
-            "autoClaimOnTransition": true
-          }
-        ]
-      }
-    ],
-    "userReplyStatus": "OPEN",
-    "staffReplyStatus": "OPEN",
-    "remindersEnabled": true,
-    "reminderThresholds": [
-      {
-        "hoursWithoutResponse": 1,
-        "message": "example_value",
-        "pingStaff": true
-      }
-    ],
-    "reminderCheckIntervalMinutes": 1,
-    "useModalFlow": true,
-    "templates": [
-      {
-        "categoryId": "1234567890123456789",
-        "modalTitle": "example_value",
-        "fields": [
-          {
-            "id": "1234567890123456789",
-            "label": "example_value",
-            "placeholder": "example_value",
-            "required": true,
-            "style": "example_value",
-            "minLength": 1,
-            "maxLength": 1
-          }
-        ]
-      }
-    ],
-    "maxOpenTicketsPerUser": 1,
-    "timeBetweenPings": 1,
-    "storeTranscripts": true,
-    "uploadTranscriptOnClose": true,
-    "autoCloseEnabled": true,
-    "autoCloseDays": 1,
-    "autoCloseStatus": "OPEN",
-    "autoCloseMessage": "example_value",
-    "autoDeleteClosedTickets": true,
-    "closedTicketRetentionDays": 1,
-    "blacklistedUserIds": [
-      "1234567890123456789"
-    ],
-    "blacklistMessage": "example_value",
-    "activityLogChannelId": "1234567890123456789",
-    "transcriptChannelId": "1234567890123456789"
-  },
   "suggestionConfig": {
     "reviewRequestConfig": {
       "enabled": true,

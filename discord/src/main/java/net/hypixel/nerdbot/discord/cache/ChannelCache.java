@@ -73,24 +73,6 @@ public class ChannelCache {
             .map(Category.class::cast);
     }
 
-    /**
-     * Get the ticket category where ticket channels are created.
-     */
-    public static Optional<Category> getTicketCategory() {
-        return getCategoryById(DiscordBotEnvironment.getBot().getConfig().getTicketConfig().getTicketCategoryId());
-    }
-
-    /**
-     * Get the closed ticket category where closed ticket channels are moved.
-     */
-    public static Optional<Category> getClosedTicketCategory() {
-        String closedCategoryId = DiscordBotEnvironment.getBot().getConfig().getTicketConfig().getClosedTicketCategoryId();
-        if (closedCategoryId == null || closedCategoryId.isEmpty()) {
-            return Optional.empty();
-        }
-        return getCategoryById(closedCategoryId);
-    }
-
     public static Optional<TextChannel> getLogChannel() {
         return getChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getLogChannelId())
             .map(TextChannel.class::cast);

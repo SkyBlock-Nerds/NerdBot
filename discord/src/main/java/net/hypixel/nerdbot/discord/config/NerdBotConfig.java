@@ -21,11 +21,6 @@ public class NerdBotConfig extends DiscordBotConfig {
     private MetricsConfig metricsConfig = new MetricsConfig();
 
     /**
-     * Configuration for status page monitoring
-     */
-    private StatusPageConfig statusPageConfig = new StatusPageConfig();
-
-    /**
      * The limit of messages that the bot will curate in one go
      * Default value is 100 messages
      */
@@ -82,10 +77,4 @@ public class NerdBotConfig extends DiscordBotConfig {
      * the bot will instantiate and start the listed features in order.
      */
     private List<FeatureConfig> features;
-
-    /**
-     * URL watcher configuration. If present and not empty,
-     * the bot will instantiate and start the listed watchers.
-     */
-    private List<WatcherConfig> watchers;
 }

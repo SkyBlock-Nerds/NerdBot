@@ -11,9 +11,9 @@ import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
-import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.discord.storage.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.MojangProfile;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.config.FeatureConfig;
 

@@ -1,8 +1,8 @@
-package net.hypixel.nerdbot.discord.storage.curator;
+package net.hypixel.nerdbot.app.curator;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.hypixel.nerdbot.discord.storage.database.model.greenlit.GreenlitMessage;
+import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
 
 import java.util.List;
 

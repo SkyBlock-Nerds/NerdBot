@@ -16,8 +16,8 @@ import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
 import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
-import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 

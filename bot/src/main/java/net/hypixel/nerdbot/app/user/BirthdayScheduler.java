@@ -3,8 +3,8 @@ package net.hypixel.nerdbot.app.user;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
-import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.discord.storage.database.model.user.birthday.BirthdayData;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 import java.util.Calendar;

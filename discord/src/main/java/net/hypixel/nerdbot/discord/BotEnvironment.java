@@ -3,9 +3,9 @@ package net.hypixel.nerdbot.discord;
 import com.google.gson.Gson;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import net.hypixel.nerdbot.core.UUIDUtils;
+import net.hypixel.nerdbot.marmalade.UUIDUtils;
 import net.hypixel.nerdbot.discord.api.bot.Bot;
-import net.hypixel.nerdbot.discord.storage.DataSerialization;
+import net.hypixel.nerdbot.marmalade.json.DataSerialization;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;

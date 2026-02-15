@@ -1,7 +1,5 @@
 package net.hypixel.nerdbot.discord;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.SlashCommandManager;
 import net.dv8tion.jda.api.JDA;
@@ -12,7 +10,6 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
-import net.hypixel.nerdbot.core.JsonUtils;
 import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
 import net.hypixel.nerdbot.discord.api.bot.Environment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
@@ -21,8 +18,10 @@ import net.hypixel.nerdbot.discord.cache.EmojiCache;
 import net.hypixel.nerdbot.discord.cache.MessageCache;
 import net.hypixel.nerdbot.discord.cache.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
-import net.hypixel.nerdbot.discord.storage.database.Database;
-import net.hypixel.nerdbot.discord.storage.repository.Repository;
+import net.hypixel.nerdbot.marmalade.json.JsonUtils;
+import net.hypixel.nerdbot.marmalade.json.DataSerialization;
+import net.hypixel.nerdbot.marmalade.storage.database.Database;
+import net.hypixel.nerdbot.marmalade.storage.repository.Repository;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -332,10 +331,8 @@ public abstract class AbstractDiscordBot implements DiscordBot {
             fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
         }
 
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-
         try (FileWriter writer = new FileWriter(fileName)) {
-            gson.toJson(newConfig, writer);
+            DataSerialization.GSON.toJson(newConfig, writer);
             return true;
         } catch (IOException exception) {
             log.error("Could not save config file!", exception);

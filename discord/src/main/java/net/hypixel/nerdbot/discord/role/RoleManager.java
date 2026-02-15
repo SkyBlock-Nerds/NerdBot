@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.app.role;
+package net.hypixel.nerdbot.discord.role;
 
 import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.entities.Member;

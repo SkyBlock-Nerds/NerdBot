@@ -5,7 +5,6 @@ import lombok.Setter;
 import lombok.ToString;
 import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
-import net.hypixel.nerdbot.discord.config.channel.TicketConfig;
 import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
 
 import java.util.ArrayList;
@@ -29,11 +28,6 @@ public class DiscordBotConfig {
      * A list of owner IDs for the bot
      */
     private List<String> ownerIds = new ArrayList<>();
-
-    /**
-     * Configuration for the ticket system
-     */
-    private TicketConfig ticketConfig = new TicketConfig();
 
     /**
      * Configuration for the suggestions channel

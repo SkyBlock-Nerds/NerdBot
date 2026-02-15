@@ -7,7 +7,6 @@ on:
     paths:
       - '**.java'
       - 'pom.xml'
-      - 'core/pom.xml'
       - 'discord/pom.xml'
       - 'bot/pom.xml'
       - 'generator/pom.xml'
@@ -16,7 +15,6 @@ on:
     paths:
       - '**.java'
       - 'pom.xml'
-      - 'core/pom.xml'
       - 'discord/pom.xml'
       - 'bot/pom.xml'
       - 'generator/pom.xml'

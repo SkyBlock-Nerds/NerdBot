@@ -1,8 +1,8 @@
-package net.hypixel.nerdbot.core.wiki;
+package net.hypixel.nerdbot.tooling.wiki;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.hypixel.nerdbot.core.HttpClient;
+import net.hypixel.nerdbot.marmalade.http.HttpClient;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

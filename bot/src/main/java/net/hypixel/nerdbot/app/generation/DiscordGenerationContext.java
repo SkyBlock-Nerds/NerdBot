@@ -2,11 +2,11 @@ package net.hypixel.nerdbot.app.generation;
 
 import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.hypixel.nerdbot.core.TimeUtils;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.generator.GenerationContext;
 import net.hypixel.nerdbot.generator.GenerationFeedback;
+import net.hypixel.nerdbot.marmalade.format.TimeUtils;
 
 import java.util.Arrays;
 

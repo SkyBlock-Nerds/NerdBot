@@ -5,8 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.core.JsonLoader;
-import net.hypixel.nerdbot.core.serializer.ColorDeserializer;
+import net.hypixel.nerdbot.marmalade.json.JsonLoader;
+import net.hypixel.nerdbot.marmalade.json.serializer.ColorDeserializer;
 
 import java.awt.Color;
 import java.util.ArrayList;

@@ -11,12 +11,12 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.hypixel.nerdbot.app.command.util.MessageExport;
-import net.hypixel.nerdbot.core.ArrayUtils;
-import net.hypixel.nerdbot.core.FileUtils;
-import net.hypixel.nerdbot.core.csv.CSVData;
+import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
+import net.hypixel.nerdbot.marmalade.io.FileUtils;
+import net.hypixel.nerdbot.marmalade.csv.CSVData;
 import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.discord.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 
 import java.io.File;

@@ -3,7 +3,7 @@ package net.hypixel.nerdbot.discord.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.hypixel.nerdbot.discord.storage.badge.Badge;
+import net.hypixel.nerdbot.marmalade.storage.badge.Badge;
 
 import java.util.List;
 
