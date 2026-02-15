@@ -7,17 +7,15 @@ on:
     paths:
       - '**.java'
       - 'pom.xml'
-      - 'discord/pom.xml'
-      - 'bot/pom.xml'
-      - 'generator/pom.xml'
+      - 'discord-framework/pom.xml'
+      - 'app/pom.xml'
       - 'tooling/pom.xml'
   pull_request:
     paths:
       - '**.java'
       - 'pom.xml'
-      - 'discord/pom.xml'
-      - 'bot/pom.xml'
-      - 'generator/pom.xml'
+      - 'discord-framework/pom.xml'
+      - 'app/pom.xml'
       - 'tooling/pom.xml'
 
 permissions:
