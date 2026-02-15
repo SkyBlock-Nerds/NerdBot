@@ -21,7 +21,7 @@ bot (It doesn't affect the building process and can be omitted).
 To run the bot, you need to include the config file in the same directory as the main application file, and if you want
 metrics to work then you'll need to expose a port for the Prometheus server. To do this, run the following command:
 
-`docker run -p 1234:1234 -v /path/to/*.config.json:/app/*.config.json -e JAVA_OPTS="-Dbot.token=<your-bot-token> -Ddb.mongodb.uri=<your-mongodb-credentials> ..." nerd-bot`
+`docker run -p 9190:9190 -v /path/to/*.config.json:/app/*.config.json -e JAVA_OPTS="-Dbot.token=<your-bot-token> -Ddb.mongodb.uri=<your-mongodb-credentials> -Dmetrics.port=9190 ..." nerd-bot`
 
 Replace `<your-bot-token>` with your Discord bot token and `<your-mongodb-credentials>` with your MongoDB credentials.
 Other arguments can be added to the `JAVA_OPTS` environment variable depending on your needs. You should also
