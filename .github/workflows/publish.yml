@@ -40,15 +40,15 @@ on:
         default: false
         type: boolean
       dockerNetwork:
-        description: 'Docker network to join (for database connectivity, etc. - e.g. nerdbot_default):'
+        description: 'Docker network to join (for database connectivity, etc.):'
         required: false
         default: ''
         type: string
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}-${{ github.ref_name }}:latest
-  CONTAINER_NAME: nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}-${{ github.ref_name }}
+  IMAGE_NAME: ${{ github.repository_owner }}/nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}:latest
+  CONTAINER_NAME: nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
   ENVIRONMENT_NAME: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
   PORT: ${{ github.event.inputs.port || '1234' }} # Default port is 1234 but should probably be changed to 9090 (convention)
   USE_OLD_IMAGE: ${{ github.event.inputs.useOldImage || 'false' }}
