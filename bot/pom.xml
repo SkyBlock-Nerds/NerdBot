@@ -21,9 +21,9 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>net.hypixel</groupId>
-            <artifactId>nerdbot-generator</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.github.Aerhhh</groupId>
+            <artifactId>MinecraftImageGenerator</artifactId>
+            <version>master-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
