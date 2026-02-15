@@ -7,8 +7,8 @@ on:
     paths:
       - '**.java'
       - 'pom.xml'
-      - 'generator/pom.xml'
-      - 'discord/pom.xml'
+      - 'discord-framework/pom.xml'
+      - 'app/pom.xml'
       - 'tooling/pom.xml'
   push:
     branches:
@@ -16,8 +16,8 @@ on:
     paths:
       - '**.java'
       - 'pom.xml'
-      - 'generator/pom.xml'
-      - 'discord/pom.xml'
+      - 'discord-framework/pom.xml'
+      - 'app/pom.xml'
       - 'tooling/pom.xml'
 
 concurrency:
@@ -40,4 +40,4 @@ jobs:
           distribution: 'adopt'
 
       - name: Build with Maven
-        run: mvn -pl discord -am org.ec4j.maven:editorconfig-maven-plugin:check clean package
+        run: mvn -pl discord-framework -am org.ec4j.maven:editorconfig-maven-plugin:check clean package

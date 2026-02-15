@@ -7,7 +7,7 @@
     <parent>
         <groupId>net.hypixel</groupId>
         <artifactId>NerdBot</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>nerdbot-tooling</artifactId>
@@ -23,12 +23,12 @@
         </dependency>
         <dependency>
             <groupId>net.hypixel</groupId>
-            <artifactId>nerdbot-discord</artifactId>
+            <artifactId>nerdbot-discord-framework</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>net.hypixel</groupId>
-            <artifactId>nerdbot-bot</artifactId>
+            <artifactId>nerdbot-app</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
