@@ -17,6 +17,6 @@ public class MetricsConfig {
     /**
      * The port that the HTTP server will be running on to serve metrics
      */
-    private int port = 1234;
+    private int port = 9190;
 
 }

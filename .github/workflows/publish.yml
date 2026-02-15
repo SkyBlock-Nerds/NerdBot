@@ -29,10 +29,10 @@ on:
         required: true
         default: 'PRODUCTION'
         type: string
-      port:
-        description: 'Port:'
-        required: true
-        default: '1234' # Default port is 1234 but should probably be changed to 9090 (convention)
+      metricsPort:
+        description: 'Prometheus metrics port:'
+        required: false
+        default: '9190'
         type: string
       useOldImage: # Useful in case of crashes
         description: 'Use old Docker image:'
@@ -50,7 +50,7 @@ env:
   IMAGE_NAME: ${{ github.repository_owner }}/nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}:latest
   CONTAINER_NAME: nerd-bot-${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
   ENVIRONMENT_NAME: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
-  PORT: ${{ github.event.inputs.port || '1234' }} # Default port is 1234 but should probably be changed to 9090 (convention)
+  METRICS_PORT: ${{ github.event.inputs.metricsPort || '9190' }}
   USE_OLD_IMAGE: ${{ github.event.inputs.useOldImage || 'false' }}
   DOCKER_NETWORK: ${{ github.event.inputs.dockerNetwork || secrets.DOCKER_NETWORK || '' }}
 
@@ -96,14 +96,16 @@ jobs:
           sudo docker stop $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') || true
           sudo docker rm $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') || true
           sudo docker rmi $(sudo docker images $(echo "${{ env.REGISTRY }}/${{ github.actor }}/${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') -q) -f || true
-          sudo docker run -d --name $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') -p ${{ env.PORT }}:${{ env.PORT }} \
+          sudo docker run -d --name $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') \
+            -p 127.0.0.1:${{ env.METRICS_PORT }}:${{ env.METRICS_PORT }} \
             ${{ env.DOCKER_NETWORK != '' && format('--network {0}', env.DOCKER_NETWORK) || '' }} \
             -v ${{ secrets.CONFIG_FOLDER_PATH }}/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json:/app/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json \
             -e "JAVA_OPTS=-Dbot.token=${{ secrets[format('BOT_TOKEN_{0}', env.ENVIRONMENT_NAME)] }} \
             -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
             -Dbot.environment=${{ env.ENVIRONMENT_NAME }} \
             -Dbot.config=/app/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json \
-            -Dhypixel.key=${{ secrets.HYPIXEL_KEY }}" \
+            -Dhypixel.key=${{ secrets.HYPIXEL_KEY }} \
+            -Dmetrics.port=${{ env.METRICS_PORT }}" \
             -e "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" \
             ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
           EOF
