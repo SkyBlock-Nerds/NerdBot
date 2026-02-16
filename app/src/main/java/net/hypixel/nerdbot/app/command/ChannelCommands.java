@@ -49,7 +49,7 @@ public class ChannelCommands {
                         .setFiles(FileUpload.fromData(file))
                         .queue();
                 }
-            } catch (IOException exception) {
+            } catch (Exception exception) {
                 log.error("An error occurred when archiving the channel " + channel.getId() + "!", exception);
                 if (!hook.isExpired()) {
                     hook.editOriginal(String.format("An error occurred while archiving channel %s: %s", channel.getAsMention(), exception.getMessage())).queue();
@@ -71,8 +71,8 @@ public class ChannelCommands {
                     hook.editOriginal("Finished archiving! Sending the zip file via DM").queue();
                 }
                 sendZipToUserAsync(event, zipFile, hook, category.getName());
-            } catch (IOException exception) {
-                log.error("Failed to zip archives for category " + category.getId(), exception);
+            } catch (Exception exception) {
+                log.error("Failed to archive category " + category.getId(), exception);
                 if (!hook.isExpired()) {
                     hook.editOriginal("Failed to create the archive zip file: " + exception.getMessage()).queue();
                 } else {

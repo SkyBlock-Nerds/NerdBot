@@ -44,14 +44,29 @@ public class ArchiveExporter {
         int totalParents = textChannels.size() + forumChannels.size();
         AtomicInteger processedParents = new AtomicInteger(0);
 
+        log.info("Starting category archive for '{}' (ID: {}) - {} text channels, {} forum channels",
+            category.getName(), category.getId(), textChannels.size(), forumChannels.size());
+
         for (TextChannel textChannel : textChannels) {
-            exports.add(exportTextChannel(textChannel, progressCallback));
+            try {
+                log.info("Starting archive of text channel '{}' (ID: {})", textChannel.getName(), textChannel.getId());
+                exports.add(exportTextChannel(textChannel, progressCallback));
+                log.info("Finished archiving text channel '{}' (ID: {})", textChannel.getName(), textChannel.getId());
+            } catch (Exception exception) {
+                log.error("Failed to archive text channel '{}' (ID: {}), skipping", textChannel.getName(), textChannel.getId(), exception);
+            }
             int current = processedParents.incrementAndGet();
             update(progressCallback, String.format("Archived %d/%d parent channels (processing threads)...", current, totalParents));
         }
 
         for (ForumChannel forumChannel : forumChannels) {
-            exports.add(exportForumChannel(forumChannel, progressCallback));
+            try {
+                log.info("Starting archive of forum channel '{}' (ID: {})", forumChannel.getName(), forumChannel.getId());
+                exports.add(exportForumChannel(forumChannel, progressCallback));
+                log.info("Finished archiving forum channel '{}' (ID: {})", forumChannel.getName(), forumChannel.getId());
+            } catch (Exception exception) {
+                log.error("Failed to archive forum channel '{}' (ID: {}), skipping", forumChannel.getName(), forumChannel.getId(), exception);
+            }
             int current = processedParents.incrementAndGet();
             update(progressCallback, String.format("Archived %d/%d parent channels (processing threads)...", current, totalParents));
         }
@@ -60,6 +75,7 @@ public class ArchiveExporter {
             throw new IOException("No channels found to archive in that category.");
         }
 
+        log.info("All channels processed, creating zip file with {} exports", exports.size());
         return zipFiles(exports, "archive-category-%s-%s".formatted(category.getName(), FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())));
     }
 
@@ -67,9 +83,20 @@ public class ArchiveExporter {
         CSVData csvData = new CSVData(List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Reactions", "Message Content"));
         AtomicInteger total = new AtomicInteger(0);
 
+        log.info("[TextChannel '{}' (ID: {})] Starting channel message retrieval", channel.getName(), channel.getId());
         addChannelMessages(csvData, channel, total, progressCallback);
-        addThreadMessages(csvData, channel.getThreadChannels(), total, progressCallback);
-        addThreadMessages(csvData, channel.retrieveArchivedPublicThreadChannels().stream().toList(), total, progressCallback);
+        log.info("[TextChannel '{}' (ID: {})] Finished channel messages, total so far: {}", channel.getName(), channel.getId(), total.get());
+
+        List<ThreadChannel> activeThreads = channel.getThreadChannels();
+        log.info("[TextChannel '{}' (ID: {})] Found {} active threads", channel.getName(), channel.getId(), activeThreads.size());
+        addThreadMessages(csvData, activeThreads, total, progressCallback);
+        log.info("[TextChannel '{}' (ID: {})] Finished active threads, total so far: {}", channel.getName(), channel.getId(), total.get());
+
+        log.info("[TextChannel '{}' (ID: {})] Retrieving archived public threads...", channel.getName(), channel.getId());
+        List<ThreadChannel> archivedThreads = channel.retrieveArchivedPublicThreadChannels().stream().toList();
+        log.info("[TextChannel '{}' (ID: {})] Found {} archived threads", channel.getName(), channel.getId(), archivedThreads.size());
+        addThreadMessages(csvData, archivedThreads, total, progressCallback);
+        log.info("[TextChannel '{}' (ID: {})] Finished archived threads, total messages: {}", channel.getName(), channel.getId(), total.get());
 
         return FileUtils.createTempFile(String.format("archive-%s-%s-%s.csv", channel.getName(), channel.getId(), FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
     }
@@ -78,8 +105,16 @@ public class ArchiveExporter {
         CSVData csvData = new CSVData(List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Reactions", "Message Content"));
         AtomicInteger total = new AtomicInteger(0);
 
-        addThreadMessages(csvData, forumChannel.getThreadChannels(), total, progressCallback);
-        addThreadMessages(csvData, forumChannel.retrieveArchivedPublicThreadChannels().stream().toList(), total, progressCallback);
+        List<ThreadChannel> activeThreads = forumChannel.getThreadChannels();
+        log.info("[ForumChannel '{}' (ID: {})] Found {} active threads", forumChannel.getName(), forumChannel.getId(), activeThreads.size());
+        addThreadMessages(csvData, activeThreads, total, progressCallback);
+        log.info("[ForumChannel '{}' (ID: {})] Finished active threads, total so far: {}", forumChannel.getName(), forumChannel.getId(), total.get());
+
+        log.info("[ForumChannel '{}' (ID: {})] Retrieving archived public threads...", forumChannel.getName(), forumChannel.getId());
+        List<ThreadChannel> archivedThreads = forumChannel.retrieveArchivedPublicThreadChannels().stream().toList();
+        log.info("[ForumChannel '{}' (ID: {})] Found {} archived threads", forumChannel.getName(), forumChannel.getId(), archivedThreads.size());
+        addThreadMessages(csvData, archivedThreads, total, progressCallback);
+        log.info("[ForumChannel '{}' (ID: {})] Finished archived threads, total messages: {}", forumChannel.getName(), forumChannel.getId(), total.get());
 
         return FileUtils.createTempFile(String.format("archive-forum-%s-%s-%s.csv", forumChannel.getName(), forumChannel.getId(), FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
     }
@@ -185,21 +220,45 @@ public class ArchiveExporter {
     }
 
     private static void addChannelMessages(CSVData csvData, TextChannel channel, AtomicInteger counter, Consumer<String> progressCallback) {
-        for (Message message : channel.getIterableHistory()) {
-            csvData.addRow(buildRow(message, "\\N", "\\N"));
-            logProgress(counter, progressCallback, "Archiving channel " + channel.getName() + " (ID: " + channel.getId() + ")");
-            throttle(counter);
+        log.info("[addChannelMessages] Starting message iteration for channel '{}' (ID: {})", channel.getName(), channel.getId());
+        int channelMessageCount = 0;
+        try {
+            for (Message message : channel.getIterableHistory()) {
+                csvData.addRow(buildRow(message, "\\N", "\\N"));
+                channelMessageCount++;
+                logProgress(counter, progressCallback, "Archiving channel " + channel.getName() + " (ID: " + channel.getId() + ")");
+                throttle(counter);
+            }
+        } catch (Exception exception) {
+            log.error("[addChannelMessages] Error iterating messages for channel '{}' (ID: {}) after {} messages",
+                channel.getName(), channel.getId(), channelMessageCount, exception);
+            throw exception;
         }
+        log.info("[addChannelMessages] Completed channel '{}' (ID: {}) - {} messages archived", channel.getName(), channel.getId(), channelMessageCount);
     }
 
     private static void addThreadMessages(CSVData csvData, List<ThreadChannel> threads, AtomicInteger counter, Consumer<String> progressCallback) {
+        log.info("[addThreadMessages] Processing {} threads", threads.size());
+        int threadIndex = 0;
         for (ThreadChannel threadChannel : threads) {
-            for (Message message : threadChannel.getIterableHistory()) {
-                csvData.addRow(buildRow(message, threadChannel.getId(), threadChannel.getName()));
-                logProgress(counter, progressCallback, "Archiving thread " + threadChannel.getName() + " (ID: " + threadChannel.getId() + ")");
-                throttle(counter);
+            threadIndex++;
+            log.info("[addThreadMessages] [{}/{}] Starting thread '{}' (ID: {})", threadIndex, threads.size(), threadChannel.getName(), threadChannel.getId());
+            int threadMessageCount = 0;
+            try {
+                for (Message message : threadChannel.getIterableHistory()) {
+                    csvData.addRow(buildRow(message, threadChannel.getId(), threadChannel.getName()));
+                    threadMessageCount++;
+                    logProgress(counter, progressCallback, "Archiving thread " + threadChannel.getName() + " (ID: " + threadChannel.getId() + ")");
+                    throttle(counter);
+                }
+            } catch (Exception exception) {
+                log.error("[addThreadMessages] Error iterating messages for thread '{}' (ID: {}) after {} messages",
+                    threadChannel.getName(), threadChannel.getId(), threadMessageCount, exception);
+                throw exception;
             }
+            log.info("[addThreadMessages] [{}/{}] Completed thread '{}' (ID: {}) - {} messages", threadIndex, threads.size(), threadChannel.getName(), threadChannel.getId(), threadMessageCount);
         }
+        log.info("[addThreadMessages] Finished processing all {} threads", threads.size());
     }
 
     private static List<String> buildRow(Message message, String threadId, String threadName) {
