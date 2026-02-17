@@ -315,7 +315,7 @@ public class ArchiveExporter {
 
     private static void logProgress(AtomicInteger counter, Consumer<String> progressCallback, String context) {
         int current = counter.incrementAndGet();
-        if (current % 10_000 == 0) {
+        if (current % (current < 10_000 ? 1_000 : 10_000) == 0) {
             String message = context + " - processed " + StringUtils.COMMA_SEPARATED_FORMAT.format(current) + " message" + (current == 1 ? "" : "s") + " so far!";
             update(progressCallback, message);
         }
