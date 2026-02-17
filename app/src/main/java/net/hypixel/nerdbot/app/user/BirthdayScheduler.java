@@ -59,8 +59,8 @@ public class BirthdayScheduler {
                         message += " You are now %d years old!";
                     }
                     channel.sendMessage(String.format(message, user.getDiscordId(), birthdayData.getAge())).queue();
-                    log.info("Sent birthday message for {} at {}", user.getDiscordId(), date);
-                }, () -> log.warn("Cannot find channel to send birthday message for {}", user.getDiscordId()));
+                    log.info("Sent birthday message for user (ID: {}) at {}", user.getDiscordId(), date);
+                }, () -> log.warn("Cannot find channel (ID: {}) to send birthday message for user (ID: {})", channelId, user.getDiscordId()));
             }
 
             Calendar calendar = Calendar.getInstance();
@@ -69,7 +69,7 @@ public class BirthdayScheduler {
             Date nextDate = calendar.getTime();
             user.getBirthdayData().setBirthdayTimestamp(user.getBirthdayData().getBirthdayTimestamp());
             BirthdayScheduler.schedule(user); // reschedule for next year
-            log.debug("Scheduled next birthday reminder for {} at {}", user.getDiscordId(), nextDate);
+            log.debug("Scheduled next birthday reminder for user (ID: {}) at {}", user.getDiscordId(), nextDate);
         }
     }
 }

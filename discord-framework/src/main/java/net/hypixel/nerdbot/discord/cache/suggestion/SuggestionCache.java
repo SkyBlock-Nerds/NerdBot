@@ -93,13 +93,13 @@ public class SuggestionCache extends TimerTask {
                     log.debug("Added existing {} suggestion: '{}' (ID: {}) to the suggestion cache.", channelType.getName().toLowerCase(), threadChannel.getName(), threadChannel.getId());
                 });
         } catch (Exception exception) {
-            log.error("Failed to load suggestions from forum channel: " + forumChannel.getName(), exception);
+            log.error("Failed to load suggestions from forum channel '{}' (ID: {})", forumChannel.getName(), forumChannel.getId(), exception);
         }
     }
 
     public void addSuggestion(ThreadChannel thread) {
         this.cache.put(thread.getId(), new Suggestion(thread));
-        log.debug("Added new suggestion '" + thread.getName() + "' (ID: " + thread.getId() + ") to the suggestion cache.");
+        log.debug("Added new suggestion '{}' (ID: {}) to the suggestion cache.", thread.getName(), thread.getId());
     }
 
     public Suggestion getSuggestion(String id) {
@@ -122,11 +122,11 @@ public class SuggestionCache extends TimerTask {
 
     public void removeSuggestion(String threadName, String threadId) {
         this.cache.remove(threadId);
-        log.debug("Removed suggestion '" + threadName + "' (ID: " + threadId + ") from the suggestion cache.");
+        log.debug("Removed suggestion '{}' (ID: {}) from the suggestion cache.", threadName, threadId);
     }
 
     public void updateSuggestion(ThreadChannel thread) {
         this.cache.put(thread.getId(), new Suggestion(thread));
-        log.debug("Updated existing suggestion: '" + thread.getName() + "' (ID: " + thread.getId() + ") in the suggestion cache.");
+        log.debug("Updated existing suggestion '{}' (ID: {}) in the suggestion cache.", thread.getName(), thread.getId());
     }
 }

@@ -44,8 +44,8 @@ public class ReminderDispatcher {
 
         user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(message)
             .addEmbeds(new EmbedBuilder().setDescription(reminder.getDescription()).build())
-            .queue((success) -> log.info("Sent reminder '{}' message to user {}", reminder.getUuid(), reminder.getUserId()),
-                (failure) -> log.error("Couldn't send reminder message to user: {} (reminder: {})", reminder.getUserId(), reminder.getUuid())));
+            .queue((success) -> log.info("Sent reminder '{}' message to user '{}' (ID: {})", reminder.getUuid(), user.getName(), reminder.getUserId()),
+                (failure) -> log.error("Couldn't send reminder message to user '{}' (ID: {}) (reminder: {})", user.getName(), reminder.getUserId(), reminder.getUuid())));
     }
 
     private static class ReminderTask extends TimerTask {

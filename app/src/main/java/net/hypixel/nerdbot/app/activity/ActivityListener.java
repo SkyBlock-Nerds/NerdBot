@@ -51,7 +51,7 @@ public class ActivityListener {
             return;
         }
 
-        log.info("User {} joined {}", event.getUser().getName(), event.getGuild().getName());
+        log.info("User '{}' (ID: {}) joined guild '{}' (ID: {})", event.getUser().getName(), event.getUser().getId(), event.getGuild().getName(), event.getGuild().getId());
 
         discordUserRepository.findByIdAsync(event.getUser().getId())
             .thenAccept(user -> {
@@ -67,7 +67,7 @@ public class ActivityListener {
     public void onGuildMemberLeave(GuildMemberRemoveEvent event) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
-        log.info("User {} left {}", event.getUser().getName(), event.getGuild().getName());
+        log.info("User '{}' (ID: {}) left guild '{}' (ID: {})", event.getUser().getName(), event.getUser().getId(), event.getGuild().getName(), event.getGuild().getId());
 
         discordUserRepository.deleteFromDatabaseAsync(event.getUser().getId())
             .thenAccept(result -> {
@@ -99,7 +99,7 @@ public class ActivityListener {
                     // New Suggestion
                     if (forumChannelId.equals(DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig().getForumChannelId())) {
                         discordUser.getLastActivity().getSuggestionCreationHistory().add(0, time);
-                        log.info("Updating new suggestion activity date for {} to {}", member.getEffectiveName(), time);
+                        log.info("Updating new suggestion activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
                     }
 
                     // New Alpha Suggestion
@@ -107,14 +107,14 @@ public class ActivityListener {
                     if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                         discordUser.getLastActivity().getAlphaSuggestionCreationHistory().add(0, time);
                         discordUser.getLastActivity().setLastAlphaActivity(time);
-                        log.info("Updating new alpha suggestion activity date for {} to {}", member.getEffectiveName(), time);
+                        log.info("Updating new alpha suggestion activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
                     }
 
                     // New Project Suggestion
                     if (ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                         discordUser.getLastActivity().getProjectSuggestionCreationHistory().add(0, time);
                         discordUser.getLastActivity().setLastProjectActivity(time);
-                        log.info("Updating new project suggestion activity date for {} to {}", member.getEffectiveName(), time);
+                        log.info("Updating new project suggestion activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
                     }
                 });
         }
@@ -168,8 +168,8 @@ public class ActivityListener {
             // Handle thread comments in role-restricted channels
             if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
                 discordUser.getLastActivity().addRoleRestrictedChannelComment(groupIdentifier, time);
-                log.info("Updating role-restricted channel group '{}' comment activity for {} to {}",
-                    groupIdentifier, member.getEffectiveName(), time);
+                log.info("Updating role-restricted channel group '{}' comment activity for user '{}' (ID: {}) to {}",
+                    groupIdentifier, member.getEffectiveName(), member.getId(), time);
             }
 
             // Handle regular messages in role-restricted channels
@@ -178,8 +178,8 @@ public class ActivityListener {
                 : guildChannel;
 
             discordUser.getLastActivity().addRoleRestrictedChannelActivity(groupIdentifier, targetChannel.getId(), targetChannel.getName(), 1, time);
-            log.info("Updating role-restricted channel group '{}' message activity for {} to {}",
-                groupIdentifier, member.getEffectiveName(), time);
+            log.info("Updating role-restricted channel group '{}' message activity for user '{}' (ID: {}) to {}",
+                groupIdentifier, member.getEffectiveName(), member.getId(), time);
         }
 
         // New Suggestion Comments
@@ -190,33 +190,33 @@ public class ActivityListener {
             // New Suggestion Comments
             if (channelType == Suggestion.ChannelType.NORMAL) {
                 discordUser.getLastActivity().getSuggestionCommentHistory().add(0, time);
-                log.info("Updating suggestion comment activity date for {} to {}", member.getEffectiveName(), time);
+                log.info("Updating suggestion comment activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
             }
 
             // New Alpha Suggestion Comments
             if (channelType == Suggestion.ChannelType.ALPHA) {
                 discordUser.getLastActivity().getAlphaSuggestionCommentHistory().add(0, time);
-                log.info("Updating alpha suggestion comment activity and last alpha activity date for {} to {}", member.getEffectiveName(), time);
+                log.info("Updating alpha suggestion comment activity and last alpha activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
             }
 
             // New Project Suggestion Comments
             if (channelType == Suggestion.ChannelType.PROJECT) {
                 discordUser.getLastActivity().getProjectSuggestionCommentHistory().add(0, time);
-                log.info("Updating project suggestion comment activity and last project activity date for {} to {}", member.getEffectiveName(), time);
+                log.info("Updating project suggestion comment activity and last project activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
             }
         }
 
         // Alpha/Project-specific Messages
         if (channelType == Suggestion.ChannelType.ALPHA) {
             discordUser.getLastActivity().setLastAlphaActivity(time);
-            log.info("Updating last alpha activity date for " + member.getEffectiveName() + " to " + time);
+            log.info("Updating last alpha activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
         } else if (channelType == Suggestion.ChannelType.PROJECT) {
             discordUser.getLastActivity().setLastProjectActivity(time);
-            log.info("Updating last project activity date for " + member.getEffectiveName() + " to " + time);
+            log.info("Updating last project activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
         }
 
         // Global Messages
-        log.info("Updating last global activity date for " + member.getEffectiveName() + " to " + time);
+        log.info("Updating last global activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
         discordUser.getLastActivity().setLastGlobalActivity(time);
 
         // Update Channel Message History (only if not already tracked in role-restricted channels)
@@ -268,13 +268,13 @@ public class ActivityListener {
 
                     if (channelType == Suggestion.ChannelType.ALPHA) {
                         discordUser.getLastActivity().setAlphaVoiceJoinDate(time);
-                        log.info("Updating last alpha voice activity for {} to {}", member.getEffectiveName(), time);
+                        log.info("Updating last alpha voice activity for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
                     } else if (channelType == Suggestion.ChannelType.PROJECT) {
                         discordUser.getLastActivity().setProjectVoiceJoinDate(time);
-                        log.info("Updating last project voice activity for {} to {}", member.getEffectiveName(), time);
+                        log.info("Updating last project voice activity for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
                     } else {
                         discordUser.getLastActivity().setLastVoiceChannelJoinDate(time);
-                        log.info("Updating last global voice activity for {} to {}", member.getEffectiveName(), time);
+                        log.info("Updating last global voice activity for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
                     }
 
                     // Check if voice channel belongs to a role-restricted group
@@ -282,8 +282,8 @@ public class ActivityListener {
                     if (matchingGroup.isPresent()) {
                         String groupIdentifier = matchingGroup.get().getIdentifier();
                         discordUser.getLastActivity().getRoleRestrictedChannelLastActivity().put(groupIdentifier, time);
-                        log.info("Updating role-restricted channel group '{}' voice activity for {} to {}",
-                            groupIdentifier, member.getEffectiveName(), time);
+                        log.info("Updating role-restricted channel group '{}' voice activity for user '{}' (ID: {}) to {}",
+                            groupIdentifier, member.getEffectiveName(), member.getId(), time);
                     }
                 }
             }
@@ -344,15 +344,15 @@ public class ActivityListener {
             if (matchingGroup.isPresent()) {
                 String groupIdentifier = matchingGroup.get().getIdentifier();
                 discordUser.getLastActivity().addRoleRestrictedChannelVote(groupIdentifier, threadChannel.getId(), time);
-                log.info("Updating role-restricted channel group '{}' voting activity for {} to {}",
-                    groupIdentifier, member.getEffectiveName(), time);
+                log.info("Updating role-restricted channel group '{}' voting activity for user '{}' (ID: {}) to {}",
+                    groupIdentifier, member.getEffectiveName(), member.getId(), time);
             }
 
             // New Suggestion Voting
             if (forumChannelId.equals(DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig().getForumChannelId())) {
                 discordUser.getLastActivity().getSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 DiscordBotEnvironment.getBot().getSuggestionCache().updateSuggestion(threadChannel);
-                log.info("Updating suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
+                log.info("Updating suggestion voting activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
             }
 
             // New Alpha Suggestion Voting
@@ -360,14 +360,14 @@ public class ActivityListener {
             if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().getAlphaSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 DiscordBotEnvironment.getBot().getSuggestionCache().updateSuggestion(threadChannel);
-                log.info("Updating alpha suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
+                log.info("Updating alpha suggestion voting activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
             }
 
             // New Project Suggestion Voting
             if (ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().getProjectSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 DiscordBotEnvironment.getBot().getSuggestionCache().updateSuggestion(threadChannel);
-                log.info("Updating project suggestion voting activity date for " + member.getEffectiveName() + " to " + time);
+                log.info("Updating project suggestion voting activity date for user '{}' (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
             }
         }
     }

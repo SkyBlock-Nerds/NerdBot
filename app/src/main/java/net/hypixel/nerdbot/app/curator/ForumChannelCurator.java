@@ -103,7 +103,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
             ForumTag greenlitTag = DiscordUtils.getTagByName(forumChannel, suggestionConfig.getGreenlitTag());
 
             if (greenlitTag == null) {
-                log.error("Couldn't find the greenlit tag for the forum channel " + forumChannel.getName() + " (ID: " + forumChannel.getId() + ")!");
+                log.error("Couldn't find the greenlit tag for the forum channel '{}' (ID: {})", forumChannel.getName(), forumChannel.getId());
                 timer.observeDuration();
                 return output;
             }
@@ -111,12 +111,12 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
             if (emojiConfig.getGreenlitEmojiId() == null || emojiConfig.getAgreeEmojiId() == null || emojiConfig.getNeutralEmojiId() == null || emojiConfig.getDisagreeEmojiId() == null
                 || EmojiCache.getEmojiById(emojiConfig.getGreenlitEmojiId()).isEmpty() || EmojiCache.getEmojiById(emojiConfig.getAgreeEmojiId()).isEmpty()
                 || EmojiCache.getEmojiById(emojiConfig.getNeutralEmojiId()).isEmpty() || EmojiCache.getEmojiById(emojiConfig.getDisagreeEmojiId()).isEmpty()) {
-                log.error("Couldn't find the greenlit, agree, neutral, or disagree emoji in the channel " + forumChannel.getName() + " (ID: " + forumChannel.getId() + ")! Check the emojiConfig values!");
+                log.error("Couldn't find the greenlit, agree, neutral, or disagree emoji in channel '{}' (ID: {}). Check the emojiConfig values!", forumChannel.getName(), forumChannel.getId());
                 timer.observeDuration();
                 return output;
             }
 
-            log.info("Curating forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ")");
+            log.info("Curating forum channel '{}' (ID: {})", forumChannel.getName(), forumChannel.getId());
 
             long start = System.currentTimeMillis();
             List<ThreadChannel> threads = Stream.concat(
@@ -127,7 +127,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                 .distinct()
                 .toList();
 
-            log.info("Found " + threads.size() + " forum post(s) in " + (System.currentTimeMillis() - start) + "ms");
+            log.info("Found {} forum post(s) in {}ms", threads.size(), System.currentTimeMillis() - start);
             PrometheusMetrics.CURATOR_MESSAGES_AMOUNT.labels(forumChannel.getName()).inc(threads.size());
             setIndex(0);
             setTotal(threads.size());
@@ -136,18 +136,18 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                 setIndex(getIndex() + 1);
                 setCurrentObject(thread);
 
-                log.info("[" + getIndex() + "/" + threads.size() + "] Curating thread '" + thread.getName() + "' (ID: " + thread.getId() + ")");
+                log.info("[{}/{}] Curating thread '{}' (ID: {})", getIndex(), threads.size(), thread.getName(), thread.getId());
 
                 MessageHistory history = thread.getHistoryFromBeginning(1).complete();
                 Message message = history.isEmpty() ? null : history.getRetrievedHistory().get(0);
 
                 if (message == null) {
-                    log.error("Message for thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is null!");
+                    log.error("Message for thread '{}' (ID: {}) is null!", thread.getName(), thread.getId());
                     continue;
                 }
 
                 try {
-                    log.info("Checking reaction counts for message ID: " + message.getId());
+                    log.info("Checking reaction counts for message ID: {}", message.getId());
 
                     List<MessageReaction> reactions = message.getReactions()
                         .stream()
@@ -181,28 +181,28 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
 
                     // Upsert into database if already greenlit
                     if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag())) {
-                        log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") is already greenlit/reviewed!");
+                        log.info("Thread '{}' (ID: {}) is already greenlit/reviewed", thread.getName(), thread.getId());
                         GreenlitMessage greenlitMessage = createGreenlitMessage(message, thread, agree, neutral, disagree);
                         database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
                         continue;
                     }
 
                     double ratio = getRatio(agree, disagree);
-                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has " + agree + " agree reactions, " + neutral + " neutral reactions, and " + disagree + " disagree reactions with a ratio of " + ratio + "%");
+                    log.info("Thread '{}' (ID: {}) has {} agree reactions, {} neutral reactions, and {} disagree reactions with a ratio of {}%", thread.getName(), thread.getId(), agree, neutral, disagree, ratio);
 
                     if ((agree < suggestionConfig.getGreenlitThreshold()) || (ratio < suggestionConfig.getGreenlitRatio())) {
-                        log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") does not meet the minimum threshold of " + suggestionConfig.getGreenlitThreshold() + " agree reactions to be greenlit!");
+                        log.info("Thread '{}' (ID: {}) does not meet the minimum threshold of {} agree reactions to be greenlit", thread.getName(), thread.getId(), suggestionConfig.getGreenlitThreshold());
                         continue;
                     }
 
-                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") meets the minimum requirements to be greenlit!");
+                    log.info("Thread '{}' (ID: {}) meets the minimum requirements to be greenlit", thread.getName(), thread.getId());
 
                     if (isReadOnly()) {
-                        log.info("Skipping thread '" + thread.getName() + "' (ID: " + thread.getId() + ") as the curator is in read-only mode!");
+                        log.info("Skipping thread '{}' (ID: {}) as the curator is in read-only mode", thread.getName(), thread.getId());
                         continue;
                     }
 
-                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has tags: " + thread.getAppliedTags().stream().map(BaseForumTag::getName).toList());
+                    log.info("Thread '{}' (ID: {}) has tags: {}", thread.getName(), thread.getId(), thread.getAppliedTags().stream().map(BaseForumTag::getName).toList());
 
                     // Discord only allows a maximum of 5 tags per thread
                     if (tags.size() >= 5 && !tags.contains(greenlitTag)) {
@@ -250,18 +250,18 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                     // Send Changes
                     threadManager.queue();
 
-                    log.info("Thread '" + thread.getName() + "' (ID: " + thread.getId() + ") has been greenlit!");
+                    log.info("Thread '{}' (ID: {}) has been greenlit!", thread.getName(), thread.getId());
                     GreenlitMessage greenlitMessage = createGreenlitMessage(message, thread, agree, neutral, disagree);
                     DiscordBotEnvironment.getBot().getSuggestionCache().updateSuggestion(thread); // Update Suggestion
                     output.add(greenlitMessage);
                 } catch (Exception exception) {
-                    log.error("Failed to curate thread '" + thread.getName() + "' (ID: " + thread.getId() + ")!", exception);
+                    log.error("Failed to curate thread '{}' (ID: {})", thread.getName(), thread.getId(), exception);
                 }
             }
 
             setEndTime(System.currentTimeMillis());
             timer.observeDuration();
-            log.info("Curated forum channel: " + forumChannel.getName() + " (Channel ID: " + forumChannel.getId() + ") in " + (getEndTime() - getStartTime()) + "ms");
+            log.info("Curated forum channel '{}' (ID: {}) in {}ms", forumChannel.getName(), forumChannel.getId(), getEndTime() - getStartTime());
             setCompleted(true);
             setCurrentObject(null);
             setIndex(0);

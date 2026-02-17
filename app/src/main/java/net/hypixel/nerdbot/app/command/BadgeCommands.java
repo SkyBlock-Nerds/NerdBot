@@ -53,7 +53,7 @@ public class BadgeCommands {
 
                     if (discordUser.addBadge(tieredBadge, finalTier)) {
                         event.getHook().editOriginal(String.format("Gave Tier %d of the %s badge to %s!", finalTier, badge.getName(), member.getEffectiveName())).queue();
-                        log.info("{} gave {} tier {} of badge '{}' (ID: {})", event.getMember().getEffectiveName(), member.getEffectiveName(), finalTier, badge.getName(), badge.getId());
+                        log.info("User '{}' (ID: {}) gave user '{}' (ID: {}) tier {} of badge '{}' (ID: {})", event.getMember().getEffectiveName(), event.getMember().getId(), member.getEffectiveName(), member.getId(), finalTier, badge.getName(), badge.getId());
                     } else {
                         event.getHook().editOriginal(String.format("%s already has Tier %d of the %s badge!", member.getEffectiveName(), finalTier, badge.getName())).queue();
                     }
@@ -65,7 +65,7 @@ public class BadgeCommands {
 
                     if (discordUser.addBadge(badge)) {
                         event.getHook().editOriginal(String.format("Gave badge %s to %s!", badge.getName(), member.getEffectiveName())).queue();
-                        log.info("{} gave {} badge '{}' (ID: {})", event.getMember().getEffectiveName(), member.getEffectiveName(), badge.getName(), badge.getId());
+                        log.info("User '{}' (ID: {}) gave user '{}' (ID: {}) badge '{}' (ID: {})", event.getMember().getEffectiveName(), event.getMember().getId(), member.getEffectiveName(), member.getId(), badge.getName(), badge.getId());
                     } else {
                         event.getHook().editOriginal(String.format("Failed to give the %s badge to %s!", badge.getName(), member.getEffectiveName())).queue();
                     }
@@ -97,14 +97,14 @@ public class BadgeCommands {
                     int finalTier = Math.max(tier, 1);
                     if (discordUser.removeBadge(tieredBadge, finalTier)) {
                         event.getHook().editOriginal(String.format("Removed Tier %d of the %s badge from %s!", finalTier, badge.getName(), member.getEffectiveName())).queue();
-                        log.info("{} removed tier {} of badge '{}' (ID: {}) from {}", event.getMember().getEffectiveName(), finalTier, badge.getName(), badge.getId(), member.getEffectiveName());
+                        log.info("User '{}' (ID: {}) removed tier {} of badge '{}' (ID: {}) from user '{}' (ID: {})", event.getMember().getEffectiveName(), event.getMember().getId(), finalTier, badge.getName(), badge.getId(), member.getEffectiveName(), member.getId());
                     } else {
                         event.getHook().editOriginal(String.format("%s does not have Tier %d of the %s badge!", member.getEffectiveName(), finalTier, badge.getName())).queue();
                     }
                 } else {
                     if (discordUser.removeBadge(badge)) {
                         event.getHook().editOriginal(String.format("Removed the %s badge from %s!", badge.getName(), member.getEffectiveName())).queue();
-                        log.info("{} removed badge '{}' (ID: {}) from {}", event.getMember().getEffectiveName(), badge.getName(), badge.getId(), member.getEffectiveName());
+                        log.info("User '{}' (ID: {}) removed badge '{}' (ID: {}) from user '{}' (ID: {})", event.getMember().getEffectiveName(), event.getMember().getId(), badge.getName(), badge.getId(), member.getEffectiveName(), member.getId());
                     } else {
                         event.getHook().editOriginal(String.format("%s does not have the %s badge!", member.getEffectiveName(), badge.getName())).queue();
                     }

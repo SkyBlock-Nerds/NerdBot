@@ -50,13 +50,13 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
                     Database database = BotEnvironment.getBot().getDatabase();
                     Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumChannelCurator(BotEnvironment.getBot().isReadOnly());
                     ForumChannel channel = forumChannel.get();
-                    log.info("Processing suggestion forum channel '" + channel.getName() + "' (ID: " + channel + ")");
+                    log.info("Processing suggestion forum channel '{}' (ID: {})", channel.getName(), channel.getId());
 
                     List<GreenlitMessage> result = forumChannelCurator.curate(channel);
                     if (result.isEmpty()) {
-                        log.info("No new suggestions were greenlit from ID " + channel.getId() + " this time!");
+                        log.info("No new suggestions were greenlit from channel '{}' (ID: {}) this time!", channel.getName(), channel.getId());
                     } else {
-                        log.info("Greenlit " + result.size() + " new suggestions from ID " + channel.getId() + ". Took " + (forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime()) + "ms!");
+                        log.info("Greenlit {} new suggestions from channel '{}' (ID: {}). Took {}ms!", result.size(), channel.getName(), channel.getId(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime());
                     }
 
                     result.forEach(greenlitMessage -> {
@@ -64,7 +64,7 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
                         greenlitMessageRepository.cacheObject(greenlitMessage);
                         PrometheusMetrics.GREENLIT_SUGGESTION_LENGTH.labels(greenlitMessage.getMessageId(), String.valueOf(greenlitMessage.getSuggestionContent().length())).inc();
                     });
-                    log.info("Inserted " + result.size() + " new greenlit messages into the database!");
+                    log.info("Inserted {} new greenlit messages into the database!", result.size());
                     PrometheusMetrics.TOTAL_GREENLIT_MESSAGES_AMOUNT.inc(result.size());
                 });
             }

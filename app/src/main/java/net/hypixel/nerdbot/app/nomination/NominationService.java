@@ -42,12 +42,12 @@ public class NominationService {
         BiPredicate<Member, DiscordUser> eligibility = (member, discordUser) -> {
             Role highestRole = RoleManager.getHighestRole(member);
             if (highestRole == null) {
-                log.info("Skipping nomination for {} as they have no roles", member.getEffectiveName());
+                log.info("Skipping nomination for user '{}' (ID: {}) as they have no roles", member.getEffectiveName(), member.getId());
                 return false;
             }
 
             if (!highestRole.getId().equalsIgnoreCase(memberRoleId)) {
-                log.info("Skipping nomination for {} as their highest role is: {}", member.getEffectiveName(), highestRole.getName());
+                log.info("Skipping nomination for user '{}' (ID: {}) as their highest role is role '{}' (ID: {})", member.getEffectiveName(), member.getId(), highestRole.getName(), highestRole.getId());
                 return false;
             }
 
@@ -65,7 +65,7 @@ public class NominationService {
         BiPredicate<Member, DiscordUser> eligibility = (member, discordUser) -> {
             Role highestRole = RoleManager.getHighestRole(member);
             if (highestRole == null) {
-                log.info("Skipping new member nomination for {} as they have no roles", member.getEffectiveName());
+                log.info("Skipping new member nomination for user '{}' (ID: {}) as they have no roles", member.getEffectiveName(), member.getId());
                 return false;
             }
 
@@ -78,7 +78,7 @@ public class NominationService {
             LocalDate joinDate = joinedAt.toLocalDate();
             LocalDate thresholdDate = LocalDate.now(ZoneId.systemDefault()).minusDays(minDays);
             if (joinDate.isAfter(thresholdDate)) {
-                log.info("Skipping new member nomination for {} as they joined on {} (< {} days)", member.getEffectiveName(), joinedAt, minDays);
+                log.info("Skipping new member nomination for user '{}' (ID: {}) as they joined on {} (< {} days)", member.getEffectiveName(), member.getId(), joinedAt, minDays);
                 return false;
             }
 
@@ -160,11 +160,11 @@ public class NominationService {
         int requirementsMet = (hasRequiredMessages ? 1 : 0) + (hasRequiredVotes ? 1 : 0) + (hasRequiredComments ? 1 : 0);
 
         if (contextLabel == null) {
-            log.info("Checking if {} should be nominated for promotion (total messages: {}, total comments: {}, total votes: {}, meets messages requirement: {}, meets comments requirement: {}, meets votes requirement: {}, requirements met: {}/3)",
-                member.getEffectiveName(), totalMessages, totalComments, totalVotes, hasRequiredMessages, hasRequiredComments, hasRequiredVotes, requirementsMet);
+            log.info("Checking if user '{}' (ID: {}) should be nominated for promotion (total messages: {}, total comments: {}, total votes: {}, meets messages requirement: {}, meets comments requirement: {}, meets votes requirement: {}, requirements met: {}/3)",
+                member.getEffectiveName(), member.getId(), totalMessages, totalComments, totalVotes, hasRequiredMessages, hasRequiredComments, hasRequiredVotes, requirementsMet);
         } else {
-            log.info("[{}] Checking if {} should be nominated (total messages: {}, total comments: {}, total votes: {}, meets messages requirement: {}, meets comments requirement: {}, meets votes requirement: {}, requirements met: {}/3)",
-                contextLabel, member.getEffectiveName(), totalMessages, totalComments, totalVotes, hasRequiredMessages, hasRequiredComments, hasRequiredVotes, requirementsMet);
+            log.info("[{}] Checking if user '{}' (ID: {}) should be nominated (total messages: {}, total comments: {}, total votes: {}, meets messages requirement: {}, meets comments requirement: {}, meets votes requirement: {}, requirements met: {}/3)",
+                contextLabel, member.getEffectiveName(), member.getId(), totalMessages, totalComments, totalVotes, hasRequiredMessages, hasRequiredComments, hasRequiredVotes, requirementsMet);
         }
 
         final NominationOutcome[] outcomeRef = new NominationOutcome[]{null};
@@ -175,11 +175,11 @@ public class NominationService {
 
             if (lastNominationMonth != now && requirementsMet >= 2) {
                 if (contextLabel == null) {
-                    log.info("Last nomination was not this month (last: {}, now: {}), sending nomination message for {} (nomination info: {})",
-                        lastNominationMonth, now, member.getEffectiveName(), discordUser.getLastActivity().getNominationInfo());
+                    log.info("Last nomination was not this month (last: {}, now: {}), sending nomination message for user '{}' (ID: {}) (nomination info: {})",
+                        lastNominationMonth, now, member.getEffectiveName(), member.getId(), discordUser.getLastActivity().getNominationInfo());
                 } else {
-                    log.info("[{}] Last nomination not this month (last: {}, now: {}), sending nomination message for {}",
-                        contextLabel, lastNominationMonth, now, member.getEffectiveName());
+                    log.info("[{}] Last nomination not this month (last: {}, now: {}), sending nomination message for user '{}' (ID: {})",
+                        contextLabel, lastNominationMonth, now, member.getEffectiveName(), member.getId());
                 }
 
                 sendNominationMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, daysWindow);
@@ -187,11 +187,11 @@ public class NominationService {
             }
         }, () -> {
             if (contextLabel == null) {
-                log.info("No last nomination date found for {}, checking if they meet the minimum requirements (min. messages: {}, min. votes: {}, min. comments: {}, nomination info: {})",
-                    member.getEffectiveName(), requiredMessages, requiredVotes, requiredComments, discordUser.getLastActivity().getNominationInfo());
+                log.info("No last nomination date found for user '{}' (ID: {}), checking if they meet the minimum requirements (min. messages: {}, min. votes: {}, min. comments: {}, nomination info: {})",
+                    member.getEffectiveName(), member.getId(), requiredMessages, requiredVotes, requiredComments, discordUser.getLastActivity().getNominationInfo());
             } else {
-                log.info("[{}] No last nomination date found for {}, checking minimum requirements",
-                    contextLabel, member.getEffectiveName());
+                log.info("[{}] No last nomination date found for user '{}' (ID: {}), checking minimum requirements",
+                    contextLabel, member.getEffectiveName(), member.getId());
             }
 
             if (requirementsMet >= 2) {
@@ -278,8 +278,8 @@ public class NominationService {
 
             textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
             discordUser.getLastActivity().getNominationInfo().increaseNominations();
-            log.info("Sent promotion nomination message for {} in voting channel (total nominations: {})",
-                member.getEffectiveName(), discordUser.getLastActivity().getNominationInfo().getTotalNominations());
+            log.info("Sent promotion nomination message for user '{}' (ID: {}) in voting channel (total nominations: {})",
+                member.getEffectiveName(), member.getId(), discordUser.getLastActivity().getNominationInfo().getTotalNominations());
         }, () -> {
             throw new IllegalStateException("Cannot find voting channel to send nomination message into!");
         });

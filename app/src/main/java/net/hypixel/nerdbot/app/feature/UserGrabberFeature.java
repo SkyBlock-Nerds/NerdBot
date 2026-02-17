@@ -33,34 +33,34 @@ public class UserGrabberFeature extends BotFeature {
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         Guild guild = DiscordUtils.getMainGuild();
-        log.info("Grabbing users from guild " + guild.getName());
+        log.info("Grabbing users from guild '{}' (ID: {})", guild.getName(), guild.getId());
 
         guild.loadMembers(member -> {
                 if (member.getUser().isBot()) {
                     return;
                 }
 
-                log.info("Found user " + member.getEffectiveName() + " (" + member.getId() + ")");
+                log.info("Found user '{}' (ID: {})", member.getEffectiveName(), member.getId());
 
                 DiscordUser discordUser = discordUserRepository.findById(member.getId());
                 if (discordUser == null) {
                     discordUser = new DiscordUser(member.getId(), new ArrayList<>(), new LastActivity(), new BirthdayData(), new MojangProfile(), new GeneratorHistory(), false);
-                    log.info("Creating new DiscordUser for user " + member.getId());
+                    log.info("Creating new DiscordUser for user '{}' (ID: {})", member.getEffectiveName(), member.getId());
                 }
 
                 if (discordUser.getLastActivity() == null) {
-                    log.info("Last activity for " + member.getEffectiveName() + " was null. Setting to default values!");
+                    log.info("Last activity for user '{}' (ID: {}) was null, setting to default values", member.getEffectiveName(), member.getId());
                     discordUser.setLastActivity(new LastActivity());
                 }
 
                 if (discordUser.getBadges() == null) {
-                    log.info("Badges for " + member.getEffectiveName() + " was null. Setting to default values!");
+                    log.info("Badges for user '{}' (ID: {}) was null, setting to default values", member.getEffectiveName(), member.getId());
                     discordUser.setBadges(new ArrayList<>());
                 }
 
                 for (BadgeEntry s : discordUser.getBadges()) {
                     if (BadgeManager.getBadgeById(s.badgeId()) == null && BadgeManager.getTieredBadgeById(s.badgeId()) == null) {
-                        log.error("Badge '" + s + "' for " + member.getEffectiveName() + " was not found in the badge map! Removing...");
+                        log.error("Badge '{}' for user '{}' (ID: {}) was not found in the badge map, removing", s, member.getEffectiveName(), member.getId());
                     }
                 }
 
@@ -68,8 +68,8 @@ public class UserGrabberFeature extends BotFeature {
                     && BadgeManager.getTieredBadgeById(badgeEntry.badgeId()) == null);
                 discordUserRepository.cacheObject(discordUser);
             })
-            .onSuccess(aVoid -> log.info("Finished grabbing users from guild " + guild.getName()))
-            .onError(throwable -> log.error("Failed to grab users from guild " + guild.getName(), throwable));
+            .onSuccess(aVoid -> log.info("Finished grabbing users from guild '{}' (ID: {})", guild.getName(), guild.getId()))
+            .onError(throwable -> log.error("Failed to grab users from guild '{}' (ID: {})", guild.getName(), guild.getId(), throwable));
     }
 
     @Override

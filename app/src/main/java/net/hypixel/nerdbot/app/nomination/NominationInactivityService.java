@@ -73,13 +73,13 @@ public class NominationInactivityService {
             Role highestRole = RoleManager.getHighestRole(member);
             if (highestRole == null) {
                 ineligible++;
-                log.info("Skipping inactivity check for {} as they have no roles", member.getEffectiveName());
+                log.info("Skipping inactivity check for user '{}' (ID: {}) as they have no roles", member.getEffectiveName(), member.getId());
                 continue;
             }
 
             if (Arrays.stream(Utils.SPECIAL_ROLES).anyMatch(role -> highestRole.getName().equalsIgnoreCase(role))) {
                 ineligible++;
-                log.info("Skipping inactivity check for {} as they have a special role: {}", member.getEffectiveName(), highestRole.getName());
+                log.info("Skipping inactivity check for user '{}' (ID: {}) as they have a special role: role '{}' (ID: {})", member.getEffectiveName(), member.getId(), highestRole.getName(), highestRole.getId());
                 continue;
             }
 
@@ -94,7 +94,7 @@ public class NominationInactivityService {
             boolean hasRequiredMessages = totalMessages >= requiredMessages;
             final int requirementsMet = (hasRequiredMessages ? 1 : 0) + (hasRequiredComments ? 1 : 0) + (hasRequiredVotes ? 1 : 0);
 
-            log.info("Checking if {} should be flagged for inactivity (total messages: {}, total comments: {}, total votes: {}) (has min. comments: {}, has min. votes: {}, has min. messages: {}, requirements met: {}/3)", member.getEffectiveName(), totalMessages, totalComments, totalVotes, hasRequiredComments, hasRequiredVotes, hasRequiredMessages, requirementsMet);
+            log.info("Checking if user '{}' (ID: {}) should be flagged for inactivity (total messages: {}, total comments: {}, total votes: {}) (has min. comments: {}, has min. votes: {}, has min. messages: {}, requirements met: {}/3)", member.getEffectiveName(), member.getId(), totalMessages, totalComments, totalVotes, hasRequiredComments, hasRequiredVotes, hasRequiredMessages, requirementsMet);
 
             lastActivity.getNominationInfo().getLastInactivityWarningTimestamp().ifPresentOrElse(timestamp -> {
                 Month lastInactivityWarningMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
@@ -173,7 +173,7 @@ public class NominationInactivityService {
             boolean hasRequiredMessages = totalMessages >= requiredMessages;
             final int requirementsMet = (hasRequiredMessages ? 1 : 0) + (hasRequiredComments ? 1 : 0) + (hasRequiredVotes ? 1 : 0);
 
-            log.info("[NewMember] Checking inactivity for {} (messages: {}, comments: {}, votes: {}) (has min. comments: {}, has min. votes: {}, has min. messages: {}, requirements met: {}/3)", member.getEffectiveName(), totalMessages, totalComments, totalVotes, hasRequiredComments, hasRequiredVotes, hasRequiredMessages, requirementsMet);
+            log.info("[NewMember] Checking inactivity for user '{}' (ID: {}) (messages: {}, comments: {}, votes: {}) (has min. comments: {}, has min. votes: {}, has min. messages: {}, requirements met: {}/3)", member.getEffectiveName(), member.getId(), totalMessages, totalComments, totalVotes, hasRequiredComments, hasRequiredVotes, hasRequiredMessages, requirementsMet);
 
             lastActivity.getNominationInfo().getLastInactivityWarningTimestamp().ifPresentOrElse(timestamp -> {
                 Month lastInactivityWarningMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
@@ -324,8 +324,8 @@ public class NominationInactivityService {
 
                     textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
                     lastActivity.getNominationInfo().increaseRoleRestrictedInactivityWarnings();
-                    log.info("Sent role-restricted inactivity warning for {} in group '{}' (total warnings: {})",
-                        member.getEffectiveName(), group.getIdentifier(),
+                    log.info("Sent role-restricted inactivity warning for user '{}' (ID: {}) in group '{}' (total warnings: {})",
+                        member.getEffectiveName(), member.getId(), group.getIdentifier(),
                         lastActivity.getNominationInfo().getTotalRoleRestrictedInactivityWarnings());
                 }, () -> {
                     throw new IllegalStateException("Cannot find voting channel to send role-restricted inactivity warning message into!");
@@ -397,8 +397,8 @@ public class NominationInactivityService {
 
             textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
             discordUser.getLastActivity().getNominationInfo().increaseInactivityWarnings();
-            log.info("Sent inactivity warning message for {} in voting channel (total warnings: {})",
-                member.getEffectiveName(),
+            log.info("Sent inactivity warning message for user '{}' (ID: {}) in voting channel (total warnings: {})",
+                member.getEffectiveName(), member.getId(),
                 discordUser.getLastActivity().getNominationInfo().getTotalInactivityWarnings());
         }, () -> {
             throw new IllegalStateException("Cannot find voting channel to send inactivity warning message into!");

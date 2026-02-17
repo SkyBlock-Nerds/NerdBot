@@ -185,7 +185,7 @@ public class AdminCommands {
 
                         Invite invite = action.complete();
                         invites.add(invite);
-                        log.info("Created new temporary invite '" + invite.getUrl() + "' for channel " + selected.getName() + " by " + event.getUser().getName());
+                        log.info("Created new temporary invite '{}' for channel '{}' (ID: {}) by user '{}' (ID: {})", invite.getUrl(), selected.getName(), selected.getId(), event.getUser().getName(), event.getUser().getId());
                     } catch (InsufficientPermissionException exception) {
                         event.getHook().editOriginal(String.format("I do not have the correct permission to create invites in %s!", selected.getAsMention())).queue();
                         return;
@@ -214,7 +214,7 @@ public class AdminCommands {
                 List<Invite> invites = event.getGuild().retrieveInvites().complete();
                 invites.forEach(invite -> {
                     invite.delete().complete();
-                    log.info(event.getUser().getName() + " deleted invite " + invite.getUrl());
+                    log.info("User '{}' (ID: {}) deleted invite {}", event.getUser().getName(), event.getUser().getId(), invite.getUrl());
                 });
 
                 ChannelCache.sendToLogChannel(
@@ -310,7 +310,7 @@ public class AdminCommands {
                 return JsonUtils.writeJsonFileAsync(fileName, JsonUtils.setJsonValue(obj, key, element));
             })
             .thenRun(() -> {
-                log.info(event.getUser().getName() + " edited the config file!");
+                log.info("User '{}' (ID: {}) edited the config file!", event.getUser().getName(), event.getUser().getId());
                 event.reply("Updated config file!").queue();
             })
             .exceptionally(throwable -> {
@@ -565,11 +565,11 @@ public class AdminCommands {
                                         if (mojangProfile != null) {
                                             mojangProfiles.add(mojangProfile);
                                             user.setMojangProfile(mojangProfile);
-                                            log.info("Migrated " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ") to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId() + ")");
+                                            log.info("Migrated user '{}' (ID: {}) to Mojang profile '{}' (UUID: {})", member.getEffectiveName(), member.getId(), mojangProfile.getUsername(), mojangProfile.getUniqueId());
                                         }
                                     })
                                     .exceptionally(throwable -> {
-                                        log.error("Unable to migrate " + member.getEffectiveName() + "(ID: " + member.getId() + ")", throwable);
+                                        log.error("Unable to migrate user '{}' (ID: {})", member.getEffectiveName(), member.getId(), throwable);
                                         return null;
                                     });
                             })
@@ -1083,7 +1083,7 @@ public class AdminCommands {
                 processed++;
             } catch (Exception e) {
                 errors++;
-                log.warn("Failed to update thread {}: {}", threadChannel.getId(), e.getMessage());
+                log.warn("Failed to update thread '{}' (ID: {}): {}", threadChannel.getName(), threadChannel.getId(), e.getMessage());
             }
         }
 
@@ -1294,8 +1294,8 @@ public class AdminCommands {
 
         event.getHook().editOriginalEmbeds(embedBuilder.build()).queue();
 
-        log.info("{} manually scanned channel {} ({})",
-            event.getUser().getName(), channel.getName(), channel.getId());
+        log.info("User '{}' (ID: {}) manually scanned channel '{}' (ID: {})",
+            event.getUser().getName(), event.getUser().getId(), channel.getName(), channel.getId());
     }
 
     @SlashCommand(name = "channel-config", subcommand = "toggle", description = "Toggle automatic management of role-restricted channel groups", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
@@ -1317,8 +1317,8 @@ public class AdminCommands {
         String status = !currentState ? "enabled" : "disabled";
         event.reply("✅ Automatic management of role-restricted channel groups has been **" + status + "**.").setEphemeral(true).queue();
 
-        log.info("{} {} automatic management of role-restricted channel groups",
-            event.getUser().getName(), !currentState ? "enabled" : "disabled");
+        log.info("User '{}' (ID: {}) {} automatic management of role-restricted channel groups",
+            event.getUser().getName(), event.getUser().getId(), !currentState ? "enabled" : "disabled");
     }
 
     @SlashCommand(name = "channel-config", subcommand = "status", description = "View the status of automatic role-restricted channel management", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
@@ -1425,8 +1425,8 @@ public class AdminCommands {
 
                 event.getHook().editOriginal(summary.toString()).queue();
 
-                log.info("Role-restricted channel groups rebuild completed by {}: {} groups -> {} groups, {} channels -> {} channels",
-                    event.getUser().getName(), groupsBefore, groupsAfter, channelsBefore, channelsAfter);
+                log.info("Role-restricted channel groups rebuild completed by user '{}' (ID: {}): {} groups -> {} groups, {} channels -> {} channels",
+                    event.getUser().getName(), event.getUser().getId(), groupsBefore, groupsAfter, channelsBefore, channelsAfter);
 
             } catch (Exception e) {
                 log.error("Error during role-restricted channel groups rebuild", e);
@@ -1458,8 +1458,8 @@ public class AdminCommands {
             event.reply(String.format("✅ Removed %d empty role-restricted channel group(s). %d groups remaining.",
                 removedCount, groupsAfter)).setEphemeral(true).queue();
 
-            log.info("{} cleaned role-restricted channel groups: removed {} empty groups",
-                event.getUser().getName(), removedCount);
+            log.info("User '{}' (ID: {}) cleaned role-restricted channel groups: removed {} empty groups",
+                event.getUser().getName(), event.getUser().getId(), removedCount);
         } else {
             event.reply("✅ No empty role-restricted channel groups found.").setEphemeral(true).queue();
         }
