@@ -22,6 +22,7 @@ import net.hypixel.nerdbot.discord.util.StringUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Comparator;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -124,7 +125,7 @@ public class ArchiveExporter {
         List<ThreadChannel> threads = ArrayUtils.safeArrayStream(forumChannel.getThreadChannels().toArray(), forumChannel.retrieveArchivedPublicThreadChannels().stream().toArray())
             .map(ThreadChannel.class::cast)
             .distinct()
-            .sorted((o1, o2) -> (int) (o1.getTimeCreated().toEpochSecond() - o2.getTimeCreated().toEpochSecond()))
+            .sorted(Comparator.comparingLong(thread -> thread.getTimeCreated().toEpochSecond()))
             .filter(threadChannel -> {
                 try {
                     Message startMessage = threadChannel.retrieveStartMessage().complete();
@@ -159,7 +160,7 @@ public class ArchiveExporter {
                 }
             } catch (Exception exception) {
                 username = threadChannel.getOwnerId();
-                log.error("Failed to get username for thread owner " + threadChannel.getOwnerId(), exception);
+                log.error("Failed to get username for thread owner {}", threadChannel.getOwnerId(), exception);
             }
 
             String threadUrl = startMessage.getJumpUrl();
@@ -294,7 +295,7 @@ public class ArchiveExporter {
         }
 
         return message.getReactions().stream()
-            .map(reaction -> String.format("%s:%d", reaction.getEmoji().getName(), reaction.getCount()))
+            .map(reaction -> reaction.getEmoji().getName() + ":" + reaction.getCount())
             .collect(Collectors.joining(", "));
     }
 
@@ -310,6 +311,7 @@ public class ArchiveExporter {
                 }
             }
         }
+        log.info("Created zip file at {} (size: {})", zipFile.getAbsolutePath(), StringUtils.formatSize(zipFile.length()));
         return zipFile;
     }
 
@@ -325,7 +327,7 @@ public class ArchiveExporter {
         int current = counter.get();
         if (current > 0 && current % 500 == 0 && inSafeThread()) {
             try {
-                Thread.sleep(250);
+                TimeUnit.MILLISECONDS.sleep(250);
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             }

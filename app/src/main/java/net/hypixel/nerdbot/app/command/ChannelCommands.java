@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.app.command;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -20,6 +21,7 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
+import net.hypixel.nerdbot.discord.util.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,22 +39,22 @@ public class ChannelCommands {
     public void archive(SlashCommandInteractionEvent event, @SlashOption TextChannel channel) {
         event.deferReply(true).complete();
         InteractionHook hook = event.getHook();
-        hook.editOriginal(String.format("Archiving channel %s! If no file appears here, please contact a bot developer.", channel.getAsMention())).queue();
+        hook.editOriginal("Archiving channel " + channel.getAsMention() + "! If no file appears here, please contact a bot developer.").queue();
 
         CompletableFuture.runAsync(() -> {
             try {
                 File file = ArchiveExporter.exportTextChannel(channel, createProgressUpdater(hook));
-                log.info("Finished archiving channel " + channel.getName() + " (ID: " + channel.getId() + ")! File located at: " + file.getAbsolutePath());
+                log.info("Finished archiving channel '{}' (ID: {})! File located at: {}", channel.getName(), channel.getId(), file.getAbsolutePath());
 
                 if (!hook.isExpired()) {
-                    hook.editOriginal(String.format("Finished archiving channel %s! The file should appear below.", channel.getAsMention()))
+                    hook.editOriginal("Finished archiving channel " + channel.getAsMention() + "! The file should appear below.")
                         .setFiles(FileUpload.fromData(file))
                         .queue();
                 }
             } catch (Exception exception) {
-                log.error("An error occurred when archiving the channel " + channel.getId() + "!", exception);
+                log.error("An error occurred when archiving the channel {}!", channel.getId(), exception);
                 if (!hook.isExpired()) {
-                    hook.editOriginal(String.format("An error occurred while archiving channel %s: %s", channel.getAsMention(), exception.getMessage())).queue();
+                    hook.editOriginal("An error occurred while archiving channel " + channel.getAsMention() + ": " + exception.getMessage()).queue();
                 }
             }
         });
@@ -62,17 +64,35 @@ public class ChannelCommands {
     public void archiveCategory(SlashCommandInteractionEvent event, @SlashOption Category category) {
         event.deferReply(true).complete();
         InteractionHook hook = event.getHook();
-        hook.editOriginal(String.format("Archiving category **%s** (ID: %s). You will receive a DM when complete.", category.getName(), category.getId())).queue();
+        hook.editOriginal("Archiving category **" + category.getName() + "** (ID: " + category.getId() + "). You will receive a DM when complete.").queue();
 
         CompletableFuture.runAsync(() -> {
             try {
                 File zipFile = ArchiveExporter.exportCategory(category, createProgressUpdater(hook));
+                long fileSizeBytes = zipFile.length();
+                log.info("Category archive for '{}' complete. Zip file: {} ({})", category.getName(), zipFile.getAbsolutePath(), StringUtils.formatSize(fileSizeBytes));
+
+                if (fileSizeBytes > Message.MAX_FILE_SIZE) {
+                    log.warn("Zip file exceeds Discord's upload limit ({}). Skipping file attachment.", StringUtils.formatSize(fileSizeBytes));
+                    String message = "Finished archiving category **" + category.getName() + "**, but the zip file is too large to send via Discord (" + StringUtils.formatSize(fileSizeBytes) + "). File path: `" + zipFile.getAbsolutePath() + "`";
+
+                    if (!hook.isExpired()) {
+                        hook.editOriginal(message).queue();
+                    }
+
+                    event.getUser().openPrivateChannel().queue(
+                        dm -> dm.sendMessage(message).queue(),
+                        error -> log.error("Failed to notify user {} of oversized archive via DM", event.getUser().getId(), error)
+                    );
+                    return;
+                }
+
                 if (!hook.isExpired()) {
                     hook.editOriginal("Finished archiving! Sending the zip file via DM").queue();
                 }
                 sendZipToUserAsync(event, zipFile, hook, category.getName());
             } catch (Exception exception) {
-                log.error("Failed to archive category " + category.getId(), exception);
+                log.error("Failed to archive category {}", category.getId(), exception);
                 if (!hook.isExpired()) {
                     hook.editOriginal("Failed to create the archive zip file: " + exception.getMessage()).queue();
                 } else {
@@ -90,19 +110,20 @@ public class ChannelCommands {
             privateChannel.sendFiles(FileUpload.fromData(zipFile)).queue(
                 success -> hook.editOriginal("Finished! Sent you the archive zip via DM").queue(),
                 error -> {
-                    log.error("Failed to DM archive zip file to user " + event.getUser().getId(), error);
+                    log.error("Failed to DM archive zip file to user {}", event.getUser().getId(), error);
                     hook.editOriginal("Finished archiving, but failed to DM the zip file. Sending here instead...")
                         .setFiles(FileUpload.fromData(zipFile))
                         .queue(null, sendError -> hook.editOriginal("Failed to send the zip. File path: " + zipFile.getAbsolutePath()).queue());
                 }
             );
         }, error -> {
-            log.error("Failed to open DM for user " + event.getUser().getId(), error);
+            log.error("Failed to open DM for user {}", event.getUser().getId(), error);
             hook.editOriginal("Finished archiving, but could not open DMs to send the zip file. File path: " + zipFile.getAbsolutePath()).queue();
         });
     }
 
     private void sendZipToUserAsync(SlashCommandInteractionEvent event, File zipFile, InteractionHook hook, String categoryName) {
+        log.info("Attempting to send archive zip for category '{}' to user {} (file size: {})", categoryName, event.getUser().getId(), StringUtils.formatSize(zipFile.length()));
         event.getUser().openPrivateChannel().queue(privateChannel -> {
             privateChannel.sendMessage("Here is your archive for category **" + categoryName + "**:")
                 .addFiles(FileUpload.fromData(zipFile))
@@ -114,7 +135,7 @@ public class ChannelCommands {
                         }
                     },
                     error -> {
-                        log.error("Failed to DM archive zip file to user " + event.getUser().getId(), error);
+                        log.error("Failed to DM archive zip file to user {}", event.getUser().getId(), error);
                         if (!hook.isExpired()) {
                             hook.editOriginal("Finished archiving, but failed to DM the zip file. Sending here instead...")
                                 .setFiles(FileUpload.fromData(zipFile))
@@ -128,7 +149,7 @@ public class ChannelCommands {
                     }
                 );
         }, error -> {
-            log.error("Failed to open DM for user " + event.getUser().getId(), error);
+            log.error("Failed to open DM for user {} to send archive zip (file: {}, size: {})", event.getUser().getId(), zipFile.getAbsolutePath(), StringUtils.formatSize(zipFile.length()), error);
             if (!hook.isExpired()) {
                 hook.editOriginal("Finished archiving, but could not open DMs to send the zip file. File path: " + zipFile.getAbsolutePath()).queue();
             } else {
@@ -186,7 +207,7 @@ public class ChannelCommands {
 
                 if (isSuggestion) {
                     if (!DiscordUtils.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) {
-                        hook.editOriginal(String.format("I could not find a tag with the name `%s`!", suggestionConfig.getReviewedTag())).queue();
+                        hook.editOriginal("I could not find a tag with the name `" + suggestionConfig.getReviewedTag() + "`!").queue();
                         return;
                     }
 
@@ -196,11 +217,8 @@ public class ChannelCommands {
                         .filter(tag -> tag.getOwnerId() != null && tag.getOwnerId().equals(discordUser.getDiscordId()))
                         .findFirst();
 
-                    if (customForumTag.isPresent()) {
-                        handleTagAndLock(event, discordUser, threadChannel, forumChannel, customForumTag.get().getName());
-                    } else {
-                        handleTagAndLock(event, discordUser, threadChannel, forumChannel, suggestionConfig.getReviewedTag());
-                    }
+                    String tagName = customForumTag.map(CustomForumTag::getName).orElse(suggestionConfig.getReviewedTag());
+                    handleTagAndLock(event, discordUser, threadChannel, forumChannel, tagName);
                 }
             })
             .exceptionally(throwable -> {
@@ -214,7 +232,7 @@ public class ChannelCommands {
         InteractionHook hook = event.getHook();
 
         if (!DiscordUtils.hasTagByName(forumChannel, tagName)) {
-            hook.editOriginal(String.format("I could not find a tag with the name `%s`!", tagName)).queue();
+            hook.editOriginal("I could not find a tag with the name `" + tagName + "`!").queue();
             return;
         }
 
@@ -229,7 +247,7 @@ public class ChannelCommands {
             ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
             if (autoTagConfig != null && autoTagConfig.getReviewTagName().equalsIgnoreCase(tagName)) {
                 ForumTag defaultTag = DiscordUtils.getTagByName(forumChannel, autoTagConfig.getDefaultTagName());
-                if (defaultTag != null && appliedTags.contains(defaultTag)) {
+                if (appliedTags.contains(defaultTag)) {
                     appliedTags.remove(defaultTag);
                     log.info("Removed auto-tag '{}' from thread '{}' (ID: {}) when '{}' tag was applied via /lock", autoTagConfig.getDefaultTagName(), threadChannel.getName(), threadChannel.getId(), tagName);
                 }
@@ -237,7 +255,7 @@ public class ChannelCommands {
 
             threadManager.setAppliedTags(appliedTags).complete();
             threadManager.setLocked(true).complete();
-            event.getChannel().sendMessage(String.format("%s applied the %s tag and locked this suggestion!", event.getUser().getAsMention(), tag.getName())).queue();
+            event.getChannel().sendMessage(event.getUser().getAsMention() + " applied the " + tag.getName() + " tag and locked this suggestion!").queue();
             hook.editOriginal("Successfully locked thread!").queue();
         } else {
             hook.editOriginal("This thread is already tagged!").queue();
