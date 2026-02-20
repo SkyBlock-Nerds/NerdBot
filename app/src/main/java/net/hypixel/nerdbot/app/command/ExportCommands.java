@@ -32,8 +32,10 @@ import net.hypixel.nerdbot.discord.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ExportCommands {
@@ -56,17 +59,22 @@ public class ExportCommands {
             return;
         }
 
-        event.getHook().editOriginal(String.format("Exporting threads from %s...", forumChannel.getAsMention())).queue();
+        event.getHook().editOriginal("Exporting threads from " + forumChannel.getAsMention() + "...").queue();
 
-        try {
-            File file = ArchiveExporter.exportForumThreadsDetailed(forumChannel, status -> event.getHook().editOriginal(status).queue());
-            event.getHook().editOriginal(String.format("Finished exporting all threads from %s!", forumChannel.getAsMention()))
-                .setFiles(FileUpload.fromData(file))
-                .queue();
-        } catch (IOException exception) {
-            log.error("Failed to create temp file!", exception);
-            event.getHook().editOriginal(String.format("Failed to create temporary file: %s", exception.getMessage())).queue();
-        }
+        CompletableFuture.runAsync(() -> {
+            try {
+                File file = ArchiveExporter.exportForumThreadsDetailed(forumChannel, status -> event.getHook().editOriginal(status).queue());
+                event.getHook().editOriginal("Finished exporting all threads from " + forumChannel.getAsMention() + "!")
+                    .setFiles(FileUpload.fromData(file))
+                    .queue();
+            } catch (IOException exception) {
+                log.error("Failed to create temp file!", exception);
+                event.getHook().editOriginal("Failed to create temporary file: " + exception.getMessage()).queue();
+            } catch (Exception exception) {
+                log.error("Failed to export threads!", exception);
+                event.getHook().editOriginal("Failed to export threads: " + exception.getMessage()).queue();
+            }
+        });
     }
 
     @SlashCommand(name = PARENT_COMMAND, subcommand = "greenlit", description = "Exports all greenlit forum posts into a CSV file", guildOnly = true, defaultMemberPermissions = {"MANAGE_CHANNEL", "MANAGE_THREADS"}, requiredPermissions = {"MANAGE_CHANNEL", "MANAGE_THREADS"})
@@ -131,12 +139,12 @@ public class ExportCommands {
 
         try {
             MessageEditData data = MessageEditBuilder.from(MessageEditData.fromContent("To import into Google Sheets, go to File -> Import, Upload the `.csv` document shown below.\nChange `Import Location` to `Append to current sheet` and `Separator Type` should be defaulted to Automatic detection if not, change it to tabs.)"))
-                .setFiles(FileUpload.fromData(FileUtils.createTempFile(String.format("export-greenlit-%s.csv", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV())))
+                .setFiles(FileUpload.fromData(FileUtils.createTempFile("export-greenlit-" + FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now()) + ".csv", csvData.toCSV())))
                 .build();
 
             event.getHook().editOriginal(data).queue();
         } catch (IOException exception) {
-            event.getHook().editOriginal(String.format("Failed to create temporary file: %s", exception.getMessage())).queue();
+            event.getHook().editOriginal("Failed to create temporary file: " + exception.getMessage()).queue();
             log.error("Failed to create temp file!", exception);
         }
     }
@@ -156,7 +164,8 @@ public class ExportCommands {
             List<MojangProfile> profiles = members.stream()
                 .filter(member -> !member.getUser().isBot())
                 .filter(member -> RoleManager.hasAnyRole(member, roleArray))
-                .map(member -> discordUserRepository.findById(member.getId()))
+                .map(Member::getId)
+                .map(discordUserRepository::findById)
                 .filter(Objects::nonNull)
                 .filter(DiscordUser::isProfileAssigned)
                 .map(DiscordUser::getMojangProfile)
@@ -174,7 +183,7 @@ public class ExportCommands {
 
             try {
                 File file = FileUtils.createTempFile(
-                    String.format("export-uuids-%s.json", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())),
+                    "export-uuids-" + FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now()) + ".json",
                     BotEnvironment.GSON.toJson(uuidArray)
                 );
                 event.getHook().sendFiles(FileUpload.fromData(file)).queue();
@@ -219,14 +228,14 @@ public class ExportCommands {
             try {
                 StringBuilder stringBuilder = new StringBuilder();
 
-                for (Map.Entry<String, List<String>> entry : membersByRole.entrySet()) {
-                    stringBuilder.append(entry.getKey()).append(":\n");
-                    entry.getValue().forEach(member -> stringBuilder.append(member).append("\n"));
+                membersByRole.forEach((role, names) -> {
+                    stringBuilder.append(role).append(":\n");
+                    names.forEach(name -> stringBuilder.append(name).append("\n"));
                     stringBuilder.append("\n");
-                }
+                });
 
                 File file = FileUtils.createTempFile(
-                    String.format("export-roles-%s.csv", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())),
+                    "export-roles-" + FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now()) + ".csv",
                     stringBuilder.toString()
                 );
                 event.getHook().sendFiles(FileUpload.fromData(file)).queue();
@@ -296,7 +305,7 @@ public class ExportCommands {
             discordUsers.removeIf(discordUser -> {
                 LastActivity lastActivity = discordUser.getLastActivity();
                 return lastActivity.getChannelActivityHistory().stream()
-                    .filter(channelActivityEntry -> !Arrays.asList(SkyBlockNerdsBot.config().getChannelConfig().getBlacklistedChannels()).contains(channelActivityEntry.getChannelId()))
+                    .filter(channelActivityEntry -> Arrays.stream(SkyBlockNerdsBot.config().getChannelConfig().getBlacklistedChannels()).noneMatch(channelActivityEntry.getChannelId()::equals))
                     .anyMatch(entry -> entry.getLastMessageTimestamp() > inactivityTimestamp && discordUser.getLastActivity().getTotalMessageCount(finalInactivityDays) > finalInactivityMessages);
             });
 
@@ -332,7 +341,7 @@ public class ExportCommands {
             StringBuilder channelActivity = new StringBuilder();
 
             if (!history.isEmpty()) {
-                history.sort((o1, o2) -> o2.getMessageCount() - o1.getMessageCount());
+                history.sort(Comparator.comparingInt(ChannelActivityEntry::getMessageCount).reversed());
 
                 for (ChannelActivityEntry entry : history) {
                     channelActivity.append(entry.getLastKnownDisplayName()).append(": ").append(entry.getMessageCount());
@@ -368,7 +377,7 @@ public class ExportCommands {
         }
 
         try {
-            File file = FileUtils.createTempFile(String.format("export-member-activity-%s.csv", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
+            File file = FileUtils.createTempFile("export-member-activity-" + FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now()) + ".csv", csvData.toCSV());
             event.getHook().sendFiles(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
             log.error("Failed to create temp file!", exception);
@@ -411,7 +420,7 @@ public class ExportCommands {
                 return;
             }
 
-            event.getHook().editOriginal(String.format("Found %d suggestions for user ID %s. Starting export...", userSuggestions.size(), userId)).queue();
+            event.getHook().editOriginal("Found " + userSuggestions.size() + " suggestions for user ID " + userId + ". Starting export...").queue();
 
             CSVData csvData = new CSVData(List.of(
                 "Title",
@@ -456,20 +465,17 @@ public class ExportCommands {
                     suggestion.isGreenlit() ? "YES" : "NO",
                     "\"" + suggestion.getAppliedTags().stream()
                         .map(BaseForumTag::getName)
-                        .reduce((a, b) -> a + ", " + b)
-                        .orElse("") + "\""
+                        .collect(Collectors.joining(", ")) + "\""
                 ));
             }
 
             event.getHook().editOriginal("Creating export file...").queue();
 
             FileUtils.createTempFileAsync(
-                String.format("export-user-suggestions-%s-%s.csv",
-                    userId,
-                    FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())),
+                "export-user-suggestions-" + userId + "-" + FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now()) + ".csv",
                 csvData.toCSV()
             ).thenAccept(file -> {
-                event.getHook().editOriginal(String.format("Successfully exported %d suggestions for user ID %s", userSuggestions.size(), userId))
+                event.getHook().editOriginal("Successfully exported " + userSuggestions.size() + " suggestions for user ID " + userId)
                     .setFiles(FileUpload.fromData(file))
                     .queue();
             }).exceptionally(throwable -> {
