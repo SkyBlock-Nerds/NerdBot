@@ -83,7 +83,7 @@
         <dependency>
             <groupId>io.sentry</groupId>
             <artifactId>sentry</artifactId>
-            <version>8.32.0</version>
+            <version>8.33.0</version>
         </dependency>
         <dependency>
             <groupId>io.sentry</groupId>
