@@ -53,7 +53,7 @@ public class ConfigGenerator {
 
         try {
             NerdBotConfig config = generator.generate(NerdBotConfig.class);
-            String json = DataSerialization.GSON.toJson(config);
+            String json = DataSerialization.PRETTY_GSON.toJson(config);
             writeJsonToFile(json, args[0]);
             System.out.println("Created JSON file: " + args[0]);
         } catch (Exception e) {

@@ -99,13 +99,13 @@ public class ExportCommands {
         List<GreenlitMessage> output = greenlitMessageRepository.getAllDocuments();
 
         if (output.isEmpty()) {
-            log.info("No greenlit suggestions found for " + event.getMember().getEffectiveName() + "'s export (after: " + formatTimestampLog(suggestionsAfter) + ", current time: " + formatTimestampLog(System.currentTimeMillis()) + ")");
+            log.info("No greenlit suggestions found for {}'s export (after: {}, current time: {})", event.getMember().getEffectiveName(), formatTimestampLog(suggestionsAfter), formatTimestampLog(System.currentTimeMillis()));
             event.getHook().editOriginal("No suggestions were greenlit").queue();
             return;
         }
 
         // Send a log line with formatted dates for the suggestionsAfter parameter
-        log.info("Exporting " + output.size() + " greenlit suggestions for " + event.getMember().getEffectiveName() + " (after: " + formatTimestampLog(suggestionsAfter) + ", current time: " + formatTimestampLog(System.currentTimeMillis()) + ")");
+        log.info("Exporting {} greenlit suggestions for {} (after: {}, current time: {})", output.size(), event.getMember().getEffectiveName(), formatTimestampLog(suggestionsAfter), formatTimestampLog(System.currentTimeMillis()));
 
         CSVData csvData = new CSVData(List.of("Creation Date", "Tags", "Title"), ";");
 
@@ -117,14 +117,14 @@ public class ExportCommands {
                     "\"" + String.join(", ", greenlitMessage.getTags()) + "\"",
                     "=HYPERLINK(\"" + greenlitMessage.getSuggestionUrl() + "\", \"" + greenlitMessage.getSuggestionTitle().replace("\"", "\"\"") + "\")"
                 ));
-                log.info("Added greenlit suggestion '" + greenlitMessage.getSuggestionTitle() + "' to the greenlit suggestion export for " + event.getMember().getEffectiveName() + " (after: " + formatTimestampLog(suggestionsAfter) + ", current time: " + formatTimestampLog(System.currentTimeMillis()) + ")");
+                log.info("Added greenlit suggestion '{}' to the greenlit suggestion export for {} (after: {}, current time: {})", greenlitMessage.getSuggestionTitle(), event.getMember().getEffectiveName(), formatTimestampLog(suggestionsAfter), formatTimestampLog(System.currentTimeMillis()));
             } else {
-                log.debug("Skipping greenlit suggestion " + greenlitMessage.getSuggestionTitle() + " because it was created before the specified timestamp (after: " + formatTimestampLog(suggestionsAfter) + ", suggestion timestamp: " + formatTimestampLog(greenlitMessage.getSuggestionTimestamp()) + ")");
+                log.debug("Skipping greenlit suggestion {} because it was created before the specified timestamp (after: {}, suggestion timestamp: {})", greenlitMessage.getSuggestionTitle(), formatTimestampLog(suggestionsAfter), formatTimestampLog(greenlitMessage.getSuggestionTimestamp()));
             }
         }
 
         if (!csvData.hasContent()) {
-            log.info("No greenlit suggestions found for " + event.getMember().getEffectiveName() + "'s export (after: " + formatTimestampLog(suggestionsAfter) + ")");
+            log.info("No greenlit suggestions found for {}'s export (after: {})", event.getMember().getEffectiveName(), formatTimestampLog(suggestionsAfter));
             event.getHook().editOriginal("No suggestions were greenlit").queue();
             return;
         }
@@ -162,7 +162,7 @@ public class ExportCommands {
                 .map(DiscordUser::getMojangProfile)
                 .toList();
 
-            log.info("Found " + profiles.size() + " members meeting requirements.");
+            log.info("Found {} members meeting requirements.", profiles.size());
 
             if (profiles.isEmpty()) {
                 event.getHook().editOriginal("Nothing found to export!").queue();
@@ -284,7 +284,7 @@ public class ExportCommands {
         List<DiscordUser> discordUsers = discordUserRepository.getAll();
 
         if (inactivityDays == -1 && inactivityMessages == -1) {
-            log.info(event.getMember().getEffectiveName() + " is exporting member activity for all members");
+            log.info("{} is exporting member activity for all members", event.getMember().getEffectiveName());
         } else {
             inactivityDays = inactivityDays != 0 ? inactivityDays : SkyBlockNerdsBot.config().getInactivityDays();
             inactivityMessages = inactivityMessages != 0 ? inactivityMessages : SkyBlockNerdsBot.config().getInactivityMessages();
@@ -300,7 +300,7 @@ public class ExportCommands {
                     .anyMatch(entry -> entry.getLastMessageTimestamp() > inactivityTimestamp && discordUser.getLastActivity().getTotalMessageCount(finalInactivityDays) > finalInactivityMessages);
             });
 
-            log.info(event.getMember().getEffectiveName() + " is exporting member activity for " + discordUsers.size() + " members that meet the requirements (" + inactivityDays + " days of inactivity and " + inactivityMessages + " messages)");
+            log.info("{} is exporting member activity for {} members that meet the requirements ({} days of inactivity and {} messages)", event.getMember().getEffectiveName(), discordUsers.size(), inactivityDays, inactivityMessages);
         }
 
         discordUsers.removeIf(discordUser -> {
@@ -323,7 +323,7 @@ public class ExportCommands {
             Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
 
             if (member == null) {
-                log.warn("[Member Activity Export] Member not found for user: " + discordUser.getDiscordId());
+                log.warn("[Member Activity Export] Member not found for user: {}", discordUser.getDiscordId());
                 continue;
             }
 
@@ -364,7 +364,7 @@ public class ExportCommands {
                 "FALSE"
             ));
 
-            log.debug("Added member " + member.getUser().getName() + " to the activity export for " + event.getMember().getEffectiveName() + " (days required: " + inactivityDays + ", message count required: " + inactivityMessages + ")");
+            log.debug("Added member {} to the activity export for {} (days required: {}, message count required: {})", member.getUser().getName(), event.getMember().getEffectiveName(), inactivityDays, inactivityMessages);
         }
 
         try {

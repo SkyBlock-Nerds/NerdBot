@@ -19,7 +19,7 @@ public class BadgeManager {
         DiscordBot discordBot = BotEnvironment.getBot(DiscordBot.class);
         discordBot.getConfig().getBadgeConfig().getBadges().forEach(badge -> {
             BADGE_MAP.put(badge.getId(), badge);
-            log.info("Loaded badge: " + badge);
+            log.info("Loaded badge: {}", badge);
         });
     }
 

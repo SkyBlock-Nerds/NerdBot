@@ -115,7 +115,7 @@ public class RoleRestrictedChannelListener {
             Set<String> channelRoleIds = getChannelRestrictedRoles(channel);
 
             if (channelRoleIds.isEmpty()) {
-                log.debug("Channel {} has no role restrictions, skipping", channel.getName());
+                log.debug("Channel {} (ID: {}) has no role restrictions, skipping", channel.getName(), channel.getId());
                 return;
             }
 

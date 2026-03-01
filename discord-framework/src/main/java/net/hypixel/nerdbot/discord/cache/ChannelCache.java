@@ -25,7 +25,7 @@ public class ChannelCache {
     public ChannelCache() {
         DiscordUtils.getMainGuild().getChannels().forEach(channel -> {
             CHANNEL_CACHE.put(channel.getId(), channel);
-            log.debug("Cached channel '" + channel.getName() + "' (ID: " + channel.getId() + ")");
+            log.debug("Cached channel '{}' (ID: {})", channel.getName(), channel.getId());
         });
     }
 
@@ -105,18 +105,18 @@ public class ChannelCache {
     @SubscribeEvent
     public void onChannelCreate(ChannelCreateEvent event) {
         CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel().asGuildChannel());
-        log.debug("Cached channel '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was created");
+        log.debug("Cached channel '{}' (ID: {}) because it was created", event.getChannel().getName(), event.getChannel().getId());
     }
 
     @SubscribeEvent
     public void onChannelUpdate(GenericChannelUpdateEvent<?> event) {
         CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel().asGuildChannel());
-        log.debug("Cached channel '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was updated");
+        log.debug("Cached channel '{}' (ID: {}) because it was updated", event.getChannel().getName(), event.getChannel().getId());
     }
 
     @SubscribeEvent
     public void onChannelDelete(ChannelDeleteEvent event) {
         CHANNEL_CACHE.remove(event.getChannel().getId());
-        log.debug("Removed channel from cache '" + event.getChannel().getName() + "' (ID: " + event.getChannel().getId() + ") because it was deleted");
+        log.debug("Removed channel from cache '{}' (ID: {}) because it was deleted", event.getChannel().getName(), event.getChannel().getId());
     }
 }

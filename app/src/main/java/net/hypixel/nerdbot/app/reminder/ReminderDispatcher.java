@@ -33,7 +33,7 @@ public class ReminderDispatcher {
         String timestamp = DiscordTimestamp.toLongDateTime(reminder.getTime());
 
         if (user == null) {
-            log.error("Couldn't find user with ID '{}' to send reminder {}!", reminder.getUserId(), reminder.getUuid());
+            log.warn("Couldn't find user with ID '{}' to send reminder {}!", reminder.getUserId(), reminder.getUuid());
             reminderRepository.deleteFromDatabase(reminder.getUuid().toString());
             return;
         }
@@ -45,7 +45,7 @@ public class ReminderDispatcher {
         user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage(message)
             .addEmbeds(new EmbedBuilder().setDescription(reminder.getDescription()).build())
             .queue((success) -> log.info("Sent reminder '{}' message to user {}", reminder.getUuid(), reminder.getUserId()),
-                (failure) -> log.error("Couldn't send reminder message to user: {} (reminder: {})", reminder.getUserId(), reminder.getUuid())));
+                (failure) -> log.warn("Couldn't send reminder message to user: {} (reminder: {})", reminder.getUserId(), reminder.getUuid())));
     }
 
     private static class ReminderTask extends TimerTask {

@@ -159,7 +159,7 @@ public class ArchiveExporter {
                 }
             } catch (Exception exception) {
                 username = threadChannel.getOwnerId();
-                log.error("Failed to get username for thread owner " + threadChannel.getOwnerId(), exception);
+                log.error("Failed to get username for thread owner {}", threadChannel.getOwnerId(), exception);
             }
 
             String threadUrl = startMessage.getJumpUrl();

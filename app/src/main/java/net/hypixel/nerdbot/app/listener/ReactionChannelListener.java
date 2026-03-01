@@ -37,12 +37,12 @@ public class ReactionChannelListener {
                 .flatMap(Optional::stream)
                 .forEach(emoji -> {
                     message.addReaction(emoji).queue();
-                    log.info("[Reaction Channel] Added reaction '" + emoji.getName() + "' to message " + message.getId() + " in reaction channel " + reactionChannel.get().name());
+                    log.info("[Reaction Channel] Added reaction '{}' to message {} in reaction channel {}", emoji.getName(), message.getId(), reactionChannel.get().name());
                 });
 
             if (reactionChannel.get().thread()) {
                 message.createThreadChannel("Related messages here").queue(thread -> {
-                    log.info("[Reaction Channel] Created thread for message " + message.getId() + " in reaction channel " + reactionChannel.get().name());
+                    log.info("[Reaction Channel] Created thread for message {} in reaction channel {}", message.getId(), reactionChannel.get().name());
                 });
             }
             return;
@@ -55,7 +55,7 @@ public class ReactionChannelListener {
                 .map(Emoji::fromUnicode)
                 .forEach(emoji -> {
                     event.getMessage().addReaction(emoji).queue();
-                    log.info("[Polls] [" + pollChannelId + "] Added reaction '" + emoji.getName() + "' to message " + event.getMessage().getId());
+                    log.info("[Polls] [{}] Added reaction '{}' to message {}", pollChannelId, emoji.getName(), event.getMessage().getId());
                 });
         }
     }

@@ -27,7 +27,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -313,7 +312,7 @@ public abstract class AbstractDiscordBot implements DiscordBot {
 
             config = discordBotConfig;
             log.info("Loaded config from {}", file.getAbsolutePath());
-        } catch (FileNotFoundException exception) {
+        } catch (IOException exception) {
             throw new IllegalStateException("Failed to load config from " + file.getAbsolutePath(), exception);
         } catch (RuntimeException exception) {
             throw new IllegalStateException("Failed to parse config from " + file.getAbsolutePath(), exception);
@@ -332,7 +331,7 @@ public abstract class AbstractDiscordBot implements DiscordBot {
         }
 
         try (FileWriter writer = new FileWriter(fileName)) {
-            DataSerialization.GSON.toJson(newConfig, writer);
+            DataSerialization.PRETTY_GSON.toJson(newConfig, writer);
             return true;
         } catch (IOException exception) {
             log.error("Could not save config file!", exception);
