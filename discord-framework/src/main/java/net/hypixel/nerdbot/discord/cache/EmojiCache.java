@@ -23,7 +23,7 @@ public class EmojiCache {
         DiscordBotEnvironment.getBot().getJDA().getGuilds().forEach(guild -> {
             guild.retrieveEmojis().complete().forEach(richCustomEmoji -> {
                 EMOJI_CACHE.put(richCustomEmoji.getId(), richCustomEmoji);
-                log.debug("Cached emoji '" + richCustomEmoji.getName() + "' (ID: " + richCustomEmoji.getId() + ")");
+                log.debug("Cached emoji '{}' (ID: {})", richCustomEmoji.getName(), richCustomEmoji.getId());
             });
         });
     }
@@ -51,18 +51,18 @@ public class EmojiCache {
     @SubscribeEvent
     public void onEmojiCreate(EmojiAddedEvent event) {
         EMOJI_CACHE.put(event.getEmoji().getId(), event.getEmoji());
-        log.debug("Cached emoji '" + event.getEmoji().getName() + "' (ID: " + event.getEmoji().getId() + ") because it was created");
+        log.debug("Cached emoji '{}' (ID: {}) because it was created", event.getEmoji().getName(), event.getEmoji().getId());
     }
 
     @SubscribeEvent
     public void onEmojiDelete(EmojiRemovedEvent event) {
         EMOJI_CACHE.remove(event.getEmoji().getId());
-        log.debug("Removed emoji from cache '" + event.getEmoji().getName() + "' (ID: " + event.getEmoji().getId() + ") because it was deleted");
+        log.debug("Removed emoji from cache '{}' (ID: {}) because it was deleted", event.getEmoji().getName(), event.getEmoji().getId());
     }
 
     @SubscribeEvent
     public void onEmojiUpdate(GenericEmojiUpdateEvent<?> event) {
         EMOJI_CACHE.put(event.getEmoji().getId(), event.getEmoji());
-        log.debug("Cached emoji '" + event.getEmoji().getName() + "' (ID: " + event.getEmoji().getId() + ") because it was updated");
+        log.debug("Cached emoji '{}' (ID: {}) because it was updated", event.getEmoji().getName(), event.getEmoji().getId());
     }
 }

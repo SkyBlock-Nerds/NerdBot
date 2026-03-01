@@ -127,7 +127,7 @@ public class HttpUtils {
         Arrays.stream(headers).forEach(h -> builder.header(h.getLeft(), h.getRight()));
 
         HttpRequest request = builder.build();
-        log.info("Sending HTTP request to {} with headers {}", url, Arrays.toString(headers));
+        log.info("Sending HTTP request to {} with {} header(s)", url, headers.length);
         PrometheusMetrics.HTTP_REQUESTS_AMOUNT.labels(request.method(), url).inc();
 
         return HttpClient.getClient().send(request, HttpResponse.BodyHandlers.ofString());
@@ -141,7 +141,7 @@ public class HttpUtils {
         Arrays.stream(headers).forEach(h -> builder.header(h.getLeft(), h.getRight()));
 
         HttpRequest request = builder.build();
-        log.info("Sending async HTTP request to {} with headers {}", url, Arrays.toString(headers));
+        log.info("Sending async HTTP request to {} with {} header(s)", url, headers.length);
         PrometheusMetrics.HTTP_REQUESTS_AMOUNT.labels(request.method(), url).inc();
 
         return HttpClient.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString());

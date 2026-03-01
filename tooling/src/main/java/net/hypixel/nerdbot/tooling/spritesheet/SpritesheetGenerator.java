@@ -96,8 +96,7 @@ public class SpritesheetGenerator {
                 String name = file.getName().replace(".png", "");
                 textures.add(new TextureInfo(name, processed));
             } catch (IOException exception) {
-                System.err.println("Failed to load: " + file.getName());
-                exception.printStackTrace();
+                System.err.println("Failed to load: " + file.getName() + " - " + exception.getMessage());
             }
         }
 
@@ -157,8 +156,7 @@ public class SpritesheetGenerator {
             ImageIO.write(atlas, "png", outputFile);
             System.out.println("Texture atlas saved successfully!");
         } catch (IOException exception) {
-            System.err.println("Failed to save texture atlas!");
-            exception.printStackTrace();
+            System.err.println("Failed to save texture atlas: " + exception.getMessage());
         }
     }
 
@@ -182,10 +180,10 @@ public class SpritesheetGenerator {
         }
 
         try (FileWriter writer = new FileWriter(jsonFile)) {
-            DataSerialization.GSON.toJson(jsonArray, writer);
+            DataSerialization.PRETTY_GSON.toJson(jsonArray, writer);
             System.out.println("Texture atlas coordinates JSON saved successfully!");
         } catch (IOException exception) {
-            exception.printStackTrace();
+            System.err.println("Failed to save coordinates JSON: " + exception.getMessage());
         }
     }
 

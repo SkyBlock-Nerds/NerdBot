@@ -171,7 +171,7 @@ public class ProfileCommands {
             try {
                 member.modifyNickname(mojangProfile.getUsername()).queue();
             } catch (HierarchyException hex) {
-                log.warn("Unable to modify the nickname of " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
+                log.warn("Unable to modify the nickname of {} ({}) [{}], lacking hierarchy.", member.getUser().getName(), member.getEffectiveName(), member.getId());
             }
         }
 
@@ -197,11 +197,11 @@ public class ProfileCommands {
                         }
                     }
                 } catch (HierarchyException hex) {
-                    log.warn("Unable to assign " + newMemberRole.get().getName() + " role to " + member.getUser().getName() + " (" + member.getEffectiveName() + ") [" + member.getId() + "], lacking hierarchy.");
+                    log.warn("Unable to assign {} role to {} ({}) [{}], lacking hierarchy.", newMemberRole.get().getName(), member.getUser().getName(), member.getEffectiveName(), member.getId());
                 }
             }
         } else {
-            log.warn("Role with ID " + newMemberRoleId + " does not exist.");
+            log.warn("Role with ID {} does not exist.", newMemberRoleId);
         }
     }
 

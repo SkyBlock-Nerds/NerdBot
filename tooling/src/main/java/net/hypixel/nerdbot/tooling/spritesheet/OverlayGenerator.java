@@ -72,7 +72,7 @@ public class OverlayGenerator {
                     overlayInfoList.add(overlayInfo);
                     overlayNames.add(overlayName);
                 } catch (IOException exception) {
-                    exception.printStackTrace();
+                    System.err.println("Failed to load overlay '" + file.getName() + "': " + exception.getMessage());
                 }
             }
         }
@@ -209,8 +209,7 @@ public class OverlayGenerator {
             }
             saveOverlayCoordinatesJson(jsonFolder, jsonFileName);
         } catch (IOException exception) {
-            System.err.println("Failed to save overlay atlas!");
-            exception.printStackTrace();
+            System.err.println("Failed to save overlay atlas: " + exception.getMessage());
         }
     }
 
@@ -231,10 +230,10 @@ public class OverlayGenerator {
         File jsonFile = new File(outputFolder, jsonFileName);
 
         try (FileWriter fileWriter = new FileWriter(jsonFile)) {
-            DataSerialization.GSON.toJson(jsonArray, fileWriter);
+            DataSerialization.PRETTY_GSON.toJson(jsonArray, fileWriter);
             System.out.println("Overlay coordinates JSON file saved successfully!");
         } catch (IOException exception) {
-            exception.printStackTrace();
+            System.err.println("Failed to save overlay coordinates JSON: " + exception.getMessage());
         }
     }
 
