@@ -268,7 +268,6 @@ public abstract class AbstractDiscordBot implements DiscordBot {
         }
 
         JsonUtils.shutdown();
-        Repository.shutdownExecutor();
 
         log.info("Bot shutdown complete!");
     }
