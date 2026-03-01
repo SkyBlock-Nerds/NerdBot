@@ -331,7 +331,7 @@ public abstract class AbstractDiscordBot implements DiscordBot {
         }
 
         try (FileWriter writer = new FileWriter(fileName)) {
-            DataSerialization.GSON.toJson(newConfig, writer);
+            DataSerialization.PRETTY_GSON.toJson(newConfig, writer);
             return true;
         } catch (IOException exception) {
             log.error("Could not save config file!", exception);
