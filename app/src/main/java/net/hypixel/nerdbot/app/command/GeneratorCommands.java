@@ -2,28 +2,9 @@ package net.hypixel.nerdbot.app.command;
 
 import com.google.gson.JsonParseException;
 import lombok.extern.slf4j.Slf4j;
-import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
-import net.aerh.slashcommands.api.annotations.SlashCommand;
-import net.aerh.slashcommands.api.annotations.SlashOption;
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.Command;
-import net.dv8tion.jda.api.utils.FileUpload;
-import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
-import net.hypixel.nerdbot.app.generation.DiscordGenerationContext;
-import net.hypixel.nerdbot.marmalade.io.FileUtils;
-import net.hypixel.nerdbot.marmalade.image.ImageUtil;
-import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
-import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.marmalade.storage.database.model.user.generator.GeneratorHistory;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
-import net.hypixel.nerdbot.discord.util.StringUtils;
-import net.aerh.imagegenerator.context.GenerationContext;
 import net.aerh.imagegenerator.Generator;
 import net.aerh.imagegenerator.builder.ClassBuilder;
+import net.aerh.imagegenerator.context.GenerationContext;
 import net.aerh.imagegenerator.data.PowerStrength;
 import net.aerh.imagegenerator.data.Rarity;
 import net.aerh.imagegenerator.data.Stat;
@@ -40,10 +21,31 @@ import net.aerh.imagegenerator.impl.tooltip.MinecraftTooltipGenerator;
 import net.aerh.imagegenerator.item.GeneratedObject;
 import net.aerh.imagegenerator.spritesheet.OverlayLoader;
 import net.aerh.imagegenerator.spritesheet.Spritesheet;
+import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
+import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashOption;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.utils.FileUpload;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import net.hypixel.nerdbot.app.generation.DiscordGenerationContext;
+import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.discord.util.StringUtils;
+import net.hypixel.nerdbot.marmalade.image.ImageUtil;
+import net.hypixel.nerdbot.marmalade.io.FileUtils;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.generator.GeneratorHistory;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -490,10 +492,13 @@ public class GeneratorCommands {
         }
     }
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "parse", description = "Parse an NBT string")
+    private static final int MAX_ATTACHMENT_SIZE_BYTES = 64 * 1024; // 64 KB
+
+    @SlashCommand(name = BASE_COMMAND, subcommand = "parse", description = "Parse an NBT string (JSON or SNBT format)")
     public void parseNbtString(
         SlashCommandInteractionEvent event,
-        @SlashOption(description = NBT_DESCRIPTION) String nbt,
+        @SlashOption(description = NBT_DESCRIPTION, required = false) String nbt,
+        @SlashOption(description = "Upload a text file containing NBT data", required = false) Message.Attachment attachment,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -504,10 +509,18 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
+        String nbtInput;
+        try {
+            nbtInput = resolveNbtInput(nbt, attachment);
+        } catch (IllegalArgumentException e) {
+            event.getHook().editOriginal(e.getMessage()).queue();
+            return;
+        }
+
         GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
 
         try {
-            MinecraftNbtParser.ParsedNbt parsedNbt = MinecraftNbtParser.parse(nbt);
+            MinecraftNbtParser.ParsedNbt parsedNbt = MinecraftNbtParser.parse(nbtInput);
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
 
             parsedNbt.getGenerators().forEach(generator -> {
@@ -548,8 +561,9 @@ public class GeneratorCommands {
             // Escape newlines in lore so the slash command is a single line
             slashCommand = slashCommand.replace("\n", "\\n");
 
+            String sourceLabel = attachment != null ? "attachment" : "text input";
             MessageEditBuilder builder = new MessageEditBuilder()
-                .setContent("Your NBT input has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + slashCommand + "```");
+                .setContent("Your NBT " + sourceLabel + " has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + slashCommand + "```");
 
             if (generatedObject.isAnimated()) {
                 builder.setFiles(FileUpload.fromData(generatedObject.getGifData(), "parsed_nbt.gif"));
@@ -570,6 +584,40 @@ public class GeneratorCommands {
             event.getHook().editOriginal(exception.getMessage()).queue();
             log.error("Encountered an error while parsing NBT", exception);
         }
+    }
+
+    private String resolveNbtInput(String nbtText, net.dv8tion.jda.api.entities.Message.Attachment attachment) {
+        if (attachment != null) {
+            if (attachment.getSize() > MAX_ATTACHMENT_SIZE_BYTES) {
+                throw new IllegalArgumentException("Attachment is too large! Maximum size is " + StringUtils.formatSize(MAX_ATTACHMENT_SIZE_BYTES));
+            }
+
+            String fileName = attachment.getFileName().toLowerCase(Locale.ROOT);
+            if (!fileName.endsWith(".txt") && !fileName.endsWith(".json") && !fileName.endsWith(".snbt") && !fileName.endsWith(".nbt")) {
+                throw new IllegalArgumentException("Unsupported file type! Please upload a `.txt`, `.json`, `.snbt`, or `.nbt` file.");
+            }
+
+            try (InputStream inputStream = attachment.getProxy().download().join()) {
+                String content = new String(inputStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                if (content.isBlank()) {
+                    throw new IllegalArgumentException("The uploaded file is empty!");
+                }
+
+                log.debug("Read {} bytes from attachment '{}'", content.length(), attachment.getFileName());
+                return content;
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (Exception e) {
+                log.error("Failed to read attachment '{}'", attachment.getFileName(), e);
+                throw new IllegalArgumentException("Failed to read the uploaded file: " + e.getMessage());
+            }
+        }
+
+        if (nbtText == null || nbtText.isBlank()) {
+            throw new IllegalArgumentException("Please provide NBT data either as text or by uploading a file.");
+        }
+
+        return nbtText;
     }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a full item image. Supports displaying items, recipes, tooltips & more")
