@@ -185,7 +185,7 @@ public class AdminCommands {
 
                         Invite invite = action.complete();
                         invites.add(invite);
-                        log.info("Created new temporary invite '" + invite.getUrl() + "' for channel " + selected.getName() + " by " + event.getUser().getName());
+                        log.info("Created new temporary invite '{}' for channel {} (ID: {}) by {} (ID: {})", invite.getUrl(), selected.getName(), selected.getId(), event.getUser().getName(), event.getUser().getId());
                     } catch (InsufficientPermissionException exception) {
                         event.getHook().editOriginal(String.format("I do not have the correct permission to create invites in %s!", selected.getAsMention())).queue();
                         return;
@@ -214,7 +214,7 @@ public class AdminCommands {
                 List<Invite> invites = event.getGuild().retrieveInvites().complete();
                 invites.forEach(invite -> {
                     invite.delete().complete();
-                    log.info(event.getUser().getName() + " deleted invite " + invite.getUrl());
+                    log.info("{} (ID: {}) deleted invite {}", event.getUser().getName(), event.getUser().getId(), invite.getUrl());
                 });
 
                 ChannelCache.sendToLogChannel(
@@ -281,8 +281,19 @@ public class AdminCommands {
             });
     }
 
+    private static final java.util.Set<String> BLOCKED_CONFIG_KEYS = java.util.Set.of(
+        "ownerIds", "guildId", "token", "databaseUri", "databaseName"
+    );
+
     @SlashCommand(name = "config", subcommand = "edit", description = "Edit the config file", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void editConfig(SlashCommandInteractionEvent event, @SlashOption String key, @SlashOption String value) {
+        // Validate the config key is not in the blocked list
+        String rootKey = key.contains(".") ? key.substring(0, key.indexOf('.')) : key;
+        if (BLOCKED_CONFIG_KEYS.contains(rootKey)) {
+            event.reply("Editing the `" + rootKey + "` config key is not permitted.").setEphemeral(true).queue();
+            return;
+        }
+
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
 
@@ -291,7 +302,6 @@ public class AdminCommands {
             return;
         }
 
-        // We should store the name of the config file on boot lol this is bad
         String fileName = System.getProperty("bot.config") != null ? System.getProperty("bot.config") : Environment.getEnvironment().name().toLowerCase() + ".config.json";
 
         JsonUtils.readJsonFileAsync(fileName)
@@ -310,7 +320,7 @@ public class AdminCommands {
                 return JsonUtils.writeJsonFileAsync(fileName, JsonUtils.setJsonValue(obj, key, element));
             })
             .thenRun(() -> {
-                log.info(event.getUser().getName() + " edited the config file!");
+                log.info("{} (ID: {}) edited the config file!", event.getUser().getName(), event.getUser().getId());
                 event.reply("Updated config file!").queue();
             })
             .exceptionally(throwable -> {
@@ -565,11 +575,11 @@ public class AdminCommands {
                                         if (mojangProfile != null) {
                                             mojangProfiles.add(mojangProfile);
                                             user.setMojangProfile(mojangProfile);
-                                            log.info("Migrated " + member.getEffectiveName() + " [" + member.getUser().getName() + "] (" + member.getId() + ") to " + mojangProfile.getUsername() + " (" + mojangProfile.getUniqueId() + ")");
+                                            log.info("Migrated {} [{}] ({}) to {} ({})", member.getEffectiveName(), member.getUser().getName(), member.getId(), mojangProfile.getUsername(), mojangProfile.getUniqueId());
                                         }
                                     })
                                     .exceptionally(throwable -> {
-                                        log.error("Unable to migrate " + member.getEffectiveName() + "(ID: " + member.getId() + ")", throwable);
+                                        log.error("Unable to migrate {} (ID: {})", member.getEffectiveName(), member.getId(), throwable);
                                         return null;
                                     });
                             })

@@ -75,7 +75,7 @@ public class WikiImageDownloader {
         try {
             scrapeImages();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Failed to scrape images: " + e.getMessage());
         }
     }
 

@@ -42,7 +42,7 @@ public class ChannelCommands {
         CompletableFuture.runAsync(() -> {
             try {
                 File file = ArchiveExporter.exportTextChannel(channel, createProgressUpdater(hook));
-                log.info("Finished archiving channel " + channel.getName() + " (ID: " + channel.getId() + ")! File located at: " + file.getAbsolutePath());
+                log.info("Finished archiving channel {} (ID: {})! File located at: {}", channel.getName(), channel.getId(), file.getAbsolutePath());
 
                 if (!hook.isExpired()) {
                     hook.editOriginal(String.format("Finished archiving channel %s! The file should appear below.", channel.getAsMention()))
@@ -50,7 +50,7 @@ public class ChannelCommands {
                         .queue();
                 }
             } catch (Exception exception) {
-                log.error("An error occurred when archiving the channel " + channel.getId() + "!", exception);
+                log.error("An error occurred when archiving the channel {}!", channel.getId(), exception);
                 if (!hook.isExpired()) {
                     hook.editOriginal(String.format("An error occurred while archiving channel %s: %s", channel.getAsMention(), exception.getMessage())).queue();
                 }
@@ -72,7 +72,7 @@ public class ChannelCommands {
                 }
                 sendZipToUserAsync(event, zipFile, hook, category.getName());
             } catch (Exception exception) {
-                log.error("Failed to archive category " + category.getId(), exception);
+                log.error("Failed to archive category {}", category.getId(), exception);
                 if (!hook.isExpired()) {
                     hook.editOriginal("Failed to create the archive zip file: " + exception.getMessage()).queue();
                 } else {
@@ -90,14 +90,14 @@ public class ChannelCommands {
             privateChannel.sendFiles(FileUpload.fromData(zipFile)).queue(
                 success -> hook.editOriginal("Finished! Sent you the archive zip via DM").queue(),
                 error -> {
-                    log.error("Failed to DM archive zip file to user " + event.getUser().getId(), error);
+                    log.error("Failed to DM archive zip file to user {}", event.getUser().getId(), error);
                     hook.editOriginal("Finished archiving, but failed to DM the zip file. Sending here instead...")
                         .setFiles(FileUpload.fromData(zipFile))
                         .queue(null, sendError -> hook.editOriginal("Failed to send the zip. File path: " + zipFile.getAbsolutePath()).queue());
                 }
             );
         }, error -> {
-            log.error("Failed to open DM for user " + event.getUser().getId(), error);
+            log.error("Failed to open DM for user {}", event.getUser().getId(), error);
             hook.editOriginal("Finished archiving, but could not open DMs to send the zip file. File path: " + zipFile.getAbsolutePath()).queue();
         });
     }
@@ -114,7 +114,7 @@ public class ChannelCommands {
                         }
                     },
                     error -> {
-                        log.error("Failed to DM archive zip file to user " + event.getUser().getId(), error);
+                        log.error("Failed to DM archive zip file to user {}", event.getUser().getId(), error);
                         if (!hook.isExpired()) {
                             hook.editOriginal("Finished archiving, but failed to DM the zip file. Sending here instead...")
                                 .setFiles(FileUpload.fromData(zipFile))
@@ -128,7 +128,7 @@ public class ChannelCommands {
                     }
                 );
         }, error -> {
-            log.error("Failed to open DM for user " + event.getUser().getId(), error);
+            log.error("Failed to open DM for user {}", event.getUser().getId(), error);
             if (!hook.isExpired()) {
                 hook.editOriginal("Finished archiving, but could not open DMs to send the zip file. File path: " + zipFile.getAbsolutePath()).queue();
             } else {

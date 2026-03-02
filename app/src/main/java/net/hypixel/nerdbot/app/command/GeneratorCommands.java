@@ -535,8 +535,7 @@ public class GeneratorCommands {
                 .findFirst();
             if (tooltipGenerator.isEmpty()) {
                 event.getHook().editOriginal("An error occurred.").queue();
-                log.error("An error occurred while parsing the NBT string, " +
-                    "there doesnt seem to be a tooltip but no nbt parser exception occurred.");
+                log.error("An error occurred while parsing the NBT string, there doesnt seem to be a tooltip but no nbt parser exception occurred.");
                 return;
             }
 
