@@ -23,7 +23,7 @@
         <dependency>
             <groupId>com.github.Aerhhh</groupId>
             <artifactId>MinecraftImageGenerator</artifactId>
-            <version>master-SNAPSHOT</version>
+            <version>skin-hash-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
