@@ -21,9 +21,9 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.Aerhhh</groupId>
+            <groupId>com.github.Aerhhh.MinecraftImageGenerator</groupId>
             <artifactId>MinecraftImageGenerator</artifactId>
-            <version>skin-hash-SNAPSHOT</version>
+            <version>master-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
