@@ -83,9 +83,8 @@ a dashboard of your choice that supports Prometheus.
 
 # Running the bot
 
-Please follow the instructions [here](https://github.com/SkyBlock-Nerds/NerdBot/blob/master/CONTRIBUTING.md)
+Please follow the instructions [here](./CONTRIBUTING.md)
 
 # Commands
 
-See the [commands](https://github.com/SkyBlock-Nerds/NerdBot/tree/master/src/main/java/net/hypixel/nerdbot/command) package.
-
+See the [commands](./app/src/main/java/net/hypixel/nerdbot/app/command) package.
