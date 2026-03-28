@@ -14,7 +14,7 @@ COPY tooling/pom.xml tooling/pom.xml
 COPY tooling/src tooling/src
 
 # Clean Maven cache and build the project with Maven
-RUN mvn clean install -f pom.xml \
+RUN mvn clean install -U -f pom.xml \
     && rm -f /app/target/original-*.jar
 
 # Use a minimal eclipse-temurin image for running the bot
