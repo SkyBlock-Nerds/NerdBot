@@ -21,6 +21,7 @@ import net.aerh.imagegenerator.impl.tooltip.MinecraftTooltipGenerator;
 import net.aerh.imagegenerator.item.GeneratedObject;
 import net.aerh.imagegenerator.spritesheet.OverlayLoader;
 import net.aerh.imagegenerator.spritesheet.Spritesheet;
+import net.aerh.imagegenerator.text.wrapper.TextWrapper;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
@@ -462,7 +463,7 @@ public class GeneratorCommands {
 
             if (hoveredItemString != null && !hoveredItemString.isBlank()) {
                 MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                    .withItemLore(hoveredItemString)
+                    .withItemLore(TextWrapper.stripActualNewlines(hoveredItemString))
                     .withAlpha(MinecraftTooltip.DEFAULT_ALPHA)
                     .withPadding(MinecraftTooltip.DEFAULT_PADDING)
                     .hasFirstLinePadding(false)
@@ -667,7 +668,7 @@ public class GeneratorCommands {
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withName(itemName)
                 .withRarity(Rarity.byName(rarity))
-                .withItemLore(itemLore)
+                .withItemLore(TextWrapper.stripActualNewlines(itemLore))
                 .withType(type)
                 .withAlpha(alpha)
                 .withPadding(padding)
@@ -771,7 +772,7 @@ public class GeneratorCommands {
         try {
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                .withItemLore(text)
+                .withItemLore(TextWrapper.stripActualNewlines(text))
                 .withAlpha(alpha)
                 .withPadding(padding)
                 .withMaxLineLength(maxLineLength)
