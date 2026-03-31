@@ -31,4 +31,11 @@ public class FunConfig {
      */
     private String aprilFoolsReactionEmoji;
 
+    /**
+     * The timezone to use for the April Fools date check (e.g. "Europe/London").
+     * <br>
+     * If not set (null), defaults to the JVM's system timezone.
+     */
+    private String aprilFoolsTimezone;
+
 }

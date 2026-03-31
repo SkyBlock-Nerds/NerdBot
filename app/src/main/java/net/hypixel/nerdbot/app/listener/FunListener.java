@@ -7,11 +7,9 @@ import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.marmalade.format.TimeUtils;
 
-import lombok.extern.log4j.Log4j2;
-
+import java.time.ZoneId;
 import java.util.concurrent.ThreadLocalRandom;
 
-@Log4j2
 public class FunListener {
 
     @SubscribeEvent
@@ -28,10 +26,11 @@ public class FunListener {
             }
         });
 
-        log.debug("April Fools: isAprilFirst={}, chance={}, emoji={}",
-            TimeUtils.isAprilFirst(), funConfig.getAprilFoolsReactionChance(), funConfig.getAprilFoolsReactionEmoji());
+        ZoneId zoneId = funConfig.getAprilFoolsTimezone() != null
+            ? ZoneId.of(funConfig.getAprilFoolsTimezone())
+            : ZoneId.systemDefault();
 
-        if (TimeUtils.isAprilFirst()
+        if (TimeUtils.isAprilFirst(zoneId)
             && funConfig.getAprilFoolsReactionChance() != null
             && funConfig.getAprilFoolsReactionEmoji() != null
             && ThreadLocalRandom.current().nextDouble() < funConfig.getAprilFoolsReactionChance()) {
