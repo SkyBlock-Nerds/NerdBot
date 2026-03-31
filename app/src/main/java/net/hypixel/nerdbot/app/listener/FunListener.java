@@ -5,8 +5,8 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.discord.config.FunConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
-import net.hypixel.nerdbot.marmalade.format.TimeUtils;
-
+import java.time.LocalDate;
+import java.time.Month;
 import java.time.ZoneId;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -29,8 +29,10 @@ public class FunListener {
         ZoneId zoneId = funConfig.getAprilFoolsTimezone() != null
             ? ZoneId.of(funConfig.getAprilFoolsTimezone())
             : ZoneId.systemDefault();
+        LocalDate now = LocalDate.now(zoneId);
+        boolean isAprilFirst = now.getMonth() == Month.APRIL && now.getDayOfMonth() == 1;
 
-        if (TimeUtils.isAprilFirst(zoneId)
+        if (isAprilFirst
             && funConfig.getAprilFoolsReactionChance() != null
             && funConfig.getAprilFoolsReactionEmoji() != null
             && ThreadLocalRandom.current().nextDouble() < funConfig.getAprilFoolsReactionChance()) {
