@@ -173,7 +173,8 @@
       "example_value": "example_value"
     },
     "aprilFoolsReactionChance": 1.0,
-    "aprilFoolsReactionEmoji": "example_value"
+    "aprilFoolsReactionEmoji": "example_value",
+    "aprilFoolsTimezone": "example_value"
   },
   "generatorConfig": {
     "playerHead": {
