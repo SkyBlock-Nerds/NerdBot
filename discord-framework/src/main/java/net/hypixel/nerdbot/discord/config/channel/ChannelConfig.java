@@ -29,7 +29,7 @@ public class ChannelConfig {
 
     private String[] genChannelIds = {};
 
-    private String[] filteredAprilFoolsGenChannelIds = {};
+    private String[] aprilFoolsGenChannelIds = {};
 
     private List<ReactionChannel> reactionChannels = List.of();
 

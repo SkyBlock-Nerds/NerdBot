@@ -28,6 +28,8 @@ import net.hypixel.nerdbot.discord.util.pagination.PaginationManager;
 import java.awt.Color;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -37,28 +39,41 @@ public class InfoCommands {
 
     @SlashCommand(name = "info", subcommand = "bot", description = "View information about the bot", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void botInfo(SlashCommandInteractionEvent event) {
-        StringBuilder builder = new StringBuilder();
         SelfUser bot = DiscordBotEnvironment.getBot().getJDA().getSelfUser();
         long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         long totalMemory = Runtime.getRuntime().totalMemory();
 
-        String botInfo = """
-                         - Bot name: %s (ID: %s)
-                         - Branch: `%s`
-                         - Container ID: `%s`
-                         - Environment: %s
-                         - Uptime: %s
-                         - Memory: %s / %s
-                         """.formatted(
+        StringBuilder botInfo = new StringBuilder();
+        botInfo.append("""
+                       - Bot name: %s (ID: %s)
+                       - Branch: `%s`
+                       - Commit: `%s`
+                       - Container ID: `%s`
+                       - Environment: %s
+                       - Uptime: %s
+                       - Memory: %s / %s
+                       """.formatted(
             bot.getName(), bot.getId(),
             FileUtils.getBranchName(),
+            FileUtils.getCommitHash(),
             FileUtils.getDockerContainerId(),
             Environment.getEnvironment(),
             TimeUtils.formatMsCompact(BotEnvironment.getBot().getUptime()),
             StringUtils.formatSize(usedMemory), StringUtils.formatSize(totalMemory)
-        );
+        ));
 
-        event.reply(botInfo).setEphemeral(true).queue();
+        Map<String, Properties> depInfo = FileUtils.getDependencyGitInfo();
+        if (!depInfo.isEmpty()) {
+            botInfo.append("\n**Dependencies:**\n");
+            for (Map.Entry<String, Properties> entry : depInfo.entrySet()) {
+                Properties props = entry.getValue();
+                String branch = props.getProperty("git.branch", "unknown");
+                String commit = props.getProperty("git.commit.id.abbrev", "unknown");
+                botInfo.append("- %s: `%s` (`%s`)\n".formatted(entry.getKey(), branch, commit));
+            }
+        }
+
+        event.reply(botInfo.toString()).setEphemeral(true).queue();
     }
 
     @SlashCommand(name = "info", subcommand = "greenlit", description = "View greenlit suggestions", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})

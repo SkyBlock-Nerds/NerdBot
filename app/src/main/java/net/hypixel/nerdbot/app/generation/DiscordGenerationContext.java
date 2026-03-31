@@ -29,7 +29,7 @@ public class DiscordGenerationContext {
         boolean aprilFools = false;
         if (TimeUtils.isAprilFirst()) {
             ChannelConfig channelConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig();
-            aprilFools = Arrays.stream(channelConfig.getFilteredAprilFoolsGenChannelIds())
+            aprilFools = Arrays.stream(channelConfig.getAprilFoolsGenChannelIds())
                 .anyMatch(id -> id.equalsIgnoreCase(channelId));
         }
 
