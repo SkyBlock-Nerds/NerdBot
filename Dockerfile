@@ -14,7 +14,7 @@ COPY tooling/pom.xml tooling/pom.xml
 COPY tooling/src tooling/src
 
 # Clean Maven cache and build the project with Maven
-RUN mvn clean install -f pom.xml \
+RUN mvn clean install -U -f pom.xml \
     && rm -f /app/target/original-*.jar
 
 # Use a minimal eclipse-temurin image for running the bot
@@ -23,12 +23,14 @@ FROM eclipse-temurin:25-jdk-alpine
 # Set the working directory
 WORKDIR /app
 
-# Pass the branch name from the build stage to the runtime stage
+# Pass the branch name and commit hash from the build stage to the runtime stage
 ARG BRANCH_NAME=unknown
+ARG COMMIT_SHA=unknown
 ENV BRANCH_NAME=${BRANCH_NAME}
+ENV COMMIT_SHA=${COMMIT_SHA}
 
 # Copy the built JAR file from the builder stage
 COPY --from=builder /app/app/target/NerdBot.jar /app/NerdBot.jar
 
 # Run the application
-ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -DBRANCH_NAME=${BRANCH_NAME} -jar NerdBot.jar"]
+ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -DBRANCH_NAME=${BRANCH_NAME} -DCOMMIT_SHA=${COMMIT_SHA} -jar NerdBot.jar"]
