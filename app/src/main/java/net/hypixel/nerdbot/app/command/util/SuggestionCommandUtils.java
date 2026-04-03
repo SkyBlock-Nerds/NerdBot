@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.command.util;
 
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -43,7 +44,7 @@ public class SuggestionCommandUtils {
             .map(tag -> tag.substring(1))
             .toList();
 
-        List<Suggestion> allSuggestions = DiscordBotEnvironment.getBot().getSuggestionCache().getSuggestions();
+        List<Suggestion> allSuggestions = SkyBlockNerdsBot.suggestionCache().getSuggestions();
         if (allSuggestions.isEmpty()) {
             log.warn("Suggestions cache is empty!");
             return Collections.emptyList();

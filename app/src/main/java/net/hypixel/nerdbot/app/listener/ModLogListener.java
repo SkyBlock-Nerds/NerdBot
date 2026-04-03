@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.listener;
 
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
@@ -167,7 +168,7 @@ public class ModLogListener {
             return;
         }
 
-        Message message = DiscordBotEnvironment.getBot().getMessageCache().getMessage(event.getMessageId());
+        Message message = SkyBlockNerdsBot.messageCache().getMessage(event.getMessageId());
         if (message == null) {
             return;
         }
@@ -203,7 +204,7 @@ public class ModLogListener {
             return;
         }
 
-        Message before = DiscordBotEnvironment.getBot().getMessageCache().getMessage(event.getMessageId());
+        Message before = SkyBlockNerdsBot.messageCache().getMessage(event.getMessageId());
         if (before == null) {
             return;
         }

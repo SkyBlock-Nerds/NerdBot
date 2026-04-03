@@ -27,7 +27,6 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.LastActiv
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.GreenlitMessageRepository;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.Utils;
 
 import java.io.File;
@@ -399,7 +398,7 @@ public class ExportCommands {
         try {
             long userIdLong = Long.parseLong(userId);
 
-            List<Suggestion> userSuggestions = DiscordBotEnvironment.getBot().getSuggestionCache()
+            List<Suggestion> userSuggestions = SkyBlockNerdsBot.suggestionCache()
                 .getSuggestions()
                 .stream()
                 .filter(suggestion -> suggestion.getOwnerIdLong() == userIdLong)

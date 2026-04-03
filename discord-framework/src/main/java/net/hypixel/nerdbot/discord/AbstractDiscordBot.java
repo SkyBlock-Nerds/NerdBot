@@ -15,8 +15,6 @@ import net.hypixel.nerdbot.discord.api.bot.Environment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.cache.EmojiCache;
-import net.hypixel.nerdbot.discord.cache.MessageCache;
-import net.hypixel.nerdbot.discord.cache.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.marmalade.json.JsonUtils;
 import net.hypixel.nerdbot.marmalade.json.DataSerialization;
@@ -46,8 +44,6 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     private final Database database;
     private JDA jda;
     private DiscordBotConfig config;
-    private MessageCache messageCache;
-    private SuggestionCache suggestionCache;
     private long startTime;
     private List<BotFeature> features = Collections.emptyList();
 
@@ -113,22 +109,6 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     protected void onShutdown() {
     }
 
-    /**
-     * Factory for the message cache. Sub-classes may override to return a specialised implementation.
-     */
-    @NotNull
-    protected MessageCache createMessageCache() {
-        return new MessageCache();
-    }
-
-    /**
-     * Factory for the suggestion cache. Sub-classes may override to return a specialised implementation.
-     */
-    @NotNull
-    protected SuggestionCache createSuggestionCache() {
-        return new SuggestionCache();
-    }
-
     @Override
     public final void create(String[] args) throws LoginException {
         loadConfig();
@@ -159,8 +139,6 @@ public abstract class AbstractDiscordBot implements DiscordBot {
         }
 
         onReady(jda);
-        messageCache = createMessageCache();
-        suggestionCache = createSuggestionCache();
         registerSlashCommands();
 
         onStart();
@@ -347,16 +325,6 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     @Override
     public JDA getJDA() {
         return jda;
-    }
-
-    @Override
-    public MessageCache getMessageCache() {
-        return messageCache;
-    }
-
-    @Override
-    public SuggestionCache getSuggestionCache() {
-        return suggestionCache;
     }
 
     @Override

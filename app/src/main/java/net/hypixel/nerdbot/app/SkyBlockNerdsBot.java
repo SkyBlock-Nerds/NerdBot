@@ -20,6 +20,8 @@ import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
+import net.hypixel.nerdbot.discord.cache.MessageCache;
+import net.hypixel.nerdbot.discord.cache.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.discord.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.config.FeatureConfig;
@@ -42,6 +44,23 @@ import java.util.List;
  */
 @Slf4j
 public class SkyBlockNerdsBot extends AbstractDiscordBot {
+
+    private MessageCache messageCache;
+    private SuggestionCache suggestionCache;
+
+    /**
+     * Static helper to get the MessageCache from the current bot instance.
+     */
+    public static MessageCache messageCache() {
+        return ((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).messageCache;
+    }
+
+    /**
+     * Static helper to get the SuggestionCache from the current bot instance.
+     */
+    public static SuggestionCache suggestionCache() {
+        return ((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).suggestionCache;
+    }
 
     @Override
     protected @NotNull Class<? extends DiscordBotConfig> getConfigClass() {
@@ -159,6 +178,9 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     @Override
     protected void onReady(@NotNull JDA jda) {
         super.onReady(jda);
+
+        messageCache = new MessageCache();
+        suggestionCache = new SuggestionCache();
 
         NerdBotConfig config = getConfig();
 

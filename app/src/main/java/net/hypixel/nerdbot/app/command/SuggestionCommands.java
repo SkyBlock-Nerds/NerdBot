@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.command;
 
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
@@ -106,7 +107,7 @@ public class SuggestionCommands {
             return;
         }
 
-        Suggestion suggestion = DiscordBotEnvironment.getBot().getSuggestionCache().getSuggestion(event.getChannel().getId());
+        Suggestion suggestion = SkyBlockNerdsBot.suggestionCache().getSuggestion(event.getChannel().getId());
 
         // Handle Missing Suggestion
         if (suggestion == null) {
@@ -441,7 +442,7 @@ public class SuggestionCommands {
                 return;
             }
 
-            Suggestion suggestion = DiscordBotEnvironment.getBot().getSuggestionCache().getSuggestion(thread.getId());
+            Suggestion suggestion = SkyBlockNerdsBot.suggestionCache().getSuggestion(thread.getId());
             if (suggestion == null) {
                 event.getHook().editOriginal("Could not find this suggestion in the cache! Please try again later.").queue();
                 return;
@@ -469,7 +470,7 @@ public class SuggestionCommands {
                     GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(
                         firstMessage.get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
                     BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
-                    DiscordBotEnvironment.getBot().getSuggestionCache().updateSuggestion(thread);
+                    SkyBlockNerdsBot.suggestionCache().updateSuggestion(thread);
 
                     thread.sendMessage("This suggestion has been greenlit.").queue();
                     yield true;

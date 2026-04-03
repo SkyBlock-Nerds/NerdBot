@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.curator;
 
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import io.prometheus.client.Summary;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -252,7 +253,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
 
                     log.info("Thread '{}' (ID: {}) has been greenlit!", thread.getName(), thread.getId());
                     GreenlitMessage greenlitMessage = createGreenlitMessage(message, thread, agree, neutral, disagree);
-                    DiscordBotEnvironment.getBot().getSuggestionCache().updateSuggestion(thread); // Update Suggestion
+                    SkyBlockNerdsBot.suggestionCache().updateSuggestion(thread); // Update Suggestion
                     output.add(greenlitMessage);
                 } catch (Exception exception) {
                     log.error("Failed to curate thread '{}' (ID: {})!", thread.getName(), thread.getId(), exception);
