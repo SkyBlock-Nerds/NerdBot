@@ -13,8 +13,7 @@
         <java.version>25</java.version>
         <lombok.version>1.18.44</lombok.version>
         <editorconfig.encoding>UTF-8</editorconfig.encoding>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
     </properties>
 
     <modules>
