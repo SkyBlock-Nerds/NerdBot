@@ -984,8 +984,8 @@ public class GeneratorCommands {
         List<EmbedBuilder> embedBuilders = new ArrayList<>();
         DiscordUserRepository discordUserRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
 
-        if (discordUserRepository.findById(event.getUser().getId()) != null) {
-            List<String> history = discordUserRepository.findById(event.getUser().getId()).getGeneratorHistory().getCommandHistory();
+        if (discordUserRepository.findById(event.getUser().getId()).isSuccess()) {
+            List<String> history = discordUserRepository.findById(event.getUser().getId()).orElse(null).getGeneratorHistory().getCommandHistory();
             embedBuilders.addAll(history.stream()
                 .map(s -> new EmbedBuilder().setDescription(s))
                 .toList()
@@ -1076,14 +1076,14 @@ public class GeneratorCommands {
             return;
         }
 
-        if (discordUserRepository.findById(user.getId()) != null) {
-            DiscordUser discordUser = discordUserRepository.findById(user.getId());
+        if (discordUserRepository.findById(user.getId()).isSuccess()) {
+            DiscordUser discordUser = discordUserRepository.findById(user.getId()).orElse(null);
 
             if (discordUser.getGeneratorHistory() == null) {
                 discordUser.setGeneratorHistory(new GeneratorHistory());
             }
 
-            discordUserRepository.findById(user.getId()).getGeneratorHistory().addCommand(command);
+            discordUser.getGeneratorHistory().addCommand(command);
         }
     }
 
@@ -1131,7 +1131,7 @@ public class GeneratorCommands {
     private boolean getUserAutoHideSetting(SlashCommandInteractionEvent event) {
         try {
             DiscordUserRepository repository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-            DiscordUser user = repository.findById(event.getMember().getId());
+            DiscordUser user = repository.findById(event.getMember().getId()).orElse(null);
 
             if (user != null) {
                 return user.isAutoHideGenCommands();

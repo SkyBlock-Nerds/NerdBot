@@ -177,7 +177,7 @@ public class ProfileCommands {
 
     public static void updateMojangProfile(Member member, MojangProfile mojangProfile) throws HttpException {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(member.getId());
+        DiscordUser discordUser = discordUserRepository.findById(member.getId()).orElse(null);
         discordUser.setMojangProfile(mojangProfile);
 
         if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
@@ -220,7 +220,7 @@ public class ProfileCommands {
 
     public static List<MessageEmbed> getActivityEmbeds(Member member) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(member.getId());
+        DiscordUser discordUser = discordUserRepository.findById(member.getId()).orElse(null);
         LastActivity lastActivity = discordUser.getLastActivity();
 
         List<MessageEmbed> embeds = new ArrayList<>();

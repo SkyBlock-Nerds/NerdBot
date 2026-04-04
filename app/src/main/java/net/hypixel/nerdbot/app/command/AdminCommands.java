@@ -239,7 +239,7 @@ public class AdminCommands {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId()).orElse(null);
 
         if (discordUser == null) {
             event.getHook().editOriginal("User not found").queue();
@@ -296,7 +296,7 @@ public class AdminCommands {
         }
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId()).orElse(null);
 
         if (discordUser == null) {
             event.reply("User not found").queue();
@@ -338,7 +338,7 @@ public class AdminCommands {
     @SlashCommand(name = "metrics", subcommand = "toggle", description = "Toggle metrics collection", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void toggleMetrics(SlashCommandInteractionEvent event) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId()).orElse(null);
 
         if (discordUser == null) {
             event.reply("User not found").queue();
@@ -498,7 +498,7 @@ public class AdminCommands {
     public void userInfo(SlashCommandInteractionEvent event, @SlashOption(description = "The user to search") Member member) {
         event.deferReply(true).queue();
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(member.getId());
+        DiscordUser discordUser = discordUserRepository.findById(member.getId()).orElse(null);
         List<MessageEmbed> embeds = new ArrayList<>(ProfileCommands.getActivityEmbeds(member));
 
         String profile = discordUser.isProfileAssigned() ?
@@ -527,7 +527,7 @@ public class AdminCommands {
     public void viewUserBadges(SlashCommandInteractionEvent event, @SlashOption(description = "The user to search") Member member) {
         event.deferReply(true).queue();
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(member.getId());
+        DiscordUser discordUser = discordUserRepository.findById(member.getId()).orElse(null);
 
         if (discordUser == null) {
             event.getHook().editOriginal("User not found").queue();
@@ -548,7 +548,7 @@ public class AdminCommands {
     public void migrateUsernames(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId()).orElse(null);
 
         if (discordUser == null) {
             event.getHook().editOriginal("User not found").queue();
@@ -607,8 +607,8 @@ public class AdminCommands {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
-        DiscordUser targetUser = discordUserRepository.findById(member.getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId()).orElse(null);
+        DiscordUser targetUser = discordUserRepository.findById(member.getId()).orElse(null);
 
         if (discordUser == null || targetUser == null) {
             event.getHook().editOriginal("User not found").queue();
@@ -678,7 +678,7 @@ public class AdminCommands {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId()).orElse(null);
 
         if (discordUser == null) {
             event.getHook().editOriginal("User not found").queue();
@@ -705,7 +705,7 @@ public class AdminCommands {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId()).orElse(null);
 
         if (discordUser == null) {
             event.getHook().editOriginal("User not found").queue();
@@ -1230,7 +1230,7 @@ public class AdminCommands {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId()).orElse(null);
 
         if (discordUser == null) {
             event.getHook().editOriginal("User not found").queue();
@@ -1307,7 +1307,7 @@ public class AdminCommands {
     @SlashCommand(name = "channel-config", subcommand = "toggle", description = "Toggle automatic management of role-restricted channel groups", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void toggleAutoManageRoleRestricted(SlashCommandInteractionEvent event) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId()).orElse(null);
 
         if (discordUser == null) {
             event.reply("User not found").queue();
@@ -1332,7 +1332,7 @@ public class AdminCommands {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId()).orElse(null);
 
         if (discordUser == null) {
             event.getHook().editOriginal("User not found").queue();
@@ -1383,7 +1383,7 @@ public class AdminCommands {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId()).orElse(null);
 
         if (discordUser == null) {
             event.getHook().editOriginal("User not found").queue();
@@ -1444,7 +1444,7 @@ public class AdminCommands {
     @SlashCommand(name = "channel-config", subcommand = "clean", description = "Remove empty role-restricted channel groups", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void cleanRoleRestrictedGroups(SlashCommandInteractionEvent event) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId()).orElse(null);
 
         if (discordUser == null) {
             event.reply("User not found").queue();
@@ -1476,7 +1476,7 @@ public class AdminCommands {
         event.deferReply(true).complete();
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getUser().getId()).orElse(null);
 
         if (discordUser == null) {
             event.getHook().editOriginal("User not found").queue();

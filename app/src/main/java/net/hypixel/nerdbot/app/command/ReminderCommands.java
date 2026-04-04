@@ -200,7 +200,7 @@ public class ReminderCommands {
                 try {
                     UUID parsed = UUID.fromString(reminderUuid);
                     ReminderRepository reminderRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-                    Reminder reminder = reminderRepository.findById(parsed.toString());
+                    Reminder reminder = reminderRepository.findById(parsed.toString()).orElse(null);
 
                     if (reminder == null || !reminder.getUserId().equalsIgnoreCase(userId)) {
                         createReminderPanel(event.getHook(), userId, 1, "❌ Reminder not found!");
@@ -355,7 +355,7 @@ public class ReminderCommands {
         try {
             UUID parsed = UUID.fromString(reminderUuid);
             ReminderRepository reminderRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-            Reminder reminder = reminderRepository.findById(parsed.toString());
+            Reminder reminder = reminderRepository.findById(parsed.toString()).orElse(null);
 
             if (reminder == null || !reminder.getUserId().equalsIgnoreCase(userId)) {
                 createReminderPanel(hook, userId, 1, "❌ Reminder not found!");
@@ -387,7 +387,7 @@ public class ReminderCommands {
 
     private void createReminderPanel(InteractionHook hook, String userId, int page, String message) {
         DiscordUserRepository userRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser user = userRepository.findById(userId);
+        DiscordUser user = userRepository.findById(userId).orElse(null);
 
         if (user == null) {
             hook.editOriginal("❌ User not found!").queue();

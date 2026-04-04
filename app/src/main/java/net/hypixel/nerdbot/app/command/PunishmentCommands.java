@@ -328,7 +328,7 @@ public class PunishmentCommands {
         event.deferEdit().queue();
 
         PunishmentRepository repo = getPunishmentRepository();
-        Punishment punishment = repo.findById(punishmentId);
+        Punishment punishment = repo.findById(punishmentId).orElse(null);
 
         if (punishment == null) {
             event.getHook().editOriginal("Punishment not found! It may have already been deleted.")
@@ -473,7 +473,7 @@ public class PunishmentCommands {
 
     private void showPunishmentDetail(InteractionHook hook, String modId, String targetIdHint, String punishmentId) {
         PunishmentRepository repo = getPunishmentRepository();
-        Punishment punishment = repo.findById(punishmentId);
+        Punishment punishment = repo.findById(punishmentId).orElse(null);
 
         if (punishment == null) {
             String content = "Punishment not found! It may have been deleted.";

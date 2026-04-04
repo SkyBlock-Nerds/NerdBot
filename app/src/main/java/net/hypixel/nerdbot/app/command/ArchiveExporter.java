@@ -145,7 +145,7 @@ public class ArchiveExporter {
 
             update(progressCallback, String.format("Exporting thread %d/%d: %s", index.get() + 1, threads.size(), threadChannel.getName()));
 
-            DiscordUser discordUser = discordUserRepository.findById(threadChannel.getOwnerId());
+            DiscordUser discordUser = discordUserRepository.findById(threadChannel.getOwnerId()).orElse(null);
             String username;
 
             try {

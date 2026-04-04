@@ -50,9 +50,9 @@ public class DiscordUtils {
 
     public static String getDisplayName(User user) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(user.getId());
+        DiscordUser discordUser = discordUserRepository.findById(user.getId()).orElse(null);
 
-        if (discordUser.isProfileAssigned()) {
+        if (discordUser != null && discordUser.isProfileAssigned()) {
             return discordUser.getMojangProfile().getUsername();
         } else {
             Guild guild = getMainGuild();

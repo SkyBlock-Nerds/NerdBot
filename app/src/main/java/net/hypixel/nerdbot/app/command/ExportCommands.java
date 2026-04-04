@@ -84,7 +84,7 @@ public class ExportCommands {
         }
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId());
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId()).orElse(null);
 
         if (discordUser == null) {
             event.getHook().editOriginal("User not found").queue();
@@ -155,7 +155,7 @@ public class ExportCommands {
             List<MojangProfile> profiles = members.stream()
                 .filter(member -> !member.getUser().isBot())
                 .filter(member -> RoleManager.hasAnyRole(member, roleArray))
-                .map(member -> discordUserRepository.findById(member.getId()))
+                .map(member -> discordUserRepository.findById(member.getId()).orElse(null))
                 .filter(Objects::nonNull)
                 .filter(DiscordUser::isProfileAssigned)
                 .map(DiscordUser::getMojangProfile)
