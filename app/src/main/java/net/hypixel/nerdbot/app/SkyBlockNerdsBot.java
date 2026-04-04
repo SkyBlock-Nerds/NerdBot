@@ -20,6 +20,7 @@ import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
+import net.hypixel.nerdbot.marmalade.functional.Result;
 import net.hypixel.nerdbot.discord.cache.MessageCache;
 import net.hypixel.nerdbot.discord.cache.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.discord.config.AlphaProjectConfigUpdater;
@@ -115,46 +116,48 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
             config.getFeatures().stream()
                 .filter(FeatureConfig::isEnabled)
-                .forEach(featureConfig -> {
-                    try {
-                        if (!isAllowed(featureConfig.getClassName())) {
-                            log.warn("Feature class {} not permitted by class allowlist", featureConfig.getClassName());
-                            return;
-                        }
-
-                        Class<?> clazz = Class.forName(featureConfig.getClassName());
-                        if (!BotFeature.class.isAssignableFrom(clazz)) {
-                            log.warn("Feature class {} does not implement BotFeature", featureConfig.getClassName());
-                            return;
-                        }
-
-                        BotFeature feature = (BotFeature) clazz.getDeclaredConstructor().newInstance();
-                        feature.setScheduleOverrides(featureConfig.getInitialDelayMs(), featureConfig.getPeriodMs());
-                        features.add(feature);
-                        log.info("Added feature from config: {}", featureConfig.getClassName());
-
-                        if (feature instanceof SchedulableFeature schedulable) {
-                            long defaultInitial = schedulable.defaultInitialDelayMs(config);
-                            long defaultPeriod = schedulable.defaultPeriodMs(config);
-
-                            Long overrideInitial = featureConfig.getInitialDelayMs();
-                            Long overridePeriod = featureConfig.getPeriodMs();
-                            long effectiveInitial = overrideInitial != null ? overrideInitial : defaultInitial;
-                            long effectivePeriod = overridePeriod != null ? overridePeriod : defaultPeriod;
-
-                            if (overrideInitial != null || overridePeriod != null) {
-                                log.info(
-                                    "Applying schedule override for {}: initialDelayMs={} (default {}), periodMs={} (default {})",
-                                    feature.getClass().getName(), effectiveInitial, defaultInitial, effectivePeriod, defaultPeriod
-                                );
-                            }
-
-                            feature.scheduleAtFixedRate(schedulable.buildTask(), defaultInitial, defaultPeriod);
-                        }
-                    } catch (Exception e) {
-                        log.warn("Failed to instantiate feature {}", featureConfig.getClassName(), e);
+                .forEach(featureConfig -> Result.of(() -> {
+                    if (!isAllowed(featureConfig.getClassName())) {
+                        log.warn("Feature class {} not permitted by class allowlist", featureConfig.getClassName());
+                        return null;
                     }
-                });
+
+                    Class<?> clazz = Class.forName(featureConfig.getClassName());
+                    if (!BotFeature.class.isAssignableFrom(clazz)) {
+                        log.warn("Feature class {} does not implement BotFeature", featureConfig.getClassName());
+                        return null;
+                    }
+
+                    BotFeature feature = (BotFeature) clazz.getDeclaredConstructor().newInstance();
+                    feature.setScheduleOverrides(featureConfig.getInitialDelayMs(), featureConfig.getPeriodMs());
+                    features.add(feature);
+                    log.info("Added feature from config: {}", featureConfig.getClassName());
+
+                    if (feature instanceof SchedulableFeature schedulable) {
+                        long defaultInitial = schedulable.defaultInitialDelayMs(config);
+                        long defaultPeriod = schedulable.defaultPeriodMs(config);
+
+                        Long overrideInitial = featureConfig.getInitialDelayMs();
+                        Long overridePeriod = featureConfig.getPeriodMs();
+                        long effectiveInitial = overrideInitial != null ? overrideInitial : defaultInitial;
+                        long effectivePeriod = overridePeriod != null ? overridePeriod : defaultPeriod;
+
+                        if (overrideInitial != null || overridePeriod != null) {
+                            log.info(
+                                "Applying schedule override for {}: initialDelayMs={} (default {}), periodMs={} (default {})",
+                                feature.getClass().getName(), effectiveInitial, defaultInitial, effectivePeriod, defaultPeriod
+                            );
+                        }
+
+                        String taskName = feature.getClass().getSimpleName() + "-task";
+                        feature.scheduleAtFixedRate(taskName, schedulable::executeTask, defaultInitial, defaultPeriod);
+                    }
+
+                    return null;
+                }).mapError(e -> {
+                    log.warn("Failed to instantiate feature {}", featureConfig.getClassName(), e);
+                    return e;
+                }));
         } else {
             log.info("No feature config present");
         }

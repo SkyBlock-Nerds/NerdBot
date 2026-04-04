@@ -572,16 +572,15 @@ public class AdminCommands {
 
                                 String scuffedUsername = Utils.getScuffedMinecraftIGN(member).orElseThrow();
                                 return HttpUtils.getMojangProfileAsync(scuffedUsername)
-                                    .thenAccept(mojangProfile -> {
-                                        if (mojangProfile != null) {
+                                    .thenAccept(result -> {
+                                        if (result.isSuccess()) {
+                                            MojangProfile mojangProfile = result.orElseGet(MojangProfile::new);
                                             mojangProfiles.add(mojangProfile);
                                             user.setMojangProfile(mojangProfile);
                                             log.info("Migrated {} [{}] ({}) to {} ({})", member.getEffectiveName(), member.getUser().getName(), member.getId(), mojangProfile.getUsername(), mojangProfile.getUniqueId());
+                                        } else {
+                                            log.error("Unable to migrate {} (ID: {})", member.getEffectiveName(), member.getId());
                                         }
-                                    })
-                                    .exceptionally(throwable -> {
-                                        log.error("Unable to migrate {} (ID: {})", member.getEffectiveName(), member.getId(), throwable);
-                                        return null;
                                     });
                             })
                     )

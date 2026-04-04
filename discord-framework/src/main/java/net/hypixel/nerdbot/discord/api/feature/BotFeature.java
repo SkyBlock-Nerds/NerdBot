@@ -1,11 +1,13 @@
 package net.hypixel.nerdbot.discord.api.feature;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import net.hypixel.nerdbot.marmalade.concurrent.ScheduledTask;
+import net.hypixel.nerdbot.marmalade.functional.ThrowingRunnable;
+
+import java.time.Duration;
 
 public abstract class BotFeature {
 
-    protected final Timer timer = new Timer();
+    protected ScheduledTask scheduledTask;
 
     private Long scheduleInitialDelayOverrideMs;
     private Long schedulePeriodOverrideMs;
@@ -19,9 +21,25 @@ public abstract class BotFeature {
         this.schedulePeriodOverrideMs = periodMs;
     }
 
-    public void scheduleAtFixedRate(TimerTask task, long defaultInitialDelayMs, long defaultPeriodMs) {
+    /**
+     * Schedules a recurring task backed by a {@link ScheduledTask}. Any checked exception thrown
+     * by {@code task} is propagated sneakily and caught by the ScheduledTask error handler.
+     *
+     * @param name the display name for the task thread
+     * @param task the work to execute on each tick
+     * @param defaultInitialDelayMs delay before the first execution, overridable via config
+     * @param defaultPeriodMs period between executions, overridable via config
+     */
+    public void scheduleAtFixedRate(String name, ThrowingRunnable<?> task, long defaultInitialDelayMs, long defaultPeriodMs) {
         long initialDelay = scheduleInitialDelayOverrideMs != null ? scheduleInitialDelayOverrideMs : defaultInitialDelayMs;
         long period = schedulePeriodOverrideMs != null ? schedulePeriodOverrideMs : defaultPeriodMs;
-        this.timer.scheduleAtFixedRate(task, initialDelay, period);
+        this.scheduledTask = ScheduledTask.create(name, ThrowingRunnable.sneaky(task), Duration.ofMillis(initialDelay), Duration.ofMillis(period));
+        this.scheduledTask.start();
+    }
+
+    public void stopScheduledTask() {
+        if (scheduledTask != null) {
+            scheduledTask.stop();
+        }
     }
 }

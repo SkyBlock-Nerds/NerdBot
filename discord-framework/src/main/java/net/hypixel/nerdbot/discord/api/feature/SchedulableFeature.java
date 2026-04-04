@@ -1,20 +1,19 @@
 package net.hypixel.nerdbot.discord.api.feature;
 
-import java.util.TimerTask;
-
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
 
 /**
  * Implement on features that execute periodic tasks. The framework
- * will call these methods to build the task and determine default
- * scheduling, and will apply any per-feature overrides from config.
+ * will call executeTask() on a fixed schedule and handle error catching.
+ * Implement defaultInitialDelayMs() and defaultPeriodMs() to control timing.
  */
 public interface SchedulableFeature {
 
     /**
-     * Build the TimerTask that performs the feature's periodic task.
+     * Executes the feature's periodic task. Any exception thrown here is
+     * caught by the ScheduledTask framework and logged automatically.
      */
-    TimerTask buildTask();
+    void executeTask() throws Exception;
 
     /**
      * Default initial delay in milliseconds before the first run.
@@ -26,4 +25,3 @@ public interface SchedulableFeature {
      */
     long defaultPeriodMs(NerdBotConfig config);
 }
-

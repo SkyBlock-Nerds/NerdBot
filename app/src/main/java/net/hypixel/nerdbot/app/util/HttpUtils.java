@@ -1,16 +1,17 @@
 package net.hypixel.nerdbot.app.util;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import io.prometheus.client.Summary;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.marmalade.functional.Pair;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.marmalade.functional.Result;
 import net.hypixel.nerdbot.marmalade.http.HttpClient;
 import net.hypixel.nerdbot.marmalade.UUIDUtils;
 import net.hypixel.nerdbot.marmalade.exception.HttpException;
 import net.hypixel.nerdbot.marmalade.json.HypixelPlayerResponse;
+import net.hypixel.nerdbot.marmalade.resilience.Retry;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.MojangProfile;
 import org.jetbrains.annotations.NotNull;
@@ -32,89 +33,98 @@ import java.util.concurrent.CompletableFuture;
 @UtilityClass
 public class HttpUtils {
 
-    public static MojangProfile getMojangProfile(String username) throws HttpException {
-        String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
+    private static final int RETRY_ATTEMPTS = 3;
+    private static final Duration RETRY_DELAY = Duration.ofMillis(500);
+    private static final double RETRY_BACKOFF = 2.0;
 
-        if (UUIDUtils.isUUID(username)) {
-            mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", username);
-        }
+    public static Result<MojangProfile, HttpException> getMojangProfile(String username) {
+        String mojangUrl = buildMojangUrl(username);
 
-        try {
-            String body = HttpClient.getString(mojangUrl);
-            return BotEnvironment.GSON.fromJson(body, MojangProfile.class);
-        } catch (IOException | InterruptedException exception) {
-            throw new HttpException("Network error fetching profile for `" + username + "`", exception);
-        } catch (Exception exception) {
-            throw new HttpException("Failed to parse Mojang profile for `" + username + "`: " + exception.getMessage(), exception);
-        }
+        return Result.of(() -> Retry.<MojangProfile>of(() -> {
+                String body = HttpClient.getString(mojangUrl).orElseThrow();
+                return BotEnvironment.GSON.fromJson(body, MojangProfile.class);
+            })
+            .maxAttempts(RETRY_ATTEMPTS)
+            .delay(RETRY_DELAY)
+            .backoffMultiplier(RETRY_BACKOFF)
+            .retryOn(HttpException.class)
+            .execute()
+        );
     }
 
-    public static CompletableFuture<MojangProfile> getMojangProfileAsync(String username) {
-        String mojangUrl = String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
+    public static CompletableFuture<Result<MojangProfile, HttpException>> getMojangProfileAsync(String username) {
+        String mojangUrl = buildMojangUrl(username);
 
-        if (UUIDUtils.isUUID(username)) {
-            mojangUrl = String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", username);
-        }
-
-        return HttpClient.getStringAsync(mojangUrl)
-            .thenApply(body -> {
-                try {
-                    return BotEnvironment.GSON.fromJson(body, MojangProfile.class);
-                } catch (JsonSyntaxException exception) {
-                    throw new RuntimeException(new HttpException("Invalid JSON response from Mojang API for `" + username + "`", exception));
-                } catch (IllegalStateException exception) {
-                    throw new RuntimeException(new HttpException("Malformed Mojang profile data for `" + username + "`", exception));
-                }
+        return Retry.<MojangProfile>of(() -> {
+                String body = HttpClient.getString(mojangUrl).orElseThrow();
+                return BotEnvironment.GSON.fromJson(body, MojangProfile.class);
             })
-            .exceptionally(throwable -> {
-                if (throwable.getCause() instanceof HttpException) {
-                    throw new RuntimeException(throwable.getCause());
+            .maxAttempts(RETRY_ATTEMPTS)
+            .delay(RETRY_DELAY)
+            .backoffMultiplier(RETRY_BACKOFF)
+            .retryOn(HttpException.class)
+            .executeAsync()
+            .handle((profile, throwable) -> {
+                if (throwable != null) {
+                    Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+                    if (cause instanceof HttpException httpException) {
+                        return Result.failure(httpException);
+                    }
+                    return Result.failure(new HttpException("Failed to fetch Mojang profile for `" + username + "`", cause));
                 }
-                throw new RuntimeException(new HttpException("Network error fetching profile for `" + username + "`", throwable));
+                return Result.success(profile);
             });
     }
 
     @NotNull
-    public static MojangProfile getMojangProfile(UUID uniqueId) throws HttpException {
+    public static Result<MojangProfile, HttpException> getMojangProfile(UUID uniqueId) {
         return getMojangProfile(uniqueId.toString());
     }
 
-    public static HypixelPlayerResponse getHypixelPlayer(UUID uniqueId) throws HttpException {
+    public static Result<HypixelPlayerResponse, HttpException> getHypixelPlayer(UUID uniqueId) {
         String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId);
         Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
 
         try {
-            String hypixelApiKey = BotEnvironment.getHypixelAPIKey().map(UUID::toString).orElse("");
-            return BotEnvironment.GSON.fromJson(getHttpResponse(url, Pair.of("API-Key", hypixelApiKey)).body(), HypixelPlayerResponse.class);
-        } catch (Exception exception) {
-            throw new HttpException("Unable to locate Hypixel Player for `" + uniqueId + "`", exception);
+            return Result.of(() -> Retry.<HypixelPlayerResponse>of(() -> {
+                    String hypixelApiKey = BotEnvironment.getHypixelAPIKey().map(UUID::toString).orElse("");
+                    HttpResponse<String> response = getHttpResponse(url, Pair.of("API-Key", hypixelApiKey));
+                    return BotEnvironment.GSON.fromJson(response.body(), HypixelPlayerResponse.class);
+                })
+                .maxAttempts(RETRY_ATTEMPTS)
+                .delay(RETRY_DELAY)
+                .backoffMultiplier(RETRY_BACKOFF)
+                .execute()
+            );
         } finally {
             requestTimer.observeDuration();
         }
     }
 
-    public static CompletableFuture<HypixelPlayerResponse> getHypixelPlayerAsync(UUID uniqueId) {
+    public static CompletableFuture<Result<HypixelPlayerResponse, HttpException>> getHypixelPlayerAsync(UUID uniqueId) {
         String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId);
         Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
 
         String hypixelApiKey = BotEnvironment.getHypixelAPIKey().map(UUID::toString).orElse("");
 
-        return getHttpResponseAsync(url, Pair.of("API-Key", hypixelApiKey))
-            .thenApply(response -> {
-                try {
-                    return BotEnvironment.GSON.fromJson(response.body(), HypixelPlayerResponse.class);
-                } catch (JsonSyntaxException exception) {
-                    throw new RuntimeException(new HttpException("Invalid JSON response from Hypixel API for `" + uniqueId + "`", exception));
-                } finally {
-                    requestTimer.observeDuration();
-                }
+        return Retry.<HypixelPlayerResponse>of(() -> {
+                HttpResponse<String> response = getHttpResponse(url, Pair.of("API-Key", hypixelApiKey));
+                return BotEnvironment.GSON.fromJson(response.body(), HypixelPlayerResponse.class);
             })
-            .exceptionally(throwable -> {
+            .maxAttempts(RETRY_ATTEMPTS)
+            .delay(RETRY_DELAY)
+            .backoffMultiplier(RETRY_BACKOFF)
+            .executeAsync()
+            .handle((player, throwable) -> {
                 requestTimer.observeDuration();
-                if (throwable.getCause() instanceof HttpException) {
-                    throw new RuntimeException(throwable.getCause());
+                if (throwable != null) {
+                    Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+                    if (cause instanceof HttpException httpException) {
+                        return Result.failure(httpException);
+                    }
+                    return Result.failure(new HttpException("Failed to fetch Hypixel player for `" + uniqueId + "`", cause));
                 }
-                throw new RuntimeException(new HttpException("Network error while fetching Hypixel player data for `" + uniqueId + "`", throwable));
+                return Result.success(player);
             });
     }
 
@@ -151,7 +161,7 @@ public class HttpUtils {
      * Makes a simple HTTP request and returns JSON.
      * Delegates to core HttpClient.
      */
-    public static JsonObject makeHttpRequest(String url) throws IOException, InterruptedException {
+    public static Result<JsonObject, HttpException> makeHttpRequest(String url) {
         return HttpClient.getJson(url);
     }
 
@@ -159,7 +169,14 @@ public class HttpUtils {
      * Makes an asynchronous HTTP request and returns JSON.
      * Delegates to core HttpClient.
      */
-    public static CompletableFuture<JsonObject> makeHttpRequestAsync(String url) {
+    public static CompletableFuture<Result<JsonObject, HttpException>> makeHttpRequestAsync(String url) {
         return HttpClient.getJsonAsync(url);
+    }
+
+    private static String buildMojangUrl(String username) {
+        if (UUIDUtils.isUUID(username)) {
+            return String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", username);
+        }
+        return String.format("https://api.mojang.com/users/profiles/minecraft/%s", username);
     }
 }
