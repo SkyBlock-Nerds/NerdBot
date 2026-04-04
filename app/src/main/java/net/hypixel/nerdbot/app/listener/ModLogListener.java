@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.app.listener;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Invite;
+import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -26,7 +27,6 @@ import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 
 import java.awt.Color;
-import java.time.Instant;
 import java.time.LocalTime;
 
 public class ModLogListener {
@@ -231,7 +231,7 @@ public class ModLogListener {
     }
 
     private EmbedBuilder getDefaultEmbed() {
-        return new EmbedBuilder().setTimestamp(Instant.now());
+        return EmbedFactory.create(null, null, Color.WHITE);
     }
 
     /**

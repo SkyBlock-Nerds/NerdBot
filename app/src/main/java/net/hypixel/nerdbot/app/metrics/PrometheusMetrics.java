@@ -4,95 +4,47 @@ import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Summary;
 import io.prometheus.client.exporter.HTTPServer;
-import io.prometheus.client.hotspot.DefaultExports;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.marmalade.metrics.MetricsRegistry;
 
 @Slf4j
 public class PrometheusMetrics {
 
-    public static final Counter EVENTS_AMOUNT = Counter.build()
-        .name("events_total")
-        .help("Amount of JDA events")
-        .labelNames("event_name")
-        .register();
-    public static final Counter TOTAL_GREENLIT_MESSAGES_AMOUNT = Counter.build()
-        .name("greenlit_messages")
-        .help("Amount of greenlit messages")
-        .register();
-    public static final Counter GREENLIT_SUGGESTION_LENGTH = Counter.build()
-        .name("greenlit_suggestion_length")
-        .help("Length of greenlit suggestions")
-        .labelNames("message_id", "message_length")
-        .register();
-    public static final Counter REVIEW_REQUEST_STATISTICS = Counter.build()
-        .name("review_request_statistics")
-        .help("Statistics of Review Requests")
-        .labelNames("message_id", "user_id", "title", "state")
-        .register();
-    public static final Summary CURATOR_LENGTH_SECONDS = Summary.build()
-        .name("curator_length_seconds")
-        .help("Time taken to curate a suggestions channel in seconds")
-        .labelNames("channel_name")
-        .register();
-    public static final Counter CURATOR_MESSAGES_AMOUNT = Counter.build()
-        .name("curator_messages_total")
-        .help("Amount of messages curated in a suggestions channel")
-        .labelNames("channel_name")
-        .register();
-    public static final Gauge TOTAL_USERS_AMOUNT = Gauge.build()
-        .name("guild_users_total")
-        .help("Total number of users in the guild")
-        .register();
-    public static final Gauge TOTAL_SUGGESTIONS_AMOUNT = Gauge.build()
-        .name("suggestions_total")
-        .help("Total number of suggestions")
-        .register();
-    public static final Counter TOTAL_MESSAGES_AMOUNT = Counter.build()
-        .name("guild_messages_sent_total")
-        .help("Total number of messages sent in guild channels")
-        .labelNames("user_name", "highest_role_name", "channel_name")
-        .register();
-    public static final Gauge FORUM_TAG_AMOUNT = Gauge.build()
-        .name("forum_tags_total")
-        .help("Total number of forum tags added")
-        .labelNames("forum_tag_name")
-        .register();
-    public static final Counter SLASH_COMMANDS_AMOUNT = Counter.build()
-        .name("slash_commands_total")
-        .help("Total number of slash commands executed")
-        .labelNames("user_name", "command_name")
-        .register();
-    public static final Counter INVITES_CREATED_AMOUNT = Counter.build()
-        .name("invites_created_total")
-        .help("Total number of invites created")
-        .labelNames("invite_code")
-        .register();
-    public static final Counter INVITES_DELETED_AMOUNT = Counter.build()
-        .name("invites_deleted_total")
-        .help("Total number of invites deleted")
-        .labelNames("invite_code")
-        .register();
-    public static final Gauge TOTAL_VOICE_CONNECTIONS_BY_USER = Gauge.build()
-        .name("voice_connections_by_user_total")
-        .help("Total number of voice connections by a user")
-        .labelNames("user_name", "channel_name")
-        .register();
-    public static final Gauge TOTAL_VOICE_TIME_SPENT_BY_USER = Gauge.build()
-        .name("voice_time_by_user_total")
-        .help("Total time spent in a voice channel by a user")
-        .labelNames("user_name", "channel_name")
-        .register();
-    public static final Counter HTTP_REQUESTS_AMOUNT = Counter.build()
-        .name("http_requests_total")
-        .help("Total number of HTTP requests")
-        .labelNames("request_type", "url")
-        .register();
-    public static final Summary HTTP_REQUEST_LATENCY = Summary.build()
-        .name("http_requests_latency_seconds")
-        .help("Request latency in seconds")
-        .labelNames("url")
-        .register();
+    public static final Counter EVENTS_AMOUNT = MetricsRegistry.counter(
+        "events_total", "Amount of JDA events", "event_name");
+    public static final Counter TOTAL_GREENLIT_MESSAGES_AMOUNT = MetricsRegistry.counter(
+        "greenlit_messages", "Amount of greenlit messages");
+    public static final Counter GREENLIT_SUGGESTION_LENGTH = MetricsRegistry.counter(
+        "greenlit_suggestion_length", "Length of greenlit suggestions", "message_id", "message_length");
+    public static final Counter REVIEW_REQUEST_STATISTICS = MetricsRegistry.counter(
+        "review_request_statistics", "Statistics of Review Requests", "message_id", "user_id", "title", "state");
+    public static final Summary CURATOR_LENGTH_SECONDS = MetricsRegistry.summary(
+        "curator_length_seconds", "Time taken to curate a suggestions channel in seconds", "channel_name");
+    public static final Counter CURATOR_MESSAGES_AMOUNT = MetricsRegistry.counter(
+        "curator_messages_total", "Amount of messages curated in a suggestions channel", "channel_name");
+    public static final Gauge TOTAL_USERS_AMOUNT = MetricsRegistry.gauge(
+        "guild_users_total", "Total number of users in the guild");
+    public static final Gauge TOTAL_SUGGESTIONS_AMOUNT = MetricsRegistry.gauge(
+        "suggestions_total", "Total number of suggestions");
+    public static final Counter TOTAL_MESSAGES_AMOUNT = MetricsRegistry.counter(
+        "guild_messages_sent_total", "Total number of messages sent in guild channels", "user_name", "highest_role_name", "channel_name");
+    public static final Gauge FORUM_TAG_AMOUNT = MetricsRegistry.gauge(
+        "forum_tags_total", "Total number of forum tags added", "forum_tag_name");
+    public static final Counter SLASH_COMMANDS_AMOUNT = MetricsRegistry.counter(
+        "slash_commands_total", "Total number of slash commands executed", "user_name", "command_name");
+    public static final Counter INVITES_CREATED_AMOUNT = MetricsRegistry.counter(
+        "invites_created_total", "Total number of invites created", "invite_code");
+    public static final Counter INVITES_DELETED_AMOUNT = MetricsRegistry.counter(
+        "invites_deleted_total", "Total number of invites deleted", "invite_code");
+    public static final Gauge TOTAL_VOICE_CONNECTIONS_BY_USER = MetricsRegistry.gauge(
+        "voice_connections_by_user_total", "Total number of voice connections by a user", "user_name", "channel_name");
+    public static final Gauge TOTAL_VOICE_TIME_SPENT_BY_USER = MetricsRegistry.gauge(
+        "voice_time_by_user_total", "Total time spent in a voice channel by a user", "user_name", "channel_name");
+    public static final Counter HTTP_REQUESTS_AMOUNT = MetricsRegistry.counter(
+        "http_requests_total", "Total number of HTTP requests", "request_type", "url");
+    public static final Summary HTTP_REQUEST_LATENCY = MetricsRegistry.summary(
+        "http_requests_latency_seconds", "Request latency in seconds", "url");
 
     private static HTTPServer server;
 
@@ -110,11 +62,7 @@ public class PrometheusMetrics {
                     server.close();
                 }
 
-                server = new HTTPServer.Builder()
-                    .withPort(SkyBlockNerdsBot.config().getMetricsConfig().getPort())
-                    .build();
-
-                DefaultExports.initialize();
+                server = MetricsRegistry.startServer(SkyBlockNerdsBot.config().getMetricsConfig().getPort());
                 log.info("Enabled Prometheus metrics on port {}",
                     SkyBlockNerdsBot.config().getMetricsConfig().getPort());
             } catch (Exception exception) {
