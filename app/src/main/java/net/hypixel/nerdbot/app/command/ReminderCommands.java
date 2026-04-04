@@ -34,10 +34,12 @@ import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepo
 import net.hypixel.nerdbot.marmalade.storage.database.repository.ReminderRepository;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
+import net.hypixel.nerdbot.marmalade.format.TimeUtils;
 
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -51,6 +53,10 @@ import java.util.regex.Pattern;
 public class ReminderCommands {
 
     private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
+
+    // Readable date format used in the reminder selection menu - e.g. "Apr 02, 2026 at 3:45 PM UTC"
+    private static final DateTimeFormatter REMINDER_DATE_FORMAT = DateTimeFormatter.ofPattern("MMM dd, yyyy 'at' h:mm a z")
+        .withZone(ZoneId.of("UTC"));
 
     /**
      * Parse a time string in the format of {@code 1w2d3h4m5s} into a Date
@@ -445,8 +451,7 @@ public class ReminderCommands {
             int globalIndex = (page - 1) * remindersPerPage + i + 1;
 
             // Use plain text date format instead of Discord timestamp for selection menu
-            SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy 'at' h:mm a z");
-            String readableDate = dateFormat.format(reminder.getTime());
+            String readableDate = TimeUtils.format(Instant.ofEpochMilli(reminder.getTime()), REMINDER_DATE_FORMAT);
 
             String optionLabel = "#" + globalIndex + " - " + readableDate;
             String optionDescription = StringUtils.truncate(reminder.getDescription(), 50);

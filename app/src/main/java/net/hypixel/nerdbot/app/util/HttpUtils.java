@@ -5,7 +5,7 @@ import com.google.gson.JsonSyntaxException;
 import io.prometheus.client.Summary;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import net.dv8tion.jda.internal.utils.tuple.Pair;
+import net.hypixel.nerdbot.marmalade.functional.Pair;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.marmalade.http.HttpClient;
 import net.hypixel.nerdbot.marmalade.UUIDUtils;
@@ -124,7 +124,7 @@ public class HttpUtils {
      */
     private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws IOException, InterruptedException {
         HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url)).GET();
-        Arrays.stream(headers).forEach(h -> builder.header(h.getLeft(), h.getRight()));
+        Arrays.stream(headers).forEach(h -> builder.header(h.first(), h.second()));
 
         HttpRequest request = builder.build();
         log.info("Sending HTTP request to {} with {} header(s)", url, headers.length);
@@ -138,7 +138,7 @@ public class HttpUtils {
             .uri(URI.create(url))
             .timeout(Duration.ofSeconds(30))
             .GET();
-        Arrays.stream(headers).forEach(h -> builder.header(h.getLeft(), h.getRight()));
+        Arrays.stream(headers).forEach(h -> builder.header(h.first(), h.second()));
 
         HttpRequest request = builder.build();
         log.info("Sending async HTTP request to {} with {} header(s)", url, headers.length);
