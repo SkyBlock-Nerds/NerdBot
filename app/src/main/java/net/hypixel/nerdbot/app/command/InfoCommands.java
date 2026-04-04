@@ -24,8 +24,8 @@ import net.hypixel.nerdbot.discord.util.StringUtils;
 import net.hypixel.nerdbot.discord.util.Utils;
 import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
 import net.hypixel.nerdbot.discord.util.pagination.PaginationManager;
+import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
 
-import java.awt.Color;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -118,9 +118,7 @@ public class InfoCommands {
     }
 
     private EmbedBuilder buildGreenlitEmbed(List<GreenlitMessage> greenlitMessages) {
-        EmbedBuilder embedBuilder = new EmbedBuilder();
-        embedBuilder.setColor(Color.GREEN)
-            .setTitle("Greenlit Suggestions");
+        EmbedBuilder embedBuilder = EmbedFactory.success("Greenlit Suggestions", null);
 
         for (GreenlitMessage message : greenlitMessages) {
             String title = StringUtils.truncate(message.getSuggestionTitle(), 100);

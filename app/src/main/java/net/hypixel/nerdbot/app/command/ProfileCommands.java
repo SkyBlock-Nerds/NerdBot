@@ -10,6 +10,7 @@ import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
@@ -223,8 +224,7 @@ public class ProfileCommands {
         int promotionComments = roleConfig.getMinimumCommentsRequiredForPromotion();
 
         // General Activity
-        embeds.add(new EmbedBuilder().setColor(Color.GREEN)
-            .setTitle("General Activity")
+        embeds.add(EmbedFactory.success("General Activity", null)
             // General
             .addField("Last Seen", lastActivity.toRelativeTimestamp(LastActivity::getLastGlobalActivity), true)
             .addField("General Voice Chat", lastActivity.toRelativeTimestamp(LastActivity::getLastVoiceChannelJoinDate), true)
@@ -578,11 +578,8 @@ public class ProfileCommands {
                                 event.getHook().editOriginal(String.format("Updated your Mojang profile to %s (`%s`)", mojangProfile.getUsername(), mojangProfile.getUniqueId())).queue();
 
                                 ChannelCache.sendToLogChannel(
-                                    new EmbedBuilder()
-                                        .setTitle("Mojang Profile Link")
-                                        .setDescription(member.getAsMention() + " has linked their Mojang Profile.")
+                                    EmbedFactory.success("Mojang Profile Link", member.getAsMention() + " has linked their Mojang Profile.")
                                         .setThumbnail(member.getEffectiveAvatarUrl())
-                                        .setColor(Color.GREEN)
                                         .addField("Username", mojangProfile.getUsername(), false)
                                         .addField(
                                             "UUID / SkyCrypt",

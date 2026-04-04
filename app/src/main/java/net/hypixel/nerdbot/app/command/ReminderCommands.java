@@ -33,8 +33,8 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.ReminderRepository;
 import net.hypixel.nerdbot.discord.util.StringUtils;
+import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
 
-import java.awt.Color;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -324,11 +324,8 @@ public class ReminderCommands {
                             // Send confirmation DM
                             try {
                                 PrivateChannel privateChannel = member.getUser().openPrivateChannel().complete();
-                                EmbedBuilder embedBuilder = new EmbedBuilder()
-                                    .setDescription(finalDescription)
-                                    .setTimestamp(Instant.now())
-                                    .setFooter(reminder.getUuid().toString())
-                                    .setColor(Color.GREEN);
+                                EmbedBuilder embedBuilder = EmbedFactory.success(null, finalDescription)
+                                    .setFooter(reminder.getUuid().toString());
 
                                 privateChannel.sendMessage("Reminder set for: " + DiscordTimestamp.toLongDateTime(finalDate.getTime()))
                                     .addEmbeds(embedBuilder.build())
