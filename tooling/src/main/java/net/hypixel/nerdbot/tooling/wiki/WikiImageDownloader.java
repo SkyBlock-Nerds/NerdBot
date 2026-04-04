@@ -165,12 +165,7 @@ public class WikiImageDownloader {
 
     private static JsonObject makeApiRequest(String apiUrl) throws IOException {
         printDebug("Making request to URL: " + apiUrl);
-        try {
-            return HttpClient.getJson(apiUrl);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException("HTTP request interrupted for URL: " + apiUrl, e);
-        }
+        return HttpClient.getJson(apiUrl).orElseThrow();
     }
 
     public static BufferedImage downloadImage(String imageUrl) throws IOException {
