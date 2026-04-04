@@ -122,10 +122,14 @@ public class ProfileCommands {
 
     public static CompletableFuture<MojangProfile> requestMojangProfileAsync(Member member, String username, boolean enforceSocial) {
         return HttpUtils.getMojangProfileAsync(username)
-            .thenCompose(mojangProfile -> {
-                if (mojangProfile == null) {
-                    return CompletableFuture.completedFuture(null);
+            .thenCompose(mojangResult -> {
+                if (mojangResult.isFailure()) {
+                    MojangProfile errorProfile = new MojangProfile();
+                    errorProfile.setErrorMessage("Failed to look up Minecraft profile for `" + username + "`");
+                    return CompletableFuture.completedFuture(errorProfile);
                 }
+
+                MojangProfile mojangProfile = mojangResult.orElseGet(MojangProfile::new);
 
                 if (mojangProfile.getErrorMessage() != null) {
                     MojangProfile errorProfile = new MojangProfile();
@@ -134,7 +138,15 @@ public class ProfileCommands {
                 }
 
                 return HttpUtils.getHypixelPlayerAsync(mojangProfile.getUniqueId())
-                    .thenApply(hypixelPlayerResponse -> {
+                    .thenApply(hypixelResult -> {
+                        if (hypixelResult.isFailure()) {
+                            MojangProfile errorProfile = new MojangProfile();
+                            errorProfile.setErrorMessage("Unable to look up `" + mojangProfile.getUsername() + "` on Hypixel");
+                            return errorProfile;
+                        }
+
+                        HypixelPlayerResponse hypixelPlayerResponse = hypixelResult.orElseGet(HypixelPlayerResponse::new);
+
                         if (!hypixelPlayerResponse.isSuccess()) {
                             MojangProfile errorProfile = new MojangProfile();
                             errorProfile.setErrorMessage("Unable to look up `" + mojangProfile.getUsername() + "`: " + hypixelPlayerResponse.getCause());

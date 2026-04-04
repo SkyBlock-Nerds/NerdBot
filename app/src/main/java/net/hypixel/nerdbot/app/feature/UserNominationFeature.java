@@ -8,7 +8,6 @@ import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.marmalade.format.TimeUtils;
 
 import java.time.Duration;
-import java.util.TimerTask;
 
 @Slf4j
 public class UserNominationFeature extends BotFeature {
@@ -35,25 +34,22 @@ public class UserNominationFeature extends BotFeature {
 
     @Override
     public void onFeatureStart() {
-        this.timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if (TimeUtils.isDayOfMonth(1) && SkyBlockNerdsBot.config().isNominationsEnabled()) {
-                    log.info("Running nomination check");
-                    nominateUsers();
-                }
+        scheduleAtFixedRate("UserNominationFeature-task", () -> {
+            if (TimeUtils.isDayOfMonth(1) && SkyBlockNerdsBot.config().isNominationsEnabled()) {
+                log.info("Running nomination check");
+                nominateUsers();
+            }
 
-                if (TimeUtils.isDayOfMonth(15) && SkyBlockNerdsBot.config().isInactivityCheckEnabled()) {
-                    log.info("Running inactivity check");
-                    findInactiveUsers();
-                    findInactiveUsersInRoleRestrictedChannels();
-                }
+            if (TimeUtils.isDayOfMonth(15) && SkyBlockNerdsBot.config().isInactivityCheckEnabled()) {
+                log.info("Running inactivity check");
+                findInactiveUsers();
+                findInactiveUsersInRoleRestrictedChannels();
             }
         }, 0, Duration.ofHours(1).toMillis());
     }
 
     @Override
     public void onFeatureEnd() {
-
+        stopScheduledTask();
     }
 }

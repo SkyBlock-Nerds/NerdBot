@@ -11,16 +11,16 @@ import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+import net.hypixel.nerdbot.marmalade.exception.HttpException;
+import net.hypixel.nerdbot.marmalade.functional.Result;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
-import net.hypixel.nerdbot.discord.config.FeatureConfig;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
-import java.util.TimerTask;
 
 @Slf4j
 public class ProfileUpdateFeature extends BotFeature implements SchedulableFeature {
@@ -37,7 +37,14 @@ public class ProfileUpdateFeature extends BotFeature implements SchedulableFeatu
             return;
         }
 
-        MojangProfile mojangProfile = HttpUtils.getMojangProfile(existingProfile.getUniqueId());
+        Result<MojangProfile, HttpException> profileResult = HttpUtils.getMojangProfile(existingProfile.getUniqueId());
+        if (profileResult.isFailure()) {
+            log.warn("Failed to fetch Mojang profile for {} (UUID: {})", discordUser.getDiscordId(), existingProfile.getUniqueId());
+            return;
+        }
+
+        MojangProfile mojangProfile = profileResult.orElseGet(MojangProfile::new);
+
         if (mojangProfile.getUsername() == null || mojangProfile.getUsername().isBlank()) {
             log.warn("Skipping nickname update for {} (UUID: {}) because the Mojang username is missing",
                 discordUser.getDiscordId(),
@@ -81,29 +88,24 @@ public class ProfileUpdateFeature extends BotFeature implements SchedulableFeatu
     }
 
     @Override
-    public TimerTask buildTask() {
-        return new TimerTask() {
-            @Override
-            public void run() {
-                if (BotEnvironment.getBot().isReadOnly()) {
-                    log.info("Bot is in read-only mode, skipping profile update task!");
-                    return;
-                }
+    public void executeTask() {
+        if (BotEnvironment.getBot().isReadOnly()) {
+            log.info("Bot is in read-only mode, skipping profile update task!");
+            return;
+        }
 
-                if (!SkyBlockNerdsBot.config().isMojangForceNicknameUpdate()) {
-                    log.info("Forcefully updating nicknames is currently disabled!");
-                    return;
-                }
+        if (!SkyBlockNerdsBot.config().isMojangForceNicknameUpdate()) {
+            log.info("Forcefully updating nicknames is currently disabled!");
+            return;
+        }
 
-                DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-                long cacheTtlHours = SkyBlockNerdsBot.config().getMojangUsernameCacheTTL();
-                discordUserRepository.forEach(discordUser -> {
-                    if (discordUser.isProfileAssigned() && discordUser.getMojangProfile().requiresCacheUpdate(cacheTtlHours)) {
-                        updateNickname(discordUser);
-                    }
-                });
+        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        long cacheTtlHours = SkyBlockNerdsBot.config().getMojangUsernameCacheTTL();
+        discordUserRepository.forEach(discordUser -> {
+            if (discordUser.isProfileAssigned() && discordUser.getMojangProfile().requiresCacheUpdate(cacheTtlHours)) {
+                updateNickname(discordUser);
             }
-        };
+        });
     }
 
     @Override
@@ -118,6 +120,6 @@ public class ProfileUpdateFeature extends BotFeature implements SchedulableFeatu
 
     @Override
     public void onFeatureEnd() {
-        this.timer.cancel();
+        stopScheduledTask();
     }
 }

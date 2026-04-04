@@ -19,7 +19,6 @@ import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.TimerTask;
 
 @Slf4j
 public class CurateFeature extends BotFeature implements SchedulableFeature {
@@ -29,46 +28,41 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
     }
 
     @Override
-    public TimerTask buildTask() {
-        return new TimerTask() {
-            @Override
-            public void run() {
-                SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
+    public void executeTask() {
+        SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
 
-                if (suggestionConfig.getForumChannelId() == null) {
-                    log.info("Not running CurateFeature: forumChannelId missing in config");
-                    return;
-                }
+        if (suggestionConfig.getForumChannelId() == null) {
+            log.info("Not running CurateFeature: forumChannelId missing in config");
+            return;
+        }
 
-                Optional<ForumChannel> forumChannel = ChannelCache.getForumChannelById(suggestionConfig.getForumChannelId());
-                if (forumChannel.isEmpty()) {
-                    log.info("Not running CurateFeature: forumChannel not found for configured forumChannelId");
-                    return;
-                }
+        Optional<ForumChannel> forumChannel = ChannelCache.getForumChannelById(suggestionConfig.getForumChannelId());
+        if (forumChannel.isEmpty()) {
+            log.info("Not running CurateFeature: forumChannel not found for configured forumChannelId");
+            return;
+        }
 
-                BotEnvironment.EXECUTOR_SERVICE.execute(() -> {
-                    Database database = BotEnvironment.getBot().getDatabase();
-                    Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumChannelCurator(BotEnvironment.getBot().isReadOnly());
-                    ForumChannel channel = forumChannel.get();
-                    log.info("Processing suggestion forum channel '{}' (ID: {})", channel.getName(), channel.getId());
+        BotEnvironment.EXECUTOR_SERVICE.execute(() -> {
+            Database database = BotEnvironment.getBot().getDatabase();
+            Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumChannelCurator(BotEnvironment.getBot().isReadOnly());
+            ForumChannel channel = forumChannel.get();
+            log.info("Processing suggestion forum channel '{}' (ID: {})", channel.getName(), channel.getId());
 
-                    List<GreenlitMessage> result = forumChannelCurator.curate(channel);
-                    if (result.isEmpty()) {
-                        log.info("No new suggestions were greenlit from ID {} this time!", channel.getId());
-                    } else {
-                        log.info("Greenlit {} new suggestions from ID {}. Took {}ms!", result.size(), channel.getId(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime());
-                    }
-
-                    result.forEach(greenlitMessage -> {
-                        GreenlitMessageRepository greenlitMessageRepository = database.getRepositoryManager().getRepository(GreenlitMessageRepository.class);
-                        greenlitMessageRepository.cacheObject(greenlitMessage);
-                        PrometheusMetrics.GREENLIT_SUGGESTION_LENGTH.labels(greenlitMessage.getMessageId(), String.valueOf(greenlitMessage.getSuggestionContent().length())).inc();
-                    });
-                    log.info("Inserted {} new greenlit messages into the database!", result.size());
-                    PrometheusMetrics.TOTAL_GREENLIT_MESSAGES_AMOUNT.inc(result.size());
-                });
+            List<GreenlitMessage> result = forumChannelCurator.curate(channel);
+            if (result.isEmpty()) {
+                log.info("No new suggestions were greenlit from ID {} this time!", channel.getId());
+            } else {
+                log.info("Greenlit {} new suggestions from ID {}. Took {}ms!", result.size(), channel.getId(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime());
             }
-        };
+
+            result.forEach(greenlitMessage -> {
+                GreenlitMessageRepository greenlitMessageRepository = database.getRepositoryManager().getRepository(GreenlitMessageRepository.class);
+                greenlitMessageRepository.cacheObject(greenlitMessage);
+                PrometheusMetrics.GREENLIT_SUGGESTION_LENGTH.labels(greenlitMessage.getMessageId(), String.valueOf(greenlitMessage.getSuggestionContent().length())).inc();
+            });
+            log.info("Inserted {} new greenlit messages into the database!", result.size());
+            PrometheusMetrics.TOTAL_GREENLIT_MESSAGES_AMOUNT.inc(result.size());
+        });
     }
 
     @Override
@@ -83,6 +77,6 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
 
     @Override
     public void onFeatureEnd() {
-        this.timer.cancel();
+        stopScheduledTask();
     }
 }
