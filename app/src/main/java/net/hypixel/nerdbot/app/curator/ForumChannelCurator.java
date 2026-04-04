@@ -14,7 +14,7 @@ import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
-import net.dv8tion.jda.internal.utils.tuple.Pair;
+import net.hypixel.nerdbot.marmalade.functional.Pair;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.EmojiCache;
@@ -171,7 +171,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                                 .findFirst()
                                 .orElse(0)
                         ))
-                        .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+                        .collect(Collectors.toMap(Pair::first, Pair::second));
 
                     int agree = votes.get(emojiConfig.getAgreeEmojiId());
                     int neutral = votes.get(emojiConfig.getNeutralEmojiId());

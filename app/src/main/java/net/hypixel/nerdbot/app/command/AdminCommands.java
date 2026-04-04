@@ -10,6 +10,7 @@ import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Invite;
@@ -1148,9 +1149,7 @@ public class AdminCommands {
         boolean onlyNew = newMembersOnly != null && newMembersOnly;
         if (onlyNew) {
             NominationSweepReport report = NominationService.getInstance().runNewMemberNominationSweep();
-            EmbedBuilder eb = new EmbedBuilder()
-                .setTitle("Nomination Sweep Complete (New Member)")
-                .setColor(Color.GREEN)
+            EmbedBuilder eb = EmbedFactory.success("Nomination Sweep Complete (New Member)", null)
                 .addField("Scanned", String.valueOf(report.scanned()), true)
                 .addField("Eligible", String.valueOf(report.eligible()), true)
                 .addField("Nominated", String.valueOf(report.nominated()), true)
@@ -1162,9 +1161,7 @@ public class AdminCommands {
             event.replyEmbeds(eb.build()).queue();
         } else {
             NominationSweepReport report = NominationService.getInstance().runMemberNominationSweep();
-            EmbedBuilder eb = new EmbedBuilder()
-                .setTitle("Nomination Sweep Complete (Member)")
-                .setColor(Color.GREEN)
+            EmbedBuilder eb = EmbedFactory.success("Nomination Sweep Complete (Member)", null)
                 .addField("Scanned", String.valueOf(report.scanned()), true)
                 .addField("Eligible", String.valueOf(report.eligible()), true)
                 .addField("Nominated", String.valueOf(report.nominated()), true)

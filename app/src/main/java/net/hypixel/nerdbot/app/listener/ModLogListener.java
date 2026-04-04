@@ -35,14 +35,12 @@ public class ModLogListener {
     public void onJoin(GuildMemberJoinEvent event) {
         Member member = event.getMember();
         String roles = member.getRoles().stream().map(Role::getName).reduce((a, b) -> a + ", " + b).orElse("None");
-        MessageEmbed messageEmbed = getDefaultEmbed()
-            .setTitle("Member joined")
+        MessageEmbed messageEmbed = EmbedFactory.success("Member joined", null)
             .addField("Member ID", member.getId(), false)
             .addField("Member Name", member.getEffectiveName(), false)
             .addField("Join Date", member.getTimeJoined().toString(), false)
             .addField("Member Roles", roles, false)
             .setThumbnail(member.getAvatarUrl())
-            .setColor(Color.GREEN)
             .build();
 
         ChannelCache.sendToLogChannel(messageEmbed);
@@ -87,11 +85,8 @@ public class ModLogListener {
     @SubscribeEvent
     public void onGuildUnban(GuildUnbanEvent event) {
         User member = event.getUser();
-        MessageEmbed messageEmbed = getDefaultEmbed()
-            .setTitle("Member unbanned")
-            .setDescription(member.getAsMention())
+        MessageEmbed messageEmbed = EmbedFactory.success("Member unbanned", member.getAsMention())
             .setThumbnail(member.getAvatarUrl())
-            .setColor(Color.GREEN)
             .build();
 
         ChannelCache.sendToLogChannel(messageEmbed);
@@ -101,9 +96,7 @@ public class ModLogListener {
     public void onInviteCreate(GuildInviteCreateEvent event) {
         User member = event.getInvite().getInviter();
         Invite invite = event.getInvite();
-        MessageEmbed messageEmbed = getDefaultEmbed()
-            .setTitle("Invite created")
-            .setDescription("Created by " + member.getAsMention()
+        MessageEmbed messageEmbed = EmbedFactory.success("Invite created", "Created by " + member.getAsMention()
                 + "\n\nInvite URL: " + invite.getUrl()
                 + "\nTime created: " + invite.getTimeCreated()
                 + "\nChannel: " + invite.getChannel().getName()
@@ -111,7 +104,6 @@ public class ModLogListener {
                 + "\nMax Age: " + LocalTime.ofSecondOfDay(Math.min(86_399, invite.getMaxAge())).toString()
                 + "\nTemporary? " + (invite.isTemporary() ? "Yes" : "No"))
             .setThumbnail(member.getAvatarUrl())
-            .setColor(Color.GREEN)
             .build();
 
         ChannelCache.sendToLogChannel(messageEmbed);
@@ -137,11 +129,8 @@ public class ModLogListener {
             stringBuilder.append(" • ").append(role.getName()).append("\n");
         }
 
-        MessageEmbed messageEmbed = getDefaultEmbed()
-            .setTitle("Role(s) added")
-            .setDescription(stringBuilder.toString())
+        MessageEmbed messageEmbed = EmbedFactory.success("Role(s) added", stringBuilder.toString())
             .setThumbnail(member.getAvatarUrl())
-            .setColor(Color.GREEN)
             .build();
 
         ChannelCache.sendToLogChannel(messageEmbed);
