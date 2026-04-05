@@ -32,9 +32,14 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.Aerhhh</groupId>
-            <artifactId>MinecraftImageGenerator</artifactId>
-            <version>master-SNAPSHOT</version>
+            <groupId>com.github.Aerhhh.MinecraftImageGenerator</groupId>
+            <artifactId>jigsaw</artifactId>
+            <version>feat~jigsaw-rewrite-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.Aerhhh.MinecraftImageGenerator</groupId>
+            <artifactId>jigsaw-skyblock</artifactId>
+            <version>feat~jigsaw-rewrite-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

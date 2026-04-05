@@ -2,15 +2,8 @@ package net.hypixel.nerdbot.app.generation;
 
 import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
-import net.aerh.imagegenerator.context.GenerationContext;
-import net.aerh.imagegenerator.context.GenerationFeedback;
-import net.hypixel.nerdbot.discord.config.FunConfig;
-import net.hypixel.nerdbot.marmalade.format.TimeUtils;
-
-import java.time.ZoneId;
-import java.util.Arrays;
+import net.aerh.jigsaw.api.generator.GenerationContext;
+import net.aerh.jigsaw.api.generator.GenerationFeedback;
 
 @UtilityClass
 public class DiscordGenerationContext {
@@ -25,21 +18,8 @@ public class DiscordGenerationContext {
             }
         };
 
-        String channelId = event.getChannel().getId();
-
-        // Determine if April Fools mode should be enabled for this channel
-        FunConfig funConfig = DiscordBotEnvironment.getBot().getConfig().getFunConfig();
-        ZoneId zoneId = funConfig.getAprilFoolsTimezone() != null
-            ? ZoneId.of(funConfig.getAprilFoolsTimezone())
-            : ZoneId.systemDefault();
-
-        boolean aprilFools = false;
-        if (TimeUtils.isAprilFirst(zoneId)) {
-            ChannelConfig channelConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig();
-            aprilFools = Arrays.stream(channelConfig.getAprilFoolsGenChannelIds())
-                .anyMatch(id -> id.equalsIgnoreCase(channelId));
-        }
-
-        return new GenerationContext(channelId, feedback, aprilFools);
+        return GenerationContext.builder()
+            .feedback(feedback)
+            .build();
     }
 }

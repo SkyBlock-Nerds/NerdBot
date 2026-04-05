@@ -22,8 +22,13 @@
         </dependency>
         <dependency>
             <groupId>com.github.Aerhhh.MinecraftImageGenerator</groupId>
-            <artifactId>MinecraftImageGenerator</artifactId>
-            <version>fix~nbt-text-component-parsing-SNAPSHOT</version>
+            <artifactId>jigsaw</artifactId>
+            <version>feat~jigsaw-rewrite-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.Aerhhh.MinecraftImageGenerator</groupId>
+            <artifactId>jigsaw-skyblock</artifactId>
+            <version>feat~jigsaw-rewrite-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
