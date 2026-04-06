@@ -286,7 +286,7 @@ public class GeneratorCommands {
                     .lore(itemLore)
                     .alpha(alpha)
                     .padding(padding)
-                    .centeredText(false)
+                    .centered(false)
                     .firstLinePadding(true)
                     .renderBorder(true);
 
@@ -454,8 +454,8 @@ public class GeneratorCommands {
             compositeBuilder.add(inventoryBuilder.build());
 
             if (hoveredItemString != null && !hoveredItemString.isBlank()) {
-                TooltipRequest tooltipRequest = TooltipRequest.builder()
-                    .lines(splitLines(TextWrapper.stripActualNewlines(hoveredItemString)))
+                TooltipRequest tooltipRequest = SkyBlockTooltipBuilder.builder()
+                    .lore(TextWrapper.stripActualNewlines(hoveredItemString))
                     .alpha(TooltipRequest.DEFAULT_ALPHA)
                     .padding(TooltipRequest.DEFAULT_PADDING)
                     .firstLinePadding(false)
@@ -507,17 +507,34 @@ public class GeneratorCommands {
         GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
 
         try {
-            GeneratorResult result = ENGINE.renderFromNbt(nbtInput, context);
-
-            // Also parse the NBT to extract data for the slash command
             ParsedItem parsedItem = ENGINE.parseNbt(nbtInput);
 
-            // Build a slash command from the parsed data
+            // Build item request
+            ItemRequest.Builder itemBuilder = ItemRequest.builder()
+                .itemId(parsedItem.itemId())
+                .enchanted(parsedItem.enchanted())
+                .scale(2);
+            parsedItem.dyeColor().ifPresent(itemBuilder::dyeColor);
+
+            // Build tooltip from lore
             SkyBlockTooltipBuilder.Builder tooltipBuilder = SkyBlockTooltipBuilder.builder();
             parsedItem.displayName().ifPresent(tooltipBuilder::name);
             if (!parsedItem.lore().isEmpty()) {
                 tooltipBuilder.lore(String.join("\\n", parsedItem.lore()));
             }
+
+            // Handle player heads
+            CompositeRequest.Builder compositeBuilder = CompositeRequest.builder();
+            if (parsedItem.base64Texture().isPresent() && !parsedItem.base64Texture().get().isBlank()) {
+                compositeBuilder.add(PlayerHeadRequest.fromBase64(parsedItem.base64Texture().get())
+                    .scale(2)
+                    .build());
+            } else {
+                compositeBuilder.add(itemBuilder.build());
+            }
+            compositeBuilder.add(tooltipBuilder.build());
+
+            GeneratorResult result = ENGINE.render(compositeBuilder.build(), context);
 
             String slashCommand = tooltipBuilder.buildSlashCommand();
             String commandItemId = parsedItem.itemId();
@@ -535,6 +552,10 @@ public class GeneratorCommands {
 
             if (parsedItem.enchanted()) {
                 slashCommand += " enchanted: True";
+            }
+
+            if (parsedItem.dyeColor().isPresent()) {
+                slashCommand += " color: #" + String.format("%06X", parsedItem.dyeColor().get() & 0xFFFFFF);
             }
 
             // Escape newlines in lore so the slash command is a single line
@@ -650,7 +671,7 @@ public class GeneratorCommands {
                 .alpha(alpha)
                 .padding(padding)
                 .maxLineLength(maxLineLength)
-                .centeredText(centered)
+                .centered(centered)
                 .firstLinePadding(firstLinePadding)
                 .renderBorder(renderBorder)
                 .build();
@@ -742,13 +763,12 @@ public class GeneratorCommands {
         renderBorder = renderBorder != null && renderBorder;
 
         try {
-            TooltipRequest tooltipRequest = TooltipRequest.builder()
-                .lines(splitLines(TextWrapper.stripActualNewlines(text)))
+            TooltipRequest tooltipRequest = SkyBlockTooltipBuilder.builder()
+                .lore(TextWrapper.stripActualNewlines(text))
                 .alpha(alpha)
                 .padding(padding)
                 .maxLineLength(maxLineLength)
-                .bypassMaxLineLength(true)
-                .centeredText(centered)
+                .centered(centered)
                 .firstLinePadding(false)
                 .renderBorder(renderBorder)
                 .build();
@@ -808,8 +828,8 @@ public class GeneratorCommands {
 
         dialogue = String.join("\n", lines);
 
-        TooltipRequest tooltipRequest = TooltipRequest.builder()
-            .lines(splitLines(dialogue))
+        TooltipRequest tooltipRequest = SkyBlockTooltipBuilder.builder()
+            .lore(dialogue)
             .alpha(0)
             .padding(TooltipRequest.DEFAULT_PADDING)
             .firstLinePadding(false)
@@ -898,8 +918,8 @@ public class GeneratorCommands {
 
             dialogue = String.join("\n", lines);
 
-            TooltipRequest tooltipRequest = TooltipRequest.builder()
-                .lines(splitLines(dialogue))
+            TooltipRequest tooltipRequest = SkyBlockTooltipBuilder.builder()
+                .lore(dialogue)
                 .alpha(0)
                 .padding(TooltipRequest.DEFAULT_PADDING)
                 .firstLinePadding(false)
