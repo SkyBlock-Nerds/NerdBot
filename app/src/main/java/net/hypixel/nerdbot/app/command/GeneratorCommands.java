@@ -279,7 +279,8 @@ public class GeneratorCommands {
             );
 
             try {
-                CompositeRequest.Builder compositeBuilder = CompositeRequest.builder();
+                CompositeRequest.Builder compositeBuilder = CompositeRequest.builder()
+                    .scaleFactor(2);
                 SkyBlockTooltipBuilder.Builder tooltipBuilder = SkyBlockTooltipBuilder.builder()
                     .name("&a" + powerName)
                     .rarity(Rarity.byName("none").orElse(null))
@@ -309,14 +310,13 @@ public class GeneratorCommands {
                     if (itemId.equalsIgnoreCase("player_head")) {
                         PlayerHeadRequest.Builder headBuilder = PlayerHeadRequest.fromBase64(
                             skinValue != null ? skinValue : ""
-                        ).scale(2);
+                        );
 
                         compositeBuilder.add(headBuilder.build());
                     } else {
                         ItemRequest.Builder itemBuilder = ItemRequest.builder()
                             .itemId(itemId)
-                            .enchanted(enchanted)
-                            .scale(2);
+                            .enchanted(enchanted);
 
                         if (color != null && !color.isBlank()) {
                             itemBuilder.color(color);
@@ -437,14 +437,14 @@ public class GeneratorCommands {
         maxLineLength = maxLineLength == null ? TooltipRequest.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
         try {
-            CompositeRequest.Builder compositeBuilder = CompositeRequest.builder();
+            CompositeRequest.Builder compositeBuilder = CompositeRequest.builder()
+                .scaleFactor(2);
 
             InventoryRequest.Builder inventoryBuilder = InventoryRequest.builder()
                 .rows(rows)
                 .slotsPerRow(slotsPerRow)
                 .drawBorder(drawBorder)
                 .drawBackground(true)
-                .scale(2)
                 .withInventoryString(inventoryString);
 
             if (containerName != null && !containerName.isBlank()) {
@@ -460,7 +460,6 @@ public class GeneratorCommands {
                     .padding(TooltipRequest.DEFAULT_PADDING)
                     .firstLinePadding(false)
                     .maxLineLength(maxLineLength)
-                    .scaleFactor(2)
                     .renderBorder(true)
                     .build();
 
@@ -512,8 +511,7 @@ public class GeneratorCommands {
             // Build item request
             ItemRequest.Builder itemBuilder = ItemRequest.builder()
                 .itemId(parsedItem.itemId())
-                .enchanted(parsedItem.enchanted())
-                .scale(2);
+                .enchanted(parsedItem.enchanted());
             parsedItem.dyeColor().ifPresent(itemBuilder::dyeColor);
 
             // Build tooltip from lore
@@ -524,10 +522,10 @@ public class GeneratorCommands {
             }
 
             // Handle player heads
-            CompositeRequest.Builder compositeBuilder = CompositeRequest.builder();
+            CompositeRequest.Builder compositeBuilder = CompositeRequest.builder()
+                .scaleFactor(2);
             if (parsedItem.base64Texture().isPresent() && !parsedItem.base64Texture().get().isBlank()) {
                 compositeBuilder.add(PlayerHeadRequest.fromBase64(parsedItem.base64Texture().get())
-                    .scale(2)
                     .build());
             } else {
                 compositeBuilder.add(itemBuilder.build());
@@ -662,7 +660,8 @@ public class GeneratorCommands {
         durability = durability == null ? 100 : durability;
 
         try {
-            CompositeRequest.Builder compositeBuilder = CompositeRequest.builder();
+            CompositeRequest.Builder compositeBuilder = CompositeRequest.builder()
+                .scaleFactor(2);
             TooltipRequest tooltipRequest = SkyBlockTooltipBuilder.builder()
                 .name(itemName)
                 .rarity(Rarity.byName(rarity).orElse(null))
@@ -680,14 +679,13 @@ public class GeneratorCommands {
                 if (itemId.equalsIgnoreCase("player_head")) {
                     PlayerHeadRequest.Builder headBuilder = PlayerHeadRequest.fromBase64(
                         skinValue != null ? skinValue : ""
-                    ).scale(2);
+                    );
 
                     compositeBuilder.add(headBuilder.build());
                 } else {
                     ItemRequest.Builder itemBuilder = ItemRequest.builder()
                         .itemId(itemId)
-                        .enchanted(enchanted)
-                        .scale(2);
+                        .enchanted(enchanted);
 
                     if (durability != null && durability < 100) {
                         itemBuilder.durabilityPercent(durability / 100.0);
@@ -706,7 +704,6 @@ public class GeneratorCommands {
                     .rows(3)
                     .slotsPerRow(3)
                     .drawBorder(renderBorder)
-                    .scale(2)
                     .withInventoryString(recipe)
                     .build()
                 );
@@ -840,11 +837,11 @@ public class GeneratorCommands {
 
         try {
             CompositeRequest.Builder compositeBuilder = CompositeRequest.builder()
+                .scaleFactor(2)
                 .add(tooltipRequest);
 
             if (skinValue != null) {
                 PlayerHeadRequest playerHeadRequest = PlayerHeadRequest.fromBase64(skinValue)
-                    .scale(2)
                     .build();
                 compositeBuilder.add(0, playerHeadRequest);
             }
@@ -929,11 +926,11 @@ public class GeneratorCommands {
                 .build();
 
             CompositeRequest.Builder compositeBuilder = CompositeRequest.builder()
+                .scaleFactor(2)
                 .add(tooltipRequest);
 
             if (skinValue != null) {
                 PlayerHeadRequest playerHeadRequest = PlayerHeadRequest.fromBase64(skinValue)
-                    .scale(2)
                     .build();
                 compositeBuilder.add(0, playerHeadRequest);
             }
