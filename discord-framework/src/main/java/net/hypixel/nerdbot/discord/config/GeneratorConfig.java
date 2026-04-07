@@ -40,6 +40,11 @@ public class GeneratorConfig {
      */
     private GeneralConfig general = new GeneralConfig();
 
+    /**
+     * Resource pack configuration
+     */
+    private ResourcePackConfig resourcePack = new ResourcePackConfig();
+
     @Getter
     @Setter
     @ToString

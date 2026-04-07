@@ -4,6 +4,8 @@ import com.google.gson.JsonParseException;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.jigsaw.api.Engine;
 import net.aerh.jigsaw.api.generator.GenerationContext;
+import net.aerh.jigsaw.core.resource.PackMetadata;
+import net.aerh.jigsaw.skyblock.engine.EngineManager;
 import net.aerh.jigsaw.api.generator.GeneratorResult;
 import net.aerh.jigsaw.api.nbt.ParsedItem;
 import net.aerh.jigsaw.core.generator.CompositeRequest;
@@ -45,7 +47,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -86,9 +90,41 @@ public class GeneratorCommands {
     private static final String DURABILITY_DESCRIPTION = "Item durability percentage (0-100, only shown if less than 100)";
     private static final String COLOR_DESCRIPTION = "The overlay color (e.g., red, blue, #FF0000)";
 
+    private static final String RESOURCE_PACK_DESCRIPTION = "Resource pack to use for textures";
+
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
-    private static final Engine ENGINE = Engine.builder().build();
+    private static EngineManager engineManager;
+
+    /**
+     * Initializes the engine manager with resource pack configuration.
+     * Must be called during bot startup before any commands are processed.
+     */
+    public static void initializeEngineManager(Path packDirectory, String defaultPack, boolean vanillaFallback) {
+        if (engineManager != null) {
+            engineManager.close();
+        }
+        engineManager = new EngineManager(packDirectory, defaultPack, vanillaFallback);
+    }
+
+    /**
+     * Reloads all resource packs from disk.
+     */
+    public static void reloadResourcePacks() {
+        if (engineManager != null) {
+            engineManager.reload();
+        }
+    }
+
+    /**
+     * Returns the engine manager. Falls back to a default instance if not yet initialized.
+     */
+    private static EngineManager getEngineManager() {
+        if (engineManager == null) {
+            engineManager = new EngineManager(Path.of("./resource-packs"), null, true);
+        }
+        return engineManager;
+    }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "display", description = "Display an item")
     public void generateItem(
@@ -99,6 +135,7 @@ public class GeneratorCommands {
         @SlashOption(description = "If the item should look as if it being hovered over", required = false) Boolean hoverEffect,
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
         @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
+        @SlashOption(autocompleteId = "resource-packs", description = RESOURCE_PACK_DESCRIPTION, required = false) String resourcePack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -138,7 +175,8 @@ public class GeneratorCommands {
                 compositeBuilder.add(itemBuilder.build());
             }
 
-            GeneratorResult result = ENGINE.render(compositeBuilder.build(), context);
+            Engine engine = getEngineManager().getEngine(resourcePack);
+            GeneratorResult result = engine.render(compositeBuilder.build(), context);
             sendResult(event, result, "item");
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (RenderException | ParseException exception) {
@@ -327,7 +365,7 @@ public class GeneratorCommands {
                 }
 
                 compositeBuilder.add(tooltipBuilder.build());
-                GeneratorResult result = ENGINE.render(compositeBuilder.build(), context);
+                GeneratorResult result = getEngineManager().getDefaultEngine().render(compositeBuilder.build(), context);
                 sendResult(event, result, "powerstone");
                 addCommandToUserHistory(event.getUser(), event.getCommandString());
             } catch (RenderException | ParseException | IllegalArgumentException exception) {
@@ -353,7 +391,7 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
-        List<Map.Entry<String, BufferedImage>> results = ENGINE.sprites().searchAll(itemId);
+        List<Map.Entry<String, BufferedImage>> results = getEngineManager().getDefaultEngine().sprites().searchAll(itemId);
 
         if (results.isEmpty()) {
             event.getHook().editOriginal("No results found for that item!").queue();
@@ -398,7 +436,7 @@ public class GeneratorCommands {
                 .withInventoryString(recipe)
                 .build();
 
-            GeneratorResult result = ENGINE.render(inventoryRequest, context);
+            GeneratorResult result = getEngineManager().getDefaultEngine().render(inventoryRequest, context);
 
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(result.firstFrame()), "recipe.png")).queue();
             addCommandToUserHistory(event.getUser(), event.getCommandString());
@@ -421,6 +459,7 @@ public class GeneratorCommands {
         @SlashOption(description = INVENTORY_NAME_DESCRIPTION, required = false) String containerName,
         @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean drawBorder,
         @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(autocompleteId = "resource-packs", description = RESOURCE_PACK_DESCRIPTION, required = false) String resourcePack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -466,7 +505,8 @@ public class GeneratorCommands {
                 compositeBuilder.add(tooltipRequest);
             }
 
-            GeneratorResult result = ENGINE.render(compositeBuilder.build(), context);
+            Engine engine = getEngineManager().getEngine(resourcePack);
+            GeneratorResult result = engine.render(compositeBuilder.build(), context);
             sendResult(event, result, "inventory");
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (RenderException | ParseException exception) {
@@ -506,7 +546,7 @@ public class GeneratorCommands {
         GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
 
         try {
-            ParsedItem parsedItem = ENGINE.parseNbt(nbtInput);
+            ParsedItem parsedItem = getEngineManager().getDefaultEngine().parseNbt(nbtInput);
 
             // Build item request
             ItemRequest.Builder itemBuilder = ItemRequest.builder()
@@ -532,7 +572,7 @@ public class GeneratorCommands {
             }
             compositeBuilder.add(tooltipBuilder.build());
 
-            GeneratorResult result = ENGINE.render(compositeBuilder.build(), context);
+            GeneratorResult result = getEngineManager().getDefaultEngine().render(compositeBuilder.build(), context);
 
             String slashCommand = tooltipBuilder.buildSlashCommand();
             String commandItemId = parsedItem.itemId();
@@ -636,6 +676,7 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION, required = false) String tooltipSide,
         @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean renderBorder,
         @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
+        @SlashOption(autocompleteId = "resource-packs", description = RESOURCE_PACK_DESCRIPTION, required = false) String resourcePack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -685,7 +726,8 @@ public class GeneratorCommands {
                 } else {
                     ItemRequest.Builder itemBuilder = ItemRequest.builder()
                         .itemId(itemId)
-                        .enchanted(enchanted);
+                        .enchanted(enchanted)
+                        .scale(10);
 
                     if (durability != null && durability < 100) {
                         itemBuilder.durabilityPercent(durability / 100.0);
@@ -720,7 +762,8 @@ public class GeneratorCommands {
                 compositeBuilder.add(tooltipRequest);
             }
 
-            GeneratorResult result = ENGINE.render(compositeBuilder.build(), context);
+            Engine engine = getEngineManager().getEngine(resourcePack);
+            GeneratorResult result = engine.render(compositeBuilder.build(), context);
             sendResult(event, result, "item");
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (RenderException | ParseException | IllegalArgumentException exception) {
@@ -770,7 +813,7 @@ public class GeneratorCommands {
                 .renderBorder(renderBorder)
                 .build();
 
-            GeneratorResult result = ENGINE.render(tooltipRequest, context);
+            GeneratorResult result = getEngineManager().getDefaultEngine().render(tooltipRequest, context);
             sendResult(event, result, "text");
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (RenderException | ParseException exception) {
@@ -846,7 +889,7 @@ public class GeneratorCommands {
                 compositeBuilder.add(0, playerHeadRequest);
             }
 
-            GeneratorResult result = ENGINE.render(compositeBuilder.build(), context);
+            GeneratorResult result = getEngineManager().getDefaultEngine().render(compositeBuilder.build(), context);
             sendResult(event, result, "dialogue");
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (RenderException | ParseException exception) {
@@ -935,7 +978,7 @@ public class GeneratorCommands {
                 compositeBuilder.add(0, playerHeadRequest);
             }
 
-            GeneratorResult result = ENGINE.render(compositeBuilder.build(), context);
+            GeneratorResult result = getEngineManager().getDefaultEngine().render(compositeBuilder.build(), context);
             sendResult(event, result, "dialogue");
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (IllegalArgumentException exception) {
@@ -991,7 +1034,7 @@ public class GeneratorCommands {
     public List<Command.Choice> itemNames(CommandAutoCompleteInteractionEvent event) {
         String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
 
-        return ENGINE.sprites().getAllSprites().keySet()
+        return getEngineManager().getDefaultEngine().sprites().getAllSprites().keySet()
             .stream()
             .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
             .limit(25)
@@ -1025,12 +1068,51 @@ public class GeneratorCommands {
     @SlashAutocompleteHandler(id = "overlay-colors")
     public List<Command.Choice> overlayColors(CommandAutoCompleteInteractionEvent event) {
         String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
-        return ENGINE.overlayColors().getAllColorOptionNames().stream()
+        return getEngineManager().getDefaultEngine().overlayColors().getAllColorOptionNames().stream()
             .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
             .sorted()
             .limit(25)
             .map(name -> new Command.Choice(name, name))
             .toList();
+    }
+
+    @SlashAutocompleteHandler(id = "resource-packs")
+    public List<Command.Choice> resourcePacks(CommandAutoCompleteInteractionEvent event) {
+        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
+
+        return getEngineManager().availablePackNames().stream()
+            .filter(name -> name.contains(userInput))
+            .limit(25)
+            .map(name -> new Command.Choice(name, name))
+            .toList();
+    }
+
+    @SlashCommand(name = BASE_COMMAND, subcommand = "resource-packs", description = "List available resource packs")
+    public void listResourcePacks(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
+    ) {
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+        event.deferReply(hidden).complete();
+
+        Collection<String> packNames = getEngineManager().availablePackNames();
+
+        if (packNames.isEmpty()) {
+            event.getHook().editOriginal("No resource packs loaded. Using vanilla textures only.").queue();
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder("**Loaded Resource Packs:**\n");
+        for (String name : packNames) {
+            getEngineManager().getPackMetadata(name).ifPresent(meta ->
+                sb.append("- **").append(name).append("** (format ")
+                  .append(meta.packFormat()).append(") - ")
+                  .append(meta.description().isBlank() ? "No description" : meta.description())
+                  .append("\n")
+            );
+        }
+
+        event.getHook().editOriginal(sb.toString()).queue();
     }
 
     /**

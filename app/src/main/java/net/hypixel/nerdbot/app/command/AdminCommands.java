@@ -38,6 +38,7 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.app.command.GeneratorCommands;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.app.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
@@ -272,6 +273,7 @@ public class AdminCommands {
                 bot.loadConfig();
                 bot.getJDA().getPresence().setActivity(Activity.of(Activity.ActivityType.valueOf(bot.getConfig().getActivityType().name()), bot.getConfig().getActivity()));
                 PrometheusMetrics.setMetricsEnabled(SkyBlockNerdsBot.config().getMetricsConfig().isEnabled());
+                GeneratorCommands.reloadResourcePacks();
 
                 event.getHook().editOriginal("Reloaded the config file!").queue();
             })
