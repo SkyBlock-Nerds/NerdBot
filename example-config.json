@@ -162,135 +162,10 @@
   "badgeConfig": {
     "badges": [
       {
-        "id": "april_fools_2024_most_messages",
-        "name": "Horse Whisperer (2024)",
-        "emoji": "🃏"
-      },
-      {
-        "id": "artist",
-        "name": "Artist",
-        "emoji": "🎨"
-      },
-      {
-        "id": "bot_contributor",
-        "name": "Bot Contributor",
-        "emoji": "🤖"
-      },
-      {
-        "id": "brainstorm_minions",
-        "name": "Minion Brainstorm",
-        "tiers": [
-          {
-            "name": "Tier 1",
-            "emoji": "🏅",
-            "tier": 1
-          },
-          {
-            "name": "Tier 2",
-            "emoji": "⭐",
-            "tier": 2
-          },
-          {
-            "name": "Tier 3",
-            "emoji": "🌟",
-            "tier": 3
-          }
-        ]
-      },
-      {
-        "id": "brainstorm_mobs",
-        "name": "Mob Brainstorm",
-        "tiers": [
-          {
-            "name": "Tier 1",
-            "emoji": "🏅",
-            "tier": 1
-          },
-          {
-            "name": "Tier 2",
-            "emoji": "⭐",
-            "tier": 2
-          },
-          {
-            "name": "Tier 3",
-            "emoji": "🌟",
-            "tier": 3
-          }
-        ]
-      },
-      {
-        "id": "brainstorm_shen_special_items",
-        "name": "Shen's Special Items Brainstorm",
-        "tiers": [
-          {
-            "name": "Tier 1",
-            "emoji": "🏅",
-            "tier": 1
-          },
-          {
-            "name": "Tier 2",
-            "emoji": "⭐",
-            "tier": 2
-          },
-          {
-            "name": "Tier 3",
-            "emoji": "🌟",
-            "tier": 3
-          }
-        ]
-      },
-      {
-        "id": "contest_november_tag_art",
-        "name": "November 2023 Art Contest",
-        "tiers": [
-          {
-            "name": "Tier 1",
-            "emoji": "🏅",
-            "tier": 1
-          },
-          {
-            "name": "Tier 2",
-            "emoji": "⭐",
-            "tier": 2
-          }
-        ]
-      },
-      {
-        "id": "project_better_mayors",
-        "name": "Better Mayors Project",
-        "tiers": [
-          {
-            "name": "Tier 1",
-            "emoji": "🏅",
-            "tier": 1
-          },
-          {
-            "name": "Tier 2",
-            "emoji": "⭐",
-            "tier": 2
-          },
-          {
-            "name": "Tier 3",
-            "emoji": "🌟",
-            "tier": 3
-          },
-          {
-            "name": "Tier 5",
-            "emoji": "💫",
-            "tier": 5
-          }
-        ]
-      },
-      {
-        "id": "wiki_contributor",
-        "name": "Wiki Contributor",
-        "emoji": "📖"
-      },
-        {
-            "id": "project_healing_revamp",
-            "name": "Healing Revamp Project",
-            "emoji": "⚕\uFE0F"
-        }
+        "id": "1234567890123456789",
+        "name": "example_value",
+        "emoji": "example_value"
+      }
     ]
   },
   "funConfig": {
@@ -346,8 +221,8 @@
       "includeErrorDetails": true
     },
     "resourcePack": {
-      "packDirectory": "./resource-packs",
-      "defaultPack": null,
+      "packDirectory": "example_value",
+      "defaultPack": "example_value",
       "includeVanillaFallback": true
     }
   },
