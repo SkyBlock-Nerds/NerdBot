@@ -21,14 +21,14 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>net.aerh</groupId>
+            <groupId>com.github.Aerhhh.MinecraftImageGenerator</groupId>
             <artifactId>jigsaw</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>feat~jigsaw-rewrite-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>net.aerh</groupId>
+            <groupId>com.github.Aerhhh.MinecraftImageGenerator</groupId>
             <artifactId>jigsaw-skyblock</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>feat~jigsaw-rewrite-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
