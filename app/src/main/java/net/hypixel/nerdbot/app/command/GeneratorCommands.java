@@ -720,7 +720,7 @@ public class GeneratorCommands {
                 if (itemId.equalsIgnoreCase("player_head")) {
                     PlayerHeadRequest.Builder headBuilder = PlayerHeadRequest.fromBase64(
                         skinValue != null ? skinValue : ""
-                    ).scale(10);
+                    );
 
                     compositeBuilder.add(headBuilder.build());
                 } else {
