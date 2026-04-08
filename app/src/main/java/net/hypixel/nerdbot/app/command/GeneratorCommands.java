@@ -432,6 +432,7 @@ public class GeneratorCommands {
                 .rows(3)
                 .slotsPerRow(3)
                 .drawBorder(false)
+                .drawTitle(false)
                 .drawBackground(renderBackground)
                 .withInventoryString(recipe)
                 .build();
