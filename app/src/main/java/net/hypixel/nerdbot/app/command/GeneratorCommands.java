@@ -726,8 +726,7 @@ public class GeneratorCommands {
                 } else {
                     ItemRequest.Builder itemBuilder = ItemRequest.builder()
                         .itemId(itemId)
-                        .enchanted(enchanted)
-                        .scale(10);
+                        .enchanted(enchanted);
 
                     if (durability != null && durability < 100) {
                         itemBuilder.durabilityPercent(durability / 100.0);
