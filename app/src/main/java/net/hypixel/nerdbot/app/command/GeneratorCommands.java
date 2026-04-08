@@ -438,7 +438,7 @@ public class GeneratorCommands {
 
             GeneratorResult result = getEngineManager().getDefaultEngine().render(inventoryRequest, context);
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(result.firstFrame()), "recipe.png")).queue();
+            sendResult(event, result, "recipe");
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (RenderException | ParseException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
