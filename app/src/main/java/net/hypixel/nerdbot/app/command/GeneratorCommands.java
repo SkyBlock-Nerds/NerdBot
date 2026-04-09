@@ -873,7 +873,6 @@ public class GeneratorCommands {
             .padding(TooltipRequest.DEFAULT_PADDING)
             .firstLinePadding(false)
             .maxLineLength(maxLineLength)
-            .bypassMaxLineLength(true)
             .renderBorder(renderBackground)
             .build();
 
@@ -963,7 +962,6 @@ public class GeneratorCommands {
                 .padding(TooltipRequest.DEFAULT_PADDING)
                 .firstLinePadding(false)
                 .maxLineLength(maxLineLength)
-                .bypassMaxLineLength(true)
                 .renderBorder(renderBackground)
                 .build();
 
