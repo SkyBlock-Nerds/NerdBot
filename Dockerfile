@@ -33,4 +33,4 @@ ENV COMMIT_SHA=${COMMIT_SHA}
 COPY --from=builder /app/app/target/NerdBot.jar /app/NerdBot.jar
 
 # Run the application
-ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -DBRANCH_NAME=${BRANCH_NAME} -DCOMMIT_SHA=${COMMIT_SHA} -jar NerdBot.jar"]
+ENTRYPOINT ["sh", "-c", "exec java --enable-preview ${JAVA_OPTS} -DBRANCH_NAME=${BRANCH_NAME} -DCOMMIT_SHA=${COMMIT_SHA} -jar NerdBot.jar"]
