@@ -36,6 +36,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import net.hypixel.nerdbot.app.util.HttpUtils;
 import net.hypixel.nerdbot.app.generation.DiscordGenerationContext;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
@@ -1134,7 +1135,7 @@ public class GeneratorCommands {
     @SlashCommand(name = BASE_COMMAND, subcommand = "body", description = "Render a full 3D player body with optional armor", guildOnly = true)
     public void generateBody(
         SlashCommandInteractionEvent event,
-        @SlashOption(description = SKIN_VALUE_DESCRIPTION) String skinValue,
+        @SlashOption(description = "The skin to render (username, skin URL, or Base64 texture)") String skinValue,
         @SlashOption(description = "Skin model type (classic = thick arms, slim = thin arms)", required = false) String skinModel,
         @SlashOption(description = "Helmet armor material (e.g., iron, diamond, netherite)", required = false) String helmet,
         @SlashOption(description = "Chestplate armor material", required = false) String chestplate,
@@ -1159,7 +1160,7 @@ public class GeneratorCommands {
                 model = SkinModel.SLIM;
             }
 
-            PlayerBodyRequest.Builder bodyBuilder = PlayerBodyRequest.fromBase64(skinValue)
+            PlayerBodyRequest.Builder bodyBuilder = resolveBodySkin(skinValue)
                     .skinModel(model)
                     .scale(2);
 
@@ -1223,6 +1224,61 @@ public class GeneratorCommands {
             return color.color().getRGB() & 0xFFFFFF;
         }
         throw new IllegalArgumentException("Unknown color: " + nameOrHex);
+    }
+
+    /**
+     * Resolves a skin value that may be a Base64 texture, a skin URL, or a player username.
+     * For usernames, looks up the UUID via Mojang API, then fetches the profile to get the
+     * Base64 texture property.
+     *
+     * @return a {@link PlayerBodyRequest.Builder} configured with the resolved skin source
+     * @throws IllegalArgumentException if the username cannot be resolved
+     */
+    private static PlayerBodyRequest.Builder resolveBodySkin(String skinValue) {
+        if (skinValue == null || skinValue.isBlank()) {
+            throw new IllegalArgumentException("Skin value must not be empty");
+        }
+
+        // If it starts with http, treat as direct URL
+        if (skinValue.startsWith("http://") || skinValue.startsWith("https://")) {
+            return PlayerBodyRequest.fromUrl(skinValue);
+        }
+
+        // If it looks like Base64 (long string, no spaces, contains typical chars), use as-is
+        if (skinValue.length() > 64 && !skinValue.contains(" ")) {
+            return PlayerBodyRequest.fromBase64(skinValue);
+        }
+
+        // Otherwise treat as a username - resolve via Mojang API
+        var profileResult = HttpUtils.getMojangProfile(skinValue);
+        if (profileResult.isFailure() || profileResult.orElse(null) == null) {
+            throw new IllegalArgumentException("Could not find Minecraft player: " + skinValue);
+        }
+
+        var profile = profileResult.orElse(null);
+        if (profile.getUniqueId() == null) {
+            throw new IllegalArgumentException("Could not find Minecraft player: " + skinValue);
+        }
+
+        // Fetch full profile with textures from session server
+        String sessionUrl = "https://sessionserver.mojang.com/session/minecraft/profile/"
+                + profile.getUniqueId().toString().replace("-", "");
+        var sessionResult = net.hypixel.nerdbot.marmalade.http.HttpClient.getString(sessionUrl);
+        if (sessionResult.isFailure()) {
+            throw new IllegalArgumentException("Could not fetch skin for player: " + skinValue);
+        }
+
+        com.google.gson.JsonObject sessionJson = com.google.gson.JsonParser.parseString(sessionResult.orElseThrow()).getAsJsonObject();
+        var properties = sessionJson.getAsJsonArray("properties");
+        for (var prop : properties) {
+            var obj = prop.getAsJsonObject();
+            if ("textures".equals(obj.get("name").getAsString())) {
+                return PlayerBodyRequest.fromBase64(obj.get("value").getAsString())
+                        .playerName(skinValue);
+            }
+        }
+
+        throw new IllegalArgumentException("Could not find skin texture for player: " + skinValue);
     }
 
     private void sendResult(SlashCommandInteractionEvent event, GeneratorResult result, String fileBaseName) throws IOException {
