@@ -31,8 +31,11 @@ public class Main {
             log.error("Failed to authenticate with Discord! Check your bot token.", exception);
         } catch (MongoException exception) {
             log.error("Failed to connect to MongoDB! Continuing without database connectivity.", exception);
-        } catch (RuntimeException exception) {
-            log.error("Unexpected runtime error during bot startup!", exception);
+        } catch (Exception exception) {
+            log.error("Unexpected error during bot startup!", exception);
+            System.exit(1);
+        } catch (Error error) {
+            log.error("Fatal error during bot startup!", error);
             System.exit(1);
         }
     }
