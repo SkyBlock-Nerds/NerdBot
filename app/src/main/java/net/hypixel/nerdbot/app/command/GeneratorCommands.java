@@ -11,7 +11,10 @@ import net.aerh.jigsaw.api.nbt.ParsedItem;
 import net.aerh.jigsaw.core.generator.CompositeRequest;
 import net.aerh.jigsaw.core.generator.InventoryRequest;
 import net.aerh.jigsaw.core.generator.ItemRequest;
+import net.aerh.jigsaw.core.generator.PlayerBodyRequest;
 import net.aerh.jigsaw.core.generator.PlayerHeadRequest;
+import net.aerh.jigsaw.core.generator.body.ArmorSlot;
+import net.aerh.jigsaw.core.generator.body.SkinModel;
 import net.aerh.jigsaw.core.generator.TooltipRequest;
 import net.aerh.jigsaw.core.text.TextWrapper;
 import net.aerh.jigsaw.exception.JigsawException;
@@ -1128,6 +1131,100 @@ public class GeneratorCommands {
     /**
      * Sends a GeneratorResult to the Discord channel, handling both static and animated images.
      */
+    @SlashCommand(name = BASE_COMMAND, subcommand = "body", description = "Render a full 3D player body with optional armor")
+    public void generateBody(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = SKIN_VALUE_DESCRIPTION) String skinValue,
+        @SlashOption(description = "Skin model type (classic = thick arms, slim = thin arms)", required = false) String skinModel,
+        @SlashOption(description = "Helmet armor material (e.g., iron, diamond, netherite)", required = false) String helmet,
+        @SlashOption(description = "Chestplate armor material", required = false) String chestplate,
+        @SlashOption(description = "Leggings armor material", required = false) String leggings,
+        @SlashOption(description = "Boots armor material", required = false) String boots,
+        @SlashOption(autocompleteId = "overlay-colors", description = "Leather armor dye color (e.g., red, #FF0000)", required = false) String dyeColor,
+        @SlashOption(autocompleteId = "resource-packs", description = RESOURCE_PACK_DESCRIPTION, required = false) String resourcePack,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
+    ) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+        event.deferReply(hidden).complete();
+
+        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
+
+        try {
+            SkinModel model = SkinModel.CLASSIC;
+            if (skinModel != null && skinModel.equalsIgnoreCase("slim")) {
+                model = SkinModel.SLIM;
+            }
+
+            PlayerBodyRequest.Builder bodyBuilder = PlayerBodyRequest.fromBase64(skinValue)
+                    .skinModel(model)
+                    .scale(2);
+
+            // Resolve optional dye color for leather armor
+            Integer resolvedDyeColor = null;
+            if (dyeColor != null && !dyeColor.isBlank()) {
+                resolvedDyeColor = resolveBodyDyeColor(dyeColor);
+            }
+
+            // Add armor pieces by material name
+            addArmorIfPresent(bodyBuilder, ArmorSlot.HELMET, helmet, resolvedDyeColor);
+            addArmorIfPresent(bodyBuilder, ArmorSlot.CHESTPLATE, chestplate, resolvedDyeColor);
+            addArmorIfPresent(bodyBuilder, ArmorSlot.LEGGINGS, leggings, resolvedDyeColor);
+            addArmorIfPresent(bodyBuilder, ArmorSlot.BOOTS, boots, resolvedDyeColor);
+
+            Engine engine = getEngineManager().getEngine(resourcePack);
+            GeneratorResult result = engine.render(bodyBuilder.build(), context);
+            sendResult(event, result, "body");
+            addCommandToUserHistory(event.getUser(), event.getCommandString());
+        } catch (RenderException | ParseException exception) {
+            event.getHook().editOriginal(exception.getMessage()).queue();
+            log.error("Encountered an error while generating a player body", exception);
+        } catch (IOException exception) {
+            event.getHook().editOriginal("An error occurred while generating that body render!").queue();
+            log.error("Encountered an error while generating a player body", exception);
+        } catch (IllegalArgumentException exception) {
+            event.getHook().editOriginal("Invalid input: " + exception.getMessage()).queue();
+        }
+    }
+
+    /**
+     * Adds an armor piece to the body request if the material is specified.
+     * Applies dye color only to leather armor pieces.
+     */
+    private static void addArmorIfPresent(PlayerBodyRequest.Builder builder, ArmorSlot slot,
+                                           String material, Integer dyeColor) {
+        if (material == null || material.isBlank()) return;
+        material = material.toLowerCase(Locale.ROOT).trim();
+
+        if (material.equals("leather") && dyeColor != null) {
+            builder.armor(slot, material, dyeColor);
+        } else {
+            builder.armor(slot, material);
+        }
+    }
+
+    /**
+     * Resolves a dye color from a named color or hex string, matching the item dye system.
+     */
+    private static int resolveBodyDyeColor(String nameOrHex) {
+        nameOrHex = nameOrHex.trim();
+        if (nameOrHex.startsWith("#")) {
+            try {
+                return Integer.parseInt(nameOrHex.substring(1), 16);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid hex color: " + nameOrHex);
+            }
+        }
+        net.aerh.jigsaw.api.text.ChatColor color = net.aerh.jigsaw.api.text.ChatColor.byName(nameOrHex);
+        if (color != null) {
+            return color.color().getRGB() & 0xFFFFFF;
+        }
+        throw new IllegalArgumentException("Unknown color: " + nameOrHex);
+    }
+
     private void sendResult(SlashCommandInteractionEvent event, GeneratorResult result, String fileBaseName) throws IOException {
         if (result.isAnimated()) {
             event.getHook().editOriginalAttachments(FileUpload.fromData(((GeneratorResult.AnimatedImage) result).toGifBytes(), fileBaseName + ".gif")).queue();
