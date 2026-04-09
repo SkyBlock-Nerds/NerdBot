@@ -1131,7 +1131,7 @@ public class GeneratorCommands {
     /**
      * Sends a GeneratorResult to the Discord channel, handling both static and animated images.
      */
-    @SlashCommand(name = BASE_COMMAND, subcommand = "body", description = "Render a full 3D player body with optional armor")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "body", description = "Render a full 3D player body with optional armor", guildOnly = true)
     public void generateBody(
         SlashCommandInteractionEvent event,
         @SlashOption(description = SKIN_VALUE_DESCRIPTION) String skinValue,
