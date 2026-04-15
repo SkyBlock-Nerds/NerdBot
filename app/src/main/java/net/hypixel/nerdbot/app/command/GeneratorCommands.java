@@ -11,10 +11,10 @@ import net.aerh.jigsaw.api.nbt.ParsedItem;
 import net.aerh.jigsaw.core.generator.CompositeRequest;
 import net.aerh.jigsaw.core.generator.InventoryRequest;
 import net.aerh.jigsaw.core.generator.ItemRequest;
-import net.aerh.jigsaw.core.generator.PlayerBodyRequest;
 import net.aerh.jigsaw.core.generator.PlayerHeadRequest;
-import net.aerh.jigsaw.core.generator.body.ArmorSlot;
-import net.aerh.jigsaw.core.generator.body.SkinModel;
+import net.aerh.jigsaw.core.generator.player.ArmorPiece;
+import net.aerh.jigsaw.core.generator.player.ArmorSet;
+import net.aerh.jigsaw.core.generator.player.PlayerModelRequest;
 import net.aerh.jigsaw.core.generator.TooltipRequest;
 import net.aerh.jigsaw.core.text.TextWrapper;
 import net.aerh.jigsaw.exception.JigsawException;
@@ -1155,13 +1155,10 @@ public class GeneratorCommands {
         GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
 
         try {
-            SkinModel model = SkinModel.CLASSIC;
-            if (skinModel != null && skinModel.equalsIgnoreCase("slim")) {
-                model = SkinModel.SLIM;
-            }
+            boolean slim = skinModel != null && skinModel.equalsIgnoreCase("slim");
 
-            PlayerBodyRequest.Builder bodyBuilder = resolveBodySkin(skinValue)
-                    .skinModel(model)
+            PlayerModelRequest.Builder bodyBuilder = resolveBodySkin(skinValue)
+                    .slim(slim)
                     .scale(2);
 
             // Resolve optional dye color for leather armor
@@ -1170,11 +1167,13 @@ public class GeneratorCommands {
                 resolvedDyeColor = resolveBodyDyeColor(dyeColor);
             }
 
-            // Add armor pieces by material name
-            addArmorIfPresent(bodyBuilder, ArmorSlot.HELMET, helmet, resolvedDyeColor);
-            addArmorIfPresent(bodyBuilder, ArmorSlot.CHESTPLATE, chestplate, resolvedDyeColor);
-            addArmorIfPresent(bodyBuilder, ArmorSlot.LEGGINGS, leggings, resolvedDyeColor);
-            addArmorIfPresent(bodyBuilder, ArmorSlot.BOOTS, boots, resolvedDyeColor);
+            // Build armor set from individual pieces
+            ArmorSet.Builder armorBuilder = ArmorSet.builder();
+            addArmorIfPresent(armorBuilder, ArmorPiece.HELMET, helmet, resolvedDyeColor);
+            addArmorIfPresent(armorBuilder, ArmorPiece.CHESTPLATE, chestplate, resolvedDyeColor);
+            addArmorIfPresent(armorBuilder, ArmorPiece.LEGGINGS, leggings, resolvedDyeColor);
+            addArmorIfPresent(armorBuilder, ArmorPiece.BOOTS, boots, resolvedDyeColor);
+            bodyBuilder.armor(armorBuilder.build());
 
             Engine engine = getEngineManager().getEngine(resourcePack);
             GeneratorResult result = engine.render(bodyBuilder.build(), context);
@@ -1195,15 +1194,20 @@ public class GeneratorCommands {
      * Adds an armor piece to the body request if the material is specified.
      * Applies dye color only to leather armor pieces.
      */
-    private static void addArmorIfPresent(PlayerBodyRequest.Builder builder, ArmorSlot slot,
+    private static void addArmorIfPresent(ArmorSet.Builder armorBuilder, ArmorPiece piece,
                                            String material, Integer dyeColor) {
         if (material == null || material.isBlank()) return;
         material = material.toLowerCase(Locale.ROOT).trim();
 
+        switch (piece) {
+            case HELMET -> armorBuilder.helmet(material);
+            case CHESTPLATE -> armorBuilder.chestplate(material);
+            case LEGGINGS -> armorBuilder.leggings(material);
+            case BOOTS -> armorBuilder.boots(material);
+        }
+
         if (material.equals("leather") && dyeColor != null) {
-            builder.armor(slot, material, dyeColor);
-        } else {
-            builder.armor(slot, material);
+            armorBuilder.leatherDyeColor(dyeColor);
         }
     }
 
@@ -1231,22 +1235,22 @@ public class GeneratorCommands {
      * For usernames, looks up the UUID via Mojang API, then fetches the profile to get the
      * Base64 texture property.
      *
-     * @return a {@link PlayerBodyRequest.Builder} configured with the resolved skin source
+     * @return a {@link PlayerModelRequest.Builder} configured with the resolved skin source
      * @throws IllegalArgumentException if the username cannot be resolved
      */
-    private static PlayerBodyRequest.Builder resolveBodySkin(String skinValue) {
+    private static PlayerModelRequest.Builder resolveBodySkin(String skinValue) {
         if (skinValue == null || skinValue.isBlank()) {
             throw new IllegalArgumentException("Skin value must not be empty");
         }
 
         // If it starts with http, treat as direct URL
         if (skinValue.startsWith("http://") || skinValue.startsWith("https://")) {
-            return PlayerBodyRequest.fromUrl(skinValue);
+            return PlayerModelRequest.fromUrl(skinValue);
         }
 
         // If it looks like Base64 (long string, no spaces, contains typical chars), use as-is
         if (skinValue.length() > 64 && !skinValue.contains(" ")) {
-            return PlayerBodyRequest.fromBase64(skinValue);
+            return PlayerModelRequest.fromBase64(skinValue);
         }
 
         // Otherwise treat as a username - resolve via Mojang API
@@ -1273,7 +1277,7 @@ public class GeneratorCommands {
         for (var prop : properties) {
             var obj = prop.getAsJsonObject();
             if ("textures".equals(obj.get("name").getAsString())) {
-                return PlayerBodyRequest.fromBase64(obj.get("value").getAsString())
+                return PlayerModelRequest.fromBase64(obj.get("value").getAsString())
                         .playerName(skinValue);
             }
         }
