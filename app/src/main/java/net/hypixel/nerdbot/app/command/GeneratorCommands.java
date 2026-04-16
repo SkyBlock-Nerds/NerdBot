@@ -608,7 +608,7 @@ public class GeneratorCommands {
                 .setContent("Your NBT " + sourceLabel + " has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + slashCommand + "```");
 
             if (result.isAnimated()) {
-                builder.setFiles(FileUpload.fromData(((GeneratorResult.AnimatedImage) result).toGifBytes(), "parsed_nbt.gif"));
+                builder.setFiles(FileUpload.fromData(((GeneratorResult.AnimatedImage) result).toWebpBytes(), "parsed_nbt.webp"));
             } else {
                 builder.setFiles(FileUpload.fromData(ImageUtil.toFile(result.firstFrame()), "parsed_nbt.png"));
             }
@@ -1287,7 +1287,7 @@ public class GeneratorCommands {
 
     private void sendResult(SlashCommandInteractionEvent event, GeneratorResult result, String fileBaseName) throws IOException {
         if (result.isAnimated()) {
-            event.getHook().editOriginalAttachments(FileUpload.fromData(((GeneratorResult.AnimatedImage) result).toGifBytes(), fileBaseName + ".gif")).queue();
+            event.getHook().editOriginalAttachments(FileUpload.fromData(((GeneratorResult.AnimatedImage) result).toWebpBytes(), fileBaseName + ".webp")).queue();
         } else {
             event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(result.firstFrame()), fileBaseName + ".png")).queue();
         }
