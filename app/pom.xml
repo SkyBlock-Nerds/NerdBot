@@ -21,10 +21,10 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-	        <groupId>com.github.Aerhhh</groupId>
-	        <artifactId>MinecraftImageGenerator</artifactId>
-	        <version>master-SNAPSHOT</version>
-	    </dependency>
+            <groupId>com.github.Aerhhh</groupId>
+            <artifactId>MinecraftImageGenerator</artifactId>
+            <version>master-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
