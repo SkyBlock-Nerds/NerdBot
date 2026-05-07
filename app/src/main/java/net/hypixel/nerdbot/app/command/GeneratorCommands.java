@@ -37,6 +37,7 @@ import net.hypixel.nerdbot.app.generation.DiscordGenerationContext;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.StringUtils;
+import net.hypixel.nerdbot.marmalade.functional.Pair;
 import net.hypixel.nerdbot.marmalade.image.ImageUtil;
 import net.hypixel.nerdbot.marmalade.io.FileUtils;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
@@ -365,18 +366,18 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
-        List<Map.Entry<String, BufferedImage>> results = Spritesheet.searchForTexture(itemId);
+        List<Pair<String, BufferedImage>> results = Spritesheet.searchForTexture(itemId);
 
         if (results.isEmpty()) {
             event.getHook().editOriginal("No results found for that item!").queue();
             return;
         }
 
-        List<Map.Entry<String, BufferedImage>> topResults = results.subList(0, Math.min(10, results.size()));
+        List<Pair<String, BufferedImage>> topResults = results.subList(0, Math.min(10, results.size()));
         StringBuilder message = new StringBuilder("Top results for `" + itemId + "` (" + StringUtils.COMMA_SEPARATED_FORMAT.format(results.size()) + " total):\n");
 
-        for (Map.Entry<String, BufferedImage> entry : topResults) {
-            message.append(" - `").append(entry.getKey()).append("`\n");
+        for (Pair<String, BufferedImage> entry : topResults) {
+            message.append(" - `").append(entry.first()).append("`\n");
         }
 
         event.getHook().editOriginal(message.toString()).queue();
