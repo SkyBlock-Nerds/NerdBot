@@ -19,6 +19,7 @@ import net.aerh.imagegenerator.impl.MinecraftNbtParser;
 import net.aerh.imagegenerator.impl.MinecraftPlayerHeadGenerator;
 import net.aerh.imagegenerator.impl.tooltip.MinecraftTooltipGenerator;
 import net.aerh.imagegenerator.item.GeneratedObject;
+import net.aerh.imagegenerator.pack.PackId;
 import net.aerh.imagegenerator.spritesheet.OverlayLoader;
 import net.aerh.imagegenerator.spritesheet.Spritesheet;
 import net.aerh.imagegenerator.text.wrapper.TextWrapper;
@@ -30,9 +31,12 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.generation.DiscordGenerationContext;
+import net.hypixel.nerdbot.app.generation.pack.ResourcePackService;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.StringUtils;
@@ -55,6 +59,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 @Slf4j
 public class GeneratorCommands {
@@ -88,6 +93,7 @@ public class GeneratorCommands {
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
     private static final String DURABILITY_DESCRIPTION = "Item durability percentage (0-100, only shown if less than 100)";
     private static final String COLOR_DESCRIPTION = "The overlay color (e.g., red, blue, #FF0000)";
+    private static final String PACK_DESCRIPTION = "The resource pack used to resolve item textures";
 
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
@@ -101,6 +107,7 @@ public class GeneratorCommands {
         @SlashOption(description = "If the item should look as if it being hovered over", required = false) Boolean hoverEffect,
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
         @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
+        @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -118,6 +125,7 @@ public class GeneratorCommands {
         durability = durability == null ? 100 : durability;
 
         try {
+            PackId packId = resolvePackOption(pack);
             GeneratorImageBuilder item = new GeneratorImageBuilder().withContext(context);
 
             if (itemId.equalsIgnoreCase("player_head") && skinValue != null) {
@@ -131,6 +139,7 @@ public class GeneratorCommands {
                     .withColor(color)
                     .isEnchanted(enchanted)
                     .withHoverEffect(hoverEffect)
+                    .withPack(packId)
                     .isBigImage();
 
                 if (durability != null) {
@@ -174,6 +183,7 @@ public class GeneratorCommands {
         @SlashOption(description = "Includes a slash command for you to edit", required = false) Boolean includeGenCommand,
         @SlashOption(description = "Whether the Power Stone shows as selected", required = false) Boolean selected,
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
+        @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -305,6 +315,10 @@ public class GeneratorCommands {
                         slashCommand += " item_id: " + itemId;
                     }
 
+                    if (pack != null && !pack.isBlank()) {
+                        slashCommand += " pack: " + pack;
+                    }
+
                     if (enchanted) {
                         slashCommand += " enchanted: True";
                     }
@@ -327,6 +341,7 @@ public class GeneratorCommands {
                             .withItem(itemId)
                             .withColor(color)
                             .isEnchanted(enchanted)
+                            .withPack(resolvePackOption(pack))
                             .isBigImage()
                             .build());
                     }
@@ -365,21 +380,56 @@ public class GeneratorCommands {
 
         event.deferReply(hidden).complete();
 
-        List<Pair<String, BufferedImage>> results = Spritesheet.searchForTexture(itemId);
+        List<String> spritesheetResults = Spritesheet.searchForTexture(itemId).stream().map(Pair::first).toList();
+        List<String> packResults = SkyBlockNerdsBot.resourcePackService().searchItemRefs(itemId);
 
-        if (results.isEmpty()) {
+        if (spritesheetResults.isEmpty() && packResults.isEmpty()) {
             event.getHook().editOriginal("No results found for that item!").queue();
             return;
         }
 
-        List<Pair<String, BufferedImage>> topResults = results.subList(0, Math.min(10, results.size()));
-        StringBuilder message = new StringBuilder("Top results for `" + itemId + "` (" + StringUtils.COMMA_SEPARATED_FORMAT.format(results.size()) + " total):\n");
-
-        for (Pair<String, BufferedImage> entry : topResults) {
-            message.append(" - `").append(entry.first()).append("`\n");
-        }
+        StringBuilder message = new StringBuilder();
+        appendSearchResults(message, "Top results for `" + itemId + "`", spritesheetResults);
+        appendSearchResults(message, "Resource pack results for `" + itemId + "`", packResults);
 
         event.getHook().editOriginal(message.toString()).queue();
+    }
+
+    private static final int SEARCH_RESULT_LIMIT = 10;
+    private static final int MAX_MESSAGE_LENGTH = 2000;
+
+    private static final String SEARCH_TRUNCATION_MARKER = " - ...\n";
+
+    /**
+     * Appends a titled block of up to {@link #SEARCH_RESULT_LIMIT} results to the search reply.
+     * This is called once per result source onto a shared builder, so every append (the block
+     * header, each line, and the truncation marker) is bounded by Discord's
+     * {@link #MAX_MESSAGE_LENGTH} limit: a block whose header would not fit is skipped entirely,
+     * and lines stop as soon as the next one plus the marker would overflow.
+     */
+    private static void appendSearchResults(StringBuilder message, String header, List<String> results) {
+        if (results.isEmpty()) {
+            return;
+        }
+
+        String headerLine = header + " (" + StringUtils.COMMA_SEPARATED_FORMAT.format(results.size()) + " total):\n";
+
+        if (message.length() + headerLine.length() + SEARCH_TRUNCATION_MARKER.length() > MAX_MESSAGE_LENGTH) {
+            return;
+        }
+
+        message.append(headerLine);
+
+        for (String result : results.subList(0, Math.min(SEARCH_RESULT_LIMIT, results.size()))) {
+            String line = " - `" + result + "`\n";
+
+            if (message.length() + line.length() + SEARCH_TRUNCATION_MARKER.length() > MAX_MESSAGE_LENGTH) {
+                message.append(SEARCH_TRUNCATION_MARKER);
+                break;
+            }
+
+            message.append(line);
+        }
     }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "recipe", description = "Generate a recipe")
@@ -387,6 +437,7 @@ public class GeneratorCommands {
         SlashCommandInteractionEvent event,
         @SlashOption(description = RECIPE_STRING_DESCRIPTION) String recipe,
         @SlashOption(description = RENDER_BACKGROUND_DESCRIPTION, required = false) Boolean renderBackground,
+        @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -408,6 +459,7 @@ public class GeneratorCommands {
                     .withSlotsPerRow(3)
                     .drawBorder(false)
                     .drawBackground(renderBackground)
+                    .withPack(resolvePackOption(pack))
                     .withInventoryString(recipe)
                     .build())
                 .build();
@@ -433,6 +485,7 @@ public class GeneratorCommands {
         @SlashOption(description = INVENTORY_NAME_DESCRIPTION, required = false) String containerName,
         @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean drawBorder,
         @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
+        @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -458,6 +511,7 @@ public class GeneratorCommands {
                     .drawBackground(true)
                     .withAnimateGlint(animateGlint)
                     .withContainerTitle(containerName)
+                    .withPack(resolvePackOption(pack))
                     .withInventoryString(inventoryString)
                     .build());
 
@@ -640,6 +694,7 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "tooltip-side", description = TOOLTIP_SIDE_DESCRIPTION, required = false) String tooltipSide,
         @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean renderBorder,
         @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
+        @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -664,6 +719,7 @@ public class GeneratorCommands {
         durability = durability == null ? 100 : durability;
 
         try {
+            PackId packId = resolvePackOption(pack);
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
             MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                 .withName(itemName)
@@ -693,6 +749,7 @@ public class GeneratorCommands {
                         .withItem(itemId)
                         .withColor(color)
                         .isEnchanted(enchanted)
+                        .withPack(packId)
                         .isBigImage();
 
                     if (durability != null) {
@@ -708,6 +765,7 @@ public class GeneratorCommands {
                     .withRows(3)
                     .withSlotsPerRow(3)
                     .drawBorder(renderBorder)
+                    .withPack(packId)
                     .withInventoryString(recipe)
                     .build()
                 ).build();
@@ -999,61 +1057,70 @@ public class GeneratorCommands {
 
     @SlashAutocompleteHandler(id = "power-strengths")
     public List<Command.Choice> powerStrengths(CommandAutoCompleteInteractionEvent event) {
-        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
-
-        return PowerStrength.getPowerStrengthNames().stream()
-            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
-            .limit(25)
-            .map(name -> new Command.Choice(name, name))
-            .toList();
+        return toChoices(PowerStrength.getPowerStrengthNames().stream(), event);
     }
 
     @SlashAutocompleteHandler(id = "item-names")
     public List<Command.Choice> itemNames(CommandAutoCompleteInteractionEvent event) {
-        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
+        ResourcePackService packService = SkyBlockNerdsBot.resourcePackService();
+        OptionMapping packOption = event.getOption("pack");
+        Stream<String> packRefs = packService.itemRefsForOption(packOption == null ? null : packOption.getAsString()).stream();
 
-        return Spritesheet.getImageMap().keySet()
-            .stream()
-            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
-            .limit(25)
-            .map(name -> new Command.Choice(name, name))
-            .toList();
+        return toChoices(Stream.concat(Spritesheet.getImageMap().keySet().stream(), packRefs), event);
+    }
+
+    @SlashAutocompleteHandler(id = "pack-ids")
+    public List<Command.Choice> packIds(CommandAutoCompleteInteractionEvent event) {
+        return toChoices(SkyBlockNerdsBot.resourcePackService().packOptionChoices().stream(), event);
     }
 
     @SlashAutocompleteHandler(id = "item-rarities")
     public List<Command.Choice> itemRarities(CommandAutoCompleteInteractionEvent event) {
-        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
-
-        return Rarity.getRarityNames().stream()
-            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
-            .limit(25)
-            .map(name -> new Command.Choice(name, name))
-            .toList();
+        return toChoices(Rarity.getRarityNames().stream(), event);
     }
 
     @SlashAutocompleteHandler(id = "tooltip-side")
     public List<Command.Choice> tooltipSide(CommandAutoCompleteInteractionEvent event) {
-        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
-
-        return Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values())
-            .map(MinecraftTooltipGenerator.TooltipSide::name)
-            .filter(side -> side.toLowerCase(Locale.ROOT).contains(userInput))
-            .limit(25)
-            .map(side -> new Command.Choice(side, side))
-            .toList();
+        return toChoices(Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values()).map(MinecraftTooltipGenerator.TooltipSide::name), event);
     }
 
     @SlashAutocompleteHandler(id = "overlay-colors")
     public List<Command.Choice> overlayColors(CommandAutoCompleteInteractionEvent event) {
+        return toChoices(OverlayLoader.getInstance().getAllColorOptionNames().stream().sorted(), event);
+    }
+
+    private static final int MAX_AUTOCOMPLETE_CHOICES = 25;
+    private static final int MAX_CHOICE_LENGTH = 100; // JDA's Command.Choice name/value limit
+
+    /**
+     * Filters the candidate strings by the focused option's current input (case-insensitively),
+     * drops any that exceed JDA's {@value MAX_CHOICE_LENGTH}-character choice limit (which would
+     * otherwise throw and abort the whole autocomplete response), caps the result at
+     * {@value MAX_AUTOCOMPLETE_CHOICES}, and maps each to a {@link Command.Choice}. The candidate
+     * stream's encounter order is preserved.
+     */
+    private static List<Command.Choice> toChoices(Stream<String> candidates, CommandAutoCompleteInteractionEvent event) {
         String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
 
-        return OverlayLoader.getInstance().getAllColorOptionNames()
-            .stream()
+        return candidates
             .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
-            .sorted()
-            .limit(25)
+            .filter(name -> name.length() <= MAX_CHOICE_LENGTH)
+            .limit(MAX_AUTOCOMPLETE_CHOICES)
             .map(name -> new Command.Choice(name, name))
             .toList();
+    }
+
+    /**
+     * Resolves a command's pack option to the {@link PackId} passed to the generator builders.
+     *
+     * @param pack The raw pack option value, may be null when the user omitted the option
+     *
+     * @return The resolved {@link PackId}, or null for vanilla rendering
+     *
+     * @throws GeneratorException If the input is not a valid pack ID or references a pack that is not loaded
+     */
+    private PackId resolvePackOption(String pack) {
+        return SkyBlockNerdsBot.resourcePackService().resolvePackOption(pack);
     }
 
     /**

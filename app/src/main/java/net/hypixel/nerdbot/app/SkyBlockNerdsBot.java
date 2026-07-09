@@ -1,10 +1,12 @@
 package net.hypixel.nerdbot.app;
 
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.imagegenerator.pack.PackRepository;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.hypixel.nerdbot.app.activity.ActivityListener;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
+import net.hypixel.nerdbot.app.generation.pack.ResourcePackService;
 import net.hypixel.nerdbot.app.listener.FunListener;
 import net.hypixel.nerdbot.app.listener.MetricsListener;
 import net.hypixel.nerdbot.app.listener.ModLogListener;
@@ -50,10 +52,24 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     private SuggestionCache suggestionCache;
 
     /**
+     * Constructed eagerly (dependency-free) so it is never null on the interaction threads that
+     * read it; the actual packs are loaded later in {@link #onReady(JDA)} once config is available.
+     */
+    private final ResourcePackService resourcePackService = new ResourcePackService(PackRepository.global());
+
+    /**
      * Static helper to get the MessageCache from the current bot instance.
      */
     public static MessageCache messageCache() {
         return ((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).messageCache;
+    }
+
+    /**
+     * Static helper to get the ResourcePackService from the current bot instance. Never null,
+     * though it holds no packs until the bot's ready sequence has run.
+     */
+    public static ResourcePackService resourcePackService() {
+        return ((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).resourcePackService;
     }
 
     /**
@@ -186,6 +202,9 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         suggestionCache = new SuggestionCache();
 
         NerdBotConfig config = getConfig();
+
+        // Register resource packs with the image generator
+        resourcePackService.registerConfiguredPacks(config.getGeneratorConfig().getResourcePacks());
 
         // Update forum IDs for alpha/project channels
         AlphaProjectConfigUpdater.updateForumIds(config, true, true, jda.getForumChannels());

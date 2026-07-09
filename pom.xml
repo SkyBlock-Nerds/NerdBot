@@ -12,9 +12,20 @@
     <properties>
         <java.version>25</java.version>
         <lombok.version>1.18.46</lombok.version>
+        <imagegenerator.version>resource-pack-loader-SNAPSHOT</imagegenerator.version>
         <editorconfig.encoding>UTF-8</editorconfig.encoding>
         <maven.compiler.release>${java.version}</maven.compiler.release>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.github.Aerhhh</groupId>
+                <artifactId>MinecraftImageGenerator</artifactId>
+                <version>${imagegenerator.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <modules>
         <module>discord-framework</module>

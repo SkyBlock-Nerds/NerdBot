@@ -4,6 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 @ToString
@@ -39,6 +42,11 @@ public class GeneratorConfig {
      * General generator configuration
      */
     private GeneralConfig general = new GeneralConfig();
+
+    /**
+     * Resource pack configuration
+     */
+    private ResourcePackConfig resourcePacks = new ResourcePackConfig();
 
     @Getter
     @Setter
@@ -191,6 +199,36 @@ public class GeneratorConfig {
 
     }
 
+
+    @Getter
+    @Setter
+    @ToString
+    public static class ResourcePackConfig {
+        /**
+         * Resource packs to register with the image generator at startup
+         */
+        private List<PackDefinition> packs = new ArrayList<>();
+
+        /**
+         * The pack ID applied when a generator command does not specify one (null or empty = vanilla)
+         */
+        private String defaultPack = null;
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class PackDefinition {
+        /**
+         * Unique pack identifier in namespace:name format (e.g. hypixel:skyblock)
+         */
+        private String id;
+
+        /**
+         * Path to the pack zip file or extracted pack directory
+         */
+        private String path;
+    }
 
     @Getter
     @Setter

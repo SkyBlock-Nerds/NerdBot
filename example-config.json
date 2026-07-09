@@ -219,6 +219,15 @@
       "minScaleFactor": 1,
       "debugLogging": true,
       "includeErrorDetails": true
+    },
+    "resourcePacks": {
+      "packs": [
+        {
+          "id": "1234567890123456789",
+          "path": "example_value"
+        }
+      ],
+      "defaultPack": "example_value"
     }
   },
   "activityType": "PLAYING",
