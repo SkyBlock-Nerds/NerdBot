@@ -152,8 +152,11 @@ public class ResourcePackService {
      *     <li>a specific registered pack &rarr; only that pack's refs;</li>
      *     <li>{@value VANILLA_OPTION} (or {@code minecraft:minecraft}) &rarr; no pack refs;</li>
      *     <li>omitted with a configured default pack &rarr; the default pack's refs;</li>
-     *     <li>omitted with no default, or an unrecognised/half-typed value &rarr; all refs.</li>
+     *     <li>omitted with no default (resolves to vanilla) &rarr; no pack refs;</li>
+     *     <li>an unrecognised or half-typed value &rarr; all refs.</li>
      * </ul>
+     * The omitted-with-no-default case returns no pack refs so that item autocomplete never
+     * suggests a pack ref that would then fail to render against the vanilla default.
      *
      * @param packOption The raw pack option value from the same interaction, may be null
      */
@@ -172,7 +175,9 @@ public class ResourcePackService {
 
         if (input == null || input.isEmpty()) {
             PackId defaultPack = defaultPackId;
-            return defaultPack != null ? itemRefs(defaultPack) : allItemRefs();
+            // Omitted option resolves to the configured default, or vanilla when there is none.
+            // Vanilla renders no pack refs, so offer none rather than suggesting refs that would fail.
+            return defaultPack != null ? itemRefs(defaultPack) : List.of();
         }
 
         // A half-typed or unrecognised pack value: fall back to every ref rather than hiding them all

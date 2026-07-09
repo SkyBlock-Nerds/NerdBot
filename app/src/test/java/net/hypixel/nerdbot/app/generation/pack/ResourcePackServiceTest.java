@@ -31,6 +31,7 @@ class ResourcePackServiceTest {
 
     private static final String PACK_ID = "nerdbot:test";
     private static final String ITEM_REF = "testpack:item/simple";
+    private static final String ITEM_DEFINITION = "{\"model\":{\"type\":\"minecraft:model\",\"model\":\"testpack:item/simple\"}}";
 
     private Path tempDir;
     private PackRepository repository;
@@ -258,6 +259,32 @@ class ResourcePackServiceTest {
     }
 
     @Test
+    void indexesOnlyItemDefinitionAssetPaths() throws IOException {
+        // A pack whose asset listing mixes item definitions (at varying depths) with non-item files.
+        // Only paths shaped assets/<namespace>/items/<path>.json become refs; everything else is ignored.
+        Map<String, Object> files = new java.util.LinkedHashMap<>();
+        files.put("pack.mcmeta", "{\"pack\":{\"pack_format\":88,\"description\":\"Edge fixture\"}}");
+        files.put("assets/testpack/items/item/simple.json", ITEM_DEFINITION);
+        files.put("assets/testpack/models/item/simple.json", "{\"textures\":{\"layer0\":\"testpack:item/simple\"}}");
+        files.put("assets/testpack/textures/item/simple.png", pngBytes());
+        // Accepted: a deeply nested item definition (mirrors real packs like item/category/sub/name)
+        files.put("assets/testpack/items/item/category/deep.json", ITEM_DEFINITION);
+        // Rejected: a directory that merely starts with "items", not the items/ folder
+        files.put("assets/testpack/itemsfoo/decoy.json", "{}");
+        // Rejected: an empty item path (no name before .json)
+        files.put("assets/testpack/items/.json", "{}");
+        // Rejected: a non-json asset that lives under items/
+        files.put("assets/testpack/items/item/notes.txt", "ignored");
+
+        Path zip = createZip("edge.zip", files);
+        service.registerConfiguredPacks(config(null, packDefinition(PACK_ID, zip)));
+
+        assertEquals(
+            List.of("testpack:item/category/deep", "testpack:item/simple"),
+            service.allItemRefs());
+    }
+
+    @Test
     void itemRefsReturnsPerPack() throws IOException {
         Path zip = createFixturePackZip("fixture.zip");
 
@@ -296,13 +323,24 @@ class ResourcePackServiceTest {
     }
 
     @Test
-    void itemRefsForOptionReturnsAllWhenNoDefaultOrUnknown() throws IOException {
+    void itemRefsForOptionOmittedWithNoDefaultOffersNoPackRefs() throws IOException {
         Path zip = createFixturePackZip("fixture.zip");
 
         service.registerConfiguredPacks(config(null, packDefinition(PACK_ID, zip)));
 
-        // No default pack, or a half-typed/unknown value: offer everything rather than nothing
-        assertEquals(List.of(ITEM_REF), service.itemRefsForOption(null));
+        // Omitting the pack option with no default resolves to vanilla, so no pack refs are offered;
+        // suggesting them would let a user pick a ref that then fails to render against vanilla.
+        assertTrue(service.itemRefsForOption(null).isEmpty());
+        assertTrue(service.itemRefsForOption("  ").isEmpty());
+    }
+
+    @Test
+    void itemRefsForOptionUnknownOrHalfTypedOffersEverything() throws IOException {
+        Path zip = createFixturePackZip("fixture.zip");
+
+        service.registerConfiguredPacks(config(null, packDefinition(PACK_ID, zip)));
+
+        // A half-typed or unrecognised pack value is ambiguous, so offer everything rather than nothing
         assertEquals(List.of(ITEM_REF), service.itemRefsForOption("nerdbot:notregistered"));
         assertEquals(List.of(ITEM_REF), service.itemRefsForOption("half-typed"));
     }
@@ -359,7 +397,7 @@ class ResourcePackServiceTest {
     private static Map<String, ?> fixturePackFiles() throws IOException {
         return Map.of(
             "pack.mcmeta", "{\"pack\":{\"pack_format\":88,\"description\":\"NerdBot test fixture\"}}",
-            "assets/testpack/items/item/simple.json", "{\"model\":{\"type\":\"minecraft:model\",\"model\":\"testpack:item/simple\"}}",
+            "assets/testpack/items/item/simple.json", ITEM_DEFINITION,
             "assets/testpack/models/item/simple.json", "{\"textures\":{\"layer0\":\"testpack:item/simple\"}}",
             "assets/testpack/textures/item/simple.png", pngBytes()
         );

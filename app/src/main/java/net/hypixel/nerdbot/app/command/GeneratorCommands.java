@@ -398,23 +398,33 @@ public class GeneratorCommands {
     private static final int SEARCH_RESULT_LIMIT = 10;
     private static final int MAX_MESSAGE_LENGTH = 2000;
 
+    private static final String SEARCH_TRUNCATION_MARKER = " - ...\n";
+
     /**
-     * Appends a titled block of up to {@link #SEARCH_RESULT_LIMIT} results to the search reply,
-     * stopping early if adding another line would push the message past Discord's
-     * {@link #MAX_MESSAGE_LENGTH} limit.
+     * Appends a titled block of up to {@link #SEARCH_RESULT_LIMIT} results to the search reply.
+     * This is called once per result source onto a shared builder, so every append (the block
+     * header, each line, and the truncation marker) is bounded by Discord's
+     * {@link #MAX_MESSAGE_LENGTH} limit: a block whose header would not fit is skipped entirely,
+     * and lines stop as soon as the next one plus the marker would overflow.
      */
     private static void appendSearchResults(StringBuilder message, String header, List<String> results) {
         if (results.isEmpty()) {
             return;
         }
 
-        message.append(header).append(" (").append(StringUtils.COMMA_SEPARATED_FORMAT.format(results.size())).append(" total):\n");
+        String headerLine = header + " (" + StringUtils.COMMA_SEPARATED_FORMAT.format(results.size()) + " total):\n";
+
+        if (message.length() + headerLine.length() + SEARCH_TRUNCATION_MARKER.length() > MAX_MESSAGE_LENGTH) {
+            return;
+        }
+
+        message.append(headerLine);
 
         for (String result : results.subList(0, Math.min(SEARCH_RESULT_LIMIT, results.size()))) {
             String line = " - `" + result + "`\n";
 
-            if (message.length() + line.length() > MAX_MESSAGE_LENGTH) {
-                message.append(" - ...\n");
+            if (message.length() + line.length() + SEARCH_TRUNCATION_MARKER.length() > MAX_MESSAGE_LENGTH) {
+                message.append(SEARCH_TRUNCATION_MARKER);
                 break;
             }
 
