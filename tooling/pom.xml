@@ -34,7 +34,6 @@
         <dependency>
             <groupId>com.github.Aerhhh</groupId>
             <artifactId>MinecraftImageGenerator</artifactId>
-            <version>master-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

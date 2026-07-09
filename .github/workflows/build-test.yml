@@ -40,4 +40,4 @@ jobs:
           distribution: 'temurin'
 
       - name: Build with Maven
-        run: mvn -pl discord-framework -am org.ec4j.maven:editorconfig-maven-plugin:check clean package
+        run: mvn org.ec4j.maven:editorconfig-maven-plugin:check clean verify

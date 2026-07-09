@@ -12,9 +12,40 @@
     <properties>
         <java.version>25</java.version>
         <lombok.version>1.18.46</lombok.version>
+        <imagegenerator.version>resource-pack-loader-SNAPSHOT</imagegenerator.version>
+        <junit.version>5.14.4</junit.version>
         <editorconfig.encoding>UTF-8</editorconfig.encoding>
         <maven.compiler.release>${java.version}</maven.compiler.release>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.github.Aerhhh</groupId>
+                <artifactId>MinecraftImageGenerator</artifactId>
+                <version>${imagegenerator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.5.5</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
     <modules>
         <module>discord-framework</module>
