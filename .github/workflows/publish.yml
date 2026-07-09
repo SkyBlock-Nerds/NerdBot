@@ -19,6 +19,9 @@
 #   - SENTRY_DSN: Sentry DSN for error reporting (optional, Sentry disabled if empty)
 #   - CONFIG_FOLDER_PATH: Path to the config file folder on the vps
 #   - PACKS_FOLDER_PATH: Path to the resource packs folder on the vps (optional; defaults to CONFIG_FOLDER_PATH/packs)
+#     This folder is mounted read-only at /app/packs, so each config resourcePacks.packs[].path
+#     must be an absolute container path under /app/packs/ (e.g. /app/packs/hypixel_skyblock.zip);
+#     a path that does not resolve inside the container is logged and skipped (that pack renders as vanilla).
 
 name: Publish
 
