@@ -18,6 +18,7 @@
 #   - HYPIXEL_KEY: Environment variable for the bot
 #   - SENTRY_DSN: Sentry DSN for error reporting (optional, Sentry disabled if empty)
 #   - CONFIG_FOLDER_PATH: Path to the config file folder on the vps
+#   - PACKS_FOLDER_PATH: Path to the resource packs folder on the vps (optional; defaults to CONFIG_FOLDER_PATH/packs)
 
 name: Publish
 
@@ -101,6 +102,7 @@ jobs:
             -p 127.0.0.1:${{ env.METRICS_PORT }}:${{ env.METRICS_PORT }} \
             ${{ env.DOCKER_NETWORK != '' && format('--network {0}', env.DOCKER_NETWORK) || '' }} \
             -v ${{ secrets.CONFIG_FOLDER_PATH }}/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json:/app/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json \
+            -v ${{ secrets.PACKS_FOLDER_PATH != '' && secrets.PACKS_FOLDER_PATH || format('{0}/packs', secrets.CONFIG_FOLDER_PATH) }}:/app/packs:ro \
             -e "JAVA_OPTS=-Dbot.token=${{ secrets[format('BOT_TOKEN_{0}', env.ENVIRONMENT_NAME)] }} \
             -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
             -Dbot.environment=${{ env.ENVIRONMENT_NAME }} \
