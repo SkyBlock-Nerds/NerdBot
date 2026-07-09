@@ -38,7 +38,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.5.33</version>
+            <version>1.5.37</version>
         </dependency>
         <dependency>
             <groupId>com.joestelmach</groupId>
@@ -83,12 +83,12 @@
         <dependency>
             <groupId>io.sentry</groupId>
             <artifactId>sentry</artifactId>
-            <version>8.43.0</version>
+            <version>8.47.0</version>
         </dependency>
         <dependency>
             <groupId>io.sentry</groupId>
             <artifactId>sentry-logback</artifactId>
-            <version>8.43.0</version>
+            <version>8.47.0</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

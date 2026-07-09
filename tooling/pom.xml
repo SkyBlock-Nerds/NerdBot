@@ -91,29 +91,5 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>generate-spritesheet</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.6.3</version>
-                        <executions>
-                            <execution>
-                                <id>generate-spritesheet</id>
-                                <goals>
-                                    <goal>java</goal>
-                                </goals>
-                                <configuration>
-                                    <mainClass>net.hypixel.nerdbot.tooling.spritesheet.ItemSpritesheetGenerator
-                                    </mainClass>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
     </profiles>
 </project>
