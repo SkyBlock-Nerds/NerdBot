@@ -25,7 +25,6 @@ import net.aerh.imagegenerator.text.wrapper.TextWrapper;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
@@ -43,12 +42,12 @@ import net.hypixel.nerdbot.marmalade.io.FileUtils;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.generator.GeneratorHistory;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -982,21 +981,15 @@ public class GeneratorCommands {
     public void viewHistory(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
-        List<EmbedBuilder> embedBuilders = new ArrayList<>();
-        DiscordUserRepository discordUserRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        List<String> history = getCommandHistory(findDiscordUser(event.getUser()));
 
-        if (discordUserRepository.findById(event.getUser().getId()).isSuccess()) {
-            List<String> history = discordUserRepository.findById(event.getUser().getId()).orElse(null).getGeneratorHistory().getCommandHistory();
-            embedBuilders.addAll(history.stream()
-                .map(s -> new EmbedBuilder().setDescription(s))
-                .toList()
-            );
-        } else {
-            embedBuilders.add(new EmbedBuilder().setTitle("No history found"));
+        if (history.isEmpty()) {
+            event.getHook().editOriginal("No history found").queue();
+            return;
         }
 
         try {
-            File file = FileUtils.createTempFile("generator_history.txt", String.join("\n\n", embedBuilders.stream().map(EmbedBuilder::getDescriptionBuilder).toList()));
+            File file = FileUtils.createTempFile("generator_history.txt", String.join("\n\n", history));
             event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
         } catch (IOException e) {
             event.getHook().editOriginal("An error occurred while fetching your generator command history!").queue();
@@ -1071,21 +1064,50 @@ public class GeneratorCommands {
      * @param command The command to add
      */
     private void addCommandToUserHistory(User user, String command) {
-        DiscordUserRepository discordUserRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = findDiscordUser(user);
 
-        if (discordUserRepository == null) {
+        if (discordUser == null) {
             return;
         }
 
-        if (discordUserRepository.findById(user.getId()).isSuccess()) {
-            DiscordUser discordUser = discordUserRepository.findById(user.getId()).orElse(null);
-
-            if (discordUser.getGeneratorHistory() == null) {
-                discordUser.setGeneratorHistory(new GeneratorHistory());
-            }
-
-            discordUser.getGeneratorHistory().addCommand(command);
+        if (discordUser.getGeneratorHistory() == null) {
+            discordUser.setGeneratorHistory(new GeneratorHistory());
         }
+
+        discordUser.getGeneratorHistory().addCommand(command);
+    }
+
+    /**
+     * Finds the {@link DiscordUser} for the given {@link User}.
+     *
+     * @param user The {@link User} to look up
+     *
+     * @return The {@link DiscordUser}, or {@code null} if the repository is unavailable or the user is not in the database
+     */
+    @Nullable
+    private static DiscordUser findDiscordUser(User user) {
+        DiscordUserRepository discordUserRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+
+        if (discordUserRepository == null) {
+            return null;
+        }
+
+        return discordUserRepository.findById(user.getId()).orElse(null);
+    }
+
+    /**
+     * Gets the generator command history of the given {@link DiscordUser}.
+     *
+     * @param discordUser The {@link DiscordUser} to get the history of
+     *
+     * @return The list of commands, or an empty list if the user is {@code null} or has no history yet
+     */
+    static List<String> getCommandHistory(@Nullable DiscordUser discordUser) {
+        if (discordUser == null || discordUser.getGeneratorHistory() == null) {
+            return List.of();
+        }
+
+        return discordUser.getGeneratorHistory().getCommandHistory();
     }
 
     /**
