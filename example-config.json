@@ -224,7 +224,13 @@
       "packs": [
         {
           "id": "1234567890123456789",
-          "path": "example_value"
+          "path": "example_value",
+          "tooltipStyles": {
+            "example_value": "example_value"
+          },
+          "textColorRemap": {
+            "example_value": "example_value"
+          }
         }
       ],
       "defaultPack": "example_value"
