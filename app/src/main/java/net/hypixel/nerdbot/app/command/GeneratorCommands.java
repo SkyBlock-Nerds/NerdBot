@@ -22,6 +22,7 @@ import net.aerh.imagegenerator.item.GeneratedObject;
 import net.aerh.imagegenerator.pack.PackId;
 import net.aerh.imagegenerator.spritesheet.OverlayLoader;
 import net.aerh.imagegenerator.spritesheet.Spritesheet;
+import net.aerh.imagegenerator.text.TextColorRemap;
 import net.aerh.imagegenerator.text.wrapper.TextWrapper;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
@@ -94,6 +95,7 @@ public class GeneratorCommands {
     private static final String DURABILITY_DESCRIPTION = "Item durability percentage (0-100, only shown if less than 100)";
     private static final String COLOR_DESCRIPTION = "The overlay color (e.g., red, blue, #FF0000)";
     private static final String PACK_DESCRIPTION = "The resource pack used to resolve item textures";
+    private static final String TOOLTIP_STYLE_DESCRIPTION = "The pack tooltip style to render with (defaults to the rarity's configured style)";
 
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
@@ -296,6 +298,7 @@ public class GeneratorCommands {
             );
 
             try {
+                PackId packId = resolvePackOption(pack);
                 GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
                 MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
                     .withName("&a" + powerName)
@@ -306,17 +309,15 @@ public class GeneratorCommands {
                     .isTextCentered(false)
                     .hasFirstLinePadding(true)
                     .withRenderBorder(true);
+                applyPackTheme(tooltipGenerator, packId, null, Rarity.byName("none"));
 
                 if (includeGenCommand != null && includeGenCommand) {
+                    // The builder round-trips its own fields (including pack and tooltip_style);
+                    // only options that belong to other generators still need appending by hand.
                     String slashCommand = tooltipGenerator.buildSlashCommand();
 
-                    // I hate this, but it works *for now*. Should probably replace it later
                     if (itemId != null && !itemId.isBlank()) {
                         slashCommand += " item_id: " + itemId;
-                    }
-
-                    if (pack != null && !pack.isBlank()) {
-                        slashCommand += " pack: " + pack;
                     }
 
                     if (enchanted) {
@@ -341,7 +342,7 @@ public class GeneratorCommands {
                             .withItem(itemId)
                             .withColor(color)
                             .isEnchanted(enchanted)
-                            .withPack(resolvePackOption(pack))
+                            .withPack(packId)
                             .isBigImage()
                             .build());
                     }
@@ -503,6 +504,7 @@ public class GeneratorCommands {
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
         try {
+            PackId packId = resolvePackOption(pack);
             GeneratorImageBuilder generatedObject = new GeneratorImageBuilder().withContext(context)
                 .addGenerator(new MinecraftInventoryGenerator.Builder()
                     .withRows(rows)
@@ -511,22 +513,24 @@ public class GeneratorCommands {
                     .drawBackground(true)
                     .withAnimateGlint(animateGlint)
                     .withContainerTitle(containerName)
-                    .withPack(resolvePackOption(pack))
+                    .withPack(packId)
                     .withInventoryString(inventoryString)
                     .build());
 
             if (hoveredItemString != null && !hoveredItemString.isBlank()) {
-                MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                MinecraftTooltipGenerator.Builder tooltipBuilder = new MinecraftTooltipGenerator.Builder()
                     .withItemLore(TextWrapper.stripActualNewlines(hoveredItemString))
                     .withAlpha(MinecraftTooltip.DEFAULT_ALPHA)
                     .withPadding(MinecraftTooltip.DEFAULT_PADDING)
                     .hasFirstLinePadding(false)
                     .withMaxLineLength(maxLineLength)
                     .withScaleFactor(Math.min(2, MinecraftInventoryGenerator.getScaleFactor()))
-                    .withRenderBorder(true)
-                    .build();
+                    .withRenderBorder(true);
+                // Hovered tooltips have no rarity, so they take the pack's default tooltip
+                // override (when present) plus the pack's text colors.
+                applyPackTheme(tooltipBuilder, packId, null, null);
 
-                generatedObject.addGenerator(tooltipGenerator);
+                generatedObject.addGenerator(tooltipBuilder.build());
             }
 
             GeneratedObject finalObject = generatedObject.build();
@@ -695,6 +699,7 @@ public class GeneratorCommands {
         @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean renderBorder,
         @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
+        @SlashOption(autocompleteId = "tooltip-styles", description = TOOLTIP_STYLE_DESCRIPTION, required = false) String tooltipStyle,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -720,10 +725,11 @@ public class GeneratorCommands {
 
         try {
             PackId packId = resolvePackOption(pack);
+            Rarity itemRarity = Rarity.byName(rarity);
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
-            MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+            MinecraftTooltipGenerator.Builder tooltipBuilder = new MinecraftTooltipGenerator.Builder()
                 .withName(itemName)
-                .withRarity(Rarity.byName(rarity))
+                .withRarity(itemRarity)
                 .withItemLore(TextWrapper.stripActualNewlines(itemLore))
                 .withType(type)
                 .withAlpha(alpha)
@@ -731,8 +737,9 @@ public class GeneratorCommands {
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
                 .hasFirstLinePadding(firstLinePadding)
-                .withRenderBorder(renderBorder)
-                .build();
+                .withRenderBorder(renderBorder);
+            applyPackTheme(tooltipBuilder, packId, tooltipStyle, itemRarity);
+            MinecraftTooltipGenerator tooltipGenerator = tooltipBuilder.build();
 
             if (itemId != null) {
                 if (itemId.equalsIgnoreCase("player_head")) {
@@ -1074,6 +1081,13 @@ public class GeneratorCommands {
         return toChoices(SkyBlockNerdsBot.resourcePackService().packOptionChoices().stream(), event);
     }
 
+    @SlashAutocompleteHandler(id = "tooltip-styles")
+    public List<Command.Choice> tooltipStyles(CommandAutoCompleteInteractionEvent event) {
+        OptionMapping packOption = event.getOption("pack");
+        return toChoices(SkyBlockNerdsBot.resourcePackService()
+            .tooltipStyleChoices(packOption == null ? null : packOption.getAsString()).stream(), event);
+    }
+
     @SlashAutocompleteHandler(id = "item-rarities")
     public List<Command.Choice> itemRarities(CommandAutoCompleteInteractionEvent event) {
         return toChoices(Rarity.getRarityNames().stream(), event);
@@ -1121,6 +1135,38 @@ public class GeneratorCommands {
      */
     private PackId resolvePackOption(String pack) {
         return SkyBlockNerdsBot.resourcePackService().resolvePackOption(pack);
+    }
+
+    /**
+     * Applies the resolved pack's tooltip theming to a tooltip builder: the explicit style
+     * option when given, else the pack's configured style for the item's rarity, plus the
+     * pack's text color remap. Without a pack there are no sprites to render a style from,
+     * so an explicit style is rejected rather than silently ignored.
+     *
+     * @throws GeneratorException If a tooltip style is given without a resource pack
+     */
+    private void applyPackTheme(MinecraftTooltipGenerator.Builder builder, PackId packId, String explicitStyle, Rarity rarity) {
+        boolean hasExplicitStyle = explicitStyle != null && !explicitStyle.isBlank();
+
+        if (packId == null) {
+            if (hasExplicitStyle) {
+                throw new GeneratorException("The tooltip_style option needs a resource pack; set the pack option too!");
+            }
+            return;
+        }
+
+        ResourcePackService packService = SkyBlockNerdsBot.resourcePackService();
+        builder.withPack(packId);
+
+        String style = hasExplicitStyle ? explicitStyle.trim() : packService.tooltipStyleFor(packId, rarity);
+        if (style != null) {
+            builder.withTooltipStyle(style);
+        }
+
+        TextColorRemap textColorRemap = packService.textColorRemapFor(packId);
+        if (textColorRemap != null) {
+            builder.withTextColorRemap(textColorRemap);
+        }
     }
 
     /**

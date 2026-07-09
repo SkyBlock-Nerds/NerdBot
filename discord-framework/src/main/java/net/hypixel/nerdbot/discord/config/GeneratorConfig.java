@@ -5,7 +5,9 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -228,6 +230,18 @@ public class GeneratorConfig {
          * Path to the pack zip file or extracted pack directory
          */
         private String path;
+
+        /**
+         * Tooltip style refs keyed by rarity name, e.g. "legendary" -> "hypixel_skyblock:legendary".
+         * Rarities without an entry render with the pack's default tooltip override, if any.
+         */
+        private Map<String, String> tooltipStyles = new LinkedHashMap<>();
+
+        /**
+         * Text color replacements applied to tooltip text, keyed by vanilla hex color,
+         * e.g. "#AA0000" -> "#D13228", mirroring the pack's text shader palette swap.
+         */
+        private Map<String, String> textColorRemap = new LinkedHashMap<>();
     }
 
     @Getter

@@ -1,11 +1,13 @@
 package net.hypixel.nerdbot.app.generation.pack;
 
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.imagegenerator.data.Rarity;
 import net.aerh.imagegenerator.exception.GeneratorException;
 import net.aerh.imagegenerator.pack.PackId;
 import net.aerh.imagegenerator.pack.PackLimits;
 import net.aerh.imagegenerator.pack.PackRepository;
 import net.aerh.imagegenerator.pack.PackSource;
+import net.aerh.imagegenerator.text.TextColorRemap;
 import net.hypixel.nerdbot.discord.config.GeneratorConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -36,6 +39,15 @@ public class ResourcePackService {
 
     private final PackRepository packRepository;
     private final Map<PackId, List<String>> itemRefsByPack = new ConcurrentHashMap<>();
+    private final Map<PackId, PackTheme> themesByPack = new ConcurrentHashMap<>();
+
+    /**
+     * A pack's configured tooltip theming: style refs keyed by lowercase rarity name plus the
+     * parsed text color replacement table (null when the config declares none).
+     */
+    private record PackTheme(Map<String, String> stylesByRarityName, @Nullable TextColorRemap textColorRemap) {
+        private static final PackTheme EMPTY = new PackTheme(Map.of(), null);
+    }
 
     /**
      * The resolved default pack, cached once at registration so command invocations that omit the
@@ -161,6 +173,18 @@ public class ResourcePackService {
      * @param packOption The raw pack option value from the same interaction, may be null
      */
     public List<String> itemRefsForOption(@Nullable String packOption) {
+        return refsForPackOption(packOption, this::itemRefs, this::allItemRefs);
+    }
+
+    /**
+     * Shared pack-option resolution for autocomplete suggestion lists (item refs, tooltip styles):
+     * a specific registered pack yields its own refs, vanilla yields none, an omitted option
+     * yields the default pack's refs (or none when vanilla is the default), and a half-typed or
+     * unrecognised value yields everything rather than hiding all suggestions.
+     */
+    private List<String> refsForPackOption(@Nullable String packOption,
+                                           java.util.function.Function<PackId, List<String>> perPack,
+                                           java.util.function.Supplier<List<String>> allRefs) {
         String input = packOption == null ? null : packOption.trim();
 
         if (input != null && (input.equalsIgnoreCase(VANILLA_OPTION) || input.equalsIgnoreCase(PackId.VANILLA.toString()))) {
@@ -170,18 +194,17 @@ public class ResourcePackService {
         Optional<PackId> selected = quietlyResolvePack(input);
 
         if (selected.isPresent()) {
-            return itemRefs(selected.get());
+            return perPack.apply(selected.get());
         }
 
         if (input == null || input.isEmpty()) {
             PackId defaultPack = defaultPackId;
             // Omitted option resolves to the configured default, or vanilla when there is none.
             // Vanilla renders no pack refs, so offer none rather than suggesting refs that would fail.
-            return defaultPack != null ? itemRefs(defaultPack) : List.of();
+            return defaultPack != null ? perPack.apply(defaultPack) : List.of();
         }
 
-        // A half-typed or unrecognised pack value: fall back to every ref rather than hiding them all
-        return allItemRefs();
+        return allRefs.get();
     }
 
     /**
@@ -189,6 +212,50 @@ public class ResourcePackService {
      */
     public List<String> itemRefs(@NotNull PackId packId) {
         return itemRefsByPack.getOrDefault(packId, List.of());
+    }
+
+    /**
+     * The configured tooltip style ref for a rarity in a pack, or null when the pack, rarity,
+     * or mapping is absent (the pack's default tooltip override then applies, if any).
+     */
+    @Nullable
+    public String tooltipStyleFor(@Nullable PackId packId, @Nullable Rarity rarity) {
+        if (packId == null || rarity == null) {
+            return null;
+        }
+
+        PackTheme theme = themesByPack.get(packId);
+        return theme == null ? null : theme.stylesByRarityName().get(rarity.getName().toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * The configured text color replacement table for a pack, or null when the pack declares none.
+     */
+    @Nullable
+    public TextColorRemap textColorRemapFor(@Nullable PackId packId) {
+        if (packId == null) {
+            return null;
+        }
+
+        PackTheme theme = themesByPack.get(packId);
+        return theme == null ? null : theme.textColorRemap();
+    }
+
+    /**
+     * The tooltip style refs to suggest for a given pack option value, following the same
+     * resolution semantics as {@link #itemRefsForOption(String)}.
+     */
+    public List<String> tooltipStyleChoices(@Nullable String packOption) {
+        return refsForPackOption(packOption, packRepository::tooltipStyles, this::allTooltipStyles);
+    }
+
+    private List<String> allTooltipStyles() {
+        return packRepository.registeredPacks().stream()
+            .map(packRepository::tooltipStyles)
+            .flatMap(List::stream)
+            .distinct()
+            .sorted()
+            .toList();
     }
 
     /**
@@ -221,6 +288,18 @@ public class ResourcePackService {
             return;
         }
 
+        // Parse the theme before opening the source so an invalid theme config skips the pack
+        // without leaking a file handle. Silently registering the pack without its theme would
+        // mask config typos behind wrong-looking renders.
+        PackTheme theme;
+        try {
+            theme = parseTheme(definition);
+        } catch (IllegalArgumentException exception) {
+            log.error("Skipping resource pack '{}' because its theme configuration is invalid: {}",
+                packId, exception.getMessage());
+            return;
+        }
+
         PackLimits limits = PackLimits.fromSystemProperties();
         PackSource source = Files.isDirectory(path) ? PackSource.directory(path, limits) : PackSource.zip(path, limits);
 
@@ -229,8 +308,78 @@ public class ResourcePackService {
         List<String> itemRefs = indexItemRefs(packId, source);
         packRepository.register(packId.toString(), source, limits);
         itemRefsByPack.put(packId, itemRefs);
+        themesByPack.put(packId, theme);
+        warnAboutMissingConfiguredStyles(packId, theme);
 
-        log.info("Registered resource pack '{}' from '{}' with {} item definitions", packId, path.toAbsolutePath(), itemRefs.size());
+        log.info("Registered resource pack '{}' from '{}' with {} item definitions and {} tooltip styles",
+            packId, path.toAbsolutePath(), itemRefs.size(), packRepository.tooltipStyles(packId).size());
+    }
+
+    /**
+     * Parses and validates a pack definition's theme configuration. Rarity keys are normalized
+     * to lowercase and must name a known rarity; remap colors must be #RRGGBB hex strings.
+     *
+     * @throws IllegalArgumentException on any invalid entry
+     */
+    private static PackTheme parseTheme(GeneratorConfig.PackDefinition definition) {
+        Map<String, String> styles = new HashMap<>();
+        Map<String, String> configuredStyles = definition.getTooltipStyles() == null ? Map.of() : definition.getTooltipStyles();
+
+        for (Map.Entry<String, String> entry : configuredStyles.entrySet()) {
+            String rarityName = entry.getKey() == null ? "" : entry.getKey().trim().toLowerCase(Locale.ROOT);
+            String styleRef = entry.getValue() == null ? "" : entry.getValue().trim();
+
+            if (rarityName.isEmpty() || styleRef.isEmpty()) {
+                throw new IllegalArgumentException("tooltipStyles entries need a rarity name and a style ref, got '"
+                    + entry.getKey() + "' -> '" + entry.getValue() + "'");
+            }
+
+            if (Rarity.byName(rarityName) == null) {
+                throw new IllegalArgumentException("tooltipStyles references unknown rarity '" + rarityName
+                    + "'; known rarities: " + String.join(", ", Rarity.getRarityNames()));
+            }
+
+            if (styles.putIfAbsent(rarityName, styleRef) != null) {
+                throw new IllegalArgumentException("Duplicate tooltipStyles entry for rarity '" + rarityName + "'");
+            }
+        }
+
+        Map<String, String> configuredRemap = definition.getTextColorRemap() == null ? Map.of() : definition.getTextColorRemap();
+        TextColorRemap remap = null;
+
+        if (!configuredRemap.isEmpty()) {
+            TextColorRemap.Builder builder = TextColorRemap.builder();
+            configuredRemap.forEach((from, to) ->
+                builder.remap(parseHexColor(from, "textColorRemap key"), parseHexColor(to, "textColorRemap value")));
+            remap = builder.build();
+        }
+
+        return styles.isEmpty() && remap == null ? PackTheme.EMPTY : new PackTheme(Map.copyOf(styles), remap);
+    }
+
+    private static int parseHexColor(@Nullable String value, String description) {
+        String trimmed = value == null ? "" : value.trim();
+
+        if (!trimmed.matches("#[0-9a-fA-F]{6}")) {
+            throw new IllegalArgumentException(description + " must be a #RRGGBB hex color, got '" + value + "'");
+        }
+
+        return Integer.parseInt(trimmed.substring(1), 16);
+    }
+
+    /**
+     * Startup visibility for configured styles the pack does not actually define. Registration
+     * proceeds (the pack file may gain the style later); rendering that rarity fails loudly in
+     * the library until the pack or the config changes.
+     */
+    private void warnAboutMissingConfiguredStyles(PackId packId, PackTheme theme) {
+        List<String> packStyles = packRepository.tooltipStyles(packId);
+        theme.stylesByRarityName().forEach((rarityName, styleRef) -> {
+            if (!packStyles.contains(styleRef)) {
+                log.warn("Pack '{}' does not define configured tooltip style '{}' (rarity '{}')",
+                    packId, styleRef, rarityName);
+            }
+        });
     }
 
     private List<String> indexItemRefs(PackId packId, PackSource source) {
