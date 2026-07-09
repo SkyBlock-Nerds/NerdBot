@@ -99,7 +99,7 @@ public class GeneratorCommands {
 
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "display", description = "Display an item")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "display", description = "Display an item", guildOnly = true)
     public void generateItem(
         SlashCommandInteractionEvent event,
         @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION) String itemId,
@@ -169,7 +169,7 @@ public class GeneratorCommands {
         }
     }
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate an image of a Power Stone")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate an image of a Power Stone", guildOnly = true)
     public void generatePowerstone(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "The name of your Power Stone") String powerName,
@@ -371,7 +371,7 @@ public class GeneratorCommands {
         }
     }
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "search", description = "Search for an item")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "search", description = "Search for an item", guildOnly = true)
     public void searchItem(SlashCommandInteractionEvent event, @SlashOption(description = "The ID of the item to search for") String itemId, @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden) {
         if (shouldBlockGeneratorCommand(event)) {
             return;
@@ -433,7 +433,7 @@ public class GeneratorCommands {
         }
     }
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "recipe", description = "Generate a recipe")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "recipe", description = "Generate a recipe", guildOnly = true)
     public void generateRecipe(
         SlashCommandInteractionEvent event,
         @SlashOption(description = RECIPE_STRING_DESCRIPTION) String recipe,
@@ -476,7 +476,7 @@ public class GeneratorCommands {
         }
     }
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "inventory", description = "Generate an inventory")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "inventory", description = "Generate an inventory", guildOnly = true)
     public void generateInventory(
         SlashCommandInteractionEvent event,
         @SlashOption(description = INVENTORY_ROWS_DESCRIPTION) int rows,
@@ -553,7 +553,7 @@ public class GeneratorCommands {
 
     private static final int MAX_ATTACHMENT_SIZE_BYTES = 64 * 1024; // 64 KB
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "parse", description = "Parse an NBT string (JSON or SNBT format)")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "parse", description = "Parse an NBT string (JSON or SNBT format)", guildOnly = true)
     public void parseNbtString(
         SlashCommandInteractionEvent event,
         @SlashOption(description = NBT_DESCRIPTION, required = false) String nbt,
@@ -678,7 +678,7 @@ public class GeneratorCommands {
         return nbtText;
     }
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a full item image. Supports displaying items, recipes, tooltips & more")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a full item image. Supports displaying items, recipes, tooltips & more", guildOnly = true)
     public void generateTooltip(
         SlashCommandInteractionEvent event,
         @SlashOption(description = NAME_DESCRIPTION) String itemName,
@@ -807,7 +807,7 @@ public class GeneratorCommands {
         }
     }
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "text", description = "Generate some text")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "text", description = "Generate some text", guildOnly = true)
     public void generateText(
         SlashCommandInteractionEvent event,
         @SlashOption(description = TEXT_DESCRIPTION) String text,
@@ -865,7 +865,7 @@ public class GeneratorCommands {
         }
     }
 
-    @SlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "single", description = "Generate dialogue for a single NPC")
+    @SlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "single", description = "Generate dialogue for a single NPC", guildOnly = true)
     public void generateSingleDialogue(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "Name of your NPC") String npcName,
@@ -947,7 +947,7 @@ public class GeneratorCommands {
         }
     }
 
-    @SlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "multi", description = "Generate dialogue for multiple NPCs")
+    @SlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "multi", description = "Generate dialogue for multiple NPCs", guildOnly = true)
     public void generateMultiDialogue(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "Names of your NPCs, separated by a comma") String npcNames,
@@ -1042,7 +1042,7 @@ public class GeneratorCommands {
         }
     }
 
-    @SlashCommand(name = BASE_COMMAND, subcommand = "history", description = "View your command history")
+    @SlashCommand(name = BASE_COMMAND, subcommand = "history", description = "View your command history", guildOnly = true)
     public void viewHistory(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
