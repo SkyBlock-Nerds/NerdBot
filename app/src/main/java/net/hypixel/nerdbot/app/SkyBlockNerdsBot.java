@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.app;
 
 import lombok.extern.slf4j.Slf4j;
+import net.aerh.imagegenerator.data.PackGlyphIndex;
 import net.aerh.imagegenerator.pack.PackRepository;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
@@ -205,6 +206,14 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
         // Register resource packs with the image generator
         resourcePackService.registerConfiguredPacks(config.getGeneratorConfig().getResourcePacks());
+
+        // Validate glyph override data (icons.json/stats.json, including any external override
+        // files) now instead of on the first /gen parse that needs it
+        try {
+            PackGlyphIndex.fromRegistries();
+        } catch (IllegalStateException e) {
+            log.error("Glyph override data failed validation; /gen parse will reject NBT input until the data is fixed", e);
+        }
 
         // Update forum IDs for alpha/project channels
         AlphaProjectConfigUpdater.updateForumIds(config, true, true, jda.getForumChannels());

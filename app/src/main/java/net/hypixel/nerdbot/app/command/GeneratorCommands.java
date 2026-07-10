@@ -26,11 +26,13 @@ import net.aerh.imagegenerator.text.TextColorRemap;
 import net.aerh.imagegenerator.text.wrapper.TextWrapper;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
+import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -38,9 +40,12 @@ import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.generation.DiscordGenerationContext;
 import net.hypixel.nerdbot.app.generation.pack.ResourcePackService;
+import net.hypixel.nerdbot.app.util.GlyphListing;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.StringUtils;
+import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
+import net.hypixel.nerdbot.discord.util.pagination.PaginationManager;
 import net.hypixel.nerdbot.marmalade.functional.Pair;
 import net.hypixel.nerdbot.marmalade.image.ImageUtil;
 import net.hypixel.nerdbot.marmalade.io.FileUtils;
@@ -430,6 +435,46 @@ public class GeneratorCommands {
             }
 
             message.append(line);
+        }
+    }
+
+    private static final int SYMBOLS_PER_PAGE = 20;
+
+    @SlashCommand(name = BASE_COMMAND, subcommand = "symbols", description = "List the placeholder names usable in generator text", guildOnly = true)
+    public void listSymbols(
+        SlashCommandInteractionEvent event,
+        @SlashOption(description = "Only show names containing this text", required = false) String filter,
+        @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
+    ) {
+        if (shouldBlockGeneratorCommand(event)) {
+            return;
+        }
+
+        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+        event.deferReply(hidden).complete();
+
+        List<String> rows = GlyphListing.buildRows(filter);
+
+        if (rows.isEmpty()) {
+            event.getHook().editOriginal("No placeholders match `" + filter + "`!").queue();
+            return;
+        }
+
+        PaginatedResponse<String> pagination = PaginatedResponse.forText(rows, SYMBOLS_PER_PAGE, GlyphListing::buildPage, "gen-symbols-page");
+        pagination.sendMessage(event);
+
+        event.getHook().retrieveOriginal().queue(message ->
+            PaginationManager.registerPagination(message.getId(), pagination)
+        );
+    }
+
+    @SlashComponentHandler(id = "gen-symbols-pagination", patterns = {"gen-symbols-page:*"})
+    public void handleSymbolsPagination(ButtonInteractionEvent event) {
+        event.deferEdit().queue();
+
+        if (!PaginationManager.handleButtonInteraction(event)) {
+            log.warn("Could not find symbols pagination for message ID: {}", event.getMessageId());
+            event.getHook().editOriginal("This pagination has expired. Please run the command again.").queue();
         }
     }
 

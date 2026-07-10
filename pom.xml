@@ -12,7 +12,7 @@
     <properties>
         <java.version>25</java.version>
         <lombok.version>1.18.46</lombok.version>
-        <imagegenerator.version>resource-pack-tooltips-SNAPSHOT</imagegenerator.version>
+        <imagegenerator.version>master-SNAPSHOT</imagegenerator.version>
         <editorconfig.encoding>UTF-8</editorconfig.encoding>
         <maven.compiler.release>${java.version}</maven.compiler.release>
     </properties>
