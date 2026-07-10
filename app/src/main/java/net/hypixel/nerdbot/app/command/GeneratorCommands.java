@@ -629,8 +629,9 @@ public class GeneratorCommands {
 
             parsedNbt.getGenerators().forEach(generator -> {
                 if (generator instanceof MinecraftTooltipGenerator.Builder tooltipBuilder) {
-                    // Themed before buildSlashCommand below so the emitted command round-trips the pack
-                    applyPackTheme(tooltipBuilder, packId);
+                    // Themed before buildSlashCommand below so the emitted command round-trips the
+                    // pack and the rarity-derived tooltip style, reproducing the preview exactly
+                    applyPackTheme(tooltipBuilder, packId, null, tooltipBuilder.getRarity());
                 } else if (generator instanceof MinecraftItemGenerator.Builder itemBuilder) {
                     itemBuilder.withPack(packId);
                 }
