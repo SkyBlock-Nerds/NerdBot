@@ -571,9 +571,7 @@ public class GeneratorCommands {
                     .withMaxLineLength(maxLineLength)
                     .withScaleFactor(Math.min(2, MinecraftInventoryGenerator.getScaleFactor()))
                     .withRenderBorder(true);
-                // Hovered tooltips have no rarity, so they take the pack's default tooltip
-                // override (when present) plus the pack's text colors.
-                applyPackTheme(tooltipBuilder, packId, null, null);
+                applyPackTheme(tooltipBuilder, packId);
 
                 generatedObject.addGenerator(tooltipBuilder.build());
             }
@@ -603,6 +601,7 @@ public class GeneratorCommands {
         SlashCommandInteractionEvent event,
         @SlashOption(description = NBT_DESCRIPTION, required = false) String nbt,
         @SlashOption(description = "Upload a text file containing NBT data", required = false) Message.Attachment attachment,
+        @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -625,9 +624,17 @@ public class GeneratorCommands {
 
         try {
             MinecraftNbtParser.ParsedNbt parsedNbt = MinecraftNbtParser.parse(nbtInput);
+            PackId packId = resolvePackOption(pack);
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
 
             parsedNbt.getGenerators().forEach(generator -> {
+                if (generator instanceof MinecraftTooltipGenerator.Builder tooltipBuilder) {
+                    // Themed before buildSlashCommand below so the emitted command round-trips the pack
+                    applyPackTheme(tooltipBuilder, packId);
+                } else if (generator instanceof MinecraftItemGenerator.Builder itemBuilder) {
+                    itemBuilder.withPack(packId);
+                }
+
                 generatorImageBuilder.addGenerator(generator.build());
             });
 
@@ -783,6 +790,7 @@ public class GeneratorCommands {
                 .isTextCentered(centered)
                 .hasFirstLinePadding(firstLinePadding)
                 .withRenderBorder(renderBorder);
+            requireBorderForTooltipStyle(tooltipStyle, renderBorder);
             applyPackTheme(tooltipBuilder, packId, tooltipStyle, itemRarity);
             MinecraftTooltipGenerator tooltipGenerator = tooltipBuilder.build();
 
@@ -861,6 +869,8 @@ public class GeneratorCommands {
         @SlashOption(description = PADDING_DESCRIPTION, required = false) Integer padding,
         @SlashOption(description = MAX_LINE_LENGTH_DESCRIPTION, required = false) Integer maxLineLength,
         @SlashOption(description = RENDER_BORDER_DESCRIPTION, required = false) Boolean renderBorder,
+        @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
+        @SlashOption(autocompleteId = "tooltip-styles", description = TOOLTIP_STYLE_DESCRIPTION, required = false) String tooltipStyle,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -880,18 +890,20 @@ public class GeneratorCommands {
         renderBorder = renderBorder != null && renderBorder;
 
         try {
+            PackId packId = resolvePackOption(pack);
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
-            MinecraftTooltipGenerator tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+            MinecraftTooltipGenerator.Builder tooltipBuilder = new MinecraftTooltipGenerator.Builder()
                 .withItemLore(TextWrapper.stripActualNewlines(text))
                 .withAlpha(alpha)
                 .withPadding(padding)
                 .withMaxLineLength(maxLineLength)
                 .isTextCentered(centered)
                 .hasFirstLinePadding(false)
-                .withRenderBorder(renderBorder)
-                .build();
+                .withRenderBorder(renderBorder);
+            requireBorderForTooltipStyle(tooltipStyle, renderBorder);
+            applyPackTheme(tooltipBuilder, packId, tooltipStyle, null);
 
-            generatorImageBuilder.addGenerator(tooltipGenerator);
+            generatorImageBuilder.addGenerator(tooltipBuilder.build());
             GeneratedObject generatedObject = generatorImageBuilder.build();
 
             if (generatedObject.isAnimated()) {
@@ -919,6 +931,7 @@ public class GeneratorCommands {
         @SlashOption(description = "If the Abiphone symbol should be shown next to the dialogue", required = false) Boolean abiphone,
         @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
         @SlashOption(description = RENDER_BACKGROUND_DESCRIPTION, required = false) Boolean renderBackground,
+        @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -944,6 +957,7 @@ public class GeneratorCommands {
                 .withMaxLineLength(maxLineLength)
                 .withRenderBorder(renderBackground)
                 .bypassMaxLineLength(true);
+            applyPackTheme(tooltipGenerator, resolvePackOption(pack));
 
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context)
                 .addGenerator(tooltipGenerator.build());
@@ -983,6 +997,7 @@ public class GeneratorCommands {
         @SlashOption(description = "If the Abiphone symbol should be shown next to the dialogue", required = false) Boolean abiphone,
         @SlashOption(description = "Player head texture (username, URL, etc.)", required = false) String skinValue,
         @SlashOption(description = RENDER_BACKGROUND_DESCRIPTION, required = false) Boolean renderBackground,
+        @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -1008,6 +1023,7 @@ public class GeneratorCommands {
                 .withMaxLineLength(maxLineLength)
                 .withRenderBorder(renderBackground)
                 .bypassMaxLineLength(true);
+            applyPackTheme(tooltipGenerator, resolvePackOption(pack));
 
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context)
                 .addGenerator(tooltipGenerator.build());
@@ -1207,6 +1223,28 @@ public class GeneratorCommands {
      *
      * @throws GeneratorException If a tooltip style is given without a resource pack
      */
+    /**
+     * Rejects an explicit tooltip_style when the border is disabled: the library only draws
+     * theme sprites when the border is rendered, so the style would silently do nothing
+     * (while an invalid style would still error — loud beats inconsistent).
+     *
+     * @throws GeneratorException If a tooltip style is given while the border is disabled
+     */
+    private static void requireBorderForTooltipStyle(String tooltipStyle, boolean renderBorder) {
+        if (tooltipStyle != null && !tooltipStyle.isBlank() && !renderBorder) {
+            throw new GeneratorException("The tooltip_style option only renders with the border; set render_border: true too!");
+        }
+    }
+
+    /**
+     * Applies pack theming for tooltips that have no rarity and no tooltip_style option (plain
+     * text, dialogue, hovered inventory lore, parsed NBT previews): the pack's default tooltip
+     * override when present, plus the pack's text color remap.
+     */
+    private void applyPackTheme(MinecraftTooltipGenerator.Builder builder, PackId packId) {
+        applyPackTheme(builder, packId, null, null);
+    }
+
     private void applyPackTheme(MinecraftTooltipGenerator.Builder builder, PackId packId, String explicitStyle, Rarity rarity) {
         boolean hasExplicitStyle = explicitStyle != null && !explicitStyle.isBlank();
 
