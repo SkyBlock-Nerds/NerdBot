@@ -935,34 +935,16 @@ public class GeneratorCommands {
         maxLineLength = maxLineLength == null ? 91 : maxLineLength;
         renderBackground = renderBackground != null && renderBackground;
 
-        String[] lines = dialogue.split("\\\\n");
-        for (int i = 0; i < lines.length; i++) {
-            lines[i] = "&e[NPC] " + npcName + "&f: " + (abiphone ? "&b%%ABIPHONE%%&f " : "") + lines[i];
-            String line = lines[i];
-
-            if (line.contains("{options:")) {
-                String[] split = line.split("\\{options: ?");
-                lines[i] = split[0];
-                String[] options = split[1].replace("}", "").split(", ");
-                lines[i] += "\n&eSelect an option: &f";
-                for (String option : options) {
-                    lines[i] += "&a" + option + "&f ";
-                }
-            }
-        }
-
-        dialogue = String.join("\n", lines);
-
-        MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-            .withItemLore(dialogue)
-            .withAlpha(0)
-            .withPadding(MinecraftTooltip.DEFAULT_PADDING)
-            .hasFirstLinePadding(false)
-            .withMaxLineLength(maxLineLength)
-            .withRenderBorder(renderBackground)
-            .bypassMaxLineLength(true);
-
         try {
+            MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
+                .withItemLore(buildSingleDialogue(npcName, dialogue, abiphone))
+                .withAlpha(0)
+                .withPadding(MinecraftTooltip.DEFAULT_PADDING)
+                .hasFirstLinePadding(false)
+                .withMaxLineLength(maxLineLength)
+                .withRenderBorder(renderBackground)
+                .bypassMaxLineLength(true);
+
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context)
                 .addGenerator(tooltipGenerator.build());
 
@@ -1018,39 +1000,8 @@ public class GeneratorCommands {
         renderBackground = renderBackground != null && renderBackground;
 
         try {
-            String[] lines = dialogue.split("\\\\n");
-            String[] names = npcNames.split(", ?");
-
-            for (int i = 0; i < lines.length; i++) {
-                String[] split = lines[i].split(", ?", 2);
-                try {
-                    int index = Integer.parseInt(split[0]);
-
-                    if (index >= names.length) {
-                        index = names.length - 1;
-                    }
-
-                    lines[i] = "&e[NPC] " + names[index] + "&f: " + (abiphone ? "&b%%ABIPHONE%%&f " : "") + split[1];
-                    String line = lines[i];
-
-                    if (line.contains("{options:")) {
-                        String[] split2 = line.split("\\{options: ?");
-                        lines[i] = split2[0];
-                        String[] options = split2[1].replace("}", "").split(", ?");
-                        lines[i] += "\n&eSelect an option: &f";
-                        for (String option : options) {
-                            lines[i] += "&a" + option + "&f ";
-                        }
-                    }
-                } catch (NumberFormatException exception) {
-                    throw new GeneratorException("Invalid NPC name index found in dialogue: " + split[0] + " (line " + (i + 1) + ")");
-                }
-            }
-
-            dialogue = String.join("\n", lines);
-
             MinecraftTooltipGenerator.Builder tooltipGenerator = new MinecraftTooltipGenerator.Builder()
-                .withItemLore(dialogue)
+                .withItemLore(buildMultiDialogue(npcNames, dialogue, abiphone))
                 .withAlpha(0)
                 .withPadding(MinecraftTooltip.DEFAULT_PADDING)
                 .hasFirstLinePadding(false)
@@ -1085,6 +1036,72 @@ public class GeneratorCommands {
             event.getHook().editOriginal("An error occurred while generating the dialogue!").queue();
             log.error("Encountered an error while generating dialogue", exception);
         }
+    }
+
+    static String buildSingleDialogue(String npcName, String dialogue, boolean abiphone) {
+        String[] lines = dialogue.split("\\\\n");
+
+        for (int i = 0; i < lines.length; i++) {
+            lines[i] = expandDialogueOptions(npcDialogueLine(npcName, abiphone, lines[i]), i + 1);
+        }
+
+        return String.join("\n", lines);
+    }
+
+    static String buildMultiDialogue(String npcNames, String dialogue, boolean abiphone) {
+        String[] lines = dialogue.split("\\\\n");
+        String[] names = npcNames.split(", ?");
+
+        for (int i = 0; i < lines.length; i++) {
+            String[] split = lines[i].split(", ?", 2);
+
+            if (split.length < 2) {
+                throw new GeneratorException("Each line must start with an NPC index followed by a comma (line " + (i + 1) + ")! Example: 0, Hello!");
+            }
+
+            int index;
+            try {
+                index = Integer.parseInt(split[0]);
+            } catch (NumberFormatException exception) {
+                throw new GeneratorException("Invalid NPC name index found in dialogue: " + split[0] + " (line " + (i + 1) + ")");
+            }
+
+            if (index < 0) {
+                throw new GeneratorException("Invalid NPC name index found in dialogue: " + split[0] + " (line " + (i + 1) + ")");
+            }
+
+            if (index >= names.length) {
+                index = names.length - 1;
+            }
+
+            lines[i] = expandDialogueOptions(npcDialogueLine(names[index], abiphone, split[1]), i + 1);
+        }
+
+        return String.join("\n", lines);
+    }
+
+    private static String npcDialogueLine(String npcName, boolean abiphone, String text) {
+        return "&e[NPC] " + npcName + "&f: " + (abiphone ? "&b%%ABIPHONE%%&f " : "") + text;
+    }
+
+    private static String expandDialogueOptions(String line, int lineNumber) {
+        if (!line.contains("{options:")) {
+            return line;
+        }
+
+        String[] split = line.split("\\{options: ?");
+
+        if (split.length < 2 || split[1].replace("}", "").isBlank()) {
+            throw new GeneratorException("Malformed {options: ...} block in dialogue (line " + lineNumber + ")! Expected format: {options: Option 1, Option 2}");
+        }
+
+        StringBuilder result = new StringBuilder(split[0]).append("\n&eSelect an option: &f");
+
+        for (String option : split[1].replace("}", "").split(", ?")) {
+            result.append("&a").append(option).append("&f ");
+        }
+
+        return result.toString();
     }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "history", description = "View your command history", guildOnly = true)
