@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.command;
 
+import net.aerh.imagegenerator.exception.GeneratorException;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.generator.GeneratorHistory;
 import org.junit.jupiter.api.Test;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GeneratorCommandsTest {
@@ -39,5 +41,114 @@ class GeneratorCommandsTest {
         discordUser.getGeneratorHistory().addCommand("/gen text text:hello");
 
         assertEquals(List.of("/gen item id:stick", "/gen text text:hello"), GeneratorCommands.getCommandHistory(discordUser));
+    }
+
+    @Test
+    void buildSingleDialoguePrefixesEachLineWithNpcName() {
+        assertEquals(
+            "&e[NPC] Steve&f: Hello\n&e[NPC] Steve&f: Bye",
+            GeneratorCommands.buildSingleDialogue("Steve", "Hello\\nBye", false)
+        );
+    }
+
+    @Test
+    void buildSingleDialogueIncludesAbiphoneSymbolWhenEnabled() {
+        assertEquals(
+            "&e[NPC] Steve&f: &b%%ABIPHONE%%&f Hello",
+            GeneratorCommands.buildSingleDialogue("Steve", "Hello", true)
+        );
+    }
+
+    @Test
+    void buildSingleDialogueExpandsOptionsBlock() {
+        assertEquals(
+            "&e[NPC] Steve&f: Hi \n&eSelect an option: &f&aYes&f &aNo&f ",
+            GeneratorCommands.buildSingleDialogue("Steve", "Hi {options: Yes, No}", false)
+        );
+    }
+
+    @Test
+    void buildSingleDialogueRejectsOptionsBlockWithNothingAfterMarker() {
+        GeneratorException exception = assertThrows(GeneratorException.class,
+            () -> GeneratorCommands.buildSingleDialogue("Steve", "Hello {options:", false));
+
+        assertEquals("Malformed {options: ...} block in dialogue (line 1)! Expected format: {options: Option 1, Option 2}", exception.getMessage());
+    }
+
+    @Test
+    void buildSingleDialogueRejectsEmptyOptionsBlock() {
+        assertThrows(GeneratorException.class, () -> GeneratorCommands.buildSingleDialogue("Steve", "Hello {options:}", false));
+    }
+
+    @Test
+    void buildSingleDialogueReportsLineNumberOfMalformedOptionsBlock() {
+        GeneratorException exception = assertThrows(GeneratorException.class,
+            () -> GeneratorCommands.buildSingleDialogue("Steve", "Hello\\nBye {options:", false));
+
+        assertTrue(exception.getMessage().contains("line 2"));
+    }
+
+    @Test
+    void buildMultiDialogueInterpolatesNpcNamesByIndex() {
+        assertEquals(
+            "&e[NPC] Alice&f: Hi\n&e[NPC] Bob&f: Hey",
+            GeneratorCommands.buildMultiDialogue("Alice, Bob", "0, Hi\\n1, Hey", false)
+        );
+    }
+
+    @Test
+    void buildMultiDialogueIncludesAbiphoneSymbolWhenEnabled() {
+        assertEquals(
+            "&e[NPC] Alice&f: &b%%ABIPHONE%%&f Hi",
+            GeneratorCommands.buildMultiDialogue("Alice", "0, Hi", true)
+        );
+    }
+
+    @Test
+    void buildMultiDialogueClampsTooLargeIndexToLastName() {
+        assertEquals(
+            "&e[NPC] Bob&f: Hi",
+            GeneratorCommands.buildMultiDialogue("Alice, Bob", "5, Hi", false)
+        );
+    }
+
+    @Test
+    void buildMultiDialogueExpandsOptionsBlock() {
+        assertEquals(
+            "&e[NPC] Alice&f: Hi \n&eSelect an option: &f&aYes&f &aNo&f ",
+            GeneratorCommands.buildMultiDialogue("Alice, Bob", "0, Hi {options: Yes, No}", false)
+        );
+    }
+
+    @Test
+    void buildMultiDialogueRejectsLineWithoutComma() {
+        GeneratorException exception = assertThrows(GeneratorException.class,
+            () -> GeneratorCommands.buildMultiDialogue("Alice, Bob", "0", false));
+
+        assertEquals("Each line must start with an NPC index followed by a comma (line 1)! Example: 0, Hello!", exception.getMessage());
+    }
+
+    @Test
+    void buildMultiDialogueRejectsNonNumericIndex() {
+        GeneratorException exception = assertThrows(GeneratorException.class,
+            () -> GeneratorCommands.buildMultiDialogue("Alice, Bob", "abc, Hi", false));
+
+        assertEquals("Invalid NPC name index found in dialogue: abc (line 1)", exception.getMessage());
+    }
+
+    @Test
+    void buildMultiDialogueRejectsNegativeIndex() {
+        GeneratorException exception = assertThrows(GeneratorException.class,
+            () -> GeneratorCommands.buildMultiDialogue("Alice, Bob", "-1, Hi", false));
+
+        assertEquals("Invalid NPC name index found in dialogue: -1 (line 1)", exception.getMessage());
+    }
+
+    @Test
+    void buildMultiDialogueRejectsMalformedOptionsBlock() {
+        GeneratorException exception = assertThrows(GeneratorException.class,
+            () -> GeneratorCommands.buildMultiDialogue("Alice, Bob", "0, Hi\\n1, Hey {options:", false));
+
+        assertTrue(exception.getMessage().contains("line 2"));
     }
 }
