@@ -61,37 +61,37 @@ class GeneratorCommandsTest {
     @Test
     void appendPowerStoneItemOptionsAppendsItemIdWhenPresent() {
         assertEquals("/gen powerstone item_id: stick",
-            GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", "stick", false, false));
+            GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", "stick", false, true));
     }
 
     @Test
     void appendPowerStoneItemOptionsOmitsItemIdWhenNullOrBlank() {
-        assertEquals("/gen powerstone", GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", null, false, false));
-        assertEquals("/gen powerstone", GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", "  ", false, false));
+        assertEquals("/gen powerstone", GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", null, false, true));
+        assertEquals("/gen powerstone", GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", "  ", false, true));
     }
 
     @Test
     void appendPowerStoneItemOptionsAppendsEnchantedWhenTrue() {
         assertEquals("/gen powerstone item_id: stick enchanted: True",
-            GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", "stick", true, false));
+            GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", "stick", true, true));
     }
 
     @Test
-    void appendPowerStoneItemOptionsAppendsAnimatedWhenTrue() {
-        assertEquals("/gen powerstone item_id: stick animated: True",
+    void appendPowerStoneItemOptionsOmitsAnimatedWhenDefaultedOn() {
+        assertEquals("/gen powerstone item_id: stick",
             GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", "stick", false, true));
     }
 
     @Test
-    void appendPowerStoneItemOptionsOmitsAnimatedWhenFalse() {
-        assertEquals("/gen powerstone item_id: stick",
+    void appendPowerStoneItemOptionsAppendsAnimatedFalseWhenOptedOut() {
+        assertEquals("/gen powerstone item_id: stick animated: False",
             GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", "stick", false, false));
     }
 
     @Test
     void appendPowerStoneItemOptionsAppendsAllOptionsInOrder() {
-        assertEquals("/gen powerstone item_id: stick enchanted: True animated: True",
-            GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", "stick", true, true));
+        assertEquals("/gen powerstone item_id: stick enchanted: True animated: False",
+            GeneratorCommands.appendPowerStoneItemOptions("/gen powerstone", "stick", true, false));
     }
 
     @Test

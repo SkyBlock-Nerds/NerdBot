@@ -102,7 +102,7 @@ public class GeneratorCommands {
     private static final String COLOR_DESCRIPTION = "The overlay color (e.g., red, blue, #FF0000)";
     private static final String PACK_DESCRIPTION = "The resource pack used to resolve item textures";
     private static final String TOOLTIP_STYLE_DESCRIPTION = "The pack tooltip style to render with (defaults to the rarity's configured style)";
-    private static final String ANIMATED_DESCRIPTION = "Render the pack's animated item textures as a GIF (requires a pack with animated textures)";
+    private static final String ANIMATED_DESCRIPTION = "Whether animated pack textures render as a GIF (defaults to the texture's own animation data; False forces a static render)";
 
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
@@ -132,7 +132,7 @@ public class GeneratorCommands {
 
         enchanted = enchanted != null && enchanted;
         hoverEffect = hoverEffect != null && hoverEffect;
-        animated = animated != null && animated;
+        animated = animated == null || animated;
         durability = durability == null ? 100 : durability;
 
         try {
@@ -207,7 +207,7 @@ public class GeneratorCommands {
         alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         enchanted = enchanted != null && enchanted;
-        animated = animated != null && animated;
+        animated = animated == null || animated;
 
         Function<String, Map<String, Integer>> parseStatsToMap = stats -> {
             Map<String, Integer> map = new HashMap<>();
@@ -620,10 +620,11 @@ public class GeneratorCommands {
                     // pack and the rarity-derived tooltip style, reproducing the preview exactly
                     applyPackTheme(tooltipBuilder, packId, null, tooltipBuilder.getRarity());
                 } else if (generator instanceof MinecraftItemGenerator.Builder itemBuilder) {
-                    // Parsed NBT reproduces a static item and emits a reproducible command; animation
-                    // is an explicit opt-in exposed only on /gen item, display and powerstone, so it is
-                    // deliberately not resolved here (there is no animate intent in the source NBT).
-                    applyItemPack(itemBuilder, packId, false);
+                    // The texture's own animation data decides the output, matching the item
+                    // commands' default: an animated pack texture parses into a GIF preview and
+                    // everything else stays static. The emitted command round-trips because the
+                    // animated option defaults on everywhere.
+                    applyItemPack(itemBuilder, packId, true);
                 }
 
                 generatorImageBuilder.addGenerator(generator.build());
@@ -758,7 +759,7 @@ public class GeneratorCommands {
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         centered = centered != null && centered;
         enchanted = enchanted != null && enchanted;
-        animated = animated != null && animated;
+        animated = animated == null || animated;
         firstLinePadding = firstLinePadding == null || firstLinePadding;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         renderBorder = renderBorder == null || renderBorder;
@@ -1037,7 +1038,8 @@ public class GeneratorCommands {
      * @param slashCommand The tooltip builder's reconstructed command to append onto
      * @param itemId       The rendered item id, or null/blank when no item was rendered
      * @param enchanted    Whether the item render was enchanted
-     * @param animated     Whether the item render used the pack's animated textures
+     * @param animated     Whether the item render used the pack's animated textures; false emits
+     *                     an explicit opt-out because animation defaults on
      *
      * @return The slash command with the item options appended
      */
@@ -1050,8 +1052,8 @@ public class GeneratorCommands {
             slashCommand += " enchanted: True";
         }
 
-        if (animated) {
-            slashCommand += " animated: True";
+        if (!animated) {
+            slashCommand += " animated: False";
         }
 
         return slashCommand;
