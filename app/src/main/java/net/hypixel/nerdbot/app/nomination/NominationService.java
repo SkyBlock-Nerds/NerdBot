@@ -167,58 +167,42 @@ public class NominationService {
                 contextLabel, member.getEffectiveName(), member.getId(), totalMessages, totalComments, totalVotes, hasRequiredMessages, hasRequiredComments, hasRequiredVotes, requirementsMet);
         }
 
-        final NominationOutcome[] outcomeRef = new NominationOutcome[]{null};
+        Long lastNominationTimestamp = lastActivity.getNominationInfo().getLastNominationTimestamp().orElse(null);
+        NominationOutcome outcome = decideOutcome(requirementsMet, lastNominationTimestamp, Instant.now().atZone(ZoneId.systemDefault()).getMonth());
 
-        lastActivity.getNominationInfo().getLastNominationTimestamp().ifPresentOrElse(timestamp -> {
-            Month lastNominationMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
-            Month now = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
-
-            if (lastNominationMonth != now && requirementsMet >= 2) {
-                if (contextLabel == null) {
-                    log.info("Last nomination was not this month (last: {}, now: {}), sending nomination message for {} (ID: {}) (nomination info: {})",
-                        lastNominationMonth, now, member.getEffectiveName(), member.getId(), discordUser.getLastActivity().getNominationInfo());
-                } else {
-                    log.info("[{}] Last nomination not this month (last: {}, now: {}), sending nomination message for {} (ID: {})",
-                        contextLabel, lastNominationMonth, now, member.getEffectiveName(), member.getId());
-                }
-
-                sendNominationMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, daysWindow);
-                outcomeRef[0] = NominationOutcome.NOMINATED;
-            }
-        }, () -> {
-            if (contextLabel == null) {
-                log.info("No last nomination date found for {} (ID: {}), checking if they meet the minimum requirements (min. messages: {}, min. votes: {}, min. comments: {}, nomination info: {})",
-                    member.getEffectiveName(), member.getId(), requiredMessages, requiredVotes, requiredComments, discordUser.getLastActivity().getNominationInfo());
-            } else {
-                log.info("[{}] No last nomination date found for {} (ID: {}), checking minimum requirements",
-                    contextLabel, member.getEffectiveName(), member.getId());
-            }
-
-            if (requirementsMet >= 2) {
-                sendNominationMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, daysWindow);
-                outcomeRef[0] = NominationOutcome.NOMINATED;
-            }
-        });
-
-        if (outcomeRef[0] != null) {
-            return outcomeRef[0];
+        if (outcome == NominationOutcome.NOMINATED) {
+            sendNominationMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, daysWindow);
         }
 
-        Long lastTimestamp = lastActivity.getNominationInfo().getLastNominationTimestamp().orElse(null);
-        if (lastTimestamp != null) {
-            Month lastMonth = Instant.ofEpochMilli(lastTimestamp).atZone(ZoneId.systemDefault()).getMonth();
-            Month nowMonth = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
+        return outcome;
+    }
 
-            if (lastMonth == nowMonth) {
+    /**
+     * Decide a member's nomination outcome from how many of the three activity thresholds they meet
+     * and when they were last nominated.
+     *
+     * <p>A member already nominated in the current month is skipped regardless of their activity;
+     * otherwise they are nominated when they meet at least two of the three thresholds, and skipped
+     * as below-threshold when they do not.
+     *
+     * <p>The "already this month" check compares the calendar {@link Month} only (ignoring year),
+     * preserving the pre-existing behaviour. Extracted from {@link #evaluateNomination} so the
+     * decision can be unit-tested in isolation.
+     *
+     * @param requirementsMet         the number of thresholds met (0-3)
+     * @param lastNominationTimestamp epoch-millis of the last nomination, or {@code null} if never
+     * @param currentMonth            the month to treat as "now"
+     * @return the nomination outcome
+     */
+    static NominationOutcome decideOutcome(int requirementsMet, Long lastNominationTimestamp, Month currentMonth) {
+        if (lastNominationTimestamp != null) {
+            Month lastNominationMonth = Instant.ofEpochMilli(lastNominationTimestamp).atZone(ZoneId.systemDefault()).getMonth();
+            if (lastNominationMonth == currentMonth) {
                 return NominationOutcome.SKIPPED_ALREADY_THIS_MONTH;
             }
         }
 
-        if (requirementsMet >= 2) {
-            return NominationOutcome.NOMINATED;
-        }
-
-        return NominationOutcome.SKIPPED_BELOW_THRESHOLD;
+        return requirementsMet >= 2 ? NominationOutcome.NOMINATED : NominationOutcome.SKIPPED_BELOW_THRESHOLD;
     }
 
     private void sendNominationMessage(Member member, DiscordUser discordUser, int requiredMessages, int requiredVotes, int requiredComments, int daysWindow) {
@@ -285,7 +269,7 @@ public class NominationService {
         });
     }
 
-    private enum NominationOutcome {
+    enum NominationOutcome {
         NOMINATED,
         SKIPPED_ALREADY_THIS_MONTH,
         SKIPPED_BELOW_THRESHOLD
