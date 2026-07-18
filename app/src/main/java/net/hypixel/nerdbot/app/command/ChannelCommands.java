@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
+import net.hypixel.nerdbot.app.command.util.CommandErrorResponder;
 import net.hypixel.nerdbot.app.config.SuggestionConfig;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
@@ -51,9 +52,9 @@ public class ChannelCommands {
                         .queue();
                 }
             } catch (Exception exception) {
-                log.error("An error occurred when archiving the channel {}!", channel.getId(), exception);
+                CommandErrorResponder.capture("An error occurred when archiving the channel " + channel.getId(), exception);
                 if (!hook.isExpired()) {
-                    hook.editOriginal(String.format("An error occurred while archiving channel %s: %s", channel.getAsMention(), exception.getMessage())).queue();
+                    hook.editOriginal(String.format("An error occurred while archiving channel %s. Please try again later.", channel.getAsMention())).queue();
                 }
             }
         });
@@ -73,12 +74,12 @@ public class ChannelCommands {
                 }
                 sendZipToUserAsync(event, zipFile, hook, category.getName());
             } catch (Exception exception) {
-                log.error("Failed to archive category {}", category.getId(), exception);
+                CommandErrorResponder.capture("Failed to archive category " + category.getId(), exception);
                 if (!hook.isExpired()) {
-                    hook.editOriginal("Failed to create the archive zip file: " + exception.getMessage()).queue();
+                    hook.editOriginal("Failed to create the archive zip file. Please try again later.").queue();
                 } else {
                     event.getUser().openPrivateChannel().queue(
-                        dm -> dm.sendMessage("Failed to archive category " + category.getName() + ": " + exception.getMessage()).queue(),
+                        dm -> dm.sendMessage("Failed to archive category " + category.getName() + ". Please try again later.").queue(),
                         error -> log.error("Failed to notify user {} of archive failure via DM", event.getUser().getId(), error)
                     );
                 }

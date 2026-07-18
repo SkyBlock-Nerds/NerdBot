@@ -23,6 +23,7 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.hypixel.nerdbot.app.command.util.CommandErrorResponder;
 import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.discord.role.RoleManager;
@@ -574,8 +575,7 @@ public class ProfileCommands {
                     });
             })
             .exceptionally(throwable -> {
-                log.error("Error during profile verification request", throwable);
-                event.getHook().editOriginal("Failed to process verification request: " + throwable.getMessage()).queue();
+                CommandErrorResponder.respond(event.getHook(), "Failed to process the verification request. Please try again later.", throwable);
                 return null;
             });
     }
@@ -643,8 +643,7 @@ public class ProfileCommands {
                     });
             })
             .exceptionally(throwable -> {
-                log.error("Error during profile linking", throwable);
-                event.getHook().editOriginal("Failed to link profile: " + throwable.getMessage()).queue();
+                CommandErrorResponder.respond(event.getHook(), "Failed to link the profile. Please try again later.", throwable);
                 return null;
             });
     }
@@ -707,8 +706,7 @@ public class ProfileCommands {
                 ).queue();
             })
             .exceptionally(throwable -> {
-                log.error("Error loading user profile", throwable);
-                event.getHook().editOriginal("Failed to load profile: " + throwable.getMessage()).queue();
+                CommandErrorResponder.respond(event.getHook(), "Failed to load the profile. Please try again later.", throwable);
                 return null;
             });
     }
@@ -740,8 +738,7 @@ public class ProfileCommands {
                 event.getHook().editOriginalEmbeds(createBadgesEmbed(event.getMember(), discordUser, true)).queue();
             })
             .exceptionally(throwable -> {
-                log.error("Error loading user badges", throwable);
-                event.getHook().editOriginal("Failed to load badges: " + throwable.getMessage()).queue();
+                CommandErrorResponder.respond(event.getHook(), "Failed to load the badges. Please try again later.", throwable);
                 return null;
             });
     }
@@ -805,8 +802,7 @@ public class ProfileCommands {
                 );
             })
             .exceptionally(throwable -> {
-                log.error("Error loading user suggestions", throwable);
-                event.getHook().editOriginal("Failed to load suggestions: " + throwable.getMessage()).queue();
+                CommandErrorResponder.respond(event.getHook(), "Failed to load the suggestions. Please try again later.", throwable);
                 return null;
             });
     }
@@ -845,8 +841,7 @@ public class ProfileCommands {
                 event.getHook().editOriginal("Your birthday has been removed!").queue();
             })
             .exceptionally(throwable -> {
-                log.error("Error removing birthday", throwable);
-                event.getHook().editOriginal("Failed to remove birthday: " + throwable.getMessage()).queue();
+                CommandErrorResponder.respond(event.getHook(), "Failed to remove the birthday. Please try again later.", throwable);
                 return null;
             });
     }
@@ -902,8 +897,7 @@ public class ProfileCommands {
                 event.getHook().editOriginal("Your birthday timezone has been updated to `" + zoneId.getId() + "`.").queue();
             })
             .exceptionally(throwable -> {
-                log.error("Error updating birthday timezone", throwable);
-                event.getHook().editOriginal("Failed to update timezone: " + throwable.getMessage()).queue();
+                CommandErrorResponder.respond(event.getHook(), "Failed to update the timezone. Please try again later.", throwable);
                 return null;
             });
     }
@@ -973,8 +967,7 @@ public class ProfileCommands {
                 }
             })
             .exceptionally(throwable -> {
-                log.error("Error setting birthday", throwable);
-                event.getHook().editOriginal("Failed to set birthday: " + throwable.getMessage()).queue();
+                CommandErrorResponder.respond(event.getHook(), "Failed to set the birthday. Please try again later.", throwable);
                 return null;
             });
     }
