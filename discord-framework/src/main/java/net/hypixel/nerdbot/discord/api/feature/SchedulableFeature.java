@@ -1,6 +1,6 @@
 package net.hypixel.nerdbot.discord.api.feature;
 
-import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 
 /**
  * Implement on features that execute periodic tasks. The framework
@@ -18,10 +18,10 @@ public interface SchedulableFeature {
     /**
      * Default initial delay in milliseconds before the first run.
      */
-    long defaultInitialDelayMs(NerdBotConfig config);
+    long defaultInitialDelayMs(DiscordBotConfig config);
 
     /**
      * Default repeating period in milliseconds.
      */
-    long defaultPeriodMs(NerdBotConfig config);
+    long defaultPeriodMs(DiscordBotConfig config);
 }

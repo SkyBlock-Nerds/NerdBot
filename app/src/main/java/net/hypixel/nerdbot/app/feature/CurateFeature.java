@@ -10,6 +10,7 @@ import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.app.curator.Curator;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
@@ -66,13 +67,13 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
     }
 
     @Override
-    public long defaultInitialDelayMs(NerdBotConfig config) {
+    public long defaultInitialDelayMs(DiscordBotConfig config) {
         return 30_000L;
     }
 
     @Override
-    public long defaultPeriodMs(NerdBotConfig config) {
-        return config.getInterval();
+    public long defaultPeriodMs(DiscordBotConfig config) {
+        return ((NerdBotConfig) config).getInterval();
     }
 
     @Override
