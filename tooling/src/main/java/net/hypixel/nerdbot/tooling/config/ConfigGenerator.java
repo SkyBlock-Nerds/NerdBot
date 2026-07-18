@@ -197,7 +197,8 @@ public class ConfigGenerator {
                 default -> {
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception exception) {
+            System.err.println("Failed to populate config value: " + exception.getMessage());
         }
     }
 
@@ -409,7 +410,8 @@ public class ConfigGenerator {
                     }
 
                     return (T) constructor.newInstance(params);
-                } catch (Exception ignored) {
+                } catch (Exception exception) {
+                    System.err.println("Failed to instantiate " + clazz.getName() + " via constructor: " + exception.getMessage());
                 }
             }
         } catch (Exception e) {
