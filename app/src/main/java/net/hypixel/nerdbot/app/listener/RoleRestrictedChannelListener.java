@@ -209,8 +209,14 @@ public class RoleRestrictedChannelListener {
             }
         }
 
-        String identifier = generateGroupIdentifier(guild, roleIds);
-        String displayName = generateGroupDisplayName(guild, roleIds);
+        List<String> roleNames = roleIds.stream()
+            .map(guild::getRoleById)
+            .filter(Objects::nonNull)
+            .map(net.dv8tion.jda.api.entities.Role::getName)
+            .toList();
+
+        String identifier = formatGroupIdentifier(roleNames, roleIds);
+        String displayName = formatGroupDisplayName(roleNames);
 
         RoleRestrictedChannelGroup newGroup = new RoleRestrictedChannelGroup(
             identifier,
@@ -244,40 +250,51 @@ public class RoleRestrictedChannelListener {
         return false;
     }
 
-    private String generateGroupIdentifier(Guild guild, Set<String> roleIds) {
-        List<String> roleNames = roleIds.stream()
-            .map(guild::getRoleById)
-            .filter(Objects::nonNull)
-            .map(role -> role.getName().toLowerCase().replaceAll("[^a-z0-9]", ""))
+    /**
+     * Build the stable identifier for a role-restricted group from its roles' names. Names are
+     * lowercased and stripped to {@code [a-z0-9]}, sorted for determinism, and joined with hyphens.
+     * When no role names resolve, the role IDs are used as a fallback.
+     *
+     * @param roleNames      the resolved role display names (unsorted, may be empty)
+     * @param fallbackRoleIds the role IDs to fall back to when no names resolve
+     *
+     * @return the group identifier, e.g. {@code "admin-mod-channels"}
+     */
+    static String formatGroupIdentifier(List<String> roleNames, Set<String> fallbackRoleIds) {
+        List<String> sanitized = roleNames.stream()
+            .map(name -> name.toLowerCase().replaceAll("[^a-z0-9]", ""))
             .sorted()
             .toList();
 
-        if (roleNames.isEmpty()) {
-            return String.join("-", roleIds) + "-channels";
+        if (sanitized.isEmpty()) {
+            return String.join("-", fallbackRoleIds) + "-channels";
         }
 
-        return String.join("-", roleNames) + "-channels";
+        return String.join("-", sanitized) + "-channels";
     }
 
-    private String generateGroupDisplayName(Guild guild, Set<String> roleIds) {
-        List<String> roleNames = roleIds.stream()
-            .map(guild::getRoleById)
-            .filter(Objects::nonNull)
-            .map(net.dv8tion.jda.api.entities.Role::getName)
-            .sorted()
-            .toList();
+    /**
+     * Build the human-readable display name for a role-restricted group from its roles' names. Names
+     * are sorted, then joined as "A Channels", "A & B Channels", or "A, B & C Channels".
+     *
+     * @param roleNames the resolved role display names (unsorted, may be empty)
+     *
+     * @return the group display name
+     */
+    static String formatGroupDisplayName(List<String> roleNames) {
+        List<String> sorted = roleNames.stream().sorted().toList();
 
-        if (roleNames.isEmpty()) {
+        if (sorted.isEmpty()) {
             return "Unknown Role Channels";
         }
 
-        if (roleNames.size() == 1) {
-            return roleNames.getFirst() + " Channels";
-        } else if (roleNames.size() == 2) {
-            return roleNames.get(0) + " & " + roleNames.get(1) + " Channels";
+        if (sorted.size() == 1) {
+            return sorted.getFirst() + " Channels";
+        } else if (sorted.size() == 2) {
+            return sorted.get(0) + " & " + sorted.get(1) + " Channels";
         } else {
-            return String.join(", ", roleNames.subList(0, roleNames.size() - 1)) +
-                " & " + roleNames.getLast() + " Channels";
+            return String.join(", ", sorted.subList(0, sorted.size() - 1)) +
+                " & " + sorted.getLast() + " Channels";
         }
     }
 }
