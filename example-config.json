@@ -3,27 +3,6 @@
     "enabled": true,
     "port": 1
   },
-  "messageLimit": 1,
-  "mojangUsernameCacheTTL": 1,
-  "mojangForceNicknameUpdate": true,
-  "voiceThreshold": 1,
-  "interval": 1,
-  "nominationsEnabled": true,
-  "inactivityCheckEnabled": true,
-  "inactivityDays": 1,
-  "inactivityMessages": 1,
-  "features": [
-    {
-      "enabled": true,
-      "className": "example_value",
-      "initialDelayMs": 1,
-      "periodMs": 1
-    }
-  ],
-  "guildId": "1234567890123456789",
-  "ownerIds": [
-    "1234567890123456789"
-  ],
   "suggestionConfig": {
     "reviewRequestConfig": {
       "enabled": true,
@@ -53,6 +32,103 @@
     "autoArchiveThreshold": 1,
     "autoLockThreshold": 1
   },
+  "badgeConfig": {
+    "badges": [
+      {
+        "id": "1234567890123456789",
+        "name": "example_value",
+        "emoji": "example_value"
+      }
+    ]
+  },
+  "funConfig": {
+    "autoReactions": {
+      "example_value": "example_value"
+    },
+    "aprilFoolsReactionChance": 1.0,
+    "aprilFoolsReactionEmoji": "example_value",
+    "aprilFoolsTimezone": "example_value"
+  },
+  "generatorConfig": {
+    "playerHead": {
+      "defaultSkinTexture": "example_value",
+      "defaultScale": 1,
+      "maxScale": 1,
+      "minScale": 1
+    },
+    "tooltip": {
+      "defaultMaxLineLength": 1,
+      "defaultAlpha": 1,
+      "defaultPadding": 1,
+      "defaultRenderBorder": true,
+      "defaultCenteredText": true,
+      "maxLineLength": 1,
+      "minLineLength": 1
+    },
+    "item": {
+      "defaultEnchanted": true,
+      "defaultHoverEffect": true,
+      "defaultDurabilityPercent": 1
+    },
+    "inventory": {
+      "defaultDrawBorder": true,
+      "defaultDrawBackground": true,
+      "maxRows": 1,
+      "maxColumns": 1,
+      "minRows": 1,
+      "minColumns": 1,
+      "animateGlint": true
+    },
+    "cache": {
+      "enabled": true,
+      "maxSize": 1,
+      "ttlMinutes": 1
+    },
+    "general": {
+      "defaultScaleFactor": 1,
+      "defaultPadding": 1,
+      "maxScaleFactor": 1,
+      "minScaleFactor": 1,
+      "debugLogging": true,
+      "includeErrorDetails": true
+    },
+    "resourcePacks": {
+      "packs": [
+        {
+          "id": "1234567890123456789",
+          "path": "example_value",
+          "tooltipStyles": {
+            "example_value": "example_value"
+          },
+          "textColorRemap": {
+            "example_value": "example_value"
+          }
+        }
+      ],
+      "defaultPack": "example_value"
+    }
+  },
+  "messageLimit": 1,
+  "mojangUsernameCacheTTL": 1,
+  "mojangForceNicknameUpdate": true,
+  "voiceThreshold": 1,
+  "interval": 1,
+  "nominationsEnabled": true,
+  "inactivityCheckEnabled": true,
+  "inactivityDays": 1,
+  "inactivityMessages": 1,
+  "features": [
+    {
+      "enabled": true,
+      "className": "example_value",
+      "initialDelayMs": 1,
+      "periodMs": 1
+    }
+  ],
+  "guildId": "1234567890123456789",
+  "ownerIds": [
+    "1234567890123456789"
+  ],
   "channelConfig": {
     "logChannelId": "1234567890123456789",
     "verifyLogChannelId": "1234567890123456789",
@@ -158,82 +234,6 @@
     "disagreeEmojiId": "1234567890123456789",
     "neutralEmojiId": "1234567890123456789",
     "greenlitEmojiId": "1234567890123456789"
-  },
-  "badgeConfig": {
-    "badges": [
-      {
-        "id": "1234567890123456789",
-        "name": "example_value",
-        "emoji": "example_value"
-      }
-    ]
-  },
-  "funConfig": {
-    "autoReactions": {
-      "example_value": "example_value"
-    },
-    "aprilFoolsReactionChance": 1.0,
-    "aprilFoolsReactionEmoji": "example_value",
-    "aprilFoolsTimezone": "example_value"
-  },
-  "generatorConfig": {
-    "playerHead": {
-      "defaultSkinTexture": "example_value",
-      "defaultScale": 1,
-      "maxScale": 1,
-      "minScale": 1
-    },
-    "tooltip": {
-      "defaultMaxLineLength": 1,
-      "defaultAlpha": 1,
-      "defaultPadding": 1,
-      "defaultRenderBorder": true,
-      "defaultCenteredText": true,
-      "maxLineLength": 1,
-      "minLineLength": 1
-    },
-    "item": {
-      "defaultEnchanted": true,
-      "defaultHoverEffect": true,
-      "defaultDurabilityPercent": 1
-    },
-    "inventory": {
-      "defaultDrawBorder": true,
-      "defaultDrawBackground": true,
-      "maxRows": 1,
-      "maxColumns": 1,
-      "minRows": 1,
-      "minColumns": 1,
-      "animateGlint": true
-    },
-    "cache": {
-      "enabled": true,
-      "maxSize": 1,
-      "ttlMinutes": 1
-    },
-    "general": {
-      "defaultScaleFactor": 1,
-      "defaultPadding": 1,
-      "maxScaleFactor": 1,
-      "minScaleFactor": 1,
-      "debugLogging": true,
-      "includeErrorDetails": true
-    },
-    "resourcePacks": {
-      "packs": [
-        {
-          "id": "1234567890123456789",
-          "path": "example_value",
-          "tooltipStyles": {
-            "example_value": "example_value"
-          },
-          "textColorRemap": {
-            "example_value": "example_value"
-          }
-        }
-      ],
-      "defaultPack": "example_value"
-    }
   },
   "activityType": "PLAYING",
   "activity": "example_value"
