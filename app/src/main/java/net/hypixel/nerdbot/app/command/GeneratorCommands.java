@@ -320,16 +320,8 @@ public class GeneratorCommands {
 
                 if (includeGenCommand != null && includeGenCommand) {
                     // The builder round-trips its own fields (including pack and tooltip_style);
-                    // only options that belong to other generators still need appending by hand.
-                    String slashCommand = tooltipGenerator.buildSlashCommand();
-
-                    if (itemId != null && !itemId.isBlank()) {
-                        slashCommand += " item_id: " + itemId;
-                    }
-
-                    if (enchanted) {
-                        slashCommand += " enchanted: True";
-                    }
+                    // only options that belong to the item generator still need appending by hand.
+                    String slashCommand = appendPowerStoneItemOptions(tooltipGenerator.buildSlashCommand(), itemId, enchanted, animated);
 
                     event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + slashCommand.trim() + "```").queue();
                 }
@@ -628,6 +620,9 @@ public class GeneratorCommands {
                     // pack and the rarity-derived tooltip style, reproducing the preview exactly
                     applyPackTheme(tooltipBuilder, packId, null, tooltipBuilder.getRarity());
                 } else if (generator instanceof MinecraftItemGenerator.Builder itemBuilder) {
+                    // Parsed NBT reproduces a static item and emits a reproducible command; animation
+                    // is an explicit opt-in exposed only on /gen item, display and powerstone, so it is
+                    // deliberately not resolved here (there is no animate intent in the source NBT).
                     applyItemPack(itemBuilder, packId, false);
                 }
 
@@ -1030,6 +1025,36 @@ public class GeneratorCommands {
             event.getHook().editOriginal("An error occurred while generating the dialogue!").queue();
             log.error("Encountered an error while generating dialogue", exception);
         }
+    }
+
+    /**
+     * Appends the options driving the Power Stone's item render onto its reconstructed slash
+     * command. The tooltip builder already round-trips its own fields (name, lore, pack,
+     * tooltip_style) via {@link MinecraftTooltipGenerator.Builder#buildSlashCommand()}; item_id,
+     * enchanted and animated belong to the sibling item generator, so they are appended here so a
+     * re-run reproduces the same render (an animated Power Stone stays animated on round-trip).
+     *
+     * @param slashCommand The tooltip builder's reconstructed command to append onto
+     * @param itemId       The rendered item id, or null/blank when no item was rendered
+     * @param enchanted    Whether the item render was enchanted
+     * @param animated     Whether the item render used the pack's animated textures
+     *
+     * @return The slash command with the item options appended
+     */
+    static String appendPowerStoneItemOptions(String slashCommand, String itemId, boolean enchanted, boolean animated) {
+        if (itemId != null && !itemId.isBlank()) {
+            slashCommand += " item_id: " + itemId;
+        }
+
+        if (enchanted) {
+            slashCommand += " enchanted: True";
+        }
+
+        if (animated) {
+            slashCommand += " animated: True";
+        }
+
+        return slashCommand;
     }
 
     static String buildSingleDialogue(String npcName, String dialogue, boolean abiphone) {
