@@ -96,18 +96,9 @@ public class NominationInactivityService {
 
             log.info("Checking if {} (ID: {}) should be flagged for inactivity (total messages: {}, total comments: {}, total votes: {}) (has min. comments: {}, has min. votes: {}, has min. messages: {}, requirements met: {}/3)", member.getEffectiveName(), member.getId(), totalMessages, totalComments, totalVotes, hasRequiredComments, hasRequiredVotes, hasRequiredMessages, requirementsMet);
 
-            lastActivity.getNominationInfo().getLastInactivityWarningTimestamp().ifPresentOrElse(timestamp -> {
-                Month lastInactivityWarningMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
-                Month monthNow = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
-
-                if (lastInactivityWarningMonth != monthNow && requirementsMet < 2) {
-                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, "Member");
-                }
-            }, () -> {
-                if (requirementsMet < 2) {
-                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, "Member");
-                }
-            });
+            if (shouldSendInactivityWarning(requirementsMet, 2, lastActivity.getNominationInfo().getLastInactivityWarningTimestamp().orElse(null), Instant.now().atZone(ZoneId.systemDefault()).getMonth())) {
+                sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, "Member");
+            }
 
             Long lastWarningTimestamp = lastActivity.getNominationInfo().getLastInactivityWarningTimestamp().orElse(null);
             if (lastWarningTimestamp != null) {
@@ -175,18 +166,9 @@ public class NominationInactivityService {
 
             log.info("[NewMember] Checking inactivity for {} (ID: {}) (messages: {}, comments: {}, votes: {}) (has min. comments: {}, has min. votes: {}, has min. messages: {}, requirements met: {}/3)", member.getEffectiveName(), member.getId(), totalMessages, totalComments, totalVotes, hasRequiredComments, hasRequiredVotes, hasRequiredMessages, requirementsMet);
 
-            lastActivity.getNominationInfo().getLastInactivityWarningTimestamp().ifPresentOrElse(timestamp -> {
-                Month lastInactivityWarningMonth = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).getMonth();
-                Month monthNow = Instant.now().atZone(ZoneId.systemDefault()).getMonth();
-
-                if (lastInactivityWarningMonth != monthNow && requirementsMet < 3) {
-                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, "New Member");
-                }
-            }, () -> {
-                if (requirementsMet < 3) {
-                    sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, "New Member");
-                }
-            });
+            if (shouldSendInactivityWarning(requirementsMet, 3, lastActivity.getNominationInfo().getLastInactivityWarningTimestamp().orElse(null), Instant.now().atZone(ZoneId.systemDefault()).getMonth())) {
+                sendInactiveUserMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, "New Member");
+            }
 
             Long lastWarningTimestamp = lastActivity.getNominationInfo().getLastInactivityWarningTimestamp().orElse(null);
             if (lastWarningTimestamp != null) {
@@ -336,6 +318,37 @@ public class NominationInactivityService {
             log.info("Role-restricted inactivity sweep complete for group '{}': scanned={}, warnedThisMonth={}, skippedAlreadyThisMonth={}, ineligible={}, missingMember={}, took={}ms",
                 group.getIdentifier(), scanned, warned, skippedAlreadyThisMonth, ineligible, missingMember, durationMs);
         }
+    }
+
+    /**
+     * Decide whether an inactivity warning should be sent to a member this run.
+     *
+     * <p>A warning is sent when the member is below the activity threshold (fewer than
+     * {@code inactivityThreshold} of the three requirements met) and has not already been warned in
+     * the current month. Extracted from the member and new-member sweeps - which previously decided
+     * this via an {@code ifPresentOrElse} and then recomputed it to tally counters - so the decision
+     * can be unit-tested in isolation.
+     *
+     * <p>The "already warned this month" check compares the calendar {@link Month} only (ignoring
+     * year), preserving the pre-existing behaviour.
+     *
+     * @param requirementsMet      the number of activity thresholds met (0-3)
+     * @param inactivityThreshold  warn when fewer than this many requirements are met
+     * @param lastWarningTimestamp epoch-millis of the last inactivity warning, or {@code null}
+     * @param currentMonth         the month to treat as "now"
+     * @return {@code true} if an inactivity warning should be sent
+     */
+    static boolean shouldSendInactivityWarning(int requirementsMet, int inactivityThreshold, Long lastWarningTimestamp, Month currentMonth) {
+        if (requirementsMet >= inactivityThreshold) {
+            return false;
+        }
+
+        if (lastWarningTimestamp != null) {
+            Month lastWarningMonth = Instant.ofEpochMilli(lastWarningTimestamp).atZone(ZoneId.systemDefault()).getMonth();
+            return lastWarningMonth != currentMonth;
+        }
+
+        return true;
     }
 
     private void sendInactiveUserMessage(Member member, DiscordUser discordUser, int requiredMessages, int requiredVotes, int requiredComments, String inactivityType) {
