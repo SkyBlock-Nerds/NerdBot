@@ -190,7 +190,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                     double ratio = getRatio(agree, disagree);
                     log.info("Thread '{}' (ID: {}) has {} agree reactions, {} neutral reactions, and {} disagree reactions with a ratio of {}%", thread.getName(), thread.getId(), agree, neutral, disagree, ratio);
 
-                    if ((agree < suggestionConfig.getGreenlitThreshold()) || (ratio < suggestionConfig.getGreenlitRatio())) {
+                    if (!meetsGreenlitThreshold(agree, disagree, suggestionConfig.getGreenlitThreshold(), suggestionConfig.getGreenlitRatio())) {
                         log.info("Thread '{}' (ID: {}) does not meet the minimum threshold of {} agree reactions to be greenlit!", thread.getName(), thread.getId(), suggestionConfig.getGreenlitThreshold());
                         continue;
                     }

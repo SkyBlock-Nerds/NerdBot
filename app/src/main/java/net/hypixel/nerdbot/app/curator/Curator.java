@@ -29,5 +29,20 @@ public abstract class Curator<T, O> {
         return positiveReactions / (positiveReactions + negativeReactions) * 100;
     }
 
+    /**
+     * Whether a suggestion's votes qualify it to be greenlit: it needs at least {@code agreeThreshold}
+     * agree reactions <em>and</em> an agree/disagree {@link #getRatio(double, double) ratio} of at
+     * least {@code ratioThreshold} percent.
+     *
+     * @param agree          the number of agree reactions
+     * @param disagree       the number of disagree reactions
+     * @param agreeThreshold the minimum agree reactions required
+     * @param ratioThreshold the minimum agree/disagree ratio required, as a percentage
+     * @return {@code true} if the suggestion meets both thresholds
+     */
+    public static boolean meetsGreenlitThreshold(int agree, int disagree, int agreeThreshold, double ratioThreshold) {
+        return agree >= agreeThreshold && getRatio(agree, disagree) >= ratioThreshold;
+    }
+
     public abstract List<GreenlitMessage> curate(T t);
 }
