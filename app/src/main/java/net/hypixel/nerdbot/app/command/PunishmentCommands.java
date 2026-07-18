@@ -18,6 +18,9 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.hypixel.nerdbot.app.punishment.PunishmentService;
+import net.hypixel.nerdbot.app.punishment.PunishmentStats;
+import net.hypixel.nerdbot.app.punishment.RepositoryPunishmentStore;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
@@ -72,29 +75,15 @@ public class PunishmentCommands {
     ) {
         event.deferReply(true).complete();
 
-        PunishmentRepository repo = getPunishmentRepository();
-        List<Punishment> results;
-
         PunishmentType punishmentType = type != null ? PunishmentType.fromName(type) : null;
 
-        if (moderator != null && punishmentType != null) {
-            results = repo.findByModeratorUserId(moderator.getId()).stream()
-                .filter(p -> p.getType() == punishmentType)
-                .limit(ITEMS_PER_PAGE)
-                .toList();
-        } else if (moderator != null) {
-            results = repo.findByModeratorUserId(moderator.getId()).stream()
-                .limit(ITEMS_PER_PAGE)
-                .toList();
-        } else if (punishmentType != null) {
-            results = repo.getAll().stream()
-                .filter(p -> p.getType() == punishmentType)
-                .limit(ITEMS_PER_PAGE)
-                .toList();
-        } else {
+        if (moderator == null && punishmentType == null) {
             event.getHook().editOriginal("Please provide at least one filter (moderator or type).").queue();
             return;
         }
+
+        PunishmentService punishmentService = new PunishmentService(new RepositoryPunishmentStore(getPunishmentRepository()));
+        List<Punishment> results = punishmentService.search(moderator != null ? moderator.getId() : null, punishmentType, ITEMS_PER_PAGE);
 
         if (results.isEmpty()) {
             event.getHook().editOriginal("No punishments found matching the given filters.").queue();
@@ -121,24 +110,19 @@ public class PunishmentCommands {
     public void punishmentStats(SlashCommandInteractionEvent event, @SlashOption Member member) {
         event.deferReply(true).complete();
 
-        PunishmentRepository repo = getPunishmentRepository();
-        String targetId = member.getId();
-        long total = repo.countByTargetUserId(targetId);
+        PunishmentService punishmentService = new PunishmentService(new RepositoryPunishmentStore(getPunishmentRepository()));
+        PunishmentStats stats = punishmentService.stats(member.getId());
 
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("Punishment Stats for " + member.getEffectiveName())
             .setColor(Color.BLUE)
             .setThumbnail(member.getEffectiveAvatarUrl())
-            .addField("Total", String.valueOf(total), true);
+            .addField("Total", String.valueOf(stats.total()), true);
 
-        for (PunishmentType type : PunishmentType.values()) {
-            long count = repo.countByTargetAndType(targetId, type);
-            if (count > 0) {
-                embed.addField(type.getDisplayName(), String.valueOf(count), true);
-            }
-        }
+        stats.countsByType().forEach((type, count) ->
+            embed.addField(type.getDisplayName(), String.valueOf(count), true));
 
-        if (total == 0) {
+        if (stats.total() == 0) {
             embed.setDescription("This user has no recorded punishments.");
         }
 
