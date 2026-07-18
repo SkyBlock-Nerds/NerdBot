@@ -62,6 +62,15 @@ public class ResourcePackService {
     }
 
     /**
+     * The {@link PackRepository} this service registers packs into, so generator builders resolve
+     * pack content against the exact repository the bot manages rather than an implicit default.
+     */
+    @NotNull
+    public PackRepository packRepository() {
+        return packRepository;
+    }
+
+    /**
      * Registers every pack declared in the given configuration. A pack that fails to load is
      * logged and skipped so that one broken pack cannot prevent the bot (or the other packs)
      * from starting. Already-registered pack IDs are skipped, making this safe to call again on
