@@ -61,7 +61,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Pattern;
 
 @Slf4j
 public class ProfileCommands {
@@ -70,7 +69,6 @@ public class ProfileCommands {
         .expireAfterAccess(Duration.ofDays(1L))
         .scheduler(Scheduler.systemScheduler())
         .build();
-    private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
 
     public static MessageEmbed createBadgesEmbed(Member member, DiscordUser discordUser, boolean viewingSelf) {
         List<BadgeEntry> badges = discordUser.getBadges().stream()
