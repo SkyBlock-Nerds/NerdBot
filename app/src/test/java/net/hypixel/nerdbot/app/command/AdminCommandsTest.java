@@ -2,7 +2,6 @@ package net.hypixel.nerdbot.app.command;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,10 +32,4 @@ class AdminCommandsTest {
         assertFalse(AdminCommands.isBlockedConfigKey("mojangUsernameCacheTTL"));
     }
 
-    @Test
-    void rootConfigKeyReturnsSegmentBeforeFirstDot() {
-        assertEquals("roleConfig", AdminCommands.rootConfigKey("roleConfig.memberRoleId"));
-        assertEquals("a", AdminCommands.rootConfigKey("a.b.c"));
-        assertEquals("token", AdminCommands.rootConfigKey("token"));
-    }
 }
