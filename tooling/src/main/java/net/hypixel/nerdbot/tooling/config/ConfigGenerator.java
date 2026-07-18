@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.tooling.config;
 
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.marmalade.json.DataSerialization;
 
 import java.io.File;

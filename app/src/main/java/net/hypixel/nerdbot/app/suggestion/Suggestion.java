@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.marmalade.EnumUtils;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 

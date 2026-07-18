@@ -8,7 +8,7 @@ import net.aerh.imagegenerator.pack.PackLimits;
 import net.aerh.imagegenerator.pack.PackRepository;
 import net.aerh.imagegenerator.pack.PackSource;
 import net.aerh.imagegenerator.text.TextColorRemap;
-import net.hypixel.nerdbot.discord.config.GeneratorConfig;
+import net.hypixel.nerdbot.app.config.GeneratorConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

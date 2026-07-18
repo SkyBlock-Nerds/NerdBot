@@ -15,9 +15,10 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
-import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.app.config.SuggestionConfig;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
@@ -181,7 +182,7 @@ public class ChannelCommands {
                 }
 
                 ForumChannel forumChannel = threadChannel.getParentChannel().asForumChannel();
-                SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
+                SuggestionConfig suggestionConfig = SkyBlockNerdsBot.config().getSuggestionConfig();
                 boolean isSuggestion = threadChannel.getParentChannel().getId().equalsIgnoreCase(suggestionConfig.getForumChannelId());
 
                 if (isSuggestion) {

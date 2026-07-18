@@ -1,8 +1,10 @@
-package net.hypixel.nerdbot.discord.config;
+package net.hypixel.nerdbot.app.config;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
+import net.hypixel.nerdbot.discord.config.FeatureConfig;
 
 import java.util.List;
 
@@ -19,6 +21,31 @@ public class NerdBotConfig extends DiscordBotConfig {
      * Configuration for metrics that the bot will be grabbing
      */
     private MetricsConfig metricsConfig = new MetricsConfig();
+
+    /**
+     * Configuration for the suggestions channel
+     */
+    private SuggestionConfig suggestionConfig = new SuggestionConfig();
+
+    /**
+     * Configuration for alpha/project suggestion channels
+     */
+    private AlphaProjectConfig alphaProjectConfig = new AlphaProjectConfig();
+
+    /**
+     * Configuration for badges
+     */
+    private BadgeConfig badgeConfig = new BadgeConfig();
+
+    /**
+     * Configuration for fun and miscellaneous things
+     */
+    private FunConfig funConfig = new FunConfig();
+
+    /**
+     * Configuration for generator commands
+     */
+    private GeneratorConfig generatorConfig = new GeneratorConfig();
 
     /**
      * The limit of messages that the bot will curate in one go

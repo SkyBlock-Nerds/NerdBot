@@ -6,8 +6,8 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
-import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
-import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.app.config.AlphaProjectConfig;
+import net.hypixel.nerdbot.app.config.SuggestionConfig;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 
 import java.time.Duration;

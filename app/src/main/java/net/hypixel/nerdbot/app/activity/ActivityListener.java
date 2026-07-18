@@ -24,7 +24,7 @@ import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.app.suggestion.SuggestionTypeResolver;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
-import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.app.config.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
@@ -97,13 +97,13 @@ public class ActivityListener {
                     long time = System.currentTimeMillis();
 
                     // New Suggestion
-                    if (forumChannelId.equals(DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig().getForumChannelId())) {
+                    if (forumChannelId.equals(SkyBlockNerdsBot.config().getSuggestionConfig().getForumChannelId())) {
                         discordUser.getLastActivity().getSuggestionCreationHistory().add(0, time);
                         log.debug("Updating new suggestion activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
                     }
 
                     // New Alpha Suggestion
-                    AlphaProjectConfig alphaProjectConfig = DiscordBotEnvironment.getBot().getConfig().getAlphaProjectConfig();
+                    AlphaProjectConfig alphaProjectConfig = SkyBlockNerdsBot.config().getAlphaProjectConfig();
                     if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                         discordUser.getLastActivity().getAlphaSuggestionCreationHistory().add(0, time);
                         discordUser.getLastActivity().setLastAlphaActivity(time);
@@ -349,14 +349,14 @@ public class ActivityListener {
             }
 
             // New Suggestion Voting
-            if (forumChannelId.equals(DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig().getForumChannelId())) {
+            if (forumChannelId.equals(SkyBlockNerdsBot.config().getSuggestionConfig().getForumChannelId())) {
                 discordUser.getLastActivity().getSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 SkyBlockNerdsBot.suggestionCache().updateSuggestion(threadChannel);
                 log.debug("Updating suggestion voting activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
             }
 
             // New Alpha Suggestion Voting
-            AlphaProjectConfig alphaProjectConfig = DiscordBotEnvironment.getBot().getConfig().getAlphaProjectConfig();
+            AlphaProjectConfig alphaProjectConfig = SkyBlockNerdsBot.config().getAlphaProjectConfig();
             if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().getAlphaSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
                 SkyBlockNerdsBot.suggestionCache().updateSuggestion(threadChannel);

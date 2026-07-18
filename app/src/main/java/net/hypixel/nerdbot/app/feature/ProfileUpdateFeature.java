@@ -12,7 +12,7 @@ import net.hypixel.nerdbot.app.util.HttpUtils;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
-import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.marmalade.exception.HttpException;
 import net.hypixel.nerdbot.marmalade.functional.Result;

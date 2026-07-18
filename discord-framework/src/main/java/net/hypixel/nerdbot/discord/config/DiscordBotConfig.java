@@ -3,9 +3,7 @@ package net.hypixel.nerdbot.discord.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
-import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,16 +28,6 @@ public class DiscordBotConfig {
     private List<String> ownerIds = new ArrayList<>();
 
     /**
-     * Configuration for the suggestions channel
-     */
-    private SuggestionConfig suggestionConfig = new SuggestionConfig();
-
-    /**
-     * Configuration for alpha/project suggestion channels
-     */
-    private AlphaProjectConfig alphaProjectConfig = new AlphaProjectConfig();
-
-    /**
      * Configuration for channels that the bot will be using
      */
     private ChannelConfig channelConfig = new ChannelConfig();
@@ -53,21 +41,6 @@ public class DiscordBotConfig {
      * Configuration for emoji IDs
      */
     private EmojiConfig emojiConfig = new EmojiConfig();
-
-    /**
-     * Configuration for badges
-     */
-    private BadgeConfig badgeConfig = new BadgeConfig();
-
-    /**
-     * Configuration for fun and miscellaneous things
-     */
-    private FunConfig funConfig = new FunConfig();
-
-    /**
-     * Configuration for generator commands
-     */
-    private GeneratorConfig generatorConfig = new GeneratorConfig();
 
     /**
      * The activity type that the bot will display on its profile

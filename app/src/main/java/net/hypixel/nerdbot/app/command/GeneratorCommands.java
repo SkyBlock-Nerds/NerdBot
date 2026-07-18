@@ -545,7 +545,7 @@ public class GeneratorCommands {
         GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
 
         drawBorder = drawBorder == null || drawBorder;
-        boolean animateGlint = DiscordBotEnvironment.getBot().getConfig().getGeneratorConfig().getInventory().isAnimateGlint();
+        boolean animateGlint = SkyBlockNerdsBot.config().getGeneratorConfig().getInventory().isAnimateGlint();
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
 
         try {

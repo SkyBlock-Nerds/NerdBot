@@ -3,10 +3,11 @@ package net.hypixel.nerdbot.app.generation;
 import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.aerh.imagegenerator.context.GenerationContext;
 import net.aerh.imagegenerator.context.GenerationFeedback;
-import net.hypixel.nerdbot.discord.config.FunConfig;
+import net.hypixel.nerdbot.app.config.FunConfig;
 import net.hypixel.nerdbot.marmalade.format.TimeUtils;
 
 import java.time.ZoneId;
@@ -28,7 +29,7 @@ public class DiscordGenerationContext {
         String channelId = event.getChannel().getId();
 
         // Determine if April Fools mode should be enabled for this channel
-        FunConfig funConfig = DiscordBotEnvironment.getBot().getConfig().getFunConfig();
+        FunConfig funConfig = SkyBlockNerdsBot.config().getFunConfig();
         ZoneId zoneId = funConfig.getAprilFoolsTimezone() != null
             ? ZoneId.of(funConfig.getAprilFoolsTimezone())
             : ZoneId.systemDefault();

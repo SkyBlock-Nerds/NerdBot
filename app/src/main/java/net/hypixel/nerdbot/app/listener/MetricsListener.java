@@ -15,8 +15,8 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.discord.role.RoleManager;
 import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
-import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
 
 @Slf4j
 public class MetricsListener {
@@ -34,7 +34,7 @@ public class MetricsListener {
 
         if (event.getChannel() instanceof ThreadChannel threadChannel) {
             String forumChannelId = threadChannel.getParentChannel().getId();
-            DiscordBotConfig botConfig = DiscordBotEnvironment.getBot().getConfig();
+            NerdBotConfig botConfig = SkyBlockNerdsBot.config();
 
             if (forumChannelId.equals(botConfig.getSuggestionConfig().getForumChannelId())
                 || ArrayUtils.safeArrayStream(botConfig.getAlphaProjectConfig().getAlphaForumIds(), botConfig.getAlphaProjectConfig().getProjectForumIds()).anyMatch(forumChannelId::equals)) {

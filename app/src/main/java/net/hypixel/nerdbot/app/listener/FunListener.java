@@ -2,8 +2,8 @@ package net.hypixel.nerdbot.app.listener;
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.hypixel.nerdbot.discord.config.FunConfig;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.app.config.FunConfig;
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.marmalade.format.TimeUtils;
 
@@ -18,7 +18,7 @@ public class FunListener {
             return;
         }
 
-        FunConfig funConfig = DiscordBotEnvironment.getBot().getConfig().getFunConfig();
+        FunConfig funConfig = SkyBlockNerdsBot.config().getFunConfig();
 
         funConfig.getAutoReactions().forEach((userId, emojiValue) -> {
             if (event.getAuthor().getId().equals(userId)) {
