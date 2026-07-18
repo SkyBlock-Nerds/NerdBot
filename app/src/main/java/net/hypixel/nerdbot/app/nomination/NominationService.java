@@ -19,8 +19,8 @@ import net.hypixel.nerdbot.discord.util.StringUtils;
 import java.awt.*;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.Month;
 import java.time.OffsetDateTime;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.function.BiPredicate;
 
@@ -168,7 +168,7 @@ public class NominationService {
         }
 
         Long lastNominationTimestamp = lastActivity.getNominationInfo().getLastNominationTimestamp().orElse(null);
-        NominationOutcome outcome = decideOutcome(requirementsMet, lastNominationTimestamp, Instant.now().atZone(ZoneId.systemDefault()).getMonth());
+        NominationOutcome outcome = decideOutcome(requirementsMet, lastNominationTimestamp, YearMonth.now(ZoneId.systemDefault()));
 
         if (outcome == NominationOutcome.NOMINATED) {
             sendNominationMessage(member, discordUser, requiredMessages, requiredVotes, requiredComments, daysWindow);
@@ -181,23 +181,21 @@ public class NominationService {
      * Decide a member's nomination outcome from how many of the three activity thresholds they meet
      * and when they were last nominated.
      *
-     * <p>A member already nominated in the current month is skipped regardless of their activity;
-     * otherwise they are nominated when they meet at least two of the three thresholds, and skipped
-     * as below-threshold when they do not.
+     * <p>A member already nominated in the current calendar month is skipped regardless of their
+     * activity; otherwise they are nominated when they meet at least two of the three thresholds, and
+     * skipped as below-threshold when they do not.
      *
-     * <p>The "already this month" check compares the calendar {@link Month} only (ignoring year),
-     * preserving the pre-existing behaviour. Extracted from {@link #evaluateNomination} so the
-     * decision can be unit-tested in isolation.
+     * <p>Extracted from {@link #evaluateNomination} so the decision can be unit-tested in isolation.
      *
      * @param requirementsMet         the number of thresholds met (0-3)
      * @param lastNominationTimestamp epoch-millis of the last nomination, or {@code null} if never
-     * @param currentMonth            the month to treat as "now"
+     * @param currentYearMonth        the year-month to treat as "now"
      * @return the nomination outcome
      */
-    static NominationOutcome decideOutcome(int requirementsMet, Long lastNominationTimestamp, Month currentMonth) {
+    static NominationOutcome decideOutcome(int requirementsMet, Long lastNominationTimestamp, YearMonth currentYearMonth) {
         if (lastNominationTimestamp != null) {
-            Month lastNominationMonth = Instant.ofEpochMilli(lastNominationTimestamp).atZone(ZoneId.systemDefault()).getMonth();
-            if (lastNominationMonth == currentMonth) {
+            YearMonth lastNominationMonth = YearMonth.from(Instant.ofEpochMilli(lastNominationTimestamp).atZone(ZoneId.systemDefault()));
+            if (lastNominationMonth.equals(currentYearMonth)) {
                 return NominationOutcome.SKIPPED_ALREADY_THIS_MONTH;
             }
         }
