@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests for the pure greenlit math on {@link Curator}: {@link Curator#getRatio} and
  * {@link Curator#meetsGreenlitThreshold}.
  */
-class CuratorTest {
+class GreenlitThresholdTest {
 
     @Test
     void ratioIsZeroWhenThereAreNoReactions() {

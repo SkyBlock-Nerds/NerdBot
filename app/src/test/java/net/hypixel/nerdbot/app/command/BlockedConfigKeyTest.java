@@ -6,9 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Characterization tests for the {@code /config edit} guard extracted from {@link AdminCommands}.
+ * The {@code /config edit} guard blocks editing sensitive keys - credentials and identity - and
+ * every dotted path beneath them.
  */
-class AdminCommandsTest {
+class BlockedConfigKeyTest {
 
     @Test
     void blocksSensitiveTopLevelKeys() {

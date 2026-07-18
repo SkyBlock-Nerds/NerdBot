@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests for {@link ReminderCommands#parseDuration}, the {@code 1w2d3h4m5s} duration parser.
  */
-class ReminderCommandsTest {
+class ReminderDurationParsingTest {
 
     @Test
     void expandsWeeksToSevenDays() {

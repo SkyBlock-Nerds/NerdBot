@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Tests for the pure promotion-nomination decision {@link NominationService#decideOutcome}.
  */
-class NominationServiceTest {
+class PromotionNominationDecisionTest {
 
     private static final YearMonth MARCH_2026 = YearMonth.of(2026, 3);
 

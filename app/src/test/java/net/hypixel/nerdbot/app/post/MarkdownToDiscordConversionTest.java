@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests for {@link MarkdownPostService#render}, the pure Markdown -> Discord-chunk conversion.
  */
-class MarkdownPostServiceTest {
+class MarkdownToDiscordConversionTest {
 
     private static final int DISCORD_MESSAGE_LIMIT = 2_000;
 

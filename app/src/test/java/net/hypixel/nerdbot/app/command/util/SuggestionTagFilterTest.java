@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Tests for {@link SuggestionCommandUtils#parseTagFilters}, the include/exclude tag filter parsing.
  */
-class SuggestionCommandUtilsTest {
+class SuggestionTagFilterTest {
 
     @Test
     void separatesIncludeAndExcludeTags() {
