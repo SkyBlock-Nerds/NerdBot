@@ -16,7 +16,7 @@ import net.dv8tion.jda.api.managers.channel.concrete.ForumChannelManager;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
 import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
-import net.hypixel.nerdbot.discord.config.AlphaProjectConfigUpdater;
+import net.hypixel.nerdbot.app.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
