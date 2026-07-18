@@ -6,6 +6,7 @@ import net.aerh.imagegenerator.pack.PackRepository;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.hypixel.nerdbot.app.activity.ActivityListener;
+import net.hypixel.nerdbot.app.feature.RepositoryAutosaveFeature;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.app.generation.pack.ResourcePackService;
 import net.hypixel.nerdbot.app.listener.FunListener;
@@ -178,6 +179,11 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         } else {
             log.info("No feature config present");
         }
+
+        // Always-on durability safety net, registered outside the config so it cannot be disabled by
+        // omission: flushes write-behind repository changes on a fixed interval so an ungraceful
+        // shutdown loses at most one interval rather than everything since startup.
+        features.add(new RepositoryAutosaveFeature());
 
         return features;
     }
