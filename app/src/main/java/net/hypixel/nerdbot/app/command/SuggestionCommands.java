@@ -32,7 +32,7 @@ import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
-import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.app.config.SuggestionConfig;
 import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
 import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
@@ -67,7 +67,7 @@ public class SuggestionCommands {
     public void requestSuggestionReview(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
 
-        if (!DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig().getReviewRequestConfig().isEnabled()) {
+        if (!SkyBlockNerdsBot.config().getSuggestionConfig().getReviewRequestConfig().isEnabled()) {
             event.getHook().editOriginal("Review requests are currently disabled!").queue();
             return;
         }
@@ -91,7 +91,7 @@ public class SuggestionCommands {
     }
 
     private void processReviewRequest(SlashCommandInteractionEvent event, DiscordUser discordUser) {
-        SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
+        SuggestionConfig suggestionConfig = SkyBlockNerdsBot.config().getSuggestionConfig();
         EmojiConfig emojiConfig = DiscordBotEnvironment.getBot().getConfig().getEmojiConfig();
         String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
 
@@ -433,7 +433,7 @@ public class SuggestionCommands {
                 return;
             }
 
-            SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
+            SuggestionConfig suggestionConfig = SkyBlockNerdsBot.config().getSuggestionConfig();
             ForumChannel forum = thread.getParentChannel().asForumChannel();
 
             if (!DiscordUtils.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {

@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.discord.config;
+package net.hypixel.nerdbot.app.config;
 
 import lombok.Getter;
 

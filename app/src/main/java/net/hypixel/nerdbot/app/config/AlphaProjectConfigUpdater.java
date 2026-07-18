@@ -5,8 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.app.suggestion.SuggestionTypeResolver;
-import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
-import net.hypixel.nerdbot.discord.config.NerdBotConfig;
 
 import java.util.ArrayList;
 import java.util.List;

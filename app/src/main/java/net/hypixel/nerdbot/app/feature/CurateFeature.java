@@ -9,14 +9,14 @@ import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
-import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
-import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.app.config.SuggestionConfig;
 import net.hypixel.nerdbot.app.curator.Curator;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.GreenlitMessageRepository;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +30,7 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
 
     @Override
     public void executeTask() {
-        SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
+        SuggestionConfig suggestionConfig = SkyBlockNerdsBot.config().getSuggestionConfig();
 
         if (suggestionConfig.getForumChannelId() == null) {
             log.info("Not running CurateFeature: forumChannelId missing in config");

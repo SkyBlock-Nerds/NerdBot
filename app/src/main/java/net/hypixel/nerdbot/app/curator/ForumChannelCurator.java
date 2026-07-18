@@ -18,10 +18,10 @@ import net.hypixel.nerdbot.marmalade.functional.Pair;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.EmojiCache;
-import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
-import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.app.config.SuggestionConfig;
 import net.hypixel.nerdbot.app.curator.Curator;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
@@ -83,7 +83,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                 return output;
             }
 
-            DiscordBotConfig botConfig = DiscordBotEnvironment.getBot().getConfig();
+            NerdBotConfig botConfig = SkyBlockNerdsBot.config();
             SuggestionConfig suggestionConfig = botConfig.getSuggestionConfig();
 
             if (suggestionConfig == null) {

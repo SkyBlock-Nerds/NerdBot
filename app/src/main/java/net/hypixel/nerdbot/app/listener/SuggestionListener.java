@@ -18,10 +18,10 @@ import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
 import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.app.suggestion.SuggestionTypeResolver;
 import net.hypixel.nerdbot.app.config.AlphaProjectConfigUpdater;
-import net.hypixel.nerdbot.discord.config.NerdBotConfig;
-import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.config.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
-import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
+import net.hypixel.nerdbot.app.config.SuggestionConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
@@ -145,8 +145,8 @@ public class SuggestionListener {
 
     private boolean isInSuggestionChannel(GenericChannelEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
-            SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
-            AlphaProjectConfig alphaProjectConfig = DiscordBotEnvironment.getBot().getConfig().getAlphaProjectConfig();
+            SuggestionConfig suggestionConfig = SkyBlockNerdsBot.config().getSuggestionConfig();
+            AlphaProjectConfig alphaProjectConfig = SkyBlockNerdsBot.config().getAlphaProjectConfig();
             String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
 
             return forumChannelId.equals(suggestionConfig.getForumChannelId())

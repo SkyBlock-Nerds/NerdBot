@@ -1,8 +1,7 @@
 package net.hypixel.nerdbot.app.badge;
 
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.marmalade.storage.badge.Badge;
 import net.hypixel.nerdbot.marmalade.storage.badge.TieredBadge;
 
@@ -16,8 +15,7 @@ public class BadgeManager {
     public static void loadBadges() {
         log.info("Loading badges from config file...");
 
-        DiscordBot discordBot = BotEnvironment.getBot(DiscordBot.class);
-        discordBot.getConfig().getBadgeConfig().getBadges().forEach(badge -> {
+        SkyBlockNerdsBot.config().getBadgeConfig().getBadges().forEach(badge -> {
             BADGE_MAP.put(badge.getId(), badge);
             log.info("Loaded badge: {}", badge);
         });

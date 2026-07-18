@@ -5,7 +5,7 @@ import net.aerh.imagegenerator.exception.GeneratorException;
 import net.aerh.imagegenerator.pack.PackId;
 import net.aerh.imagegenerator.pack.PackRepository;
 import net.aerh.imagegenerator.text.TextColorRemap;
-import net.hypixel.nerdbot.discord.config.GeneratorConfig;
+import net.hypixel.nerdbot.app.config.GeneratorConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
