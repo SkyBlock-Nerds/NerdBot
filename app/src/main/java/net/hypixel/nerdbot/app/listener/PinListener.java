@@ -2,7 +2,6 @@ package net.hypixel.nerdbot.app.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -34,7 +33,7 @@ public class PinListener {
         if (member.getUser().isBot()) {
             // This deletes automated pinned messages sent by the bot.
             if (event.getMessage().getType() == MessageType.CHANNEL_PINNED_ADD) {
-                event.getMessage().delete().complete();
+                event.getMessage().delete().queue();
             }
             return; // Ignore any other bot messages
         }
@@ -60,7 +59,7 @@ public class PinListener {
             return;
         }
 
-        event.getMessage().pin().complete();
+        event.getMessage().pin().queue();
     }
 
     @SubscribeEvent
@@ -86,11 +85,12 @@ public class PinListener {
             }
 
             // We get the message we are checking to pin it.
-            Message message = event.retrieveMessage().complete();
-            if (!message.isPinned()) {
-                // We pin the message here.
-                message.pin().complete();
-            }
+            event.retrieveMessage().queue(message -> {
+                if (!message.isPinned()) {
+                    // We pin the message here.
+                    message.pin().queue();
+                }
+            });
         }
     }
 
@@ -117,11 +117,12 @@ public class PinListener {
             }
 
             // We get the message we are checking to unpin it.
-            Message message = event.retrieveMessage().complete();
-            if (message.isPinned()) {
-                // We unpin the message here.
-                message.unpin().complete();
-            }
+            event.retrieveMessage().queue(message -> {
+                if (message.isPinned()) {
+                    // We unpin the message here.
+                    message.unpin().queue();
+                }
+            });
         }
     }
 }
