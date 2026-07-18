@@ -1,16 +1,15 @@
 package net.hypixel.nerdbot.app.command.util;
 
-import io.sentry.Sentry;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 
 /**
- * Centralises how slash commands report an internal failure. The exception is logged and forwarded
- * to Sentry, while the user only ever sees a generic, caller-supplied message. Internal exception
- * detail ({@link Throwable#getMessage()}, stack traces, filesystem paths) must never be passed as
- * the user message.
+ * Centralises how slash commands report an internal failure. The exception is logged (which the
+ * logback Sentry appender forwards to Sentry), while the user only ever sees a generic,
+ * caller-supplied message. Internal exception detail ({@link Throwable#getMessage()}, stack traces,
+ * filesystem paths) must never be passed as the user message.
  */
 @Slf4j
 @UtilityClass
@@ -41,17 +40,14 @@ public class CommandErrorResponder {
     }
 
     /**
-     * Log an exception and forward it to Sentry without sending a user-facing reply. Use when the
-     * user is notified through a channel other than the interaction (e.g. a direct message).
+     * Log an exception (which the logback Sentry appender forwards to Sentry) without sending a
+     * user-facing reply. Use when the user is notified through a channel other than the interaction
+     * (e.g. a direct message).
      *
      * @param context describes what failed, used as the log message
-     * @param error   the exception to log and capture
+     * @param error   the exception to log
      */
     public static void capture(String context, Throwable error) {
         log.error(context, error);
-
-        if (Sentry.isEnabled()) {
-            Sentry.captureException(error);
-        }
     }
 }

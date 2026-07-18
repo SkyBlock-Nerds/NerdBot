@@ -20,7 +20,10 @@ public class SentryManager {
         }
 
         String environment = Environment.getEnvironment().name().toLowerCase();
-        Sentry.configureScope(scope -> scope.setTag("environment", environment));
+        Sentry.configureScope(scope -> {
+            scope.setTag("environment", environment);
+            scope.addEventProcessor(new UserErrorSentryFilter());
+        });
         log.info("Sentry configured with environment: {}", environment);
     }
 
