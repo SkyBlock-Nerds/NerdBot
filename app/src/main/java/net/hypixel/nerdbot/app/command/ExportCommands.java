@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.app.command.util.CommandErrorResponder;
 import net.hypixel.nerdbot.discord.role.RoleManager;
 import net.hypixel.nerdbot.marmalade.io.FileUtils;
 import net.hypixel.nerdbot.marmalade.csv.CSVData;
@@ -63,8 +64,7 @@ public class ExportCommands {
                 .setFiles(FileUpload.fromData(file))
                 .queue();
         } catch (IOException exception) {
-            log.error("Failed to create temp file!", exception);
-            event.getHook().editOriginal(String.format("Failed to create temporary file: %s", exception.getMessage())).queue();
+            CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", exception);
         }
     }
 
@@ -135,8 +135,7 @@ public class ExportCommands {
 
             event.getHook().editOriginal(data).queue();
         } catch (IOException exception) {
-            event.getHook().editOriginal(String.format("Failed to create temporary file: %s", exception.getMessage())).queue();
-            log.error("Failed to create temp file!", exception);
+            CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", exception);
         }
     }
 
@@ -178,12 +177,10 @@ public class ExportCommands {
                 );
                 event.getHook().sendFiles(FileUpload.fromData(file)).queue();
             } catch (IOException exception) {
-                log.error("Failed to create temp file!", exception);
-                event.getHook().editOriginal("An error occurred while creating the temp file: " + exception.getMessage()).queue();
+                CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", exception);
             }
         }).onError(throwable -> {
-            log.error("Failed to load guild members for UUID export", throwable);
-            event.getHook().editOriginal("Failed to load guild members: " + throwable.getMessage()).queue();
+            CommandErrorResponder.respond(event.getHook(), "Failed to load the guild members. Please try again later.", throwable);
         });
     }
 
@@ -230,12 +227,10 @@ public class ExportCommands {
                 );
                 event.getHook().sendFiles(FileUpload.fromData(file)).queue();
             } catch (IOException exception) {
-                log.error("Failed to create temp file!", exception);
-                event.getHook().editOriginal("An error occurred while creating the temp file: " + exception.getMessage()).queue();
+                CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", exception);
             }
         }).onError(throwable -> {
-            log.error("Failed to load guild members for role export", throwable);
-            event.getHook().editOriginal("Failed to load guild members: " + throwable.getMessage()).queue();
+            CommandErrorResponder.respond(event.getHook(), "Failed to load the guild members. Please try again later.", throwable);
         });
     }
 
@@ -370,8 +365,7 @@ public class ExportCommands {
             File file = FileUtils.createTempFile(String.format("export-member-activity-%s.csv", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
             event.getHook().sendFiles(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
-            log.error("Failed to create temp file!", exception);
-            event.getHook().editOriginal("An error occurred while creating the temp file: " + exception.getMessage()).queue();
+            CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", exception);
         }
     }
 
@@ -472,8 +466,7 @@ public class ExportCommands {
                     .setFiles(FileUpload.fromData(file))
                     .queue();
             }).exceptionally(throwable -> {
-                log.error("Failed to create temp file for user suggestions export", throwable);
-                event.getHook().editOriginal("Failed to create temporary file: " + throwable.getMessage()).queue();
+                CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", throwable);
                 return null;
             });
 

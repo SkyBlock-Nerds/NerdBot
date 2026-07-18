@@ -38,6 +38,7 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.app.command.util.CommandErrorResponder;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.app.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
@@ -440,8 +441,7 @@ public class AdminCommands {
                         );
                     })
                     .exceptionally(throwable -> {
-                        log.error("Error during profile linking", throwable);
-                        event.getHook().editOriginal(String.format("Could not find player with username `%s`! (%s)", username, throwable.getMessage())).queue();
+                        CommandErrorResponder.respond(event.getHook(), String.format("Could not find a player with username `%s`. Please try again later.", username), throwable);
                         return null;
                     });
             })
@@ -500,8 +500,7 @@ public class AdminCommands {
                         }
                     })
                     .exceptionally(throwable -> {
-                        log.error("Error checking missing profiles", throwable);
-                        event.getHook().editOriginal("An error occurred while checking for missing profiles: " + throwable.getMessage()).queue();
+                        CommandErrorResponder.respond(event.getHook(), "An error occurred while checking for missing profiles. Please try again later.", throwable);
                         return null;
                     });
             })
@@ -614,8 +613,7 @@ public class AdminCommands {
                         event.getHook().editOriginal("Migration complete! Migrated " + mojangProfiles.size() + " users.").queue();
                     })
                     .exceptionally(throwable -> {
-                        log.error("Error during username migration", throwable);
-                        event.getHook().editOriginal("Migration failed: " + throwable.getMessage()).queue();
+                        CommandErrorResponder.respond(event.getHook(), "Migration failed. Please try again later.", throwable);
                         return null;
                     });
             })
@@ -718,8 +716,7 @@ public class AdminCommands {
             repository.saveAllToDatabase();
             event.getHook().editOriginal(String.format("Saved %d documents to the database!", repository.getCache().estimatedSize())).queue();
         } catch (RepositoryException exception) {
-            event.getHook().editOriginal(String.format("An error occurred while saving the repository: %s", exception.getMessage())).queue();
-            log.error("An error occurred while saving the repository!", exception);
+            CommandErrorResponder.respond(event.getHook(), "An error occurred while saving the repository. Please try again later.", exception);
         }
     }
 
@@ -746,8 +743,7 @@ public class AdminCommands {
             repository.loadAllDocumentsIntoCache();
             event.getHook().editOriginal(String.format("Loaded %d documents from the database!", repository.getCache().estimatedSize())).queue();
         } catch (RepositoryException exception) {
-            event.getHook().editOriginal(String.format("An error occurred while loading the repository: %s", exception.getMessage())).queue();
-            log.error("An error occurred while saving the repository!", exception);
+            CommandErrorResponder.respond(event.getHook(), "An error occurred while loading the repository. Please try again later.", exception);
         }
     }
 
@@ -768,8 +764,7 @@ public class AdminCommands {
 
             event.getHook().editOriginal(repository.getCache().stats().toString()).queue();
         } catch (RepositoryException exception) {
-            event.getHook().editOriginal(String.format("An error occurred while getting the statistics for that repository: %s", exception.getMessage())).queue();
-            log.error("An error occurred while saving the repository!", exception);
+            CommandErrorResponder.respond(event.getHook(), "An error occurred while getting the repository statistics. Please try again later.", exception);
         }
     }
 
