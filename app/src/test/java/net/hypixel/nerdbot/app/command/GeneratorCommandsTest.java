@@ -276,4 +276,53 @@ class GeneratorCommandsTest {
 
         assertTrue(exception.getMessage().contains("Invalid number"));
     }
+
+    @Test
+    void appendSearchResultsIgnoresEmptyResults() {
+        StringBuilder message = new StringBuilder("existing");
+
+        GeneratorCommands.appendSearchResults(message, "Header", List.of());
+
+        assertEquals("existing", message.toString());
+    }
+
+    @Test
+    void appendSearchResultsAppendsHeaderWithTotalAndEachResult() {
+        StringBuilder message = new StringBuilder();
+
+        GeneratorCommands.appendSearchResults(message, "Top", List.of("a", "b"));
+
+        assertEquals("Top (2 total):\n - `a`\n - `b`\n", message.toString());
+    }
+
+    @Test
+    void appendSearchResultsCapsRenderedLinesButReportsFullTotal() {
+        List<String> results = java.util.stream.IntStream.range(0, 15).mapToObj(i -> "item" + i).toList();
+        StringBuilder message = new StringBuilder();
+
+        GeneratorCommands.appendSearchResults(message, "Results", results);
+
+        String output = message.toString();
+        assertTrue(output.startsWith("Results (15 total):\n"), "header should report the full total");
+        assertEquals(10, output.lines().filter(line -> line.startsWith(" - ")).count(), "only 10 results should render");
+    }
+
+    @Test
+    void appendSearchResultsSkipsBlockThatWouldExceedMessageLimit() {
+        // Discord's 2000-char message limit: a block whose header would not fit is skipped entirely.
+        StringBuilder message = new StringBuilder("x".repeat(1990));
+
+        GeneratorCommands.appendSearchResults(message, "Header", List.of("a"));
+
+        assertEquals(1990, message.length(), "the block should be skipped, leaving the message untouched");
+    }
+
+    @Test
+    void appendSearchResultsAppendsTruncationMarkerWhenLinesRunOut() {
+        StringBuilder message = new StringBuilder("x".repeat(1975));
+
+        GeneratorCommands.appendSearchResults(message, "H", List.of("a", "b"));
+
+        assertTrue(message.toString().endsWith(" - ...\n"), "should end with the truncation marker");
+    }
 }

@@ -413,7 +413,7 @@ public class GeneratorCommands {
         return map;
     }
 
-    private static void appendSearchResults(StringBuilder message, String header, List<String> results) {
+    static void appendSearchResults(StringBuilder message, String header, List<String> results) {
         if (results.isEmpty()) {
             return;
         }
