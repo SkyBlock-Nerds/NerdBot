@@ -65,7 +65,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -208,45 +207,9 @@ public class GeneratorCommands {
         enchanted = enchanted != null && enchanted;
         animated = animated == null || animated;
 
-        Function<String, Map<String, Integer>> parseStatsToMap = stats -> {
-            Map<String, Integer> map = new HashMap<>();
-
-            if (stats == null || stats.trim().isEmpty()) {
-                return map;
-            }
-
-            String[] entries = stats.split(",");
-
-            for (String entry : entries) {
-                if (entry == null || entry.trim().isEmpty()) {
-                    continue;
-                }
-
-                String[] stat = entry.split(":");
-
-                if (stat.length != 2 || stat[0].trim().isEmpty() || stat[1].trim().isEmpty()) {
-                    throw new GeneratorException("Stat `" + entry + "` is using an invalid format. Use `stat:value` and separate multiple entries with commas (e.g., `health:-50,damage:10`)");
-                }
-
-                String statName = stat[0].trim();
-
-                int statValue;
-
-                try {
-                    statValue = Integer.parseInt(stat[1].trim());
-                } catch (NumberFormatException e) {
-                    throw new GeneratorException("Invalid number for stat `" + statName + "`: " + stat[1].trim() + ". Use `stat:value` (e.g., `health:-50`)");
-                }
-
-                map.merge(statName, statValue, Integer::sum);
-            }
-
-            return map;
-        };
-
         try {
             StringBuilder scalingStatsFormatted = new StringBuilder();
-            Map<String, Integer> scalingStatsMap = parseStatsToMap.apply(scalingStats);
+            Map<String, Integer> scalingStatsMap = parseStatsToMap(scalingStats);
 
             for (Map.Entry<String, Integer> entry : scalingStatsMap.entrySet()) {
                 String statName = entry.getKey();
@@ -267,7 +230,7 @@ public class GeneratorCommands {
             }
 
             StringBuilder bonusStatsFormatted = new StringBuilder();
-            Map<String, Integer> bonusStats = parseStatsToMap.apply(uniqueBonus);
+            Map<String, Integer> bonusStats = parseStatsToMap(uniqueBonus);
 
             for (Map.Entry<String, Integer> entry : bonusStats.entrySet()) {
                 String statName = entry.getKey();
@@ -402,6 +365,54 @@ public class GeneratorCommands {
      * {@link #MAX_MESSAGE_LENGTH} limit: a block whose header would not fit is skipped entirely,
      * and lines stop as soon as the next one plus the marker would overflow.
      */
+    /**
+     * Parse a comma-separated {@code stat:value} string (e.g. {@code "health:-50,damage:10"}) into a
+     * map of stat name to summed value.
+     *
+     * <p>Blank entries are ignored and duplicate stats are summed. Extracted from the powerstone
+     * {@code /gen} handler (where it was an inline lambda used for both scaling and bonus stats) so
+     * the parsing and its error messages can be unit-tested.
+     *
+     * @param stats the raw stats string, may be {@code null} or blank (yielding an empty map)
+     * @return a map of stat name to summed value
+     * @throws GeneratorException if an entry is not {@code stat:value} or the value is not an integer
+     */
+    static Map<String, Integer> parseStatsToMap(String stats) {
+        Map<String, Integer> map = new HashMap<>();
+
+        if (stats == null || stats.trim().isEmpty()) {
+            return map;
+        }
+
+        String[] entries = stats.split(",");
+
+        for (String entry : entries) {
+            if (entry == null || entry.trim().isEmpty()) {
+                continue;
+            }
+
+            String[] stat = entry.split(":");
+
+            if (stat.length != 2 || stat[0].trim().isEmpty() || stat[1].trim().isEmpty()) {
+                throw new GeneratorException("Stat `" + entry + "` is using an invalid format. Use `stat:value` and separate multiple entries with commas (e.g., `health:-50,damage:10`)");
+            }
+
+            String statName = stat[0].trim();
+
+            int statValue;
+
+            try {
+                statValue = Integer.parseInt(stat[1].trim());
+            } catch (NumberFormatException e) {
+                throw new GeneratorException("Invalid number for stat `" + statName + "`: " + stat[1].trim() + ". Use `stat:value` (e.g., `health:-50`)");
+            }
+
+            map.merge(statName, statValue, Integer::sum);
+        }
+
+        return map;
+    }
+
     private static void appendSearchResults(StringBuilder message, String header, List<String> results) {
         if (results.isEmpty()) {
             return;
