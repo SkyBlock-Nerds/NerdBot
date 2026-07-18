@@ -26,7 +26,7 @@ import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.marmalade.functional.Result;
 import net.hypixel.nerdbot.discord.cache.MessageCache;
 import net.hypixel.nerdbot.discord.cache.suggestion.SuggestionCache;
-import net.hypixel.nerdbot.discord.config.AlphaProjectConfigUpdater;
+import net.hypixel.nerdbot.app.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.config.FeatureConfig;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
