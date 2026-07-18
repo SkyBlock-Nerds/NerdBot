@@ -8,6 +8,7 @@ import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
+import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 
@@ -62,13 +63,13 @@ public class ActivityPurgeFeature extends BotFeature implements SchedulableFeatu
     }
 
     @Override
-    public long defaultInitialDelayMs(NerdBotConfig config) {
-        return Duration.of(config.getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis();
+    public long defaultInitialDelayMs(DiscordBotConfig config) {
+        return Duration.of(((NerdBotConfig) config).getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis();
     }
 
     @Override
-    public long defaultPeriodMs(NerdBotConfig config) {
-        return Duration.of(config.getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis();
+    public long defaultPeriodMs(DiscordBotConfig config) {
+        return Duration.of(((NerdBotConfig) config).getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis();
     }
 
     @Override
