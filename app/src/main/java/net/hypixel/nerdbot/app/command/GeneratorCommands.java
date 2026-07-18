@@ -149,8 +149,7 @@ public class GeneratorCommands {
                     .withData(data)
                     .withColor(color)
                     .isEnchanted(enchanted)
-                    .withHoverEffect(hoverEffect)
-                    .isBigImage();
+                    .withHoverEffect(hoverEffect);
                 applyItemPack(itemBuilder, packId, animated);
 
                 if (durability != null) {
@@ -340,8 +339,7 @@ public class GeneratorCommands {
                         MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
                             .withItem(itemId)
                             .withColor(color)
-                            .isEnchanted(enchanted)
-                            .isBigImage();
+                            .isEnchanted(enchanted);
                         applyItemPack(itemBuilder, packId, animated);
 
                         generatorImageBuilder.addGenerator(itemBuilder.build());
@@ -798,8 +796,7 @@ public class GeneratorCommands {
                     MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
                         .withItem(itemId)
                         .withColor(color)
-                        .isEnchanted(enchanted)
-                        .isBigImage();
+                        .isEnchanted(enchanted);
                     applyItemPack(itemBuilder, packId, animated);
 
                     if (durability != null) {

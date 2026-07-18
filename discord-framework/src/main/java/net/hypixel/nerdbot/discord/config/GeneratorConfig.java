@@ -130,11 +130,6 @@ public class GeneratorConfig {
         private boolean defaultHoverEffect = false;
 
         /**
-         * Whether big image mode is enabled by default
-         */
-        private boolean defaultBigImage = false;
-
-        /**
          * Default durability percentage (null = no durability bar)
          */
         private Integer defaultDurabilityPercent = null;
