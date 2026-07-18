@@ -30,19 +30,43 @@ import java.util.stream.Collectors;
 @UtilityClass
 public class SuggestionCommandUtils {
 
-    public static List<Suggestion> getSuggestions(Member member, @Nullable Long userId, String tags, String title, Suggestion.ChannelType channelType) {
-        final List<String> allTags = (tags == null || tags.trim().isEmpty())
+    /**
+     * The include and exclude tag names parsed from a suggestion tag filter string.
+     *
+     * @param include tags a suggestion must all have
+     * @param exclude tags a suggestion must not have
+     */
+    public record TagFilters(List<String> include, List<String> exclude) {
+    }
+
+    /**
+     * Split a comma-separated tag filter string into include and exclude lists. Tags prefixed with
+     * {@code !} are exclusions (with the {@code !} stripped); the rest are inclusions. A null or
+     * blank string yields two empty lists.
+     *
+     * @param tags the raw tag filter string, e.g. {@code "bug, !wontfix"}
+     * @return the parsed include/exclude tag lists
+     */
+    static TagFilters parseTagFilters(String tags) {
+        List<String> allTags = (tags == null || tags.trim().isEmpty())
             ? Collections.emptyList()
             : Arrays.asList(tags.split(", ?"));
 
-        // Separate tags into include (positive) and exclude (negated with !) lists
-        final List<String> includeTags = allTags.stream()
+        List<String> include = allTags.stream()
             .filter(tag -> !tag.startsWith("!"))
             .toList();
-        final List<String> excludeTags = allTags.stream()
+        List<String> exclude = allTags.stream()
             .filter(tag -> tag.startsWith("!"))
             .map(tag -> tag.substring(1))
             .toList();
+
+        return new TagFilters(include, exclude);
+    }
+
+    public static List<Suggestion> getSuggestions(Member member, @Nullable Long userId, String tags, String title, Suggestion.ChannelType channelType) {
+        TagFilters tagFilters = parseTagFilters(tags);
+        final List<String> includeTags = tagFilters.include();
+        final List<String> excludeTags = tagFilters.exclude();
 
         List<Suggestion> allSuggestions = SkyBlockNerdsBot.suggestionCache().getSuggestions();
         if (allSuggestions.isEmpty()) {
