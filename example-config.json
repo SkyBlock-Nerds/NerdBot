@@ -195,7 +195,6 @@
     "item": {
       "defaultEnchanted": true,
       "defaultHoverEffect": true,
-      "defaultBigImage": true,
       "defaultDurabilityPercent": 1
     },
     "inventory": {
