@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -231,5 +232,48 @@ class GeneratorCommandsTest {
             () -> GeneratorCommands.buildMultiDialogue("Alice, Bob", "0, Hi\\n1, Hey {options:", false));
 
         assertTrue(exception.getMessage().contains("line 2"));
+    }
+
+    @Test
+    void parseStatsToMapParsesMultipleEntries() {
+        assertEquals(Map.of("health", -50, "damage", 10),
+            GeneratorCommands.parseStatsToMap("health:-50,damage:10"));
+    }
+
+    @Test
+    void parseStatsToMapTrimsWhitespace() {
+        assertEquals(Map.of("health", -50), GeneratorCommands.parseStatsToMap("  health : -50  "));
+    }
+
+    @Test
+    void parseStatsToMapReturnsEmptyForNullOrBlank() {
+        assertTrue(GeneratorCommands.parseStatsToMap(null).isEmpty());
+        assertTrue(GeneratorCommands.parseStatsToMap("   ").isEmpty());
+    }
+
+    @Test
+    void parseStatsToMapSumsDuplicateStats() {
+        assertEquals(Map.of("strength", 15), GeneratorCommands.parseStatsToMap("strength:5,strength:10"));
+    }
+
+    @Test
+    void parseStatsToMapIgnoresBlankEntries() {
+        assertEquals(Map.of("health", 10, "damage", 5), GeneratorCommands.parseStatsToMap("health:10,,damage:5,"));
+    }
+
+    @Test
+    void parseStatsToMapRejectsInvalidFormat() {
+        GeneratorException exception = assertThrows(GeneratorException.class,
+            () -> GeneratorCommands.parseStatsToMap("health"));
+
+        assertTrue(exception.getMessage().contains("invalid format"));
+    }
+
+    @Test
+    void parseStatsToMapRejectsNonNumericValue() {
+        GeneratorException exception = assertThrows(GeneratorException.class,
+            () -> GeneratorCommands.parseStatsToMap("health:abc"));
+
+        assertTrue(exception.getMessage().contains("Invalid number"));
     }
 }
