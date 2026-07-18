@@ -57,6 +57,7 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -70,28 +71,41 @@ public class ProfileCommands {
         .scheduler(Scheduler.systemScheduler())
         .build();
 
-    public static MessageEmbed createBadgesEmbed(Member member, DiscordUser discordUser, boolean viewingSelf) {
-        List<BadgeEntry> badges = discordUser.getBadges().stream()
-            .sorted((o1, o2) -> {
-                if (BadgeManager.isTieredBadge(o1.badgeId()) && BadgeManager.isTieredBadge(o2.badgeId())) {
-                    TieredBadge tieredBadge1 = BadgeManager.getTieredBadgeById(o1.badgeId());
-                    TieredBadge tieredBadge2 = BadgeManager.getTieredBadgeById(o2.badgeId());
+    /**
+     * The order badges are displayed in: tiered badges first, higher tiers before lower, then
+     * non-tiered badges most-recently-obtained first.
+     *
+     * <p>Extracted from {@link #createBadgesEmbed} so the ordering can be unit-tested. Resolves
+     * badge metadata through the static {@link BadgeManager}.
+     *
+     * @return the display comparator for a user's {@link BadgeEntry badges}
+     */
+    static Comparator<BadgeEntry> badgeDisplayComparator() {
+        return (o1, o2) -> {
+            if (BadgeManager.isTieredBadge(o1.badgeId()) && BadgeManager.isTieredBadge(o2.badgeId())) {
+                TieredBadge tieredBadge1 = BadgeManager.getTieredBadgeById(o1.badgeId());
+                TieredBadge tieredBadge2 = BadgeManager.getTieredBadgeById(o2.badgeId());
 
-                    if (o1.tier() != null && o2.tier() != null) {
-                        return Integer.compare(tieredBadge2.getTier(o2.tier()).getTier(), tieredBadge1.getTier(o1.tier()).getTier());
-                    } else if (o1.tier() != null) {
-                        return -1;
-                    } else if (o2.tier() != null) {
-                        return 1;
-                    }
-                } else if (BadgeManager.isTieredBadge(o1.badgeId())) {
+                if (o1.tier() != null && o2.tier() != null) {
+                    return Integer.compare(tieredBadge2.getTier(o2.tier()).getTier(), tieredBadge1.getTier(o1.tier()).getTier());
+                } else if (o1.tier() != null) {
                     return -1;
-                } else if (BadgeManager.isTieredBadge(o2.badgeId())) {
+                } else if (o2.tier() != null) {
                     return 1;
                 }
+            } else if (BadgeManager.isTieredBadge(o1.badgeId())) {
+                return -1;
+            } else if (BadgeManager.isTieredBadge(o2.badgeId())) {
+                return 1;
+            }
 
-                return Long.compare(o2.obtainedAt(), o1.obtainedAt());
-            })
+            return Long.compare(o2.obtainedAt(), o1.obtainedAt());
+        };
+    }
+
+    public static MessageEmbed createBadgesEmbed(Member member, DiscordUser discordUser, boolean viewingSelf) {
+        List<BadgeEntry> badges = discordUser.getBadges().stream()
+            .sorted(badgeDisplayComparator())
             .toList();
 
         EmbedBuilder embedBuilder = new EmbedBuilder()
