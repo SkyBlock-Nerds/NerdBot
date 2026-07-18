@@ -7,23 +7,16 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
-import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.EmojiCache;
-import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
-import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
-import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -104,55 +97,5 @@ public class DiscordUtils {
         return threadChannel.getAppliedTags()
             .stream()
             .anyMatch(forumTag -> (ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name)));
-    }
-
-    public static Suggestion.ChannelType getThreadSuggestionType(ThreadChannel threadChannel) {
-        return getForumSuggestionType(threadChannel.getParentChannel().asForumChannel());
-    }
-
-    public static Suggestion.ChannelType getForumSuggestionType(ForumChannel forumChannel) {
-        SuggestionConfig suggestionConfig = DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig();
-        AlphaProjectConfig alphaProjectConfig = DiscordBotEnvironment.getBot().getConfig().getAlphaProjectConfig();
-        String parentChannelId = forumChannel.getId();
-
-        if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
-            return Suggestion.ChannelType.ALPHA;
-        } else if (ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
-            return Suggestion.ChannelType.PROJECT;
-        } else if (parentChannelId.equals(suggestionConfig.getForumChannelId())) {
-            return Suggestion.ChannelType.NORMAL;
-        }
-
-        Category parentCategory = forumChannel.getParentCategory();
-
-        if (parentCategory != null) {
-            return getChannelSuggestionTypeFromName(parentCategory.getName());
-        }
-
-        String[] projectChannelNames = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getProjectChannelNames();
-        String channelName = forumChannel.getName().toLowerCase();
-
-        if (channelName.contains("alpha") || Arrays.stream(projectChannelNames).anyMatch(channelName::contains)) {
-            return getChannelSuggestionTypeFromName(forumChannel.getName());
-        }
-
-        return Suggestion.ChannelType.UNKNOWN;
-    }
-
-    public static Suggestion.ChannelType getChannelSuggestionType(StandardGuildChannel channel) {
-        return getChannelSuggestionTypeFromName(channel.getName());
-    }
-
-    public static Suggestion.ChannelType getChannelSuggestionTypeFromName(String name) {
-        if (name.toLowerCase().contains("alpha")) {
-            return Suggestion.ChannelType.ALPHA;
-        }
-
-        String[] projectChannelNames = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getProjectChannelNames();
-        if (Arrays.stream(projectChannelNames).anyMatch(name.toLowerCase()::contains)) {
-            return Suggestion.ChannelType.PROJECT;
-        }
-
-        return Suggestion.ChannelType.NORMAL;
     }
 }

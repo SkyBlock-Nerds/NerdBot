@@ -3,10 +3,10 @@ package net.hypixel.nerdbot.app.config;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
-import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.SuggestionTypeResolver;
 import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
-import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +24,7 @@ public class AlphaProjectConfigUpdater {
         if (updateAlpha) {
             log.info("Updating Alpha Forum IDs");
             alphaProjectConfig.setAlphaForumIds(forumChannels.stream()
-                .filter(forumChannel -> DiscordUtils.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.ALPHA)
+                .filter(forumChannel -> SuggestionTypeResolver.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.ALPHA)
                 .map(ForumChannel::getId)
                 .toArray(String[]::new));
         }
@@ -32,7 +32,7 @@ public class AlphaProjectConfigUpdater {
         if (updateProject) {
             log.info("Updating Project Forum IDs");
             alphaProjectConfig.setProjectForumIds(forumChannels.stream()
-                .filter(forumChannel -> DiscordUtils.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.PROJECT)
+                .filter(forumChannel -> SuggestionTypeResolver.getForumSuggestionType(forumChannel) == Suggestion.ChannelType.PROJECT)
                 .map(ForumChannel::getId)
                 .toArray(String[]::new));
         }

@@ -30,8 +30,7 @@ import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.cache.ChannelCache;
-import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
 import net.hypixel.nerdbot.discord.config.suggestion.SuggestionConfig;
 import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
@@ -153,7 +152,7 @@ public class SuggestionCommands {
         }
 
         // Send Request Review Message
-        ChannelCache.getRequestedReviewChannel().ifPresentOrElse(textChannel -> {
+        SuggestionCommandUtils.getRequestedReviewChannel().ifPresentOrElse(textChannel -> {
             textChannel.sendMessageEmbeds(
                     new EmbedBuilder()
                         .setAuthor(String.format("Greenlit Review Request from %s", event.getUser().getEffectiveName()))

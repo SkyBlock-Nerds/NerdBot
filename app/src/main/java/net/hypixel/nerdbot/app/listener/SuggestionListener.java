@@ -15,7 +15,8 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.managers.channel.concrete.ForumChannelManager;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
-import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.SuggestionTypeResolver;
 import net.hypixel.nerdbot.app.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.discord.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
@@ -68,7 +69,7 @@ public class SuggestionListener {
     @SubscribeEvent
     public void onChannelDelete(ChannelDeleteEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            Suggestion.ChannelType channelType = DiscordUtils.getForumSuggestionType(event.getChannel().asForumChannel());
+            Suggestion.ChannelType channelType = SuggestionTypeResolver.getForumSuggestionType(event.getChannel().asForumChannel());
 
             if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
                 NerdBotConfig botConfig = SkyBlockNerdsBot.config();
@@ -92,7 +93,7 @@ public class SuggestionListener {
     private void updateConfigForumIds(GenericChannelEvent event) {
         if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
             ForumChannel forumChannel = event.getChannel().asForumChannel();
-            Suggestion.ChannelType channelType = DiscordUtils.getForumSuggestionType(forumChannel);
+            Suggestion.ChannelType channelType = SuggestionTypeResolver.getForumSuggestionType(forumChannel);
 
             log.info("Forum channel event detected: '{}' (ID: {}), detected type: {}, parent category: {}",
                 forumChannel.getName(),
