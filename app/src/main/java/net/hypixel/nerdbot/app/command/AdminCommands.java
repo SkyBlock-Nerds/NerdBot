@@ -567,6 +567,9 @@ public class AdminCommands {
         guildOnly = true,
         defaultMemberPermissions = {"ADMINISTRATOR"}
     )
+    // Intentionally uses the legacy display-name heuristic: this admin tool migrates pre-verification
+    // members who never self-assigned a Mojang profile, and no non-heuristic source exists for them.
+    @SuppressWarnings("deprecation")
     public void migrateUsernames(SlashCommandInteractionEvent event) {
         event.deferReply(true).complete();
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
