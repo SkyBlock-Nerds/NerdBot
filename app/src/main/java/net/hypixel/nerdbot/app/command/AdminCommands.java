@@ -286,11 +286,34 @@ public class AdminCommands {
         "ownerIds", "guildId", "token", "databaseUri", "databaseName"
     );
 
+    /**
+     * Extract the root segment of a dotted config key path (the part before the first {@code .}).
+     *
+     * @param key the config key, e.g. {@code "roleConfig.memberRoleId"} or {@code "token"}
+     * @return the root key, e.g. {@code "roleConfig"} or {@code "token"}
+     */
+    static String rootConfigKey(String key) {
+        return key.contains(".") ? key.substring(0, key.indexOf('.')) : key;
+    }
+
+    /**
+     * Whether the given config key may not be edited via {@code /config edit}. Sensitive keys
+     * (credentials and identity) are blocked, including any nested path beneath them.
+     *
+     * <p>Extracted from {@link #editConfig} so this security guard can be unit-tested directly.
+     *
+     * @param key the config key an admin is attempting to edit
+     * @return {@code true} if editing the key is not permitted
+     */
+    static boolean isBlockedConfigKey(String key) {
+        return BLOCKED_CONFIG_KEYS.contains(rootConfigKey(key));
+    }
+
     @SlashCommand(name = "config", subcommand = "edit", description = "Edit the config file", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void editConfig(SlashCommandInteractionEvent event, @SlashOption String key, @SlashOption String value) {
         // Validate the config key is not in the blocked list
-        String rootKey = key.contains(".") ? key.substring(0, key.indexOf('.')) : key;
-        if (BLOCKED_CONFIG_KEYS.contains(rootKey)) {
+        String rootKey = rootConfigKey(key);
+        if (isBlockedConfigKey(key)) {
             event.reply("Editing the `" + rootKey + "` config key is not permitted.").setEphemeral(true).queue();
             return;
         }
