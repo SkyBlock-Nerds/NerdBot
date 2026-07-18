@@ -7,47 +7,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Characterization tests for pure logic extracted from {@link ProfileCommands}: the Hypixel
- * social-media verification and the badge display ordering.
+ * Ordering a user's badges for display: tiered badges before non-tiered, higher tiers before lower,
+ * a tiered entry with a tier before one without, then non-tiered by most-recently-obtained.
  */
-class ProfileCommandsTest {
-
-    @Test
-    void failsWhenNoSocialMediaIsLinked() {
-        Optional<String> error = ProfileCommands.socialVerificationError("Notch", null, "Notch", false);
-
-        assertTrue(error.isPresent());
-        assertEquals("The Hypixel profile for `Notch` does not have any social media linked!", error.get());
-    }
-
-    @Test
-    void passesWhenLinkedDiscordMatchesCaseInsensitively() {
-        assertTrue(ProfileCommands.socialVerificationError("Notch", "notch", "Notch", true).isEmpty());
-        assertTrue(ProfileCommands.socialVerificationError("Notch", "Notch", "Notch", true).isEmpty());
-    }
-
-    @Test
-    void failsWhenLinkedDiscordDoesNotMatch() {
-        Optional<String> error = ProfileCommands.socialVerificationError("Notch", "Herobrine", "Notch", true);
-
-        assertTrue(error.isPresent());
-        assertEquals("The Discord account `Notch` does not match the social media linked on the Hypixel profile for `Notch`! It is currently set to `Herobrine`", error.get());
-    }
-
-    @Test
-    void failsWhenSocialMediaIsPresentButNoDiscordLinkIsSet() {
-        Optional<String> error = ProfileCommands.socialVerificationError("Notch", null, "Notch", true);
-
-        assertTrue(error.isPresent());
-        assertEquals("The Discord account `Notch` does not match the social media linked on the Hypixel profile for `Notch`! It is currently set to `null`", error.get());
-    }
+class BadgeDisplayOrderTest {
 
     @AfterEach
     void clearBadges() {

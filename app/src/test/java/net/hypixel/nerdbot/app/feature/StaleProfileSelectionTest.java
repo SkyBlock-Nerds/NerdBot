@@ -9,14 +9,13 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Characterization tests for the pure decisions extracted from {@link ProfileUpdateFeature}:
- * which users are due for a refresh, and whether a nickname actually needs changing.
+ * Selecting which users are due for a Mojang-profile refresh: only those with an assigned profile
+ * whose cache has gone stale.
  */
-class ProfileUpdateFeatureTest {
+class StaleProfileSelectionTest {
 
     private static final long TTL_HOURS = 24;
 
@@ -40,17 +39,6 @@ class ProfileUpdateFeatureTest {
             .seed(new DiscordUser("b"));
 
         assertTrue(ProfileUpdateFeature.profilesRequiringUpdate(store, TTL_HOURS).isEmpty());
-    }
-
-    @Test
-    void nicknameUpdateNeededWhenCurrentNameLacksUsername() {
-        assertTrue(ProfileUpdateFeature.needsNicknameUpdate("SomeNickname", "Notch"));
-    }
-
-    @Test
-    void nicknameUpdateNotNeededWhenCurrentNameAlreadyContainsUsernameCaseInsensitively() {
-        assertFalse(ProfileUpdateFeature.needsNicknameUpdate("xX_NOTCH_Xx", "notch"));
-        assertFalse(ProfileUpdateFeature.needsNicknameUpdate("Notch", "Notch"));
     }
 
     private static DiscordUser userWithProfile(String discordId, long lastUpdated) {

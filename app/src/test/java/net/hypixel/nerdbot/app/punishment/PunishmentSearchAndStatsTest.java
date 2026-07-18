@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests for {@link PunishmentService} search and stats, exercised against an in-memory store.
  */
-class PunishmentServiceTest {
+class PunishmentSearchAndStatsTest {
 
     @Test
     void searchByModeratorReturnsOnlyThatModeratorsPunishments() {

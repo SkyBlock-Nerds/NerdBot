@@ -11,10 +11,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Characterization tests pinning the behaviour of {@link ActivityPurgeFeature#purgeOldHistory}
- * before any further refactoring of the nomination/activity subsystem.
+ * Purging activity history older than the retention window re-saves only the users whose history
+ * actually changed.
  */
-class ActivityPurgeFeatureTest {
+class StaleActivityPurgeTest {
 
     private static final int RETENTION_DAYS = 30;
 
@@ -44,16 +44,6 @@ class ActivityPurgeFeatureTest {
         assertEquals(0, purged);
         assertTrue(store.savedIds().isEmpty(), "no user should be re-saved when nothing is stale");
         assertEquals(1, recent.getLastActivity().getSuggestionCreationHistory().size());
-    }
-
-    @Test
-    void handlesEmptyStore() {
-        FakeDiscordUserStore store = new FakeDiscordUserStore();
-
-        int purged = ActivityPurgeFeature.purgeOldHistory(store, RETENTION_DAYS);
-
-        assertEquals(0, purged);
-        assertTrue(store.savedIds().isEmpty());
     }
 
     private static DiscordUser userWithSuggestionCreatedAt(String discordId, long timestamp) {

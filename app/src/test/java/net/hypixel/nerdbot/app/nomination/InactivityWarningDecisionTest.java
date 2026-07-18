@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@link NominationInactivityService#shouldSendInactivityWarning}, including the per-sweep threshold
  * and the "already warned this calendar month" check.
  */
-class NominationInactivityServiceTest {
+class InactivityWarningDecisionTest {
 
     private static final int MEMBER_THRESHOLD = 2;
     private static final int NEW_MEMBER_THRESHOLD = 3;

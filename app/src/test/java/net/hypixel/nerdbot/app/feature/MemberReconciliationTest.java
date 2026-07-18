@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Characterization tests pinning the per-member reconciliation performed by
  * {@link UserGrabberFeature#reconcileMember}.
  */
-class UserGrabberFeatureTest {
+class MemberReconciliationTest {
 
     private static final Predicate<String> ALL_KNOWN = badgeId -> true;
 
