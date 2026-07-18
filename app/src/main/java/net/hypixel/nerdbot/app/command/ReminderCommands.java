@@ -59,15 +59,19 @@ public class ReminderCommands {
         .withZone(ZoneId.of("UTC"));
 
     /**
-     * Parse a time string in the format of {@code 1w2d3h4m5s} into a Date
+     * Parse a {@code 1w2d3h4m5s}-style duration string into a {@link Duration}.
      *
-     * @param time The time string to parse
+     * <p>Every unit is optional and an empty string yields {@link Duration#ZERO}; weeks are expanded
+     * to seven days. Extracted from {@link #parseCustomFormat} so the deterministic parsing can be
+     * unit-tested without depending on the current time.
      *
-     * @return The parsed string as a Date
+     * @param time The duration string, e.g. {@code 1w2d3h4m5s}
      *
-     * @throws DateTimeParseException If the string could not be parsed
+     * @return The parsed {@link Duration}
+     *
+     * @throws DateTimeParseException If the string does not match the expected format
      */
-    public static Date parseCustomFormat(String time) throws DateTimeParseException {
+    static Duration parseDuration(String time) throws DateTimeParseException {
         Matcher matcher = DURATION.matcher(time);
 
         if (!matcher.matches()) {
@@ -95,8 +99,20 @@ public class ReminderCommands {
             duration = duration.plusSeconds(Long.parseLong(matcher.group(10)));
         }
 
-        Instant date = Instant.now().plus(duration);
-        return Date.from(date);
+        return duration;
+    }
+
+    /**
+     * Parse a time string in the format of {@code 1w2d3h4m5s} into a Date
+     *
+     * @param time The time string to parse
+     *
+     * @return The parsed string as a Date
+     *
+     * @throws DateTimeParseException If the string could not be parsed
+     */
+    public static Date parseCustomFormat(String time) throws DateTimeParseException {
+        return Date.from(Instant.now().plus(parseDuration(time)));
     }
 
     private Date parseLong(String time) throws NumberFormatException {
