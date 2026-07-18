@@ -59,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
@@ -154,18 +155,15 @@ public class ProfileCommands {
                         }
 
                         if (enforceSocial) {
-                            if (hypixelPlayerResponse.getPlayer().getSocialMedia() == null) {
-                                MojangProfile errorProfile = new MojangProfile();
-                                errorProfile.setErrorMessage("The Hypixel profile for `" + mojangProfile.getUsername() + "` does not have any social media linked!");
-                                return errorProfile;
-                            }
+                            HypixelPlayerResponse.SocialMedia socialMedia = hypixelPlayerResponse.getPlayer().getSocialMedia();
+                            String linkedDiscord = socialMedia == null
+                                ? null
+                                : socialMedia.getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
 
-                            String discord = hypixelPlayerResponse.getPlayer().getSocialMedia().getLinks().get(HypixelPlayerResponse.SocialMedia.Service.DISCORD);
-                            String discordName = member.getUser().getName();
-
-                            if (!discordName.equalsIgnoreCase(discord)) {
+                            Optional<String> socialError = socialVerificationError(member.getUser().getName(), linkedDiscord, mojangProfile.getUsername(), socialMedia != null);
+                            if (socialError.isPresent()) {
                                 MojangProfile errorProfile = new MojangProfile();
-                                errorProfile.setErrorMessage("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + mojangProfile.getUsername() + "`! It is currently set to `" + discord + "`");
+                                errorProfile.setErrorMessage(socialError.get());
                                 return errorProfile;
                             }
                         }
@@ -173,6 +171,31 @@ public class ProfileCommands {
                         return mojangProfile;
                     });
             });
+    }
+
+    /**
+     * Verify that a member's Discord username matches the Discord handle linked on their Hypixel
+     * profile.
+     *
+     * <p>Extracted from {@link #requestMojangProfileAsync} so the verification, including its exact
+     * error messages, can be unit-tested without Mojang/Hypixel HTTP calls.
+     *
+     * @param discordName        the member's current Discord username
+     * @param linkedDiscord      the Discord handle linked on Hypixel, or {@code null} if unset
+     * @param minecraftUsername  the Minecraft username, used in the error messages
+     * @param socialMediaPresent whether the Hypixel profile has any social media linked at all
+     * @return an error message if verification fails, otherwise {@link Optional#empty()}
+     */
+    static Optional<String> socialVerificationError(String discordName, String linkedDiscord, String minecraftUsername, boolean socialMediaPresent) {
+        if (!socialMediaPresent) {
+            return Optional.of("The Hypixel profile for `" + minecraftUsername + "` does not have any social media linked!");
+        }
+
+        if (!discordName.equalsIgnoreCase(linkedDiscord)) {
+            return Optional.of("The Discord account `" + discordName + "` does not match the social media linked on the Hypixel profile for `" + minecraftUsername + "`! It is currently set to `" + linkedDiscord + "`");
+        }
+
+        return Optional.empty();
     }
 
     public static void updateMojangProfile(Member member, MojangProfile mojangProfile) throws HttpException {
