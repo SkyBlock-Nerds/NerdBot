@@ -32,7 +32,7 @@ import net.hypixel.nerdbot.marmalade.exception.HttpException;
 import net.hypixel.nerdbot.marmalade.json.HypixelPlayerResponse;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
-import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.marmalade.storage.badge.Badge;

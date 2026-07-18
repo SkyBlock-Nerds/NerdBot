@@ -1,6 +1,8 @@
 package net.hypixel.nerdbot.app.command.util;
 
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.discord.cache.ChannelCache;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -9,7 +11,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.hypixel.nerdbot.app.command.SuggestionStats;
 import net.hypixel.nerdbot.discord.cache.EmojiCache;
-import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
@@ -22,6 +24,7 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -29,6 +32,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @UtilityClass
 public class SuggestionCommandUtils {
+
+    public static Optional<TextChannel> getRequestedReviewChannel() {
+        return ChannelCache.getChannelById(SkyBlockNerdsBot.config().getSuggestionConfig().getReviewRequestConfig().getChannelId())
+            .map(TextChannel.class::cast);
+    }
 
     /**
      * The include and exclude tag names parsed from a suggestion tag filter string.

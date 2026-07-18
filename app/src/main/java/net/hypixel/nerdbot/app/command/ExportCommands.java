@@ -18,7 +18,7 @@ import net.hypixel.nerdbot.discord.role.RoleManager;
 import net.hypixel.nerdbot.marmalade.io.FileUtils;
 import net.hypixel.nerdbot.marmalade.csv.CSVData;
 import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.ChannelActivityEntry;

@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.discord.cache.suggestion;
+package net.hypixel.nerdbot.app.suggestion;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +12,8 @@ import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.marmalade.EnumUtils;
-import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.discord.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
@@ -48,7 +49,7 @@ public class Suggestion {
     }
 
     public Suggestion(ThreadChannel thread, ChannelType channelType) {
-        DiscordBotConfig botConfig = DiscordBotEnvironment.getBot().getConfig();
+        NerdBotConfig botConfig = SkyBlockNerdsBot.config();
         this.threadId = thread.getId();
         this.parentId = thread.getParentChannel().asForumChannel().getId();
         this.threadName = thread.getName();
@@ -58,7 +59,7 @@ public class Suggestion {
         this.timeCreated = thread.getTimeCreated();
         this.jumpUrl = String.format("https://discord.com/channels/%s/%s", this.getGuildId(), this.getThreadId());
         this.greenlit = channelType == ChannelType.NORMAL && DiscordUtils.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
-        this.channelType = channelType == null ? DiscordUtils.getThreadSuggestionType(thread) : channelType;
+        this.channelType = channelType == null ? SuggestionTypeResolver.getThreadSuggestionType(thread) : channelType;
         this.expired = false;
 
         // Activity

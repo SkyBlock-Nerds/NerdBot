@@ -21,14 +21,14 @@ import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
 import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.cache.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.SuggestionTypeResolver;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
 import net.hypixel.nerdbot.discord.config.channel.AlphaProjectConfig;
 import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
-import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.EmojiConfigUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -154,11 +154,11 @@ public class ActivityListener {
         Suggestion.ChannelType channelType;
 
         if (guildChannel instanceof ThreadChannel threadChannel) {
-            channelType = DiscordUtils.getThreadSuggestionType(threadChannel);
+            channelType = SuggestionTypeResolver.getThreadSuggestionType(threadChannel);
         } else if (guildChannel instanceof TextChannel) {
-            channelType = DiscordUtils.getChannelSuggestionType(guildChannel.asTextChannel());
+            channelType = SuggestionTypeResolver.getChannelSuggestionType(guildChannel.asTextChannel());
         } else {
-            channelType = DiscordUtils.getChannelSuggestionTypeFromName(guildChannel.getName());
+            channelType = SuggestionTypeResolver.getChannelSuggestionTypeFromName(guildChannel.getName());
         }
 
         Optional<RoleRestrictedChannelGroup> matchingGroup = findMatchingRoleRestrictedGroup(guildChannel.getId(), member);
@@ -185,7 +185,7 @@ public class ActivityListener {
         // New Suggestion Comments
         if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
             ForumChannel forumChannel = guildChannel.asThreadChannel().getParentChannel().asForumChannel();
-            channelType = DiscordUtils.getForumSuggestionType(forumChannel);
+            channelType = SuggestionTypeResolver.getForumSuggestionType(forumChannel);
 
             // New Suggestion Comments
             if (channelType == Suggestion.ChannelType.NORMAL) {
@@ -264,7 +264,7 @@ public class ActivityListener {
                 PrometheusMetrics.TOTAL_VOICE_TIME_SPENT_BY_USER.labels(member.getEffectiveName(), channelLeft.getName()).inc((TimeUnit.MILLISECONDS.toSeconds(timeSpent)));
 
                 if ((timeSpent / 1_000L) > SkyBlockNerdsBot.config().getVoiceThreshold()) {
-                    Suggestion.ChannelType channelType = DiscordUtils.getChannelSuggestionType(channelLeft.asVoiceChannel());
+                    Suggestion.ChannelType channelType = SuggestionTypeResolver.getChannelSuggestionType(channelLeft.asVoiceChannel());
 
                     if (channelType == Suggestion.ChannelType.ALPHA) {
                         discordUser.getLastActivity().setAlphaVoiceJoinDate(time);

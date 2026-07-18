@@ -97,11 +97,6 @@ public class ChannelCache {
             .map(TextChannel.class::cast);
     }
 
-    public static Optional<TextChannel> getRequestedReviewChannel() {
-        return getChannelById(DiscordBotEnvironment.getBot().getConfig().getSuggestionConfig().getReviewRequestConfig().getChannelId())
-            .map(TextChannel.class::cast);
-    }
-
     @SubscribeEvent
     public void onChannelCreate(ChannelCreateEvent event) {
         CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel().asGuildChannel());
