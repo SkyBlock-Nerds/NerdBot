@@ -20,6 +20,7 @@ import net.aerh.imagegenerator.impl.MinecraftPlayerHeadGenerator;
 import net.aerh.imagegenerator.impl.tooltip.MinecraftTooltipGenerator;
 import net.aerh.imagegenerator.item.GeneratedObject;
 import net.aerh.imagegenerator.pack.PackId;
+import net.aerh.imagegenerator.pack.PackRepository;
 import net.aerh.imagegenerator.spritesheet.OverlayLoader;
 import net.aerh.imagegenerator.spritesheet.Spritesheet;
 import net.aerh.imagegenerator.text.TextColorRemap;
@@ -101,6 +102,7 @@ public class GeneratorCommands {
     private static final String COLOR_DESCRIPTION = "The overlay color (e.g., red, blue, #FF0000)";
     private static final String PACK_DESCRIPTION = "The resource pack used to resolve item textures";
     private static final String TOOLTIP_STYLE_DESCRIPTION = "The pack tooltip style to render with (defaults to the rarity's configured style)";
+    private static final String ANIMATED_DESCRIPTION = "Render the pack's animated item textures as a GIF (requires a pack with animated textures)";
 
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
@@ -115,6 +117,7 @@ public class GeneratorCommands {
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
         @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
+        @SlashOption(description = ANIMATED_DESCRIPTION, required = false) Boolean animated,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -129,6 +132,7 @@ public class GeneratorCommands {
 
         enchanted = enchanted != null && enchanted;
         hoverEffect = hoverEffect != null && hoverEffect;
+        animated = animated != null && animated;
         durability = durability == null ? 100 : durability;
 
         try {
@@ -146,8 +150,8 @@ public class GeneratorCommands {
                     .withColor(color)
                     .isEnchanted(enchanted)
                     .withHoverEffect(hoverEffect)
-                    .withPack(packId)
                     .isBigImage();
+                applyItemPack(itemBuilder, packId, animated);
 
                 if (durability != null) {
                     itemBuilder.withDurability(durability);
@@ -158,11 +162,7 @@ public class GeneratorCommands {
 
             GeneratedObject generatedObject = item.build();
 
-            if (generatedObject.isAnimated()) {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "item.gif")).queue();
-            } else {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
-            }
+            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "item")).queue();
 
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
@@ -191,6 +191,7 @@ public class GeneratorCommands {
         @SlashOption(description = "Whether the Power Stone shows as selected", required = false) Boolean selected,
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
+        @SlashOption(description = ANIMATED_DESCRIPTION, required = false) Boolean animated,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -206,6 +207,7 @@ public class GeneratorCommands {
         alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         enchanted = enchanted != null && enchanted;
+        animated = animated != null && animated;
 
         Function<String, Map<String, Integer>> parseStatsToMap = stats -> {
             Map<String, Integer> map = new HashMap<>();
@@ -343,24 +345,21 @@ public class GeneratorCommands {
 
                         generatorImageBuilder.addGenerator(generator.build());
                     } else {
-                        generatorImageBuilder.addGenerator(new MinecraftItemGenerator.Builder()
+                        MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
                             .withItem(itemId)
                             .withColor(color)
                             .isEnchanted(enchanted)
-                            .withPack(packId)
-                            .isBigImage()
-                            .build());
+                            .isBigImage();
+                        applyItemPack(itemBuilder, packId, animated);
+
+                        generatorImageBuilder.addGenerator(itemBuilder.build());
                     }
                 }
 
                 generatorImageBuilder.addGenerator(tooltipGenerator.build());
                 GeneratedObject generatedObject = generatorImageBuilder.build();
 
-                if (generatedObject.isAnimated()) {
-                    event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "powerstone.gif")).queue();
-                } else {
-                    event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "powerstone.png")).queue();
-                }
+                event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "powerstone")).queue();
 
                 addCommandToUserHistory(event.getUser(), event.getCommandString());
             } catch (GeneratorException | IllegalArgumentException exception) {
@@ -510,7 +509,7 @@ public class GeneratorCommands {
                     .build())
                 .build();
 
-            event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "recipe.png")).queue();
+            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "recipe")).queue();
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
             event.getHook().editOriginal(exception.getMessage()).queue();
@@ -578,11 +577,7 @@ public class GeneratorCommands {
 
             GeneratedObject finalObject = generatedObject.build();
 
-            if (finalObject.isAnimated()) {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(finalObject.getGifData(), "inventory.gif")).queue();
-            } else {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(finalObject.getImage()), "inventory.png")).queue();
-            }
+            event.getHook().editOriginalAttachments(renderAttachment(finalObject, "inventory")).queue();
 
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
@@ -633,7 +628,7 @@ public class GeneratorCommands {
                     // pack and the rarity-derived tooltip style, reproducing the preview exactly
                     applyPackTheme(tooltipBuilder, packId, null, tooltipBuilder.getRarity());
                 } else if (generator instanceof MinecraftItemGenerator.Builder itemBuilder) {
-                    itemBuilder.withPack(packId);
+                    applyItemPack(itemBuilder, packId, false);
                 }
 
                 generatorImageBuilder.addGenerator(generator.build());
@@ -676,11 +671,7 @@ public class GeneratorCommands {
             MessageEditBuilder builder = new MessageEditBuilder()
                 .setContent("Your NBT " + sourceLabel + " has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + slashCommand + "```");
 
-            if (generatedObject.isAnimated()) {
-                builder.setFiles(FileUpload.fromData(generatedObject.getGifData(), "parsed_nbt.gif"));
-            } else {
-                builder.setFiles(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "parsed_nbt.png"));
-            }
+            builder.setFiles(renderAttachment(generatedObject, "parsed_nbt"));
 
             event.getHook().editOriginal(builder.build()).queue();
             addCommandToUserHistory(event.getUser(), event.getCommandString());
@@ -753,6 +744,7 @@ public class GeneratorCommands {
         @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(autocompleteId = "tooltip-styles", description = TOOLTIP_STYLE_DESCRIPTION, required = false) String tooltipStyle,
+        @SlashOption(description = ANIMATED_DESCRIPTION, required = false) Boolean animated,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -771,6 +763,7 @@ public class GeneratorCommands {
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         centered = centered != null && centered;
         enchanted = enchanted != null && enchanted;
+        animated = animated != null && animated;
         firstLinePadding = firstLinePadding == null || firstLinePadding;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         renderBorder = renderBorder == null || renderBorder;
@@ -810,8 +803,8 @@ public class GeneratorCommands {
                         .withItem(itemId)
                         .withColor(color)
                         .isEnchanted(enchanted)
-                        .withPack(packId)
                         .isBigImage();
+                    applyItemPack(itemBuilder, packId, animated);
 
                     if (durability != null) {
                         itemBuilder.withDurability(durability);
@@ -845,11 +838,7 @@ public class GeneratorCommands {
 
             GeneratedObject generatedObject = generatorImageBuilder.build();
 
-            if (generatedObject.isAnimated()) {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "item.gif")).queue();
-            } else {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "item.png")).queue();
-            }
+            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "item")).queue();
 
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException | IllegalArgumentException exception) {
@@ -907,11 +896,7 @@ public class GeneratorCommands {
             generatorImageBuilder.addGenerator(tooltipBuilder.build());
             GeneratedObject generatedObject = generatorImageBuilder.build();
 
-            if (generatedObject.isAnimated()) {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "text.gif")).queue();
-            } else {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "text.png")).queue();
-            }
+            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "text")).queue();
 
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
@@ -973,11 +958,7 @@ public class GeneratorCommands {
 
             GeneratedObject generatedObject = generatorImageBuilder.build();
 
-            if (generatedObject.isAnimated()) {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "dialogue.gif")).queue();
-            } else {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "dialogue.png")).queue();
-            }
+            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "dialogue")).queue();
 
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
@@ -1039,11 +1020,7 @@ public class GeneratorCommands {
 
             GeneratedObject generatedObject = generatorImageBuilder.build();
 
-            if (generatedObject.isAnimated()) {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(generatedObject.getGifData(), "dialogue.gif")).queue();
-            } else {
-                event.getHook().editOriginalAttachments(FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), "dialogue.png")).queue();
-            }
+            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "dialogue")).queue();
 
             addCommandToUserHistory(event.getUser(), event.getCommandString());
         } catch (GeneratorException exception) {
@@ -1214,6 +1191,44 @@ public class GeneratorCommands {
      */
     private PackId resolvePackOption(String pack) {
         return SkyBlockNerdsBot.resourcePackService().resolvePackOption(pack);
+    }
+
+    /**
+     * Applies the resolved pack to an item builder: the pack selection, the repository the bot
+     * manages the pack in, and the animated-textures opt-in. Mirrors {@link #applyPackTheme} for
+     * tooltips so every item render resolves against the same pack state. With no pack (vanilla)
+     * and animation off this leaves the render byte-identical to the pre-pack path.
+     *
+     * @param builder  The item builder to configure
+     * @param packId   The resolved pack, or null for vanilla rendering
+     * @param animated Whether to render the pack's animated item textures as a GIF
+     */
+    private void applyItemPack(MinecraftItemGenerator.Builder builder, PackId packId, boolean animated) {
+        PackRepository packRepository = SkyBlockNerdsBot.resourcePackService().packRepository();
+        builder.withPack(packId)
+            .withPackRepository(packRepository)
+            .withAnimatedTextures(animated);
+    }
+
+    /**
+     * Builds the Discord attachment for a generated render, branching on
+     * {@link GeneratedObject#isAnimated()}: animated renders upload the encoded GIF bytes as
+     * {@code <baseName>.gif}, static renders upload the PNG as {@code <baseName>.png}. Shared by
+     * every generator command so the GIF/PNG decision stays in one place.
+     *
+     * @param generatedObject The render to attach
+     * @param baseName        The attachment file name without extension (e.g. {@code "item"})
+     *
+     * @return The {@link FileUpload} to send back to Discord
+     *
+     * @throws IOException If writing the static PNG to a temporary file fails
+     */
+    static FileUpload renderAttachment(GeneratedObject generatedObject, String baseName) throws IOException {
+        if (generatedObject.isAnimated()) {
+            return FileUpload.fromData(generatedObject.getGifData(), baseName + ".gif");
+        }
+
+        return FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), baseName + ".png");
     }
 
     /**

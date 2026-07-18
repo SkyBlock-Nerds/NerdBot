@@ -1,17 +1,62 @@
 package net.hypixel.nerdbot.app.command;
 
 import net.aerh.imagegenerator.exception.GeneratorException;
+import net.aerh.imagegenerator.item.GeneratedObject;
+import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.generator.GeneratorHistory;
 import org.junit.jupiter.api.Test;
 
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GeneratorCommandsTest {
+
+    @Test
+    void renderAttachmentUploadsStaticRenderAsPng() throws IOException {
+        GeneratedObject staticObject = new GeneratedObject(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
+
+        try (FileUpload upload = GeneratorCommands.renderAttachment(staticObject, "item")) {
+            assertEquals("item.png", upload.getName());
+        }
+    }
+
+    @Test
+    void renderAttachmentUploadsAnimatedRenderAsGif() throws IOException {
+        byte[] gifData = {'G', 'I', 'F', '8', '9', 'a'};
+        GeneratedObject animatedObject = new GeneratedObject(
+            gifData,
+            List.of(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)),
+            50
+        );
+
+        try (FileUpload upload = GeneratorCommands.renderAttachment(animatedObject, "item")) {
+            assertEquals("item.gif", upload.getName());
+            assertArrayEquals(gifData, upload.getData().readAllBytes());
+        }
+    }
+
+    @Test
+    void renderAttachmentUsesGivenBaseNameForFileExtension() throws IOException {
+        GeneratedObject staticObject = new GeneratedObject(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
+        GeneratedObject animatedObject = new GeneratedObject(
+            new byte[]{1, 2, 3, 4},
+            List.of(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)),
+            50
+        );
+
+        try (FileUpload pngUpload = GeneratorCommands.renderAttachment(staticObject, "recipe");
+             FileUpload gifUpload = GeneratorCommands.renderAttachment(animatedObject, "powerstone")) {
+            assertEquals("recipe.png", pngUpload.getName());
+            assertEquals("powerstone.gif", gifUpload.getName());
+        }
+    }
 
     @Test
     void getCommandHistoryReturnsEmptyListForNullUser() {
