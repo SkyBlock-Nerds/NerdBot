@@ -25,7 +25,7 @@ class MemberReconciliationTest {
     void createsNewUserWhenAbsentThenSavesIt() {
         FakeDiscordUserStore store = new FakeDiscordUserStore();
 
-        DiscordUser result = UserGrabberFeature.reconcileMember(store, "123", "Nerd", ALL_KNOWN);
+        DiscordUser result = UserGrabberFeature.reconcileMember(store, "123", "Nerd", ALL_KNOWN, List.of());
 
         assertEquals("123", result.getDiscordId());
         assertNotNull(result.getLastActivity(), "a new user should have default activity");
@@ -40,7 +40,7 @@ class MemberReconciliationTest {
         existing.setLastActivity(null);
         FakeDiscordUserStore store = new FakeDiscordUserStore().seed(existing);
 
-        DiscordUser result = UserGrabberFeature.reconcileMember(store, "123", "Nerd", ALL_KNOWN);
+        DiscordUser result = UserGrabberFeature.reconcileMember(store, "123", "Nerd", ALL_KNOWN, List.of());
 
         assertNotNull(result.getLastActivity(), "null activity should have been replaced with a default");
         assertEquals(List.of("123"), store.savedIds());
@@ -52,7 +52,7 @@ class MemberReconciliationTest {
         existing.setBadges(null);
         FakeDiscordUserStore store = new FakeDiscordUserStore().seed(existing);
 
-        DiscordUser result = UserGrabberFeature.reconcileMember(store, "123", "Nerd", ALL_KNOWN);
+        DiscordUser result = UserGrabberFeature.reconcileMember(store, "123", "Nerd", ALL_KNOWN, List.of());
 
         assertNotNull(result.getBadges(), "null badges should have been replaced with an empty list");
         assertTrue(result.getBadges().isEmpty());
@@ -65,10 +65,17 @@ class MemberReconciliationTest {
         existing.setBadges(new ArrayList<>(List.of(new BadgeEntry("known"), new BadgeEntry("stale"))));
         FakeDiscordUserStore store = new FakeDiscordUserStore().seed(existing);
 
-        DiscordUser result = UserGrabberFeature.reconcileMember(store, "123", "Nerd", badgeId -> badgeId.equals("known"));
+        DiscordUser result = UserGrabberFeature.reconcileMember(store, "123", "Nerd", badgeId -> badgeId.equals("known"), List.of());
 
         assertEquals(1, result.getBadges().size(), "the unrecognised badge should have been removed");
         assertEquals("known", result.getBadges().get(0).badgeId());
         assertEquals(List.of("123"), store.savedIds());
+    }
+
+    @Test
+    void backfillsAndUpdatesRoleIds() {
+        FakeDiscordUserStore store = new FakeDiscordUserStore();
+        DiscordUser result = UserGrabberFeature.reconcileMember(store, "123", "Nerd", ALL_KNOWN, List.of("100", "200"));
+        assertEquals(List.of("100", "200"), result.getRoleIds(), "reconcile should adopt the member's current roles");
     }
 }

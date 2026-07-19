@@ -2,7 +2,9 @@ package net.hypixel.nerdbot.app.feature;
 
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Role;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
+import net.hypixel.nerdbot.app.role.RoleIdSync;
 import net.hypixel.nerdbot.app.storage.DiscordUserStore;
 import net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore;
 import net.hypixel.nerdbot.discord.BotEnvironment;
@@ -13,6 +15,7 @@ import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepo
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
 
 @Slf4j
@@ -41,7 +44,8 @@ public class UserGrabberFeature extends BotFeature {
                 }
 
                 log.info("Found user {} ({})", member.getEffectiveName(), member.getId());
-                reconcileMember(store, member.getId(), member.getEffectiveName(), UserGrabberFeature::isKnownBadge);
+                List<String> roleIds = member.getRoles().stream().map(Role::getId).toList();
+                reconcileMember(store, member.getId(), member.getEffectiveName(), UserGrabberFeature::isKnownBadge, roleIds);
             })
             .onSuccess(aVoid -> log.info("Finished grabbing users from guild {} (ID: {})", guild.getName(), guild.getId()))
             .onError(throwable -> log.error("Failed to grab users from guild {} (ID: {})", guild.getName(), guild.getId(), throwable));
@@ -61,9 +65,10 @@ public class UserGrabberFeature extends BotFeature {
      * @param memberId      the member's Discord ID
      * @param effectiveName the member's display name (used only for logging)
      * @param knownBadge    returns {@code true} if the given badge ID is still recognised
+     * @param roleIds       the member's current Discord role ids
      * @return the reconciled (and saved) user
      */
-    static DiscordUser reconcileMember(DiscordUserStore store, String memberId, String effectiveName, Predicate<String> knownBadge) {
+    static DiscordUser reconcileMember(DiscordUserStore store, String memberId, String effectiveName, Predicate<String> knownBadge, List<String> roleIds) {
         DiscordUser discordUser = store.findById(memberId).orElse(null);
         if (discordUser == null) {
             discordUser = new DiscordUser(memberId);
@@ -87,6 +92,10 @@ public class UserGrabberFeature extends BotFeature {
             }
             return unknown;
         });
+
+        if (RoleIdSync.applyRoleIds(discordUser, roleIds)) {
+            log.info("Updated role ids for {} (ID: {})", effectiveName, memberId);
+        }
 
         store.save(discordUser);
         return discordUser;
