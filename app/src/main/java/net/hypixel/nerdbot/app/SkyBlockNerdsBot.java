@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.hypixel.nerdbot.app.activity.ActivityListener;
 import net.hypixel.nerdbot.app.feature.RepositoryAutosaveFeature;
+import net.hypixel.nerdbot.app.feature.RoleReconcileFeature;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.app.generation.pack.ResourcePackService;
 import net.hypixel.nerdbot.app.listener.FunListener;
@@ -15,6 +16,7 @@ import net.hypixel.nerdbot.app.listener.ModLogListener;
 import net.hypixel.nerdbot.app.listener.PinListener;
 import net.hypixel.nerdbot.app.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.app.listener.RoleRestrictedChannelListener;
+import net.hypixel.nerdbot.app.listener.RoleSyncListener;
 import net.hypixel.nerdbot.app.listener.SuggestionListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.app.sentry.SentryManager;
@@ -118,7 +120,8 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
             new PinListener(),
             new MetricsListener(),
             new FunListener(),
-            new RoleRestrictedChannelListener()
+            new RoleRestrictedChannelListener(),
+            new RoleSyncListener()
         ));
 
         return listeners;
@@ -184,6 +187,10 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         // omission: flushes write-behind repository changes on a fixed interval so an ungraceful
         // shutdown loses at most one interval rather than everything since startup.
         features.add(new RepositoryAutosaveFeature());
+
+        // Always-on safety net: hourly sweep that catches role changes missed by RoleSyncListener
+        // while the bot was offline (see RoleReconcileFeature for details).
+        features.add(new RoleReconcileFeature());
 
         return features;
     }
