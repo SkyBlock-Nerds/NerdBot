@@ -12,6 +12,7 @@
     <properties>
         <java.version>25</java.version>
         <lombok.version>1.18.46</lombok.version>
+        <sentry.version>8.48.0</sentry.version>
         <imagegenerator.version>master-SNAPSHOT</imagegenerator.version>
         <editorconfig.encoding>UTF-8</editorconfig.encoding>
         <maven.compiler.release>${java.version}</maven.compiler.release>
