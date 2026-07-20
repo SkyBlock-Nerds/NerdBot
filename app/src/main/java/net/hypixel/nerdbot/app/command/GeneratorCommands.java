@@ -101,7 +101,7 @@ public class GeneratorCommands {
     private static final String COLOR_DESCRIPTION = "The overlay color (e.g., red, blue, #FF0000)";
     private static final String PACK_DESCRIPTION = "The resource pack used to resolve item textures";
     private static final String TOOLTIP_STYLE_DESCRIPTION = "The pack tooltip style to render with (defaults to the rarity's configured style)";
-    private static final String ANIMATED_DESCRIPTION = "Whether animated pack textures render as a GIF (defaults to the texture's own animation data; False forces a static render)";
+    private static final String ANIMATED_DESCRIPTION = "Whether animated pack textures render as a GIF (False forces a static render)";
 
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
