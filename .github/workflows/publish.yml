@@ -66,7 +66,7 @@ jobs:
     steps:
       - name: Checkout code
         if: ${{ env.USE_OLD_IMAGE == 'false' }}
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
 
       - name: Login to GHCR
         if: ${{ env.USE_OLD_IMAGE == 'false' }}
