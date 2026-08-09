@@ -55,7 +55,6 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.user.generator.Gener
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1266,14 +1265,6 @@ public class GeneratorCommands {
         return FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), baseName + ".png");
     }
 
-    /**
-     * Applies the resolved pack's tooltip theming to a tooltip builder: the explicit style
-     * option when given, else the pack's configured style for the item's rarity, plus the
-     * pack's text color remap. Without a pack there are no sprites to render a style from,
-     * so an explicit style is rejected rather than silently ignored.
-     *
-     * @throws GeneratorException If a tooltip style is given without a resource pack
-     */
     /**
      * Rejects an explicit tooltip_style when the border is disabled: the library only draws
      * theme sprites when the border is rendered, so the style would silently do nothing
