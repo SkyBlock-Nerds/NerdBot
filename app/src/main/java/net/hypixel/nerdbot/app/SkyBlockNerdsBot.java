@@ -9,7 +9,9 @@ import net.hypixel.nerdbot.app.activity.ActivityListener;
 import net.hypixel.nerdbot.app.feature.RepositoryAutosaveFeature;
 import net.hypixel.nerdbot.app.feature.RoleReconcileFeature;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
+import net.hypixel.nerdbot.app.drive.DrivePermissionService;
 import net.hypixel.nerdbot.app.generation.pack.ResourcePackService;
+import net.hypixel.nerdbot.app.listener.DrivePermissionListener;
 import net.hypixel.nerdbot.app.listener.FunListener;
 import net.hypixel.nerdbot.app.listener.MetricsListener;
 import net.hypixel.nerdbot.app.listener.ModLogListener;
@@ -61,6 +63,8 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
      */
     private final ResourcePackService resourcePackService = new ResourcePackService(PackRepository.global());
 
+    private DrivePermissionService drivePermissionService;
+
     /**
      * Static helper to get the MessageCache from the current bot instance.
      */
@@ -74,6 +78,14 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
      */
     public static ResourcePackService resourcePackService() {
         return ((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).resourcePackService;
+    }
+
+    /**
+     * Static helper for the Drive permission service. Empty whenever the feature
+     * is disabled in config or its secrets are absent — callers no-op in that case.
+     */
+    public static java.util.Optional<DrivePermissionService> drivePermissionService() {
+        return java.util.Optional.ofNullable(((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).drivePermissionService);
     }
 
     /**
@@ -121,7 +133,8 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
             new MetricsListener(),
             new FunListener(),
             new RoleRestrictedChannelListener(),
-            new RoleSyncListener()
+            new RoleSyncListener(),
+            new DrivePermissionListener()
         ));
 
         return listeners;
@@ -219,6 +232,9 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
         // Register resource packs with the image generator
         resourcePackService.registerConfiguredPacks(config.getGeneratorConfig().getResourcePacks());
+
+        // Empty when the feature is disabled in config or its secrets are absent; commands/listener no-op in that case
+        drivePermissionService = DrivePermissionService.fromSystemProperties(config.getGoogleDriveConfig()).orElse(null);
 
         // Validate glyph override data (icons.json/stats.json, including any external override
         // files) now instead of on the first /gen parse that needs it
