@@ -108,6 +108,19 @@
       "defaultPack": "example_value"
     }
   },
+  "googleDriveConfig": {
+    "enabled": false,
+    "folderMappings": [
+      {
+        "roleId": "1234567890123456789",
+        "folderIds": [
+          "example_folder_id_1",
+          "example_folder_id_2"
+        ],
+        "accessLevel": "READER"
+      }
+    ]
+  },
   "messageLimit": 1,
   "mojangUsernameCacheTTL": 1,
   "mojangForceNicknameUpdate": true,
