@@ -43,4 +43,28 @@ class GoogleDriveConfigTest {
         assertFalse(config.getGoogleDriveConfig().isEnabled());
         assertNotNull(config.getGoogleDriveConfig().getFolderMappings());
     }
+
+    @Test
+    void notificationEmailsDefaultOnAndParseOff() {
+        NerdBotConfig absent = new Gson().fromJson("{}", NerdBotConfig.class);
+        assertTrue(absent.getGoogleDriveConfig().isSendNotificationEmails());
+
+        String json = """
+            {"googleDriveConfig": {"sendNotificationEmails": false}}
+            """;
+        NerdBotConfig explicit = new Gson().fromJson(json, NerdBotConfig.class);
+        assertFalse(explicit.getGoogleDriveConfig().isSendNotificationEmails());
+    }
+
+    @Test
+    void notificationEmailMessageDefaultsAndParses() {
+        NerdBotConfig absent = new Gson().fromJson("{}", NerdBotConfig.class);
+        assertFalse(absent.getGoogleDriveConfig().getNotificationEmailMessage().isBlank());
+
+        String json = """
+            {"googleDriveConfig": {"notificationEmailMessage": "custom text"}}
+            """;
+        NerdBotConfig explicit = new Gson().fromJson(json, NerdBotConfig.class);
+        assertEquals("custom text", explicit.getGoogleDriveConfig().getNotificationEmailMessage());
+    }
 }

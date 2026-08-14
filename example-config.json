@@ -114,12 +114,13 @@
       {
         "roleId": "1234567890123456789",
         "folderIds": [
-          "example_folder_id_1",
-          "example_folder_id_2"
+          "1234567890123456789"
         ],
         "accessLevel": "READER"
       }
-    ]
+    ],
+    "sendNotificationEmails": true,
+    "notificationEmailMessage": "This folder was shared automatically by the SkyBlock Nerds bot based on your Discord roles."
   },
   "messageLimit": 1,
   "mojangUsernameCacheTTL": 1,

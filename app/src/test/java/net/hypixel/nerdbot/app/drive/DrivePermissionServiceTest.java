@@ -144,7 +144,8 @@ class DrivePermissionServiceTest {
 
         SyncOutcome outcome = service(client).syncGrants("42", access, List.of("111"), config(mapping("111", "READER", "fA", "fB")));
 
-        assertEquals(List.of("fA"), outcome.failedFolders());
+        assertEquals(List.of("fA"), outcome.failedFolders().stream().map(DrivePermissionService.FailedFolder::folderId).toList());
+        assertEquals(400, outcome.failedFolders().getFirst().statusCode());
         assertEquals(List.of("fB"), outcome.grantedFolders());
         assertEquals(1, access.getGrants().size()); // only fB recorded — reconcile will retry fA later
     }
@@ -158,7 +159,8 @@ class DrivePermissionServiceTest {
 
         SyncOutcome outcome = service(client).syncGrants("42", access, List.of(), config(mapping("111", "READER", "fA")));
 
-        assertEquals(List.of("fA"), outcome.failedFolders());
+        assertEquals(List.of("fA"), outcome.failedFolders().stream().map(DrivePermissionService.FailedFolder::folderId).toList());
+        assertEquals(403, outcome.failedFolders().getFirst().statusCode());
         assertEquals(1, access.getGrants().size());
     }
 
@@ -170,7 +172,8 @@ class DrivePermissionServiceTest {
         SyncOutcome outcome = service(client).syncGrants("42", access, List.of("111"), config(mapping("111", "READER", "fA")));
 
         assertTrue(outcome.grantedFolders().isEmpty());
-        assertEquals(List.of("fA"), outcome.failedFolders());
+        assertEquals(List.of("fA"), outcome.failedFolders().stream().map(DrivePermissionService.FailedFolder::folderId).toList());
+        assertEquals(-1, outcome.failedFolders().getFirst().statusCode());
         assertTrue(client.operations.isEmpty());
     }
 

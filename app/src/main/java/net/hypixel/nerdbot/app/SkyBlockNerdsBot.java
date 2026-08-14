@@ -83,7 +83,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
     /**
      * Static helper for the Drive permission service. Empty whenever the feature
-     * is disabled in config or its secrets are absent — callers no-op in that case.
+     * is disabled in config or its secrets are absent; callers no-op in that case.
      */
     public static java.util.Optional<DrivePermissionService> drivePermissionService() {
         return java.util.Optional.ofNullable(((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).drivePermissionService);

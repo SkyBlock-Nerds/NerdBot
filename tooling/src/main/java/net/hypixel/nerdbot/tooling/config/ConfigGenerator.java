@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.tooling.config;
 
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import net.hypixel.nerdbot.app.config.ExampleValue;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.marmalade.json.DataSerialization;
 
@@ -203,6 +204,10 @@ public class ConfigGenerator {
     }
 
     private Object generateValueForField(Field field, int depth) {
+        if (field.isAnnotationPresent(ExampleValue.class)) {
+            return parseExampleValue(field, field.getAnnotation(ExampleValue.class).value());
+        }
+
         Class<?> type = field.getType();
         Type genericType = field.getGenericType();
         String fieldName = field.getName().toLowerCase();
@@ -210,6 +215,20 @@ public class ConfigGenerator {
         boolean isDiscordId = fieldName.endsWith("id") || fieldName.endsWith("ids");
 
         return generateValue(type, genericType, fieldName, isDiscordId, depth);
+    }
+
+    /**
+     * Honors an {@link ExampleValue} override: booleans are parsed, everything
+     * else (currently just strings) is emitted as the raw annotation value.
+     */
+    private Object parseExampleValue(Field field, String rawValue) {
+        Class<?> type = field.getType();
+
+        if (type == boolean.class || type == Boolean.class) {
+            return Boolean.parseBoolean(rawValue);
+        }
+
+        return rawValue;
     }
 
     private Object generateValue(Class<?> type, Type genericType, String fieldName, boolean isDiscordId, int depth) {

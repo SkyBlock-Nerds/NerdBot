@@ -33,6 +33,9 @@ public class DrivePermissionSyncFeature extends BotFeature {
         if (SkyBlockNerdsBot.drivePermissionService().isEmpty()) {
             return;
         }
+        if (!SkyBlockNerdsBot.config().getGoogleDriveConfig().isEnabled()) {
+            return;
+        }
         if (!BotEnvironment.getBot().getDatabase().isConnected()) {
             log.error("Skipping Drive permission sweep as the database is not connected!");
             return;

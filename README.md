@@ -81,6 +81,17 @@ them.
 The bot tracks a number of custom metrics that are implemented using Prometheus. These metrics can then be viewed using
 a dashboard of your choice that supports Prometheus.
 
+## Google Drive Access Sync
+
+Members link their Google account email with `/drive link` (a modal, so the address never appears in chat, and every
+reply is ephemeral), and the bot keeps their shared-Drive folder access in sync with their Discord roles: holding a
+mapped role grants access at that role's level, holding several mapped roles gets the union of every folder they
+unlock (the most permissive level wins where two roles map to the same folder), and losing a role, leaving, being
+kicked, or being banned revokes every grant and deletes the stored email. Role changes sync instantly through
+Discord's events, and an hourly reconcile sweep re-checks every linked member and heals anything that slipped
+through, including permissions removed by hand in Drive. Linked emails are encrypted at rest with AES-256-GCM, and
+every grant and revoke is logged.
+
 # Running the bot
 
 Please follow the instructions [here](./CONTRIBUTING.md)
@@ -88,3 +99,102 @@ Please follow the instructions [here](./CONTRIBUTING.md)
 # Commands
 
 See the [commands](./app/src/main/java/net/hypixel/nerdbot/app/command) package.
+
+# Google Drive Access Sync Setup
+
+This section covers turning the feature on. It's fully inert until you complete it: `googleDriveConfig.enabled` is
+`false` by default in the config, and even with it set to `true` the bot needs both secrets below before it will do
+anything.
+
+## Secrets
+
+Two JVM system properties, passed the same way as `bot.token`:
+
+- `drive.credentials.path`: path to the Google service account's JSON key file.
+- `drive.email.key`: a base64-encoded 32-byte AES key used to encrypt linked emails at rest. Generate one with:
+
+  ```bash
+  openssl rand -base64 32
+  ```
+
+**Pick this key before the first member links.** There's no rotation path. If you change it later, every
+previously stored email becomes undecryptable and those members will need to relink.
+
+## One-time Google setup
+
+1. Create (or reuse) a GCP project.
+2. Enable the Google Drive API for that project.
+3. Create a service account in the project, using the "Application data" credential type.
+4. Download the service account's JSON key file.
+5. In the shared drive that holds the folders you want to sync, have a Manager add the service account's
+   `client_email` (from the JSON key) as a **Manager** on the shared drive itself, not on individual folders.
+   Drive-level membership covers every subfolder, including ones you add to `folderMappings` later.
+
+## Configuration
+
+The `googleDriveConfig` top-level block in the config file controls the feature (see
+[`example-config.json`](./example-config.json)):
+
+```json
+"googleDriveConfig": {
+  "enabled": false,
+  "folderMappings": [
+    {
+      "roleId": "1234567890123456789",
+      "folderIds": ["example_folder_id_1", "example_folder_id_2"],
+      "accessLevel": "READER"
+    }
+  ]
+}
+```
+
+- `enabled`: turns the subsystem on. Even when `true`, it stays inert until both secrets above are set. The Drive
+  service is built once at startup, so enabling it requires a full bot restart; `/config reload` alone will not
+  activate it.
+- `folderMappings`: one entry per Discord role: the shared-Drive folders that role grants access to, and the level
+  it grants. `accessLevel` is one of `READER`, `COMMENTER`, or `WRITER`.
+- `sendNotificationEmails`: whether members receive Google's share-notification email when the bot grants them
+  folder access (default `true`). Revokes never generate an email; that's a Drive limitation.
+- `notificationEmailMessage`: custom text Google includes in that email, so it explains itself despite the raw
+  service-account sender address. Blank uses Google's default wording.
+- A member holding several mapped roles gets the union of every folder those roles unlock; where two roles map to
+  the same folder at different levels, the more permissive level wins.
+
+## Docker deployment
+
+Production deploys run through the [Publish workflow](.github/workflows/publish.yml): set the `DRIVE_CREDENTIALS_FOLDER_PATH`
+and `DRIVE_EMAIL_KEY` repo secrets, drop `drive-credentials.json` (the service account key, renamed, `chmod 600`) into
+the configured folder on the vps, and the workflow mounts it and passes both `-Ddrive.*` flags automatically. Both
+secrets are optional; leave them unset and the feature stays off. See the secrets list at the top of the workflow
+file for details.
+
+The `docker run`/`docker-compose` snippets below are a manual/local reference, not what production uses. The host
+directory is up to you; these examples use `/opt/nerdbot/` (ours), holding `production.config.json` and
+`drive-credentials.json`. No Dockerfile change is needed; the entrypoint already expands `JAVA_OPTS`.
+
+`docker run`:
+
+```bash
+docker run \
+  -v /opt/nerdbot/production.config.json:/app/production.config.json \
+  -v /opt/nerdbot/drive-credentials.json:/app/secrets/drive-credentials.json:ro \
+  -e JAVA_OPTS="-Dbot.token=<your-bot-token> -Ddb.mongodb.uri=<your-mongodb-uri> ... -Ddrive.credentials.path=/app/secrets/drive-credentials.json -Ddrive.email.key=<your-base64-key>" \
+  nerd-bot
+```
+
+(`...` stands in for whatever other flags you already pass in `JAVA_OPTS`, just append the two Drive ones.)
+
+Equivalent `docker-compose`:
+
+```yaml
+services:
+  nerdbot:
+    volumes:
+      - /opt/nerdbot/production.config.json:/app/production.config.json
+      - /opt/nerdbot/drive-credentials.json:/app/secrets/drive-credentials.json:ro
+    environment:
+      JAVA_OPTS: >-
+        -Dbot.token=<your-bot-token> -Ddb.mongodb.uri=<your-mongodb-uri> ...
+        -Ddrive.credentials.path=/app/secrets/drive-credentials.json
+        -Ddrive.email.key=<your-base64-key>
+```

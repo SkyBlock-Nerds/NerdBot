@@ -17,6 +17,14 @@ import java.util.Map;
  */
 public class FakeDrivePermissionClient implements DrivePermissionClient {
 
+    /** Optional folder-name overrides for getFileName; unset ids echo a stub name. */
+    public final Map<String, String> fileNames = new HashMap<>();
+
+    @Override
+    public String getFileName(String fileId) {
+        return fileNames.getOrDefault(fileId, "Folder " + fileId);
+    }
+
     public final Map<String, List<DrivePermission>> folders = new HashMap<>();
     public final List<String> operations = new ArrayList<>();
     private final Map<String, Integer> transientFailuresRemaining = new HashMap<>();
