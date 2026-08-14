@@ -8,6 +8,7 @@ import net.hypixel.nerdbot.marmalade.google.GoogleTokenProvider;
 import net.hypixel.nerdbot.marmalade.google.ServiceAccountKey;
 import net.hypixel.nerdbot.marmalade.google.drive.DriveAccessLevel;
 import net.hypixel.nerdbot.marmalade.google.drive.DriveApiException;
+import net.hypixel.nerdbot.marmalade.google.drive.DrivePermission;
 import net.hypixel.nerdbot.marmalade.google.drive.DrivePermissionClient;
 import net.hypixel.nerdbot.marmalade.google.drive.HttpDrivePermissionClient;
 import net.hypixel.nerdbot.marmalade.google.drive.TransientDriveApiException;
@@ -263,5 +264,14 @@ public class DrivePermissionService {
             log.warn("Stored Drive email could not be decrypted (key rotation or corrupt data) — treating member as unsyncable", e);
             return Optional.empty();
         }
+    }
+
+    /**
+     * Lists all current permissions on a folder. Used by the reconcile sweep to
+     * detect permissions that were deleted directly in Drive so they can be
+     * re-granted if the user still holds the mapped role.
+     */
+    public List<DrivePermission> listFolderPermissions(String folderId) throws DriveApiException {
+        return withRetry(() -> client.listPermissions(folderId));
     }
 }

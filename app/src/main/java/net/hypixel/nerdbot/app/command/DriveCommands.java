@@ -12,7 +12,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.drive.DriveLinkWorkflow;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
-// import net.hypixel.nerdbot.app.drive.DriveSyncSweep; // enabled once DriveSyncSweep lands (next commit)
+import net.hypixel.nerdbot.app.drive.DriveSyncSweep;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
@@ -134,16 +134,15 @@ public class DriveCommands {
             + "\nLast synced: <t:" + user.getDriveAccess().getLastSyncedAt() / 1000 + ":R>").queue();
     }
 
-    // enabled once DriveSyncSweep lands (next commit)
-    // @SlashCommand(name = "drive", subcommand = "sync", description = "Force a full Drive permission reconcile now", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
-    // public void driveSync(SlashCommandInteractionEvent event) {
-    //     if (SkyBlockNerdsBot.drivePermissionService().isEmpty()) {
-    //         event.reply("Drive access syncing is not configured on this server.").setEphemeral(true).queue();
-    //         return;
-    //     }
-    //
-    //     event.deferReply(true).queue();
-    //     DriveSyncSweep.Result result = new DriveSyncSweep().run();
-    //     event.getHook().editOriginal("Reconcile finished: " + result.summary()).queue();
-    // }
+    @SlashCommand(name = "drive", subcommand = "sync", description = "Force a full Drive permission reconcile now", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
+    public void driveSync(SlashCommandInteractionEvent event) {
+        if (SkyBlockNerdsBot.drivePermissionService().isEmpty()) {
+            event.reply("Drive access syncing is not configured on this server.").setEphemeral(true).queue();
+            return;
+        }
+
+        event.deferReply(true).queue();
+        DriveSyncSweep.Result result = new DriveSyncSweep().run();
+        event.getHook().editOriginal("Reconcile finished: " + result.summary()).queue();
+    }
 }

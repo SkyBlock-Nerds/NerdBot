@@ -6,6 +6,7 @@ import net.aerh.imagegenerator.pack.PackRepository;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.hypixel.nerdbot.app.activity.ActivityListener;
+import net.hypixel.nerdbot.app.feature.DrivePermissionSyncFeature;
 import net.hypixel.nerdbot.app.feature.RepositoryAutosaveFeature;
 import net.hypixel.nerdbot.app.feature.RoleReconcileFeature;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
@@ -204,6 +205,9 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         // Always-on safety net: hourly sweep that catches role changes missed by RoleSyncListener
         // while the bot was offline (see RoleReconcileFeature for details).
         features.add(new RoleReconcileFeature());
+
+        // Safety net for Drive folder permissions; inert unless the Drive service is configured.
+        features.add(new DrivePermissionSyncFeature());
 
         return features;
     }
