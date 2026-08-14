@@ -79,7 +79,10 @@ public class DriveCommands {
 
         switch (result.status()) {
             case INVALID_EMAIL -> event.getHook().editOriginal("That doesn't look like a valid email address — nothing was saved.").queue();
-            case DUPLICATE_EMAIL -> event.getHook().editOriginal("That email is already linked to another member. If it's yours, ask a moderator for help.").queue();
+            case DUPLICATE_EMAIL -> {
+                log.warn("Member {} attempted to link an email already linked to another member", event.getUser().getId());
+                event.getHook().editOriginal("That email is already linked to another member. If it's yours, ask a moderator for help.").queue();
+            }
             case LINKED -> {
                 repository.cacheObject(user);
                 repository.saveToDatabaseAsync(user);
@@ -141,6 +144,7 @@ public class DriveCommands {
             return;
         }
 
+        log.info("Member {} invoked /drive sync", event.getUser().getId());
         event.deferReply(true).queue();
         DriveSyncSweep.Result result = new DriveSyncSweep().run();
         event.getHook().editOriginal("Reconcile finished: " + result.summary()).queue();

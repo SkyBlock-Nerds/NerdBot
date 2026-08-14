@@ -136,7 +136,7 @@ public class DrivePermissionService {
      * Converges this member's Drive permissions onto what their roles say they
      * should have. Mutates {@code access}; the caller persists the user.
      */
-    public SyncOutcome syncGrants(DriveAccess access, Collection<String> roleIds, GoogleDriveConfig config) {
+    public SyncOutcome syncGrants(String memberId, DriveAccess access, Collection<String> roleIds, GoogleDriveConfig config) {
         Map<String, DriveAccessLevel> desired = computeDesiredGrants(roleIds, config);
         List<String> granted = new ArrayList<>();
         List<String> revoked = new ArrayList<>();
@@ -158,12 +158,17 @@ public class DrivePermissionService {
                 continue;
             }
 
+            if (wanted != null) {
+                log.info("Access level change for member {} on folder {}: {} -> {}", memberId, grant.folderId(), grant.accessLevel(), wanted);
+            }
+
             try {
                 withRetry(() -> {
                     client.revokePermission(grant.folderId(), grant.permissionId());
                     return null;
                 });
                 revoked.add(grant.folderId());
+                log.info("Revoked {} on folder {} for member {} (permission {})", grant.accessLevel(), grant.folderId(), memberId, grant.permissionId());
             } catch (DriveApiException e) {
                 log.error("Failed to revoke Drive permission on folder {} (kept for reconcile)", grant.folderId(), e);
                 failed.add(grant.folderId());
@@ -185,6 +190,7 @@ public class DrivePermissionService {
                 String permissionId = withRetry(() -> client.grantPermission(entry.getKey(), email.get(), entry.getValue()));
                 keptGrants.add(new DriveGrant(entry.getKey(), permissionId, entry.getValue().name()));
                 granted.add(entry.getKey());
+                log.info("Granted {} on folder {} to member {} (permission {})", entry.getValue(), entry.getKey(), memberId, permissionId);
             } catch (DriveApiException e) {
                 log.error("Failed to grant Drive permission on folder {} (reconcile will retry)", entry.getKey(), e);
                 failed.add(entry.getKey());
@@ -193,6 +199,11 @@ public class DrivePermissionService {
 
         access.setGrants(keptGrants);
         access.setLastSyncedAt(System.currentTimeMillis());
+
+        if (granted.isEmpty() && revoked.isEmpty() && failed.isEmpty()) {
+            log.debug("Drive sync no-op for member {} ({} grants unchanged)", memberId, access.getGrants().size());
+        }
+
         return new SyncOutcome(granted, revoked, failed);
     }
 
@@ -203,7 +214,7 @@ public class DrivePermissionService {
      *
      * @return false if any revoke ultimately failed (caller should log loudly)
      */
-    public boolean revokeAll(DriveAccess access) {
+    public boolean revokeAll(String memberId, DriveAccess access) {
         boolean allRevoked = true;
         List<DriveGrant> remaining = new ArrayList<>();
 
@@ -213,6 +224,7 @@ public class DrivePermissionService {
                     client.revokePermission(grant.folderId(), grant.permissionId());
                     return null;
                 });
+                log.info("Revoked {} on folder {} for member {} (permission {})", grant.accessLevel(), grant.folderId(), memberId, grant.permissionId());
             } catch (DriveApiException e) {
                 log.error("Failed to revoke Drive permission on folder {} during full revoke", grant.folderId(), e);
                 remaining.add(grant);

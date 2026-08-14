@@ -63,12 +63,14 @@ public class DrivePermissionListener {
                 }
                 List<String> roleIds = member.getRoles().stream().map(Role::getId).toList();
                 DrivePermissionService.SyncOutcome outcome = service.syncGrants(
-                    user.getDriveAccess(), roleIds, SkyBlockNerdsBot.config().getGoogleDriveConfig());
+                    member.getId(), user.getDriveAccess(), roleIds, SkyBlockNerdsBot.config().getGoogleDriveConfig());
                 repository.cacheObject(user);
                 repository.saveToDatabaseAsync(user);
                 if (!outcome.grantedFolders().isEmpty() || !outcome.revokedFolders().isEmpty() || outcome.hasFailures()) {
                     log.info("Drive resync for {}: +{} -{} !{}", member.getId(),
                         outcome.grantedFolders().size(), outcome.revokedFolders().size(), outcome.failedFolders().size());
+                } else {
+                    log.debug("Drive resync for {}: no changes", member.getId());
                 }
             });
         });

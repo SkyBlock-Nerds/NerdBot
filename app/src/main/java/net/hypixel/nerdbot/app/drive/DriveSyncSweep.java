@@ -76,6 +76,7 @@ public class DriveSyncSweep {
             }
 
             if (roleIds.isEmpty()) {
+                log.info("Member {} no longer in guild; revoking and forgetting their Drive access", user.getDiscordId());
                 workflow.revokeAndForget(user);
                 saver.save(user);
                 departed++;
@@ -83,7 +84,7 @@ public class DriveSyncSweep {
             }
 
             dropDanglingGrants(user, livePermissionIds);
-            DrivePermissionService.SyncOutcome outcome = service.syncGrants(user.getDriveAccess(), roleIds.get(), config);
+            DrivePermissionService.SyncOutcome outcome = service.syncGrants(user.getDiscordId(), user.getDriveAccess(), roleIds.get(), config);
             saver.save(user);
             if (outcome.hasFailures()) {
                 failed++;
@@ -159,6 +160,10 @@ public class DriveSyncSweep {
         List<DiscordUser> linkedUsers = repository.getAllDocuments().stream()
             .filter(user -> user.getDriveAccess() != null)
             .toList();
+
+        Set<String> mappedFolders = new HashSet<>();
+        config.getFolderMappings().forEach(mapping -> mappedFolders.addAll(mapping.getFolderIds()));
+        log.info("Reconcile sweep starting: {} linked member(s), {} mapped folder(s)", linkedUsers.size(), mappedFolders.size());
 
         // Wrap the saver with pacing so a large sweep doesn't hammer the API
         UserSaver saver = user -> {

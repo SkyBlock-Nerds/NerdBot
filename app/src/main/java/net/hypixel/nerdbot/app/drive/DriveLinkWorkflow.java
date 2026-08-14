@@ -53,12 +53,16 @@ public class DriveLinkWorkflow {
             return new LinkResult(Status.DUPLICATE_EMAIL, null);
         }
 
-        if (user.getDriveAccess() != null && !service.revokeAll(user.getDriveAccess())) {
-            log.error("Partial revoke while relinking {} — continuing; reconcile cannot heal the old address, check Drive manually", user.getDiscordId());
+        if (user.getDriveAccess() != null) {
+            int existingGrantCount = user.getDriveAccess().getGrants().size();
+            log.info("Member {} is relinking their Drive email; revoking {} existing grant(s) first", user.getDiscordId(), existingGrantCount);
+            if (!service.revokeAll(user.getDiscordId(), user.getDriveAccess())) {
+                log.error("Partial revoke while relinking {} — continuing; reconcile cannot heal the old address, check Drive manually", user.getDiscordId());
+            }
         }
 
         user.setDriveAccess(new DriveAccess(service.encryptEmail(email), emailHash));
-        DrivePermissionService.SyncOutcome outcome = service.syncGrants(user.getDriveAccess(), roleIds, config);
+        DrivePermissionService.SyncOutcome outcome = service.syncGrants(user.getDiscordId(), user.getDriveAccess(), roleIds, config);
         log.info("Linked Drive access for {}: {} granted, {} failed", user.getDiscordId(),
             outcome.grantedFolders().size(), outcome.failedFolders().size());
         return new LinkResult(Status.LINKED, outcome);
@@ -74,6 +78,7 @@ public class DriveLinkWorkflow {
             return false;
         }
         revokeAndForget(user);
+        log.info("Member {} unlinked their Drive email", user.getDiscordId());
         return true;
     }
 
@@ -86,7 +91,7 @@ public class DriveLinkWorkflow {
         if (user.getDriveAccess() == null) {
             return;
         }
-        if (!service.revokeAll(user.getDriveAccess())) {
+        if (!service.revokeAll(user.getDiscordId(), user.getDriveAccess())) {
             log.error("Could not revoke every Drive permission for departing member {} — REMAINING GRANTS MUST BE REMOVED MANUALLY IN DRIVE", user.getDiscordId());
         }
         user.setDriveAccess(null);

@@ -90,7 +90,7 @@ class DrivePermissionServiceTest {
         FakeDrivePermissionClient client = new FakeDrivePermissionClient();
         DriveAccess access = linkedAccess();
 
-        SyncOutcome outcome = service(client).syncGrants(access, List.of("111"), config(mapping("111", "READER", "fA", "fB")));
+        SyncOutcome outcome = service(client).syncGrants("42", access, List.of("111"), config(mapping("111", "READER", "fA", "fB")));
 
         assertEquals(List.of("fA", "fB"), outcome.grantedFolders().stream().sorted().toList());
         assertEquals(2, access.getGrants().size());
@@ -101,9 +101,9 @@ class DrivePermissionServiceTest {
     void revokesStaleFolders() {
         FakeDrivePermissionClient client = new FakeDrivePermissionClient();
         DriveAccess access = linkedAccess();
-        service(client).syncGrants(access, List.of("111"), config(mapping("111", "READER", "fA", "fB")));
+        service(client).syncGrants("42", access, List.of("111"), config(mapping("111", "READER", "fA", "fB")));
 
-        SyncOutcome outcome = service(client).syncGrants(access, List.of(), config(mapping("111", "READER", "fA", "fB")));
+        SyncOutcome outcome = service(client).syncGrants("42", access, List.of(), config(mapping("111", "READER", "fA", "fB")));
 
         assertEquals(2, outcome.revokedFolders().size());
         assertTrue(access.getGrants().isEmpty());
@@ -114,9 +114,9 @@ class DrivePermissionServiceTest {
     void levelChangeRevokesThenRegrants() {
         FakeDrivePermissionClient client = new FakeDrivePermissionClient();
         DriveAccess access = linkedAccess();
-        service(client).syncGrants(access, List.of("111"), config(mapping("111", "READER", "fA")));
+        service(client).syncGrants("42", access, List.of("111"), config(mapping("111", "READER", "fA")));
 
-        service(client).syncGrants(access, List.of("222"), config(mapping("111", "READER", "fA"), mapping("222", "WRITER", "fA")));
+        service(client).syncGrants("42", access, List.of("222"), config(mapping("111", "READER", "fA"), mapping("222", "WRITER", "fA")));
 
         assertEquals(1, access.getGrants().size());
         assertEquals("WRITER", access.getGrants().getFirst().accessLevel());
@@ -130,7 +130,7 @@ class DrivePermissionServiceTest {
         client.failTransiently("fA", 2); // fewer than max attempts
         DriveAccess access = linkedAccess();
 
-        SyncOutcome outcome = service(client).syncGrants(access, List.of("111"), config(mapping("111", "READER", "fA")));
+        SyncOutcome outcome = service(client).syncGrants("42", access, List.of("111"), config(mapping("111", "READER", "fA")));
 
         assertEquals(List.of("fA"), outcome.grantedFolders());
         assertTrue(outcome.failedFolders().isEmpty());
@@ -142,7 +142,7 @@ class DrivePermissionServiceTest {
         client.failPermanently("fA", 400);
         DriveAccess access = linkedAccess();
 
-        SyncOutcome outcome = service(client).syncGrants(access, List.of("111"), config(mapping("111", "READER", "fA", "fB")));
+        SyncOutcome outcome = service(client).syncGrants("42", access, List.of("111"), config(mapping("111", "READER", "fA", "fB")));
 
         assertEquals(List.of("fA"), outcome.failedFolders());
         assertEquals(List.of("fB"), outcome.grantedFolders());
@@ -153,10 +153,10 @@ class DrivePermissionServiceTest {
     void failedRevokeKeepsGrantRecordedForReconcile() {
         FakeDrivePermissionClient client = new FakeDrivePermissionClient();
         DriveAccess access = linkedAccess();
-        service(client).syncGrants(access, List.of("111"), config(mapping("111", "READER", "fA")));
+        service(client).syncGrants("42", access, List.of("111"), config(mapping("111", "READER", "fA")));
         client.failPermanently("fA", 403);
 
-        SyncOutcome outcome = service(client).syncGrants(access, List.of(), config(mapping("111", "READER", "fA")));
+        SyncOutcome outcome = service(client).syncGrants("42", access, List.of(), config(mapping("111", "READER", "fA")));
 
         assertEquals(List.of("fA"), outcome.failedFolders());
         assertEquals(1, access.getGrants().size());
@@ -167,7 +167,7 @@ class DrivePermissionServiceTest {
         FakeDrivePermissionClient client = new FakeDrivePermissionClient();
         DriveAccess access = new DriveAccess("garbage-not-ciphertext", "hash");
 
-        SyncOutcome outcome = service(client).syncGrants(access, List.of("111"), config(mapping("111", "READER", "fA")));
+        SyncOutcome outcome = service(client).syncGrants("42", access, List.of("111"), config(mapping("111", "READER", "fA")));
 
         assertTrue(outcome.grantedFolders().isEmpty());
         assertEquals(List.of("fA"), outcome.failedFolders());
@@ -180,9 +180,9 @@ class DrivePermissionServiceTest {
     void revokeAllClearsEverything() {
         FakeDrivePermissionClient client = new FakeDrivePermissionClient();
         DriveAccess access = linkedAccess();
-        service(client).syncGrants(access, List.of("111"), config(mapping("111", "READER", "fA", "fB")));
+        service(client).syncGrants("42", access, List.of("111"), config(mapping("111", "READER", "fA", "fB")));
 
-        assertTrue(service(client).revokeAll(access));
+        assertTrue(service(client).revokeAll("42", access));
         assertTrue(access.getGrants().isEmpty());
         assertTrue(client.folders.get("fA").isEmpty());
     }
@@ -191,10 +191,10 @@ class DrivePermissionServiceTest {
     void revokeAllReportsFailureButRemovesWhatItCan() {
         FakeDrivePermissionClient client = new FakeDrivePermissionClient();
         DriveAccess access = linkedAccess();
-        service(client).syncGrants(access, List.of("111"), config(mapping("111", "READER", "fA", "fB")));
+        service(client).syncGrants("42", access, List.of("111"), config(mapping("111", "READER", "fA", "fB")));
         client.failPermanently("fA", 403);
 
-        assertFalse(service(client).revokeAll(access));
+        assertFalse(service(client).revokeAll("42", access));
         assertTrue(client.folders.get("fB").isEmpty());
     }
 
