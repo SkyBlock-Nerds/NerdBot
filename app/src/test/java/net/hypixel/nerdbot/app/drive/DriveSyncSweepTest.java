@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -108,5 +109,32 @@ class DriveSyncSweepTest {
 
         assertEquals(2, result.failed());
         assertEquals(2, saved.size()); // state still persisted for both
+    }
+
+    @Test
+    void lookupFailureLeavesUserUntouched() {
+        // Link with the mapped role so we get a grant
+        DiscordUser user = new DiscordUser("42");
+        DriveLinkWorkflow workflow = new DriveLinkWorkflow(service, config);
+        workflow.link(user, "42@example.com", List.of("111"), List.of(user));
+
+        // Verify user is linked and has a grant stored
+        assertNotNull(user.getDriveAccess());
+        assertTrue(user.getDriveAccess().getGrants().size() > 0);
+        int initialGrantCount = user.getDriveAccess().getGrants().size();
+
+        DriveSyncSweep.Result result = DriveSyncSweep.reconcileUsers(
+            List.of(user), id -> {
+                throw new RuntimeException("discord hiccup");
+            }, service, config, saved::add);
+
+        // Failed lookup must not revoke or forget
+        assertEquals(0, result.departed());
+        assertEquals(1, result.failed());
+        // User's drive access must be intact (not null, grants untouched in count)
+        assertNotNull(user.getDriveAccess());
+        assertEquals(initialGrantCount, user.getDriveAccess().getGrants().size());
+        // Saver must not have been called
+        assertTrue(saved.isEmpty());
     }
 }

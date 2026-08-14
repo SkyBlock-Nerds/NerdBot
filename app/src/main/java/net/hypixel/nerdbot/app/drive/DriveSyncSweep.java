@@ -3,6 +3,8 @@ package net.hypixel.nerdbot.app.drive;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.config.GoogleDriveConfig;
 import net.hypixel.nerdbot.discord.BotEnvironment;
@@ -64,7 +66,15 @@ public class DriveSyncSweep {
                 continue;
             }
 
-            Optional<List<String>> roleIds = lookup.roleIdsFor(user.getDiscordId());
+            Optional<List<String>> roleIds;
+            try {
+                roleIds = lookup.roleIdsFor(user.getDiscordId());
+            } catch (Exception e) {
+                log.warn("Could not resolve member {} this sweep — skipping", user.getDiscordId(), e);
+                failed++;
+                continue;
+            }
+
             if (roleIds.isEmpty()) {
                 workflow.revokeAndForget(user);
                 saver.save(user);
@@ -135,8 +145,14 @@ public class DriveSyncSweep {
             try {
                 return Optional.of(guild.retrieveMemberById(discordId).complete()
                     .getRoles().stream().map(Role::getId).toList());
-            } catch (Exception e) {
-                return Optional.empty(); // not in the guild anymore
+            } catch (ErrorResponseException e) {
+                // Only return empty if we can confirm the member is gone
+                if (e.getErrorResponse() == ErrorResponse.UNKNOWN_MEMBER ||
+                    e.getErrorResponse() == ErrorResponse.UNKNOWN_USER) {
+                    return Optional.empty(); // member left the guild
+                }
+                // For any other error, rethrow so it's caught by reconcileUsers and counted as failed
+                throw e;
             }
         };
 
