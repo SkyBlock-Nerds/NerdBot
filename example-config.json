@@ -112,7 +112,6 @@
   "mojangUsernameCacheTTL": 1,
   "mojangForceNicknameUpdate": true,
   "voiceThreshold": 1,
-  "interval": 1,
   "nominationsEnabled": true,
   "inactivityCheckEnabled": true,
   "inactivityDays": 1,

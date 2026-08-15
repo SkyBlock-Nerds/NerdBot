@@ -9,7 +9,6 @@ import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
-import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.app.config.SuggestionConfig;
 import net.hypixel.nerdbot.app.curator.Curator;
@@ -18,11 +17,17 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMes
 import net.hypixel.nerdbot.marmalade.storage.database.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
 @Slf4j
 public class CurateFeature extends BotFeature implements SchedulableFeature {
+
+    /**
+     * Fallback curate cadence, used when the feature's config entry omits {@code periodMs}.
+     */
+    private static final long DEFAULT_PERIOD_MS = Duration.ofHours(12).toMillis();
 
     @Override
     public void onFeatureStart() {
@@ -73,7 +78,7 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
 
     @Override
     public long defaultPeriodMs(DiscordBotConfig config) {
-        return ((NerdBotConfig) config).getInterval();
+        return DEFAULT_PERIOD_MS;
     }
 
     @Override
