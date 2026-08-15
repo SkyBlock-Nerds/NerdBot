@@ -48,6 +48,11 @@ public class NerdBotConfig extends DiscordBotConfig {
     private GeneratorConfig generatorConfig = new GeneratorConfig();
 
     /**
+     * Configuration for Google Drive folder permission syncing
+     */
+    private GoogleDriveConfig googleDriveConfig = new GoogleDriveConfig();
+
+    /**
      * The limit of messages that the bot will curate in one go
      * Default value is 100 messages
      */

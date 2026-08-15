@@ -22,6 +22,11 @@
 #     This folder is mounted read-only at /app/packs, so each config resourcePacks.packs[].path
 #     must be an absolute container path under /app/packs/ (e.g. /app/packs/hypixel_skyblock.zip);
 #     a path that does not resolve inside the container is logged and skipped (that pack renders as vanilla).
+#   - DRIVE_CREDENTIALS_FOLDER_PATH: Path on the vps to the folder holding drive-credentials.json (optional;
+#     defaults to CONFIG_FOLDER_PATH, i.e. the key file sits next to the config file). The Google Drive
+#     permission sync feature stays off if the file or DRIVE_EMAIL_KEY is absent.
+#   - DRIVE_EMAIL_KEY: Base64-encoded 32-byte AES key used to encrypt linked Drive emails at rest (optional;
+#     the Google Drive permission sync feature stays off if unset).
 
 name: Publish
 
@@ -106,12 +111,14 @@ jobs:
             ${{ env.DOCKER_NETWORK != '' && format('--network {0}', env.DOCKER_NETWORK) || '' }} \
             -v ${{ secrets.CONFIG_FOLDER_PATH }}/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json:/app/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json \
             -v ${{ secrets.PACKS_FOLDER_PATH != '' && secrets.PACKS_FOLDER_PATH || format('{0}/packs', secrets.CONFIG_FOLDER_PATH) }}:/app/packs:ro \
+            -v ${{ secrets.DRIVE_CREDENTIALS_FOLDER_PATH != '' && secrets.DRIVE_CREDENTIALS_FOLDER_PATH || secrets.CONFIG_FOLDER_PATH }}/drive-credentials.json:/app/secrets/drive-credentials.json:ro \
             -e "JAVA_OPTS=-Dbot.token=${{ secrets[format('BOT_TOKEN_{0}', env.ENVIRONMENT_NAME)] }} \
             -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
             -Dbot.environment=${{ env.ENVIRONMENT_NAME }} \
             -Dbot.config=/app/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json \
             -Dhypixel.key=${{ secrets.HYPIXEL_KEY }} \
-            -Dmetrics.port=${{ env.METRICS_PORT }}" \
+            -Dmetrics.port=${{ env.METRICS_PORT }} \
+            -Ddrive.credentials.path=/app/secrets/drive-credentials.json -Ddrive.email.key=${{ secrets.DRIVE_EMAIL_KEY }}" \
             -e "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" \
             ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
           EOF
