@@ -70,12 +70,6 @@ public class NerdBotConfig extends DiscordBotConfig {
     private long voiceThreshold = 60;
 
     /**
-     * The interval between each curate cycle in milliseconds
-     * Default value is 43200000 (12 hours)
-     */
-    private long interval = 43_200_000;
-
-    /**
      * Whether nominations to the next role are enabled
      * Default value is true
      */

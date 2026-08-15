@@ -155,23 +155,15 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
                     log.info("Added feature from config: {}", featureConfig.getClassName());
 
                     if (feature instanceof SchedulableFeature schedulable) {
-                        long defaultInitial = schedulable.defaultInitialDelayMs(config);
-                        long defaultPeriod = schedulable.defaultPeriodMs(config);
-
-                        Long overrideInitial = featureConfig.getInitialDelayMs();
-                        Long overridePeriod = featureConfig.getPeriodMs();
-                        long effectiveInitial = overrideInitial != null ? overrideInitial : defaultInitial;
-                        long effectivePeriod = overridePeriod != null ? overridePeriod : defaultPeriod;
-
-                        if (overrideInitial != null || overridePeriod != null) {
-                            log.info(
-                                "Applying schedule override for {}: initialDelayMs={} (default {}), periodMs={} (default {})",
-                                feature.getClass().getName(), effectiveInitial, defaultInitial, effectivePeriod, defaultPeriod
-                            );
-                        }
-
+                        // Override precedence lives in BotFeature.scheduleAtFixedRate, which also logs
+                        // the resolved schedule. Don't duplicate that logic here.
                         String taskName = feature.getClass().getSimpleName() + "-task";
-                        feature.scheduleAtFixedRate(taskName, schedulable::executeTask, defaultInitial, defaultPeriod);
+                        feature.scheduleAtFixedRate(
+                            taskName,
+                            schedulable::executeTask,
+                            schedulable.defaultInitialDelayMs(config),
+                            schedulable.defaultPeriodMs(config)
+                        );
                     }
 
                     return null;
