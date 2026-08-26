@@ -101,7 +101,6 @@ public class GeneratorCommands {
     private static final String ITEM_MODEL_DESCRIPTION = "The minecraft:item_model ref to render (e.g. hypixel_skyblock:item/jacob/cactus_knife)";
     private static final String PACK_DESCRIPTION = "The resource pack used to resolve item textures";
     private static final String TOOLTIP_STYLE_DESCRIPTION = "The pack tooltip style to render with (defaults to the rarity's configured style)";
-    private static final String ANIMATED_DESCRIPTION = "Whether animated pack textures render as a GIF (False forces a static render)";
 
     private static final String MINECRAFT_NAMESPACE = "minecraft:";
 
@@ -119,7 +118,6 @@ public class GeneratorCommands {
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
         @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
-        @SlashOption(description = ANIMATED_DESCRIPTION, required = false) Boolean animated,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -134,7 +132,6 @@ public class GeneratorCommands {
 
         enchanted = enchanted != null && enchanted;
         hoverEffect = hoverEffect != null && hoverEffect;
-        animated = animated == null || animated;
         durability = durability == null ? 100 : durability;
 
         try {
@@ -153,7 +150,7 @@ public class GeneratorCommands {
                     .withColor(color)
                     .isEnchanted(enchanted)
                     .withHoverEffect(hoverEffect);
-                applyItemPack(itemBuilder, packId, animated);
+                applyItemPack(itemBuilder, packId);
 
                 if (durability != null) {
                     itemBuilder.withDurability(durability);
@@ -193,7 +190,6 @@ public class GeneratorCommands {
         @SlashOption(description = "Whether the Power Stone shows as selected", required = false) Boolean selected,
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
-        @SlashOption(description = ANIMATED_DESCRIPTION, required = false) Boolean animated,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -209,7 +205,6 @@ public class GeneratorCommands {
         alpha = alpha == null ? MinecraftTooltip.DEFAULT_ALPHA : alpha;
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         enchanted = enchanted != null && enchanted;
-        animated = animated == null || animated;
 
         try {
             StringBuilder scalingStatsFormatted = new StringBuilder();
@@ -287,7 +282,7 @@ public class GeneratorCommands {
                 if (includeGenCommand != null && includeGenCommand) {
                     // The builder round-trips its own fields (including pack and tooltip_style);
                     // only options that belong to the item generator still need appending by hand.
-                    String slashCommand = appendPowerStoneItemOptions(tooltipGenerator.buildSlashCommand(), itemId, enchanted, animated);
+                    String slashCommand = appendPowerStoneItemOptions(tooltipGenerator.buildSlashCommand(), itemId, enchanted);
 
                     event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + slashCommand.trim() + "```").queue();
                 }
@@ -307,7 +302,7 @@ public class GeneratorCommands {
                             .withItem(itemId)
                             .withColor(color)
                             .isEnchanted(enchanted);
-                        applyItemPack(itemBuilder, packId, animated);
+                        applyItemPack(itemBuilder, packId);
 
                         generatorImageBuilder.addGenerator(itemBuilder.build());
                     }
@@ -504,12 +499,11 @@ public class GeneratorCommands {
 
         try {
             GeneratedObject generatedObject = new GeneratorImageBuilder().withContext(context)
-                .addGenerator(new MinecraftInventoryGenerator.Builder()
+                .addGenerator(applyInventoryPack(new MinecraftInventoryGenerator.Builder(), resolvePackOption(pack))
                     .withRows(3)
                     .withSlotsPerRow(3)
                     .drawBorder(false)
                     .drawBackground(renderBackground)
-                    .withPack(resolvePackOption(pack))
                     .withInventoryString(recipe)
                     .build())
                 .build();
@@ -555,14 +549,13 @@ public class GeneratorCommands {
         try {
             PackId packId = resolvePackOption(pack);
             GeneratorImageBuilder generatedObject = new GeneratorImageBuilder().withContext(context)
-                .addGenerator(new MinecraftInventoryGenerator.Builder()
+                .addGenerator(applyInventoryPack(new MinecraftInventoryGenerator.Builder(), packId)
                     .withRows(rows)
                     .withSlotsPerRow(slotsPerRow)
                     .drawBorder(drawBorder)
                     .drawBackground(true)
                     .withAnimateGlint(animateGlint)
                     .withContainerTitle(containerName)
-                    .withPack(packId)
                     .withInventoryString(inventoryString)
                     .build());
 
@@ -738,7 +731,6 @@ public class GeneratorCommands {
         @SlashOption(description = DURABILITY_DESCRIPTION, required = false) Integer durability,
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(autocompleteId = "tooltip-styles", description = TOOLTIP_STYLE_DESCRIPTION, required = false) String tooltipStyle,
-        @SlashOption(description = ANIMATED_DESCRIPTION, required = false) Boolean animated,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
         if (shouldBlockGeneratorCommand(event)) {
@@ -757,7 +749,6 @@ public class GeneratorCommands {
         padding = padding == null ? MinecraftTooltip.DEFAULT_PADDING : padding;
         centered = centered != null && centered;
         enchanted = enchanted != null && enchanted;
-        animated = animated == null || animated;
         firstLinePadding = firstLinePadding == null || firstLinePadding;
         maxLineLength = maxLineLength == null ? MinecraftTooltipGenerator.DEFAULT_MAX_LINE_LENGTH : maxLineLength;
         renderBorder = renderBorder == null || renderBorder;
@@ -797,7 +788,7 @@ public class GeneratorCommands {
                     MinecraftItemGenerator.Builder itemBuilder = addressItem(new MinecraftItemGenerator.Builder(), itemId, itemModel)
                         .withColor(color)
                         .isEnchanted(enchanted);
-                    applyItemPack(itemBuilder, packId, animated);
+                    applyItemPack(itemBuilder, packId);
 
                     if (durability != null) {
                         itemBuilder.withDurability(durability);
@@ -808,11 +799,10 @@ public class GeneratorCommands {
             }
 
             if (recipe != null && !recipe.isBlank()) {
-                generatorImageBuilder.addGenerator(0, new MinecraftInventoryGenerator.Builder()
+                generatorImageBuilder.addGenerator(0, applyInventoryPack(new MinecraftInventoryGenerator.Builder(), packId)
                     .withRows(3)
                     .withSlotsPerRow(3)
                     .drawBorder(renderBorder)
-                    .withPack(packId)
                     .withInventoryString(recipe)
                     .build()
                 ).build();
@@ -1028,29 +1018,23 @@ public class GeneratorCommands {
     /**
      * Appends the options driving the Power Stone's item render onto its reconstructed slash
      * command. The tooltip builder already round-trips its own fields (name, lore, pack,
-     * tooltip_style) via {@link MinecraftTooltipGenerator.Builder#buildSlashCommand()}; item_id,
-     * enchanted and animated belong to the sibling item generator, so they are appended here so a
-     * re-run reproduces the same render (an animated Power Stone stays animated on round-trip).
+     * tooltip_style) via {@link MinecraftTooltipGenerator.Builder#buildSlashCommand()}; item_id
+     * and enchanted belong to the sibling item generator, so they are appended here so a re-run
+     * reproduces the same render.
      *
      * @param slashCommand The tooltip builder's reconstructed command to append onto
      * @param itemId       The rendered item id, or null/blank when no item was rendered
      * @param enchanted    Whether the item render was enchanted
-     * @param animated     Whether the item render used the pack's animated textures; false emits
-     *                     an explicit opt-out because animation defaults on
      *
      * @return The slash command with the item options appended
      */
-    static String appendPowerStoneItemOptions(String slashCommand, String itemId, boolean enchanted, boolean animated) {
+    static String appendPowerStoneItemOptions(String slashCommand, String itemId, boolean enchanted) {
         if (itemId != null && !itemId.isBlank()) {
             slashCommand += " item_id: " + itemId;
         }
 
         if (enchanted) {
             slashCommand += " enchanted: True";
-        }
-
-        if (!animated) {
-            slashCommand += " animated: False";
         }
 
         return slashCommand;
@@ -1193,16 +1177,14 @@ public class GeneratorCommands {
                     MinecraftItemGenerator.Builder baseItem = new MinecraftItemGenerator.Builder()
                         .withItem(parsedNbt.getParsedItemId())
                         .isEnchanted(parsedNbt.isEnchanted());
-                    applyItemPack(packService, baseItem, packId, true);
+                    applyItemPack(packService, baseItem, packId);
                     generatorImageBuilder.addGenerator(baseItem.build());
                     continue;
                 }
 
-                // The texture's own animation data decides the output, matching the item commands'
-                // default: an animated pack texture parses into a GIF preview and everything else
-                // stays static. The emitted command round-trips because the animated option
-                // defaults on everywhere.
-                applyItemPack(packService, itemBuilder, packId, true);
+                // The texture's own animation data decides the output: an animated pack texture
+                // parses into a GIF preview and everything else stays static.
+                applyItemPack(packService, itemBuilder, packId);
             }
 
             generatorImageBuilder.addGenerator(generator.build());
@@ -1453,27 +1435,50 @@ public class GeneratorCommands {
     }
 
     /**
-     * Applies the resolved pack to an item builder: the pack selection, the repository the bot
-     * manages the pack in, and the animated-textures opt-in. Mirrors {@link #applyPackTheme} for
-     * tooltips so every item render resolves against the same pack state. With no pack (vanilla)
-     * and animation off this leaves the render byte-identical to the pre-pack path.
+     * Applies the resolved pack to an item builder: the pack selection and the repository the
+     * bot manages the pack in. Mirrors {@link #applyPackTheme} for tooltips so every item render
+     * resolves against the same pack state. With no pack (vanilla) this leaves the render
+     * byte-identical to the pre-pack path.
      *
-     * @param builder  The item builder to configure
-     * @param packId   The resolved pack, or null for vanilla rendering
-     * @param animated Whether to render the pack's animated item textures as a GIF
+     * @param builder The item builder to configure
+     * @param packId  The resolved pack, or null for vanilla rendering
      */
-    private void applyItemPack(MinecraftItemGenerator.Builder builder, PackId packId, boolean animated) {
-        applyItemPack(SkyBlockNerdsBot.resourcePackService(), builder, packId, animated);
+    private void applyItemPack(MinecraftItemGenerator.Builder builder, PackId packId) {
+        applyItemPack(SkyBlockNerdsBot.resourcePackService(), builder, packId);
     }
 
     /**
      * Overload taking the pack service explicitly, so the render path can be exercised against a
      * fixture pack instead of the bot's global one.
      */
-    static void applyItemPack(ResourcePackService packService, MinecraftItemGenerator.Builder builder, PackId packId, boolean animated) {
+    static void applyItemPack(ResourcePackService packService, MinecraftItemGenerator.Builder builder, PackId packId) {
         builder.withPack(packId)
-            .withPackRepository(packService.packRepository())
-            .withAnimatedTextures(animated);
+            .withPackRepository(packService.packRepository());
+    }
+
+    /**
+     * Applies the resolved pack to an inventory builder: the pack selection and the repository
+     * the bot manages the pack in. The inventory counterpart of
+     * {@link #applyItemPack(MinecraftItemGenerator.Builder, PackId)}, so recipe grids and
+     * inventories resolve slot items against the same pack state as a standalone item render
+     * rather than falling back to the generator's global repository.
+     *
+     * @param builder The inventory builder to configure
+     * @param packId  The resolved pack, or null for vanilla rendering
+     *
+     * @return The same builder, so it can be chained straight into the remaining options
+     */
+    private MinecraftInventoryGenerator.Builder applyInventoryPack(MinecraftInventoryGenerator.Builder builder, PackId packId) {
+        return applyInventoryPack(SkyBlockNerdsBot.resourcePackService(), builder, packId);
+    }
+
+    /**
+     * Overload taking the pack service explicitly; see
+     * {@link #applyItemPack(ResourcePackService, MinecraftItemGenerator.Builder, PackId)}.
+     */
+    static MinecraftInventoryGenerator.Builder applyInventoryPack(ResourcePackService packService, MinecraftInventoryGenerator.Builder builder, PackId packId) {
+        return builder.withPack(packId)
+            .withPackRepository(packService.packRepository());
     }
 
     /**
