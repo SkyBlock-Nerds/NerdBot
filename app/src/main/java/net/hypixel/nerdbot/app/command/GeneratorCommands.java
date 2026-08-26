@@ -98,16 +98,20 @@ public class GeneratorCommands {
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
     private static final String DURABILITY_DESCRIPTION = "Item durability percentage (0-100, only shown if less than 100)";
     private static final String COLOR_DESCRIPTION = "The overlay color (e.g., red, blue, #FF0000)";
+    private static final String ITEM_MODEL_DESCRIPTION = "The minecraft:item_model ref to render (e.g. hypixel_skyblock:item/jacob/cactus_knife)";
     private static final String PACK_DESCRIPTION = "The resource pack used to resolve item textures";
     private static final String TOOLTIP_STYLE_DESCRIPTION = "The pack tooltip style to render with (defaults to the rarity's configured style)";
     private static final String ANIMATED_DESCRIPTION = "Whether animated pack textures render as a GIF (False forces a static render)";
+
+    private static final String MINECRAFT_NAMESPACE = "minecraft:";
 
     private static final boolean AUTO_HIDE_ON_ERROR = true;
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "display", description = "Display an item", guildOnly = true)
     public void generateItem(
         SlashCommandInteractionEvent event,
-        @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION) String itemId,
+        @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION, required = false) String itemId,
+        @SlashOption(autocompleteId = "item-names", description = ITEM_MODEL_DESCRIPTION, required = false) String itemModel,
         @SlashOption(description = EXTRA_DATA_DESCRIPTION, required = false) String data,
         @SlashOption(autocompleteId = "overlay-colors", description = COLOR_DESCRIPTION, required = false) String color,
         @SlashOption(description = ENCHANTED_DESCRIPTION, required = false) Boolean enchanted,
@@ -134,16 +138,17 @@ public class GeneratorCommands {
         durability = durability == null ? 100 : durability;
 
         try {
+            requireSingleItemAddress(itemId, itemModel);
+            requireAnItemAddress(itemId, itemModel);
             PackId packId = resolvePackOption(pack);
             GeneratorImageBuilder item = new GeneratorImageBuilder().withContext(context);
 
-            if (itemId.equalsIgnoreCase("player_head") && skinValue != null) {
+            if (itemModel == null && itemId.equalsIgnoreCase("player_head") && skinValue != null) {
                 item.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
                     .withSkin(skinValue)
                     .build());
             } else {
-                MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
-                    .withItem(itemId)
+                MinecraftItemGenerator.Builder itemBuilder = addressItem(new MinecraftItemGenerator.Builder(), itemId, itemModel)
                     .withData(data)
                     .withColor(color)
                     .isEnchanted(enchanted)
@@ -618,27 +623,13 @@ public class GeneratorCommands {
         GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
 
         try {
-            MinecraftNbtParser.ParsedNbt parsedNbt = MinecraftNbtParser.parse(nbtInput);
             PackId packId = resolvePackOption(pack);
-            GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
+            ParsedRender render = renderParsedNbtWithFallback(SkyBlockNerdsBot.resourcePackService(), nbtInput, packId, context);
 
-            parsedNbt.getGenerators().forEach(generator -> {
-                if (generator instanceof MinecraftTooltipGenerator.Builder tooltipBuilder) {
-                    // Themed before buildSlashCommand below so the emitted command round-trips the
-                    // pack and the rarity-derived tooltip style, reproducing the preview exactly
-                    applyPackTheme(tooltipBuilder, packId, null, tooltipBuilder.getRarity());
-                } else if (generator instanceof MinecraftItemGenerator.Builder itemBuilder) {
-                    // The texture's own animation data decides the output, matching the item
-                    // commands' default: an animated pack texture parses into a GIF preview and
-                    // everything else stays static. The emitted command round-trips because the
-                    // animated option defaults on everywhere.
-                    applyItemPack(itemBuilder, packId, true);
-                }
-
-                generatorImageBuilder.addGenerator(generator.build());
-            });
-
-            GeneratedObject generatedObject = generatorImageBuilder.build();
+            MinecraftNbtParser.ParsedNbt parsedNbt = render.parsedNbt();
+            GeneratedObject generatedObject = render.image();
+            ItemModelFallback fallback = render.fallback();
+            String itemModel = parsedNbt.getParsedItemModel();
 
             Optional<ClassBuilder<? extends Generator>> tooltipGenerator = parsedNbt.getGenerators()
                 .stream()
@@ -650,30 +641,28 @@ public class GeneratorCommands {
                 return;
             }
 
-            String slashCommand = ((MinecraftTooltipGenerator.Builder) tooltipGenerator.get()).buildSlashCommand();
-            String commandItemId = parsedNbt.getParsedItemId();
-
-            if (commandItemId != null && !commandItemId.isBlank()) {
-                if (commandItemId.startsWith("minecraft:")) {
-                    commandItemId = commandItemId.substring("minecraft:".length());
-                }
-                slashCommand += " item_id: " + commandItemId;
-            }
-
-            if (parsedNbt.getBase64Texture() != null && !parsedNbt.getBase64Texture().isBlank()) {
-                slashCommand += " skin_value: " + parsedNbt.getBase64Texture();
-            }
-
-            if (parsedNbt.isEnchanted()) {
-                slashCommand += " enchanted: True";
-            }
+            String slashCommand = appendParsedItemOptions(
+                ((MinecraftTooltipGenerator.Builder) tooltipGenerator.get()).buildSlashCommand(),
+                parsedNbt.getParsedItemId(),
+                itemModel,
+                parsedNbt.getBase64Texture(),
+                parsedNbt.isEnchanted()
+            );
 
             // Escape newlines in lore so the slash command is a single line
             slashCommand = slashCommand.replace("\n", "\\n");
 
             String sourceLabel = attachment != null ? "attachment" : "text input";
-            MessageEditBuilder builder = new MessageEditBuilder()
-                .setContent("Your NBT " + sourceLabel + " has been parsed into a slash command:" + System.lineSeparator() + "```" + System.lineSeparator() + slashCommand + "```");
+            String content = "Your NBT " + sourceLabel + " has been parsed into a slash command:"
+                + System.lineSeparator() + "```" + System.lineSeparator() + slashCommand + "```";
+
+            String fallbackNotice = itemModelFallbackNotice(fallback,
+                packId == null ? null : packId.toString(), itemModel, parsedNbt.getParsedItemId());
+            if (fallbackNotice != null) {
+                content += System.lineSeparator() + "-# " + fallbackNotice;
+            }
+
+            MessageEditBuilder builder = new MessageEditBuilder().setContent(content);
 
             builder.setFiles(renderAttachment(generatedObject, "parsed_nbt"));
 
@@ -734,6 +723,7 @@ public class GeneratorCommands {
         @SlashOption(description = TYPE_DESCRIPTION, required = false) String type,
         @SlashOption(autocompleteId = "item-rarities", description = RARITY_DESCRIPTION, required = false) String rarity,
         @SlashOption(autocompleteId = "item-names", description = ITEM_DESCRIPTION, required = false) String itemId,
+        @SlashOption(autocompleteId = "item-names", description = ITEM_MODEL_DESCRIPTION, required = false) String itemModel,
         @SlashOption(autocompleteId = "overlay-colors", description = COLOR_DESCRIPTION, required = false) String color,
         @SlashOption(description = SKIN_VALUE_DESCRIPTION, required = false) String skinValue,
         @SlashOption(description = RECIPE_STRING_DESCRIPTION, required = false) String recipe,
@@ -774,6 +764,7 @@ public class GeneratorCommands {
         durability = durability == null ? 100 : durability;
 
         try {
+            requireSingleItemAddress(itemId, itemModel);
             PackId packId = resolvePackOption(pack);
             Rarity itemRarity = Rarity.byName(rarity);
             GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
@@ -792,8 +783,8 @@ public class GeneratorCommands {
             applyPackTheme(tooltipBuilder, packId, tooltipStyle, itemRarity);
             MinecraftTooltipGenerator tooltipGenerator = tooltipBuilder.build();
 
-            if (itemId != null) {
-                if (itemId.equalsIgnoreCase("player_head")) {
+            if (itemId != null || itemModel != null) {
+                if (itemModel == null && itemId.equalsIgnoreCase("player_head")) {
                     MinecraftPlayerHeadGenerator.Builder generator = new MinecraftPlayerHeadGenerator.Builder()
                         .withScale(-2);
 
@@ -803,8 +794,7 @@ public class GeneratorCommands {
 
                     generatorImageBuilder.addGenerator(generator.build());
                 } else {
-                    MinecraftItemGenerator.Builder itemBuilder = new MinecraftItemGenerator.Builder()
-                        .withItem(itemId)
+                    MinecraftItemGenerator.Builder itemBuilder = addressItem(new MinecraftItemGenerator.Builder(), itemId, itemModel)
                         .withColor(color)
                         .isEnchanted(enchanted);
                     applyItemPack(itemBuilder, packId, animated);
@@ -1066,6 +1056,241 @@ public class GeneratorCommands {
         return slashCommand;
     }
 
+    /**
+     * Appends the options addressing the item a parsed NBT payload rendered. An item carrying a
+     * {@code minecraft:item_model} component is addressed by that model rather than by its item
+     * id, so the emitted command reproduces the preview instead of falling back to whatever base
+     * item the pack happens to sit on (Hypixel ships most custom items on {@code paper}).
+     *
+     * @param slashCommand The tooltip builder's reconstructed command to append onto
+     * @param itemId       The parsed item id, used only when no item model is present
+     * @param itemModel    The {@code minecraft:item_model} component value, or null when absent
+     * @param skinValue    The resolved player head texture, or null when the item is not a head
+     * @param enchanted    Whether the item render was enchanted
+     *
+     * @return The slash command with the item options appended
+     */
+    static String appendParsedItemOptions(String slashCommand, String itemId, String itemModel, String skinValue, boolean enchanted) {
+        if (itemModel != null && !itemModel.isBlank()) {
+            slashCommand += " item_model: " + itemModel;
+        } else if (itemId != null && !itemId.isBlank()) {
+            slashCommand += " item_id: " + stripMinecraftNamespace(itemId);
+        }
+
+        if (skinValue != null && !skinValue.isBlank()) {
+            slashCommand += " skin_value: " + skinValue;
+        }
+
+        if (enchanted) {
+            slashCommand += " enchanted: True";
+        }
+
+        return slashCommand;
+    }
+
+    /**
+     * The item id without its default namespace, so the emitted command matches what the
+     * {@code item_id} option expects. Item model refs keep their namespace: it selects the
+     * asset directory the model is looked up in.
+     */
+    private static String stripMinecraftNamespace(String itemId) {
+        return itemId.startsWith(MINECRAFT_NAMESPACE) ? itemId.substring(MINECRAFT_NAMESPACE.length()) : itemId;
+    }
+
+    /**
+     * Rejects addressing one item both ways at once, mirroring the generator's own
+     * {@code withItem}/{@code withItemModel} validation but failing with a message the user sees
+     * in Discord rather than an IllegalArgumentException stack trace.
+     *
+     * @throws GeneratorException If both options were supplied
+     */
+    static void requireSingleItemAddress(String itemId, String itemModel) {
+        if (itemId != null && !itemId.isBlank() && itemModel != null && !itemModel.isBlank()) {
+            throw new GeneratorException("The item_id and item_model options are mutually exclusive; use one or the other!");
+        }
+    }
+
+    /**
+     * The outcome of rendering a parsed NBT payload: the image, the parse result it came from,
+     * and which stand-in (if any) had to be drawn in place of the addressed item model.
+     */
+    record ParsedRender(GeneratedObject image, MinecraftNbtParser.ParsedNbt parsedNbt, ItemModelFallback fallback) {
+    }
+
+    /**
+     * Parses and renders an NBT payload, degrading gracefully when an addressed item model cannot
+     * be produced.
+     *
+     * <p>Whether an item model can render is only knowable by rendering it: a ref can index
+     * cleanly and still fail (a definition pointing at a model the pack never shipped, for one),
+     * and the bot's pack is routinely older than the items people paste in. So the model is
+     * attempted as addressed, and only a failure triggers the stand-in - the head texture where
+     * the item has one, otherwise the base item the model sits on. A failure with no item model
+     * involved is rethrown untouched: that is a genuine error about the user's input, not a pack
+     * being behind.
+     *
+     * @param packService The pack service backing the render
+     * @param nbtInput    The raw NBT, re-parsed for the retry so builders start clean
+     * @param packId      The resolved pack, or null for vanilla
+     * @param context     The generation context, may be null outside an interaction
+     *
+     * @throws GeneratorException If the render fails for any reason other than an item model the
+     *                            pack cannot produce
+     */
+    static ParsedRender renderParsedNbtWithFallback(ResourcePackService packService, String nbtInput,
+                                                    @Nullable PackId packId, @Nullable GenerationContext context) throws IOException {
+        MinecraftNbtParser.ParsedNbt parsedNbt = MinecraftNbtParser.parse(nbtInput);
+
+        try {
+            return new ParsedRender(renderParsedNbt(packService, parsedNbt, packId, context, ItemModelFallback.NONE),
+                parsedNbt, ItemModelFallback.NONE);
+        } catch (GeneratorException exception) {
+            // PackResolveException extends GeneratorException, so this covers both a pack that
+            // cannot produce the model and a model that resolves to nothing renderable.
+            // Without an item model the stand-in would be the same item-id render that just
+            // failed, so this rethrows rather than burning a second attempt on the same outcome.
+            ItemModelFallback fallback = itemModelFallback(parsedNbt.getParsedItemModel(), parsedNbt.getBase64Texture());
+            if (fallback == ItemModelFallback.NONE) {
+                throw exception;
+            }
+
+            log.info("Could not render item model '{}' from pack '{}', falling back to {}",
+                parsedNbt.getParsedItemModel(), packId, fallback, exception);
+            // Re-parsed rather than re-used: building a generator fills defaults into its builder,
+            // so the retry starts from clean builders instead of half-configured ones.
+            MinecraftNbtParser.ParsedNbt retry = MinecraftNbtParser.parse(nbtInput);
+            return new ParsedRender(renderParsedNbt(packService, retry, packId, context, fallback), retry, fallback);
+        }
+    }
+
+    /**
+     * Renders a parsed NBT payload, substituting the item generator per the given fallback. The
+     * tooltip is themed here rather than at the call site so the emitted slash command round-trips
+     * the pack and rarity-derived style, reproducing the preview exactly.
+     */
+    private static GeneratedObject renderParsedNbt(ResourcePackService packService, MinecraftNbtParser.ParsedNbt parsedNbt,
+                                                   @Nullable PackId packId, @Nullable GenerationContext context,
+                                                   ItemModelFallback fallback) throws IOException {
+        GeneratorImageBuilder generatorImageBuilder = new GeneratorImageBuilder().withContext(context);
+
+        for (ClassBuilder<? extends Generator> generator : parsedNbt.getGenerators()) {
+            if (generator instanceof MinecraftTooltipGenerator.Builder tooltipBuilder) {
+                applyPackTheme(packService, tooltipBuilder, packId, null, tooltipBuilder.getRarity());
+            } else if (generator instanceof MinecraftItemGenerator.Builder itemBuilder) {
+                if (fallback == ItemModelFallback.PLAYER_HEAD) {
+                    generatorImageBuilder.addGenerator(new MinecraftPlayerHeadGenerator.Builder()
+                        .withSkin(parsedNbt.getBase64Texture())
+                        .withScale(-2)
+                        .build());
+                    continue;
+                }
+
+                if (fallback == ItemModelFallback.ITEM_ID) {
+                    // Rebuilt rather than re-pointed: the parsed builder already committed to
+                    // withItemModel, which the generator treats as exclusive with withItem. A dye
+                    // color on the original is lost here, which is acceptable on a render that is
+                    // already a stand-in for the model the pack could not produce.
+                    MinecraftItemGenerator.Builder baseItem = new MinecraftItemGenerator.Builder()
+                        .withItem(parsedNbt.getParsedItemId())
+                        .isEnchanted(parsedNbt.isEnchanted());
+                    applyItemPack(packService, baseItem, packId, true);
+                    generatorImageBuilder.addGenerator(baseItem.build());
+                    continue;
+                }
+
+                // The texture's own animation data decides the output, matching the item commands'
+                // default: an animated pack texture parses into a GIF preview and everything else
+                // stays static. The emitted command round-trips because the animated option
+                // defaults on everywhere.
+                applyItemPack(packService, itemBuilder, packId, true);
+            }
+
+            generatorImageBuilder.addGenerator(generator.build());
+        }
+
+        return generatorImageBuilder.build();
+    }
+
+    /** What a {@code minecraft:item_model} render degrades to when the pack cannot produce it. */
+    enum ItemModelFallback {
+        /** The model resolved (or none was asked for): render it as addressed. */
+        NONE,
+        /** Render the item's player head texture instead. */
+        PLAYER_HEAD,
+        /** Render the base item the model sits on instead. */
+        ITEM_ID
+    }
+
+    /**
+     * Picks what to render after a render failed with an item model addressed. Hypixel commonly
+     * ships an item with both a {@code minecraft:profile} texture (so vanilla clients see a
+     * textured head) and a {@code minecraft:item_model} (so pack clients see the real model), and
+     * the bot's pack is routinely older than the items people paste in. Degrading - to the head
+     * where one exists, otherwise to the base item the model sits on - keeps the tooltip preview
+     * working; the caller pairs it with {@link #itemModelFallbackNotice} so the substitution is
+     * never silent.
+     *
+     * <p>{@link ItemModelFallback#NONE} for an item that was never addressed by model: that
+     * failure has nothing to do with item models and must surface to the user unchanged.
+     *
+     * @param itemModel     The item model ref that was being rendered, or null when addressing by id
+     * @param base64Texture The resolved head texture, or null/blank when the item has none
+     */
+    static ItemModelFallback itemModelFallback(String itemModel, String base64Texture) {
+        if (itemModel == null || itemModel.isBlank()) {
+            return ItemModelFallback.NONE;
+        }
+
+        return base64Texture != null && !base64Texture.isBlank()
+            ? ItemModelFallback.PLAYER_HEAD
+            : ItemModelFallback.ITEM_ID;
+    }
+
+    /**
+     * The line telling the user their preview is not what the NBT actually asked for, so a wrong
+     * looking icon reads as a stale pack rather than a broken generator.
+     *
+     * @return The notice, or null when nothing was substituted
+     */
+    @Nullable
+    static String itemModelFallbackNotice(ItemModelFallback fallback, @Nullable String packId, String itemModel, String itemId) {
+        if (fallback == ItemModelFallback.NONE) {
+            return null;
+        }
+
+        String source = packId == null ? "Vanilla" : "The `" + packId + "` pack";
+        String rendered = fallback == ItemModelFallback.PLAYER_HEAD
+            ? "the item's player head texture"
+            : "the base item `" + stripMinecraftNamespace(itemId) + "`";
+
+        return source + " could not resolve item model `" + itemModel + "`, so " + rendered
+            + " was rendered instead. The pack is likely older than this item.";
+    }
+
+    /**
+     * Rejects a render that names neither an item id nor an item model, for the subcommands whose
+     * whole output is the item. {@code /gen item} does not use this: there, both options are
+     * genuinely optional because the tooltip renders on its own.
+     *
+     * @throws GeneratorException If neither option was supplied
+     */
+    static void requireAnItemAddress(String itemId, String itemModel) {
+        if ((itemId == null || itemId.isBlank()) && (itemModel == null || itemModel.isBlank())) {
+            throw new GeneratorException("Set either the item_id or the item_model option to pick what to render!");
+        }
+    }
+
+    /**
+     * Points an item builder at whichever address the user gave, keeping the two mutually
+     * exclusive builder calls in one place. Callers validate the pair first with
+     * {@link #requireSingleItemAddress(String, String)}.
+     */
+    private static MinecraftItemGenerator.Builder addressItem(MinecraftItemGenerator.Builder builder, String itemId, String itemModel) {
+        return itemModel != null && !itemModel.isBlank()
+            ? builder.withItemModel(itemModel)
+            : builder.withItem(itemId);
+    }
+
     static String buildSingleDialogue(String npcName, String dialogue, boolean abiphone) {
         String[] lines = dialogue.split("\\\\n");
 
@@ -1238,9 +1463,16 @@ public class GeneratorCommands {
      * @param animated Whether to render the pack's animated item textures as a GIF
      */
     private void applyItemPack(MinecraftItemGenerator.Builder builder, PackId packId, boolean animated) {
-        PackRepository packRepository = SkyBlockNerdsBot.resourcePackService().packRepository();
+        applyItemPack(SkyBlockNerdsBot.resourcePackService(), builder, packId, animated);
+    }
+
+    /**
+     * Overload taking the pack service explicitly, so the render path can be exercised against a
+     * fixture pack instead of the bot's global one.
+     */
+    static void applyItemPack(ResourcePackService packService, MinecraftItemGenerator.Builder builder, PackId packId, boolean animated) {
         builder.withPack(packId)
-            .withPackRepository(packRepository)
+            .withPackRepository(packService.packRepository())
             .withAnimatedTextures(animated);
     }
 
@@ -1288,6 +1520,14 @@ public class GeneratorCommands {
     }
 
     private void applyPackTheme(MinecraftTooltipGenerator.Builder builder, PackId packId, String explicitStyle, Rarity rarity) {
+        applyPackTheme(SkyBlockNerdsBot.resourcePackService(), builder, packId, explicitStyle, rarity);
+    }
+
+    /**
+     * Overload taking the pack service explicitly; see
+     * {@link #applyItemPack(ResourcePackService, MinecraftItemGenerator.Builder, PackId, boolean)}.
+     */
+    static void applyPackTheme(ResourcePackService packService, MinecraftTooltipGenerator.Builder builder, PackId packId, String explicitStyle, Rarity rarity) {
         boolean hasExplicitStyle = explicitStyle != null && !explicitStyle.isBlank();
 
         if (packId == null) {
@@ -1297,8 +1537,11 @@ public class GeneratorCommands {
             return;
         }
 
-        ResourcePackService packService = SkyBlockNerdsBot.resourcePackService();
-        builder.withPack(packId);
+        // The repository is injected rather than left to the tooltip generator's global fallback,
+        // so tooltips and item renders always resolve against the same pack state. These coincide
+        // in production, where the service wraps the global repository, but not for a service
+        // built over its own.
+        builder.withPack(packId).withPackRepository(packService.packRepository());
 
         String style = hasExplicitStyle ? explicitStyle.trim() : packService.tooltipStyleFor(packId, rarity);
         if (style != null) {
