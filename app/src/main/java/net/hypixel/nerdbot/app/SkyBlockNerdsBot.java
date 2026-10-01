@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.hypixel.nerdbot.app.activity.ActivityListener;
 import net.hypixel.nerdbot.app.feature.DrivePermissionSyncFeature;
 import net.hypixel.nerdbot.app.feature.RepositoryAutosaveFeature;
+import net.hypixel.nerdbot.app.feature.ResourcePackUpdateFeature;
 import net.hypixel.nerdbot.app.feature.RoleReconcileFeature;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
@@ -258,8 +259,10 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
             packsRegistered = true;
 
             if (packCacheStore != null) {
+                PackBootResolver.repairUnregistered(packConfig, cachedPackPaths, resourcePackService, packCacheStore);
                 packUpdater = new PackUpdater(resourcePackService, new HttpHypixelPackApiClient(settings),
                     packCacheStore, settings, new PackUpdateNotifier(), Clock.systemUTC());
+                warnIfUpdateFeatureMissing(config);
             }
         } catch (RuntimeException e) {
             // A bad auto-update setting must never stop the bot from booting on the configured packs
@@ -403,6 +406,15 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         } catch (RuntimeException e) {
             log.error("Resource pack auto-update is off: could not open the pack cache at '{}'", settings.getCacheDir(), e);
             return null;
+        }
+    }
+
+    /** Warns when auto-update is set up but nothing schedules the checks, leaving only /pack check. */
+    private static void warnIfUpdateFeatureMissing(NerdBotConfig config) {
+        boolean scheduled = config.getFeatures() != null && config.getFeatures().stream()
+            .anyMatch(feature -> feature.isEnabled() && ResourcePackUpdateFeature.class.getName().equals(feature.getClassName()));
+        if (!scheduled) {
+            log.warn("Resource pack auto-update is configured but ResourcePackUpdateFeature is not in the features list, so updates only happen through /pack check");
         }
     }
 

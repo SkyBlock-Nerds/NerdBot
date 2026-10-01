@@ -45,7 +45,7 @@ public final class PackConfigMapper {
                 continue;
             }
 
-            String id = definition.getId() == null ? null : definition.getId().trim().toLowerCase(Locale.ROOT);
+            String id = normalisedId(definition.getId());
             Path override = id == null ? null : pathOverrides.get(id);
             packs.add(toDefinition(definition, override == null ? definition.getPath() : override.toString()));
         }
@@ -53,11 +53,19 @@ public final class PackConfigMapper {
         return new PackRegistrationConfig(packs, config.getDefaultPack());
     }
 
+    /** The one way pack ids are compared in the bot: trimmed and lowercase, or null for a null id. */
+    @Nullable
+    public static String normalisedId(@Nullable String id) {
+        return id == null ? null : id.trim().toLowerCase(Locale.ROOT);
+    }
+
     /**
      * Maps one NerdBot pack definition to the library form, loading the pack from {@code path}
-     * instead of the configured path.
+     * instead of the configured path. The id keeps its configured case (the library lowercases it)
+     * but is trimmed so stray whitespace never reaches the library.
      */
     public static PackDefinition toDefinition(GeneratorConfig.PackDefinition definition, String path) {
-        return new PackDefinition(definition.getId(), path, definition.getTooltipStyles(), definition.getTextColorRemap());
+        String id = definition.getId() == null ? null : definition.getId().trim();
+        return new PackDefinition(id, path, definition.getTooltipStyles(), definition.getTextColorRemap());
     }
 }

@@ -27,27 +27,26 @@ public class PackCommands {
     private static final String PACK_OPTION_DESCRIPTION = "The auto-updated pack (optional when only one is configured)";
     private static final int DISCORD_MESSAGE_LIMIT = 2000;
 
+    /** The updater and the pack the command targets. */
+    private record Target(PackUpdater updater, GeneratorConfig.PackDefinition definition) {
+    }
+
     @SlashCommand(name = "pack", subcommand = "status", description = "Show the auto-updated resource pack state", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void status(SlashCommandInteractionEvent event, @SlashOption(autocompleteId = "auto-update-packs", description = PACK_OPTION_DESCRIPTION, required = false) String pack) {
-        Optional<PackUpdater> updater = SkyBlockNerdsBot.packUpdater();
-        if (updater.isEmpty()) {
-            event.reply(NOT_CONFIGURED_MESSAGE).setEphemeral(true).queue();
+        Optional<Target> target = resolveTarget(event, pack);
+        if (target.isEmpty()) {
             return;
         }
 
-        Optional<GeneratorConfig.PackDefinition> definition = resolveDefinition(event, pack);
-        if (definition.isEmpty()) {
-            return;
-        }
-
-        String packId = PackUpdater.packIdOf(definition.get());
-        PackState.Slot slot = updater.get().store().slot(packId);
+        PackUpdater updater = target.get().updater();
+        String packId = PackUpdater.packIdOf(target.get().definition());
+        PackState.Slot slot = updater.store().slot(packId);
         StringBuilder message = new StringBuilder("**").append(packId).append("**\n");
         message.append("Live: ").append(slot.current() == null ? "configured pack" : PackUpdateNotifier.describe(slot.current())
             + ", applied <t:" + slot.current().appliedAtEpochMs() / 1000 + ":R>").append('\n');
         message.append("Previous: ").append(slot.previous() == null ? "none" : PackUpdateNotifier.describe(slot.previous())).append('\n');
         message.append("Rejected versions remembered: ").append(slot.rejected().size()).append('\n');
-        message.append("Last check: ").append(updater.get().lastOutcome(packId)
+        message.append("Last check: ").append(updater.lastOutcome(packId)
             .map(recorded -> summarize(recorded.outcome()) + " <t:" + recorded.atEpochMs() / 1000 + ":R>")
             .orElse("none since the bot started"));
 
@@ -81,23 +80,28 @@ public class PackCommands {
 
     /** Download and load can take seconds, so the work runs off the interaction thread. */
     private void runAsync(SlashCommandInteractionEvent event, String pack, String actionName, PackAction action) {
+        Optional<Target> target = resolveTarget(event, pack);
+        if (target.isEmpty()) {
+            return;
+        }
+
+        log.info("Member {} invoked /pack {} for {}", event.getUser().getId(), actionName, target.get().definition().getId());
+        event.deferReply(true).queue();
+        BotEnvironment.EXECUTOR_SERVICE.execute(() -> {
+            PackUpdateOutcome outcome = action.run(target.get().updater(), target.get().definition());
+            event.getHook().editOriginal(truncate(summarize(outcome))).queue();
+        });
+    }
+
+    /** Replies with an error and returns empty when auto-update is off or the option does not pick exactly one auto-updated pack. */
+    private Optional<Target> resolveTarget(SlashCommandInteractionEvent event, String pack) {
         Optional<PackUpdater> updater = SkyBlockNerdsBot.packUpdater();
         if (updater.isEmpty()) {
             event.reply(NOT_CONFIGURED_MESSAGE).setEphemeral(true).queue();
-            return;
+            return Optional.empty();
         }
 
-        Optional<GeneratorConfig.PackDefinition> definition = resolveDefinition(event, pack);
-        if (definition.isEmpty()) {
-            return;
-        }
-
-        log.info("Member {} invoked /pack {} for {}", event.getUser().getId(), actionName, definition.get().getId());
-        event.deferReply(true).queue();
-        BotEnvironment.EXECUTOR_SERVICE.execute(() -> {
-            PackUpdateOutcome outcome = action.run(updater.get(), definition.get());
-            event.getHook().editOriginal(truncate(summarize(outcome))).queue();
-        });
+        return resolveDefinition(event, pack).map(definition -> new Target(updater.get(), definition));
     }
 
     /** Replies with an error and returns empty when the option does not pick exactly one auto-updated pack. */
@@ -141,7 +145,7 @@ public class PackCommands {
                 + " (" + applied.previousItemCount() + " to " + applied.itemCount() + " items).";
             case PackUpdateOutcome.Rejected rejected -> "Rejected format " + rejected.packFormat() + " ("
                 + PackUpdateNotifier.shortHash(rejected.sha1()) + "): " + rejected.reason();
-            case PackUpdateOutcome.TransientFailure failure -> "Check failed, will retry on the next poll: " + failure.reason();
+            case PackUpdateOutcome.TransientFailure failure -> "Check failed, will retry on the next scheduled check: " + failure.reason();
             case PackUpdateOutcome.RolledBack rolledBack -> "Rolled back to " + PackUpdateNotifier.describe(rolledBack.to())
                 + ". " + PackUpdateNotifier.shortHash(rolledBack.from().sha1()) + " will not be re-applied.";
             case PackUpdateOutcome.Unavailable unavailable -> "Not possible: " + unavailable.reason();

@@ -22,7 +22,6 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -147,7 +146,7 @@ public class PackUpdater {
     }
 
     public static String packIdOf(GeneratorConfig.PackDefinition definition) {
-        return definition.getId().trim().toLowerCase(Locale.ROOT);
+        return PackConfigMapper.normalisedId(definition.getId());
     }
 
     /** Runs one update check for a pack, unless another check or rollback is running. */
@@ -258,9 +257,7 @@ public class PackUpdater {
     private static Optional<Path> configuredZipMatching(String packId, GeneratorConfig.PackDefinition definition, String sha1) {
         try {
             Path configured = Path.of(definition.getPath());
-            if (Files.isRegularFile(configured) && PackCacheStore.sha1Of(configured).equals(sha1)) {
-                return Optional.of(configured);
-            }
+            return PackCacheStore.fileMatches(configured, sha1) ? Optional.of(configured) : Optional.empty();
         } catch (IOException | RuntimeException e) {
             // RuntimeException covers InvalidPathException from a bad configured path
             log.debug("Could not compare configured pack '{}' with the latest version: {}", packId, describe(e));
@@ -381,6 +378,7 @@ public class PackUpdater {
                 expectationsFor(definition, slot.previous().packFormat(), 0)
             );
         } catch (RuntimeException e) {
+            log.warn("Rollback of pack '{}' could not load the previous pack", packId, e);
             return new PackUpdateOutcome.Unavailable("the previous pack could not be loaded: " + describe(e));
         }
 

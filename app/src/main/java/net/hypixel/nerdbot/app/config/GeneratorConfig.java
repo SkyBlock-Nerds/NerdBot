@@ -249,6 +249,10 @@ public class GeneratorConfig {
         private PackAutoUpdate autoUpdate = null;
     }
 
+    /**
+     * Settings shared by every auto-updated pack. They are read at startup, so changes take effect
+     * after a restart (per-pack settings apply on the next check).
+     */
     @Getter
     @Setter
     @ToString

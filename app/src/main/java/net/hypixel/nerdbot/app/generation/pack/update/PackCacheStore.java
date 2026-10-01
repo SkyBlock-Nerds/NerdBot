@@ -191,10 +191,15 @@ public class PackCacheStore {
         save(packId, new PackState.Slot(slot.current(), slot.previous(), withRejection(slot.rejected(), rejected)));
     }
 
-    /** Swaps current and previous and rejects the hash that was current. */
+    /** Swaps current and previous, rejects the hash that was current and un-rejects the one rolled back to. */
     public synchronized void recordRolledBack(String packId, PackState.RejectedHash rejectedCurrent) {
         PackState.Slot slot = slot(packId);
-        save(packId, new PackState.Slot(slot.previous(), slot.current(), withRejection(slot.rejected(), rejectedCurrent)));
+        List<PackState.RejectedHash> rejected = withRejection(slot.rejected(), rejectedCurrent);
+        if (slot.previous() != null) {
+            // The admin just endorsed the pack being rolled back to, so it must not stay rejected
+            rejected.removeIf(entry -> entry.sha1().equals(slot.previous().sha1()));
+        }
+        save(packId, new PackState.Slot(slot.previous(), slot.current(), rejected));
     }
 
     /**
@@ -227,7 +232,7 @@ public class PackCacheStore {
             if (!zip.normalize().startsWith(cacheDir.normalize())) {
                 return Optional.empty();
             }
-            return matching(zip, applied.sha1());
+            return fileMatches(zip, applied.sha1()) ? Optional.of(zip) : Optional.empty();
         } catch (IOException | RuntimeException e) {
             // RuntimeException covers InvalidPathException from a hand-edited file name
             log.warn("Could not verify cached pack {}", applied.fileName(), e);
@@ -238,18 +243,17 @@ public class PackCacheStore {
     /** {@code <sha1>.zip}, only if it exists and its SHA-1 matches. */
     public synchronized Optional<Path> cachedZip(String sha1) {
         try {
-            return matching(zipPath(sha1), sha1);
+            Path zip = zipPath(sha1);
+            return fileMatches(zip, sha1) ? Optional.of(zip) : Optional.empty();
         } catch (IOException e) {
             log.warn("Could not verify cached pack {}{}", sha1, ZIP_SUFFIX, e);
             return Optional.empty();
         }
     }
 
-    private static Optional<Path> matching(Path zip, String sha1) throws IOException {
-        if (!Files.isRegularFile(zip)) {
-            return Optional.empty();
-        }
-        return sha1Of(zip).equals(sha1) ? Optional.of(zip) : Optional.empty();
+    /** Whether {@code file} is a regular file whose SHA-1 is {@code sha1}. */
+    public static boolean fileMatches(Path file, String sha1) throws IOException {
+        return Files.isRegularFile(file) && sha1Of(file).equals(sha1);
     }
 
     /** Atomically renames {@code <sha1>.zip.part} to {@code <sha1>.zip}, replacing it, and returns the zip. */
