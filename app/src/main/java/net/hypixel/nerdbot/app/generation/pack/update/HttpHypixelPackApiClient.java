@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -29,7 +30,9 @@ public class HttpHypixelPackApiClient implements HypixelPackApiClient {
     public HttpHypixelPackApiClient(GeneratorConfig.AutoUpdateSettings settings) {
         this.apiUrl = settings.getApiUrl();
         this.maxDownloadBytes = settings.getMaxDownloadBytes();
-        this.allowedHosts = settings.getAllowedDownloadHosts().stream()
+        List<String> configuredHosts = settings.getAllowedDownloadHosts() == null ? List.of() : settings.getAllowedDownloadHosts();
+        this.allowedHosts = configuredHosts.stream()
+            .filter(Objects::nonNull)
             .map(host -> host.trim().toLowerCase(Locale.ROOT))
             .filter(host -> !host.isEmpty())
             .collect(Collectors.toUnmodifiableSet());

@@ -12,7 +12,13 @@ import net.hypixel.nerdbot.app.feature.RepositoryAutosaveFeature;
 import net.hypixel.nerdbot.app.feature.RoleReconcileFeature;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
+import net.hypixel.nerdbot.app.config.GeneratorConfig;
 import net.hypixel.nerdbot.app.generation.pack.PackConfigMapper;
+import net.hypixel.nerdbot.app.generation.pack.update.HttpHypixelPackApiClient;
+import net.hypixel.nerdbot.app.generation.pack.update.PackBootResolver;
+import net.hypixel.nerdbot.app.generation.pack.update.PackCacheStore;
+import net.hypixel.nerdbot.app.generation.pack.update.PackUpdateNotifier;
+import net.hypixel.nerdbot.app.generation.pack.update.PackUpdater;
 import net.hypixel.nerdbot.app.listener.DrivePermissionListener;
 import net.hypixel.nerdbot.app.listener.FunListener;
 import net.hypixel.nerdbot.app.listener.MetricsListener;
@@ -44,10 +50,13 @@ import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * SkyBlock Nerds Discord bot implementation.
@@ -66,6 +75,9 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     private final ResourcePackService resourcePackService = new ResourcePackService(PackRepository.global());
 
     private DrivePermissionService drivePermissionService;
+
+    /** Null when no pack opts into auto-update or the cache directory is unusable. */
+    private volatile PackUpdater packUpdater;
 
     /**
      * Static helper to get the MessageCache from the current bot instance.
@@ -88,6 +100,14 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
      */
     public static java.util.Optional<DrivePermissionService> drivePermissionService() {
         return java.util.Optional.ofNullable(((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).drivePermissionService);
+    }
+
+    /**
+     * Static helper for the resource pack updater. Empty when no pack opts into auto-update or
+     * the pack cache directory could not be opened.
+     */
+    public static java.util.Optional<PackUpdater> packUpdater() {
+        return java.util.Optional.ofNullable(((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).packUpdater);
     }
 
     /**
@@ -228,7 +248,27 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         NerdBotConfig config = getConfig();
 
         // Register resource packs with the image generator
-        resourcePackService.registerConfiguredPacks(PackConfigMapper.toRegistrationConfig(config.getGeneratorConfig().getResourcePacks()));
+        GeneratorConfig.ResourcePackConfig packConfig = config.getGeneratorConfig().getResourcePacks();
+        boolean packsRegistered = false;
+        try {
+            GeneratorConfig.AutoUpdateSettings settings = autoUpdateSettings(packConfig);
+            PackCacheStore packCacheStore = openPackCacheStore(packConfig, settings);
+            Map<String, Path> cachedPackPaths = packCacheStore == null ? Map.of() : PackBootResolver.cachedPaths(packConfig, packCacheStore);
+            resourcePackService.registerConfiguredPacks(PackConfigMapper.toRegistrationConfig(packConfig, cachedPackPaths));
+            packsRegistered = true;
+
+            if (packCacheStore != null) {
+                packUpdater = new PackUpdater(resourcePackService, new HttpHypixelPackApiClient(settings),
+                    packCacheStore, settings, new PackUpdateNotifier(), Clock.systemUTC());
+            }
+        } catch (RuntimeException e) {
+            // A bad auto-update setting must never stop the bot from booting on the configured packs
+            log.error("Resource pack auto-update is off: startup failed", e);
+            packUpdater = null;
+            if (!packsRegistered) {
+                resourcePackService.registerConfiguredPacks(PackConfigMapper.toRegistrationConfig(packConfig));
+            }
+        }
 
         // Empty when the feature is disabled in config or its secrets are absent; commands/listener no-op in that case
         drivePermissionService = DrivePermissionService.fromSystemProperties(config.getGoogleDriveConfig()).orElse(null);
@@ -328,6 +368,48 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
                 log.error("Failed to load reminders from database", throwable);
                 return null;
             });
+    }
+
+    /**
+     * Opens the pack cache when at least one pack opts into auto-update. Returns null (auto-update
+     * off for this run) when none does or the directory cannot be created.
+     */
+    private static PackCacheStore openPackCacheStore(GeneratorConfig.ResourcePackConfig packConfig, GeneratorConfig.AutoUpdateSettings settings) {
+        // The one boot-time call that reports why packs are excluded; later calls log at debug
+        List<GeneratorConfig.PackDefinition> autoUpdated = PackUpdater.enabledDefinitions(packConfig, true);
+        if (autoUpdated.isEmpty()) {
+            return null;
+        }
+
+        if (settings.getCacheDir() == null || settings.getCacheDir().isBlank()) {
+            log.error("Resource pack auto-update is off: generatorConfig.resourcePacks.autoUpdate.cacheDir is empty");
+            return null;
+        }
+
+        try {
+            Path cacheDir = Path.of(settings.getCacheDir()).toAbsolutePath().normalize();
+            for (GeneratorConfig.PackDefinition definition : autoUpdated) {
+                try {
+                    Path configured = Path.of(definition.getPath()).toAbsolutePath().normalize();
+                    if (configured.startsWith(cacheDir)) {
+                        log.warn("Pack '{}' is configured from inside the pack cache folder '{}'; cache cleanup may delete it, move it elsewhere",
+                            definition.getId(), cacheDir);
+                    }
+                } catch (RuntimeException e) {
+                    log.warn("Could not check whether pack '{}' is configured from inside the pack cache folder", definition.getId(), e);
+                }
+            }
+            return PackCacheStore.open(cacheDir, settings.getMaxRejectedHashes());
+        } catch (RuntimeException e) {
+            log.error("Resource pack auto-update is off: could not open the pack cache at '{}'", settings.getCacheDir(), e);
+            return null;
+        }
+    }
+
+    /** The shared auto-update settings, or the defaults when the config sets "autoUpdate": null. */
+    private static GeneratorConfig.AutoUpdateSettings autoUpdateSettings(GeneratorConfig.ResourcePackConfig packConfig) {
+        GeneratorConfig.AutoUpdateSettings settings = packConfig == null ? null : packConfig.getAutoUpdate();
+        return settings == null ? new GeneratorConfig.AutoUpdateSettings() : settings;
     }
 
     private static boolean isAllowed(String className) {

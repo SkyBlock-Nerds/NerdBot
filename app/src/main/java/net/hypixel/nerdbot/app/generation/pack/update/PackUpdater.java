@@ -79,6 +79,16 @@ public class PackUpdater {
      * or a Hypixel id are all excluded, since updating either would be a guess.
      */
     public static List<GeneratorConfig.PackDefinition> enabledDefinitions(@Nullable GeneratorConfig.ResourcePackConfig config) {
+        return enabledDefinitions(config, false);
+    }
+
+    /**
+     * Same as {@link #enabledDefinitions(GeneratorConfig.ResourcePackConfig)}, but when
+     * {@code reportProblems} is true the reasons packs are excluded are logged at error instead of
+     * debug. Callers pass true once at boot so the repeated scheduled and command calls stay quiet.
+     */
+    public static List<GeneratorConfig.PackDefinition> enabledDefinitions(@Nullable GeneratorConfig.ResourcePackConfig config,
+                                                                          boolean reportProblems) {
         if (config == null || config.getPacks() == null) {
             return List.of();
         }
@@ -86,7 +96,7 @@ public class PackUpdater {
         List<GeneratorConfig.PackDefinition> candidates = config.getPacks().stream()
             .filter(definition -> definition != null && definition.getAutoUpdate() != null && definition.getAutoUpdate().isEnabled())
             .filter(definition -> isPresent(definition.getId()) && isPresent(definition.getPath()) && isPresent(definition.getAutoUpdate().getHypixelPackId()))
-            .filter(PackUpdater::hasValidSettings)
+            .filter(definition -> hasValidSettings(definition, reportProblems))
             .toList();
 
         Map<String, Long> packIdCounts = candidates.stream()
@@ -97,12 +107,12 @@ public class PackUpdater {
         List<GeneratorConfig.PackDefinition> eligible = new ArrayList<>();
         for (GeneratorConfig.PackDefinition definition : candidates) {
             if (packIdCounts.get(packIdOf(definition)) > 1) {
-                log.error("Pack '{}' has the same id as another pack once lowercased, so neither is updated automatically",
+                logProblem(reportProblems, "Pack '{}' has the same id as another pack once lowercased, so neither is updated automatically",
                     definition.getId());
                 continue;
             }
             if (hypixelIdCounts.get(definition.getAutoUpdate().getHypixelPackId()) > 1) {
-                log.error("Pack '{}' shares Hypixel pack id '{}' with another pack, so neither is updated automatically",
+                logProblem(reportProblems, "Pack '{}' shares Hypixel pack id '{}' with another pack, so neither is updated automatically",
                     definition.getId(), definition.getAutoUpdate().getHypixelPackId());
                 continue;
             }
@@ -112,20 +122,28 @@ public class PackUpdater {
     }
 
     /** Whether the pack's id parses and its minItemRatio is usable, logging the reason when not. */
-    private static boolean hasValidSettings(GeneratorConfig.PackDefinition definition) {
+    private static boolean hasValidSettings(GeneratorConfig.PackDefinition definition, boolean reportProblems) {
         try {
             PackId.parse(packIdOf(definition));
         } catch (IllegalArgumentException e) {
-            log.error("Pack '{}' has an invalid id ({}), so it is not updated automatically", definition.getId(), e.getMessage());
+            logProblem(reportProblems, "Pack '{}' has an invalid id ({}), so it is not updated automatically", definition.getId(), e.getMessage());
             return false;
         }
 
         double minItemRatio = definition.getAutoUpdate().getMinItemRatio();
         if (Double.isNaN(minItemRatio) || minItemRatio < 0 || minItemRatio > 1) {
-            log.error("Pack '{}' has minItemRatio {} outside 0 to 1, so it is not updated automatically", definition.getId(), minItemRatio);
+            logProblem(reportProblems, "Pack '{}' has minItemRatio {} outside 0 to 1, so it is not updated automatically", definition.getId(), minItemRatio);
             return false;
         }
         return true;
+    }
+
+    private static void logProblem(boolean reportProblems, String message, Object... args) {
+        if (reportProblems) {
+            log.error(message, args);
+        } else {
+            log.debug(message, args);
+        }
     }
 
     public static String packIdOf(GeneratorConfig.PackDefinition definition) {
