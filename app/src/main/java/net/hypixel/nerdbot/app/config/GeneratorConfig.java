@@ -210,6 +210,11 @@ public class GeneratorConfig {
          * The pack ID applied when a generator command does not specify one (null or empty = vanilla)
          */
         private String defaultPack = null;
+
+        /**
+         * Settings shared by every pack that opts into automatic updates from the Hypixel pack API
+         */
+        private AutoUpdateSettings autoUpdate = new AutoUpdateSettings();
     }
 
     @Getter
@@ -237,6 +242,66 @@ public class GeneratorConfig {
          * e.g. "#AA0000" -> "#D13228", mirroring the pack's text shader palette swap.
          */
         private Map<String, String> textColorRemap = new LinkedHashMap<>();
+
+        /**
+         * Automatic updates from the Hypixel pack API for this pack (null or disabled = never updated automatically)
+         */
+        private PackAutoUpdate autoUpdate = null;
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class AutoUpdateSettings {
+        /**
+         * The Hypixel resource pack list endpoint
+         */
+        private String apiUrl = "https://api.hypixel.net/v2/resources/packs";
+
+        /**
+         * Writable directory holding downloaded packs and pack-state.json
+         */
+        private String cacheDir = "/app/data/packs";
+
+        /**
+         * Hosts packs may be downloaded from, including after redirects
+         */
+        private List<String> allowedDownloadHosts = new ArrayList<>(List.of("resourcepacks.hypixel.net"));
+
+        /**
+         * Largest pack download accepted, in bytes
+         */
+        private long maxDownloadBytes = 64L * 1024 * 1024;
+
+        /**
+         * How many rejected pack hashes to remember per pack before the oldest are forgotten
+         */
+        private int maxRejectedHashes = 20;
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class PackAutoUpdate {
+        /**
+         * Whether this pack is updated automatically
+         */
+        private boolean enabled = false;
+
+        /**
+         * The "id" of the pack entry in the Hypixel pack list, e.g. SkyBlock
+         */
+        private String hypixelPackId = "SkyBlock";
+
+        /**
+         * A new pack must index at least this share of the live pack's items (0 to 1)
+         */
+        private double minItemRatio = 0.5;
+
+        /**
+         * Item refs that must exist in a new pack and render, e.g. hypixel_skyblock:item/uncategorized/hyperion
+         */
+        private List<String> sampleItems = new ArrayList<>();
     }
 
     @Getter

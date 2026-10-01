@@ -102,10 +102,27 @@
           },
           "textColorRemap": {
             "example_value": "example_value"
+          },
+          "autoUpdate": {
+            "enabled": true,
+            "hypixelPackId": "1234567890123456789",
+            "minItemRatio": 1.0,
+            "sampleItems": [
+              "example_value"
+            ]
           }
         }
       ],
-      "defaultPack": "example_value"
+      "defaultPack": "example_value",
+      "autoUpdate": {
+        "apiUrl": "https://example.com/",
+        "cacheDir": "example_value",
+        "allowedDownloadHosts": [
+          "example_value"
+        ],
+        "maxDownloadBytes": 1,
+        "maxRejectedHashes": 1
+      }
     }
   },
   "googleDriveConfig": {
