@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.app;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.imagegenerator.data.PackGlyphIndex;
 import net.aerh.imagegenerator.pack.PackRepository;
+import net.aerh.imagegenerator.tools.pack.ResourcePackService;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.hypixel.nerdbot.app.activity.ActivityListener;
@@ -11,7 +12,7 @@ import net.hypixel.nerdbot.app.feature.RepositoryAutosaveFeature;
 import net.hypixel.nerdbot.app.feature.RoleReconcileFeature;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
-import net.hypixel.nerdbot.app.generation.pack.ResourcePackService;
+import net.hypixel.nerdbot.app.generation.pack.PackConfigMapper;
 import net.hypixel.nerdbot.app.listener.DrivePermissionListener;
 import net.hypixel.nerdbot.app.listener.FunListener;
 import net.hypixel.nerdbot.app.listener.MetricsListener;
@@ -227,7 +228,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         NerdBotConfig config = getConfig();
 
         // Register resource packs with the image generator
-        resourcePackService.registerConfiguredPacks(config.getGeneratorConfig().getResourcePacks());
+        resourcePackService.registerConfiguredPacks(PackConfigMapper.toRegistrationConfig(config.getGeneratorConfig().getResourcePacks()));
 
         // Empty when the feature is disabled in config or its secrets are absent; commands/listener no-op in that case
         drivePermissionService = DrivePermissionService.fromSystemProperties(config.getGoogleDriveConfig()).orElse(null);
