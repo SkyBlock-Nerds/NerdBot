@@ -22,6 +22,10 @@
 #     This folder is mounted read-only at /app/packs, so each config resourcePacks.packs[].path
 #     must be an absolute container path under /app/packs/ (e.g. /app/packs/hypixel_skyblock.zip);
 #     a path that does not resolve inside the container is logged and skipped (that pack renders as vanilla).
+#   - PACK_CACHE_FOLDER_PATH: Writable folder on the vps for automatically downloaded resource packs (optional;
+#     defaults to CONFIG_FOLDER_PATH/pack-cache). Mounted read-write at /app/data/packs, which must match
+#     generatorConfig.resourcePacks.autoUpdate.cacheDir. Docker creates it on first run. Deleting its
+#     contents is safe: the bot falls back to the configured packs and downloads again.
 #   - DRIVE_CREDENTIALS_FOLDER_PATH: Path on the vps to the folder holding drive-credentials.json (optional;
 #     defaults to CONFIG_FOLDER_PATH, i.e. the key file sits next to the config file). The Google Drive
 #     permission sync feature stays off if the file or DRIVE_EMAIL_KEY is absent.
@@ -111,6 +115,7 @@ jobs:
             ${{ env.DOCKER_NETWORK != '' && format('--network {0}', env.DOCKER_NETWORK) || '' }} \
             -v ${{ secrets.CONFIG_FOLDER_PATH }}/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json:/app/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json \
             -v ${{ secrets.PACKS_FOLDER_PATH != '' && secrets.PACKS_FOLDER_PATH || format('{0}/packs', secrets.CONFIG_FOLDER_PATH) }}:/app/packs:ro \
+            -v ${{ secrets.PACK_CACHE_FOLDER_PATH != '' && secrets.PACK_CACHE_FOLDER_PATH || format('{0}/pack-cache', secrets.CONFIG_FOLDER_PATH) }}:/app/data/packs \
             -v ${{ secrets.DRIVE_CREDENTIALS_FOLDER_PATH != '' && secrets.DRIVE_CREDENTIALS_FOLDER_PATH || secrets.CONFIG_FOLDER_PATH }}/drive-credentials.json:/app/secrets/drive-credentials.json:ro \
             -e "JAVA_OPTS=-Dbot.token=${{ secrets[format('BOT_TOKEN_{0}', env.ENVIRONMENT_NAME)] }} \
             -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
