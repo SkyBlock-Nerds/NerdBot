@@ -13,8 +13,8 @@
         <java.version>25</java.version>
         <lombok.version>1.18.48</lombok.version>
         <sentry.version>8.57.0</sentry.version>
-        <!-- Temporary pin: JitPack failed to build master-SNAPSHOT for 28ff72c. Switch back to master-SNAPSHOT once it builds. -->
-        <imagegenerator.version>28ff72c996c69b243fdf1c7d10277967cbbff719</imagegenerator.version>
+        <!-- Temporary pin: JitPack keeps failing to build master-SNAPSHOT. Switch back to master-SNAPSHOT once it builds. -->
+        <imagegenerator.version>c0ec707815</imagegenerator.version>
         <editorconfig.encoding>UTF-8</editorconfig.encoding>
         <maven.compiler.release>${java.version}</maven.compiler.release>
     </properties>
