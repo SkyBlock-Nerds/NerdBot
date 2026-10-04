@@ -212,7 +212,7 @@ public class GeneratorConfig {
         private String defaultPack = null;
 
         /**
-         * Settings shared by every pack that opts into automatic updates from the Hypixel pack API
+         * Settings shared by every pack that opts into automatic updates from the pack's release source
          */
         private AutoUpdateSettings autoUpdate = new AutoUpdateSettings();
     }
@@ -244,7 +244,7 @@ public class GeneratorConfig {
         private Map<String, String> textColorRemap = new LinkedHashMap<>();
 
         /**
-         * Automatic updates from the Hypixel pack API for this pack (null or disabled = never updated automatically)
+         * Automatic updates from the pack's release source for this pack (null or disabled = never updated automatically)
          */
         private PackAutoUpdate autoUpdate = null;
     }
@@ -278,7 +278,7 @@ public class GeneratorConfig {
         private long maxDownloadBytes = 64L * 1024 * 1024;
 
         /**
-         * How many rejected pack hashes to remember per pack before the oldest are forgotten
+         * How many rejected pack versions to remember per pack before the oldest are forgotten
          */
         private int maxRejectedHashes = 20;
     }
@@ -293,9 +293,14 @@ public class GeneratorConfig {
         private boolean enabled = false;
 
         /**
-         * The "id" of the pack entry in the Hypixel pack list, e.g. SkyBlock
+         * The "id" of the pack entry in the Hypixel pack list, e.g. SkyBlock (used by the hypixel-api source)
          */
         private String hypixelPackId = "SkyBlock";
+
+        /**
+         * Where new versions come from (null = the Hypixel API, using autoUpdate.apiUrl and hypixelPackId)
+         */
+        private PackSourceSettings source = null;
 
         /**
          * A new pack must index at least this share of the live pack's items (0 to 1)
@@ -306,6 +311,27 @@ public class GeneratorConfig {
          * Item refs that must exist in a new pack and render, e.g. hypixel_skyblock:item/uncategorized/hyperion
          */
         private List<String> sampleItems = new ArrayList<>();
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class PackSourceSettings {
+        /**
+         * hypixel-api or deploy-index (required when a source block is present)
+         */
+        private String type = null;
+
+        /**
+         * deploy-index only: https URL of a JSON index with "uuid", "pack_versions" and "last_updated"
+         */
+        private String url = null;
+
+        /**
+         * deploy-index only: download URL containing {deployId} and {format}, e.g.
+         * https://resourcepacks.hypixel.net/SkyBlock/{deployId}/{format}.zip
+         */
+        private String downloadUrlTemplate = null;
     }
 
     @Getter

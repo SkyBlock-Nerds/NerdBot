@@ -12,7 +12,8 @@ import java.util.stream.Collectors;
 
 /**
  * A short digest of every setting that can make a pack fail the update checks: the download host
- * allowlist and size cap, and the pack's validation settings (minimum item ratio and sample items).
+ * allowlist and size cap, the pack's validation settings (minimum item ratio and sample items)
+ * and, when configured, the pack's update source.
  * A rejection recorded under one fingerprint stops applying once these settings change, so fixing
  * a config mistake lets the bot try the same pack again instead of blocking it until Hypixel
  * publishes a new one. Values are normalised (trimmed, hosts lowercased, sorted, de-duplicated) so
@@ -29,7 +30,8 @@ public final class RejectionFingerprint {
         String canonical = "hosts=" + normalised(settings.getAllowedDownloadHosts(), true)
             + "\nmaxDownloadBytes=" + settings.getMaxDownloadBytes()
             + "\nminItemRatio=" + autoUpdate.getMinItemRatio()
-            + "\nsampleItems=" + normalised(autoUpdate.getSampleItems(), false);
+            + "\nsampleItems=" + normalised(autoUpdate.getSampleItems(), false)
+            + (autoUpdate.getSource() == null ? "" : "\nsource=" + ReleaseSources.fingerprintPart(autoUpdate));
 
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.UTF_8));

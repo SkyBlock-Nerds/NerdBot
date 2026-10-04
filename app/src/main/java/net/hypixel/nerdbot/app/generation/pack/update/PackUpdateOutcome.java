@@ -5,7 +5,10 @@ import org.jetbrains.annotations.Nullable;
 /** Everything a pack update check or rollback can end in. */
 public sealed interface PackUpdateOutcome {
 
-    /** Nothing to do: the selected hash is live, or was rejected before. */
+    /**
+     * Nothing to do: the selected version is live, or was rejected before. {@code sha1} is the
+     * published SHA-1, or the deploy key for sources that publish none.
+     */
     record UpToDate(String sha1, boolean previouslyRejected) implements PackUpdateOutcome {
     }
 
@@ -13,7 +16,10 @@ public sealed interface PackUpdateOutcome {
     record Applied(@Nullable PackState.AppliedPack from, PackState.AppliedPack to, int itemCount, int previousItemCount) implements PackUpdateOutcome {
     }
 
-    /** The selected pack failed a check and is remembered so it is not retried. */
+    /**
+     * The selected pack failed a check and is remembered so it is not retried. {@code sha1} is the
+     * published SHA-1, or the deploy key for sources that publish none.
+     */
     record Rejected(String sha1, int packFormat, String reason) implements PackUpdateOutcome {
     }
 

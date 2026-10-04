@@ -6,6 +6,7 @@ import net.hypixel.nerdbot.discord.cache.ChannelCache;
 
 import java.awt.Color;
 import java.time.Instant;
+import java.util.regex.Pattern;
 
 /**
  * Posts pack update outcomes worth a human's attention to the bot log channel: applied packs,
@@ -15,6 +16,7 @@ public class PackUpdateNotifier implements PackUpdateListener {
 
     static final int TRANSIENT_ALERT_THRESHOLD = 4;
     private static final int HASH_PREFIX_LENGTH = 12;
+    private static final Pattern SHA1_PATTERN = Pattern.compile("[0-9a-f]{40}");
 
     @Override
     public void onOutcome(String packId, PackUpdateOutcome outcome) {
@@ -61,8 +63,9 @@ public class PackUpdateNotifier implements PackUpdateListener {
         return "format " + pack.packFormat() + ", " + shortHash(pack.sha1()) + ", deploy " + pack.deployId();
     }
 
-    public static String shortHash(String sha1) {
-        return sha1.length() <= HASH_PREFIX_LENGTH ? sha1 : sha1.substring(0, HASH_PREFIX_LENGTH);
+    /** The first 12 characters of a SHA-1; anything that is not a 40 character lowercase hex SHA-1 (a deploy key) is returned unchanged. */
+    public static String shortHash(String value) {
+        return SHA1_PATTERN.matcher(value).matches() ? value.substring(0, HASH_PREFIX_LENGTH) : value;
     }
 
     /** Reasons can be long (exception text); Discord rejects embed field values over its limit. */

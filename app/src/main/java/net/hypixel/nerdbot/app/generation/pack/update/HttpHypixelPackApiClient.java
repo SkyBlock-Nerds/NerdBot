@@ -5,47 +5,28 @@ import com.google.gson.JsonObject;
 import net.hypixel.nerdbot.app.config.GeneratorConfig;
 import net.hypixel.nerdbot.marmalade.exception.HttpException;
 import net.hypixel.nerdbot.marmalade.functional.Result;
-import net.hypixel.nerdbot.marmalade.http.DownloadResult;
 import net.hypixel.nerdbot.marmalade.http.HttpClient;
 
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-/** Talks to the Hypixel resource pack API and its CDN. */
+/** Reads the Hypixel resource pack list. */
 public class HttpHypixelPackApiClient implements HypixelPackApiClient {
 
     private static final Pattern SHA1_HEX = Pattern.compile("[0-9a-f]{40}");
 
     private final String apiUrl;
-    private final long maxDownloadBytes;
-    private final Set<String> allowedHosts;
 
     public HttpHypixelPackApiClient(GeneratorConfig.AutoUpdateSettings settings) {
         this.apiUrl = settings.getApiUrl();
-        this.maxDownloadBytes = settings.getMaxDownloadBytes();
-        List<String> configuredHosts = settings.getAllowedDownloadHosts() == null ? List.of() : settings.getAllowedDownloadHosts();
-        this.allowedHosts = configuredHosts.stream()
-            .filter(Objects::nonNull)
-            .map(host -> host.trim().toLowerCase(Locale.ROOT))
-            .filter(host -> !host.isEmpty())
-            .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
     public Result<List<HypixelPack>, HttpException> fetchPacks() {
         return HttpClient.getJson(apiUrl).flatMap(HttpHypixelPackApiClient::parse);
-    }
-
-    @Override
-    public Result<DownloadResult, HttpException> download(HypixelPackVersion version, Path target) {
-        return HttpClient.downloadToFile(version.url(), target, maxDownloadBytes, allowedHosts);
     }
 
     static Result<List<HypixelPack>, HttpException> parse(JsonObject root) {

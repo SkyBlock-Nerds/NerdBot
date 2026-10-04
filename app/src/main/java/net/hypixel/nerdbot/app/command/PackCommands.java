@@ -139,8 +139,8 @@ public class PackCommands {
     private static String summarize(PackUpdateOutcome outcome) {
         return switch (outcome) {
             case PackUpdateOutcome.UpToDate upToDate -> upToDate.previouslyRejected()
-                ? "Hypixel's latest version (" + PackUpdateNotifier.shortHash(upToDate.sha1()) + ") was rejected before, so it was skipped."
-                : "Already on Hypixel's latest version (" + PackUpdateNotifier.shortHash(upToDate.sha1()) + ").";
+                ? "The latest version (" + PackUpdateNotifier.shortHash(upToDate.sha1()) + ") was rejected before, so it was skipped."
+                : "Already on the latest version (" + PackUpdateNotifier.shortHash(upToDate.sha1()) + ").";
             case PackUpdateOutcome.Applied applied -> "Applied " + PackUpdateNotifier.describe(applied.to())
                 + " (" + applied.previousItemCount() + " to " + applied.itemCount() + " items).";
             case PackUpdateOutcome.Rejected rejected -> "Rejected format " + rejected.packFormat() + " ("

@@ -18,6 +18,7 @@ import net.hypixel.nerdbot.app.generation.pack.PackConfigMapper;
 import net.hypixel.nerdbot.app.generation.pack.update.HttpHypixelPackApiClient;
 import net.hypixel.nerdbot.app.generation.pack.update.PackBootResolver;
 import net.hypixel.nerdbot.app.generation.pack.update.PackCacheStore;
+import net.hypixel.nerdbot.app.generation.pack.update.PackDownloader;
 import net.hypixel.nerdbot.app.generation.pack.update.PackUpdateNotifier;
 import net.hypixel.nerdbot.app.generation.pack.update.PackUpdater;
 import net.hypixel.nerdbot.app.listener.DrivePermissionListener;
@@ -260,7 +261,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
             if (packCacheStore != null) {
                 PackBootResolver.repairUnregistered(packConfig, cachedPackPaths, resourcePackService, packCacheStore);
-                packUpdater = new PackUpdater(resourcePackService, new HttpHypixelPackApiClient(settings),
+                packUpdater = new PackUpdater(resourcePackService, new HttpHypixelPackApiClient(settings), new PackDownloader(settings),
                     packCacheStore, settings, new PackUpdateNotifier(), Clock.systemUTC());
                 warnIfUpdateFeatureMissing(config);
             }
