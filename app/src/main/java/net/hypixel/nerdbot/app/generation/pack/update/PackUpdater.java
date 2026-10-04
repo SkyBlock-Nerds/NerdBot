@@ -76,8 +76,8 @@ public class PackUpdater {
 
     /**
      * The packs eligible for automatic updates: autoUpdate enabled, id and path present, a valid
-     * pack id, a minItemRatio between 0 and 1, and a lowercase id and an update source that no other
-     * eligible pack also uses. Every excluded pack is logged with the reason; packs sharing an id
+     * pack id, a minItemRatio between 0 and 1, a valid update source, and a lowercase id and an
+     * update source that no other eligible pack also uses. Every excluded pack is logged with the reason; packs sharing an id
      * or an update source are all excluded, since updating either would be a guess.
      */
     public static List<GeneratorConfig.PackDefinition> enabledDefinitions(@Nullable GeneratorConfig.ResourcePackConfig config) {
@@ -123,7 +123,7 @@ public class PackUpdater {
         return List.copyOf(eligible);
     }
 
-    /** Whether the pack's id parses and its minItemRatio is usable, logging the reason when not. */
+    /** Whether the pack's id parses, its minItemRatio is usable and its update source is valid, logging the reason when not. */
     private static boolean hasValidSettings(GeneratorConfig.PackDefinition definition, boolean reportProblems) {
         try {
             PackId.parse(packIdOf(definition));
@@ -227,10 +227,10 @@ public class PackUpdater {
         }
         PackReleaseVersion selected = atTop.getFirst();
         String deployKey = PackState.deployKey(release.deployId(), selected.packFormat());
-        String label = selected.sha1() != null ? selected.sha1() : deployKey;
+        String label = selected.label(release.deployId());
 
         PackState.Slot slot = store.slot(packId);
-        if (isLive(slot.current(), release.deployId(), selected)) {
+        if (isLive(slot.current(), deployKey, selected)) {
             return new PackUpdateOutcome.UpToDate(label, false);
         }
 
@@ -252,21 +252,21 @@ public class PackUpdater {
             seedConfiguredPackAsPrevious(packId, definition);
         }
 
-        return downloadAndApply(packId, definition, release, selected, fingerprint);
+        return downloadAndApply(packId, definition, release, selected, deployKey, label, fingerprint);
     }
 
     /**
      * Whether {@code current} is this version: the same SHA-1 when the source publishes one,
      * otherwise the same deploy id and format.
      */
-    private static boolean isLive(@Nullable PackState.AppliedPack current, String deployId, PackReleaseVersion selected) {
+    private static boolean isLive(@Nullable PackState.AppliedPack current, String deployKey, PackReleaseVersion selected) {
         if (current == null) {
             return false;
         }
         if (selected.sha1() != null) {
             return current.sha1().equals(selected.sha1());
         }
-        return current.deployId().equals(deployId) && current.packFormat() == selected.packFormat();
+        return deployKey.equals(current.deployKey());
     }
 
     /** The configured pack file, only when it is a regular file whose SHA-1 is {@code sha1}. */
@@ -308,14 +308,14 @@ public class PackUpdater {
      * A zip for this version that is already in the cache: by SHA-1 when the source publishes one,
      * otherwise the current or previous pack with the same deploy id and format, if its file is intact.
      */
-    private Optional<CachedZip> reusableZip(String packId, String deployId, PackReleaseVersion selected) {
+    private Optional<CachedZip> reusableZip(String packId, String deployKey, PackReleaseVersion selected) {
         if (selected.sha1() != null) {
             return store.cachedZip(selected.sha1()).map(zip -> new CachedZip(zip, selected.sha1()));
         }
 
         PackState.Slot slot = store.slot(packId);
         for (PackState.AppliedPack entry : Arrays.asList(slot.current(), slot.previous())) {
-            if (entry != null && entry.deployId().equals(deployId) && entry.packFormat() == selected.packFormat()) {
+            if (entry != null && deployKey.equals(entry.deployKey())) {
                 Optional<Path> zip = store.verifiedZip(entry);
                 if (zip.isPresent()) {
                     return Optional.of(new CachedZip(zip.get(), entry.sha1()));
@@ -326,20 +326,18 @@ public class PackUpdater {
     }
 
     private PackUpdateOutcome downloadAndApply(String packId, GeneratorConfig.PackDefinition definition,
-                                               PackRelease release, PackReleaseVersion selected, String fingerprint) {
-        String deployKey = PackState.deployKey(release.deployId(), selected.packFormat());
-        String label = selected.sha1() != null ? selected.sha1() : deployKey;
-
+                                               PackRelease release, PackReleaseVersion selected, String deployKey,
+                                               String label, String fingerprint) {
         Path zip;
         String sha1;
-        Optional<CachedZip> reusable = reusableZip(packId, release.deployId(), selected);
+        Optional<CachedZip> reusable = reusableZip(packId, deployKey, selected);
         if (reusable.isPresent()) {
             log.info("Pack '{}' version {} is already in the cache, skipping the download", packId, label);
             zip = reusable.get().zip();
             sha1 = reusable.get().sha1();
         } else {
             // Partial downloads are named by what is known before downloading
-            String partKey = selected.sha1() != null ? selected.sha1() : release.deployId() + "-" + selected.packFormat();
+            String partKey = selected.sha1() != null ? selected.sha1() : deployKey.replace('/', '-');
             Result<DownloadResult, HttpException> downloaded = downloader.download(selected.url(), store.partPath(partKey));
             if (downloaded instanceof Result.Failure<DownloadResult, HttpException> failure) {
                 HttpException error = failure.error();
@@ -447,7 +445,7 @@ public class PackUpdater {
         PackState.AppliedPack from = slot.current();
         // No fingerprint: an admin's rollback holds whatever the settings become
         store.recordRolledBack(packId, new PackState.RejectedHash(from.sha1(), from.packFormat(), "rolled back by an admin",
-            clock.millis(), null, PackState.deployKey(from.deployId(), from.packFormat())));
+            clock.millis(), null, from.deployKey()));
         log.info("Rolled pack '{}' back from {} to {}", packId, from.sha1(), slot.previous().sha1());
         return new PackUpdateOutcome.RolledBack(from, slot.previous());
     }

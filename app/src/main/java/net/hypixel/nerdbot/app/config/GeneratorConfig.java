@@ -212,7 +212,7 @@ public class GeneratorConfig {
         private String defaultPack = null;
 
         /**
-         * Settings shared by every pack that opts into automatic updates from the Hypixel pack API
+         * Settings shared by every pack that opts into automatic updates from the pack's release source
          */
         private AutoUpdateSettings autoUpdate = new AutoUpdateSettings();
     }
@@ -244,7 +244,7 @@ public class GeneratorConfig {
         private Map<String, String> textColorRemap = new LinkedHashMap<>();
 
         /**
-         * Automatic updates from the Hypixel pack API for this pack (null or disabled = never updated automatically)
+         * Automatic updates from the pack's release source for this pack (null or disabled = never updated automatically)
          */
         private PackAutoUpdate autoUpdate = null;
     }
@@ -278,7 +278,7 @@ public class GeneratorConfig {
         private long maxDownloadBytes = 64L * 1024 * 1024;
 
         /**
-         * How many rejected pack hashes to remember per pack before the oldest are forgotten
+         * How many rejected pack versions to remember per pack before the oldest are forgotten
          */
         private int maxRejectedHashes = 20;
     }
@@ -318,9 +318,9 @@ public class GeneratorConfig {
     @ToString
     public static class PackSourceSettings {
         /**
-         * hypixel-api (the default) or deploy-index
+         * hypixel-api or deploy-index (required when a source block is present)
          */
-        private String type = "hypixel-api";
+        private String type = null;
 
         /**
          * deploy-index only: https URL of a JSON index with "uuid", "pack_versions" and "last_updated"

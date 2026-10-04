@@ -12,4 +12,12 @@ import java.net.URI;
  * @param sha1       Lowercase hex SHA-1 the source publishes for the zip, or null when it publishes none
  */
 public record PackReleaseVersion(int packFormat, URI url, @Nullable String sha1) {
+
+    /**
+     * The published SHA-1, or the deploy key when none is published. Shown to admins and used for
+     * rejection records before any download.
+     */
+    public String label(String deployId) {
+        return sha1 != null ? sha1 : PackState.deployKey(deployId, packFormat);
+    }
 }

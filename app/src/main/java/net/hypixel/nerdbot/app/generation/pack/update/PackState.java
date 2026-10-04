@@ -25,6 +25,11 @@ public record PackState(Map<String, Slot> packs) {
      * @param deployId Hypixel's deploy id, or "configured" for the pack seeded from the config path
      */
     public record AppliedPack(int packFormat, String sha1, String deployId, String fileName, long appliedAtEpochMs) {
+
+        /** {@link PackState#deployKey} of this pack; works with a null deploy id from a hand-edited state file. */
+        public String deployKey() {
+            return PackState.deployKey(deployId, packFormat);
+        }
     }
 
     /**

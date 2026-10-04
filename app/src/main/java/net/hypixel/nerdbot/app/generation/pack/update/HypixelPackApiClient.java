@@ -5,7 +5,7 @@ import net.hypixel.nerdbot.marmalade.functional.Result;
 
 import java.util.List;
 
-/** Everything the pack updater needs from the network, behind one seam. */
+/** Reads the Hypixel resource pack list. */
 public interface HypixelPackApiClient {
 
     /** Fetches and validates the shape of the pack list. Shape problems are failures, never exceptions. */

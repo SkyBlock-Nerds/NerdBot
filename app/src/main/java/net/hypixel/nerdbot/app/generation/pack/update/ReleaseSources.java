@@ -19,13 +19,16 @@ public final class ReleaseSources {
     private ReleaseSources() {
     }
 
-    /** The configured source type in lowercase, {@value #HYPIXEL_API} when no source or type is set. */
+    /**
+     * The configured source type in lowercase: {@value #HYPIXEL_API} when there is no source block,
+     * and an empty string when a source block has no type.
+     */
     public static String typeOf(GeneratorConfig.PackAutoUpdate autoUpdate) {
         GeneratorConfig.PackSourceSettings source = autoUpdate.getSource();
-        if (source == null || isBlank(source.getType())) {
+        if (source == null) {
             return HYPIXEL_API;
         }
-        return source.getType().trim().toLowerCase(Locale.ROOT);
+        return isBlank(source.getType()) ? "" : source.getType().trim().toLowerCase(Locale.ROOT);
     }
 
     /** Why the configured source cannot be used, or null when it can. */
@@ -34,6 +37,7 @@ public final class ReleaseSources {
         return switch (typeOf(autoUpdate)) {
             case HYPIXEL_API -> isBlank(autoUpdate.getHypixelPackId()) ? "hypixelPackId is empty" : null;
             case DEPLOY_INDEX -> deployIndexProblem(autoUpdate.getSource());
+            case "" -> "source.type is missing; use " + HYPIXEL_API + " or " + DEPLOY_INDEX;
             default -> "unknown source type '" + autoUpdate.getSource().getType() + "', expected "
                 + HYPIXEL_API + " or " + DEPLOY_INDEX;
         };
@@ -45,23 +49,28 @@ public final class ReleaseSources {
         if (url.isEmpty()) {
             return "source.url is empty";
         }
-        try {
-            URI parsed = new URI(url);
-            if (!"https".equalsIgnoreCase(parsed.getScheme()) || parsed.getHost() == null) {
-                return "source.url must be an https URL";
-            }
-        } catch (URISyntaxException e) {
-            return "source.url is not a valid URL: " + e.getMessage();
+        String urlProblem = httpsProblem("source.url", url);
+        if (urlProblem != null) {
+            return urlProblem;
         }
 
         String template = trimmed(source.getDownloadUrlTemplate());
         if (!template.contains(DEPLOY_ID_PLACEHOLDER) || !template.contains(FORMAT_PLACEHOLDER)) {
             return "source.downloadUrlTemplate must contain " + DEPLOY_ID_PLACEHOLDER + " and " + FORMAT_PLACEHOLDER;
         }
+        return httpsProblem("source.downloadUrlTemplate", DeployIndexReleaseSource.downloadUrl(template, SAMPLE_DEPLOY_ID, 1));
+    }
+
+    /** Why {@code value} is not a usable https URL, or null when it is. */
+    @Nullable
+    private static String httpsProblem(String field, String value) {
         try {
-            new URI(DeployIndexReleaseSource.downloadUrl(template, SAMPLE_DEPLOY_ID, 1));
+            URI parsed = new URI(value);
+            if (!"https".equalsIgnoreCase(parsed.getScheme()) || parsed.getHost() == null) {
+                return field + " must be an https URL";
+            }
         } catch (URISyntaxException e) {
-            return "source.downloadUrlTemplate does not form a valid URL: " + e.getMessage();
+            return field + " is not a valid URL: " + e.getMessage();
         }
         return null;
     }
