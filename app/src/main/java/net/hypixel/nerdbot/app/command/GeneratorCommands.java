@@ -98,7 +98,7 @@ public class GeneratorCommands {
     private static final String NBT_DESCRIPTION = "The NBT string to parse";
     private static final String HIDDEN_OUTPUT_DESCRIPTION = "Whether the output should be hidden (sent ephemerally)";
     private static final String DURABILITY_DESCRIPTION = "Item durability percentage (0-100, only shown if less than 100)";
-    private static final String COLOR_DESCRIPTION = "The overlay color (e.g., red, blue, #FF0000)";
+    private static final String COLOR_DESCRIPTION = "Overlay color for vanilla items, or dye color for pack items (e.g. red, light_blue, #FF0000)";
     private static final String ITEM_MODEL_DESCRIPTION = "The minecraft:item_model ref to render (e.g. hypixel_skyblock:item/jacob/cactus_knife)";
     private static final String PACK_DESCRIPTION = "The resource pack used to resolve item textures";
     private static final String TOOLTIP_STYLE_DESCRIPTION = "The pack tooltip style to render with (defaults to the rarity's configured style)";
