@@ -293,9 +293,14 @@ public class GeneratorConfig {
         private boolean enabled = false;
 
         /**
-         * The "id" of the pack entry in the Hypixel pack list, e.g. SkyBlock
+         * The "id" of the pack entry in the Hypixel pack list, e.g. SkyBlock (used by the hypixel-api source)
          */
         private String hypixelPackId = "SkyBlock";
+
+        /**
+         * Where new versions come from (null = the Hypixel API, using autoUpdate.apiUrl and hypixelPackId)
+         */
+        private PackSourceSettings source = null;
 
         /**
          * A new pack must index at least this share of the live pack's items (0 to 1)
@@ -306,6 +311,27 @@ public class GeneratorConfig {
          * Item refs that must exist in a new pack and render, e.g. hypixel_skyblock:item/uncategorized/hyperion
          */
         private List<String> sampleItems = new ArrayList<>();
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class PackSourceSettings {
+        /**
+         * hypixel-api (the default) or deploy-index
+         */
+        private String type = "hypixel-api";
+
+        /**
+         * deploy-index only: https URL of a JSON index with "uuid", "pack_versions" and "last_updated"
+         */
+        private String url = null;
+
+        /**
+         * deploy-index only: download URL containing {deployId} and {format}, e.g.
+         * https://resourcepacks.hypixel.net/SkyBlock/{deployId}/{format}.zip
+         */
+        private String downloadUrlTemplate = null;
     }
 
     @Getter
