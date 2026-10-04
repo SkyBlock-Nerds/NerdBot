@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +31,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * Checks Hypixel for a newer pack, downloads, validates and applies it, and rolls back on request.
+ * Checks a pack's release source for a newer version, downloads, validates and applies it, and rolls back on request.
  * One check or rollback runs at a time across all packs; a second caller gets {@link PackUpdateOutcome.Busy}.
  * Every outcome except {@code Busy} is reported to the listener and kept as the pack's last outcome;
  * {@code Busy} is only returned to the caller.
@@ -42,6 +43,7 @@ public class PackUpdater {
 
     private final ResourcePackService packService;
     private final HypixelPackApiClient apiClient;
+    private final PackDownloader downloader;
     private final PackCacheStore store;
     private final GeneratorConfig.AutoUpdateSettings settings;
     private final PackUpdateListener listener;
@@ -53,10 +55,11 @@ public class PackUpdater {
     public record RecordedOutcome(PackUpdateOutcome outcome, long atEpochMs) {
     }
 
-    public PackUpdater(ResourcePackService packService, HypixelPackApiClient apiClient, PackCacheStore store,
-                       GeneratorConfig.AutoUpdateSettings settings, PackUpdateListener listener, Clock clock) {
+    public PackUpdater(ResourcePackService packService, HypixelPackApiClient apiClient, PackDownloader downloader,
+                       PackCacheStore store, GeneratorConfig.AutoUpdateSettings settings, PackUpdateListener listener, Clock clock) {
         this.packService = packService;
         this.apiClient = apiClient;
+        this.downloader = downloader;
         this.store = store;
         this.settings = settings;
         this.listener = listener;
@@ -73,9 +76,9 @@ public class PackUpdater {
 
     /**
      * The packs eligible for automatic updates: autoUpdate enabled, id and path present, a valid
-     * pack id, a minItemRatio between 0 and 1, and a lowercase id and Hypixel pack id that no other
+     * pack id, a minItemRatio between 0 and 1, and a lowercase id and an update source that no other
      * eligible pack also uses. Every excluded pack is logged with the reason; packs sharing an id
-     * or a Hypixel id are all excluded, since updating either would be a guess.
+     * or an update source are all excluded, since updating either would be a guess.
      */
     public static List<GeneratorConfig.PackDefinition> enabledDefinitions(@Nullable GeneratorConfig.ResourcePackConfig config) {
         return enabledDefinitions(config, false);
@@ -94,14 +97,14 @@ public class PackUpdater {
 
         List<GeneratorConfig.PackDefinition> candidates = config.getPacks().stream()
             .filter(definition -> definition != null && definition.getAutoUpdate() != null && definition.getAutoUpdate().isEnabled())
-            .filter(definition -> isPresent(definition.getId()) && isPresent(definition.getPath()) && isPresent(definition.getAutoUpdate().getHypixelPackId()))
+            .filter(definition -> isPresent(definition.getId()) && isPresent(definition.getPath()))
             .filter(definition -> hasValidSettings(definition, reportProblems))
             .toList();
 
         Map<String, Long> packIdCounts = candidates.stream()
             .collect(Collectors.groupingBy(PackUpdater::packIdOf, Collectors.counting()));
-        Map<String, Long> hypixelIdCounts = candidates.stream()
-            .collect(Collectors.groupingBy(definition -> definition.getAutoUpdate().getHypixelPackId(), Collectors.counting()));
+        Map<String, Long> sourceCounts = candidates.stream()
+            .collect(Collectors.groupingBy(definition -> ReleaseSources.identity(definition.getAutoUpdate()), Collectors.counting()));
 
         List<GeneratorConfig.PackDefinition> eligible = new ArrayList<>();
         for (GeneratorConfig.PackDefinition definition : candidates) {
@@ -110,9 +113,9 @@ public class PackUpdater {
                     definition.getId());
                 continue;
             }
-            if (hypixelIdCounts.get(definition.getAutoUpdate().getHypixelPackId()) > 1) {
-                logProblem(reportProblems, "Pack '{}' shares Hypixel pack id '{}' with another pack, so neither is updated automatically",
-                    definition.getId(), definition.getAutoUpdate().getHypixelPackId());
+            if (sourceCounts.get(ReleaseSources.identity(definition.getAutoUpdate())) > 1) {
+                logProblem(reportProblems, "Pack '{}' reads the same update source ({}) as another pack, so neither is updated automatically",
+                    definition.getId(), ReleaseSources.identity(definition.getAutoUpdate()));
                 continue;
             }
             eligible.add(definition);
@@ -132,6 +135,13 @@ public class PackUpdater {
         double minItemRatio = definition.getAutoUpdate().getMinItemRatio();
         if (Double.isNaN(minItemRatio) || minItemRatio < 0 || minItemRatio > 1) {
             logProblem(reportProblems, "Pack '{}' has minItemRatio {} outside 0 to 1, so it is not updated automatically", definition.getId(), minItemRatio);
+            return false;
+        }
+
+        String sourceProblem = ReleaseSources.problem(definition.getAutoUpdate());
+        if (sourceProblem != null) {
+            logProblem(reportProblems, "Pack '{}' has an invalid update source ({}), so it is not updated automatically",
+                definition.getId(), sourceProblem);
             return false;
         }
         return true;
@@ -201,56 +211,62 @@ public class PackUpdater {
         String packId = packIdOf(definition);
         GeneratorConfig.PackAutoUpdate autoUpdate = definition.getAutoUpdate();
 
-        Result<List<HypixelPack>, HttpException> fetched = apiClient.fetchPacks();
-        if (fetched instanceof Result.Failure<List<HypixelPack>, HttpException> failure) {
-            return transientFailure(packId, "could not fetch the pack list: " + failure.error().getMessage(), failure.error());
+        Result<PackRelease, HttpException> fetched = ReleaseSources.forDefinition(apiClient, autoUpdate).latest();
+        if (fetched instanceof Result.Failure<PackRelease, HttpException> failure) {
+            return transientFailure(packId, failure.error().getMessage(), failure.error());
         }
+        PackRelease release = fetched.orElseThrow();
 
-        Optional<HypixelPack> pack = fetched.orElseThrow().stream()
-            .filter(candidate -> candidate.id().equals(autoUpdate.getHypixelPackId()))
-            .findFirst();
-        if (pack.isEmpty()) {
-            return transientFailure(packId, "the pack list has no entry named " + autoUpdate.getHypixelPackId(), null);
-        }
-        if (pack.get().versions().isEmpty()) {
-            return transientFailure(packId, "pack " + autoUpdate.getHypixelPackId() + " lists no versions", null);
-        }
-
-        int topFormat = pack.get().versions().stream().mapToInt(HypixelPackVersion::packFormat).max().orElseThrow();
-        List<HypixelPackVersion> atTop = pack.get().versions().stream()
+        int topFormat = release.versions().stream().mapToInt(PackReleaseVersion::packFormat).max().orElseThrow();
+        List<PackReleaseVersion> atTop = release.versions().stream()
             .filter(version -> version.packFormat() == topFormat)
             .toList();
         if (atTop.size() > 1) {
-            return transientFailure(packId, "pack " + autoUpdate.getHypixelPackId() + " lists " + atTop.size()
+            return transientFailure(packId, "the latest release lists " + atTop.size()
                 + " versions with format " + topFormat + ", refusing to guess", null);
         }
-        HypixelPackVersion selected = atTop.getFirst();
+        PackReleaseVersion selected = atTop.getFirst();
+        String deployKey = PackState.deployKey(release.deployId(), selected.packFormat());
+        String label = selected.sha1() != null ? selected.sha1() : deployKey;
 
         PackState.Slot slot = store.slot(packId);
-        if (slot.current() != null && slot.current().sha1().equals(selected.sha1())) {
-            return new PackUpdateOutcome.UpToDate(selected.sha1(), false);
+        if (isLive(slot.current(), release.deployId(), selected)) {
+            return new PackUpdateOutcome.UpToDate(label, false);
         }
 
-        if (slot.current() == null) {
+        if (slot.current() == null && selected.sha1() != null) {
             Optional<Path> configured = configuredZipMatching(packId, definition, selected.sha1());
             if (configured.isPresent()) {
-                return adoptConfiguredPack(packId, configured.get(), pack.get(), selected);
+                return adoptConfiguredPack(packId, configured.get(), release, selected);
             }
         }
 
         String fingerprint = RejectionFingerprint.of(settings, autoUpdate);
-        Optional<PackState.RejectedHash> rejection = slot.rejection(selected.sha1(), fingerprint);
+        Optional<PackState.RejectedHash> rejection = slot.rejection(selected.sha1(), deployKey, fingerprint);
         if (rejection.isPresent()) {
-            log.debug("Pack '{}' version {} was rejected before ({}), skipping",
-                packId, selected.sha1(), rejection.get().reason());
-            return new PackUpdateOutcome.UpToDate(selected.sha1(), true);
+            log.debug("Pack '{}' version {} was rejected before ({}), skipping", packId, label, rejection.get().reason());
+            return new PackUpdateOutcome.UpToDate(label, true);
         }
 
         if (slot.current() == null && slot.previous() == null) {
             seedConfiguredPackAsPrevious(packId, definition);
         }
 
-        return downloadAndApply(packId, definition, pack.get(), selected, fingerprint);
+        return downloadAndApply(packId, definition, release, selected, fingerprint);
+    }
+
+    /**
+     * Whether {@code current} is this version: the same SHA-1 when the source publishes one,
+     * otherwise the same deploy id and format.
+     */
+    private static boolean isLive(@Nullable PackState.AppliedPack current, String deployId, PackReleaseVersion selected) {
+        if (current == null) {
+            return false;
+        }
+        if (selected.sha1() != null) {
+            return current.sha1().equals(selected.sha1());
+        }
+        return current.deployId().equals(deployId) && current.packFormat() == selected.packFormat();
     }
 
     /** The configured pack file, only when it is a regular file whose SHA-1 is {@code sha1}. */
@@ -266,10 +282,10 @@ public class PackUpdater {
     }
 
     /**
-     * Records the configured pack as the current one when it already is Hypixel's latest version.
-     * It is live already, so nothing is downloaded or reloaded.
+     * Records the configured pack as the current one when it already is the latest version. It is
+     * live already, so nothing is downloaded or reloaded. Only possible when the source publishes a SHA-1.
      */
-    private PackUpdateOutcome adoptConfiguredPack(String packId, Path configured, HypixelPack pack, HypixelPackVersion selected) {
+    private PackUpdateOutcome adoptConfiguredPack(String packId, Path configured, PackRelease release, PackReleaseVersion selected) {
         Path cached;
         try {
             cached = store.importCopy(configured, selected.sha1());
@@ -277,42 +293,76 @@ public class PackUpdater {
             return transientFailure(packId, "could not copy the configured pack into the cache: " + describe(e), e);
         }
 
-        store.recordApplied(packId, new PackState.AppliedPack(selected.packFormat(), selected.sha1(), pack.deployId(),
+        store.recordApplied(packId, new PackState.AppliedPack(selected.packFormat(), selected.sha1(), release.deployId(),
             cached.getFileName().toString(), clock.millis()));
-        log.info("Configured pack '{}' is already Hypixel's latest format {} ({}), recorded it as current",
+        log.info("Configured pack '{}' is already the latest format {} ({}), recorded it as current",
             packId, selected.packFormat(), selected.sha1());
         return new PackUpdateOutcome.UpToDate(selected.sha1(), false);
     }
 
+    /** A cached zip and its SHA-1. */
+    private record CachedZip(Path zip, String sha1) {
+    }
+
+    /**
+     * A zip for this version that is already in the cache: by SHA-1 when the source publishes one,
+     * otherwise the current or previous pack with the same deploy id and format, if its file is intact.
+     */
+    private Optional<CachedZip> reusableZip(String packId, String deployId, PackReleaseVersion selected) {
+        if (selected.sha1() != null) {
+            return store.cachedZip(selected.sha1()).map(zip -> new CachedZip(zip, selected.sha1()));
+        }
+
+        PackState.Slot slot = store.slot(packId);
+        for (PackState.AppliedPack entry : Arrays.asList(slot.current(), slot.previous())) {
+            if (entry != null && entry.deployId().equals(deployId) && entry.packFormat() == selected.packFormat()) {
+                Optional<Path> zip = store.verifiedZip(entry);
+                if (zip.isPresent()) {
+                    return Optional.of(new CachedZip(zip.get(), entry.sha1()));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     private PackUpdateOutcome downloadAndApply(String packId, GeneratorConfig.PackDefinition definition,
-                                               HypixelPack pack, HypixelPackVersion selected, String fingerprint) {
-        Optional<Path> alreadyCached = store.cachedZip(selected.sha1());
+                                               PackRelease release, PackReleaseVersion selected, String fingerprint) {
+        String deployKey = PackState.deployKey(release.deployId(), selected.packFormat());
+        String label = selected.sha1() != null ? selected.sha1() : deployKey;
+
         Path zip;
-        if (alreadyCached.isPresent()) {
-            log.info("Pack '{}' version {} is already in the cache, skipping the download", packId, selected.sha1());
-            zip = alreadyCached.get();
+        String sha1;
+        Optional<CachedZip> reusable = reusableZip(packId, release.deployId(), selected);
+        if (reusable.isPresent()) {
+            log.info("Pack '{}' version {} is already in the cache, skipping the download", packId, label);
+            zip = reusable.get().zip();
+            sha1 = reusable.get().sha1();
         } else {
-            Result<DownloadResult, HttpException> downloaded = apiClient.download(selected, store.partPath(selected.sha1()));
+            // Partial downloads are named by what is known before downloading
+            String partKey = selected.sha1() != null ? selected.sha1() : release.deployId() + "-" + selected.packFormat();
+            Result<DownloadResult, HttpException> downloaded = downloader.download(selected.url(), store.partPath(partKey));
             if (downloaded instanceof Result.Failure<DownloadResult, HttpException> failure) {
                 HttpException error = failure.error();
                 if (error instanceof DownloadRejectedException) {
-                    return reject(packId, selected, error.getMessage(), fingerprint);
+                    return reject(packId, label, deployKey, selected.packFormat(), error.getMessage(), fingerprint);
                 }
                 return transientFailure(packId, "could not download format " + selected.packFormat() + ": " + error.getMessage(), error);
             }
 
             String actualSha1 = downloaded.orElseThrow().sha1Hex();
-            if (!actualSha1.equals(selected.sha1())) {
-                store.deletePart(selected.sha1());
-                return reject(packId, selected, "the download's SHA-1 is " + actualSha1 + " but Hypixel advertised " + selected.sha1(), fingerprint);
+            if (selected.sha1() != null && !actualSha1.equals(selected.sha1())) {
+                store.deletePart(partKey);
+                return reject(packId, label, deployKey, selected.packFormat(),
+                    "the download's SHA-1 is " + actualSha1 + " but the source published " + selected.sha1(), fingerprint);
             }
 
             try {
-                zip = store.promotePart(selected.sha1());
+                zip = store.promotePart(partKey, actualSha1);
             } catch (IOException e) {
-                store.deletePart(selected.sha1());
+                store.deletePart(partKey);
                 return transientFailure(packId, "could not move the download into the cache: " + describe(e), e);
             }
+            sha1 = actualSha1;
         }
 
         PackReloadResult result;
@@ -323,30 +373,30 @@ public class PackUpdater {
                 expectationsFor(definition, selected.packFormat(), definition.getAutoUpdate().getMinItemRatio())
             );
         } catch (RuntimeException e) {
-            store.deleteIfUnreferenced(selected.sha1());
+            store.deleteIfUnreferenced(sha1);
             return transientFailure(packId, "the pack could not be reloaded: " + describe(e), e);
         }
 
         PackReloadResult.Applied applied;
         switch (result) {
             case PackReloadResult.Rejected rejected -> {
-                store.deleteIfUnreferenced(selected.sha1());
-                return reject(packId, selected, rejected.reason(), fingerprint);
+                store.deleteIfUnreferenced(sha1);
+                return reject(packId, sha1, deployKey, selected.packFormat(), rejected.reason(), fingerprint);
             }
             case PackReloadResult.NotAttempted notAttempted -> {
-                // Our configuration is at fault, not the pack: never remember the hash as rejected
-                store.deleteIfUnreferenced(selected.sha1());
+                // Our configuration is at fault, not the pack: never remember the version as rejected
+                store.deleteIfUnreferenced(sha1);
                 return transientFailure(packId, "the pack was not tried: " + notAttempted.reason(), null);
             }
             case PackReloadResult.Applied success -> applied = success;
         }
 
         PackState.AppliedPack from = store.slot(packId).current();
-        PackState.AppliedPack to = new PackState.AppliedPack(selected.packFormat(), selected.sha1(), pack.deployId(),
+        PackState.AppliedPack to = new PackState.AppliedPack(selected.packFormat(), sha1, release.deployId(),
             zip.getFileName().toString(), clock.millis());
         store.recordApplied(packId, to);
         store.cleanup();
-        log.info("Applied pack '{}' format {} ({})", packId, to.packFormat(), to.sha1());
+        log.info("Applied pack '{}' format {} ({}, deploy {})", packId, to.packFormat(), to.sha1(), to.deployId());
         return new PackUpdateOutcome.Applied(from, to, applied.itemCount(), applied.previousItemCount());
     }
 
@@ -396,7 +446,8 @@ public class PackUpdater {
 
         PackState.AppliedPack from = slot.current();
         // No fingerprint: an admin's rollback holds whatever the settings become
-        store.recordRolledBack(packId, new PackState.RejectedHash(from.sha1(), from.packFormat(), "rolled back by an admin", clock.millis(), null));
+        store.recordRolledBack(packId, new PackState.RejectedHash(from.sha1(), from.packFormat(), "rolled back by an admin",
+            clock.millis(), null, PackState.deployKey(from.deployId(), from.packFormat())));
         log.info("Rolled pack '{}' back from {} to {}", packId, from.sha1(), slot.previous().sha1());
         return new PackUpdateOutcome.RolledBack(from, slot.previous());
     }
@@ -440,10 +491,10 @@ public class PackUpdater {
         return new PackExpectations(packFormat, minItemRatio, definition.getAutoUpdate().getSampleItems());
     }
 
-    private PackUpdateOutcome reject(String packId, HypixelPackVersion version, String reason, String fingerprint) {
-        store.recordRejected(packId, new PackState.RejectedHash(version.sha1(), version.packFormat(), reason, clock.millis(), fingerprint));
-        log.warn("Rejected pack '{}' format {} ({}): {}", packId, version.packFormat(), version.sha1(), reason);
-        return new PackUpdateOutcome.Rejected(version.sha1(), version.packFormat(), reason);
+    private PackUpdateOutcome reject(String packId, String sha1, String deployKey, int packFormat, String reason, String fingerprint) {
+        store.recordRejected(packId, new PackState.RejectedHash(sha1, packFormat, reason, clock.millis(), fingerprint, deployKey));
+        log.warn("Rejected pack '{}' format {} ({}): {}", packId, packFormat, sha1, reason);
+        return new PackUpdateOutcome.Rejected(sha1, packFormat, reason);
     }
 
     private PackUpdateOutcome transientFailure(String packId, String reason, @Nullable Throwable cause) {

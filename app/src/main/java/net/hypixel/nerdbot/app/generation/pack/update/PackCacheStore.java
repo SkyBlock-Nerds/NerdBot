@@ -191,15 +191,20 @@ public class PackCacheStore {
         save(packId, new PackState.Slot(slot.current(), slot.previous(), withRejection(slot.rejected(), rejected)));
     }
 
-    /** Swaps current and previous, rejects the hash that was current and un-rejects the one rolled back to. */
+    /**
+     * Swaps current and previous, un-rejects the pack rolled back to and then rejects the one that
+     * was current. The un-reject comes first so that a current pack sharing the previous pack's
+     * deploy key (a new SHA-1 under the same deploy id) stays rejected.
+     */
     public synchronized void recordRolledBack(String packId, PackState.RejectedHash rejectedCurrent) {
         PackState.Slot slot = slot(packId);
-        List<PackState.RejectedHash> rejected = withRejection(slot.rejected(), rejectedCurrent);
+        List<PackState.RejectedHash> kept = new ArrayList<>(slot.rejected());
         if (slot.previous() != null) {
             // The admin just endorsed the pack being rolled back to, so it must not stay rejected
-            rejected.removeIf(entry -> entry.sha1().equals(slot.previous().sha1()));
+            String previousDeployKey = PackState.deployKey(slot.previous().deployId(), slot.previous().packFormat());
+            kept.removeIf(entry -> entry.sha1().equals(slot.previous().sha1()) || previousDeployKey.equals(entry.deployKey()));
         }
-        save(packId, new PackState.Slot(slot.previous(), slot.current(), rejected));
+        save(packId, new PackState.Slot(slot.previous(), slot.current(), withRejection(kept, rejectedCurrent)));
     }
 
     /**
@@ -258,8 +263,16 @@ public class PackCacheStore {
 
     /** Atomically renames {@code <sha1>.zip.part} to {@code <sha1>.zip}, replacing it, and returns the zip. */
     public synchronized Path promotePart(String sha1) throws IOException {
+        return promotePart(sha1, sha1);
+    }
+
+    /**
+     * Atomically renames {@code <partKey>.zip.part} to {@code <sha1>.zip}, replacing it, and returns
+     * the zip. The part key differs from the SHA-1 for downloads whose SHA-1 is only known afterwards.
+     */
+    public synchronized Path promotePart(String partKey, String sha1) throws IOException {
         Path zip = zipPath(sha1);
-        Files.move(partPath(sha1), zip, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        Files.move(partPath(partKey), zip, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         return zip;
     }
 
