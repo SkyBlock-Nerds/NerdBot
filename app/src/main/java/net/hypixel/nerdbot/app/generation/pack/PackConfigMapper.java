@@ -62,10 +62,11 @@ public final class PackConfigMapper {
     /**
      * Maps one NerdBot pack definition to the library form, loading the pack from {@code path}
      * instead of the configured path. The id keeps its configured case (the library lowercases it)
-     * but is trimmed so stray whitespace never reaches the library.
+     * but is trimmed so stray whitespace never reaches the library. The variantOf is passed through
+     * as configured; the library trims, lowercases and validates it.
      */
     public static PackDefinition toDefinition(GeneratorConfig.PackDefinition definition, String path) {
         String id = definition.getId() == null ? null : definition.getId().trim();
-        return new PackDefinition(id, path, definition.getTooltipStyles(), definition.getTextColorRemap());
+        return new PackDefinition(id, path, definition.getTooltipStyles(), definition.getTextColorRemap(), definition.getVariantOf());
     }
 }

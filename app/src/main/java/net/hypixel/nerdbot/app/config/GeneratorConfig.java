@@ -244,6 +244,12 @@ public class GeneratorConfig {
         private Map<String, String> textColorRemap = new LinkedHashMap<>();
 
         /**
+         * The pack this one is a variant of, e.g. "hypixel:skyblock" for the alpha pack, so that pack's
+         * icon overrides and emissive alpha convention apply to this one too (null or empty = none)
+         */
+        private String variantOf = null;
+
+        /**
          * Automatic updates from the pack's release source for this pack (null or disabled = never updated automatically)
          */
         private PackAutoUpdate autoUpdate = null;
