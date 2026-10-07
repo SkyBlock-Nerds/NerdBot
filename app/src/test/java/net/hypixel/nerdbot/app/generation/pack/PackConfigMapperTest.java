@@ -5,6 +5,7 @@ import net.aerh.imagegenerator.tools.pack.PackRegistrationConfig;
 import net.hypixel.nerdbot.app.config.GeneratorConfig;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ class PackConfigMapperTest {
         definition.setPath("/app/packs/hypixel-skyblock.zip");
         definition.setTooltipStyles(Map.of("legendary", "hypixel_skyblock:legendary"));
         definition.setTextColorRemap(Map.of("#AA0000", "#D13228"));
+        definition.setVariantOf("hypixel:main");
         GeneratorConfig.ResourcePackConfig config = new GeneratorConfig.ResourcePackConfig();
         config.setPacks(List.of(definition));
         config.setDefaultPack("hypixel:skyblock");
@@ -35,7 +37,45 @@ class PackConfigMapperTest {
 
         assertEquals("hypixel:skyblock", mapped.defaultPack());
         assertEquals(List.of(new PackDefinition("hypixel:skyblock", "/app/packs/hypixel-skyblock.zip",
-            Map.of("legendary", "hypixel_skyblock:legendary"), Map.of("#AA0000", "#D13228"))), mapped.packs());
+            Map.of("legendary", "hypixel_skyblock:legendary"), Map.of("#AA0000", "#D13228"), "hypixel:main")), mapped.packs());
+    }
+
+    @Test
+    void variantOfDefaultsToNone() {
+        GeneratorConfig.PackDefinition definition = new GeneratorConfig.PackDefinition();
+        definition.setId("hypixel:skyblock");
+        definition.setPath("p");
+
+        assertNull(PackConfigMapper.toDefinition(definition, "p").variantOf());
+    }
+
+    @Test
+    void variantOfIsPassedThroughAsConfigured() {
+        // The library trims, lowercases and validates it, the same as it does for the id.
+        GeneratorConfig.PackDefinition definition = new GeneratorConfig.PackDefinition();
+        definition.setId("hypixel:alpha");
+        definition.setPath("/app/packs/hypixel_alpha.zip");
+        definition.setVariantOf(" Hypixel:SkyBlock ");
+
+        PackDefinition mapped = PackConfigMapper.toDefinition(definition, "/app/data/packs/abc.zip");
+
+        assertEquals(" Hypixel:SkyBlock ", mapped.variantOf());
+        assertEquals("/app/data/packs/abc.zip", mapped.path(), "the reload path still wins over the configured one");
+    }
+
+    @Test
+    void variantOfSurvivesACachedPathOverride() {
+        GeneratorConfig.PackDefinition definition = new GeneratorConfig.PackDefinition();
+        definition.setId("hypixel:alpha");
+        definition.setPath("/app/packs/hypixel_alpha.zip");
+        definition.setVariantOf("hypixel:skyblock");
+        GeneratorConfig.ResourcePackConfig config = new GeneratorConfig.ResourcePackConfig();
+        config.setPacks(List.of(definition));
+
+        PackDefinition mapped = PackConfigMapper.toRegistrationConfig(config,
+            Map.of("hypixel:alpha", Path.of("/app/data/packs/abc.zip"))).packs().get(0);
+
+        assertEquals("hypixel:skyblock", mapped.variantOf());
     }
 
     @Test

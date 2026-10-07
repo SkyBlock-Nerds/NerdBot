@@ -103,6 +103,7 @@
           "textColorRemap": {
             "example_value": "example_value"
           },
+          "variantOf": "example_value",
           "autoUpdate": {
             "enabled": true,
             "hypixelPackId": "1234567890123456789",
