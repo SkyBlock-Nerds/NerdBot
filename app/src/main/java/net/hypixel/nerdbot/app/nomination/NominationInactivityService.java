@@ -284,20 +284,20 @@ public class NominationInactivityService {
                         .addField("Messages",
                             String.format("%s %s / %s required",
                                 messagesStatus,
-                                StringUtils.COMMA_SEPARATED_FORMAT.format(totalMessages),
-                                StringUtils.COMMA_SEPARATED_FORMAT.format(group.getMinimumMessagesForActivity())),
+                                StringUtils.formatWithCommas(totalMessages),
+                                StringUtils.formatWithCommas(group.getMinimumMessagesForActivity())),
                             true)
                         .addField("Votes",
                             String.format("%s %s / %s required",
                                 votesStatus,
-                                StringUtils.COMMA_SEPARATED_FORMAT.format(totalVotes),
-                                StringUtils.COMMA_SEPARATED_FORMAT.format(group.getMinimumVotesForActivity())),
+                                StringUtils.formatWithCommas(totalVotes),
+                                StringUtils.formatWithCommas(group.getMinimumVotesForActivity())),
                             true)
                         .addField("Comments",
                             String.format("%s %s / %s required",
                                 commentsStatus,
-                                StringUtils.COMMA_SEPARATED_FORMAT.format(totalComments),
-                                StringUtils.COMMA_SEPARATED_FORMAT.format(group.getMinimumCommentsForActivity())),
+                                StringUtils.formatWithCommas(totalComments),
+                                StringUtils.formatWithCommas(group.getMinimumCommentsForActivity())),
                             true);
 
                     if (!openTicketLinks.isEmpty()) {
@@ -379,24 +379,24 @@ public class NominationInactivityService {
                 .addField("Messages",
                     String.format("%s %s / %s required",
                         messagesStatus,
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalMessages),
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(requiredMessages)),
+                        StringUtils.formatWithCommas(totalMessages),
+                        StringUtils.formatWithCommas(requiredMessages)),
                     true)
                 .addField("Votes",
                     String.format("%s %s / %s required",
                         votesStatus,
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalVotes),
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(requiredVotes)),
+                        StringUtils.formatWithCommas(totalVotes),
+                        StringUtils.formatWithCommas(requiredVotes)),
                     true)
                 .addField("Comments",
                     String.format("%s %s / %s required",
                         commentsStatus,
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(totalComments),
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(requiredComments)),
+                        StringUtils.formatWithCommas(totalComments),
+                        StringUtils.formatWithCommas(requiredComments)),
                     true)
                 .addField("Warning History",
                     String.format("**Total Warnings:** %s\n**Last Warning:** %s",
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(lastActivity.getNominationInfo().getTotalInactivityWarnings()),
+                        StringUtils.formatWithCommas(lastActivity.getNominationInfo().getTotalInactivityWarnings()),
                         lastActivity.getNominationInfo().getLastInactivityWarningDateString()),
                     false)
                 .setTimestamp(Instant.now());

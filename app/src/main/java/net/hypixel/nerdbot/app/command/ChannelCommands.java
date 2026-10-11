@@ -212,7 +212,7 @@ public class ChannelCommands {
             // Check for auto-tag swap configuration
             ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
             if (autoTagConfig != null && autoTagConfig.getReviewTagName().equalsIgnoreCase(tagName)) {
-                ForumTag defaultTag = DiscordUtils.getTagByName(forumChannel, autoTagConfig.getDefaultTagName());
+                ForumTag defaultTag = DiscordUtils.findTagByName(forumChannel, autoTagConfig.getDefaultTagName()).orElse(null);
                 if (defaultTag != null && appliedTags.contains(defaultTag)) {
                     appliedTags.remove(defaultTag);
                     log.info("Removed auto-tag '{}' from thread '{}' (ID: {}) when '{}' tag was applied via /lock", autoTagConfig.getDefaultTagName(), threadChannel.getName(), threadChannel.getId(), tagName);

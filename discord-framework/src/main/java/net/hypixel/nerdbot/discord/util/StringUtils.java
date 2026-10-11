@@ -3,16 +3,23 @@ package net.hypixel.nerdbot.discord.util;
 import lombok.experimental.UtilityClass;
 
 import java.text.DecimalFormat;
+import java.util.Locale;
 
 @UtilityClass
 public class StringUtils {
-
-    public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
 
     @Deprecated
     static final String MINECRAFT_USERNAME_REGEX = "^[a-zA-Z0-9_]{2,16}";
     @Deprecated
     static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
+
+    /** @deprecated A shared DecimalFormat isn't thread-safe; use {@link #formatWithCommas(long)}. */
+    @Deprecated(forRemoval = true)
+    public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");
+
+    public static String formatWithCommas(long value) {
+        return String.format(Locale.ROOT, "%,d", value);
+    }
 
     public static String formatSize(long size) {
         if (size <= 0) return "0";

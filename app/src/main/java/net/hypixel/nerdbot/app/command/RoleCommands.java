@@ -107,10 +107,10 @@ public class RoleCommands {
                     event.getHook().editOriginal("You are currently eligible for a promotion! This is not a guarantee that you will be promoted. Thanks for contributing to SkyBlock Nerds!").queue();
                 } else {
                     event.getHook().editOriginal(String.format("You have %s/%s required suggestion votes and %s/%s required suggestion comments to be nominated for the Orange role!",
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalVotes(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion()),
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(user.getLastActivity().getTotalComments(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
-                        StringUtils.COMMA_SEPARATED_FORMAT.format(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion())
+                        StringUtils.formatWithCommas(user.getLastActivity().getTotalVotes(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
+                        StringUtils.formatWithCommas(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion()),
+                        StringUtils.formatWithCommas(user.getLastActivity().getTotalComments(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
+                        StringUtils.formatWithCommas(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion())
                     )).queue();
                 }
             })
