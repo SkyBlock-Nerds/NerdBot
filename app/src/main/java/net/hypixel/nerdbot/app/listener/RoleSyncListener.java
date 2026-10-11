@@ -43,8 +43,7 @@ public class RoleSyncListener {
                 return; // unverified members are created by the grabber/activity flows
             }
             if (RoleIdSync.applyRoleIds(user, roleIds)) {
-                repository.cacheObject(user);
-                repository.saveToDatabaseAsync(user);
+                repository.cacheAndSaveAsync(user);
                 log.info("Updated role ids for {} ({} roles)", member.getId(), roleIds.size());
             }
         });

@@ -336,9 +336,7 @@ public class ReminderCommands {
                 final Date finalDate = date;
                 final String finalDescription = descriptionInput;
 
-                reminderRepository.cacheObject(reminder);
-
-                reminderRepository.saveToDatabaseAsync(reminder)
+                reminderRepository.cacheAndSaveAsync(reminder)
                     .thenAccept(result -> {
                         if (result != null && result.wasAcknowledged() && result.getUpsertedId() != null) {
                             ReminderDispatcher.schedule(reminder);
