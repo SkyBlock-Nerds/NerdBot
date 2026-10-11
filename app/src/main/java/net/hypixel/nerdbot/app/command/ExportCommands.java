@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ExportCommands {
@@ -249,27 +250,6 @@ public class ExportCommands {
         }
 
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        CSVData csvData = new CSVData(List.of(
-            "Discord Username",
-            "Minecraft Username",
-            "Last Global Activity",
-            "Last VC Join",
-            "Last Item Generation",
-            "Last Suggestion Created",
-            "Last Project Suggestion Created",
-            "Last Alpha Suggestion Created",
-            "Last Suggestion Vote",
-            "Last Project Suggestion Vote",
-            "Last Alpha Suggestion Vote",
-            "Last Project Activity",
-            "Last Alpha Activity",
-            "Last Ticket Activity",
-            "Total Recent Messages",
-            "Messages Sent (Last " + inactivityDays + "d)",
-            "Reviewed",
-            "Comments"
-        ), ";");
-
         if (discordUserRepository.isEmpty()) {
             event.getHook().editOriginal("Nothing found to export!").queue();
             return;
@@ -312,6 +292,7 @@ public class ExportCommands {
             return RoleManager.hasAnyRole(member, Utils.SPECIAL_ROLES);
         });
 
+        CSVData csvData = new CSVData(memberActivityHeaders(inactivityDays), ";");
 
         for (DiscordUser discordUser : discordUsers) {
             Member member = event.getGuild().getMemberById(discordUser.getDiscordId());
@@ -321,42 +302,7 @@ public class ExportCommands {
                 continue;
             }
 
-            LastActivity lastActivity = discordUser.getLastActivity();
-            List<ChannelActivityEntry> history = new ArrayList<>(lastActivity.getChannelActivityHistory(inactivityDays));
-            StringBuilder channelActivity = new StringBuilder();
-
-            if (!history.isEmpty()) {
-                history.sort((o1, o2) -> o2.getMessageCount() - o1.getMessageCount());
-
-                for (ChannelActivityEntry entry : history) {
-                    channelActivity.append(entry.getLastKnownDisplayName()).append(": ").append(entry.getMessageCount());
-                    if (history.indexOf(entry) != history.size() - 1) {
-                        channelActivity.append("\n");
-                    }
-                }
-            } else {
-                channelActivity.append("N/A");
-            }
-
-            csvData.addRow(List.of(
-                member.getUser().getName(),
-                discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
-                formatTimestampSheets(lastActivity.getLastGlobalActivity()),
-                formatTimestampSheets(lastActivity.getLastVoiceChannelJoinDate()),
-                formatTimestampSheets(lastActivity.getLastItemGenUsage()),
-                lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getSuggestionCreationHistory().getFirst()),
-                lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getProjectSuggestionCreationHistory().getFirst()),
-                lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getAlphaSuggestionCreationHistory().getFirst()),
-                lastActivity.getSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getSuggestionVoteHistoryMap())),
-                lastActivity.getProjectSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getProjectSuggestionVoteHistoryMap())),
-                lastActivity.getAlphaSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getAlphaSuggestionVoteHistoryMap())),
-                formatTimestampSheets(lastActivity.getLastProjectActivity()),
-                formatTimestampSheets(lastActivity.getLastAlphaActivity()),
-                formatTimestampSheets(lastActivity.getLastTicketUsage()),
-                String.valueOf(lastActivity.getTotalMessageCount(inactivityDays)),
-                "\"" + channelActivity + "\"",
-                "FALSE"
-            ));
+            csvData.addRow(memberActivityRow(member.getUser().getName(), discordUser, inactivityDays));
 
             log.debug("Added member {} to the activity export for {} (days required: {}, message count required: {})", member.getUser().getName(), event.getMember().getEffectiveName(), inactivityDays, inactivityMessages);
         }
@@ -369,7 +315,63 @@ public class ExportCommands {
         }
     }
 
-    private String formatTimestampSheets(long timestamp) {
+    static List<String> memberActivityHeaders(int inactivityDays) {
+        return List.of(
+            "Discord Username",
+            "Minecraft Username",
+            "Last Global Activity",
+            "Last VC Join",
+            "Last Item Generation",
+            "Last Suggestion Created",
+            "Last Project Suggestion Created",
+            "Last Alpha Suggestion Created",
+            "Last Suggestion Vote",
+            "Last Project Suggestion Vote",
+            "Last Alpha Suggestion Vote",
+            "Last Project Activity",
+            "Last Alpha Activity",
+            "Last Ticket Activity",
+            "Total Recent Messages",
+            "Messages Sent (Last " + inactivityDays + "d)",
+            "Reviewed",
+            "Comments"
+        );
+    }
+
+    static List<String> memberActivityRow(String discordUsername, DiscordUser discordUser, int inactivityDays) {
+        LastActivity lastActivity = discordUser.getLastActivity();
+        List<ChannelActivityEntry> history = new ArrayList<>(lastActivity.getChannelActivityHistory(inactivityDays));
+        history.sort((o1, o2) -> o2.getMessageCount() - o1.getMessageCount());
+
+        String channelActivity = history.isEmpty()
+            ? "N/A"
+            : history.stream()
+                .map(entry -> entry.getLastKnownDisplayName() + ": " + entry.getMessageCount())
+                .collect(Collectors.joining("\n"));
+
+        return List.of(
+            discordUsername,
+            discordUser.getMojangProfile().getUsername() == null ? "Not Linked" : discordUser.getMojangProfile().getUsername(),
+            formatTimestampSheets(lastActivity.getLastGlobalActivity()),
+            formatTimestampSheets(lastActivity.getLastVoiceChannelJoinDate()),
+            formatTimestampSheets(lastActivity.getLastItemGenUsage()),
+            lastActivity.getSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getSuggestionCreationHistory().getFirst()),
+            lastActivity.getProjectSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getProjectSuggestionCreationHistory().getFirst()),
+            lastActivity.getAlphaSuggestionCreationHistory().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getAlphaSuggestionCreationHistory().getFirst()),
+            lastActivity.getSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getSuggestionVoteHistoryMap())),
+            lastActivity.getProjectSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getProjectSuggestionVoteHistoryMap())),
+            lastActivity.getAlphaSuggestionVoteHistoryMap().isEmpty() ? "N/A" : formatTimestampSheets(lastActivity.getNewestEntry(lastActivity.getAlphaSuggestionVoteHistoryMap())),
+            formatTimestampSheets(lastActivity.getLastProjectActivity()),
+            formatTimestampSheets(lastActivity.getLastAlphaActivity()),
+            formatTimestampSheets(lastActivity.getLastTicketUsage()),
+            String.valueOf(lastActivity.getTotalMessageCount(inactivityDays)),
+            "\"" + channelActivity.replace("\"", "\"\"") + "\"",
+            "FALSE",
+            ""
+        );
+    }
+
+    private static String formatTimestampSheets(long timestamp) {
         if (timestamp < 0) {
             return "N/A";
         }
