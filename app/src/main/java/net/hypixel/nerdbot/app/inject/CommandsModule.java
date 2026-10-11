@@ -18,6 +18,9 @@ import net.hypixel.nerdbot.app.command.PunishmentCommands;
 import net.hypixel.nerdbot.app.command.ReminderCommands;
 import net.hypixel.nerdbot.app.command.RoleCommands;
 import net.hypixel.nerdbot.app.command.SuggestionCommands;
+import net.hypixel.nerdbot.app.profile.MojangProfileLookup;
+import net.hypixel.nerdbot.app.profile.ProfileEmbeds;
+import net.hypixel.nerdbot.app.profile.ProfileLinker;
 
 /**
  * Every slash command class the bot registers. Commands that haven't moved to constructor injection
@@ -89,14 +92,12 @@ public interface CommandsModule {
     @Provides
     @IntoSet
     @SlashCommandHandlers
-    static Object adminCommands() {
-        return new AdminCommands();
+    static Object adminCommands(MojangProfileLookup profileLookup, ProfileLinker profileLinker, ProfileEmbeds profileEmbeds) {
+        return new AdminCommands(profileLookup, profileLinker, profileEmbeds);
     }
 
-    @Provides
+    @Binds
     @IntoSet
     @SlashCommandHandlers
-    static Object profileCommands() {
-        return new ProfileCommands();
-    }
+    Object profileCommands(ProfileCommands commands);
 }

@@ -1,9 +1,9 @@
-package net.hypixel.nerdbot.app.command;
+package net.hypixel.nerdbot.app.profile;
 
-import net.hypixel.nerdbot.app.badge.BadgeManager;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.testsupport.MapBadgeCatalog;
 import net.hypixel.nerdbot.marmalade.storage.badge.TieredBadge;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.badge.BadgeEntry;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -17,13 +17,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class BadgeDisplayOrderTest {
 
-    @AfterEach
-    void clearBadges() {
-        BadgeManager.getBadgeMap().clear();
-    }
+    private final MapBadgeCatalog catalog = new MapBadgeCatalog();
+    private final ProfileEmbeds embeds = new ProfileEmbeds(NerdBotConfig::new, catalog);
 
-    private static void registerTieredBadge() {
-        BadgeManager.getBadgeMap().put("tiered", new TieredBadge("tiered", "Tiered", List.of(
+    private void registerTieredBadge() {
+        catalog.with(new TieredBadge("tiered", "Tiered", List.of(
             new TieredBadge.Tier("one", "e", 1),
             new TieredBadge.Tier("two", "e", 2),
             new TieredBadge.Tier("three", "e", 3))));
@@ -35,7 +33,7 @@ class BadgeDisplayOrderTest {
         BadgeEntry plain = new BadgeEntry("plain", null, 1L);
         BadgeEntry tiered = new BadgeEntry("tiered", 1, 1L);
 
-        List<BadgeEntry> sorted = Stream.of(plain, tiered).sorted(ProfileCommands.badgeDisplayComparator()).toList();
+        List<BadgeEntry> sorted = Stream.of(plain, tiered).sorted(embeds.badgeDisplayOrder()).toList();
 
         assertEquals(List.of(tiered, plain), sorted);
     }
@@ -46,7 +44,7 @@ class BadgeDisplayOrderTest {
         BadgeEntry low = new BadgeEntry("tiered", 1, 1L);
         BadgeEntry high = new BadgeEntry("tiered", 3, 1L);
 
-        List<BadgeEntry> sorted = Stream.of(low, high).sorted(ProfileCommands.badgeDisplayComparator()).toList();
+        List<BadgeEntry> sorted = Stream.of(low, high).sorted(embeds.badgeDisplayOrder()).toList();
 
         assertEquals(List.of(high, low), sorted);
     }
@@ -57,7 +55,7 @@ class BadgeDisplayOrderTest {
         BadgeEntry configured = new BadgeEntry("tiered", 2, 1L);
         BadgeEntry unconfigured = new BadgeEntry("tiered", 5, 1L);
 
-        List<BadgeEntry> sorted = Stream.of(configured, unconfigured).sorted(ProfileCommands.badgeDisplayComparator()).toList();
+        List<BadgeEntry> sorted = Stream.of(configured, unconfigured).sorted(embeds.badgeDisplayOrder()).toList();
 
         assertEquals(List.of(unconfigured, configured), sorted);
     }
@@ -68,7 +66,7 @@ class BadgeDisplayOrderTest {
         BadgeEntry older = new BadgeEntry("tiered", 1, 100L);
         BadgeEntry newer = new BadgeEntry("tiered", 1, 200L);
 
-        List<BadgeEntry> sorted = Stream.of(older, newer).sorted(ProfileCommands.badgeDisplayComparator()).toList();
+        List<BadgeEntry> sorted = Stream.of(older, newer).sorted(embeds.badgeDisplayOrder()).toList();
 
         assertEquals(List.of(newer, older), sorted);
     }
@@ -78,7 +76,7 @@ class BadgeDisplayOrderTest {
         BadgeEntry older = new BadgeEntry("a", null, 100L);
         BadgeEntry newer = new BadgeEntry("b", null, 200L);
 
-        List<BadgeEntry> sorted = Stream.of(older, newer).sorted(ProfileCommands.badgeDisplayComparator()).toList();
+        List<BadgeEntry> sorted = Stream.of(older, newer).sorted(embeds.badgeDisplayOrder()).toList();
 
         assertEquals(List.of(newer, older), sorted);
     }
@@ -89,7 +87,7 @@ class BadgeDisplayOrderTest {
         BadgeEntry withoutTier = new BadgeEntry("tiered", null, 1L);
         BadgeEntry withTier = new BadgeEntry("tiered", 2, 1L);
 
-        List<BadgeEntry> sorted = Stream.of(withoutTier, withTier).sorted(ProfileCommands.badgeDisplayComparator()).toList();
+        List<BadgeEntry> sorted = Stream.of(withoutTier, withTier).sorted(embeds.badgeDisplayOrder()).toList();
 
         assertEquals(List.of(withTier, withoutTier), sorted);
     }

@@ -6,21 +6,21 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
+/** A UTC clock that only moves when a test advances it. */
 public final class MutableClock extends Clock {
 
-    private Instant instant;
+    private Instant now;
 
     public MutableClock(Instant start) {
-        this.instant = start;
+        this.now = start;
     }
 
-    public void advance(Duration duration) {
-        instant = instant.plus(duration);
+    public MutableClock() {
+        this(Instant.parse("2026-10-11T12:00:00Z"));
     }
 
-    @Override
-    public Instant instant() {
-        return instant;
+    public void advance(Duration amount) {
+        now = now.plus(amount);
     }
 
     @Override
@@ -30,6 +30,11 @@ public final class MutableClock extends Clock {
 
     @Override
     public Clock withZone(ZoneId zone) {
-        throw new UnsupportedOperationException("Announcer converts zones itself");
+        return this;
+    }
+
+    @Override
+    public Instant instant() {
+        return now;
     }
 }

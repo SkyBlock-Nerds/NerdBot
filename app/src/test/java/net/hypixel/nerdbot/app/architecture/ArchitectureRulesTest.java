@@ -49,7 +49,7 @@ class ArchitectureRulesTest {
      * Code that gets what it needs through its constructor. Add to these as more of the bot moves
      * over; nothing in them may go back to looking things up through the global bot.
      */
-    private static final String[] INJECTED_PACKAGES = {"..app.inject..", "..app.punishment..", "..app.reminder.."};
+    private static final String[] INJECTED_PACKAGES = {"..app.inject..", "..app.profile..", "..app.punishment..", "..app.reminder.."};
     private static final String[] INJECTED_CLASSES = {
         "net.hypixel.nerdbot.app.badge.BadgeCatalog",
         "net.hypixel.nerdbot.app.badge.BadgeService",
@@ -63,6 +63,7 @@ class ArchitectureRulesTest {
         "net.hypixel.nerdbot.app.command.InfoCommands",
         "net.hypixel.nerdbot.app.command.PackCommands",
         "net.hypixel.nerdbot.app.command.PostCommands",
+        "net.hypixel.nerdbot.app.command.ProfileCommands",
         "net.hypixel.nerdbot.app.command.PunishmentCommands",
         "net.hypixel.nerdbot.app.command.ReminderCommands",
         "net.hypixel.nerdbot.app.command.RoleCommands",
@@ -71,14 +72,17 @@ class ArchitectureRulesTest {
         "net.hypixel.nerdbot.app.command.util.CommandReplies",
         "net.hypixel.nerdbot.app.command.util.PanelId",
         "net.hypixel.nerdbot.app.command.util.ProgressUpdates",
+        "net.hypixel.nerdbot.app.command.util.SuggestionListings",
         "net.hypixel.nerdbot.app.generation.DiscordGenerationContexts",
         "net.hypixel.nerdbot.app.nomination.ActivityRequirements",
         "net.hypixel.nerdbot.app.storage.GreenlitStore",
+        "net.hypixel.nerdbot.app.storage.MissingUserRecordException",
         "net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore",
         "net.hypixel.nerdbot.app.storage.RepositoryGreenlitStore",
         "net.hypixel.nerdbot.app.suggestion.SuggestionAutoArchiver",
         "net.hypixel.nerdbot.app.suggestion.SuggestionCache",
-        "net.hypixel.nerdbot.app.suggestion.SuggestionFactory"
+        "net.hypixel.nerdbot.app.suggestion.SuggestionFactory",
+        "net.hypixel.nerdbot.app.user.BirthdayService"
     };
 
     @Test

@@ -1,14 +1,11 @@
 package net.hypixel.nerdbot.app.command.util;
 
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.hypixel.nerdbot.app.testsupport.MutableClock;
 import net.hypixel.nerdbot.discord.testsupport.CallRecorder;
 import org.junit.jupiter.api.Test;
 
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -92,30 +89,6 @@ class ProgressUpdatesTest {
         });
 
         assertThrows(IllegalStateException.class, () -> progress.report("status"));
-    }
-
-    private static final class MutableClock extends Clock {
-
-        private Instant now = Instant.parse("2026-10-11T12:00:00Z");
-
-        void advance(Duration amount) {
-            now = now.plus(amount);
-        }
-
-        @Override
-        public ZoneId getZone() {
-            return ZoneOffset.UTC;
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            return this;
-        }
-
-        @Override
-        public Instant instant() {
-            return now;
-        }
     }
 
     @Test
