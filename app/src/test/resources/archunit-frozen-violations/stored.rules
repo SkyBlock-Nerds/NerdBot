@@ -1,0 +1,4 @@
+#
+#Sun Oct 11 16:35:19 BST 2026
+no\ classes\ should\ call\ constructor\ where\ new\ Timer(),\ because\ each\ Timer\ is\ its\ own\ thread;\ scheduled\ work\ should\ share\ one\ scheduler=299e577f-31e5-43f5-9399-c9009eb45016
+no\ classes\ that\ reside\ in\ any\ package\ ['..app.command..',\ '..app.listener..']\ should\ call\ method\ where\ RestAction.complete(),\ because\ blocking\ a\ JDA\ event\ or\ interaction\ thread\ stalls\ every\ other\ event;\ use\ queue()\ or\ submit()=595d68b3-3fd4-4344-bae4-65dd8e867ccf
