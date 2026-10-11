@@ -213,7 +213,8 @@ public class ProfileCommands {
 
     public static void updateMojangProfile(Member member, MojangProfile mojangProfile) throws HttpException {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(member.getId()).orElse(null);
+        DiscordUser discordUser = discordUserRepository.findById(member.getId()).toOptional()
+            .orElseThrow(() -> new IllegalStateException("No user record for member " + member.getId()));
         discordUser.setMojangProfile(mojangProfile);
 
         if (!member.getEffectiveName().toLowerCase().contains(mojangProfile.getUsername().toLowerCase())) {
@@ -254,9 +255,7 @@ public class ProfileCommands {
         }
     }
 
-    public static List<MessageEmbed> getActivityEmbeds(Member member) {
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(member.getId()).orElse(null);
+    public static List<MessageEmbed> getActivityEmbeds(Member member, DiscordUser discordUser) {
         LastActivity lastActivity = discordUser.getLastActivity();
 
         List<MessageEmbed> embeds = new ArrayList<>();
@@ -662,7 +661,15 @@ public class ProfileCommands {
             return;
         }
 
-        List<MessageEmbed> activityEmbeds = getActivityEmbeds(event.getMember());
+        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(event.getMember().getId()).orElse(null);
+
+        if (discordUser == null) {
+            event.getHook().editOriginal("User not found").queue();
+            return;
+        }
+
+        List<MessageEmbed> activityEmbeds = getActivityEmbeds(event.getMember(), discordUser);
         event.getHook().editOriginalEmbeds(activityEmbeds.toArray(new MessageEmbed[]{})).queue();
     }
 
@@ -719,7 +726,7 @@ public class ProfileCommands {
     )
     public void myBadges(SlashCommandInteractionEvent event, @SlashOption(required = false) Boolean showPublicly) {
         if (!BotEnvironment.getBot().getDatabase().isConnected()) {
-            event.getHook().editOriginal("Could not connect to database!").queue();
+            event.reply("Could not connect to database!").setEphemeral(true).queue();
             return;
         }
 
