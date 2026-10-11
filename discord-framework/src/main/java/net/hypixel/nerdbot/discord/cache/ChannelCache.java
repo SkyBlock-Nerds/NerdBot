@@ -13,23 +13,27 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class ChannelCache {
 
-    private static final Map<String, GuildChannel> CHANNEL_CACHE = new HashMap<>();
+    // Written from JDA event threads and read from everywhere else
+    private static final Map<String, GuildChannel> CHANNEL_CACHE = new ConcurrentHashMap<>();
 
     public ChannelCache() {
         DiscordUtils.getMainGuild().getChannels().forEach(channel -> {
-            CHANNEL_CACHE.put(channel.getId(), channel);
+            cache(channel);
             log.debug("Cached channel '{}' (ID: {})", channel.getName(), channel.getId());
         });
     }
 
     public static Optional<GuildChannel> getChannelById(String channelId) {
+        if (channelId == null || channelId.isBlank()) {
+            return Optional.empty();
+        }
         return Optional.ofNullable(CHANNEL_CACHE.get(channelId));
     }
 
@@ -40,42 +44,35 @@ public class ChannelCache {
     }
 
     public static Optional<TextChannel> getTextChannelByName(String channelName) {
-        return getChannelByName(channelName)
-            .map(TextChannel.class::cast);
+        return ofType(getChannelByName(channelName), TextChannel.class);
     }
 
     public static Optional<TextChannel> getTextChannelById(String channelId) {
-        return getChannelById(channelId)
-            .map(TextChannel.class::cast);
+        return ofType(getChannelById(channelId), TextChannel.class);
     }
 
     public static Optional<ForumChannel> getForumChannelByName(String channelName) {
-        return getChannelByName(channelName)
-            .filter(channel -> channel instanceof ForumChannel)
-            .map(ForumChannel.class::cast);
+        return ofType(getChannelByName(channelName), ForumChannel.class);
     }
 
     public static Optional<ForumChannel> getForumChannelById(String channelId) {
-        return getChannelById(channelId)
-            .filter(channel -> channel instanceof ForumChannel)
-            .map(ForumChannel.class::cast);
+        return ofType(getChannelById(channelId), ForumChannel.class);
     }
 
     public static Optional<Category> getCategoryByName(String categoryName) {
-        return getChannelByName(categoryName)
-            .filter(channel -> channel instanceof Category)
-            .map(Category.class::cast);
+        return ofType(getChannelByName(categoryName), Category.class);
     }
 
     public static Optional<Category> getCategoryById(String categoryId) {
-        return getChannelById(categoryId)
-            .filter(channel -> channel instanceof Category)
-            .map(Category.class::cast);
+        return ofType(getChannelById(categoryId), Category.class);
+    }
+
+    private static <T> Optional<T> ofType(Optional<GuildChannel> channel, Class<T> type) {
+        return channel.filter(type::isInstance).map(type::cast);
     }
 
     public static Optional<TextChannel> getLogChannel() {
-        return getChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getLogChannelId())
-            .map(TextChannel.class::cast);
+        return getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getLogChannelId());
     }
 
     public static void sendToLogChannel(MessageEmbed embed, MessageEmbed... additional) {
@@ -93,25 +90,32 @@ public class ChannelCache {
     }
 
     public static Optional<TextChannel> getVerifyLogChannel() {
-        return getChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getVerifyLogChannelId())
-            .map(TextChannel.class::cast);
+        return getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getVerifyLogChannelId());
+    }
+
+    static void cache(GuildChannel channel) {
+        CHANNEL_CACHE.put(channel.getId(), channel);
+    }
+
+    static void uncache(String channelId) {
+        CHANNEL_CACHE.remove(channelId);
     }
 
     @SubscribeEvent
     public void onChannelCreate(ChannelCreateEvent event) {
-        CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel().asGuildChannel());
+        cache(event.getChannel().asGuildChannel());
         log.debug("Cached channel '{}' (ID: {}) because it was created", event.getChannel().getName(), event.getChannel().getId());
     }
 
     @SubscribeEvent
     public void onChannelUpdate(GenericChannelUpdateEvent<?> event) {
-        CHANNEL_CACHE.put(event.getChannel().getId(), event.getChannel().asGuildChannel());
+        cache(event.getChannel().asGuildChannel());
         log.debug("Cached channel '{}' (ID: {}) because it was updated", event.getChannel().getName(), event.getChannel().getId());
     }
 
     @SubscribeEvent
     public void onChannelDelete(ChannelDeleteEvent event) {
-        CHANNEL_CACHE.remove(event.getChannel().getId());
+        uncache(event.getChannel().getId());
         log.debug("Removed channel from cache '{}' (ID: {}) because it was deleted", event.getChannel().getName(), event.getChannel().getId());
     }
 }

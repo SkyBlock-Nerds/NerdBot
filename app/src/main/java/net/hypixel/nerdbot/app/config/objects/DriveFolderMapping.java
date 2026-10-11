@@ -3,7 +3,6 @@ package net.hypixel.nerdbot.app.config.objects;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import net.hypixel.nerdbot.app.config.ExampleValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +26,5 @@ public class DriveFolderMapping {
      * Held as a string so a config typo disables one mapping (with a warning)
      * instead of failing the whole config load.
      */
-    @ExampleValue("READER")
     private String accessLevel = "READER";
 }

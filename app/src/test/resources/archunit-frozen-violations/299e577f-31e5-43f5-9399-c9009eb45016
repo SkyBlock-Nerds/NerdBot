@@ -1,0 +1,4 @@
+Constructor <net.hypixel.nerdbot.app.suggestion.SuggestionCache.<init>()> calls constructor <java.util.Timer.<init>()> in (SuggestionCache.java:28)
+Method <net.hypixel.nerdbot.app.command.util.ProgressUpdates.every(java.time.Duration, java.lang.String, java.lang.Runnable)> calls constructor <java.util.Timer.<init>(java.lang.String, boolean)> in (ProgressUpdates.java:27)
+Method <net.hypixel.nerdbot.app.reminder.ReminderDispatcher.schedule(net.hypixel.nerdbot.marmalade.storage.database.model.reminder.Reminder)> calls constructor <java.util.Timer.<init>()> in (ReminderDispatcher.java:23)
+Method <net.hypixel.nerdbot.app.user.BirthdayScheduler.schedule(net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser)> calls constructor <java.util.Timer.<init>()> in (BirthdayScheduler.java:35)

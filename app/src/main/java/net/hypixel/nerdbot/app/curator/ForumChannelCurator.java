@@ -100,7 +100,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                 return output;
             }
 
-            ForumTag greenlitTag = DiscordUtils.getTagByName(forumChannel, suggestionConfig.getGreenlitTag());
+            ForumTag greenlitTag = DiscordUtils.findTagByName(forumChannel, suggestionConfig.getGreenlitTag()).orElse(null);
 
             if (greenlitTag == null) {
                 log.error("Couldn't find the greenlit tag for the forum channel {} (ID: {})!", forumChannel.getName(), forumChannel.getId());
@@ -119,12 +119,8 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
             log.info("Curating forum channel: {} (Channel ID: {})", forumChannel.getName(), forumChannel.getId());
 
             long start = System.currentTimeMillis();
-            List<ThreadChannel> threads = Stream.concat(
-                    forumChannel.getThreadChannels().stream(), // Unarchived Posts
-                    forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
-                )
+            List<ThreadChannel> threads = forumChannel.getThreadChannels().stream()
                 .filter(thread -> !thread.isLocked() && !thread.isArchived())
-                .distinct()
                 .toList();
 
             log.info("Found {} forum post(s) in {}ms", threads.size(), System.currentTimeMillis() - start);
@@ -221,23 +217,17 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                     ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
                     if (autoTagConfig != null && autoTagConfig.getReviewTagName().equalsIgnoreCase(suggestionConfig.getGreenlitTag())) {
                         // Remove the default tag if it exists
-                        ForumTag defaultTag = DiscordUtils.getTagByName(forumChannel, autoTagConfig.getDefaultTagName());
+                        ForumTag defaultTag = DiscordUtils.findTagByName(forumChannel, autoTagConfig.getDefaultTagName()).orElse(null);
                         if (defaultTag != null && tags.contains(defaultTag)) {
                             tags.remove(defaultTag);
                             log.info("Removed auto-tag '{}' from thread '{}' (ID: {}) when greenlit via curator", autoTagConfig.getDefaultTagName(), thread.getName(), thread.getId());
                         }
                     }
 
-                    boolean wasArchived = thread.isArchived();
-
-                    if (wasArchived) {
-                        threadManager = threadManager.setArchived(false);
-                    }
-
                     threadManager = threadManager.setAppliedTags(tags);
 
                     // Handle Archiving and Locking
-                    if (wasArchived || suggestionConfig.isArchiveOnGreenlit()) {
+                    if (suggestionConfig.isArchiveOnGreenlit()) {
                         threadManager = threadManager.setArchived(true);
                     }
 

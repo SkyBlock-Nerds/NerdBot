@@ -5,47 +5,76 @@ import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.nomination.NominationInactivityService;
 import net.hypixel.nerdbot.app.nomination.NominationService;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
-import net.hypixel.nerdbot.marmalade.format.TimeUtils;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 public class UserNominationFeature extends BotFeature {
 
-    public static void nominateUsers() {
-        NominationService.getInstance().runMemberNominationSweep();
+    static final int NOMINATION_DAY = 1;
+    static final int INACTIVITY_CHECK_DAY = 15;
+
+    enum Sweep {
+        MEMBER_NOMINATIONS,
+        NEW_MEMBER_NOMINATIONS,
+        MEMBER_INACTIVITY,
+        NEW_MEMBER_INACTIVITY,
+        ROLE_RESTRICTED_INACTIVITY
     }
 
-    public static void nominateNewMembers() {
-        NominationService.getInstance().runNewMemberNominationSweep();
-    }
+    /**
+     * The feature runs hourly, so each sweep runs on every hour of its day. That's safe because every
+     * sweep only nominates or warns a member once per calendar month.
+     */
+    static List<Sweep> sweepsDueOn(int dayOfMonth, boolean nominationsEnabled, boolean inactivityChecksEnabled) {
+        List<Sweep> sweeps = new ArrayList<>();
 
-    public static void findInactiveUsers() {
-        NominationInactivityService.getInstance().runInactivitySweepForMembers();
-    }
+        if (dayOfMonth == NOMINATION_DAY && nominationsEnabled) {
+            sweeps.add(Sweep.MEMBER_NOMINATIONS);
+            sweeps.add(Sweep.NEW_MEMBER_NOMINATIONS);
+        }
 
-    public static void findInactiveNewMembers() {
-        NominationInactivityService.getInstance().runInactivitySweepForNewMembers();
-    }
+        if (dayOfMonth == INACTIVITY_CHECK_DAY && inactivityChecksEnabled) {
+            sweeps.add(Sweep.MEMBER_INACTIVITY);
+            sweeps.add(Sweep.NEW_MEMBER_INACTIVITY);
+            sweeps.add(Sweep.ROLE_RESTRICTED_INACTIVITY);
+        }
 
-    public static void findInactiveUsersInRoleRestrictedChannels() {
-        NominationInactivityService.getInstance().runRoleRestrictedInactivitySweep();
+        return sweeps;
     }
 
     @Override
     public void onFeatureStart() {
         scheduleAtFixedRate("UserNominationFeature-task", () -> {
-            if (TimeUtils.isDayOfMonth(1) && SkyBlockNerdsBot.config().isNominationsEnabled()) {
-                log.info("Running nomination check");
-                nominateUsers();
-            }
+            List<Sweep> due = sweepsDueOn(
+                LocalDate.now().getDayOfMonth(),
+                SkyBlockNerdsBot.config().isNominationsEnabled(),
+                SkyBlockNerdsBot.config().isInactivityCheckEnabled()
+            );
 
-            if (TimeUtils.isDayOfMonth(15) && SkyBlockNerdsBot.config().isInactivityCheckEnabled()) {
-                log.info("Running inactivity check");
-                findInactiveUsers();
-                findInactiveUsersInRoleRestrictedChannels();
+            for (Sweep sweep : due) {
+                log.info("Running {} sweep", sweep);
+
+                try {
+                    run(sweep);
+                } catch (RuntimeException exception) {
+                    log.error("{} sweep failed", sweep, exception);
+                }
             }
         }, 0, Duration.ofHours(1).toMillis());
+    }
+
+    private static void run(Sweep sweep) {
+        switch (sweep) {
+            case MEMBER_NOMINATIONS -> NominationService.getInstance().runMemberNominationSweep();
+            case NEW_MEMBER_NOMINATIONS -> NominationService.getInstance().runNewMemberNominationSweep();
+            case MEMBER_INACTIVITY -> NominationInactivityService.getInstance().runInactivitySweepForMembers();
+            case NEW_MEMBER_INACTIVITY -> NominationInactivityService.getInstance().runInactivitySweepForNewMembers();
+            case ROLE_RESTRICTED_INACTIVITY -> NominationInactivityService.getInstance().runRoleRestrictedInactivitySweep();
+        }
     }
 
     @Override

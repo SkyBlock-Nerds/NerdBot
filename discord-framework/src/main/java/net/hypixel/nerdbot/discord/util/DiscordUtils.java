@@ -17,6 +17,7 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -67,16 +68,26 @@ public class DiscordUtils {
         return EmojiCache.getEmojiById(emoji);
     }
 
+    /**
+     * @throws NoSuchElementException when the forum has no such tag; use {@link #findTagByName} when that's expected
+     */
     public static ForumTag getTagByName(ForumChannel forumChannel, String name) {
         return getTagByName(forumChannel, name, true);
     }
 
     public static ForumTag getTagByName(ForumChannel forumChannel, String name, boolean ignoreCase) {
-        return forumChannel.getAvailableTags()
-            .stream()
-            .filter(forumTag -> (ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name)))
-            .findFirst()
-            .orElseThrow();
+        return findTagByName(forumChannel, name, ignoreCase)
+            .orElseThrow(() -> new NoSuchElementException("Forum " + forumChannel.getName() + " has no tag named " + name));
+    }
+
+    public static Optional<ForumTag> findTagByName(ForumChannel forumChannel, String name) {
+        return findTagByName(forumChannel, name, true);
+    }
+
+    public static Optional<ForumTag> findTagByName(ForumChannel forumChannel, String name, boolean ignoreCase) {
+        return forumChannel.getAvailableTags().stream()
+            .filter(forumTag -> tagNameMatches(forumTag, name, ignoreCase))
+            .findFirst();
     }
 
     public static boolean hasTagByName(ForumChannel forumChannel, String name) {
@@ -84,9 +95,7 @@ public class DiscordUtils {
     }
 
     public static boolean hasTagByName(ForumChannel forumChannel, String name, boolean ignoreCase) {
-        return forumChannel.getAvailableTags()
-            .stream()
-            .anyMatch(forumTag -> (ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name)));
+        return findTagByName(forumChannel, name, ignoreCase).isPresent();
     }
 
     public static boolean hasTagByName(ThreadChannel threadChannel, String name) {
@@ -94,8 +103,10 @@ public class DiscordUtils {
     }
 
     public static boolean hasTagByName(ThreadChannel threadChannel, String name, boolean ignoreCase) {
-        return threadChannel.getAppliedTags()
-            .stream()
-            .anyMatch(forumTag -> (ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name)));
+        return threadChannel.getAppliedTags().stream().anyMatch(forumTag -> tagNameMatches(forumTag, name, ignoreCase));
+    }
+
+    private static boolean tagNameMatches(ForumTag forumTag, String name, boolean ignoreCase) {
+        return ignoreCase ? forumTag.getName().equalsIgnoreCase(name) : forumTag.getName().equals(name);
     }
 }

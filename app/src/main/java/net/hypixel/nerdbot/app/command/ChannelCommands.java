@@ -24,7 +24,6 @@ import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -84,23 +83,6 @@ public class ChannelCommands {
                     );
                 }
             }
-        });
-    }
-
-    private void sendZipToUser(SlashCommandInteractionEvent event, File zipFile, InteractionHook hook) {
-        event.getUser().openPrivateChannel().queue(privateChannel -> {
-            privateChannel.sendFiles(FileUpload.fromData(zipFile)).queue(
-                success -> hook.editOriginal("Finished! Sent you the archive zip via DM").queue(),
-                error -> {
-                    log.error("Failed to DM archive zip file to user {}", event.getUser().getId(), error);
-                    hook.editOriginal("Finished archiving, but failed to DM the zip file. Sending here instead...")
-                        .setFiles(FileUpload.fromData(zipFile))
-                        .queue(null, sendError -> hook.editOriginal("Failed to send the zip. File path: " + zipFile.getAbsolutePath()).queue());
-                }
-            );
-        }, error -> {
-            log.error("Failed to open DM for user {}", event.getUser().getId(), error);
-            hook.editOriginal("Finished archiving, but could not open DMs to send the zip file. File path: " + zipFile.getAbsolutePath()).queue();
         });
     }
 
@@ -230,7 +212,7 @@ public class ChannelCommands {
             // Check for auto-tag swap configuration
             ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
             if (autoTagConfig != null && autoTagConfig.getReviewTagName().equalsIgnoreCase(tagName)) {
-                ForumTag defaultTag = DiscordUtils.getTagByName(forumChannel, autoTagConfig.getDefaultTagName());
+                ForumTag defaultTag = DiscordUtils.findTagByName(forumChannel, autoTagConfig.getDefaultTagName()).orElse(null);
                 if (defaultTag != null && appliedTags.contains(defaultTag)) {
                     appliedTags.remove(defaultTag);
                     log.info("Removed auto-tag '{}' from thread '{}' (ID: {}) when '{}' tag was applied via /lock", autoTagConfig.getDefaultTagName(), threadChannel.getName(), threadChannel.getId(), tagName);

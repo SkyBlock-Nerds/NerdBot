@@ -154,9 +154,9 @@ public class SuggestionCommandUtils {
             }
 
             link += "\n";
-            link += EmojiCache.getFormattedEmoji(EmojiConfig::getAgreeEmojiId) + " " + StringUtils.COMMA_SEPARATED_FORMAT.format(suggestion.getAgrees())
+            link += EmojiCache.getFormattedEmoji(EmojiConfig::getAgreeEmojiId) + " " + StringUtils.formatWithCommas(suggestion.getAgrees())
                 + "\u3000"
-                + EmojiCache.getFormattedEmoji(EmojiConfig::getDisagreeEmojiId) + " " + StringUtils.COMMA_SEPARATED_FORMAT.format(suggestion.getDisagrees()) + "\n";
+                + EmojiCache.getFormattedEmoji(EmojiConfig::getDisagreeEmojiId) + " " + StringUtils.formatWithCommas(suggestion.getDisagrees()) + "\n";
             links.add(link);
         });
 
@@ -168,7 +168,7 @@ public class SuggestionCommandUtils {
             .setDescription(links.toString())
             .addField(
                 "Total",
-                StringUtils.COMMA_SEPARATED_FORMAT.format(stats.totalSuggestions()),
+                StringUtils.formatWithCommas(stats.totalSuggestions()),
                 true
             );
 
@@ -176,7 +176,7 @@ public class SuggestionCommandUtils {
             statsFields++;
             embedBuilder.addField(
                 EmojiCache.getFormattedEmoji(EmojiConfig::getGreenlitEmojiId),
-                StringUtils.COMMA_SEPARATED_FORMAT.format(stats.greenlitSuggestions()) + " (" + stats.greenlitPercentage() + "%)",
+                StringUtils.formatWithCommas(stats.greenlitSuggestions()) + " (" + stats.greenlitPercentage() + "%)",
                 true
             );
         }
@@ -185,10 +185,10 @@ public class SuggestionCommandUtils {
             statsFields++;
             embedBuilder.addField(
                 "Reactions",
-                EmojiCache.getFormattedEmoji(EmojiConfig::getAgreeEmojiId) + " " + StringUtils.COMMA_SEPARATED_FORMAT.format(stats.totalAgrees()) +
+                EmojiCache.getFormattedEmoji(EmojiConfig::getAgreeEmojiId) + " " + StringUtils.formatWithCommas(stats.totalAgrees()) +
                     "\u3000"
-                    + EmojiCache.getFormattedEmoji(EmojiConfig::getDisagreeEmojiId) + " " + StringUtils.COMMA_SEPARATED_FORMAT.format(stats.totalDisagrees())
-                    + " (Total: " + StringUtils.COMMA_SEPARATED_FORMAT.format(stats.totalReactions()) + ")",
+                    + EmojiCache.getFormattedEmoji(EmojiConfig::getDisagreeEmojiId) + " " + StringUtils.formatWithCommas(stats.totalDisagrees())
+                    + " (Total: " + StringUtils.formatWithCommas(stats.totalReactions()) + ")",
                 true
             );
         }

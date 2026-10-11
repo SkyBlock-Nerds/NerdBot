@@ -1,25 +1,25 @@
 {
   "metricsConfig": {
-    "enabled": true,
-    "port": 1
+    "enabled": false,
+    "port": 9190
   },
   "suggestionConfig": {
     "reviewRequestConfig": {
-      "enabled": true,
+      "enabled": false,
       "channelId": "1234567890123456789",
-      "threshold": 1,
-      "enforceGreenlitRatio": true,
-      "minimumSuggestionAge": 1
+      "threshold": 15,
+      "enforceGreenlitRatio": false,
+      "minimumSuggestionAge": 604800000
     },
     "forumChannelId": "1234567890123456789",
-    "greenlitTag": "example_value",
-    "reviewedTag": "example_value",
-    "greenlitThreshold": 1,
-    "greenlitRatio": 1.0,
-    "archiveOnGreenlit": true,
-    "lockOnGreenlit": true,
-    "autoArchiveThreshold": 1,
-    "autoLockThreshold": 1
+    "greenlitTag": "Greenlit",
+    "reviewedTag": "Reviewed",
+    "greenlitThreshold": 20,
+    "greenlitRatio": 75.0,
+    "archiveOnGreenlit": false,
+    "lockOnGreenlit": false,
+    "autoArchiveThreshold": 168,
+    "autoLockThreshold": -1
   },
   "alphaProjectConfig": {
     "alphaForumIds": [
@@ -29,8 +29,8 @@
       "1234567890123456789"
     ],
     "autoCreateTags": true,
-    "autoArchiveThreshold": 1,
-    "autoLockThreshold": 1
+    "autoArchiveThreshold": 168,
+    "autoLockThreshold": -1
   },
   "badgeConfig": {
     "badges": [
@@ -45,89 +45,43 @@
     "autoReactions": {
       "example_value": "example_value"
     },
-    "aprilFoolsReactionChance": 1.0,
+    "aprilFoolsReactionChance": 0.1,
     "aprilFoolsReactionEmoji": "example_value",
-    "aprilFoolsTimezone": "example_value"
+    "aprilFoolsTimezone": "UTC"
   },
   "generatorConfig": {
-    "playerHead": {
-      "defaultSkinTexture": "example_value",
-      "defaultScale": 1,
-      "maxScale": 1,
-      "minScale": 1
-    },
-    "tooltip": {
-      "defaultMaxLineLength": 1,
-      "defaultAlpha": 1,
-      "defaultPadding": 1,
-      "defaultRenderBorder": true,
-      "defaultCenteredText": true,
-      "maxLineLength": 1,
-      "minLineLength": 1
-    },
-    "item": {
-      "defaultEnchanted": true,
-      "defaultHoverEffect": true,
-      "defaultDurabilityPercent": 1
-    },
     "inventory": {
-      "defaultDrawBorder": true,
-      "defaultDrawBackground": true,
-      "maxRows": 1,
-      "maxColumns": 1,
-      "minRows": 1,
-      "minColumns": 1,
-      "animateGlint": true
-    },
-    "cache": {
-      "enabled": true,
-      "maxSize": 1,
-      "ttlMinutes": 1
-    },
-    "general": {
-      "defaultScaleFactor": 1,
-      "defaultPadding": 1,
-      "maxScaleFactor": 1,
-      "minScaleFactor": 1,
-      "debugLogging": true,
-      "includeErrorDetails": true
+      "animateGlint": false
     },
     "resourcePacks": {
       "packs": [
         {
-          "id": "1234567890123456789",
-          "path": "example_value",
-          "tooltipStyles": {
-            "example_value": "example_value"
-          },
-          "textColorRemap": {
-            "example_value": "example_value"
-          },
-          "variantOf": "example_value",
+          "id": "hypixel:skyblock",
+          "path": "/app/packs/hypixel_skyblock.zip",
+          "tooltipStyles": {},
+          "textColorRemap": {},
           "autoUpdate": {
-            "enabled": true,
-            "hypixelPackId": "1234567890123456789",
+            "enabled": false,
+            "hypixelPackId": "SkyBlock",
             "source": {
-              "type": "example_value",
-              "url": "https://example.com/",
-              "downloadUrlTemplate": "https://example.com/"
+              "type": "deploy-index",
+              "url": "https://example.com/skyblock-pack-index.json",
+              "downloadUrlTemplate": "https://resourcepacks.hypixel.net/SkyBlock/{deployId}/{format}.zip"
             },
-            "minItemRatio": 1.0,
-            "sampleItems": [
-              "example_value"
-            ]
+            "minItemRatio": 0.5,
+            "sampleItems": []
           }
         }
       ],
-      "defaultPack": "example_value",
+      "defaultPack": "hypixel:skyblock",
       "autoUpdate": {
-        "apiUrl": "https://example.com/",
-        "cacheDir": "example_value",
+        "apiUrl": "https://api.hypixel.net/v2/resources/packs",
+        "cacheDir": "/app/data/packs",
         "allowedDownloadHosts": [
-          "example_value"
+          "resourcepacks.hypixel.net"
         ],
-        "maxDownloadBytes": 1,
-        "maxRejectedHashes": 1
+        "maxDownloadBytes": 67108864,
+        "maxRejectedHashes": 20
       }
     }
   },
@@ -145,20 +99,20 @@
     "sendNotificationEmails": true,
     "notificationEmailMessage": "This folder was shared automatically by the SkyBlock Nerds bot based on your Discord roles."
   },
-  "messageLimit": 1,
-  "mojangUsernameCacheTTL": 1,
-  "mojangForceNicknameUpdate": true,
-  "voiceThreshold": 1,
+  "messageLimit": 100,
+  "mojangUsernameCacheTTL": 12,
+  "mojangForceNicknameUpdate": false,
+  "voiceThreshold": 60,
   "nominationsEnabled": true,
   "inactivityCheckEnabled": true,
-  "inactivityDays": 1,
-  "inactivityMessages": 1,
+  "inactivityDays": 7,
+  "inactivityMessages": 10,
   "features": [
     {
       "enabled": true,
-      "className": "example_value",
-      "initialDelayMs": 1,
-      "periodMs": 1
+      "className": "net.hypixel.nerdbot.app.feature.CurateFeature",
+      "initialDelayMs": 0,
+      "periodMs": 3600000
     }
   ],
   "guildId": "1234567890123456789",
@@ -189,11 +143,11 @@
         "emojiIds": [
           "1234567890123456789"
         ],
-        "thread": true
+        "thread": false
       }
     ],
     "blacklistedChannels": [
-      "example_value"
+      "1234567890123456789"
     ],
     "customForumTags": [
       {
@@ -211,21 +165,21 @@
         "requiredRoleIds": [
           "1234567890123456789"
         ],
-        "minimumMessagesForActivity": 1,
-        "minimumVotesForActivity": 1,
+        "minimumMessagesForActivity": 5,
+        "minimumVotesForActivity": 2,
         "minimumCommentsForActivity": 1,
-        "activityCheckDays": 1,
+        "activityCheckDays": 30,
         "votingNotificationsEnabled": true
       }
     ],
     "autoManageRoleRestrictedChannels": true,
-    "defaultMinimumMessagesForActivity": 1,
-    "defaultMinimumVotesForActivity": 1,
+    "defaultMinimumMessagesForActivity": 5,
+    "defaultMinimumVotesForActivity": 2,
     "defaultMinimumCommentsForActivity": 1,
-    "defaultActivityCheckDays": 1,
+    "defaultActivityCheckDays": 30,
     "autoPinFirstMessage": true,
     "autoPinBlacklistedChannels": [
-      "example_value"
+      "1234567890123456789"
     ],
     "projectChannelNames": [
       "example_value"
@@ -245,15 +199,15 @@
     "memberRoleId": "1234567890123456789",
     "newMemberRoleId": "1234567890123456789",
     "limboRoleId": "1234567890123456789",
-    "currentlyPromotingUsers": true,
-    "minimumVotesRequiredForPromotion": 1,
-    "minimumCommentsRequiredForPromotion": 1,
-    "minimumMessagesRequiredForPromotion": 1,
-    "daysRequiredForVoteHistory": 1,
-    "daysRequiredForInactivityCheck": 1,
-    "messagesRequiredForInactivityCheck": 1,
-    "votesRequiredForInactivityCheck": 1,
-    "commentsRequiredForInactivityCheck": 1,
+    "currentlyPromotingUsers": false,
+    "minimumVotesRequiredForPromotion": 100,
+    "minimumCommentsRequiredForPromotion": 100,
+    "minimumMessagesRequiredForPromotion": 10,
+    "daysRequiredForVoteHistory": 90,
+    "daysRequiredForInactivityCheck": 30,
+    "messagesRequiredForInactivityCheck": 100,
+    "votesRequiredForInactivityCheck": 25,
+    "commentsRequiredForInactivityCheck": 100,
     "pingableRoles": [
       {
         "name": "example_value",
@@ -263,7 +217,7 @@
     "promotionTierRoleIds": [
       "1234567890123456789"
     ],
-    "newMemberNominationMinDays": 1
+    "newMemberNominationMinDays": 30
   },
   "emojiConfig": {
     "agreeEmojiId": "1234567890123456789",
@@ -271,6 +225,6 @@
     "neutralEmojiId": "1234567890123456789",
     "greenlitEmojiId": "1234567890123456789"
   },
-  "activityType": "PLAYING",
-  "activity": "example_value"
+  "activityType": "WATCHING",
+  "activity": "with a default message!"
 }

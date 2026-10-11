@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.discord.config.channel;
 
+import net.hypixel.nerdbot.discord.config.ExampleValue;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -33,6 +34,8 @@ public class ChannelConfig {
 
     private List<ReactionChannel> reactionChannels = List.of();
 
+    @ExampleValue("1234567890123456789")
+
     private String[] blacklistedChannels = {};
 
     private List<CustomForumTag> customForumTags = List.of();
@@ -47,6 +50,7 @@ public class ChannelConfig {
     private int defaultActivityCheckDays = 30;
 
     private boolean autoPinFirstMessage = true;
+    @ExampleValue("1234567890123456789")
     private String[] autoPinBlacklistedChannels = {};
 
     private String[] projectChannelNames = {};

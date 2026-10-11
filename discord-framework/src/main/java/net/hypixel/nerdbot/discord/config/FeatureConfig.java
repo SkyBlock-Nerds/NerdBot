@@ -20,16 +20,19 @@ public class FeatureConfig {
      * Must implement {@code net.hypixel.nerdbot.discord.api.feature.BotFeature}
      * and provide a public no-argument constructor.
      */
+    @ExampleValue("net.hypixel.nerdbot.app.feature.CurateFeature")
     private String className;
 
     /**
      * Optional initial delay in milliseconds before the feature's periodic task first runs.
      */
+    @ExampleValue("0")
     private Long initialDelayMs;
 
     /**
      * Optional repeating period in milliseconds for the feature's task.
      */
+    @ExampleValue("3600000")
     private Long periodMs;
 
 }

@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.config;
 
+import net.hypixel.nerdbot.discord.config.ExampleValue;
 import lombok.Getter;
 
 import java.util.HashMap;
@@ -22,6 +23,7 @@ public class FunConfig {
      * <br>
      * If not set (null), the feature is disabled.
      */
+    @ExampleValue("0.1")
     private Double aprilFoolsReactionChance;
 
     /**
@@ -36,6 +38,7 @@ public class FunConfig {
      * <br>
      * If not set (null), defaults to the JVM's system timezone.
      */
+    @ExampleValue("UTC")
     private String aprilFoolsTimezone;
 
 }
