@@ -75,7 +75,7 @@ public class ProfileCommands {
 
     /**
      * The order badges are displayed in: tiered badges first, higher tiers before lower, then
-     * non-tiered badges most-recently-obtained first.
+     * most-recently-obtained first among equal tiers and non-tiered badges.
      *
      * <p>Extracted from {@link #createBadgesEmbed} so the ordering can be unit-tested. Resolves
      * badge metadata through the static {@link BadgeManager}.
@@ -85,11 +85,11 @@ public class ProfileCommands {
     static Comparator<BadgeEntry> badgeDisplayComparator() {
         return (o1, o2) -> {
             if (BadgeManager.isTieredBadge(o1.badgeId()) && BadgeManager.isTieredBadge(o2.badgeId())) {
-                TieredBadge tieredBadge1 = BadgeManager.getTieredBadgeById(o1.badgeId());
-                TieredBadge tieredBadge2 = BadgeManager.getTieredBadgeById(o2.badgeId());
-
                 if (o1.tier() != null && o2.tier() != null) {
-                    return Integer.compare(tieredBadge2.getTier(o2.tier()).getTier(), tieredBadge1.getTier(o1.tier()).getTier());
+                    int byTier = Integer.compare(o2.tier(), o1.tier());
+                    if (byTier != 0) {
+                        return byTier;
+                    }
                 } else if (o1.tier() != null) {
                     return -1;
                 } else if (o2.tier() != null) {
@@ -105,6 +105,22 @@ public class ProfileCommands {
         };
     }
 
+    static String formatBadgeEntry(BadgeEntry badgeEntry) {
+        Badge badge = BadgeManager.getBadgeById(badgeEntry.badgeId());
+        String name;
+
+        // Reconciliation prunes unknown badge ids, but a badge removed from config can still be shown before it runs
+        if (badge == null) {
+            name = badgeEntry.badgeId();
+        } else if (badge instanceof TieredBadge tieredBadge && badgeEntry.tier() != null && badgeEntry.tier() >= 1) {
+            name = tieredBadge.getFormattedName(badgeEntry.tier());
+        } else {
+            name = badge.getFormattedName();
+        }
+
+        return "**" + name + "**\nObtained on " + DateFormatUtils.format(badgeEntry.obtainedAt(), "MMMM dd, yyyy");
+    }
+
     public static MessageEmbed createBadgesEmbed(Member member, DiscordUser discordUser, boolean viewingSelf) {
         List<BadgeEntry> badges = discordUser.getBadges().stream()
             .sorted(badgeDisplayComparator())
@@ -113,20 +129,10 @@ public class ProfileCommands {
         EmbedBuilder embedBuilder = new EmbedBuilder()
             .setTitle(viewingSelf ? "Your Badges" : (member.getEffectiveName().endsWith("s") ? member.getEffectiveName() + "'" : member.getEffectiveName() + "'s") + " Badges")
             .setColor(Color.PINK)
-            .setDescription(badges.stream().map(badgeEntry -> {
-                Badge badge = BadgeManager.getBadgeById(badgeEntry.badgeId());
-                StringBuilder stringBuilder = new StringBuilder("**");
-
-                if (BadgeManager.isTieredBadge(badgeEntry.badgeId()) && badgeEntry.tier() != null && badgeEntry.tier() >= 1) {
-                    TieredBadge tieredBadge = BadgeManager.getTieredBadgeById(badgeEntry.badgeId());
-                    stringBuilder.append(tieredBadge.getTier(badgeEntry.tier()).getFormattedName());
-                } else {
-                    stringBuilder.append(badge.getFormattedName());
-                }
-
-                stringBuilder.append("**\nObtained on ").append(DateFormatUtils.format(badgeEntry.obtainedAt(), "MMMM dd, yyyy"));
-                return stringBuilder.toString();
-            }).reduce((s, s2) -> s + "\n\n" + s2).orElse("No badges :("));
+            .setDescription(badges.stream()
+                .map(ProfileCommands::formatBadgeEntry)
+                .reduce((s, s2) -> s + "\n\n" + s2)
+                .orElse("No badges :("));
 
         if (discordUser.getBadges().isEmpty()) {
             embedBuilder.setImage("https://i.imgur.com/fs71kmJ.png");

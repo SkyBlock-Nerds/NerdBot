@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Ordering a user's badges for display: tiered badges before non-tiered, higher tiers before lower,
- * a tiered entry with a tier before one without, then non-tiered by most-recently-obtained.
+ * a tiered entry with a tier before one without, then most-recently-obtained among equal tiers and non-tiered.
  */
 class BadgeDisplayOrderTest {
 
@@ -49,6 +49,28 @@ class BadgeDisplayOrderTest {
         List<BadgeEntry> sorted = Stream.of(low, high).sorted(ProfileCommands.badgeDisplayComparator()).toList();
 
         assertEquals(List.of(high, low), sorted);
+    }
+
+    @Test
+    void tierMissingFromConfigStillSortsByTierNumber() {
+        registerTieredBadge();
+        BadgeEntry configured = new BadgeEntry("tiered", 2, 1L);
+        BadgeEntry unconfigured = new BadgeEntry("tiered", 5, 1L);
+
+        List<BadgeEntry> sorted = Stream.of(configured, unconfigured).sorted(ProfileCommands.badgeDisplayComparator()).toList();
+
+        assertEquals(List.of(unconfigured, configured), sorted);
+    }
+
+    @Test
+    void sameTierFallsBackToMostRecentlyObtained() {
+        registerTieredBadge();
+        BadgeEntry older = new BadgeEntry("tiered", 1, 100L);
+        BadgeEntry newer = new BadgeEntry("tiered", 1, 200L);
+
+        List<BadgeEntry> sorted = Stream.of(older, newer).sorted(ProfileCommands.badgeDisplayComparator()).toList();
+
+        assertEquals(List.of(newer, older), sorted);
     }
 
     @Test
