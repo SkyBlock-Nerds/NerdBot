@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.activity;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -42,6 +43,10 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ActivityListener {
     private final Map<Long, Long> voiceActivity = new HashMap<>();
+
+    @Inject
+    public ActivityListener() {
+    }
 
     @SubscribeEvent
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {

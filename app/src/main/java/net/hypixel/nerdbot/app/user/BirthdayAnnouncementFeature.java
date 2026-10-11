@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.user;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore;
@@ -18,6 +19,10 @@ public class BirthdayAnnouncementFeature extends BotFeature {
 
     private static final long INITIAL_DELAY_MS = TimeUnit.MINUTES.toMillis(1);
     private static final long PERIOD_MS = TimeUnit.HOURS.toMillis(1);
+
+    @Inject
+    public BirthdayAnnouncementFeature() {
+    }
 
     @Override
     public void onFeatureStart() {

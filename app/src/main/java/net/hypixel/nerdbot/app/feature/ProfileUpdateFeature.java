@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.feature;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -29,6 +30,10 @@ import java.util.Locale;
 
 @Slf4j
 public class ProfileUpdateFeature extends BotFeature implements SchedulableFeature {
+
+    @Inject
+    public ProfileUpdateFeature() {
+    }
 
     public static void updateNickname(DiscordUser discordUser) {
         MojangProfile existingProfile = discordUser.getMojangProfile();

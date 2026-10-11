@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.listener;
 
+import jakarta.inject.Inject;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Invite;
@@ -30,6 +31,10 @@ import java.awt.Color;
 import java.time.LocalTime;
 
 public class ModLogListener {
+
+    @Inject
+    public ModLogListener() {
+    }
 
     @SubscribeEvent
     public void onJoin(GuildMemberJoinEvent event) {

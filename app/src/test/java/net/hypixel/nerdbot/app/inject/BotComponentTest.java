@@ -10,6 +10,8 @@ import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashModalHandler;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.hooks.SubscribeEvent;
+import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.testsupport.Fakes;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.PunishmentRepository;
@@ -18,13 +20,16 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -52,6 +57,22 @@ class BotComponentTest {
     }
 
     @Test
+    void registersEveryEventListenerExactlyOnce() {
+        Set<Class<?>> registered = component.eventListeners().stream().map(Object::getClass).collect(Collectors.toSet());
+
+        assertEquals(appClasses(type -> Arrays.stream(type.getDeclaredMethods()).anyMatch(method -> method.isAnnotationPresent(SubscribeEvent.class))), registered);
+        assertEquals(registered.size(), component.eventListeners().size());
+    }
+
+    @Test
+    void everyFeatureCanBeBuilt() {
+        Set<Class<?>> features = appClasses(type -> BotFeature.class.isAssignableFrom(type) && !Modifier.isAbstract(type.getModifiers()));
+
+        assertEquals(features, component.features().keySet());
+        component.features().forEach((type, provider) -> assertInstanceOf(type, provider.get()));
+    }
+
+    @Test
     void theSchedulerIsSharedAcrossTheComponent() {
         assertSame(component.scheduler(), component.scheduler());
         assertSame(component.reminderScheduler(), component.reminderScheduler());
@@ -66,12 +87,16 @@ class BotComponentTest {
     }
 
     private static Set<Class<?>> commandClasses() {
+        return appClasses(type -> Arrays.stream(type.getDeclaredMethods()).anyMatch(BotComponentTest::isHandler));
+    }
+
+    private static Set<Class<?>> appClasses(Predicate<Class<?>> matching) {
         return new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
             .importPackages("net.hypixel.nerdbot.app")
             .stream()
             .map(JavaClass::reflect)
-            .filter(type -> Arrays.stream(type.getDeclaredMethods()).anyMatch(BotComponentTest::isHandler))
+            .filter(matching)
             .collect(Collectors.toSet());
     }
 

@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.listener;
 
+import jakarta.inject.Inject;
 import com.vdurmont.emoji.EmojiParser;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
@@ -15,6 +16,10 @@ import java.util.Optional;
 
 @Slf4j
 public class ReactionChannelListener {
+
+    @Inject
+    public ReactionChannelListener() {
+    }
 
     @SubscribeEvent
     public void onMessageReceive(MessageReceivedEvent event) {

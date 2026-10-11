@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.listener;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageType;
@@ -18,6 +19,10 @@ public class PinListener {
 
     private final Emoji pushpin = Emoji.fromUnicode("\uD83D\uDCCC");
     private final Emoji roundPushpin = Emoji.fromUnicode("\uD83D\uDCCD");
+
+    @Inject
+    public PinListener() {
+    }
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {

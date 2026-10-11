@@ -1,21 +1,34 @@
 package net.hypixel.nerdbot.app.feature;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.nomination.NominationInactivityService;
 import net.hypixel.nerdbot.app.nomination.NominationService;
+import net.hypixel.nerdbot.app.nomination.SweepLog;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.time.YearMonth;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
+/**
+ * Runs the monthly nomination sweeps from the 1st and the inactivity sweeps from the 15th. Each
+ * batch runs once a month, on its day or as soon after it as the bot is up, and is only logged as
+ * done once every sweep in it has finished; a failed batch is tried again an hour later.
+ */
 @Slf4j
 public class UserNominationFeature extends BotFeature {
 
     static final int NOMINATION_DAY = 1;
     static final int INACTIVITY_CHECK_DAY = 15;
+    private static final Duration CHECK_PERIOD = Duration.ofHours(1);
 
     enum Sweep {
         MEMBER_NOMINATIONS,
@@ -25,46 +38,91 @@ public class UserNominationFeature extends BotFeature {
         ROLE_RESTRICTED_INACTIVITY
     }
 
-    /**
-     * The feature runs hourly, so each sweep runs on every hour of its day. That's safe because every
-     * sweep only nominates or warns a member once per calendar month.
-     */
-    static List<Sweep> sweepsDueOn(int dayOfMonth, boolean nominationsEnabled, boolean inactivityChecksEnabled) {
-        List<Sweep> sweeps = new ArrayList<>();
+    /** Sweeps that run together, from their day of the month on. */
+    enum Batch {
+        NOMINATIONS("nominations", NOMINATION_DAY, NerdBotConfig::isNominationsEnabled,
+            List.of(Sweep.MEMBER_NOMINATIONS, Sweep.NEW_MEMBER_NOMINATIONS)),
+        INACTIVITY_CHECKS("inactivity-checks", INACTIVITY_CHECK_DAY, NerdBotConfig::isInactivityCheckEnabled,
+            List.of(Sweep.MEMBER_INACTIVITY, Sweep.NEW_MEMBER_INACTIVITY, Sweep.ROLE_RESTRICTED_INACTIVITY));
 
-        if (dayOfMonth == NOMINATION_DAY && nominationsEnabled) {
-            sweeps.add(Sweep.MEMBER_NOMINATIONS);
-            sweeps.add(Sweep.NEW_MEMBER_NOMINATIONS);
+        final String key;
+        final int day;
+        final Predicate<NerdBotConfig> enabled;
+        final List<Sweep> sweeps;
+
+        Batch(String key, int day, Predicate<NerdBotConfig> enabled, List<Sweep> sweeps) {
+            this.key = key;
+            this.day = day;
+            this.enabled = enabled;
+            this.sweeps = sweeps;
         }
+    }
 
-        if (dayOfMonth == INACTIVITY_CHECK_DAY && inactivityChecksEnabled) {
-            sweeps.add(Sweep.MEMBER_INACTIVITY);
-            sweeps.add(Sweep.NEW_MEMBER_INACTIVITY);
-            sweeps.add(Sweep.ROLE_RESTRICTED_INACTIVITY);
-        }
+    private final SweepLog sweepLog;
+    private final Clock clock;
+    private final Provider<NerdBotConfig> config;
+    private final Consumer<Sweep> runner;
 
-        return sweeps;
+    @Inject
+    public UserNominationFeature(SweepLog sweepLog, Clock clock, Provider<NerdBotConfig> config) {
+        this(sweepLog, clock, config, UserNominationFeature::run);
+    }
+
+    UserNominationFeature(SweepLog sweepLog, Clock clock, Provider<NerdBotConfig> config, Consumer<Sweep> runner) {
+        this.sweepLog = sweepLog;
+        this.clock = clock;
+        this.config = config;
+        this.runner = runner;
     }
 
     @Override
     public void onFeatureStart() {
-        scheduleAtFixedRate("UserNominationFeature-task", () -> {
-            List<Sweep> due = sweepsDueOn(
-                LocalDate.now().getDayOfMonth(),
-                SkyBlockNerdsBot.config().isNominationsEnabled(),
-                SkyBlockNerdsBot.config().isInactivityCheckEnabled()
-            );
+        scheduleAtFixedRate("UserNominationFeature-task", this::runDueSweeps, 0, CHECK_PERIOD.toMillis());
+    }
 
-            for (Sweep sweep : due) {
-                log.info("Running {} sweep", sweep);
+    void runDueSweeps() {
+        LocalDate today = LocalDate.now(clock);
+        YearMonth month = YearMonth.from(today);
+        NerdBotConfig current = config.get();
 
-                try {
-                    run(sweep);
-                } catch (RuntimeException exception) {
-                    log.error("{} sweep failed", sweep, exception);
-                }
+        for (Batch batch : Batch.values()) {
+            if (!batch.enabled.test(current) || today.getDayOfMonth() < batch.day) {
+                continue;
             }
-        }, 0, Duration.ofHours(1).toMillis());
+
+            Optional<YearMonth> lastRun = sweepLog.lastRun(batch.key);
+            if (lastRun.isPresent() && !lastRun.get().isBefore(month)) {
+                continue;
+            }
+
+            // Before runs were logged, every batch ran on its own day, so this month's already happened
+            if (lastRun.isEmpty() && today.getDayOfMonth() > batch.day) {
+                log.info("No {} run is logged yet; counting {} as done", batch.key, month);
+                sweepLog.recordRun(batch.key, month);
+                continue;
+            }
+
+            if (runAll(batch)) {
+                sweepLog.recordRun(batch.key, month);
+            }
+        }
+    }
+
+    private boolean runAll(Batch batch) {
+        boolean finished = true;
+
+        for (Sweep sweep : batch.sweeps) {
+            log.info("Running {} sweep", sweep);
+
+            try {
+                runner.accept(sweep);
+            } catch (RuntimeException exception) {
+                log.error("{} sweep failed; the {} batch will be tried again", sweep, batch.key, exception);
+                finished = false;
+            }
+        }
+
+        return finished;
     }
 
     private static void run(Sweep sweep) {

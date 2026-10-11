@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.feature;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -29,6 +30,10 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
      */
     private static final long DEFAULT_PERIOD_MS = Duration.ofHours(12).toMillis();
 
+    @Inject
+    public CurateFeature() {
+    }
+
     @Override
     public void onFeatureStart() {
     }
@@ -48,27 +53,26 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
             return;
         }
 
-        BotEnvironment.EXECUTOR_SERVICE.execute(() -> {
-            Database database = BotEnvironment.getBot().getDatabase();
-            Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumChannelCurator(BotEnvironment.getBot().isReadOnly());
-            ForumChannel channel = forumChannel.get();
-            log.info("Processing suggestion forum channel '{}' (ID: {})", channel.getName(), channel.getId());
+        // Curating here rather than handing it off means a slow run can't overlap the next one
+        Database database = BotEnvironment.getBot().getDatabase();
+        Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumChannelCurator(BotEnvironment.getBot().isReadOnly());
+        ForumChannel channel = forumChannel.get();
+        log.info("Processing suggestion forum channel '{}' (ID: {})", channel.getName(), channel.getId());
 
-            List<GreenlitMessage> result = forumChannelCurator.curate(channel);
-            if (result.isEmpty()) {
-                log.info("No new suggestions were greenlit from ID {} this time!", channel.getId());
-            } else {
-                log.info("Greenlit {} new suggestions from ID {}. Took {}ms!", result.size(), channel.getId(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime());
-            }
+        List<GreenlitMessage> result = forumChannelCurator.curate(channel);
+        if (result.isEmpty()) {
+            log.info("No new suggestions were greenlit from ID {} this time!", channel.getId());
+        } else {
+            log.info("Greenlit {} new suggestions from ID {}. Took {}ms!", result.size(), channel.getId(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime());
+        }
 
-            result.forEach(greenlitMessage -> {
-                GreenlitMessageRepository greenlitMessageRepository = database.getRepositoryManager().getRepository(GreenlitMessageRepository.class);
-                greenlitMessageRepository.cacheObject(greenlitMessage);
-                PrometheusMetrics.GREENLIT_SUGGESTION_LENGTH.observe(greenlitMessage.getSuggestionContent().length());
-            });
-            log.info("Inserted {} new greenlit messages into the database!", result.size());
-            PrometheusMetrics.TOTAL_GREENLIT_MESSAGES_AMOUNT.inc(result.size());
+        result.forEach(greenlitMessage -> {
+            GreenlitMessageRepository greenlitMessageRepository = database.getRepositoryManager().getRepository(GreenlitMessageRepository.class);
+            greenlitMessageRepository.cacheObject(greenlitMessage);
+            PrometheusMetrics.GREENLIT_SUGGESTION_LENGTH.observe(greenlitMessage.getSuggestionContent().length());
         });
+        log.info("Inserted {} new greenlit messages into the database!", result.size());
+        PrometheusMetrics.TOTAL_GREENLIT_MESSAGES_AMOUNT.inc(result.size());
     }
 
     @Override

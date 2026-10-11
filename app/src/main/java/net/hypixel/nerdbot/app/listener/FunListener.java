@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.listener;
 
+import jakarta.inject.Inject;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.app.config.FunConfig;
@@ -11,6 +12,10 @@ import java.time.ZoneId;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class FunListener {
+
+    @Inject
+    public FunListener() {
+    }
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {

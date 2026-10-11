@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.feature;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.config.GeneratorConfig;
@@ -21,6 +22,10 @@ public class ResourcePackUpdateFeature extends BotFeature implements Schedulable
 
     private static final long DEFAULT_INITIAL_DELAY_MS = 60_000L;
     private static final long DEFAULT_PERIOD_MS = 900_000L;
+
+    @Inject
+    public ResourcePackUpdateFeature() {
+    }
 
     @Override
     public void onFeatureStart() {
