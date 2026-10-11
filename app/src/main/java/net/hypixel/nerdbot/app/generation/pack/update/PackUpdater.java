@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -48,6 +49,7 @@ public class PackUpdater {
     private final GeneratorConfig.AutoUpdateSettings settings;
     private final PackUpdateListener listener;
     private final Clock clock;
+    private final BiFunction<HypixelPackApiClient, GeneratorConfig.PackAutoUpdate, ReleaseSource> releaseSources;
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, Integer> consecutiveTransientFailures = new ConcurrentHashMap<>();
     private final Map<String, RecordedOutcome> lastOutcomes = new ConcurrentHashMap<>();
@@ -57,6 +59,12 @@ public class PackUpdater {
 
     public PackUpdater(ResourcePackService packService, HypixelPackApiClient apiClient, PackDownloader downloader,
                        PackCacheStore store, GeneratorConfig.AutoUpdateSettings settings, PackUpdateListener listener, Clock clock) {
+        this(packService, apiClient, downloader, store, settings, listener, clock, ReleaseSources::forDefinition);
+    }
+
+    PackUpdater(ResourcePackService packService, HypixelPackApiClient apiClient, PackDownloader downloader,
+                PackCacheStore store, GeneratorConfig.AutoUpdateSettings settings, PackUpdateListener listener, Clock clock,
+                BiFunction<HypixelPackApiClient, GeneratorConfig.PackAutoUpdate, ReleaseSource> releaseSources) {
         this.packService = packService;
         this.apiClient = apiClient;
         this.downloader = downloader;
@@ -64,6 +72,7 @@ public class PackUpdater {
         this.settings = settings;
         this.listener = listener;
         this.clock = clock;
+        this.releaseSources = releaseSources;
     }
 
     public PackCacheStore store() {
@@ -211,7 +220,7 @@ public class PackUpdater {
         String packId = packIdOf(definition);
         GeneratorConfig.PackAutoUpdate autoUpdate = definition.getAutoUpdate();
 
-        Result<PackRelease, HttpException> fetched = ReleaseSources.forDefinition(apiClient, autoUpdate).latest();
+        Result<PackRelease, HttpException> fetched = releaseSources.apply(apiClient, autoUpdate).latest();
         if (fetched instanceof Result.Failure<PackRelease, HttpException> failure) {
             return transientFailure(packId, failure.error().getMessage(), failure.error());
         }
@@ -340,6 +349,7 @@ public class PackUpdater {
             String partKey = selected.sha1() != null ? selected.sha1() : deployKey.replace('/', '-');
             Result<DownloadResult, HttpException> downloaded = downloader.download(selected.url(), store.partPath(partKey));
             if (downloaded instanceof Result.Failure<DownloadResult, HttpException> failure) {
+                store.deletePart(partKey);
                 HttpException error = failure.error();
                 if (error instanceof DownloadRejectedException) {
                     return reject(packId, label, deployKey, selected.packFormat(), error.getMessage(), fingerprint);

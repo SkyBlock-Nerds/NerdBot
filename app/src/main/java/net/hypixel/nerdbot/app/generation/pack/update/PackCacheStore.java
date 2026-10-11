@@ -40,6 +40,7 @@ public class PackCacheStore {
     private static final String STATE_FILE = "pack-state.json";
     private static final String ZIP_SUFFIX = ".zip";
     private static final String PART_SUFFIX = ".zip.part";
+    private static final String STATE_TEMP_FILE = STATE_FILE + ".tmp";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private final Path cacheDir;
@@ -314,8 +315,8 @@ public class PackCacheStore {
     }
 
     /**
-     * Deletes every zip that no current or previous slot references, and every leftover partial
-     * download. A file still open (Windows, during a release grace period) is left for next time.
+     * Deletes every zip that no current or previous slot references, every leftover partial
+     * download, and a state temp file left by a failed write. A file still open (Windows, during a release grace period) is left for next time.
      */
     public synchronized void cleanup() {
         if (stateUnreadable) {
@@ -328,7 +329,7 @@ public class PackCacheStore {
             for (Path file : files) {
                 String name = file.getFileName().toString();
                 boolean staleZip = name.endsWith(ZIP_SUFFIX) && !keep.contains(name);
-                if (staleZip || name.endsWith(PART_SUFFIX)) {
+                if (staleZip || name.endsWith(PART_SUFFIX) || name.equals(STATE_TEMP_FILE)) {
                     deleteQuietly(file);
                 }
             }
@@ -353,7 +354,7 @@ public class PackCacheStore {
     private void save(String packId, PackState.Slot slot) {
         slots.put(packId, slot);
         Path stateFile = cacheDir.resolve(STATE_FILE);
-        Path temp = cacheDir.resolve(STATE_FILE + ".tmp");
+        Path temp = cacheDir.resolve(STATE_TEMP_FILE);
         try {
             Files.writeString(temp, GSON.toJson(new PackState(slots)), StandardCharsets.UTF_8);
             Files.move(temp, stateFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
@@ -361,6 +362,7 @@ public class PackCacheStore {
         } catch (IOException e) {
             // The in-memory state stays correct for this run; only a restart would lose it
             log.error("Could not write the pack state file {}", stateFile, e);
+            deleteQuietly(temp);
         }
     }
 
