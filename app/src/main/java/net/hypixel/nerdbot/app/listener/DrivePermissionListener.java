@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.listener;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -25,6 +26,10 @@ import java.util.List;
  */
 @Slf4j
 public class DrivePermissionListener {
+
+    @Inject
+    public DrivePermissionListener() {
+    }
 
     @SubscribeEvent
     public void onRoleAdd(GuildMemberRoleAddEvent event) {

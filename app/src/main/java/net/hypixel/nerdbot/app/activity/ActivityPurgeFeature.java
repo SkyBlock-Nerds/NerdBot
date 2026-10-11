@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.activity;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.storage.DiscordUserStore;
@@ -7,16 +8,22 @@ import net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
-import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 
 @Slf4j
 public class ActivityPurgeFeature extends BotFeature implements SchedulableFeature {
+
+    // History is kept for weeks, so a daily purge is plenty
+    private static final Duration INITIAL_DELAY = Duration.ofHours(1);
+    private static final Duration PERIOD = Duration.ofDays(1);
+
+    @Inject
+    public ActivityPurgeFeature() {
+    }
 
     @Override
     public void onFeatureStart() {
@@ -64,12 +71,12 @@ public class ActivityPurgeFeature extends BotFeature implements SchedulableFeatu
 
     @Override
     public long defaultInitialDelayMs(DiscordBotConfig config) {
-        return Duration.of(((NerdBotConfig) config).getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis();
+        return INITIAL_DELAY.toMillis();
     }
 
     @Override
     public long defaultPeriodMs(DiscordBotConfig config) {
-        return Duration.of(((NerdBotConfig) config).getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis();
+        return PERIOD.toMillis();
     }
 
     @Override

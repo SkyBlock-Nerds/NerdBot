@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.listener;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -31,6 +32,10 @@ import java.util.List;
 
 @Slf4j
 public class SuggestionListener {
+
+    @Inject
+    public SuggestionListener() {
+    }
 
     @SubscribeEvent
     public void onChannelCreate(@NotNull ChannelCreateEvent event) {

@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.listener;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.GenericEvent;
@@ -17,6 +18,10 @@ import net.hypixel.nerdbot.discord.role.RoleManager;
 
 @Slf4j
 public class MetricsListener {
+
+    @Inject
+    public MetricsListener() {
+    }
 
     @SubscribeEvent
     public void onEvent(GenericEvent event) {

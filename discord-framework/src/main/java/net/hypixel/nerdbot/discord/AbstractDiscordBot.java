@@ -42,8 +42,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.login.LoginException;
 
 /**
@@ -58,9 +65,18 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     private volatile DiscordBotConfig config;
     private long startTime;
     private List<BotFeature> features = Collections.emptyList();
+    private volatile ScheduledExecutorService featureScheduler;
     private final AtomicBoolean shuttingDown = new AtomicBoolean();
 
     static final String FEATURE_PACKAGE_PREFIX = "net.hypixel.nerdbot.";
+    static final int FEATURE_THREADS = 4;
+    static final Duration FEATURE_RUN_GRACE = Duration.ofSeconds(30);
+
+    /** Turns a {@code features[].className} entry into a feature, or empty when it isn't one. */
+    @FunctionalInterface
+    public interface FeatureFactory {
+        Optional<BotFeature> create(String className);
+    }
 
     protected AbstractDiscordBot() {
         this.database = Objects.requireNonNull(createDatabase(), "createDatabase() returned null");
@@ -235,16 +251,20 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     /**
      * A feature that fails to start is logged and left out; the others still start, and only the
      * ones that started are stopped on shutdown. A {@link SchedulableFeature}'s task is scheduled
-     * after its {@code onFeatureStart}, so the task never runs before the feature is set up.
+     * after its {@code onFeatureStart}, so the task never runs before the feature is set up. Every
+     * feature shares one scheduler.
      */
     @Override
     public final void onStart() {
+        featureScheduler = newFeatureScheduler();
         List<BotFeature> started = new ArrayList<>();
+
         for (BotFeature feature : createFeatures()) {
             if (feature == null) {
                 continue;
             }
 
+            feature.useScheduler(featureScheduler);
             try {
                 feature.onFeatureStart();
             } catch (RuntimeException exception) {
@@ -270,6 +290,17 @@ public abstract class AbstractDiscordBot implements DiscordBot {
         log.info("Bot started in environment {}", Environment.getEnvironment());
     }
 
+    private static ScheduledExecutorService newFeatureScheduler() {
+        AtomicInteger threads = new AtomicInteger();
+        ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(FEATURE_THREADS, task -> {
+            Thread thread = new Thread(task, "feature-scheduler-" + threads.incrementAndGet());
+            thread.setDaemon(true);
+            return thread;
+        });
+        scheduler.setRemoveOnCancelPolicy(true);
+        return scheduler;
+    }
+
     private void scheduleIfSchedulable(BotFeature feature) {
         if (feature instanceof SchedulableFeature schedulable) {
             feature.scheduleAtFixedRate(
@@ -286,7 +317,12 @@ public abstract class AbstractDiscordBot implements DiscordBot {
      * {@link #createFeatures()} and add any always-on features of their own.
      */
     protected final List<BotFeature> createConfiguredFeatures() {
-        return instantiateFeatures(config == null ? null : config.getFeatures());
+        return createConfiguredFeatures(AbstractDiscordBot::constructByReflection);
+    }
+
+    /** As {@link #createConfiguredFeatures()}, with the bot building each feature itself, for example through injection. */
+    protected final List<BotFeature> createConfiguredFeatures(FeatureFactory factory) {
+        return instantiateFeatures(config == null ? null : config.getFeatures(), factory);
     }
 
     /**
@@ -295,6 +331,10 @@ public abstract class AbstractDiscordBot implements DiscordBot {
      * constructed is logged and skipped rather than stopping the rest.
      */
     static List<BotFeature> instantiateFeatures(@Nullable List<FeatureConfig> featureConfigs) {
+        return instantiateFeatures(featureConfigs, AbstractDiscordBot::constructByReflection);
+    }
+
+    static List<BotFeature> instantiateFeatures(@Nullable List<FeatureConfig> featureConfigs, FeatureFactory factory) {
         if (featureConfigs == null) {
             log.info("No feature config present");
             return List.of();
@@ -302,6 +342,7 @@ public abstract class AbstractDiscordBot implements DiscordBot {
 
         log.info("Loading features from config ({} entries)", featureConfigs.size());
         List<BotFeature> features = new ArrayList<>();
+        Set<String> listed = new HashSet<>();
         for (FeatureConfig featureConfig : featureConfigs) {
             if (featureConfig == null || !featureConfig.isEnabled()) {
                 continue;
@@ -312,23 +353,39 @@ public abstract class AbstractDiscordBot implements DiscordBot {
                 log.warn("Feature class {} not permitted by class allowlist", className);
                 continue;
             }
+            if (!listed.add(className)) {
+                log.warn("Feature class {} is listed more than once; starting it once", className);
+                continue;
+            }
 
             try {
-                Class<?> type = Class.forName(className);
-                if (!BotFeature.class.isAssignableFrom(type)) {
-                    log.warn("Feature class {} does not implement BotFeature", className);
+                Optional<BotFeature> feature = factory.create(className);
+                if (feature.isEmpty()) {
+                    log.warn("Feature class {} is not a feature this bot knows", className);
                     continue;
                 }
 
-                BotFeature feature = (BotFeature) type.getDeclaredConstructor().newInstance();
-                feature.setScheduleOverrides(featureConfig.getInitialDelayMs(), featureConfig.getPeriodMs());
-                features.add(feature);
+                feature.get().setScheduleOverrides(featureConfig.getInitialDelayMs(), featureConfig.getPeriodMs());
+                features.add(feature.get());
                 log.info("Added feature from config: {}", className);
-            } catch (ReflectiveOperationException | RuntimeException exception) {
+            } catch (RuntimeException exception) {
                 log.warn("Failed to instantiate feature {}", className, exception);
             }
         }
         return features;
+    }
+
+    private static Optional<BotFeature> constructByReflection(String className) {
+        try {
+            Class<?> type = Class.forName(className);
+            if (!BotFeature.class.isAssignableFrom(type)) {
+                return Optional.empty();
+            }
+            return Optional.of((BotFeature) type.getDeclaredConstructor().newInstance());
+        } catch (ReflectiveOperationException exception) {
+            log.warn("Failed to construct feature {}", className, exception);
+            return Optional.empty();
+        }
     }
 
     /**
@@ -348,6 +405,7 @@ public abstract class AbstractDiscordBot implements DiscordBot {
         for (BotFeature feature : features) {
             runShutdownStep("stop feature " + feature.getClass().getSimpleName(), feature::onFeatureEnd);
         }
+        runShutdownStep("wait for running feature tasks", this::stopFeatureScheduler);
         runShutdownStep("shut down JDA", this::shutdownJda);
         runShutdownStep("run onShutdown", this::onShutdown);
         runShutdownStep("save repositories", this::saveRepositories);
@@ -362,6 +420,25 @@ public abstract class AbstractDiscordBot implements DiscordBot {
             step.run();
         } catch (RuntimeException exception) {
             log.error("Failed to {} during shutdown", description, exception);
+        }
+    }
+
+    /** Lets runs already going finish before anything they use is shut down or saved. */
+    private void stopFeatureScheduler() {
+        ScheduledExecutorService scheduler = featureScheduler;
+        if (scheduler == null) {
+            return;
+        }
+
+        scheduler.shutdown();
+        try {
+            if (!scheduler.awaitTermination(FEATURE_RUN_GRACE.toMillis(), TimeUnit.MILLISECONDS)) {
+                log.warn("Feature tasks were still running after {} seconds, interrupting them", FEATURE_RUN_GRACE.toSeconds());
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            scheduler.shutdownNow();
         }
     }
 

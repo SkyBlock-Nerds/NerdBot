@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.feature;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
@@ -22,6 +23,10 @@ import java.util.Map;
 public class RepositoryAutosaveFeature extends BotFeature {
 
     private static final long AUTOSAVE_INTERVAL_MS = Duration.ofMinutes(15).toMillis();
+
+    @Inject
+    public RepositoryAutosaveFeature() {
+    }
 
     @Override
     public void onFeatureStart() {

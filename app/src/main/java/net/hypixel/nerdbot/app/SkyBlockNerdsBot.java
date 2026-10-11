@@ -1,22 +1,18 @@
 package net.hypixel.nerdbot.app;
 
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.imagegenerator.data.PackGlyphIndex;
 import net.aerh.imagegenerator.pack.PackRepository;
 import net.aerh.imagegenerator.tools.pack.ResourcePackService;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
-import net.hypixel.nerdbot.app.activity.ActivityListener;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
-import net.hypixel.nerdbot.app.channel.RestrictedChannelGroups;
 import net.hypixel.nerdbot.app.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.app.config.GeneratorConfig;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
-import net.hypixel.nerdbot.app.feature.DrivePermissionSyncFeature;
-import net.hypixel.nerdbot.app.feature.RepositoryAutosaveFeature;
 import net.hypixel.nerdbot.app.feature.ResourcePackUpdateFeature;
-import net.hypixel.nerdbot.app.feature.RoleReconcileFeature;
 import net.hypixel.nerdbot.app.generation.pack.PackConfigMapper;
 import net.hypixel.nerdbot.app.generation.pack.update.HttpHypixelPackApiClient;
 import net.hypixel.nerdbot.app.generation.pack.update.PackBootResolver;
@@ -27,22 +23,12 @@ import net.hypixel.nerdbot.app.generation.pack.update.PackUpdater;
 import net.hypixel.nerdbot.app.inject.BotComponent;
 import net.hypixel.nerdbot.app.inject.BotState;
 import net.hypixel.nerdbot.app.inject.DaggerBotComponent;
-import net.hypixel.nerdbot.app.listener.DrivePermissionListener;
-import net.hypixel.nerdbot.app.listener.FunListener;
-import net.hypixel.nerdbot.app.listener.MetricsListener;
-import net.hypixel.nerdbot.app.listener.ModLogListener;
-import net.hypixel.nerdbot.app.listener.PinListener;
-import net.hypixel.nerdbot.app.listener.ReactionChannelListener;
-import net.hypixel.nerdbot.app.listener.RoleRestrictedChannelListener;
-import net.hypixel.nerdbot.app.listener.RoleSyncListener;
-import net.hypixel.nerdbot.app.listener.SuggestionListener;
+import net.hypixel.nerdbot.app.inject.StorageModule;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.app.sentry.SentryManager;
 import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
-import net.hypixel.nerdbot.app.user.BirthdayAnnouncementFeature;
 import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
-import net.hypixel.nerdbot.discord.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.discord.cache.MessageCache;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
@@ -54,11 +40,12 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * SkyBlock Nerds Discord bot implementation.
@@ -82,11 +69,6 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
     /** Null when no pack opts into auto-update or the cache directory is unusable. */
     private volatile PackUpdater packUpdater;
 
-    /** Empty until the bot is ready. */
-    public static Optional<RestrictedChannelGroups> restrictedChannelGroups() {
-        BotComponent current = ((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).component;
-        return current == null ? Optional.empty() : Optional.of(current.restrictedChannelGroups());
-    }
 
     /**
      * Static helper to get the MessageCache from the current bot instance.
@@ -156,47 +138,40 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
     @Override
     protected @NotNull Database createDatabase() {
         String mongoUri = System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/");
-        return new Database(mongoUri, "skyblock_nerds");
+        return new Database(mongoUri, StorageModule.DATABASE_NAME);
     }
 
     @Override
     protected @NotNull Collection<Object> getEventListeners() {
-        List<Object> listeners = new ArrayList<>(Arrays.asList(
-            new ModLogListener(),
-            new FeatureEventListener(),
-            new ActivityListener(),
-            new SuggestionListener(),
-            new ReactionChannelListener(),
-            new PinListener(),
-            new MetricsListener(),
-            new FunListener(),
-            new RoleRestrictedChannelListener(),
-            new RoleSyncListener(),
-            new DrivePermissionListener()
-        ));
-
-        return listeners;
+        return List.copyOf(component.eventListeners());
     }
 
     @Override
     protected @NotNull Collection<? extends BotFeature> createFeatures() {
-        List<BotFeature> features = new ArrayList<>(createConfiguredFeatures());
+        Map<Class<?>, Provider<BotFeature>> available = component.features();
+        return combineFeatures(createConfiguredFeatures(className -> findFeature(available, className)), component.alwaysOnFeatures());
+    }
 
-        // Always-on durability safety net, registered outside the config so it cannot be disabled by
-        // omission: flushes write-behind repository changes on a fixed interval so an ungraceful
-        // shutdown loses at most one interval rather than everything since startup.
-        features.add(new RepositoryAutosaveFeature());
+    static Optional<BotFeature> findFeature(Map<Class<?>, Provider<BotFeature>> available, String className) {
+        return available.entrySet().stream()
+            .filter(entry -> entry.getKey().getName().equals(className))
+            .findFirst()
+            .map(entry -> entry.getValue().get());
+    }
 
-        // Always-on safety net: hourly sweep that catches role changes missed by RoleSyncListener
-        // while the bot was offline (see RoleReconcileFeature for details).
-        features.add(new RoleReconcileFeature());
+    /** The configured features, then the always-on ones; a config entry for an always-on feature is ignored. */
+    static List<BotFeature> combineFeatures(List<BotFeature> configured, List<BotFeature> alwaysOn) {
+        Set<Class<?>> alwaysOnTypes = alwaysOn.stream().map(Object::getClass).collect(Collectors.toSet());
 
-        // Always-on: posts birthdays on the day, once, in each member's own timezone
-        features.add(new BirthdayAnnouncementFeature());
-
-        // Safety net for Drive folder permissions; inert unless the Drive service is configured.
-        features.add(new DrivePermissionSyncFeature());
-
+        List<BotFeature> features = new ArrayList<>();
+        for (BotFeature feature : configured) {
+            if (alwaysOnTypes.contains(feature.getClass())) {
+                log.warn("{} always runs, so its config entry is ignored", feature.getClass().getSimpleName());
+            } else {
+                features.add(feature);
+            }
+        }
+        features.addAll(alwaysOn);
         return features;
     }
 

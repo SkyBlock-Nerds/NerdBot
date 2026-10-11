@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.feature;
 
+import jakarta.inject.Inject;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
@@ -24,6 +25,10 @@ public class HelloGoodbyeFeature extends BotFeature {
         .setColor(Color.GREEN)
         .setTimestamp(OffsetDateTime.now())
         .build();
+
+    @Inject
+    public HelloGoodbyeFeature() {
+    }
 
     @Override
     public void onFeatureStart() {

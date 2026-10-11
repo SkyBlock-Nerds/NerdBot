@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.feature;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.drive.DriveSyncSweep;
@@ -19,6 +20,10 @@ import java.util.concurrent.TimeUnit;
 public class DrivePermissionSyncFeature extends BotFeature {
 
     private static final long PERIOD_MS = TimeUnit.HOURS.toMillis(1);
+
+    @Inject
+    public DrivePermissionSyncFeature() {
+    }
 
     @Override
     public void onFeatureStart() {

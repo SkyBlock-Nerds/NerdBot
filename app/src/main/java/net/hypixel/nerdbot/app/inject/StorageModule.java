@@ -3,6 +3,9 @@ package net.hypixel.nerdbot.app.inject;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
+import com.mongodb.client.MongoCollection;
+import net.hypixel.nerdbot.app.nomination.MongoSweepLog;
+import net.hypixel.nerdbot.app.nomination.SweepLog;
 import net.hypixel.nerdbot.app.punishment.PunishmentStore;
 import net.hypixel.nerdbot.app.punishment.RepositoryPunishmentStore;
 import net.hypixel.nerdbot.app.reminder.ReminderStore;
@@ -11,14 +14,18 @@ import net.hypixel.nerdbot.app.storage.DiscordUserStore;
 import net.hypixel.nerdbot.app.storage.GreenlitStore;
 import net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore;
 import net.hypixel.nerdbot.app.storage.RepositoryGreenlitStore;
+import net.hypixel.nerdbot.app.storage.SweepRuns;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.PunishmentRepository;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.ReminderRepository;
+import org.bson.Document;
 
 @Module
 public interface StorageModule {
+
+    String DATABASE_NAME = "skyblock_nerds";
 
     @Binds
     PunishmentStore punishmentStore(RepositoryPunishmentStore store);
@@ -46,6 +53,18 @@ public interface StorageModule {
     static GreenlitMessageRepository greenlitMessageRepository(Database database) {
         return repository(database, GreenlitMessageRepository.class);
     }
+
+    @Provides
+    @SweepRuns
+    static MongoCollection<Document> sweepRuns(Database database) {
+        if (database.getMongoClient() == null) {
+            throw new IllegalStateException("sweep_runs is unavailable; is the database connected?");
+        }
+        return database.getMongoClient().getDatabase(DATABASE_NAME).getCollection("sweep_runs");
+    }
+
+    @Binds
+    SweepLog sweepLog(MongoSweepLog log);
 
     @Provides
     static ReminderRepository reminderRepository(Database database) {

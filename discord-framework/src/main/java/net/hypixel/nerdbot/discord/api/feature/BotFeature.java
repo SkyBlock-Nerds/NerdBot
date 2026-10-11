@@ -1,15 +1,21 @@
 package net.hypixel.nerdbot.discord.api.feature;
 
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.marmalade.concurrent.ScheduledTask;
 import net.hypixel.nerdbot.marmalade.functional.ThrowingRunnable;
 
-import java.time.Duration;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * Something the bot starts after it's ready and stops on shutdown. Repeating work runs on a
+ * scheduler the bot shares between all features, so a feature doesn't hold a thread of its own.
+ */
 @Slf4j
 public abstract class BotFeature {
 
-    protected ScheduledTask scheduledTask;
+    private ScheduledExecutorService scheduler;
+    private ScheduledFuture<?> scheduledRun;
 
     private Long scheduleInitialDelayOverrideMs;
     private Long schedulePeriodOverrideMs;
@@ -23,16 +29,25 @@ public abstract class BotFeature {
         this.schedulePeriodOverrideMs = periodMs;
     }
 
+    /** Called by the bot before {@link #onFeatureStart()}. */
+    public final synchronized void useScheduler(ScheduledExecutorService scheduler) {
+        this.scheduler = scheduler;
+    }
+
     /**
-     * Schedules a recurring task backed by a {@link ScheduledTask}. Any checked exception thrown
-     * by {@code task} is propagated sneakily and caught by the ScheduledTask error handler.
+     * Runs {@code task} repeatedly on the shared scheduler. A run never overlaps the previous one,
+     * and anything it throws, {@link Error}s included, is logged without stopping later runs.
+     * Scheduling again replaces the earlier schedule.
      *
-     * @param name the display name for the task thread
-     * @param task the work to execute on each tick
-     * @param defaultInitialDelayMs delay before the first execution, overridable via config
-     * @param defaultPeriodMs period between executions, overridable via config
+     * @param defaultInitialDelayMs delay before the first run, overridable through the config
+     * @param defaultPeriodMs time between runs, overridable through the config
+     * @throws IllegalStateException when the feature wasn't started by a bot
      */
-    public void scheduleAtFixedRate(String name, ThrowingRunnable<?> task, long defaultInitialDelayMs, long defaultPeriodMs) {
+    public synchronized void scheduleAtFixedRate(String name, ThrowingRunnable<?> task, long defaultInitialDelayMs, long defaultPeriodMs) {
+        if (scheduler == null) {
+            throw new IllegalStateException(getClass().getSimpleName() + " has no scheduler; features are started by the bot");
+        }
+
         long initialDelay = scheduleInitialDelayOverrideMs != null ? scheduleInitialDelayOverrideMs : defaultInitialDelayMs;
         long period = schedulePeriodOverrideMs != null ? schedulePeriodOverrideMs : defaultPeriodMs;
 
@@ -45,17 +60,29 @@ public abstract class BotFeature {
             period, describeSource(schedulePeriodOverrideMs, defaultPeriodMs)
         );
 
-        this.scheduledTask = ScheduledTask.create(name, ThrowingRunnable.sneaky(task), Duration.ofMillis(initialDelay), Duration.ofMillis(period));
-        this.scheduledTask.start();
+        if (scheduledRun != null) {
+            scheduledRun.cancel(false);
+        }
+
+        Runnable run = ThrowingRunnable.sneaky(task);
+        scheduledRun = scheduler.scheduleAtFixedRate(() -> {
+            try {
+                run.run();
+            } catch (Throwable throwable) {
+                log.error("Scheduled task '{}' failed", name, throwable);
+            }
+        }, initialDelay, period, TimeUnit.MILLISECONDS);
     }
 
     private static String describeSource(Long override, long defaultValue) {
         return override != null ? "config override, feature default " + defaultValue : "feature default";
     }
 
-    public void stopScheduledTask() {
-        if (scheduledTask != null) {
-            scheduledTask.stop();
+    /** Cancels later runs; a run already going finishes. */
+    public synchronized void stopScheduledTask() {
+        if (scheduledRun != null) {
+            scheduledRun.cancel(false);
+            scheduledRun = null;
         }
     }
 }
