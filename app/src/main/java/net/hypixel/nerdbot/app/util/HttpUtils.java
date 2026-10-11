@@ -143,20 +143,6 @@ public class HttpUtils {
         return HttpClient.getClient().send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    private static CompletableFuture<HttpResponse<String>> getHttpResponseAsync(String url, Pair<String, String>... headers) {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .timeout(Duration.ofSeconds(30))
-            .GET();
-        Arrays.stream(headers).forEach(h -> builder.header(h.first(), h.second()));
-
-        HttpRequest request = builder.build();
-        log.info("Sending async HTTP request to {} with {} header(s)", url, headers.length);
-        PrometheusMetrics.HTTP_REQUESTS_AMOUNT.labels(request.method(), url).inc();
-
-        return HttpClient.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString());
-    }
-
     /**
      * Makes a simple HTTP request and returns JSON.
      * Delegates to core HttpClient.
