@@ -1,9 +1,12 @@
 package net.hypixel.nerdbot.app.command.util;
 
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -23,6 +26,8 @@ import java.util.function.Consumer;
 @Slf4j
 public final class CommandReplies {
 
+    private static final int MAX_EMBEDS = Message.MAX_EMBED_COUNT;
+
     private CommandReplies() {
     }
 
@@ -34,6 +39,17 @@ public final class CommandReplies {
 
     public static void replyPrivately(IReplyCallback interaction, String message) {
         interaction.reply(message).setEphemeral(true).queue();
+    }
+
+    /**
+     * Replaces the deferred reply with the embeds. Discord takes at most ten per message, so any
+     * more go out as follow-ups that are hidden the same way the reply is.
+     */
+    public static void showEmbeds(InteractionHook hook, List<MessageEmbed> embeds) {
+        hook.editOriginalEmbeds(embeds.subList(0, Math.min(MAX_EMBEDS, embeds.size()))).queue();
+        for (int start = MAX_EMBEDS; start < embeds.size(); start += MAX_EMBEDS) {
+            hook.sendMessageEmbeds(embeds.subList(start, Math.min(start + MAX_EMBEDS, embeds.size()))).queue();
+        }
     }
 
     /**

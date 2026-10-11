@@ -36,7 +36,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.command.util.PanelId;
-import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
+import net.hypixel.nerdbot.app.command.util.SuggestionListings;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.config.ReviewRequestConfig;
 import net.hypixel.nerdbot.app.config.SuggestionConfig;
@@ -48,7 +48,6 @@ import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.app.suggestion.SuggestionFactory;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
-import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
 import net.hypixel.nerdbot.discord.util.pagination.PaginationManager;
 import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
 import org.jetbrains.annotations.Nullable;
@@ -71,18 +70,15 @@ public class SuggestionCommands {
     static final String REVIEW_PREFIX = "suggestion-review";
     /** Review buttons aren't tied to one user, so only {@link PanelId#parse} is used. */
     static final PanelId REVIEW = PanelId.of(REVIEW_PREFIX, 2, 0);
+    private static final String PAGINATION_ID = "suggestions-page";
     static final Duration REVIEW_COOLDOWN = Duration.ofHours(1);
     static final String SENT_FOR_REVIEW = "This suggestion has been sent for review!";
     static final String GREENLIT_MESSAGE = "This suggestion has been greenlit.";
     static final String DENIED_MESSAGE = "Your recent review request has been denied. We recommend you review your suggestion and make any necessary changes before requesting another review. Thank you!";
     static final String LOCKED_MESSAGE = "We have reviewed your recent request and have decided to lock this suggestion. If you believe this to be a mistake or would like more information, please contact us through Mod Mail.";
 
-    /** Which suggestions a /suggestions command lists, and how. */
-    record ListingRequest(@Nullable Long ownerId, @Nullable String ownerName, @Nullable String ownerAvatar,
-                          boolean showNames, boolean showRatio) {
-    }
-
     private final SuggestionCache suggestions;
+    private final SuggestionListings listings;
     private final SuggestionFactory factory;
     private final Provider<NerdBotConfig> config;
     private final JDA jda;
@@ -94,9 +90,10 @@ public class SuggestionCommands {
         .build();
 
     @Inject
-    public SuggestionCommands(SuggestionCache suggestions, SuggestionFactory factory, Provider<NerdBotConfig> config, JDA jda,
-                              GreenlitStore greenlit, Executor backgroundWork, Clock clock) {
+    public SuggestionCommands(SuggestionCache suggestions, SuggestionListings listings, SuggestionFactory factory, Provider<NerdBotConfig> config,
+                              JDA jda, GreenlitStore greenlit, Executor backgroundWork, Clock clock) {
         this.suggestions = suggestions;
+        this.listings = listings;
         this.factory = factory;
         this.config = config;
         this.jda = jda;
@@ -127,10 +124,10 @@ public class SuggestionCommands {
         }
 
         User owner = jda.getUserById(ownerId);
-        showSuggestions(event, new ListingRequest(ownerId,
+        listings.show(event, new SuggestionListings.Request(ownerId,
             owner != null ? owner.getName() : userId.trim(),
             owner != null ? owner.getEffectiveAvatarUrl() : null,
-            false, canSeeRatio(event.getMember(), ownerId)), tags, title, channelType);
+            false, canSeeRatio(event.getMember(), ownerId)), tags, title, channelType, PAGINATION_ID);
     }
 
     @SlashCommand(name = "suggestions", subcommand = "by-member", description = "View user suggestions.", guildOnly = true)
@@ -141,8 +138,8 @@ public class SuggestionCommands {
         @SlashOption(description = "Words to filter title for.", required = false) String title,
         @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String type
     ) {
-        showSuggestions(event, new ListingRequest(member.getIdLong(), member.getEffectiveName(), member.getEffectiveAvatarUrl(),
-            false, canSeeRatio(event.getMember(), member.getIdLong())), tags, title, type);
+        listings.show(event, new SuggestionListings.Request(member.getIdLong(), member.getEffectiveName(), member.getEffectiveAvatarUrl(),
+            false, canSeeRatio(event.getMember(), member.getIdLong())), tags, title, type, PAGINATION_ID);
     }
 
     @SlashCommand(name = "suggestions", subcommand = "by-everyone", description = "View all suggestions.", guildOnly = true)
@@ -152,7 +149,7 @@ public class SuggestionCommands {
         @SlashOption(description = "Words to filter title for.", required = false) String title,
         @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String type
     ) {
-        showSuggestions(event, new ListingRequest(null, null, null, true, true), tags, title, type);
+        listings.show(event, new SuggestionListings.Request(null, null, null, true, true), tags, title, type, PAGINATION_ID);
     }
 
     @SlashAutocompleteHandler(id = "suggestion-types")
@@ -167,7 +164,7 @@ public class SuggestionCommands {
         review(event);
     }
 
-    @SlashComponentHandler(id = "suggestions-pagination", patterns = {"suggestions-page:*"})
+    @SlashComponentHandler(id = "suggestions-pagination", patterns = {PAGINATION_ID + ":*"})
     public void handleSuggestionsPagination(ButtonInteractionEvent event) {
         event.deferEdit().queue();
 
@@ -175,37 +172,6 @@ public class SuggestionCommands {
             log.warn("Could not find pagination for message ID: {}", event.getMessageId());
             event.getHook().editOriginal("This pagination has expired. Please run the command again.").queue();
         }
-    }
-
-    void showSuggestions(IReplyCallback interaction, ListingRequest request, @Nullable String tags, @Nullable String title, @Nullable String type) {
-        InteractionHook hook = CommandReplies.deferPrivately(interaction);
-        Member viewer = interaction.getMember();
-        if (viewer == null) {
-            hook.editOriginal("This command can only be used in a server!").queue();
-            return;
-        }
-
-        Suggestion.ChannelType channelType = type == null || type.isBlank() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.getType(type);
-        if (channelType == Suggestion.ChannelType.UNKNOWN) {
-            hook.editOriginal("Invalid channel type provided!").queue();
-            return;
-        }
-
-        List<Suggestion> matching = SuggestionCommandUtils.filterSuggestions(jda, suggestions.all(), viewer, request.ownerId(), tags, title, channelType);
-        if (matching.isEmpty()) {
-            hook.editOriginal(suggestions.isInitialized()
-                ? "No suggestions found matching that filter!"
-                : "Suggestions are still loading, please try again in a minute.").queue();
-            return;
-        }
-
-        SuggestionCommandUtils.Listing listing = new SuggestionCommandUtils.Listing(viewer, tags, title, channelType,
-            request.showNames(), request.showRatio(), request.ownerName(), request.ownerAvatar(), !suggestions.isInitialized(), jda);
-        PaginatedResponse<Suggestion> pagination = SuggestionCommandUtils.createSuggestionsPagination(
-            matching, SuggestionCommandUtils.buildSuggestionStats(jda, matching, viewer), listing, "suggestions-page");
-
-        pagination.sendMessage(interaction);
-        hook.retrieveOriginal().queue(message -> PaginationManager.registerPagination(message.getId(), pagination));
     }
 
     void requestReview(IReplyCallback interaction, @Nullable MessageChannelUnion channel) {

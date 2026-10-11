@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.hypixel.nerdbot.app.command.util.PanelId;
+import net.hypixel.nerdbot.app.command.util.SuggestionListings;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.config.ReviewRequestConfig;
 import net.hypixel.nerdbot.app.config.SuggestionConfig;
@@ -73,7 +74,8 @@ class SuggestionCommandsTest {
         "getTextChannelById", (CallRecorder.Answer) args -> REVIEW_CHANNEL.equals(args[0]) ? reviewChannel : null,
         "getThreadChannelById", (CallRecorder.Answer) args -> threads.get(String.valueOf(args[0]))));
     private final SuggestionCache cache = new SuggestionCache(scheduler, factory, () -> config, jda, Clock.systemUTC());
-    private final SuggestionCommands commands = new SuggestionCommands(cache, factory, () -> config, jda, greenlit, Runnable::run,
+    private final SuggestionListings listings = new SuggestionListings(cache, jda);
+    private final SuggestionCommands commands = new SuggestionCommands(cache, listings, factory, () -> config, jda, greenlit, Runnable::run,
         Clock.fixed(NOW.toInstant(), ZoneOffset.UTC));
     private ThreadChannel thread;
 
@@ -359,11 +361,23 @@ class SuggestionCommandsTest {
     @Nested
     class Listing {
 
+        private static final SuggestionListings.Request EVERYONE = new SuggestionListings.Request(null, null, null, true, true);
+
         @Test
         void anUnknownTypeIsRefused() {
-            commands.showSuggestions(slashAsMember(), new SuggestionCommands.ListingRequest(null, null, null, true, true), null, null, "nonsense");
+            listings.show(slashAsMember(), EVERYONE, null, null, "nonsense", "suggestions-page");
 
             assertEquals("Invalid channel type provided!", DiscordFakes.lastEditText(recorder));
+        }
+
+        @Test
+        void outsideAServerNothingIsListed() {
+            Map<String, Object> inDirectMessages = new HashMap<>(Map.of("getUser", DiscordFakes.user("1")));
+            inDirectMessages.put("getMember", null);
+
+            listings.show(recorder.fake(SlashCommandInteraction.class, inDirectMessages), EVERYONE, null, null, null, "suggestions-page");
+
+            assertEquals("This command can only be used in a server!", DiscordFakes.lastEditText(recorder));
         }
 
         @Test
@@ -371,7 +385,7 @@ class SuggestionCommandsTest {
             cache.start();
             scheduler.advance(Duration.ZERO);
 
-            commands.showSuggestions(slashAsMember(), new SuggestionCommands.ListingRequest(null, null, null, true, true), null, "zebra", null);
+            listings.show(slashAsMember(), EVERYONE, null, "zebra", null, "suggestions-page");
 
             assertEquals("No suggestions found matching that filter!", DiscordFakes.lastEditText(recorder));
         }
@@ -379,9 +393,9 @@ class SuggestionCommandsTest {
         @Test
         void beforeTheFirstLoadItSaysResultsAreStillLoading() {
             SuggestionCache empty = new SuggestionCache(scheduler, factory, () -> config, jda, Clock.systemUTC());
-            SuggestionCommands loading = new SuggestionCommands(empty, factory, () -> config, jda, greenlit, Runnable::run, Clock.systemUTC());
+            SuggestionListings loading = new SuggestionListings(empty, jda);
 
-            loading.showSuggestions(slashAsMember(), new SuggestionCommands.ListingRequest(null, null, null, true, true), null, null, null);
+            loading.show(slashAsMember(), EVERYONE, null, null, null, "suggestions-page");
 
             assertEquals("Suggestions are still loading, please try again in a minute.", DiscordFakes.lastEditText(recorder));
         }

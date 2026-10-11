@@ -1,6 +1,5 @@
 package net.hypixel.nerdbot.app.command;
 
-import net.hypixel.nerdbot.app.user.LegacyUsernames;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -11,7 +10,6 @@ import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Invite;
@@ -41,6 +39,9 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.command.util.ProgressUpdates;
+import net.hypixel.nerdbot.app.config.MetricsConfig;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.curator.Curator;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.app.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
@@ -48,21 +49,25 @@ import net.hypixel.nerdbot.app.nomination.InactivitySweepReport;
 import net.hypixel.nerdbot.app.nomination.NominationInactivityService;
 import net.hypixel.nerdbot.app.nomination.NominationService;
 import net.hypixel.nerdbot.app.nomination.NominationSweepReport;
+import net.hypixel.nerdbot.app.profile.MojangProfileLookup;
+import net.hypixel.nerdbot.app.profile.ProfileEmbeds;
+import net.hypixel.nerdbot.app.profile.ProfileLinker;
+import net.hypixel.nerdbot.app.user.LegacyUsernames;
 import net.hypixel.nerdbot.app.util.HttpUtils;
-import net.hypixel.nerdbot.marmalade.io.FileUtils;
-import net.hypixel.nerdbot.marmalade.exception.RepositoryException;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.bot.Bot;
 import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
 import net.hypixel.nerdbot.discord.api.bot.Environment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
-import net.hypixel.nerdbot.app.config.MetricsConfig;
-import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
-import net.hypixel.nerdbot.app.curator.Curator;
-import net.hypixel.nerdbot.marmalade.json.JsonUtils;
+import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.discord.util.DiscordUtils;
+import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
+import net.hypixel.nerdbot.marmalade.exception.RepositoryException;
 import net.hypixel.nerdbot.marmalade.format.TimeUtils;
+import net.hypixel.nerdbot.marmalade.io.FileUtils;
+import net.hypixel.nerdbot.marmalade.json.JsonUtils;
 import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.LastActivity;
@@ -70,8 +75,6 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.MojangPro
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.NominationInfo;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.marmalade.storage.repository.Repository;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
-import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
 import java.awt.Color;
 import java.io.File;
@@ -92,6 +95,16 @@ import java.util.stream.Stream;
 
 @Slf4j
 public class AdminCommands {
+
+    private final MojangProfileLookup profileLookup;
+    private final ProfileLinker profileLinker;
+    private final ProfileEmbeds profileEmbeds;
+
+    public AdminCommands(MojangProfileLookup profileLookup, ProfileLinker profileLinker, ProfileEmbeds profileEmbeds) {
+        this.profileLookup = profileLookup;
+        this.profileLinker = profileLinker;
+        this.profileEmbeds = profileEmbeds;
+    }
 
     @SlashCommand(name = "curate", description = "Manually run the curation process", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void curate(SlashCommandInteractionEvent event, @SlashOption ForumChannel channel, @SlashOption(description = "Run the curator without greenlighting suggestions", required = false) Boolean readOnly) {
@@ -406,45 +419,31 @@ public class AdminCommands {
 
                 boolean enforceSocial = bypassSocial == null || !bypassSocial;
 
-                ProfileCommands.requestMojangProfileAsync(member, username, enforceSocial)
-                    .thenAccept(mojangProfile -> {
-                        if (mojangProfile == null) {
-                            event.getHook().editOriginal(String.format("Could not find player with username `%s`! (%s)", username, "Profile not found")).queue();
-                            return;
+                profileLookup.lookup(username, member.getUser().getName(), enforceSocial)
+                    .thenCompose(result -> switch (result) {
+                        case MojangProfileLookup.Rejected rejected -> {
+                            event.getHook().editOriginal(rejected.reason().contains("does not match")
+                                ? String.format("Profile mismatch error for %s: %s", username, rejected.reason())
+                                : rejected.reason()).queue();
+                            yield CompletableFuture.<Void>completedFuture(null);
                         }
+                        case MojangProfileLookup.Found found -> profileLinker.link(member, found.profile()).thenRun(() -> {
+                            MojangProfile mojangProfile = found.profile();
+                            event.getHook().editOriginal(String.format("Updated profile for %s to %s (UUID: %s)", member.getAsMention(), mojangProfile.getUsername(), mojangProfile.getUniqueId())).queue();
 
-                        if (mojangProfile.getErrorMessage() != null) {
-                            if (mojangProfile.getErrorMessage().contains("does not match")) {
-                                event.getHook().editOriginal(String.format("Profile mismatch error for %s: %s", username, mojangProfile.getErrorMessage())).queue();
-                            } else {
-                                event.getHook().editOriginal(mojangProfile.getErrorMessage()).queue();
-                            }
-                            return;
-                        }
-
-                        ProfileCommands.updateMojangProfile(member, mojangProfile);
-                        event.getHook().editOriginal(String.format("Updated profile for %s to %s (UUID: %s)", member.getAsMention(), mojangProfile.getUsername(), mojangProfile.getUniqueId())).queue();
-
-                        ChannelCache.sendToLogChannel(
-                            new EmbedBuilder()
-                                .setTitle("Mojang Profile Change")
-                                .setThumbnail(member.getAvatarUrl())
-                                .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
-                                .addField("Username", mojangProfile.getUsername(), false)
-                                .addField(
-                                    "UUID / SkyCrypt",
-                                    String.format(
-                                        "[%s](https://sky.shiiyu.moe/stats/%s)",
-                                        mojangProfile.getUniqueId(),
-                                        mojangProfile.getUniqueId()
-                                    ),
-                                    false
-                                )
-                                .build()
-                        );
+                            ChannelCache.sendToLogChannel(
+                                new EmbedBuilder()
+                                    .setTitle("Mojang Profile Change")
+                                    .setThumbnail(member.getAvatarUrl())
+                                    .setDescription(event.getMember().getAsMention() + " updated the Mojang Profile for " + member.getAsMention() + ".")
+                                    .addField("Username", mojangProfile.getUsername(), false)
+                                    .addField("UUID / SkyCrypt", ProfileEmbeds.skyCryptLink(mojangProfile), false)
+                                    .build()
+                            );
+                        });
                     })
                     .exceptionally(throwable -> {
-                        CommandReplies.fail(event.getHook(), String.format("Could not find a player with username `%s`. Please try again later.", username), throwable);
+                        CommandReplies.fail(event.getHook(), "Failed to link that profile. Please try again later.", throwable);
                         return null;
                     });
             })
@@ -530,22 +529,18 @@ public class AdminCommands {
             return;
         }
 
-        List<MessageEmbed> embeds = new ArrayList<>(ProfileCommands.getActivityEmbeds(member, discordUser));
-
-        String profile = discordUser.isProfileAssigned() ?
-            discordUser.getMojangProfile().getUsername() + " (" + discordUser.getMojangProfile().getUniqueId().toString() + ")" :
-            "*Missing Data*";
+        List<MessageEmbed> embeds = new ArrayList<>(profileEmbeds.activity(member, discordUser));
 
         embeds.add(0, new EmbedBuilder()
             .setAuthor(member.getEffectiveName())
             .setThumbnail(member.getEffectiveAvatarUrl())
             .addField("ID", member.getId(), false)
-            .addField("Mojang Profile", profile, false)
-            .addField("Birthday", discordUser.getBirthdayData().getFormattedDisplay(), false)
+            .addField("Mojang Profile", ProfileEmbeds.linkedProfile(discordUser), false)
+            .addField("Birthday", ProfileEmbeds.birthday(discordUser), false)
             .build());
-        embeds.add(1, ProfileCommands.createBadgesEmbed(member, discordUser, false));
+        embeds.add(1, profileEmbeds.badges(member, discordUser, false));
 
-        event.getHook().editOriginalEmbeds(embeds.toArray(new MessageEmbed[]{})).queue();
+        CommandReplies.showEmbeds(event.getHook(), embeds);
     }
 
     @SlashCommand(
@@ -565,7 +560,7 @@ public class AdminCommands {
             return;
         }
 
-        event.getHook().editOriginalEmbeds(ProfileCommands.createBadgesEmbed(member, discordUser, event.getUser().getId().equals(member.getId()))).queue();
+        event.getHook().editOriginalEmbeds(profileEmbeds.badges(member, discordUser, event.getUser().getId().equals(member.getId()))).queue();
     }
 
     @SlashCommand(

@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.user;
 
+import jakarta.inject.Inject;
 import net.hypixel.nerdbot.app.storage.DiscordUserStore;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.birthday.BirthdayData;
@@ -32,6 +33,7 @@ public class BirthdayService {
     private final DiscordUserStore store;
     private final Clock clock;
 
+    @Inject
     public BirthdayService(DiscordUserStore store, Clock clock) {
         this.store = store;
         this.clock = clock;

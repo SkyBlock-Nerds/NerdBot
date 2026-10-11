@@ -12,6 +12,8 @@ import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
 import net.hypixel.nerdbot.app.drive.DriveSyncSweep;
 import net.hypixel.nerdbot.app.generation.pack.update.PackUpdater;
+import net.hypixel.nerdbot.app.profile.HttpMinecraftAccounts;
+import net.hypixel.nerdbot.app.profile.MinecraftAccounts;
 import net.hypixel.nerdbot.app.reminder.DiscordReminderSender;
 import net.hypixel.nerdbot.app.reminder.ReminderSender;
 
@@ -40,6 +42,9 @@ public interface BotModule {
 
     @Binds
     BadgeCatalog badgeCatalog(ConfiguredBadgeCatalog catalog);
+
+    @Binds
+    MinecraftAccounts minecraftAccounts(HttpMinecraftAccounts accounts);
 
     @Provides
     static Clock clock() {

@@ -64,7 +64,11 @@ public final class DiscordFakes {
      * JDA's varargs overloads hand on to the collection ones.
      */
     public static <T> List<T> lastCallItems(CallRecorder recorder, String method, Class<T> type) {
-        List<Object> args = recorder.last(method).args();
+        return callItems(recorder.last(method), type);
+    }
+
+    public static <T> List<T> callItems(CallRecorder.Call call, Class<T> type) {
+        List<Object> args = call.args();
         if (args.size() == 1 && args.getFirst() instanceof Collection<?> items) {
             return items.stream().map(type::cast).toList();
         }

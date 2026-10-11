@@ -27,11 +27,10 @@ public interface DiscordUserStore {
      * Every member has a record, created when they join, so a missing one is a bug rather than
      * something to show the member.
      *
-     * @throws IllegalStateException when there is no record
+     * @throws MissingUserRecordException when there is no record
      */
     default DiscordUser require(String discordId) {
-        return findById(discordId)
-            .orElseThrow(() -> new IllegalStateException("Member " + discordId + " has no user record"));
+        return findById(discordId).orElseThrow(() -> new MissingUserRecordException(discordId));
     }
 
     // Reads the database rather than the cache, which drops members after a day of inactivity
