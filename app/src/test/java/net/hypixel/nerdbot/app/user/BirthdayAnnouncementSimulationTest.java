@@ -15,18 +15,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static net.hypixel.nerdbot.app.testsupport.BirthdayFixtures.member;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class BirthdayAnnouncementSimulationTest {
 
     private record Sent(Instant at, String message) {
-    }
-
-    private static DiscordUser member(String id, LocalDate birthDate, String timezone) {
-        DiscordUser user = new DiscordUser(id);
-        user.getBirthdayData().setBirthDate(birthDate);
-        user.getBirthdayData().setTimezone(timezone);
-        return user;
     }
 
     private static List<Sent> runHourly(FakeDiscordUserStore store, Instant start, int hours,

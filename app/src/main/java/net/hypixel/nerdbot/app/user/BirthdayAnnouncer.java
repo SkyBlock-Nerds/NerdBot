@@ -8,6 +8,7 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.user.birthday.Birthd
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -31,14 +32,20 @@ public class BirthdayAnnouncer {
         Instant now = clock.instant();
         int started = 0;
 
-        for (DiscordUser user : store.findWithBirthdaySet()) {
+        for (String id : store.findIdsWithBirthdaySet()) {
             try {
+                Optional<DiscordUser> found = store.findById(id);
+                if (found.isEmpty()) {
+                    continue;
+                }
+
+                DiscordUser user = found.get();
                 if (isDue(user.getBirthdayData(), now)) {
                     announce(user, LocalDate.ofInstant(now, user.getBirthdayData().getTimeZoneId()));
                     started++;
                 }
             } catch (RuntimeException exception) {
-                log.error("Failed to announce the birthday of {}", user.getDiscordId(), exception);
+                log.error("Failed to announce the birthday of {}", id, exception);
             }
         }
 
@@ -64,6 +71,7 @@ public class BirthdayAnnouncer {
     private void announce(DiscordUser user, LocalDate today) {
         BirthdayData data = user.getBirthdayData();
         int previousYear = data.getLastAnnouncedYear();
+        String message = message(user, today);
 
         data.setLastAnnouncedYear(today.getYear());
         try {
@@ -73,7 +81,7 @@ public class BirthdayAnnouncer {
             throw exception;
         }
 
-        deliver(message(user, today)).whenComplete((ignored, failure) -> {
+        deliver(message).whenComplete((ignored, failure) -> {
             if (failure == null) {
                 log.info("Announced the birthday of {}", user.getDiscordId());
                 return;

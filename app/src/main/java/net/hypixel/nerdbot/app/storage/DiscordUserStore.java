@@ -21,7 +21,7 @@ public interface DiscordUserStore {
     Optional<DiscordUser> findById(String discordId);
 
     // Reads the database rather than the cache, which drops members after a day of inactivity
-    List<DiscordUser> findWithBirthdaySet();
+    List<String> findIdsWithBirthdaySet();
 
     // In-memory only; the periodic autosave writes it out later
     void cache(DiscordUser user);

@@ -45,7 +45,11 @@ public class UserGrabberFeature extends BotFeature {
 
                 log.info("Found user {} ({})", member.getEffectiveName(), member.getId());
                 List<String> roleIds = member.getRoles().stream().map(Role::getId).toList();
-                reconcileMember(store, member.getId(), member.getEffectiveName(), UserGrabberFeature::isKnownBadge, roleIds);
+                try {
+                    reconcileMember(store, member.getId(), member.getEffectiveName(), UserGrabberFeature::isKnownBadge, roleIds);
+                } catch (RuntimeException exception) {
+                    log.error("Failed to reconcile user {} ({}), leaving their record untouched", member.getEffectiveName(), member.getId(), exception);
+                }
             })
             .onSuccess(aVoid -> log.info("Finished grabbing users from guild {} (ID: {})", guild.getName(), guild.getId()))
             .onError(throwable -> log.error("Failed to grab users from guild {} (ID: {})", guild.getName(), guild.getId(), throwable));

@@ -27,6 +27,7 @@ public class FakeDiscordUserStore implements DiscordUserStore {
     private final List<String> savedIds = new ArrayList<>();
     private final Set<String> failingSaves = new HashSet<>();
     private final Set<String> throwingSaves = new HashSet<>();
+    private final Set<String> throwingFinds = new HashSet<>();
     // Users are held by reference, so this snapshot is the only way to tell what was persisted from what is in memory
     private final Map<String, Integer> persistedAnnouncedYears = new HashMap<>();
 
@@ -45,6 +46,11 @@ public class FakeDiscordUserStore implements DiscordUserStore {
         return this;
     }
 
+    public FakeDiscordUserStore throwOnFindFor(String... discordIds) {
+        throwingFinds.addAll(List.of(discordIds));
+        return this;
+    }
+
     @Override
     public List<DiscordUser> getAll() {
         return new ArrayList<>(users.values());
@@ -52,13 +58,17 @@ public class FakeDiscordUserStore implements DiscordUserStore {
 
     @Override
     public Optional<DiscordUser> findById(String discordId) {
+        if (throwingFinds.contains(discordId)) {
+            throw new IllegalStateException("find failed");
+        }
         return Optional.ofNullable(users.get(discordId));
     }
 
     @Override
-    public List<DiscordUser> findWithBirthdaySet() {
+    public List<String> findIdsWithBirthdaySet() {
         return users.values().stream()
             .filter(user -> user.getBirthdayData() != null && user.getBirthdayData().isBirthdaySet())
+            .map(DiscordUser::getDiscordId)
             .toList();
     }
 

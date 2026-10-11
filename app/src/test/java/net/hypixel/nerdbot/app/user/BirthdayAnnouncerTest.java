@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.app.user;
 
 import net.hypixel.nerdbot.app.testsupport.FakeDiscordUserStore;
+import net.hypixel.nerdbot.app.testsupport.RecordingMessenger;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.birthday.BirthdayData;
 import org.junit.jupiter.api.Test;
@@ -9,23 +10,16 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static net.hypixel.nerdbot.app.testsupport.BirthdayFixtures.member;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BirthdayAnnouncerTest {
-
-    private static DiscordUser member(String id, LocalDate birthDate, String timezone) {
-        DiscordUser user = new DiscordUser(id);
-        user.getBirthdayData().setBirthDate(birthDate);
-        user.getBirthdayData().setTimezone(timezone);
-        return user;
-    }
 
     private static BirthdayData data(LocalDate birthDate, String timezone) {
         return member("x", birthDate, timezone).getBirthdayData();
@@ -89,7 +83,7 @@ class BirthdayAnnouncerTest {
             BirthdayAnnouncer.message(leapling, LocalDate.of(2027, 2, 28)));
     }
 
-    private final List<String> sent = new ArrayList<>();
+    private final RecordingMessenger messenger = new RecordingMessenger();
     private final Clock onTheDay = Clock.fixed(Instant.parse("2026-10-12T05:00:00Z"), ZoneOffset.UTC);
 
     @Test
@@ -99,12 +93,11 @@ class BirthdayAnnouncerTest {
         BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, message -> {
             assertEquals(2026, user.getBirthdayData().getLastAnnouncedYear());
             assertEquals(List.of("1"), store.savedIds());
-            sent.add(message);
-            return CompletableFuture.completedFuture(null);
+            return messenger.send(message);
         }, onTheDay);
 
         assertEquals(1, announcer.announceDue());
-        assertEquals(List.of("Happy birthday <@1>!"), sent);
+        assertEquals(List.of("Happy birthday <@1>!"), messenger.messages());
         assertEquals(2026, store.persistedAnnouncedYear("1"));
         assertEquals(0, announcer.announceDue());
     }
@@ -162,13 +155,10 @@ class BirthdayAnnouncerTest {
         DiscordUser user = member("1", LocalDate.of(2007, 10, 12), "UTC");
         user.getBirthdayData().setLastAnnouncedYear(2025);
         FakeDiscordUserStore store = new FakeDiscordUserStore().seed(user).throwOnSaveFor("1");
-        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, message -> {
-            sent.add(message);
-            return CompletableFuture.completedFuture(null);
-        }, onTheDay);
+        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, messenger, onTheDay);
 
         assertEquals(0, announcer.announceDue());
-        assertTrue(sent.isEmpty());
+        assertTrue(messenger.messages().isEmpty());
         assertEquals(2025, user.getBirthdayData().getLastAnnouncedYear());
         assertNull(store.persistedAnnouncedYear("1"));
     }
@@ -177,13 +167,10 @@ class BirthdayAnnouncerTest {
     void failedRecordMeansNothingIsSent() {
         DiscordUser user = member("1", LocalDate.of(2007, 10, 12), "UTC");
         FakeDiscordUserStore store = new FakeDiscordUserStore().seed(user).failSavesFor("1");
-        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, message -> {
-            sent.add(message);
-            return CompletableFuture.completedFuture(null);
-        }, onTheDay);
+        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, messenger, onTheDay);
 
         assertEquals(0, announcer.announceDue());
-        assertTrue(sent.isEmpty());
+        assertTrue(messenger.messages().isEmpty());
         assertEquals(0, user.getBirthdayData().getLastAnnouncedYear());
     }
 
@@ -193,23 +180,29 @@ class BirthdayAnnouncerTest {
             .seed(member("1", LocalDate.of(2007, 10, 12), "UTC"))
             .seed(member("2", LocalDate.of(2001, 10, 12), "UTC"))
             .failSavesFor("1");
-        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, message -> {
-            sent.add(message);
-            return CompletableFuture.completedFuture(null);
-        }, onTheDay);
+        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, messenger, onTheDay);
 
         assertEquals(1, announcer.announceDue());
-        assertEquals(List.of("Happy birthday <@2>!"), sent);
+        assertEquals(List.of("Happy birthday <@2>!"), messenger.messages());
+    }
+
+    @Test
+    void unreadableMemberDoesNotStopTheOthers() {
+        FakeDiscordUserStore store = new FakeDiscordUserStore()
+            .seed(member("1", LocalDate.of(2007, 10, 12), "UTC"))
+            .seed(member("2", LocalDate.of(2001, 10, 12), "UTC"))
+            .throwOnFindFor("1");
+        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, messenger, onTheDay);
+
+        assertEquals(1, announcer.announceDue());
+        assertEquals(List.of("Happy birthday <@2>!"), messenger.messages());
     }
 
     @Test
     void settingTheBirthdayOnTheDayItselfStillAnnouncesIt() {
         DiscordUser user = new DiscordUser("1");
         FakeDiscordUserStore store = new FakeDiscordUserStore().seed(user);
-        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, message -> {
-            sent.add(message);
-            return CompletableFuture.completedFuture(null);
-        }, onTheDay);
+        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, messenger, onTheDay);
         assertEquals(0, announcer.announceDue());
 
         user.setBirthday(LocalDate.of(2007, 10, 12), LocalDate.of(2026, 10, 12));
@@ -221,17 +214,14 @@ class BirthdayAnnouncerTest {
     void removingAndReAddingTheBirthdayDoesNotAnnounceTwice() {
         DiscordUser user = member("1", LocalDate.of(2007, 10, 12), "UTC");
         FakeDiscordUserStore store = new FakeDiscordUserStore().seed(user);
-        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, message -> {
-            sent.add(message);
-            return CompletableFuture.completedFuture(null);
-        }, onTheDay);
+        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, messenger, onTheDay);
         announcer.announceDue();
 
         user.getBirthdayData().clearBirthday();
         user.setBirthday(LocalDate.of(2007, 10, 12), LocalDate.of(2026, 10, 12));
         announcer.announceDue();
 
-        assertEquals(1, sent.size());
+        assertEquals(1, messenger.messages().size());
     }
 
     @Test
@@ -239,17 +229,11 @@ class BirthdayAnnouncerTest {
         DiscordUser user = member("1", LocalDate.of(2007, 10, 12), "Pacific/Kiritimati");
         FakeDiscordUserStore store = new FakeDiscordUserStore().seed(user);
         Clock early = Clock.fixed(Instant.parse("2026-10-11T11:00:00Z"), ZoneOffset.UTC);
-        new BirthdayAnnouncer(store, message -> {
-            sent.add(message);
-            return CompletableFuture.completedFuture(null);
-        }, early).announceDue();
+        new BirthdayAnnouncer(store, messenger, early).announceDue();
 
         user.getBirthdayData().setTimezone("Etc/GMT+12");
-        new BirthdayAnnouncer(store, message -> {
-            sent.add(message);
-            return CompletableFuture.completedFuture(null);
-        }, Clock.fixed(Instant.parse("2026-10-12T13:00:00Z"), ZoneOffset.UTC)).announceDue();
+        new BirthdayAnnouncer(store, messenger, Clock.fixed(Instant.parse("2026-10-12T13:00:00Z"), ZoneOffset.UTC)).announceDue();
 
-        assertEquals(1, sent.size());
+        assertEquals(1, messenger.messages().size());
     }
 }

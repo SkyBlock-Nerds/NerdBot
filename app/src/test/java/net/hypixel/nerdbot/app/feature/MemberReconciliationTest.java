@@ -11,6 +11,7 @@ import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -22,7 +23,7 @@ class MemberReconciliationTest {
     private static final Predicate<String> ALL_KNOWN = badgeId -> true;
 
     @Test
-    void createsNewUserWhenAbsentThenSavesIt() {
+    void createsNewUserWhenAbsentThenCachesIt() {
         FakeDiscordUserStore store = new FakeDiscordUserStore();
 
         DiscordUser result = UserGrabberFeature.reconcileMember(store, "123", "Nerd", ALL_KNOWN, List.of());
@@ -30,8 +31,18 @@ class MemberReconciliationTest {
         assertEquals("123", result.getDiscordId());
         assertNotNull(result.getLastActivity(), "a new user should have default activity");
         assertNotNull(result.getBadges(), "a new user should have a (non-null) badge list");
-        assertEquals(List.of("123"), store.cachedIds(), "the new user should have been saved");
+        assertEquals(List.of("123"), store.cachedIds(), "the new user should have been cached");
         assertTrue(store.findById("123").isPresent(), "the new user should now be in the store");
+    }
+
+    @Test
+    void failedLookupCachesNothingSoARealRecordIsNeverOverwritten() {
+        FakeDiscordUserStore store = new FakeDiscordUserStore().throwOnFindFor("123");
+
+        assertThrows(IllegalStateException.class,
+            () -> UserGrabberFeature.reconcileMember(store, "123", "Nerd", ALL_KNOWN, List.of()));
+
+        assertTrue(store.cachedIds().isEmpty(), "a failed lookup must not cache a blank user");
     }
 
     @Test
