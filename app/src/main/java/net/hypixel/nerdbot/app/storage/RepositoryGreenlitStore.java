@@ -24,6 +24,11 @@ public class RepositoryGreenlitStore implements GreenlitStore {
     }
 
     @Override
+    public CompletableFuture<List<GreenlitMessage>> loadAllSaved() {
+        return withRepository(greenlit -> greenlit.saveAllToDatabaseAsync().thenCompose(saved -> greenlit.getAllDocumentsAsync()));
+    }
+
+    @Override
     public CompletableFuture<Void> save(GreenlitMessage message) {
         return withRepository(greenlit -> greenlit.cacheAndSaveAsync(message).thenApply(result -> null));
     }
