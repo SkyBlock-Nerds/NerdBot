@@ -261,7 +261,7 @@ public class ActivityListener {
             if (channelLeft != null) {
                 long timeSpent = time - this.voiceActivity.get(member.getIdLong());
 
-                PrometheusMetrics.TOTAL_VOICE_TIME_SPENT_BY_USER.labels(member.getEffectiveName(), channelLeft.getName()).inc((TimeUnit.MILLISECONDS.toSeconds(timeSpent)));
+                PrometheusMetrics.VOICE_TIME_SECONDS.labels(channelLeft.getName()).inc(TimeUnit.MILLISECONDS.toSeconds(timeSpent));
 
                 if ((timeSpent / 1_000L) > SkyBlockNerdsBot.config().getVoiceThreshold()) {
                     Suggestion.ChannelType channelType = SuggestionTypeResolver.getChannelSuggestionType(channelLeft.asVoiceChannel());
@@ -293,7 +293,7 @@ public class ActivityListener {
 
         if (event.getChannelJoined() != null) {
             this.voiceActivity.put(member.getIdLong(), time);
-            PrometheusMetrics.TOTAL_VOICE_CONNECTIONS_BY_USER.labels(member.getEffectiveName(), event.getChannelJoined().getName()).inc();
+            PrometheusMetrics.VOICE_CONNECTIONS.labels(event.getChannelJoined().getName()).inc();
         }
     }
 

@@ -499,12 +499,7 @@ public class SuggestionCommands {
                     : Button.danger("suggestion-review-completed", "Denied")).asDisabled()
             )).queue();
 
-            PrometheusMetrics.REVIEW_REQUEST_STATISTICS.labels(
-                firstMessage.get().getId(),
-                firstMessage.get().getAuthor().getId(),
-                suggestion.getThreadName(),
-                action
-            ).inc();
+            PrometheusMetrics.REVIEW_REQUESTS.labels(action).inc();
         });
     }
 

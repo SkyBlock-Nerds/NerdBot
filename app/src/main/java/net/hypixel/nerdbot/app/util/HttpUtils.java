@@ -36,6 +36,7 @@ public class HttpUtils {
     private static final int RETRY_ATTEMPTS = 3;
     private static final Duration RETRY_DELAY = Duration.ofMillis(500);
     private static final double RETRY_BACKOFF = 2.0;
+    private static final String HYPIXEL_PLAYER_ENDPOINT = "hypixel_player";
 
     public static Result<MojangProfile, HttpException> getMojangProfile(String username) {
         String mojangUrl = buildMojangUrl(username);
@@ -83,12 +84,12 @@ public class HttpUtils {
 
     public static Result<HypixelPlayerResponse, HttpException> getHypixelPlayer(UUID uniqueId) {
         String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId);
-        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
+        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(HYPIXEL_PLAYER_ENDPOINT).startTimer();
 
         try {
             return Result.of(() -> Retry.<HypixelPlayerResponse>of(() -> {
                     String hypixelApiKey = BotEnvironment.getHypixelAPIKey().map(UUID::toString).orElse("");
-                    HttpResponse<String> response = getHttpResponse(url, Pair.of("API-Key", hypixelApiKey));
+                    HttpResponse<String> response = getHttpResponse(HYPIXEL_PLAYER_ENDPOINT, url, Pair.of("API-Key", hypixelApiKey));
                     return BotEnvironment.GSON.fromJson(response.body(), HypixelPlayerResponse.class);
                 })
                 .maxAttempts(RETRY_ATTEMPTS)
@@ -103,12 +104,12 @@ public class HttpUtils {
 
     public static CompletableFuture<Result<HypixelPlayerResponse, HttpException>> getHypixelPlayerAsync(UUID uniqueId) {
         String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId);
-        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(url).startTimer();
+        Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(HYPIXEL_PLAYER_ENDPOINT).startTimer();
 
         String hypixelApiKey = BotEnvironment.getHypixelAPIKey().map(UUID::toString).orElse("");
 
         return Retry.<HypixelPlayerResponse>of(() -> {
-                HttpResponse<String> response = getHttpResponse(url, Pair.of("API-Key", hypixelApiKey));
+                HttpResponse<String> response = getHttpResponse(HYPIXEL_PLAYER_ENDPOINT, url, Pair.of("API-Key", hypixelApiKey));
                 return BotEnvironment.GSON.fromJson(response.body(), HypixelPlayerResponse.class);
             })
             .maxAttempts(RETRY_ATTEMPTS)
@@ -132,13 +133,13 @@ public class HttpUtils {
      * Makes an HTTP request with Prometheus metrics tracking.
      * This method wraps the core HttpClient with monitoring capabilities.
      */
-    private static HttpResponse<String> getHttpResponse(String url, Pair<String, String>... headers) throws IOException, InterruptedException {
+    private static HttpResponse<String> getHttpResponse(String endpoint, String url, Pair<String, String>... headers) throws IOException, InterruptedException {
         HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url)).GET();
         Arrays.stream(headers).forEach(h -> builder.header(h.first(), h.second()));
 
         HttpRequest request = builder.build();
         log.info("Sending HTTP request to {} with {} header(s)", url, headers.length);
-        PrometheusMetrics.HTTP_REQUESTS_AMOUNT.labels(request.method(), url).inc();
+        PrometheusMetrics.HTTP_REQUESTS_AMOUNT.labels(request.method(), endpoint).inc();
 
         return HttpClient.getClient().send(request, HttpResponse.BodyHandlers.ofString());
     }

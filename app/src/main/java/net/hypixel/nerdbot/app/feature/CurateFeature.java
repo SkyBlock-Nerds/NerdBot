@@ -64,7 +64,7 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
             result.forEach(greenlitMessage -> {
                 GreenlitMessageRepository greenlitMessageRepository = database.getRepositoryManager().getRepository(GreenlitMessageRepository.class);
                 greenlitMessageRepository.cacheObject(greenlitMessage);
-                PrometheusMetrics.GREENLIT_SUGGESTION_LENGTH.labels(greenlitMessage.getMessageId(), String.valueOf(greenlitMessage.getSuggestionContent().length())).inc();
+                PrometheusMetrics.GREENLIT_SUGGESTION_LENGTH.observe(greenlitMessage.getSuggestionContent().length());
             });
             log.info("Inserted {} new greenlit messages into the database!", result.size());
             PrometheusMetrics.TOTAL_GREENLIT_MESSAGES_AMOUNT.inc(result.size());
