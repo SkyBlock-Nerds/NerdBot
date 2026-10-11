@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.discord;
 
+import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.client.MongoClient;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.SlashCommandManager;
 import net.dv8tion.jda.api.JDA;
@@ -27,12 +29,14 @@ import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Base implementation for Discord bots built on top of the NerdBot platform.
@@ -46,6 +50,7 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     private DiscordBotConfig config;
     private long startTime;
     private List<BotFeature> features = Collections.emptyList();
+    private final AtomicBoolean shuttingDown = new AtomicBoolean();
 
     protected AbstractDiscordBot() {
         this.database = Objects.requireNonNull(createDatabase(), "createDatabase() returned null");
@@ -103,8 +108,8 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     }
 
     /**
-     * Hook called during shutdown before repositories are saved and database is closed.
-     * Use this for cleanup tasks that need to happen before data persistence.
+     * Hook called during shutdown after features have stopped and JDA has shut down, but before
+     * repositories are saved and the database is closed.
      */
     protected void onShutdown() {
     }
@@ -121,11 +126,6 @@ public abstract class AbstractDiscordBot implements DiscordBot {
             builder.setActivity(activity);
         }
 
-        Collection<Object> listeners = getEventListeners();
-        if (!listeners.isEmpty()) {
-            builder.addEventListeners(listeners.toArray(new Object[0]));
-        }
-
         configureMemoryUsage(builder);
         customizeBuilder(builder);
 
@@ -139,6 +139,13 @@ public abstract class AbstractDiscordBot implements DiscordBot {
         }
 
         onReady(jda);
+
+        // Registered only now so listeners never see events before onReady has set up what they use
+        Collection<Object> listeners = getEventListeners();
+        if (!listeners.isEmpty()) {
+            jda.addEventListener(listeners.toArray(new Object[0]));
+        }
+
         registerSlashCommands();
 
         onStart();
@@ -183,71 +190,109 @@ public abstract class AbstractDiscordBot implements DiscordBot {
         );
     }
 
+    /**
+     * A feature that fails to start is logged and left out; the others still start, and only the
+     * ones that started are stopped on shutdown.
+     */
     @Override
     public final void onStart() {
-        Collection<? extends BotFeature> createdFeatures = createFeatures();
-        List<BotFeature> featureList = new ArrayList<>();
+        List<BotFeature> started = new ArrayList<>();
+        for (BotFeature feature : createFeatures()) {
+            if (feature == null) {
+                continue;
+            }
 
-        createdFeatures.stream()
-            .filter(Objects::nonNull)
-            .forEach(featureList::add);
+            try {
+                feature.onFeatureStart();
+                started.add(feature);
+                log.info("Started feature {}", feature.getClass().getSimpleName());
+            } catch (RuntimeException exception) {
+                log.error("Feature {} failed to start and will not run", feature.getClass().getSimpleName(), exception);
+            }
+        }
 
-        featureList.forEach(feature -> {
-            feature.onFeatureStart();
-            log.info("Started feature {}", feature.getClass().getSimpleName());
-        });
-
-        features = Collections.unmodifiableList(featureList);
+        features = Collections.unmodifiableList(started);
         startTime = System.currentTimeMillis();
 
         log.info("Bot started in environment {}", Environment.getEnvironment());
     }
 
+    /**
+     * Each step runs even if an earlier one fails, so a broken feature can't stop the data from
+     * being saved. JDA stops before the save so no event changes a repository mid-save. Only the
+     * first call does anything; INT and TERM can both arrive.
+     */
     @Override
     public final void onEnd() {
-        log.info("Shutting down bot...");
-
-        features.forEach(BotFeature::onFeatureEnd);
-
-        onShutdown();
-
-        try {
-            Map<Class<?>, Object> repositories = database.getRepositoryManager().getRepositories();
-            log.info("Saving data from {} repositories...", repositories.size());
-
-            repositories.forEach((type, repositoryObject) -> {
-                Repository<?> repository = (Repository<?>) repositoryObject;
-                repository.saveAllToDatabaseAsync()
-                    .thenAccept(result -> {
-                        if (result != null && result.wasAcknowledged()) {
-                            int total = result.getInsertedCount() + result.getModifiedCount();
-                            log.info(
-                                "Saved {} documents for repository {} ({} inserted, {} modified, {} deleted)",
-                                total,
-                                repository.getClass().getSimpleName(),
-                                result.getInsertedCount(),
-                                result.getModifiedCount(),
-                                result.getDeletedCount()
-                            );
-                        } else {
-                            log.info("Saved 0 documents for repository {}", repository.getClass().getSimpleName());
-                        }
-                    })
-                    .exceptionally(throwable -> {
-                        log.error("Failed to save documents for repository {}", repository.getClass().getSimpleName(), throwable);
-                        return null;
-                    })
-                    .join();
-            });
-        } catch (Exception exception) {
-            log.error("Error while saving data: {}", exception.getMessage(), exception);
-        } finally {
-            database.getMongoClient().close();
+        if (!shuttingDown.compareAndSet(false, true)) {
+            log.info("Shutdown already in progress");
+            return;
         }
 
-        JsonUtils.shutdown();
+        log.info("Shutting down bot...");
+
+        for (BotFeature feature : features) {
+            runShutdownStep("stop feature " + feature.getClass().getSimpleName(), feature::onFeatureEnd);
+        }
+        runShutdownStep("shut down JDA", this::shutdownJda);
+        runShutdownStep("run onShutdown", this::onShutdown);
+        runShutdownStep("save repositories", this::saveRepositories);
+        runShutdownStep("close the database connection", this::closeDatabase);
+        runShutdownStep("shut down JSON utilities", JsonUtils::shutdown);
 
         log.info("Bot shutdown complete!");
+    }
+
+    private static void runShutdownStep(String description, Runnable step) {
+        try {
+            step.run();
+        } catch (RuntimeException exception) {
+            log.error("Failed to {} during shutdown", description, exception);
+        }
+    }
+
+    private void shutdownJda() {
+        if (jda == null) {
+            return;
+        }
+
+        jda.shutdown();
+        try {
+            if (!jda.awaitShutdown(Duration.ofSeconds(10))) {
+                log.warn("JDA did not shut down within 10 seconds, forcing it");
+                jda.shutdownNow();
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            jda.shutdownNow();
+        }
+    }
+
+    private void saveRepositories() {
+        Map<Class<?>, Object> repositories = database.getRepositoryManager().getRepositories();
+        log.info("Saving data from {} repositories...", repositories.size());
+
+        repositories.values().forEach(repositoryObject -> {
+            Repository<?> repository = (Repository<?>) repositoryObject;
+            String name = repository.getClass().getSimpleName();
+            runShutdownStep("save repository " + name, () -> {
+                BulkWriteResult result = repository.saveAllToDatabase();
+                if (result != null && result.wasAcknowledged()) {
+                    log.info("Saved {} documents for repository {} ({} inserted, {} modified, {} deleted)",
+                        result.getInsertedCount() + result.getModifiedCount(), name,
+                        result.getInsertedCount(), result.getModifiedCount(), result.getDeletedCount());
+                } else {
+                    log.info("Saved 0 documents for repository {}", name);
+                }
+            });
+        });
+    }
+
+    private void closeDatabase() {
+        MongoClient client = database.getMongoClient();
+        if (client != null) {
+            client.close();
+        }
     }
 
     @Override

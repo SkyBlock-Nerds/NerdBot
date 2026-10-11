@@ -37,6 +37,12 @@ public final class MongoTestDatabase {
         return client;
     }
 
+    /** For code that builds its own client, such as Marmalade's Database. */
+    public static String connectionString() {
+        client();
+        return container.getConnectionString();
+    }
+
     public static String freshDatabaseName() {
         return "test_" + UUID.randomUUID().toString().replace("-", "");
     }
