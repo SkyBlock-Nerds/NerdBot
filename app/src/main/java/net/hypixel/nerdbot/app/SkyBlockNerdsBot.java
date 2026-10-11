@@ -32,6 +32,7 @@ import net.hypixel.nerdbot.app.listener.RoleSyncListener;
 import net.hypixel.nerdbot.app.listener.SuggestionListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.app.sentry.SentryManager;
+import net.hypixel.nerdbot.app.user.BirthdayAnnouncementFeature;
 import net.hypixel.nerdbot.app.reminder.ReminderDispatcher;
 import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
@@ -219,6 +220,9 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         // Always-on safety net: hourly sweep that catches role changes missed by RoleSyncListener
         // while the bot was offline (see RoleReconcileFeature for details).
         features.add(new RoleReconcileFeature());
+
+        // Always-on: posts birthdays on the day, once, in each member's own timezone
+        features.add(new BirthdayAnnouncementFeature());
 
         // Safety net for Drive folder permissions; inert unless the Drive service is configured.
         features.add(new DrivePermissionSyncFeature());
