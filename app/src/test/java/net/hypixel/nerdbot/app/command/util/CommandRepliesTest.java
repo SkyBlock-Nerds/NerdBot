@@ -68,6 +68,20 @@ class CommandRepliesTest {
     }
 
     @Test
+    void failEditsADeferredReplyWithTheSafeMessage() {
+        CommandReplies.fail(hook, "Something broke", new IllegalStateException("secret detail"));
+
+        assertEquals("Something broke", recorder.last("editOriginal").arg(0));
+    }
+
+    @Test
+    void failRepliesToAnInteractionThatWasNotDeferred() {
+        CommandReplies.fail(recorder.fake(SlashCommandInteraction.class), "Something broke", new IllegalStateException("secret detail"));
+
+        assertEquals("Something broke", recorder.last("reply").arg(0));
+    }
+
+    @Test
     void workThatFinishesLaterIsStillHandled() {
         CompletableFuture<String> work = new CompletableFuture<>();
         CompletableFuture<Void> finished = CommandReplies.finish(work, hook, "test", "Something broke", result -> {

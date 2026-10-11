@@ -55,14 +55,20 @@ class ArchitectureRulesTest {
         "net.hypixel.nerdbot.app.badge.BadgeService",
         "net.hypixel.nerdbot.app.badge.ConfiguredBadgeCatalog",
         "net.hypixel.nerdbot.app.command.BadgeCommands",
+        "net.hypixel.nerdbot.app.command.ChannelCommands",
         "net.hypixel.nerdbot.app.command.DriveCommands",
+        "net.hypixel.nerdbot.app.command.InfoCommands",
         "net.hypixel.nerdbot.app.command.PackCommands",
         "net.hypixel.nerdbot.app.command.PostCommands",
         "net.hypixel.nerdbot.app.command.PunishmentCommands",
         "net.hypixel.nerdbot.app.command.ReminderCommands",
+        "net.hypixel.nerdbot.app.command.RoleCommands",
         "net.hypixel.nerdbot.app.command.util.CommandReplies",
         "net.hypixel.nerdbot.app.command.util.PanelId",
-        "net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore"
+        "net.hypixel.nerdbot.app.nomination.ActivityRequirements",
+        "net.hypixel.nerdbot.app.storage.GreenlitStore",
+        "net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore",
+        "net.hypixel.nerdbot.app.storage.RepositoryGreenlitStore"
     };
 
     @Test

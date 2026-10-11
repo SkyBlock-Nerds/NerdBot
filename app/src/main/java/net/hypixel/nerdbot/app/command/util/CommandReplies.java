@@ -16,6 +16,8 @@ import java.util.function.Consumer;
  *     and shows a generic error, even after the reply was deferred.</li>
  *     <li>Work that finishes later goes through {@link #finish}, because the library never sees
  *     exceptions from a future and the user would be left on "thinking..." forever.</li>
+ *     <li>An exception a command catches itself goes through {@link #fail}, so it is logged and the
+ *     user sees a safe message rather than the exception's text.</li>
  * </ul>
  */
 @Slf4j
@@ -32,6 +34,27 @@ public final class CommandReplies {
 
     public static void replyPrivately(IReplyCallback interaction, String message) {
         interaction.reply(message).setEphemeral(true).queue();
+    }
+
+    /**
+     * Logs the error (the logback Sentry appender forwards it to Sentry) and replaces the deferred
+     * reply with {@code userMessage}. The message must be safe to show: never the exception's own
+     * text, a stack trace or a file path.
+     */
+    public static void fail(InteractionHook hook, String userMessage, Throwable error) {
+        logFailure(userMessage, error);
+        hook.editOriginal(userMessage).queue();
+    }
+
+    /** As {@link #fail(InteractionHook, String, Throwable)}, for an interaction that wasn't deferred. */
+    public static void fail(IReplyCallback interaction, String userMessage, Throwable error) {
+        logFailure(userMessage, error);
+        interaction.reply(userMessage).queue();
+    }
+
+    /** Logs a failure the user hears about some other way, such as a DM. */
+    public static void logFailure(String context, Throwable error) {
+        log.error(context, error);
     }
 
     /**
