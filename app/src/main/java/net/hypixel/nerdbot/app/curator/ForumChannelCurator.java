@@ -100,7 +100,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                 return output;
             }
 
-            ForumTag greenlitTag = DiscordUtils.getTagByName(forumChannel, suggestionConfig.getGreenlitTag());
+            ForumTag greenlitTag = DiscordUtils.findTagByName(forumChannel, suggestionConfig.getGreenlitTag()).orElse(null);
 
             if (greenlitTag == null) {
                 log.error("Couldn't find the greenlit tag for the forum channel {} (ID: {})!", forumChannel.getName(), forumChannel.getId());
@@ -217,7 +217,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                     ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
                     if (autoTagConfig != null && autoTagConfig.getReviewTagName().equalsIgnoreCase(suggestionConfig.getGreenlitTag())) {
                         // Remove the default tag if it exists
-                        ForumTag defaultTag = DiscordUtils.getTagByName(forumChannel, autoTagConfig.getDefaultTagName());
+                        ForumTag defaultTag = DiscordUtils.findTagByName(forumChannel, autoTagConfig.getDefaultTagName()).orElse(null);
                         if (defaultTag != null && tags.contains(defaultTag)) {
                             tags.remove(defaultTag);
                             log.info("Removed auto-tag '{}' from thread '{}' (ID: {}) when greenlit via curator", autoTagConfig.getDefaultTagName(), thread.getName(), thread.getId());

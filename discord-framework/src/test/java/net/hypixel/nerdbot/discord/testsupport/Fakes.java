@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.app.testsupport;
+package net.hypixel.nerdbot.discord.testsupport;
 
 import java.lang.reflect.Proxy;
 import java.util.List;
