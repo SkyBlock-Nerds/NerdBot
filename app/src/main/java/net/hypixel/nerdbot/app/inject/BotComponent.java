@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.app.inject;
 import dagger.BindsInstance;
 import dagger.Component;
 import jakarta.inject.Singleton;
+import net.aerh.imagegenerator.tools.pack.ResourcePackService;
 import net.dv8tion.jda.api.JDA;
 import net.hypixel.nerdbot.app.reminder.ReminderScheduler;
 import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
@@ -31,8 +32,12 @@ public interface BotComponent {
 
     ExecutorService backgroundWorkPool();
 
+    @ImageRendering
+    ExecutorService imageRenderingPool();
+
     @Component.Factory
     interface Factory {
-        BotComponent create(@BindsInstance JDA jda, @BindsInstance Database database, @BindsInstance BotState state);
+        BotComponent create(@BindsInstance JDA jda, @BindsInstance Database database, @BindsInstance BotState state,
+                            @BindsInstance ResourcePackService resourcePacks);
     }
 }

@@ -81,19 +81,16 @@ public interface CommandsModule {
     @SlashCommandHandlers
     Object badgeCommands(BadgeCommands commands);
 
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object generatorCommands(GeneratorCommands commands);
+
     @Provides
     @IntoSet
     @SlashCommandHandlers
     static Object adminCommands() {
         return new AdminCommands();
-    }
-
-
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
-    static Object generatorCommands() {
-        return new GeneratorCommands();
     }
 
     @Provides

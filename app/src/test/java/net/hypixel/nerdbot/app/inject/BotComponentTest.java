@@ -3,6 +3,8 @@ package net.hypixel.nerdbot.app.inject;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
+import net.aerh.imagegenerator.pack.PackRepository;
+import net.aerh.imagegenerator.tools.pack.ResourcePackService;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
@@ -32,7 +34,8 @@ class BotComponentTest {
         SlashCommand.class, SlashComponentHandler.class, SlashModalHandler.class, SlashAutocompleteHandler.class);
 
     // No URI, so no connection and no repositories registered
-    private final BotComponent component = DaggerBotComponent.factory().create(Fakes.of(JDA.class, Map.of()), new Database(null, null), Fakes.of(BotState.class, Map.of()));
+    private final BotComponent component = DaggerBotComponent.factory().create(Fakes.of(JDA.class, Map.of()), new Database(null, null), Fakes.of(BotState.class, Map.of()),
+        new ResourcePackService(new PackRepository()));
 
     @Test
     void registersEveryClassWithSlashHandlersExactlyOnce() {
@@ -80,5 +83,6 @@ class BotComponentTest {
     void stopThreads() {
         component.scheduler().shutdownNow();
         component.backgroundWorkPool().shutdownNow();
+        component.imageRenderingPool().shutdownNow();
     }
 }

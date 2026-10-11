@@ -30,6 +30,7 @@ public interface BotModule {
 
     int SCHEDULER_THREADS = 2;
     int BACKGROUND_WORK_THREADS = 4;
+    int IMAGE_RENDERING_THREADS = Math.max(2, Runtime.getRuntime().availableProcessors());
 
     @Binds
     LogChannel logChannel(DiscordLogChannel channel);
@@ -69,6 +70,17 @@ public interface BotModule {
     @Singleton
     static ExecutorService backgroundWorkPool() {
         return Executors.newFixedThreadPool(BACKGROUND_WORK_THREADS, daemonThreads("bot-work-"));
+    }
+
+    @Binds
+    @ImageRendering
+    Executor imageRendering(@ImageRendering ExecutorService pool);
+
+    @Provides
+    @Singleton
+    @ImageRendering
+    static ExecutorService imageRenderingPool() {
+        return Executors.newFixedThreadPool(IMAGE_RENDERING_THREADS, daemonThreads("image-render-"));
     }
 
     @Provides

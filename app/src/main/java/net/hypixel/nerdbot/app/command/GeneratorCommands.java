@@ -1,34 +1,29 @@
 package net.hypixel.nerdbot.app.command;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.imagegenerator.context.GenerationContext;
 import net.aerh.imagegenerator.data.PowerStrength;
 import net.aerh.imagegenerator.data.Rarity;
 import net.aerh.imagegenerator.exception.GeneratorException;
 import net.aerh.imagegenerator.exception.NbtParseException;
-import net.aerh.imagegenerator.exception.TooManyTexturesException;
 import net.aerh.imagegenerator.impl.tooltip.MinecraftTooltipGenerator;
 import net.aerh.imagegenerator.item.GeneratedObject;
 import net.aerh.imagegenerator.spritesheet.OverlayLoader;
 import net.aerh.imagegenerator.spritesheet.Spritesheet;
-import net.aerh.imagegenerator.tools.DialogueRequest;
 import net.aerh.imagegenerator.tools.DialogueTool;
-import net.aerh.imagegenerator.tools.DisplayRequest;
 import net.aerh.imagegenerator.tools.DisplayTool;
-import net.aerh.imagegenerator.tools.InventoryRequest;
 import net.aerh.imagegenerator.tools.InventoryTool;
-import net.aerh.imagegenerator.tools.ItemRequest;
 import net.aerh.imagegenerator.tools.ItemTool;
 import net.aerh.imagegenerator.tools.ParseRequest;
 import net.aerh.imagegenerator.tools.ParseResult;
 import net.aerh.imagegenerator.tools.ParseTool;
 import net.aerh.imagegenerator.tools.PowerStoneRequest;
 import net.aerh.imagegenerator.tools.PowerStoneTool;
-import net.aerh.imagegenerator.tools.RecipeRequest;
 import net.aerh.imagegenerator.tools.RecipeTool;
 import net.aerh.imagegenerator.tools.SearchResult;
 import net.aerh.imagegenerator.tools.SearchTool;
-import net.aerh.imagegenerator.tools.TextRequest;
 import net.aerh.imagegenerator.tools.TextTool;
 import net.aerh.imagegenerator.tools.pack.ResourcePackService;
 import net.aerh.imagegenerator.tools.support.GlyphListing;
@@ -38,33 +33,45 @@ import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.app.generation.DiscordGenerationContext;
-import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.generation.DiscordGenerationContexts;
+import net.hypixel.nerdbot.app.inject.ImageRendering;
+import net.hypixel.nerdbot.app.storage.DiscordUserStore;
 import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
 import net.hypixel.nerdbot.discord.util.pagination.PaginationManager;
-import net.hypixel.nerdbot.marmalade.image.ImageUtil;
-import net.hypixel.nerdbot.marmalade.io.FileUtils;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.generator.GeneratorHistory;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
+import javax.imageio.ImageIO;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -87,7 +94,6 @@ public class GeneratorCommands {
     private static final String FIRST_LINE_PADDING_DESCRIPTION = "Add a small amount of padding between the item name and the first line of lore";
     private static final String TOOLTIP_SIDE_DESCRIPTION = "Which side the tooltip should be displayed on";
     private static final String TEXT_DESCRIPTION = "The text to display";
-    private static final String TEXTURE_DESCRIPTION = "The texture of the player head";
     private static final String RECIPE_STRING_DESCRIPTION = "The recipe string to display";
     private static final String INVENTORY_ROWS_DESCRIPTION = "The number of rows in the inventory";
     private static final String INVENTORY_COLUMNS_DESCRIPTION = "The number of slots per row in the inventory";
@@ -103,7 +109,62 @@ public class GeneratorCommands {
     private static final String PACK_DESCRIPTION = "The resource pack used to resolve item textures";
     private static final String TOOLTIP_STYLE_DESCRIPTION = "The pack tooltip style to render with (defaults to the rarity's configured style)";
 
-    private static final boolean AUTO_HIDE_ON_ERROR = true;
+    static final String WRONG_CHANNEL_MESSAGE = "Generator commands can only be used in image generator channels.";
+
+    // Without the member's preference, err on the side of not posting their image publicly
+    private static final boolean HIDDEN_WHEN_PREFERENCE_UNKNOWN = true;
+
+    private static final int MAX_MESSAGE_LENGTH = 2000;
+    private static final int SEARCH_RESULT_LIMIT = 10;
+    private static final String SEARCH_TRUNCATION_MARKER = " - ...\n";
+    private static final int SYMBOLS_PER_PAGE = 20;
+    private static final String DISCORD_SYMBOLS_HEADER = "Use `%%name%%` in generator text. Pack glyphs are shown as codepoints because"
+        + " Discord cannot display them; generated images can.";
+    private static final int MAX_AUTOCOMPLETE_CHOICES = 25;
+    private static final int MAX_CHOICE_LENGTH = 100;
+
+    static final int MAX_NBT_FILE_BYTES = 64 * 1024;
+    private static final Set<String> NBT_FILE_EXTENSIONS = Set.of(".txt", ".json", ".snbt", ".nbt");
+    private static final long NBT_DOWNLOAD_TIMEOUT_SECONDS = 30;
+
+    /** One generator run. Runs on the rendering pool and builds the reply that replaces the deferred one. */
+    @FunctionalInterface
+    interface Render {
+        MessageEditData render(GenerationContext context) throws IOException;
+    }
+
+    @FunctionalInterface
+    interface ImageRender {
+        GeneratedObject render(GenerationContext context) throws IOException;
+    }
+
+    /** An NBT file a member uploaded, kept apart from JDA's attachment so the checks can be tested. */
+    record NbtUpload(String fileName, int size, Supplier<CompletableFuture<InputStream>> download) {
+
+        static @Nullable NbtUpload of(@Nullable Message.Attachment attachment) {
+            return attachment == null ? null
+                : new NbtUpload(attachment.getFileName(), attachment.getSize(), () -> attachment.getProxy().download());
+        }
+    }
+
+    private record Started(InteractionHook hook, boolean hidden, Optional<DiscordUser> user) {
+    }
+
+    private final ResourcePackService packs;
+    private final Provider<NerdBotConfig> config;
+    private final DiscordUserStore users;
+    private final DiscordGenerationContexts contexts;
+    private final Executor rendering;
+
+    @Inject
+    public GeneratorCommands(ResourcePackService packs, Provider<NerdBotConfig> config, DiscordUserStore users,
+                             DiscordGenerationContexts contexts, @ImageRendering Executor rendering) {
+        this.packs = packs;
+        this.config = config;
+        this.users = users;
+        this.contexts = contexts;
+        this.rendering = rendering;
+    }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "display", description = "Display an item", guildOnly = true)
     public void generateItem(
@@ -119,31 +180,9 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
-        if (shouldBlockGeneratorCommand(event)) {
-            return;
-        }
-
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
-
-        event.deferReply(hidden).complete();
-
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
-
-        try {
-            DisplayRequest request = GeneratorRequests.display(itemId, itemModel, data, color, enchanted, hoverEffect, skinValue, durability,
-                packService().resolvePackOption(pack));
-            GeneratedObject generatedObject = new DisplayTool(packService()).render(request, context);
-
-            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "item")).queue();
-
-            addCommandToUserHistory(event.getUser(), event.getCommandString());
-        } catch (GeneratorException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while generating an item display", exception);
-        } catch (IOException exception) {
-            event.getHook().editOriginal("An error occurred while generating that item!").queue();
-            log.error("Encountered an error while generating an item display", exception);
-        }
+        generateImage(event, hidden, "item", "An error occurred while generating that item!", context -> new DisplayTool(packs).render(
+            GeneratorRequests.display(itemId, itemModel, data, color, enchanted, hoverEffect, skinValue, durability, packs.resolvePackOption(pack)),
+            context));
     }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "powerstone", description = "Generate an image of a Power Stone", guildOnly = true)
@@ -165,75 +204,42 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
-        if (shouldBlockGeneratorCommand(event)) {
-            return;
-        }
-
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
-
-        event.deferReply(hidden).complete();
-
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
-
-        try {
+        generateImage(event, hidden, "powerstone", "An error occurred while generating that Power Stone!", context -> {
             PowerStoneRequest request = GeneratorRequests.powerStone(powerName, powerStrength, magicalPower, scalingStats, uniqueBonus,
-                itemId, color, skinValue, alpha, padding, selected, enchanted, packService().resolvePackOption(pack));
-            PowerStoneTool tool = new PowerStoneTool(packService());
+                itemId, color, skinValue, alpha, padding, selected, enchanted, packs.resolvePackOption(pack));
+            PowerStoneTool tool = new PowerStoneTool(packs);
 
-            if (includeGenCommand != null && includeGenCommand) {
-                String slashCommand = tool.slashCommand(request);
-                event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + slashCommand.trim() + "```").queue();
+            if (Boolean.TRUE.equals(includeGenCommand)) {
+                event.getHook().sendMessage("Your Power Stone has been parsed into a slash command:\n```" + tool.slashCommand(request).trim() + "```").queue();
             }
 
-            GeneratedObject generatedObject = tool.render(request, context);
-
-            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "powerstone")).queue();
-
-            addCommandToUserHistory(event.getUser(), event.getCommandString());
-        } catch (GeneratorException | IllegalArgumentException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while generating a Power Stone", exception);
-        } catch (IOException exception) {
-            event.getHook().editOriginal("An error occurred while generating that Power Stone!").queue();
-            log.error("Encountered an error while generating a Power Stone", exception);
-        }
+            return tool.render(request, context);
+        });
     }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "search", description = "Search for an item", guildOnly = true)
     public void searchItem(SlashCommandInteractionEvent event, @SlashOption(description = "The ID of the item to search for") String itemId, @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden) {
-        if (shouldBlockGeneratorCommand(event)) {
-            return;
-        }
+        answer(event, hidden, "An error occurred while searching for that item!", context -> new MessageEditBuilder()
+            .setContent(searchReply(itemId, new SearchTool(packs).search(itemId)))
+            .build(), user -> {
+        });
+    }
 
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
-
-        event.deferReply(hidden).complete();
-
-        SearchResult result = new SearchTool(packService()).search(itemId);
-
+    static String searchReply(String query, SearchResult result) {
         if (result.isEmpty()) {
-            event.getHook().editOriginal("No results found for that item!").queue();
-            return;
+            return "No results found for that item!";
         }
 
         StringBuilder message = new StringBuilder();
-        appendSearchResults(message, "Top results for `" + itemId + "`", result.spritesheetResults());
-        appendSearchResults(message, "Resource pack results for `" + itemId + "`", result.packResults());
-
-        event.getHook().editOriginal(message.toString()).queue();
+        appendSearchResults(message, "Top results for `" + query + "`", result.spritesheetResults());
+        appendSearchResults(message, "Resource pack results for `" + query + "`", result.packResults());
+        return message.toString();
     }
 
-    private static final int SEARCH_RESULT_LIMIT = 10;
-    private static final int MAX_MESSAGE_LENGTH = 2000;
-
-    private static final String SEARCH_TRUNCATION_MARKER = " - ...\n";
-
     /**
-     * Appends a titled block of up to {@link #SEARCH_RESULT_LIMIT} results to the search reply.
-     * This is called once per result source onto a shared builder, so every append (the block
-     * header, each line, and the truncation marker) is bounded by Discord's
-     * {@link #MAX_MESSAGE_LENGTH} limit: a block whose header would not fit is skipped entirely,
-     * and lines stop as soon as the next one plus the marker would overflow.
+     * Called once per result source onto one shared message, so every append is checked against
+     * Discord's message limit: a block whose header won't fit is skipped, and lines stop with a
+     * truncation marker before they would overflow.
      */
     static void appendSearchResults(StringBuilder message, String header, List<String> results) {
         if (results.isEmpty()) {
@@ -260,37 +266,29 @@ public class GeneratorCommands {
         }
     }
 
-    private static final int SYMBOLS_PER_PAGE = 20;
-    private static final String DISCORD_SYMBOLS_HEADER = "Use `%%name%%` in generator text. Pack glyphs are shown as codepoints because"
-        + " Discord cannot display them; generated images can.";
-
     @SlashCommand(name = BASE_COMMAND, subcommand = "symbols", description = "List the placeholder names usable in generator text", guildOnly = true)
     public void listSymbols(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "Only show names containing this text", required = false) String filter,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
-        if (shouldBlockGeneratorCommand(event)) {
+        Optional<Started> started = start(event, hidden);
+        if (started.isEmpty()) {
             return;
         }
 
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
-        event.deferReply(hidden).complete();
-
+        InteractionHook hook = started.get().hook();
         List<String> rows = GlyphListing.buildRows(filter);
 
         if (rows.isEmpty()) {
-            event.getHook().editOriginal("No placeholders match `" + filter + "`!").queue();
+            hook.editOriginal("No placeholders match `" + filter + "`!").queue();
             return;
         }
 
         PaginatedResponse<String> pagination = PaginatedResponse.forText(rows, SYMBOLS_PER_PAGE,
             page -> GlyphListing.buildPage(DISCORD_SYMBOLS_HEADER, page), "gen-symbols-page");
         pagination.sendMessage(event);
-
-        event.getHook().retrieveOriginal().queue(message ->
-            PaginationManager.registerPagination(message.getId(), pagination)
-        );
+        hook.retrieveOriginal().queue(message -> PaginationManager.registerPagination(message.getId(), pagination));
     }
 
     @SlashComponentHandler(id = "gen-symbols-pagination", patterns = {"gen-symbols-page:*"})
@@ -311,29 +309,8 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
-        if (shouldBlockGeneratorCommand(event)) {
-            return;
-        }
-
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
-
-        event.deferReply(hidden).complete();
-
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
-
-        try {
-            RecipeRequest request = GeneratorRequests.recipe(recipe, renderBackground, packService().resolvePackOption(pack));
-            GeneratedObject generatedObject = new RecipeTool(packService()).render(request, context);
-
-            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "recipe")).queue();
-            addCommandToUserHistory(event.getUser(), event.getCommandString());
-        } catch (GeneratorException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while generating a recipe", exception);
-        } catch (IOException exception) {
-            event.getHook().editOriginal("An error occurred while generating that recipe!").queue();
-            log.error("Encountered an error while generating a recipe", exception);
-        }
+        generateImage(event, hidden, "recipe", "An error occurred while generating that recipe!", context -> new RecipeTool(packs).render(
+            GeneratorRequests.recipe(recipe, renderBackground, packs.resolvePackOption(pack)), context));
     }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "inventory", description = "Generate an inventory", guildOnly = true)
@@ -349,36 +326,12 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
-        if (shouldBlockGeneratorCommand(event)) {
-            return;
-        }
-
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
-
-        event.deferReply(hidden).complete();
-
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
-
-        boolean animateGlint = SkyBlockNerdsBot.config().getGeneratorConfig().getInventory().isAnimateGlint();
-
-        try {
-            InventoryRequest request = GeneratorRequests.inventory(rows, slotsPerRow, inventoryString, hoveredItemString, containerName,
-                drawBorder, maxLineLength, animateGlint, packService().resolvePackOption(pack));
-            GeneratedObject finalObject = new InventoryTool(packService()).render(request, context);
-
-            event.getHook().editOriginalAttachments(renderAttachment(finalObject, "inventory")).queue();
-
-            addCommandToUserHistory(event.getUser(), event.getCommandString());
-        } catch (GeneratorException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while generating an inventory", exception);
-        } catch (IOException exception) {
-            event.getHook().editOriginal("An error occurred while generating that inventory!").queue();
-            log.error("Encountered an error while generating an inventory", exception);
-        }
+        generateImage(event, hidden, "inventory", "An error occurred while generating that inventory!", context -> {
+            boolean animateGlint = config.get().getGeneratorConfig().getInventory().isAnimateGlint();
+            return new InventoryTool(packs).render(GeneratorRequests.inventory(rows, slotsPerRow, inventoryString, hoveredItemString,
+                containerName, drawBorder, maxLineLength, animateGlint, packs.resolvePackOption(pack)), context);
+        });
     }
-
-    private static final int MAX_ATTACHMENT_SIZE_BYTES = 64 * 1024; // 64 KB
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "parse", description = "Parse an NBT string (JSON or SNBT format)", guildOnly = true)
     public void parseNbtString(
@@ -388,83 +341,60 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
-        if (shouldBlockGeneratorCommand(event)) {
-            return;
-        }
+        NbtUpload upload = NbtUpload.of(attachment);
 
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
+        generate(event, hidden, "An error occurred while parsing the NBT!", context -> {
+            String input = nbtInput(nbt, upload);
+            ParseResult result = new ParseTool(packs).render(new ParseRequest(input, packs.resolvePackOption(pack)), context);
+            return parsedReply(result, upload == null ? "text input" : "attachment");
+        });
+    }
 
-        event.deferReply(hidden).complete();
-
-        String nbtInput;
-        try {
-            nbtInput = resolveNbtInput(nbt, attachment);
-        } catch (IllegalArgumentException e) {
-            event.getHook().editOriginal(e.getMessage()).queue();
-            return;
-        }
-
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
-
-        try {
-            ParseResult result = new ParseTool(packService()).render(new ParseRequest(nbtInput, packService().resolvePackOption(pack)), context);
-
-            String sourceLabel = attachment != null ? "attachment" : "text input";
-            String content = "Your NBT " + sourceLabel + " has been parsed into a slash command:"
-                + System.lineSeparator() + "```" + System.lineSeparator() + result.slashCommand() + "```";
-
-            if (result.fallbackNotice() != null) {
-                content += System.lineSeparator() + "-# " + result.fallbackNotice();
+    /** An uploaded file wins over the text option. */
+    static String nbtInput(@Nullable String text, @Nullable NbtUpload upload) throws IOException {
+        if (upload == null) {
+            if (text == null || text.isBlank()) {
+                throw new IllegalArgumentException("Please provide NBT data either as text or by uploading a file.");
             }
+            return text;
+        }
 
-            MessageEditBuilder builder = new MessageEditBuilder().setContent(content);
-            builder.setFiles(renderAttachment(result.image(), "parsed_nbt"));
+        if (upload.size() > MAX_NBT_FILE_BYTES) {
+            throw new IllegalArgumentException("Attachment is too large! Maximum size is " + NumberFormats.formatSize(MAX_NBT_FILE_BYTES));
+        }
 
-            event.getHook().editOriginal(builder.build()).queue();
-            addCommandToUserHistory(event.getUser(), event.getCommandString());
-        } catch (IOException exception) {
-            event.getHook().editOriginal("An error occurred while parsing the NBT!").queue();
-            log.error("Encountered an error while parsing NBT", exception);
-        } catch (TooManyTexturesException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-        } catch (GeneratorException | NbtParseException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while parsing NBT", exception);
+        String fileName = upload.fileName().toLowerCase(Locale.ROOT);
+        if (NBT_FILE_EXTENSIONS.stream().noneMatch(fileName::endsWith)) {
+            throw new IllegalArgumentException("Unsupported file type! Please upload a `.txt`, `.json`, `.snbt`, or `.nbt` file.");
+        }
+
+        String content = download(upload);
+        if (content.isBlank()) {
+            throw new IllegalArgumentException("The uploaded file is empty!");
+        }
+
+        return content;
+    }
+
+    private static String download(NbtUpload upload) throws IOException {
+        try (InputStream input = upload.download().get().get(NBT_DOWNLOAD_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (ExecutionException | TimeoutException exception) {
+            throw new IOException("Couldn't download " + upload.fileName(), exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while downloading " + upload.fileName(), exception);
         }
     }
 
-    private String resolveNbtInput(String nbtText, net.dv8tion.jda.api.entities.Message.Attachment attachment) {
-        if (attachment != null) {
-            if (attachment.getSize() > MAX_ATTACHMENT_SIZE_BYTES) {
-                throw new IllegalArgumentException("Attachment is too large! Maximum size is " + NumberFormats.formatSize(MAX_ATTACHMENT_SIZE_BYTES));
-            }
+    private static MessageEditData parsedReply(ParseResult result, String sourceLabel) throws IOException {
+        String content = "Your NBT " + sourceLabel + " has been parsed into a slash command:\n```\n" + result.slashCommand() + "```";
 
-            String fileName = attachment.getFileName().toLowerCase(Locale.ROOT);
-            if (!fileName.endsWith(".txt") && !fileName.endsWith(".json") && !fileName.endsWith(".snbt") && !fileName.endsWith(".nbt")) {
-                throw new IllegalArgumentException("Unsupported file type! Please upload a `.txt`, `.json`, `.snbt`, or `.nbt` file.");
-            }
-
-            try (InputStream inputStream = attachment.getProxy().download().join()) {
-                String content = new String(inputStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-                if (content.isBlank()) {
-                    throw new IllegalArgumentException("The uploaded file is empty!");
-                }
-
-                log.debug("Read {} bytes from attachment '{}'", content.length(), attachment.getFileName());
-                return content;
-            } catch (IllegalArgumentException e) {
-                throw e;
-            } catch (Exception e) {
-                log.error("Failed to read attachment '{}'", attachment.getFileName(), e);
-                throw new IllegalArgumentException("Failed to read the uploaded file: " + e.getMessage());
-            }
+        if (result.fallbackNotice() != null) {
+            content += "\n-# " + result.fallbackNotice();
         }
 
-        if (nbtText == null || nbtText.isBlank()) {
-            throw new IllegalArgumentException("Please provide NBT data either as text or by uploading a file.");
-        }
-
-        return nbtText;
+        return new MessageEditBuilder().setContent(content).setFiles(renderAttachment(result.image(), "parsed_nbt")).build();
     }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "item", description = "Generate a full item image. Supports displaying items, recipes, tooltips & more", guildOnly = true)
@@ -492,32 +422,10 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "tooltip-styles", description = TOOLTIP_STYLE_DESCRIPTION, required = false) String tooltipStyle,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
-        if (shouldBlockGeneratorCommand(event)) {
-            return;
-        }
-
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
-
-        event.deferReply(hidden).complete();
-
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
-
-        try {
-            ItemRequest request = GeneratorRequests.item(itemName, itemLore, type, rarity, itemId, itemModel, color, skinValue, recipe,
-                alpha, padding, enchanted, centered, firstLinePadding, maxLineLength, tooltipSide, renderBorder, durability,
-                packService().resolvePackOption(pack), tooltipStyle);
-            GeneratedObject generatedObject = new ItemTool(packService()).render(request, context);
-
-            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "item")).queue();
-
-            addCommandToUserHistory(event.getUser(), event.getCommandString());
-        } catch (GeneratorException | IllegalArgumentException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while generating an item display", exception);
-        } catch (IOException exception) {
-            event.getHook().editOriginal("An error occurred while generating that item!").queue();
-            log.error("Encountered an error while generating an item display", exception);
-        }
+        generateImage(event, hidden, "item", "An error occurred while generating that item!", context -> new ItemTool(packs).render(
+            GeneratorRequests.item(itemName, itemLore, type, rarity, itemId, itemModel, color, skinValue, recipe, alpha, padding, enchanted,
+                centered, firstLinePadding, maxLineLength, tooltipSide, renderBorder, durability, packs.resolvePackOption(pack), tooltipStyle),
+            context));
     }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "text", description = "Generate some text", guildOnly = true)
@@ -533,31 +441,9 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "tooltip-styles", description = TOOLTIP_STYLE_DESCRIPTION, required = false) String tooltipStyle,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
-        if (shouldBlockGeneratorCommand(event)) {
-            return;
-        }
-
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
-
-        event.deferReply(hidden).complete();
-
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
-
-        try {
-            TextRequest request = GeneratorRequests.text(text, centered, alpha, padding, maxLineLength, renderBorder,
-                packService().resolvePackOption(pack), tooltipStyle);
-            GeneratedObject generatedObject = new TextTool(packService()).render(request, context);
-
-            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "text")).queue();
-
-            addCommandToUserHistory(event.getUser(), event.getCommandString());
-        } catch (GeneratorException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while generating text", exception);
-        } catch (IOException exception) {
-            event.getHook().editOriginal("An error occurred while generating the text!").queue();
-            log.error("Encountered an error while generating text", exception);
-        }
+        generateImage(event, hidden, "text", "An error occurred while generating the text!", context -> new TextTool(packs).render(
+            GeneratorRequests.text(text, centered, alpha, padding, maxLineLength, renderBorder, packs.resolvePackOption(pack), tooltipStyle),
+            context));
     }
 
     @SlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "single", description = "Generate dialogue for a single NPC", guildOnly = true)
@@ -572,31 +458,9 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
-        if (shouldBlockGeneratorCommand(event)) {
-            return;
-        }
-
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
-
-        event.deferReply(hidden).complete();
-
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
-
-        try {
-            DialogueRequest request = GeneratorRequests.dialogueSingle(npcName, dialogue, maxLineLength, abiphone, skinValue, renderBackground,
-                packService().resolvePackOption(pack));
-            GeneratedObject generatedObject = new DialogueTool(packService()).render(request, context);
-
-            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "dialogue")).queue();
-
-            addCommandToUserHistory(event.getUser(), event.getCommandString());
-        } catch (GeneratorException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while generating dialogue", exception);
-        } catch (IOException exception) {
-            event.getHook().editOriginal("An error occurred while generating the dialogue!").queue();
-            log.error("Encountered an error while generating dialogue", exception);
-        }
+        generateImage(event, hidden, "dialogue", "An error occurred while generating the dialogue!", context -> new DialogueTool(packs).render(
+            GeneratorRequests.dialogueSingle(npcName, dialogue, maxLineLength, abiphone, skinValue, renderBackground, packs.resolvePackOption(pack)),
+            context));
     }
 
     @SlashCommand(name = BASE_COMMAND, group = "dialogue", subcommand = "multi", description = "Generate dialogue for multiple NPCs", guildOnly = true)
@@ -611,246 +475,212 @@ public class GeneratorCommands {
         @SlashOption(autocompleteId = "pack-ids", description = PACK_DESCRIPTION, required = false) String pack,
         @SlashOption(description = HIDDEN_OUTPUT_DESCRIPTION, required = false) Boolean hidden
     ) {
-        if (shouldBlockGeneratorCommand(event)) {
-            return;
-        }
-
-        hidden = hidden == null ? getUserAutoHideSetting(event) : hidden;
-
-        event.deferReply(hidden).complete();
-
-        GenerationContext context = DiscordGenerationContext.fromEvent(event, hidden);
-
-        try {
-            DialogueRequest request = GeneratorRequests.dialogueMulti(npcNames, dialogue, maxLineLength, abiphone, skinValue, renderBackground,
-                packService().resolvePackOption(pack));
-            GeneratedObject generatedObject = new DialogueTool(packService()).render(request, context);
-
-            event.getHook().editOriginalAttachments(renderAttachment(generatedObject, "dialogue")).queue();
-
-            addCommandToUserHistory(event.getUser(), event.getCommandString());
-        } catch (GeneratorException exception) {
-            event.getHook().editOriginal(exception.getMessage()).queue();
-            log.error("Encountered an error while generating dialogue", exception);
-        } catch (IOException exception) {
-            event.getHook().editOriginal("An error occurred while generating the dialogue!").queue();
-            log.error("Encountered an error while generating dialogue", exception);
-        }
+        generateImage(event, hidden, "dialogue", "An error occurred while generating the dialogue!", context -> new DialogueTool(packs).render(
+            GeneratorRequests.dialogueMulti(npcNames, dialogue, maxLineLength, abiphone, skinValue, renderBackground, packs.resolvePackOption(pack)),
+            context));
     }
 
     @SlashCommand(name = BASE_COMMAND, subcommand = "history", description = "View your command history", guildOnly = true)
     public void viewHistory(SlashCommandInteractionEvent event) {
-        event.deferReply(true).complete();
+        showHistory(event);
+    }
 
-        List<String> history = getCommandHistory(findDiscordUser(event.getUser()));
+    void showHistory(SlashCommandInteraction event) {
+        InteractionHook hook = CommandReplies.deferPrivately(event);
+        List<String> history = userRecord(event.getUser().getId()).map(GeneratorCommands::commandHistory).orElse(List.of());
 
         if (history.isEmpty()) {
-            event.getHook().editOriginal("No history found").queue();
+            hook.editOriginal("No history found").queue();
             return;
         }
 
-        try {
-            File file = FileUtils.createTempFile("generator_history.txt", String.join("\n\n", history));
-            event.getHook().editOriginalAttachments(FileUpload.fromData(file)).queue();
-        } catch (IOException e) {
-            event.getHook().editOriginal("An error occurred while fetching your generator command history!").queue();
-            log.error("Encountered an error while fetching generator command history for {}", event.getUser().getId(), e);
-        }
+        byte[] file = String.join("\n\n", history).getBytes(StandardCharsets.UTF_8);
+        hook.editOriginalAttachments(FileUpload.fromData(file, "generator_history.txt")).queue();
+    }
+
+    static List<String> commandHistory(DiscordUser user) {
+        GeneratorHistory history = user.getGeneratorHistory();
+        return history == null ? List.of() : List.copyOf(history.getCommandHistory());
     }
 
     @SlashAutocompleteHandler(id = "power-strengths")
     public List<Command.Choice> powerStrengths(CommandAutoCompleteInteractionEvent event) {
-        return toChoices(PowerStrength.getPowerStrengthNames().stream(), event);
+        return toChoices(PowerStrength.getPowerStrengthNames().stream(), event.getFocusedOption().getValue());
     }
 
     @SlashAutocompleteHandler(id = "item-names")
     public List<Command.Choice> itemNames(CommandAutoCompleteInteractionEvent event) {
-        OptionMapping packOption = event.getOption("pack");
-        Stream<String> packRefs = packService().itemRefsForOption(packOption == null ? null : packOption.getAsString()).stream();
-
-        return toChoices(Stream.concat(Spritesheet.getImageMap().keySet().stream(), packRefs), event);
+        Stream<String> packRefs = packs.itemRefsForOption(packOption(event)).stream();
+        return toChoices(Stream.concat(Spritesheet.getImageMap().keySet().stream(), packRefs), event.getFocusedOption().getValue());
     }
 
     @SlashAutocompleteHandler(id = "pack-ids")
     public List<Command.Choice> packIds(CommandAutoCompleteInteractionEvent event) {
-        return toChoices(packService().packOptionChoices().stream(), event);
+        return toChoices(packs.packOptionChoices().stream(), event.getFocusedOption().getValue());
     }
 
     @SlashAutocompleteHandler(id = "tooltip-styles")
     public List<Command.Choice> tooltipStyles(CommandAutoCompleteInteractionEvent event) {
-        OptionMapping packOption = event.getOption("pack");
-        return toChoices(packService()
-            .tooltipStyleChoices(packOption == null ? null : packOption.getAsString()).stream(), event);
+        return toChoices(packs.tooltipStyleChoices(packOption(event)).stream(), event.getFocusedOption().getValue());
     }
 
     @SlashAutocompleteHandler(id = "item-rarities")
     public List<Command.Choice> itemRarities(CommandAutoCompleteInteractionEvent event) {
-        return toChoices(Rarity.getRarityNames().stream(), event);
+        return toChoices(Rarity.getRarityNames().stream(), event.getFocusedOption().getValue());
     }
 
     @SlashAutocompleteHandler(id = "tooltip-side")
     public List<Command.Choice> tooltipSide(CommandAutoCompleteInteractionEvent event) {
-        return toChoices(Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values()).map(MinecraftTooltipGenerator.TooltipSide::name), event);
+        return toChoices(Arrays.stream(MinecraftTooltipGenerator.TooltipSide.values()).map(MinecraftTooltipGenerator.TooltipSide::name),
+            event.getFocusedOption().getValue());
     }
 
     @SlashAutocompleteHandler(id = "overlay-colors")
     public List<Command.Choice> overlayColors(CommandAutoCompleteInteractionEvent event) {
-        return toChoices(OverlayLoader.getInstance().getAllColorOptionNames().stream().sorted(), event);
+        return toChoices(OverlayLoader.getInstance().getAllColorOptionNames().stream().sorted(), event.getFocusedOption().getValue());
     }
 
-    private static final int MAX_AUTOCOMPLETE_CHOICES = 25;
-    private static final int MAX_CHOICE_LENGTH = 100; // JDA's Command.Choice name/value limit
+    private static @Nullable String packOption(CommandAutoCompleteInteractionEvent event) {
+        OptionMapping option = event.getOption("pack");
+        return option == null ? null : option.getAsString();
+    }
 
     /**
-     * Filters the candidate strings by the focused option's current input (case-insensitively),
-     * drops any that exceed JDA's {@value MAX_CHOICE_LENGTH}-character choice limit (which would
-     * otherwise throw and abort the whole autocomplete response), caps the result at
-     * {@value MAX_AUTOCOMPLETE_CHOICES}, and maps each to a {@link Command.Choice}. The candidate
-     * stream's encounter order is preserved.
+     * Keeps the candidates containing the typed text, in their original order. Names over Discord's
+     * choice length are dropped, because one of them would make JDA reject the whole response.
      */
-    private static List<Command.Choice> toChoices(Stream<String> candidates, CommandAutoCompleteInteractionEvent event) {
-        String userInput = event.getFocusedOption().getValue().toLowerCase(Locale.ROOT);
+    static List<Command.Choice> toChoices(Stream<String> candidates, String typed) {
+        String input = typed.toLowerCase(Locale.ROOT);
 
         return candidates
-            .filter(name -> name.toLowerCase(Locale.ROOT).contains(userInput))
+            .filter(name -> name.toLowerCase(Locale.ROOT).contains(input))
             .filter(name -> name.length() <= MAX_CHOICE_LENGTH)
             .limit(MAX_AUTOCOMPLETE_CHOICES)
             .map(name -> new Command.Choice(name, name))
             .toList();
     }
 
-    private static ResourcePackService packService() {
-        return SkyBlockNerdsBot.resourcePackService();
+    static FileUpload renderAttachment(GeneratedObject generated, String baseName) throws IOException {
+        if (generated.isAnimated()) {
+            return FileUpload.fromData(generated.getGifData(), baseName + ".gif");
+        }
+
+        ByteArrayOutputStream png = new ByteArrayOutputStream();
+        if (!ImageIO.write(generated.getImage(), "png", png)) {
+            throw new IOException("No PNG writer is available");
+        }
+
+        return FileUpload.fromData(png.toByteArray(), baseName + ".png");
+    }
+
+    private void generateImage(SlashCommandInteraction event, @Nullable Boolean hidden, String fileName, String failureMessage, ImageRender render) {
+        generate(event, hidden, failureMessage, context -> new MessageEditBuilder()
+            .setFiles(renderAttachment(render.render(context), fileName))
+            .build());
+    }
+
+    /** As {@link #answer}, and a successful command is added to the member's generator history. */
+    CompletableFuture<Void> generate(SlashCommandInteraction event, @Nullable Boolean hidden, String failureMessage, Render render) {
+        return answer(event, hidden, failureMessage, render, user -> addToHistory(user, event.getCommandString()));
     }
 
     /**
-     * Builds the Discord attachment for a generated render, branching on
-     * {@link GeneratedObject#isAnimated()}: animated renders upload the encoded GIF bytes as
-     * {@code <baseName>.gif}, static renders upload the PNG as {@code <baseName>.png}. Shared by
-     * every generator command so the GIF/PNG decision stays in one place.
+     * Defers the reply, renders on the rendering pool and replaces the deferred reply with the
+     * result. Input the generator rejects is shown to the member; anything else gets
+     * {@code failureMessage}.
      *
-     * @param generatedObject The render to attach
-     * @param baseName        The attachment file name without extension (e.g. {@code "item"})
-     *
-     * @return The {@link FileUpload} to send back to Discord
-     *
-     * @throws IOException If writing the static PNG to a temporary file fails
+     * @return completes once the reply has been sent, for tests
      */
-    static FileUpload renderAttachment(GeneratedObject generatedObject, String baseName) throws IOException {
-        if (generatedObject.isAnimated()) {
-            return FileUpload.fromData(generatedObject.getGifData(), baseName + ".gif");
+    CompletableFuture<Void> answer(SlashCommandInteraction event, @Nullable Boolean hidden, String failureMessage, Render render,
+                                   Consumer<DiscordUser> afterSuccess) {
+        Optional<Started> started = start(event, hidden);
+        if (started.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
         }
 
-        return FileUpload.fromData(ImageUtil.toFile(generatedObject.getImage()), baseName + ".png");
+        InteractionHook hook = started.get().hook();
+        GenerationContext context = contexts.create(event, started.get().hidden());
+
+        return CompletableFuture.supplyAsync(() -> renderUnchecked(render, context), rendering)
+            .thenAccept(reply -> {
+                // Discord can still refuse the edit, for example an image over the upload limit
+                hook.editOriginal(reply).queue(null, failure -> CommandReplies.fail(hook, failureMessage, failure));
+                started.get().user().ifPresent(afterSuccess);
+            })
+            .exceptionally(error -> {
+                reportFailure(hook, failureMessage, unwrap(error));
+                return null;
+            });
     }
 
-    /**
-     * Adds a slash command to the given {@link User}'s history.
-     * This will silently fail if the user is not found in the database.
-     *
-     * @param user    The {@link User} to add the command to
-     * @param command The command to add
-     */
-    private void addCommandToUserHistory(User user, String command) {
-        DiscordUser discordUser = findDiscordUser(user);
-
-        if (discordUser == null) {
-            return;
+    private Optional<Started> start(SlashCommandInteraction event, @Nullable Boolean hidden) {
+        if (!inGeneratorChannel(event.getChannelId())) {
+            event.reply(WRONG_CHANNEL_MESSAGE).setEphemeral(true).queue();
+            log.warn("Blocked generator command '{}' from user {} in channel {}", event.getCommandString(), event.getUser().getId(), event.getChannelId());
+            return Optional.empty();
         }
 
-        if (discordUser.getGeneratorHistory() == null) {
-            discordUser.setGeneratorHistory(new GeneratorHistory());
-        }
+        Optional<DiscordUser> user = userRecord(event.getUser().getId());
+        boolean hide = hidden != null ? hidden : user.map(DiscordUser::isAutoHideGenCommands).orElse(HIDDEN_WHEN_PREFERENCE_UNKNOWN);
+        event.deferReply(hide).queue();
 
-        discordUser.getGeneratorHistory().addCommand(command);
+        return Optional.of(new Started(event.getHook(), hide, user));
     }
 
-    /**
-     * Finds the {@link DiscordUser} for the given {@link User}.
-     *
-     * @param user The {@link User} to look up
-     *
-     * @return The {@link DiscordUser}, or {@code null} if the repository is unavailable or the user is not in the database
-     */
-    @Nullable
-    private static DiscordUser findDiscordUser(User user) {
-        DiscordUserRepository discordUserRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        if (discordUserRepository == null) {
-            return null;
-        }
-
-        return discordUserRepository.findById(user.getId()).orElse(null);
+    private boolean inGeneratorChannel(String channelId) {
+        String[] allowed = config.get().getChannelConfig().getGenChannelIds();
+        return allowed == null || allowed.length == 0 || Arrays.asList(allowed).contains(channelId);
     }
 
-    /**
-     * Gets the generator command history of the given {@link DiscordUser}.
-     *
-     * @param discordUser The {@link DiscordUser} to get the history of
-     *
-     * @return The list of commands, or an empty list if the user is {@code null} or has no history yet
-     */
-    static List<String> getCommandHistory(@Nullable DiscordUser discordUser) {
-        if (discordUser == null || discordUser.getGeneratorHistory() == null) {
-            return List.of();
-        }
-
-        return discordUser.getGeneratorHistory().getCommandHistory();
-    }
-
-    /**
-     * Determine whether the slash command should be allowed to be executed
-     *
-     * @param event The SlashCommandInteractionEvent event instance
-     *
-     * @return True if it can execute, false otherwise
-     */
-    private boolean shouldBlockGeneratorCommand(SlashCommandInteractionEvent event) {
-        ChannelConfig channelConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig();
-        String[] allowedChannelIds = channelConfig.getGenChannelIds();
-
-        if (allowedChannelIds == null || allowedChannelIds.length == 0) {
-            return false;
-        }
-
-        String channelId = event.getChannel().getId();
-        boolean allowed = Arrays.asList(allowedChannelIds).contains(channelId);
-
-        if (!allowed) {
-            String response = "Generator commands can only be used in image generator channels.";
-
-            if (event.isAcknowledged()) {
-                event.getHook().sendMessage(response).setEphemeral(true).queue();
-            } else {
-                event.reply(response).setEphemeral(true).queue();
-            }
-
-            log.warn("Blocked generator command '{}' from user {} in channel {}", event.getCommandString(), event.getUser().getId(), event.getChannel().getId());
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Gets the gen command auto hide preference from a {@link SlashCommandInteractionEvent}.
-     *
-     * @param event The {@link SlashCommandInteractionEvent} triggered by the user you want to get the auto hide preference from.
-     *
-     * @return The auto hide preference from the user.
-     */
-    private boolean getUserAutoHideSetting(SlashCommandInteractionEvent event) {
+    /** The generator works without a record, but every member should have one, so a missing one is logged as the bug it is. */
+    private Optional<DiscordUser> userRecord(String discordId) {
         try {
-            DiscordUserRepository repository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-            DiscordUser user = repository.findById(event.getMember().getId()).orElse(null);
-
-            if (user != null) {
-                return user.isAutoHideGenCommands();
+            Optional<DiscordUser> user = users.findById(discordId);
+            if (user.isEmpty()) {
+                log.error("Member {} has no user record, so their generator preference and history are skipped", discordId);
             }
-        } catch (Exception exception) {
-            return AUTO_HIDE_ON_ERROR;
+            return user;
+        } catch (RuntimeException exception) {
+            log.error("Couldn't look up the user record of {}, so their generator preference and history are skipped", discordId, exception);
+            return Optional.empty();
         }
+    }
 
-        return AUTO_HIDE_ON_ERROR;
+    private void addToHistory(DiscordUser user, String command) {
+        // Two renders for the same member can finish at the same time
+        synchronized (user) {
+            if (user.getGeneratorHistory() == null) {
+                user.setGeneratorHistory(new GeneratorHistory());
+            }
+            user.getGeneratorHistory().addCommand(command);
+        }
+        users.cache(user);
+    }
+
+    private static MessageEditData renderUnchecked(Render render, GenerationContext context) {
+        try {
+            return render.render(context);
+        } catch (IOException exception) {
+            throw new CompletionException(exception);
+        }
+    }
+
+    private static Throwable unwrap(Throwable error) {
+        return error instanceof CompletionException && error.getCause() != null ? error.getCause() : error;
+    }
+
+    static void reportFailure(InteractionHook hook, String failureMessage, Throwable error) {
+        String message = error.getMessage();
+
+        if (isRejectedInput(error) && message != null && !message.isBlank()) {
+            log.debug("The generator rejected the input: {}", message);
+            hook.editOriginal(message.length() > MAX_MESSAGE_LENGTH ? message.substring(0, MAX_MESSAGE_LENGTH) : message).queue();
+        } else {
+            CommandReplies.fail(hook, failureMessage, error);
+        }
+    }
+
+    private static boolean isRejectedInput(Throwable error) {
+        return error instanceof GeneratorException || error instanceof NbtParseException || error instanceof IllegalArgumentException;
     }
 }
