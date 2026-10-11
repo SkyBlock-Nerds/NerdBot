@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.app.config;
 
+import net.hypixel.nerdbot.discord.config.ExampleValue;
+import net.hypixel.nerdbot.discord.config.NoExampleValue;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -46,6 +48,7 @@ public class GeneratorConfig {
         /**
          * The pack ID applied when a generator command does not specify one (null or empty = vanilla)
          */
+        @ExampleValue("hypixel:skyblock")
         private String defaultPack = null;
 
         /**
@@ -61,29 +64,34 @@ public class GeneratorConfig {
         /**
          * Unique pack identifier in namespace:name format (e.g. hypixel:skyblock)
          */
+        @ExampleValue("hypixel:skyblock")
         private String id;
 
         /**
          * Path to the pack zip file or extracted pack directory
          */
+        @ExampleValue("/app/packs/hypixel_skyblock.zip")
         private String path;
 
         /**
          * Tooltip style refs keyed by rarity name, e.g. "legendary" -> "hypixel_skyblock:legendary".
          * Rarities without an entry render with the pack's default tooltip override, if any.
          */
+        @NoExampleValue
         private Map<String, String> tooltipStyles = new LinkedHashMap<>();
 
         /**
          * Text color replacements applied to tooltip text, keyed by vanilla hex color,
          * e.g. "#AA0000" -> "#D13228", mirroring the pack's text shader palette swap.
          */
+        @NoExampleValue
         private Map<String, String> textColorRemap = new LinkedHashMap<>();
 
         /**
          * The pack this one is a variant of, e.g. "hypixel:skyblock" for the alpha pack, so that pack's
          * icon overrides and emissive alpha convention apply to this one too (null or empty = none)
          */
+        @NoExampleValue
         private String variantOf = null;
 
         /**
@@ -153,6 +161,7 @@ public class GeneratorConfig {
         /**
          * Item refs that must exist in a new pack and render, e.g. hypixel_skyblock:item/uncategorized/hyperion
          */
+        @NoExampleValue
         private List<String> sampleItems = new ArrayList<>();
     }
 
@@ -163,17 +172,20 @@ public class GeneratorConfig {
         /**
          * hypixel-api or deploy-index (required when a source block is present)
          */
+        @ExampleValue("deploy-index")
         private String type = null;
 
         /**
          * deploy-index only: https URL of a JSON index with "uuid", "pack_versions" and "last_updated"
          */
+        @ExampleValue("https://example.com/skyblock-pack-index.json")
         private String url = null;
 
         /**
          * deploy-index only: download URL containing {deployId} and {format}, e.g.
          * https://resourcepacks.hypixel.net/SkyBlock/{deployId}/{format}.zip
          */
+        @ExampleValue("https://resourcepacks.hypixel.net/SkyBlock/{deployId}/{format}.zip")
         private String downloadUrlTemplate = null;
     }
 }
