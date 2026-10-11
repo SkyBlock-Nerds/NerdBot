@@ -119,12 +119,8 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
             log.info("Curating forum channel: {} (Channel ID: {})", forumChannel.getName(), forumChannel.getId());
 
             long start = System.currentTimeMillis();
-            List<ThreadChannel> threads = Stream.concat(
-                    forumChannel.getThreadChannels().stream(), // Unarchived Posts
-                    forumChannel.retrieveArchivedPublicThreadChannels().stream() // Archived Posts
-                )
+            List<ThreadChannel> threads = forumChannel.getThreadChannels().stream()
                 .filter(thread -> !thread.isLocked() && !thread.isArchived())
-                .distinct()
                 .toList();
 
             log.info("Found {} forum post(s) in {}ms", threads.size(), System.currentTimeMillis() - start);
@@ -228,16 +224,10 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
                         }
                     }
 
-                    boolean wasArchived = thread.isArchived();
-
-                    if (wasArchived) {
-                        threadManager = threadManager.setArchived(false);
-                    }
-
                     threadManager = threadManager.setAppliedTags(tags);
 
                     // Handle Archiving and Locking
-                    if (wasArchived || suggestionConfig.isArchiveOnGreenlit()) {
+                    if (suggestionConfig.isArchiveOnGreenlit()) {
                         threadManager = threadManager.setArchived(true);
                     }
 

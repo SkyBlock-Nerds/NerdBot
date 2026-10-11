@@ -16,16 +16,8 @@ public class UserNominationFeature extends BotFeature {
         NominationService.getInstance().runMemberNominationSweep();
     }
 
-    public static void nominateNewMembers() {
-        NominationService.getInstance().runNewMemberNominationSweep();
-    }
-
     public static void findInactiveUsers() {
         NominationInactivityService.getInstance().runInactivitySweepForMembers();
-    }
-
-    public static void findInactiveNewMembers() {
-        NominationInactivityService.getInstance().runInactivitySweepForNewMembers();
     }
 
     public static void findInactiveUsersInRoleRestrictedChannels() {
