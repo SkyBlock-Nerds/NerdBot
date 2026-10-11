@@ -4,7 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.hypixel.nerdbot.discord.role.RoleManager;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
@@ -12,6 +14,7 @@ import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.LastActivity;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.NominationInfo;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
@@ -31,11 +34,14 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class NominationInactivityService {
 
     private static final NominationInactivityService INSTANCE = new NominationInactivityService();
+    private static final int ROLE_RESTRICTED_INACTIVITY_THRESHOLD = 2;
 
     private NominationInactivityService() {
     }
@@ -199,6 +205,13 @@ public class NominationInactivityService {
             return;
         }
 
+        String votingChannelId = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId();
+        TextChannel votingChannel = ChannelCache.getTextChannelById(votingChannelId).orElse(null);
+        if (votingChannel == null) {
+            log.error("Cannot find the member voting channel (ID: {}) to send role-restricted inactivity warnings into, skipping the sweep", votingChannelId);
+            return;
+        }
+
         log.info("Checking for inactive users in {} role-restricted channel groups", channelGroups.size());
 
         for (RoleRestrictedChannelGroup group : channelGroups) {
@@ -215,9 +228,12 @@ public class NominationInactivityService {
             int scanned = 0;
             int missingMember = 0;
             int ineligible = 0;
+            int active = 0;
             int warned = 0;
             int skippedAlreadyThisMonth = 0;
             long startNanos = System.nanoTime();
+            YearMonth currentMonth = YearMonth.now(ZoneId.systemDefault());
+            List<String> requiredRoleIds = Arrays.asList(group.getRequiredRoleIds());
 
             for (DiscordUser discordUser : discordUserRepository.getAll()) {
                 scanned++;
@@ -229,95 +245,106 @@ public class NominationInactivityService {
                     continue;
                 }
 
-                // Must have one of the group's required roles
-                boolean hasRequiredRole = member.getRoles().stream().anyMatch(role -> Arrays.asList(group.getRequiredRoleIds()).contains(role.getId()));
+                boolean hasRequiredRole = member.getRoles().stream().anyMatch(role -> requiredRoleIds.contains(role.getId()));
                 if (!hasRequiredRole) {
                     ineligible++;
                     continue;
                 }
 
                 LastActivity lastActivity = discordUser.getLastActivity();
+                NominationInfo nominationInfo = lastActivity.getNominationInfo();
                 int totalMessages = lastActivity.getRoleRestrictedChannelMessageCount(group.getIdentifier(), group.getActivityCheckDays());
                 int totalVotes = lastActivity.getRoleRestrictedChannelVoteCount(group.getIdentifier(), group.getActivityCheckDays());
                 int totalComments = lastActivity.getRoleRestrictedChannelCommentCount(group.getIdentifier(), group.getActivityCheckDays());
-
-                String messagesStatus = totalMessages >= group.getMinimumMessagesForActivity() ? "✅" : "❌";
-                String votesStatus = totalVotes >= group.getMinimumVotesForActivity() ? "✅" : "❌";
-                String commentsStatus = totalComments >= group.getMinimumCommentsForActivity() ? "✅" : "❌";
 
                 int requirementsMet = (totalMessages >= group.getMinimumMessagesForActivity() ? 1 : 0)
                     + (totalVotes >= group.getMinimumVotesForActivity() ? 1 : 0)
                     + (totalComments >= group.getMinimumCommentsForActivity() ? 1 : 0);
 
-                Color embedColor = requirementsMet == 0 ? Color.RED : new Color(255, 165, 0);
-
-                StringBuilder roleNames = new StringBuilder();
-                for (String roleId : group.getRequiredRoleIds()) {
-                    Role role = member.getGuild().getRoleById(roleId);
-                    if (role != null) {
-                        if (!roleNames.isEmpty()) {
-                            roleNames.append(", ");
-                        }
-
-                        roleNames.append(role.getName());
-                    }
+                Long lastGroupWarning = nominationInfo.getLastRoleRestrictedInactivityWarningTimestamp(group.getIdentifier()).orElse(null);
+                RoleRestrictedOutcome outcome = classifyRoleRestrictedMember(requirementsMet, lastGroupWarning, currentMonth);
+                if (outcome == RoleRestrictedOutcome.ACTIVE) {
+                    active++;
+                    continue;
+                }
+                if (outcome == RoleRestrictedOutcome.ALREADY_WARNED_THIS_MONTH) {
+                    skippedAlreadyThisMonth++;
+                    continue;
                 }
 
-                ChannelCache.getTextChannelById(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getMemberVotingChannelId()).ifPresentOrElse(textChannel -> {
-                    List<String> openTicketLinks = findOpenTicketLinks(member.getId());
-
-                    EmbedBuilder embedBuilder = new EmbedBuilder()
-                        .setColor(embedColor)
-                        .setTitle(String.format("Role-Restricted Inactivity Warning - %s", group.getDisplayName()))
-                        .setDescription("**" + member.getAsMention() + "** has been flagged for inactivity in **" + group.getDisplayName() + "**")
-                        .setThumbnail(member.getEffectiveAvatarUrl())
-                        .addField("Channel Group",
-                            String.format("**Group:** %s\n**Required Roles:** %s",
-                                group.getDisplayName(),
-                                (!roleNames.isEmpty() ? roleNames.toString() : "Unknown")),
-                            false)
-                        .addField(String.format("Activity Summary (last %d days)", group.getActivityCheckDays()),
-                            String.format("**Requirements Met:** %d/3\n**Last Activity:** %s",
-                                requirementsMet,
-                                lastActivity.getRoleRestrictedChannelRelativeTimestamp(group.getIdentifier())),
-                            false)
-                        .addField("Messages",
-                            String.format("%s %s / %s required",
-                                messagesStatus,
-                                StringUtils.formatWithCommas(totalMessages),
-                                StringUtils.formatWithCommas(group.getMinimumMessagesForActivity())),
-                            true)
-                        .addField("Votes",
-                            String.format("%s %s / %s required",
-                                votesStatus,
-                                StringUtils.formatWithCommas(totalVotes),
-                                StringUtils.formatWithCommas(group.getMinimumVotesForActivity())),
-                            true)
-                        .addField("Comments",
-                            String.format("%s %s / %s required",
-                                commentsStatus,
-                                StringUtils.formatWithCommas(totalComments),
-                                StringUtils.formatWithCommas(group.getMinimumCommentsForActivity())),
-                            true);
-
-                    if (!openTicketLinks.isEmpty()) {
-                        embedBuilder.addField("Open Tickets", String.join("\n", openTicketLinks), false);
-                    }
-
-                    textChannel.sendMessageEmbeds(embedBuilder.build()).queue();
-                    lastActivity.getNominationInfo().increaseRoleRestrictedInactivityWarnings();
-                    log.info("Sent role-restricted inactivity warning for {} (ID: {}) in group '{}' (total warnings: {})",
-                        member.getEffectiveName(), member.getId(), group.getIdentifier(),
-                        lastActivity.getNominationInfo().getTotalRoleRestrictedInactivityWarnings());
-                }, () -> {
-                    throw new IllegalStateException("Cannot find voting channel to send role-restricted inactivity warning message into!");
-                });
+                votingChannel.sendMessageEmbeds(buildRoleRestrictedWarningEmbed(member, group, lastActivity, requirementsMet, totalMessages, totalVotes, totalComments)).queue();
+                nominationInfo.recordRoleRestrictedInactivityWarning(group.getIdentifier());
+                warned++;
+                log.info("Sent role-restricted inactivity warning for {} (ID: {}) in group '{}' (total warnings: {})",
+                    member.getEffectiveName(), member.getId(), group.getIdentifier(), nominationInfo.getTotalRoleRestrictedInactivityWarnings());
             }
 
             long durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
-            log.info("Role-restricted inactivity sweep complete for group '{}': scanned={}, warnedThisMonth={}, skippedAlreadyThisMonth={}, ineligible={}, missingMember={}, took={}ms",
-                group.getIdentifier(), scanned, warned, skippedAlreadyThisMonth, ineligible, missingMember, durationMs);
+            log.info("Role-restricted inactivity sweep complete for group '{}': scanned={}, warned={}, active={}, skippedAlreadyThisMonth={}, ineligible={}, missingMember={}, took={}ms",
+                group.getIdentifier(), scanned, warned, active, skippedAlreadyThisMonth, ineligible, missingMember, durationMs);
         }
+    }
+
+    enum RoleRestrictedOutcome {
+        ACTIVE,
+        ALREADY_WARNED_THIS_MONTH,
+        WARN
+    }
+
+    /**
+     * Same rule as the member sweep (fewer than 2 of the 3 requirements met is inactive), but the
+     * once-a-month limit is tracked per channel group.
+     */
+    static RoleRestrictedOutcome classifyRoleRestrictedMember(int requirementsMet, Long lastGroupWarningTimestamp, YearMonth currentMonth) {
+        if (requirementsMet >= ROLE_RESTRICTED_INACTIVITY_THRESHOLD) {
+            return RoleRestrictedOutcome.ACTIVE;
+        }
+
+        return shouldSendInactivityWarning(requirementsMet, ROLE_RESTRICTED_INACTIVITY_THRESHOLD, lastGroupWarningTimestamp, currentMonth)
+            ? RoleRestrictedOutcome.WARN
+            : RoleRestrictedOutcome.ALREADY_WARNED_THIS_MONTH;
+    }
+
+    private MessageEmbed buildRoleRestrictedWarningEmbed(Member member, RoleRestrictedChannelGroup group, LastActivity lastActivity,
+                                                         int requirementsMet, int totalMessages, int totalVotes, int totalComments) {
+        String roleNames = Arrays.stream(group.getRequiredRoleIds())
+            .map(roleId -> member.getGuild().getRoleById(roleId))
+            .filter(Objects::nonNull)
+            .map(Role::getName)
+            .collect(Collectors.joining(", "));
+
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+            .setColor(requirementsMet == 0 ? Color.RED : new Color(255, 165, 0))
+            .setTitle(String.format("Role-Restricted Inactivity Warning - %s", group.getDisplayName()))
+            .setDescription("**" + member.getAsMention() + "** has been flagged for inactivity in **" + group.getDisplayName() + "**")
+            .setThumbnail(member.getEffectiveAvatarUrl())
+            .addField("Channel Group",
+                String.format("**Group:** %s\n**Required Roles:** %s",
+                    group.getDisplayName(),
+                    (!roleNames.isEmpty() ? roleNames : "Unknown")),
+                false)
+            .addField(String.format("Activity Summary (last %d days)", group.getActivityCheckDays()),
+                String.format("**Requirements Met:** %d/3\n**Last Activity:** %s",
+                    requirementsMet,
+                    lastActivity.getRoleRestrictedChannelRelativeTimestamp(group.getIdentifier())),
+                false)
+            .addField("Messages", requirementLine(totalMessages, group.getMinimumMessagesForActivity()), true)
+            .addField("Votes", requirementLine(totalVotes, group.getMinimumVotesForActivity()), true)
+            .addField("Comments", requirementLine(totalComments, group.getMinimumCommentsForActivity()), true);
+
+        List<String> openTicketLinks = findOpenTicketLinks(member.getId());
+        if (!openTicketLinks.isEmpty()) {
+            embedBuilder.addField("Open Tickets", String.join("\n", openTicketLinks), false);
+        }
+
+        return embedBuilder.build();
+    }
+
+    private static String requirementLine(int actual, int required) {
+        return String.format("%s %s / %s required",
+            actual >= required ? "✅" : "❌",
+            StringUtils.formatWithCommas(actual),
+            StringUtils.formatWithCommas(required));
     }
 
     /**
