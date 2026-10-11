@@ -1,23 +1,29 @@
 package net.hypixel.nerdbot.app.command;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.commands.Command;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.config.GeneratorConfig;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.generation.pack.update.PackState;
 import net.hypixel.nerdbot.app.generation.pack.update.PackUpdateNotifier;
 import net.hypixel.nerdbot.app.generation.pack.update.PackUpdateOutcome;
 import net.hypixel.nerdbot.app.generation.pack.update.PackUpdater;
-import net.hypixel.nerdbot.discord.BotEnvironment;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /** Admin controls for resource pack auto-update. */
 @Slf4j
@@ -31,8 +37,23 @@ public class PackCommands {
     private record Target(PackUpdater updater, GeneratorConfig.PackDefinition definition) {
     }
 
+    private final Provider<Optional<PackUpdater>> packUpdater;
+    private final Provider<NerdBotConfig> config;
+    private final Executor backgroundWork;
+
+    @Inject
+    public PackCommands(Provider<Optional<PackUpdater>> packUpdater, Provider<NerdBotConfig> config, Executor backgroundWork) {
+        this.packUpdater = packUpdater;
+        this.config = config;
+        this.backgroundWork = backgroundWork;
+    }
+
     @SlashCommand(name = "pack", subcommand = "status", description = "Show the auto-updated resource pack state", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void status(SlashCommandInteractionEvent event, @SlashOption(autocompleteId = "auto-update-packs", description = PACK_OPTION_DESCRIPTION, required = false) String pack) {
+        showStatus(event, pack);
+    }
+
+    void showStatus(IReplyCallback event, String pack) {
         Optional<Target> target = resolveTarget(event, pack);
         if (target.isEmpty()) {
             return;
@@ -50,7 +71,7 @@ public class PackCommands {
             .map(recorded -> summarize(recorded.outcome()) + " <t:" + recorded.atEpochMs() / 1000 + ":R>")
             .orElse("none since the bot started"));
 
-        event.reply(truncate(message.toString())).setEphemeral(true).queue();
+        CommandReplies.replyPrivately(event, truncate(message.toString()));
     }
 
     @SlashCommand(name = "pack", subcommand = "check", description = "Check Hypixel for a newer resource pack now", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
@@ -74,30 +95,33 @@ public class PackCommands {
             .toList();
     }
 
-    private interface PackAction {
+    interface PackAction {
         PackUpdateOutcome run(PackUpdater updater, GeneratorConfig.PackDefinition definition);
     }
 
     /** Download and load can take seconds, so the work runs off the interaction thread. */
-    private void runAsync(SlashCommandInteractionEvent event, String pack, String actionName, PackAction action) {
+    void runAsync(IReplyCallback event, String pack, String actionName, PackAction action) {
         Optional<Target> target = resolveTarget(event, pack);
         if (target.isEmpty()) {
             return;
         }
 
-        log.info("Member {} invoked /pack {} for {}", event.getUser().getId(), actionName, target.get().definition().getId());
-        event.deferReply(true).queue();
-        BotEnvironment.EXECUTOR_SERVICE.execute(() -> {
-            PackUpdateOutcome outcome = action.run(target.get().updater(), target.get().definition());
-            event.getHook().editOriginal(truncate(summarize(outcome))).queue();
-        });
+        String packId = target.get().definition().getId();
+        log.info("Member {} invoked /pack {} for {}", event.getUser().getId(), actionName, packId);
+        InteractionHook hook = CommandReplies.deferPrivately(event);
+        CompletableFuture<PackUpdateOutcome> outcome = CompletableFuture.supplyAsync(
+            () -> action.run(target.get().updater(), target.get().definition()), backgroundWork);
+
+        CommandReplies.finish(outcome, hook, "run /pack " + actionName + " for " + packId,
+            "The pack " + actionName + " failed unexpectedly. Check the logs.",
+            result -> hook.editOriginal(truncate(summarize(result))).queue());
     }
 
     /** Replies with an error and returns empty when auto-update is off or the option does not pick exactly one auto-updated pack. */
-    private Optional<Target> resolveTarget(SlashCommandInteractionEvent event, String pack) {
-        Optional<PackUpdater> updater = SkyBlockNerdsBot.packUpdater();
+    private Optional<Target> resolveTarget(IReplyCallback event, String pack) {
+        Optional<PackUpdater> updater = packUpdater.get();
         if (updater.isEmpty()) {
-            event.reply(NOT_CONFIGURED_MESSAGE).setEphemeral(true).queue();
+            CommandReplies.replyPrivately(event, NOT_CONFIGURED_MESSAGE);
             return Optional.empty();
         }
 
@@ -105,15 +129,14 @@ public class PackCommands {
     }
 
     /** Replies with an error and returns empty when the option does not pick exactly one auto-updated pack. */
-    private Optional<GeneratorConfig.PackDefinition> resolveDefinition(SlashCommandInteractionEvent event, String pack) {
+    private Optional<GeneratorConfig.PackDefinition> resolveDefinition(IReplyCallback event, String pack) {
         List<GeneratorConfig.PackDefinition> definitions = PackUpdater.enabledDefinitions(packConfig());
 
         if (pack == null || pack.isBlank()) {
             if (definitions.size() == 1) {
                 return Optional.of(definitions.getFirst());
             }
-            event.reply(definitions.isEmpty() ? NOT_CONFIGURED_MESSAGE : "More than one pack is auto-updated, so choose one with the pack option.")
-                .setEphemeral(true).queue();
+            CommandReplies.replyPrivately(event, definitions.isEmpty() ? NOT_CONFIGURED_MESSAGE : "More than one pack is auto-updated, so choose one with the pack option.");
             return Optional.empty();
         }
 
@@ -122,21 +145,21 @@ public class PackCommands {
             .filter(definition -> PackUpdater.packIdOf(definition).equals(wanted))
             .findFirst();
         if (match.isEmpty()) {
-            event.reply("`" + pack + "` is not an auto-updated pack.").setEphemeral(true).queue();
+            CommandReplies.replyPrivately(event, "`" + pack + "` is not an auto-updated pack.");
         }
         return match;
     }
 
-    private static GeneratorConfig.ResourcePackConfig packConfig() {
-        return SkyBlockNerdsBot.config().getGeneratorConfig().getResourcePacks();
+    private GeneratorConfig.ResourcePackConfig packConfig() {
+        return config.get().getGeneratorConfig().getResourcePacks();
     }
 
     /** Failure reasons can be long, and Discord rejects messages over its length limit. */
-    private static String truncate(String text) {
+    static String truncate(String text) {
         return text.length() <= DISCORD_MESSAGE_LIMIT ? text : text.substring(0, DISCORD_MESSAGE_LIMIT);
     }
 
-    private static String summarize(PackUpdateOutcome outcome) {
+    static String summarize(PackUpdateOutcome outcome) {
         return switch (outcome) {
             case PackUpdateOutcome.UpToDate upToDate -> upToDate.previouslyRejected()
                 ? "The latest version (" + PackUpdateNotifier.shortHash(upToDate.sha1()) + ") was rejected before, so it was skipped."

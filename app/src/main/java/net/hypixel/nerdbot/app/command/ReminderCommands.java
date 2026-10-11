@@ -27,6 +27,7 @@ import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.interactions.modals.ModalInteraction;
 import net.dv8tion.jda.api.interactions.modals.ModalMapping;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.command.util.PanelId;
 import net.hypixel.nerdbot.app.reminder.ReminderService;
 import net.hypixel.nerdbot.app.reminder.ReminderService.CreateResult;
@@ -114,7 +115,7 @@ public class ReminderCommands {
     }
 
     void showPanel(IReplyCallback interaction) {
-        interaction.deferReply(true).queue();
+        CommandReplies.deferPrivately(interaction);
         renderPanel(interaction.getHook(), interaction.getUser().getId(), 1, null);
     }
 
@@ -191,8 +192,7 @@ public class ReminderCommands {
         }
         String userId = parts.get().getFirst();
 
-        interaction.deferReply(true).queue();
-        InteractionHook hook = interaction.getHook();
+        InteractionHook hook = CommandReplies.deferPrivately(interaction);
 
         String timeInput = modalText(interaction, "time");
         String description = modalText(interaction, "description");
@@ -207,13 +207,8 @@ public class ReminderCommands {
             return;
         }
 
-        reminders.create(userId, interaction.getChannel().getId(), timeInput, description).whenComplete((result, error) -> {
-            if (error != null) {
-                log.error("Could not save reminder for user {}", userId, error);
-                hook.editOriginal("❌ An error occurred while saving the reminder! Please try again.").queue();
-                return;
-            }
-
+        CommandReplies.finish(reminders.create(userId, interaction.getChannel().getId(), timeInput, description), hook,
+            "save a reminder for " + userId, "❌ An error occurred while saving the reminder! Please try again.", result -> {
             switch (result) {
                 case CreateResult.Created created -> hook.editOriginal("✅ Successfully created reminder for "
                     + DiscordTimestamp.toLongDateTime(created.reminder().getTime()) + "!\n\n"

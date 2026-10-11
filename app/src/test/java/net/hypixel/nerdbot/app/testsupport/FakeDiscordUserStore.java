@@ -25,6 +25,7 @@ public class FakeDiscordUserStore implements DiscordUserStore {
     private final Map<String, DiscordUser> users = new LinkedHashMap<>();
     private final List<String> cachedIds = new ArrayList<>();
     private final List<String> savedIds = new ArrayList<>();
+    private final List<String> clearedDriveAccessIds = new ArrayList<>();
     private final Set<String> failingSaves = new HashSet<>();
     private final Set<String> throwingSaves = new HashSet<>();
     private final Set<String> throwingFinds = new HashSet<>();
@@ -54,6 +55,11 @@ public class FakeDiscordUserStore implements DiscordUserStore {
     @Override
     public List<DiscordUser> getAll() {
         return new ArrayList<>(users.values());
+    }
+
+    @Override
+    public List<DiscordUser> getAllFromDatabase() {
+        return getAll();
     }
 
     @Override
@@ -90,6 +96,16 @@ public class FakeDiscordUserStore implements DiscordUserStore {
         savedIds.add(user.getDiscordId());
         persistedAnnouncedYears.put(user.getDiscordId(), announcedYearOf(user));
         return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public void clearDriveAccess(DiscordUser user) {
+        cache(user);
+        clearedDriveAccessIds.add(user.getDiscordId());
+    }
+
+    public List<String> clearedDriveAccessIds() {
+        return List.copyOf(clearedDriveAccessIds);
     }
 
     public List<String> cachedIds() {

@@ -18,7 +18,21 @@ public interface DiscordUserStore {
 
     List<DiscordUser> getAll();
 
+    // Every stored user, including ones the cache has dropped after a day of inactivity
+    List<DiscordUser> getAllFromDatabase();
+
     Optional<DiscordUser> findById(String discordId);
+
+    /**
+     * Every member has a record, created when they join, so a missing one is a bug rather than
+     * something to show the member.
+     *
+     * @throws IllegalStateException when there is no record
+     */
+    default DiscordUser require(String discordId) {
+        return findById(discordId)
+            .orElseThrow(() -> new IllegalStateException("Member " + discordId + " has no user record"));
+    }
 
     // Reads the database rather than the cache, which drops members after a day of inactivity
     List<String> findIdsWithBirthdaySet();
@@ -27,4 +41,7 @@ public interface DiscordUserStore {
     void cache(DiscordUser user);
 
     CompletableFuture<Void> save(DiscordUser user);
+
+    /** Caches the user, whose Drive access has already been cleared, and removes it from the stored copy. */
+    void clearDriveAccess(DiscordUser user);
 }

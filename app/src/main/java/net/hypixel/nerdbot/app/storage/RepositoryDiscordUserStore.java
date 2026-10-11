@@ -1,5 +1,7 @@
 package net.hypixel.nerdbot.app.storage;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 
@@ -15,34 +17,53 @@ import java.util.concurrent.CompletableFuture;
  */
 public class RepositoryDiscordUserStore implements DiscordUserStore {
 
-    private final DiscordUserRepository repository;
+    private final Provider<DiscordUserRepository> repository;
+
+    /** Looks the repository up on each call, so the bot still starts without a database. */
+    @Inject
+    public RepositoryDiscordUserStore(Provider<DiscordUserRepository> repository) {
+        this.repository = repository;
+    }
 
     public RepositoryDiscordUserStore(DiscordUserRepository repository) {
-        this.repository = repository;
+        this(() -> repository);
     }
 
     @Override
     public List<DiscordUser> getAll() {
-        return repository.getAll();
+        return repository.get().getAll();
+    }
+
+    @Override
+    public List<DiscordUser> getAllFromDatabase() {
+        return repository.get().getAllDocuments();
     }
 
     @Override
     public Optional<DiscordUser> findById(String discordId) {
-        return RepositoryLookups.toOptional(discordId, repository.findById(discordId));
+        return RepositoryLookups.toOptional(discordId, repository.get().findById(discordId));
     }
 
     @Override
     public List<String> findIdsWithBirthdaySet() {
-        return repository.findIdsWithBirthdaySet();
+        return repository.get().findIdsWithBirthdaySet();
     }
 
     @Override
     public void cache(DiscordUser user) {
-        repository.cacheObject(user);
+        repository.get().cacheObject(user);
     }
 
     @Override
     public CompletableFuture<Void> save(DiscordUser user) {
-        return repository.cacheAndSaveAsync(user).thenApply(result -> null);
+        return repository.get().cacheAndSaveAsync(user).thenApply(result -> null);
+    }
+
+    @Override
+    public void clearDriveAccess(DiscordUser user) {
+        DiscordUserRepository users = repository.get();
+        users.cacheObject(user);
+        // A $set save can't remove a field, so the stored copy is cleared directly
+        users.unsetField(user.getDiscordId(), "driveAccess");
     }
 }

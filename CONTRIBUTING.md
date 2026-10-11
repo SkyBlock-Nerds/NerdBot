@@ -83,3 +83,17 @@ with the fakes in the framework's test jar. Once a class is injected, add it to 
 Panels that only the person who opened them may use (buttons, select menus, modals) should describe
 their ids with `PanelId`, which builds and parses them and rejects clicks from anyone else. Timed work
 goes on the shared `ScheduledExecutorService` from `BotModule` rather than a new `Timer`.
+
+How a command answers:
+
+- Things the user should hear about, like bad input, come back from the service as a result type and
+  are shown as a normal reply.
+- An unexpected exception thrown by a handler can be left alone. The command library logs it and shows
+  a generic error, even after the reply was deferred.
+- Anything that finishes later (a `CompletableFuture`) must end in `CommandReplies.finish`, which logs
+  a failure and replaces the reply. The library never sees those exceptions, so without it the user is
+  left on "thinking..." forever.
+
+The config, the pack updater and the Drive service are injected as `Provider<...>` and read on each
+use, because `/config reload` replaces the config and the others only exist once startup reaches
+them. `ArchitectureRulesTest` fails if one is injected directly.

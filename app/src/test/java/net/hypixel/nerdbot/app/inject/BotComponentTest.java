@@ -32,7 +32,7 @@ class BotComponentTest {
         SlashCommand.class, SlashComponentHandler.class, SlashModalHandler.class, SlashAutocompleteHandler.class);
 
     // No URI, so no connection and no repositories registered
-    private final BotComponent component = DaggerBotComponent.factory().create(Fakes.of(JDA.class, Map.of()), new Database(null, null));
+    private final BotComponent component = DaggerBotComponent.factory().create(Fakes.of(JDA.class, Map.of()), new Database(null, null), Fakes.of(BotState.class, Map.of()));
 
     @Test
     void registersEveryClassWithSlashHandlersExactlyOnce() {
@@ -77,7 +77,8 @@ class BotComponentTest {
     }
 
     @AfterEach
-    void stopScheduler() {
+    void stopThreads() {
         component.scheduler().shutdownNow();
+        component.backgroundWorkPool().shutdownNow();
     }
 }

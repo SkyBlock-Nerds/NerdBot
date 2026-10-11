@@ -3,22 +3,32 @@ package net.hypixel.nerdbot.app.architecture;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.domain.JavaConstructor;
 import com.tngtech.archunit.core.domain.JavaConstructorCall;
 import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
+import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.ConditionEvents;
+import com.tngtech.archunit.lang.SimpleConditionEvent;
 import com.tngtech.archunit.library.freeze.FreezingArchRule;
+import jakarta.inject.Inject;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.inject.BotState;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.Set;
 import java.util.Timer;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.constructors;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.GeneralCodingRules.NO_CLASSES_SHOULD_ACCESS_STANDARD_STREAMS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,9 +51,18 @@ class ArchitectureRulesTest {
      */
     private static final String[] INJECTED_PACKAGES = {"..app.inject..", "..app.punishment..", "..app.reminder.."};
     private static final String[] INJECTED_CLASSES = {
+        "net.hypixel.nerdbot.app.badge.BadgeCatalog",
+        "net.hypixel.nerdbot.app.badge.BadgeService",
+        "net.hypixel.nerdbot.app.badge.ConfiguredBadgeCatalog",
+        "net.hypixel.nerdbot.app.command.BadgeCommands",
+        "net.hypixel.nerdbot.app.command.DriveCommands",
+        "net.hypixel.nerdbot.app.command.PackCommands",
+        "net.hypixel.nerdbot.app.command.PostCommands",
         "net.hypixel.nerdbot.app.command.PunishmentCommands",
         "net.hypixel.nerdbot.app.command.ReminderCommands",
-        "net.hypixel.nerdbot.app.command.util.PanelId"
+        "net.hypixel.nerdbot.app.command.util.CommandReplies",
+        "net.hypixel.nerdbot.app.command.util.PanelId",
+        "net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore"
     };
 
     @Test
@@ -86,6 +105,29 @@ class ArchitectureRulesTest {
         noClasses().that().resideInAnyPackage(INJECTED_PACKAGES).or(injectedClass())
             .should().dependOnClassesThat().belongToAnyOf(BotEnvironment.class, DiscordBotEnvironment.class, SkyBlockNerdsBot.class, ChannelCache.class)
             .because("injected code gets its dependencies through its constructor, so tests can hand it fakes")
+            .check(CLASSES);
+    }
+
+    /**
+     * The config is replaced by {@code /config reload}, and the pack updater and Drive service only
+     * exist once startup reaches them, so a class handed one of these at construction would keep a
+     * stale or empty copy. They have to come through a {@code Provider}.
+     */
+    @Test
+    void liveValuesAreInjectedThroughAProvider() {
+        Set<String> liveTypes = Set.of(NerdBotConfig.class.getName(), Optional.class.getName(), BotState.class.getName());
+
+        constructors().that().areAnnotatedWith(Inject.class)
+            .and().areDeclaredInClassesThat().resideOutsideOfPackage("..app.inject..")
+            .should(new ArchCondition<JavaConstructor>("not take the config, an Optional or BotState directly") {
+                @Override
+                public void check(JavaConstructor constructor, ConditionEvents events) {
+                    constructor.getRawParameterTypes().stream()
+                        .filter(type -> liveTypes.contains(type.getName()))
+                        .forEach(type -> events.add(SimpleConditionEvent.violated(constructor,
+                            constructor.getFullName() + " takes " + type.getSimpleName() + "; inject Provider<" + type.getSimpleName() + "> instead")));
+                }
+            })
             .check(CLASSES);
     }
 
