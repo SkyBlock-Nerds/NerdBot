@@ -1,7 +1,9 @@
 package net.hypixel.nerdbot.app.command;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.channel.unions.IThreadContainerUnion;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -42,7 +45,7 @@ class ChannelCommandsTest {
 
     private final CallRecorder recorder = new CallRecorder();
     private final NerdBotConfig config = new NerdBotConfig();
-    private final ChannelCommands commands = new ChannelCommands(() -> config, Runnable::run);
+    private final ChannelCommands commands = new ChannelCommands(() -> config, Runnable::run, Clock.systemUTC());
     private boolean managerSucceeds = true;
 
     @BeforeEach
@@ -153,6 +156,24 @@ class ChannelCommandsTest {
 
         assertEquals("Failed to lock the thread. Please check my permissions and try again.", DiscordFakes.lastEditText(recorder));
         assertFalse(recorder.called("sendMessage"));
+    }
+
+    @Test
+    void aChannelArchiveThatFailsSaysSo() {
+        TextChannel channel = recorder.fake(TextChannel.class, Map.of("getAsMention", "<#20>", "getId", "20", "getName", "general"));
+
+        commands.archiveChannel(DiscordFakes.slash(recorder, MODERATOR), channel);
+
+        assertEquals("An error occurred while archiving channel <#20>. Please try again later.", DiscordFakes.lastEditText(recorder));
+    }
+
+    @Test
+    void anEmptyCategoryCannotBeArchived() {
+        Category category = Fakes.of(Category.class, Map.of("getName", "Old", "getId", "30"));
+
+        commands.archiveCategory(DiscordFakes.slash(recorder, MODERATOR), category);
+
+        assertEquals("Failed to create the archive zip file. Please try again later.", DiscordFakes.lastEditText(recorder));
     }
 
     private record Thread(MessageChannelUnion channel) {

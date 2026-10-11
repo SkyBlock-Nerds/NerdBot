@@ -1,19 +1,122 @@
 package net.hypixel.nerdbot.app.command.util;
 
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.hypixel.nerdbot.discord.testsupport.CallRecorder;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProgressUpdatesTest {
+
+    @Test
+    void throttledReportsEditAtMostOncePerInterval() {
+        MutableClock clock = new MutableClock();
+        List<String> edits = new ArrayList<>();
+        ProgressUpdates progress = ProgressUpdates.throttled(Duration.ofSeconds(10), clock, edits::add);
+
+        progress.report("1/100");
+        clock.advance(Duration.ofSeconds(4));
+        progress.report("40/100");
+        clock.advance(Duration.ofSeconds(6));
+        progress.report("70/100");
+
+        assertEquals(List.of("1/100", "70/100"), edits);
+    }
+
+    @Test
+    void nothingIsReportedAfterTheFinalUpdate() {
+        MutableClock clock = new MutableClock();
+        List<String> edits = new ArrayList<>();
+        ProgressUpdates progress = ProgressUpdates.throttled(Duration.ofSeconds(10), clock, edits::add);
+
+        progress.finish(() -> edits.add("done"));
+        clock.advance(Duration.ofMinutes(1));
+        progress.report("late status");
+
+        assertEquals(List.of("done"), edits);
+    }
+
+    @Test
+    void aFailingEditDoesNotStopLaterOnes() {
+        MutableClock clock = new MutableClock();
+        List<String> edits = new ArrayList<>();
+        ProgressUpdates progress = ProgressUpdates.throttled(Duration.ofSeconds(1), clock, status -> {
+            if (status.equals("bad")) {
+                throw new IllegalStateException("hook expired");
+            }
+            edits.add(status);
+        });
+
+        progress.report("bad");
+        clock.advance(Duration.ofSeconds(1));
+        progress.report("good");
+
+        assertEquals(List.of("good"), edits);
+    }
+
+    @Test
+    void throttledReplyEditsTheHookUntilItExpires() {
+        CallRecorder recorder = new CallRecorder();
+        boolean[] expired = {false};
+        InteractionHook hook = recorder.fake(InteractionHook.class, Map.of("isExpired", (CallRecorder.Answer) args -> expired[0]));
+        MutableClock clock = new MutableClock();
+        ProgressUpdates progress = ProgressUpdates.throttledReply(hook, Duration.ofSeconds(1), clock);
+
+        progress.loggingReporter().accept("halfway");
+        assertEquals("halfway", recorder.last("editOriginal").arg(0));
+
+        expired[0] = true;
+        clock.advance(Duration.ofSeconds(2));
+        progress.report("too late");
+        assertEquals(1, recorder.calls("editOriginal").size());
+    }
+
+    @Test
+    void reportIsOnlyForThrottledProgress() {
+        ProgressUpdates progress = new ProgressUpdates(() -> {
+        });
+
+        assertThrows(IllegalStateException.class, () -> progress.report("status"));
+    }
+
+    private static final class MutableClock extends Clock {
+
+        private Instant now = Instant.parse("2026-10-11T12:00:00Z");
+
+        void advance(Duration amount) {
+            now = now.plus(amount);
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return this;
+        }
+
+        @Override
+        public Instant instant() {
+            return now;
+        }
+    }
 
     @Test
     void ticksRunTheUpdateUntilFinished() {

@@ -10,6 +10,12 @@ public interface GreenlitStore {
     /** Every greenlit suggestion; fails, rather than throwing, when the database isn't available. */
     CompletableFuture<List<GreenlitMessage>> loadAll();
 
+    /**
+     * Writes any greenlit messages still waiting for the autosave, then loads them all, so an export
+     * includes the latest ones. Fails, rather than throwing, when the database isn't available.
+     */
+    CompletableFuture<List<GreenlitMessage>> loadAllSaved();
+
     /** Caches and writes the message straight away; fails, rather than throwing, when the database isn't available. */
     CompletableFuture<Void> save(GreenlitMessage message);
 }

@@ -29,6 +29,11 @@ public class FakeGreenlitStore implements GreenlitStore {
     }
 
     @Override
+    public CompletableFuture<List<GreenlitMessage>> loadAllSaved() {
+        return loadResult;
+    }
+
+    @Override
     public CompletableFuture<Void> save(GreenlitMessage message) {
         if (savesFail) {
             return CompletableFuture.failedFuture(new IllegalStateException("database unavailable"));

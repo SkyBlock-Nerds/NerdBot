@@ -44,6 +44,11 @@ public interface CommandsModule {
     @Binds
     @IntoSet
     @SlashCommandHandlers
+    Object exportCommands(ExportCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
     Object infoCommands(InfoCommands commands);
 
     @Binds
@@ -83,12 +88,6 @@ public interface CommandsModule {
         return new AdminCommands();
     }
 
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
-    static Object exportCommands() {
-        return new ExportCommands();
-    }
 
     @Provides
     @IntoSet

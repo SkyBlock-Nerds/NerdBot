@@ -18,6 +18,7 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.app.command.util.CommandReplies;
+import net.hypixel.nerdbot.app.command.util.ProgressUpdates;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.config.SuggestionConfig;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
@@ -27,67 +28,87 @@ import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 
 @Slf4j
 public class ChannelCommands {
 
-    static final long PROGRESS_INTERVAL_MS = 10_000;
+    static final Duration PROGRESS_INTERVAL = Duration.ofSeconds(10);
 
     private final Provider<NerdBotConfig> config;
     private final Executor backgroundWork;
+    private final Clock clock;
 
     @Inject
-    public ChannelCommands(Provider<NerdBotConfig> config, Executor backgroundWork) {
+    public ChannelCommands(Provider<NerdBotConfig> config, Executor backgroundWork, Clock clock) {
         this.config = config;
         this.backgroundWork = backgroundWork;
+        this.clock = clock;
     }
 
     @SlashCommand(name = "archive", subcommand = "channel", description = "Archives a channel and exports its contents to a file", guildOnly = true, defaultMemberPermissions = {"MANAGE_CHANNEL"}, requiredPermissions = {"MANAGE_CHANNEL"})
     public void archive(SlashCommandInteractionEvent event, @SlashOption TextChannel channel) {
-        InteractionHook hook = CommandReplies.deferPrivately(event);
-        hook.editOriginal(String.format("Archiving channel %s! If no file appears here, please contact a bot developer.", channel.getAsMention())).queue();
-
-        CompletableFuture.runAsync(() -> {
-            try {
-                File file = ArchiveExporter.exportTextChannel(channel, progressUpdater(hook));
-                log.info("Finished archiving channel {} (ID: {})! File located at: {}", channel.getName(), channel.getId(), file.getAbsolutePath());
-
-                if (!hook.isExpired()) {
-                    hook.editOriginal(String.format("Finished archiving channel %s! The file should appear below.", channel.getAsMention()))
-                        .setFiles(FileUpload.fromData(file))
-                        .queue();
-                }
-            } catch (Exception exception) {
-                CommandReplies.logFailure("An error occurred when archiving the channel " + channel.getId(), exception);
-                if (!hook.isExpired()) {
-                    hook.editOriginal(String.format("An error occurred while archiving channel %s. Please try again later.", channel.getAsMention())).queue();
-                }
-            }
-        }, backgroundWork);
+        archiveChannel(event, channel);
     }
 
     @SlashCommand(name = "archive", subcommand = "category", description = "Archives all text/forum channels (including threads) in a category into a single zip", guildOnly = true, defaultMemberPermissions = {"MANAGE_CHANNEL"}, requiredPermissions = {"MANAGE_CHANNEL"})
     public void archiveCategory(SlashCommandInteractionEvent event, @SlashOption Category category) {
-        InteractionHook hook = CommandReplies.deferPrivately(event);
-        User user = event.getUser();
-        hook.editOriginal(String.format("Archiving category **%s** (ID: %s). You will receive a DM when complete.", category.getName(), category.getId())).queue();
+        archiveCategory((IReplyCallback) event, category);
+    }
 
+    void archiveChannel(IReplyCallback interaction, TextChannel channel) {
+        InteractionHook hook = CommandReplies.deferPrivately(interaction);
+        hook.editOriginal(String.format("Archiving channel %s! If no file appears here, please contact a bot developer.", channel.getAsMention())).queue();
+
+        ProgressUpdates progress = ProgressUpdates.throttledReply(hook, PROGRESS_INTERVAL, clock);
         CompletableFuture.runAsync(() -> {
             try {
-                File zipFile = ArchiveExporter.exportCategory(category, progressUpdater(hook));
-                if (!hook.isExpired()) {
-                    hook.editOriginal("Finished archiving! Sending the zip file via DM").queue();
-                }
+                File file = ArchiveExporter.exportTextChannel(channel, progress.loggingReporter());
+                log.info("Finished archiving channel {} (ID: {})! File located at: {}", channel.getName(), channel.getId(), file.getAbsolutePath());
+
+                progress.finish(() -> {
+                    if (!hook.isExpired()) {
+                        hook.editOriginal(String.format("Finished archiving channel %s! The file should appear below.", channel.getAsMention()))
+                            .setFiles(FileUpload.fromData(file))
+                            .queue();
+                    }
+                });
+            } catch (Exception exception) {
+                CommandReplies.logFailure("An error occurred when archiving the channel " + channel.getId(), exception);
+                progress.finish(() -> {
+                    if (!hook.isExpired()) {
+                        hook.editOriginal(String.format("An error occurred while archiving channel %s. Please try again later.", channel.getAsMention())).queue();
+                    }
+                });
+            }
+        }, backgroundWork);
+    }
+
+    void archiveCategory(IReplyCallback interaction, Category category) {
+        InteractionHook hook = CommandReplies.deferPrivately(interaction);
+        User user = interaction.getUser();
+        hook.editOriginal(String.format("Archiving category **%s** (ID: %s). You will receive a DM when complete.", category.getName(), category.getId())).queue();
+
+        ProgressUpdates progress = ProgressUpdates.throttledReply(hook, PROGRESS_INTERVAL, clock);
+        CompletableFuture.runAsync(() -> {
+            try {
+                File zipFile = ArchiveExporter.exportCategory(category, progress.loggingReporter());
+                progress.finish(() -> {
+                    if (!hook.isExpired()) {
+                        hook.editOriginal("Finished archiving! Sending the zip file via DM").queue();
+                    }
+                });
                 sendZipToUser(user, zipFile, hook, category.getName());
             } catch (Exception exception) {
                 CommandReplies.logFailure("Failed to archive category " + category.getId(), exception);
+                progress.finish(() -> {
+                });
                 if (!hook.isExpired()) {
                     hook.editOriginal("Failed to create the archive zip file. Please try again later.").queue();
                 } else {
@@ -220,24 +241,5 @@ public class ChannelCommands {
         });
     }
 
-    private static Consumer<String> progressUpdater(InteractionHook hook) {
-        AtomicLong lastUpdate = new AtomicLong(0);
 
-        return status -> {
-            log.info(status);
-
-            if (hook.isExpired()) {
-                return;
-            }
-
-            long now = System.currentTimeMillis();
-            long last = lastUpdate.get();
-            if (now - last >= PROGRESS_INTERVAL_MS && lastUpdate.compareAndSet(last, now)) {
-                hook.editOriginal(status).queue(
-                    null,
-                    throwable -> log.debug("Failed to send progress update: {}", throwable.getMessage())
-                );
-            }
-        };
-    }
 }

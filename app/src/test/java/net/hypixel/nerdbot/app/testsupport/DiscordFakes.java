@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.app.testsupport;
 
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction;
@@ -26,8 +27,11 @@ public final class DiscordFakes {
         return Fakes.of(User.class, Map.of("getId", id));
     }
 
+    /** A slash command from {@code userId}, whose hook is still usable (JDA works expiry out from a timestamp the fake doesn't have). */
     public static SlashCommandInteraction slash(CallRecorder recorder, String userId) {
-        return recorder.fake(SlashCommandInteraction.class, Map.of("getUser", user(userId)));
+        return recorder.fake(SlashCommandInteraction.class, Map.of(
+            "getUser", user(userId),
+            "getHook", recorder.fake(InteractionHook.class, Map.of("isExpired", false))));
     }
 
     public static ButtonInteraction button(CallRecorder recorder, String userId, String componentId) {
