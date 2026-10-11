@@ -2,29 +2,31 @@ package net.hypixel.nerdbot.app.inject;
 
 import dagger.Binds;
 import dagger.Module;
-import dagger.Provides;
 import dagger.multibindings.IntoSet;
-import net.hypixel.nerdbot.app.command.AdminCommands;
 import net.hypixel.nerdbot.app.command.BadgeCommands;
+import net.hypixel.nerdbot.app.command.CacheCommands;
 import net.hypixel.nerdbot.app.command.ChannelCommands;
+import net.hypixel.nerdbot.app.command.ConfigCommands;
+import net.hypixel.nerdbot.app.command.CurateCommands;
 import net.hypixel.nerdbot.app.command.DriveCommands;
 import net.hypixel.nerdbot.app.command.ExportCommands;
 import net.hypixel.nerdbot.app.command.GeneratorCommands;
 import net.hypixel.nerdbot.app.command.InfoCommands;
+import net.hypixel.nerdbot.app.command.InviteCommands;
+import net.hypixel.nerdbot.app.command.NominationCommands;
 import net.hypixel.nerdbot.app.command.PackCommands;
 import net.hypixel.nerdbot.app.command.PostCommands;
 import net.hypixel.nerdbot.app.command.ProfileCommands;
 import net.hypixel.nerdbot.app.command.PunishmentCommands;
 import net.hypixel.nerdbot.app.command.ReminderCommands;
+import net.hypixel.nerdbot.app.command.RestrictedChannelCommands;
 import net.hypixel.nerdbot.app.command.RoleCommands;
 import net.hypixel.nerdbot.app.command.SuggestionCommands;
-import net.hypixel.nerdbot.app.profile.MojangProfileLookup;
-import net.hypixel.nerdbot.app.profile.ProfileEmbeds;
-import net.hypixel.nerdbot.app.profile.ProfileLinker;
+import net.hypixel.nerdbot.app.command.TagTransferCommands;
+import net.hypixel.nerdbot.app.command.UserCommands;
 
 /**
- * Every slash command class the bot registers. Commands that haven't moved to constructor injection
- * are still built with {@code new}; when one moves, its provider here becomes a {@code @Binds}.
+ * Every slash command class the bot registers.
  */
 @Module
 public interface CommandsModule {
@@ -89,15 +91,48 @@ public interface CommandsModule {
     @SlashCommandHandlers
     Object generatorCommands(GeneratorCommands commands);
 
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
-    static Object adminCommands(MojangProfileLookup profileLookup, ProfileLinker profileLinker, ProfileEmbeds profileEmbeds) {
-        return new AdminCommands(profileLookup, profileLinker, profileEmbeds);
-    }
-
     @Binds
     @IntoSet
     @SlashCommandHandlers
     Object profileCommands(ProfileCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object cacheCommands(CacheCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object configCommands(ConfigCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object curateCommands(CurateCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object inviteCommands(InviteCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object nominationCommands(NominationCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object restrictedChannelCommands(RestrictedChannelCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object tagTransferCommands(TagTransferCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object userCommands(UserCommands commands);
 }

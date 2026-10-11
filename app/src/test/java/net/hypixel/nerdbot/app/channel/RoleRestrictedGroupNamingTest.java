@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.app.listener;
+package net.hypixel.nerdbot.app.channel;
 
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +18,7 @@ class RoleRestrictedGroupNamingTest {
         // "Admin Team!" -> "adminteam", "Mod" -> "mod", sorted for a deterministic identifier
         assertEquals(
             "adminteam-mod-channels",
-            RoleRestrictedChannelListener.formatGroupIdentifier(List.of("Mod", "Admin Team!"), Set.of())
+            RestrictedChannelGroups.groupIdentifier(List.of("Mod", "Admin Team!"), Set.of())
         );
     }
 
@@ -26,25 +26,25 @@ class RoleRestrictedGroupNamingTest {
     void identifierFallsBackToRoleIdsWhenNoNamesResolve() {
         assertEquals(
             "999-channels",
-            RoleRestrictedChannelListener.formatGroupIdentifier(List.of(), Set.of("999"))
+            RestrictedChannelGroups.groupIdentifier(List.of(), Set.of("999"))
         );
     }
 
     @Test
     void displayNameForNoRolesIsUnknown() {
-        assertEquals("Unknown Role Channels", RoleRestrictedChannelListener.formatGroupDisplayName(List.of()));
+        assertEquals("Unknown Role Channels", RestrictedChannelGroups.groupDisplayName(List.of()));
     }
 
     @Test
     void displayNameForSingleRole() {
-        assertEquals("Admin Channels", RoleRestrictedChannelListener.formatGroupDisplayName(List.of("Admin")));
+        assertEquals("Admin Channels", RestrictedChannelGroups.groupDisplayName(List.of("Admin")));
     }
 
     @Test
     void displayNameForTwoRolesSortsAndJoinsWithAmpersand() {
         assertEquals(
             "Admin & Mod Channels",
-            RoleRestrictedChannelListener.formatGroupDisplayName(List.of("Mod", "Admin"))
+            RestrictedChannelGroups.groupDisplayName(List.of("Mod", "Admin"))
         );
     }
 
@@ -52,7 +52,7 @@ class RoleRestrictedGroupNamingTest {
     void displayNameForThreeOrMoreRolesUsesCommasThenAmpersand() {
         assertEquals(
             "Admin, Mod & VIP Channels",
-            RoleRestrictedChannelListener.formatGroupDisplayName(List.of("VIP", "Admin", "Mod"))
+            RestrictedChannelGroups.groupDisplayName(List.of("VIP", "Admin", "Mod"))
         );
     }
 }
