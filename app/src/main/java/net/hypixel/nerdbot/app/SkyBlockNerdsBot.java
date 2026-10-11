@@ -354,8 +354,8 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
                     long now = System.currentTimeMillis();
 
                     if (now > reminder.getTime()) {
-                        ReminderDispatcher.dispatch(reminder, true);
-                        log.info("Sent reminder {} because it was not sent yet!", reminder);
+                        ReminderDispatcher.sendIfStillPending(reminder, true);
+                        log.info("Reminder {} came due while the bot was offline, sending it now", reminder);
                         return;
                     }
 

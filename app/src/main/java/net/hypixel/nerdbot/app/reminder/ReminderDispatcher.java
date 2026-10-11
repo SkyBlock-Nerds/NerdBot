@@ -12,6 +12,8 @@ import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 @UtilityClass
 @Slf4j
@@ -27,17 +29,36 @@ public class ReminderDispatcher {
         reminder.cancelTimer();
     }
 
-    public void dispatch(Reminder reminder, boolean late) {
+    public void sendIfStillPending(Reminder reminder, boolean late) {
         ReminderRepository reminderRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-        User user = DiscordBotEnvironment.getBot().getJDA().getUserById(reminder.getUserId());
-        String timestamp = DiscordTimestamp.toLongDateTime(reminder.getTime());
+        sendIfStillPending(reminder, late, reminderRepository::deleteFromDatabase, ReminderDispatcher::dispatch);
+    }
 
-        if (user == null) {
-            log.warn("Couldn't find user with ID '{}' to send reminder {}!", reminder.getUserId(), reminder.getUuid());
-            reminderRepository.deleteFromDatabase(reminder.getUuid().toString());
+    /**
+     * Deleting first and only sending when the delete actually removed the document means a
+     * reminder is sent at most once, even if the timer and the startup catch-up both fire for it.
+     */
+    static void sendIfStillPending(Reminder reminder, boolean late, Function<String, DeleteResult> delete, BiConsumer<Reminder, Boolean> send) {
+        DeleteResult result = delete.apply(reminder.getUuid().toString());
+
+        if (result == null || !result.wasAcknowledged() || result.getDeletedCount() == 0) {
+            log.info("Reminder '{}' was already sent or removed, skipping", reminder.getUuid());
             return;
         }
 
+        reminder.cancelTimer();
+        send.accept(reminder, late);
+    }
+
+    private void dispatch(Reminder reminder, boolean late) {
+        DiscordBotEnvironment.getBot().getJDA().retrieveUserById(reminder.getUserId()).queue(
+            user -> sendDirectMessage(user, reminder, late),
+            failure -> log.warn("Couldn't find user with ID '{}' to send reminder {}", reminder.getUserId(), reminder.getUuid(), failure)
+        );
+    }
+
+    private void sendDirectMessage(User user, Reminder reminder, boolean late) {
+        String timestamp = DiscordTimestamp.toLongDateTime(reminder.getTime());
         String message = late
             ? user.getAsMention() + ", while I was offline, you asked me to remind you at " + timestamp + " about: "
             : user.getAsMention() + ", you asked me to remind you at " + timestamp + " about: ";
@@ -58,14 +79,7 @@ public class ReminderDispatcher {
 
         @Override
         public void run() {
-        ReminderRepository reminderRepository = DiscordBotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-            DeleteResult result = reminderRepository.deleteFromDatabase(reminder.getUuid().toString());
-
-            if (result != null && result.wasAcknowledged() && result.getDeletedCount() > 0) {
-                reminder.cancelTimer();
-                ReminderDispatcher.dispatch(reminder, false);
-                log.info("Reminder '{}' successfully deleted (result: {})", reminder.getUuid(), result);
-            }
+            ReminderDispatcher.sendIfStillPending(reminder, false);
         }
     }
 }
