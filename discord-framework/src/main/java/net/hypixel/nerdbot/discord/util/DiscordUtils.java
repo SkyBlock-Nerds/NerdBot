@@ -3,18 +3,13 @@ package net.hypixel.nerdbot.discord.util;
 import com.vdurmont.emoji.EmojiManager;
 import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.EmojiCache;
-import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.NoSuchElementException;
@@ -40,24 +35,6 @@ public class DiscordUtils {
         }
 
         return Optional.empty();
-    }
-
-    public static String getDisplayName(User user) {
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser discordUser = discordUserRepository.findById(user.getId()).orElse(null);
-
-        if (discordUser != null && discordUser.isProfileAssigned()) {
-            return discordUser.getMojangProfile().getUsername();
-        } else {
-            Guild guild = getMainGuild();
-            Member sbnMember = guild.retrieveMemberById(user.getId()).complete();
-
-            if (sbnMember == null || sbnMember.getNickname() == null) {
-                return user.getEffectiveName();
-            }
-
-            return sbnMember.getNickname();
-        }
     }
 
     public static Optional<Emoji> getEmoji(String emoji) {

@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.command;
 
+import net.dv8tion.jda.api.entities.User;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
@@ -253,6 +254,19 @@ public class ProfileCommands {
         } else {
             log.warn("Role with ID {} does not exist.", newMemberRoleId);
         }
+    }
+
+    /** The member's Minecraft name when they've linked one, otherwise their server nickname. */
+    private static String displayName(User user) {
+        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        DiscordUser discordUser = discordUserRepository.findById(user.getId()).orElse(null);
+        if (discordUser != null && discordUser.isProfileAssigned()) {
+            return discordUser.getMojangProfile().getUsername();
+        }
+
+        // Every member is cached, so this needs no REST call and is simply null once they've left
+        Member member = DiscordUtils.getMainGuild().getMemberById(user.getId());
+        return member == null || member.getNickname() == null ? user.getEffectiveName() : member.getNickname();
     }
 
     public static List<MessageEmbed> getActivityEmbeds(Member member, DiscordUser discordUser) {
@@ -942,7 +956,7 @@ public class ProfileCommands {
             case "kicknow" -> {
                 Guild guild = DiscordUtils.getMainGuild();
                 Member member = guild.retrieveMemberById(memberId).complete();
-                String displayName = DiscordUtils.getDisplayName(member.getUser());
+                String displayName = displayName(member.getUser());
                 guild.kick(UserSnowflake.fromId(memberId)).complete();
 
                 event.replyEmbeds(new EmbedBuilder()

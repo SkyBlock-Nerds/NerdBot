@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.command;
 
+import net.hypixel.nerdbot.app.user.LegacyUsernames;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -71,7 +72,6 @@ import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepo
 import net.hypixel.nerdbot.marmalade.storage.repository.Repository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
-import net.hypixel.nerdbot.discord.util.Utils;
 
 import java.awt.Color;
 import java.io.File;
@@ -596,7 +596,7 @@ public class AdminCommands {
             .onSuccess(members -> {
                 List<CompletableFuture<Void>> migrationTasks = members.stream()
                     .filter(member -> !member.getUser().isBot())
-                    .filter(member -> Utils.getScuffedMinecraftIGN(member).isPresent())
+                    .filter(member -> LegacyUsernames.fromDisplayName(member).isPresent())
                     .map(member ->
                         discordUserRepository.findByIdAsync(member.getId())
                             .thenCompose(user -> {
@@ -604,7 +604,7 @@ public class AdminCommands {
                                     return CompletableFuture.completedFuture(null);
                                 }
 
-                                String scuffedUsername = Utils.getScuffedMinecraftIGN(member).orElseThrow();
+                                String scuffedUsername = LegacyUsernames.fromDisplayName(member).orElseThrow();
                                 return HttpUtils.getMojangProfileAsync(scuffedUsername)
                                     .thenAccept(result -> {
                                         if (result.isSuccess()) {
