@@ -50,47 +50,8 @@
     "aprilFoolsTimezone": "example_value"
   },
   "generatorConfig": {
-    "playerHead": {
-      "defaultSkinTexture": "example_value",
-      "defaultScale": 1,
-      "maxScale": 1,
-      "minScale": 1
-    },
-    "tooltip": {
-      "defaultMaxLineLength": 1,
-      "defaultAlpha": 1,
-      "defaultPadding": 1,
-      "defaultRenderBorder": true,
-      "defaultCenteredText": true,
-      "maxLineLength": 1,
-      "minLineLength": 1
-    },
-    "item": {
-      "defaultEnchanted": true,
-      "defaultHoverEffect": true,
-      "defaultDurabilityPercent": 1
-    },
     "inventory": {
-      "defaultDrawBorder": true,
-      "defaultDrawBackground": true,
-      "maxRows": 1,
-      "maxColumns": 1,
-      "minRows": 1,
-      "minColumns": 1,
       "animateGlint": true
-    },
-    "cache": {
-      "enabled": true,
-      "maxSize": 1,
-      "ttlMinutes": 1
-    },
-    "general": {
-      "defaultScaleFactor": 1,
-      "defaultPadding": 1,
-      "maxScaleFactor": 1,
-      "minScaleFactor": 1,
-      "debugLogging": true,
-      "includeErrorDetails": true
     },
     "resourcePacks": {
       "packs": [
